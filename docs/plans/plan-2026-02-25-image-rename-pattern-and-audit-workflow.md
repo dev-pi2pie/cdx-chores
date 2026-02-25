@@ -40,7 +40,7 @@ Reference inspiration/spec input:
 - [ ] Decide default prefix behavior (directory name vs fixed `file` vs current behavior compatibility)
 - [ ] Define timestamp precedence for images (EXIF `DateTimeOriginal` vs file mtime)
 - [ ] Decide whether EXIF support is in scope for Node-only launch or requires a separate backend/tool
-- [ ] Define allowed extensions default list and override behavior (`--ext`)
+- [x] Define allowed extensions default list and override behavior (`--ext`)
 - [ ] Define recursive behavior (`--recursive`) and safety boundaries
 - [ ] Define symlink policy (skip, log reason)
 - [ ] Define audit CSV format and naming (including dry-run suffix)
@@ -112,7 +112,8 @@ Rename plan CSV schema should be documented in a dedicated guide:
 - Job: evaluate EXIF timestamp extraction options for Node/Bun-compatible image workflows
 - Job: design and implement single-file rename workflow
 - Job: design and implement custom rename pattern/template parsing + validation
-- Job: add recursive and extension-filter support with tests
+- Job: add recursive support and safety boundaries with tests
+- Job: document regex/ext scoping examples for image/non-image mixed folders
 - Job: implement CSV replay/apply mode if adopted
 
 ## Related Plans
@@ -122,3 +123,12 @@ Rename plan CSV schema should be documented in a dedicated guide:
 ## Related Research
 
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+
+## Status Notes
+
+- `rename batch` now supports file scoping controls for batch selection:
+  - `--match-regex`
+  - `--skip-regex`
+  - `--ext`
+  - `--skip-ext`
+- Extension filters are case-insensitive and apply before dry-run/apply plan generation, so CSV snapshots only include scoped files.

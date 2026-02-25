@@ -74,13 +74,19 @@ export async function writeTextFileSafe(
 export async function planBatchRename(
   runtime: CliRuntime,
   directoryInput: string,
-  options: { prefix?: string; now?: Date; titleOverrides?: Map<string, string> } = {},
+  options: {
+    prefix?: string;
+    now?: Date;
+    titleOverrides?: Map<string, string>;
+    fileFilter?: (entryName: string) => boolean;
+  } = {},
 ): Promise<{ directoryPath: string; plans: PlannedRename[] }> {
   const directoryPath = resolveFromCwd(runtime, directoryInput);
   const entries = await readdir(directoryPath, { withFileTypes: true });
   const files = entries
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
+    .filter((name) => options.fileFilter?.(name) ?? true)
     .sort((a, b) => a.localeCompare(b));
 
   const prefix = slugifyName(options.prefix?.trim() || "file");

@@ -34,8 +34,8 @@ At the same time, the codebase now has multiple command/action flows that wrap s
 - [x] Add automated tests for Codex fallback messaging path (deterministic unit test via injected suggester)
 - [x] Tune Codex request settings for better success odds (timeout/network-enabled thread settings)
 - [x] Add user-tunable Codex request controls (timeout, retries, batch size)
-- [ ] Define scoping controls for rename batch (regex include/exclude, extension filters)
-- [ ] Define behavior for unsupported/non-static/oversized files in Codex-assisted mode (skip Codex assist, still rename deterministically)
+- [x] Define scoping controls for rename batch (regex include/exclude, extension filters)
+- [x] Define behavior for unsupported/non-static/oversized files in Codex-assisted mode (skip Codex assist, still rename deterministically)
 - [ ] Add/update `doctor`/capability messaging only if needed for Codex-backed features
 - [x] Write and maintain action/tool integration guide for future chores
 - [x] Create follow-up implementation job(s) after scope and UX decisions are settled
@@ -111,7 +111,15 @@ Purpose:
   - `networkAccessEnabled: true`
   - `webSearchMode: disabled`
 - Non-supported files (or files outside the image extension list) currently remain in the batch rename flow and use deterministic naming only.
-- Regex/ext scoping controls are not implemented yet (planned).
+- `rename batch` / `batch-rename` now supports batch scoping controls:
+  - `--match-regex`
+  - `--skip-regex`
+  - `--ext` (repeatable and comma-separated)
+  - `--skip-ext` (repeatable and comma-separated)
+- Codex-assisted rename now prefilters eligible image inputs before calling Codex:
+  - skips GIFs (treated as likely non-static for assist)
+  - skips oversized local images (keeps deterministic rename path)
+  - still renames all scoped files deterministically when no Codex title is available
 - Real-image dry-run was exercised against `examples/playground/images/*` in the current environment and still fell back due timeout/abort (`The operation was aborted.`), but now displays live progress feedback before fallback.
 
 ## Risks and Mitigations

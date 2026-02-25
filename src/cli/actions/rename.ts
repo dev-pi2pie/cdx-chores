@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import { basename, extname } from "node:path";
 
 import {
@@ -5,6 +6,7 @@ import {
   type CodexImageRenameResult,
 } from "../../adapters/codex/image-rename-titles";
 import { slugifyName } from "../../utils/slug";
+import { CliError } from "../errors";
 import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
 import { applyPlannedRenames, planBatchRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
@@ -20,6 +22,10 @@ export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
   dryRun?: boolean;
+  matchRegex?: string;
+  skipRegex?: string;
+  ext?: string[];
+  skipExt?: string[];
   codex?: boolean;
   codexTimeoutMs?: number;
   codexRetries?: number;
@@ -48,6 +54,104 @@ const IMAGE_EXTENSIONS = new Set([
   ".tiff",
   ".avif",
 ]);
+
+// Keep Codex local-image requests conservative to avoid hard failures on very large files.
+const CODEX_MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+// GIFs are often animated/non-static; skip Codex assist and keep deterministic rename behavior.
+const CODEX_STATIC_IMAGE_EXTENSIONS = new Set(
+  [...IMAGE_EXTENSIONS].filter((ext) => ext !== ".gif"),
+);
+
+function compileOptionalRegex(
+  value: string | undefined,
+  label: "--match-regex" | "--skip-regex",
+): RegExp | undefined {
+  const pattern = value?.trim();
+  if (!pattern) {
+    return undefined;
+  }
+
+  try {
+    return new RegExp(pattern);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliError(`Invalid ${label}: ${message}`, { code: "INVALID_INPUT", exitCode: 2 });
+  }
+}
+
+function normalizeExtensions(values: string[] | undefined): Set<string> | undefined {
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+
+  const normalized = values
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0)
+    .map((value) => (value.startsWith(".") ? value : `.${value}`));
+
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  return new Set(normalized);
+}
+
+function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: string) => boolean {
+  const matchRegex = compileOptionalRegex(options.matchRegex, "--match-regex");
+  const skipRegex = compileOptionalRegex(options.skipRegex, "--skip-regex");
+  const includeExts = normalizeExtensions(options.ext);
+  const excludeExts = normalizeExtensions(options.skipExt);
+
+  return (entryName: string) => {
+    if (matchRegex && !matchRegex.test(entryName)) {
+      return false;
+    }
+
+    if (skipRegex && skipRegex.test(entryName)) {
+      return false;
+    }
+
+    const ext = extname(entryName).toLowerCase();
+    if (includeExts && !includeExts.has(ext)) {
+      return false;
+    }
+
+    if (excludeExts?.has(ext)) {
+      return false;
+    }
+
+    return true;
+  };
+}
+
+async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<string[]> {
+  const imagePaths: string[] = [];
+
+  for (const plan of plans) {
+    const sourcePath = plan.fromPath;
+    const ext = extname(sourcePath).toLowerCase();
+    if (!CODEX_STATIC_IMAGE_EXTENSIONS.has(ext)) {
+      continue;
+    }
+
+    try {
+      const fileStats = await stat(sourcePath);
+      if (!fileStats.isFile()) {
+        continue;
+      }
+      if (fileStats.size > CODEX_MAX_IMAGE_BYTES) {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+
+    imagePaths.push(sourcePath);
+  }
+
+  return imagePaths;
+}
 
 function startCodexProgress(
   runtime: CliRuntime,
@@ -85,9 +189,11 @@ export async function actionRenameBatch(
   options: RenameBatchOptions,
 ): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
   const directory = assertNonEmpty(options.directory, "Directory path");
+  const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
     now: runtime.now(),
+    fileFilter,
   });
   const directoryPath = initial.directoryPath;
 
@@ -98,9 +204,7 @@ export async function actionRenameBatch(
   let codexTitlesByPath: Map<string, string> | undefined;
 
   if (options.codex ?? false) {
-    const imagePaths = initial.plans
-      .map((plan) => plan.fromPath)
-      .filter((path) => IMAGE_EXTENSIONS.has(extname(path).toLowerCase()));
+    const imagePaths = await selectCodexAssistImagePaths(initial.plans);
     codexImageCount = imagePaths.length;
 
     if (imagePaths.length > 0) {
@@ -129,6 +233,7 @@ export async function actionRenameBatch(
         prefix: options.prefix,
         now: runtime.now(),
         titleOverrides,
+        fileFilter,
       })
     : initial;
 

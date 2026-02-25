@@ -259,6 +259,68 @@ describe("cli action modules: rename", () => {
     }
   });
 
+  test("actionRenameBatch scopes files with regex and extension filters", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-scope-filters");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "keep-photo.JPG"), "1", "utf8");
+      await writeFile(join(dirPath, "skip-photo.png"), "2", "utf8");
+      await writeFile(join(dirPath, "other.jpg"), "3", "utf8");
+      await writeFile(join(dirPath, "notes.txt"), "4", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "img",
+        dryRun: true,
+        matchRegex: "photo",
+        skipRegex: "^skip",
+        ext: ["jpg", "png"],
+        skipExt: ["png"],
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(result.changedCount).toBe(1);
+      expect(stdout.text).toContain("Files found: 1");
+      expect(stdout.text).toContain("keep-photo.JPG -> img-");
+      expect(stdout.text).not.toContain("skip-photo.png");
+      expect(stdout.text).not.toContain("other.jpg");
+      expect(stdout.text).not.toContain("notes.txt");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch rejects invalid regex scope filters", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-invalid-regex");
+      await mkdir(dirPath, { recursive: true });
+
+      await expectCliError(
+        () =>
+          actionRenameBatch(runtime, {
+            directory: toRepoRelativePath(dirPath),
+            dryRun: true,
+            matchRegex: "(",
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Invalid --match-regex:" },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(stderr.text).toBe("");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch codex mode shows progress and fallback messaging when Codex returns an error", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
@@ -342,6 +404,53 @@ describe("cli action modules: rename", () => {
       expect(calls[0]?.batchSize).toBe(1);
       expect(calls[0]?.imagePaths).toHaveLength(2);
       expect(stdout.text).toContain("Codex image titles:");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch skips Codex assist for non-static or oversized images but still renames them", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-skip-ineligible");
+      await mkdir(dirPath, { recursive: true });
+
+      const gifPath = join(dirPath, "animated.gif");
+      const largePngPath = join(dirPath, "large.png");
+      const okPngPath = join(dirPath, "ok.png");
+
+      await writeFile(gifPath, "fakegif", "utf8");
+      await writeFile(largePngPath, Buffer.alloc(21 * 1024 * 1024));
+      await writeFile(okPngPath, "fakepng", "utf8");
+
+      const calls: Array<{ imagePaths: string[] }> = [];
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "img",
+        dryRun: true,
+        codex: true,
+        codexTitleSuggester: async (options) => {
+          calls.push({ imagePaths: options.imagePaths });
+          return {
+            suggestions: options.imagePaths.map((path) => ({ path, title: "only eligible image" })),
+          };
+        },
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(3);
+      expect(result.changedCount).toBe(3);
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.imagePaths).toHaveLength(1);
+      expect(calls[0]?.imagePaths[0]?.endsWith("/ok.png")).toBe(true);
+      expect(stdout.text).toContain("Codex image titles: 1/1 image file(s) suggested");
+      expect(stdout.text).toContain("- animated.gif -> img-");
+      expect(stdout.text).toContain("- large.png -> img-");
+      expect(stdout.text).toContain("- ok.png -> img-");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

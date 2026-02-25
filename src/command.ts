@@ -28,6 +28,14 @@ function applyCommonFileOptions(command: Command): void {
     .option("--overwrite", "Overwrite output file if it already exists", false);
 }
 
+function collectCsvListOption(value: string, previous: string[] = []): string[] {
+  const next = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  return [...previous, ...next];
+}
+
 function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
   const normalized = argv.slice(0, 2);
   let displayPathStyle: CliRuntime["displayPathStyle"] = "relative";
@@ -164,6 +172,10 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
+    .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
+    .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
+    .option("--skip-ext <value>", "Exclude file extensions (repeatable or comma-separated)", collectCsvListOption, [])
     .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
     .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
     .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
@@ -174,6 +186,10 @@ export async function runCli(
         options: {
           prefix?: string;
           dryRun?: boolean;
+          matchRegex?: string;
+          skipRegex?: string;
+          ext?: string[];
+          skipExt?: string[];
           codex?: boolean;
           codexTimeoutMs?: number;
           codexRetries?: number;
@@ -184,6 +200,10 @@ export async function runCli(
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        matchRegex: options.matchRegex,
+        skipRegex: options.skipRegex,
+        ext: options.ext,
+        skipExt: options.skipExt,
         codex: options.codex,
         codexTimeoutMs: options.codexTimeoutMs,
         codexRetries: options.codexRetries,
@@ -205,6 +225,10 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
+    .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
+    .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
+    .option("--skip-ext <value>", "Exclude file extensions (repeatable or comma-separated)", collectCsvListOption, [])
     .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
     .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
     .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
@@ -215,6 +239,10 @@ export async function runCli(
         options: {
           prefix?: string;
           dryRun?: boolean;
+          matchRegex?: string;
+          skipRegex?: string;
+          ext?: string[];
+          skipExt?: string[];
           codex?: boolean;
           codexTimeoutMs?: number;
           codexRetries?: number;
@@ -225,6 +253,10 @@ export async function runCli(
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        matchRegex: options.matchRegex,
+        skipRegex: options.skipRegex,
+        ext: options.ext,
+        skipExt: options.skipExt,
         codex: options.codex,
         codexTimeoutMs: options.codexTimeoutMs,
         codexRetries: options.codexRetries,
