@@ -48,21 +48,19 @@ These defaults should be implemented first and revisited after manual testing ac
 ### Path prompt abstraction
 
 - Extract path prompting logic from `src/cli/interactive.ts` into reusable helpers (for example, `src/cli/prompts/path.ts`)
-- Support prompt variants:
-  - required file path
-  - required directory path
-  - optional output path with derived default hint
-  - CSV plan path prompt
+- Support required file path prompt variant
+- Support required directory path prompt variant
+- Support optional output path prompt variant with derived default hint
+- Support CSV plan path prompt variant
 - Centralize path prompt validation and display formatting
 
 ### Derived path hints (default output suggestions)
 
 - Standardize hint generation currently done ad hoc in `formatDefaultOutputHint(...)`
-- Show resolved/display-friendly default output paths consistently for:
-  - `data json-to-csv`
-  - `data csv-to-json`
-  - `md to-docx`
-  - `video gif` (optional output)
+- Show resolved/display-friendly default output paths for `data json-to-csv`
+- Show resolved/display-friendly default output paths for `data csv-to-json`
+- Show resolved/display-friendly default output paths for `md to-docx`
+- Show resolved/display-friendly default output paths for `video gif` (optional output)
 - Keep behavior compatible with existing action defaults (prompt hint only; action remains source of truth)
 
 ### Filesystem-backed autocomplete (MVP)
@@ -187,14 +185,14 @@ These defaults should be implemented first and revisited after manual testing ac
 
 ## Risks and Mitigations
 
-- Risk: prompt library limitations make custom key handling fragile
-  - Mitigation: keep a simple fallback mode and decouple suggestion engine from UI
-- Risk: large directories cause sluggish suggestions
-  - Mitigation: cap results, short-circuit matching, and avoid expensive stat calls in MVP
-- Risk: users expect shell-like behavior and are surprised by differences
-  - Mitigation: document exact key behavior and keep `Enter` submission semantics predictable
-- Risk: duplicate hint/default logic diverges from action defaults
-  - Mitigation: centralize hint generation and treat hints as display-only while actions remain source of truth
+- Risk: prompt library limitations make custom key handling fragile.
+  - Mitigation: keep a simple fallback mode and decouple suggestion engine from UI.
+- Risk: large directories cause sluggish suggestions.
+  - Mitigation: cap results, short-circuit matching, and avoid expensive stat calls in MVP.
+- Risk: users expect shell-like behavior and are surprised by differences.
+  - Mitigation: document exact key behavior and keep `Enter` submission semantics predictable.
+- Risk: duplicate hint/default logic diverges from action defaults.
+  - Mitigation: centralize hint generation and treat hints as display-only while actions remain source of truth.
 
 ## Deliverables
 
