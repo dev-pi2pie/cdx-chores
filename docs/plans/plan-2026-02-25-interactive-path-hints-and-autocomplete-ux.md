@@ -170,7 +170,7 @@ These defaults should be implemented first and revisited after manual testing ac
 - [ ] `rename apply` CSV file path suggestion works for relative path
 - [ ] `video gif` optional output path hint still works when left blank
 
-### Terminal compatibility checks
+### Terminal Compatibility Checks (Manual QA)
 
 - [ ] macOS Terminal
 - [ ] iTerm2
