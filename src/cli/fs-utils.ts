@@ -1,5 +1,5 @@
 import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
-import { basename, dirname, extname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 import { CliError } from "./errors";
 import type { CliRuntime, PlannedRename } from "./types";
@@ -11,6 +11,15 @@ export { defaultOutputPath } from "../utils/paths";
 
 export function resolveFromCwd(runtime: CliRuntime, filePath: string): string {
   return resolve(runtime.cwd, filePath);
+}
+
+export function formatPathForDisplay(runtime: CliRuntime, filePath: string): string {
+  if (runtime.displayPathStyle === "absolute") {
+    return filePath;
+  }
+
+  const relativePath = relative(runtime.cwd, filePath);
+  return relativePath.length > 0 ? relativePath : ".";
 }
 
 export async function readTextFileRequired(path: string): Promise<string> {

@@ -5,6 +5,7 @@ export interface CliRuntime {
   stdout: NodeJS.WritableStream;
   stderr: NodeJS.WritableStream;
   stdin: NodeJS.ReadStream;
+  displayPathStyle: "relative" | "absolute";
 }
 
 export interface RunCliOptions {
@@ -14,6 +15,7 @@ export interface RunCliOptions {
   stdout?: NodeJS.WritableStream;
   stderr?: NodeJS.WritableStream;
   stdin?: NodeJS.ReadStream;
+  displayPathStyle?: "relative" | "absolute";
 }
 
 export interface PlannedRename {

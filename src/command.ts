@@ -5,6 +5,11 @@ import { runInteractiveMode } from "./cli/interactive";
 import { EMBEDDED_PACKAGE_VERSION } from "./cli/program/version-embedded";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
 
+interface NormalizedCliArgv {
+  argv: string[];
+  displayPathStyle: CliRuntime["displayPathStyle"];
+}
+
 function createRuntime(options: RunCliOptions): CliRuntime {
   return {
     cwd: options.cwd ?? process.cwd(),
@@ -13,6 +18,7 @@ function createRuntime(options: RunCliOptions): CliRuntime {
     stdout: options.stdout ?? process.stdout,
     stderr: options.stderr ?? process.stderr,
     stdin: options.stdin ?? process.stdin,
+    displayPathStyle: options.displayPathStyle ?? "relative",
   };
 }
 
@@ -22,12 +28,35 @@ function applyCommonFileOptions(command: Command): void {
     .option("--overwrite", "Overwrite output file if it already exists", false);
 }
 
+function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
+  const normalized = argv.slice(0, 2);
+  let displayPathStyle: CliRuntime["displayPathStyle"] = "relative";
+
+  for (const arg of argv.slice(2)) {
+    if (arg === "--absolute" || arg === "--abs") {
+      displayPathStyle = "absolute";
+      continue;
+    }
+
+    if (arg === "-V") {
+      normalized.push("-v");
+      continue;
+    }
+
+    normalized.push(arg);
+  }
+
+  return { argv: normalized, displayPathStyle };
+}
+
 export async function runCli(
   argv: string[] = process.argv,
   runtime: RunCliOptions = {},
 ): Promise<void> {
+  const normalized = normalizeCliArgv(argv);
   const cliRuntime = createRuntime(runtime);
-  const args = argv.slice(2);
+  cliRuntime.displayPathStyle = runtime.displayPathStyle ?? normalized.displayPathStyle;
+  const args = normalized.argv.slice(2);
 
   if (args.length === 0) {
     if (!cliRuntime.stdin.isTTY) {
@@ -53,7 +82,8 @@ export async function runCli(
     .name("cdx-chores")
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
-    .version(EMBEDDED_PACKAGE_VERSION);
+    .option("--absolute, --abs", "Show absolute paths in CLI output", false)
+    .version(EMBEDDED_PACKAGE_VERSION, "-v, --version");
 
   program
     .command("interactive")
@@ -208,7 +238,7 @@ export async function runCli(
     );
 
   try {
-    await program.parseAsync(argv);
+    await program.parseAsync(normalized.argv);
   } catch (error) {
     const cliError = toCliError(error);
     cliRuntime.stderr.write(`${cliError.message}\n`);

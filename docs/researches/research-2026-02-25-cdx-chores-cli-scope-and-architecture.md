@@ -2,7 +2,7 @@
 title: "cdx-chores CLI scope and architecture research"
 created-date: 2026-02-25
 modified-date: 2026-02-25
-status: draft
+status: in-progress
 agent: codex
 ---
 

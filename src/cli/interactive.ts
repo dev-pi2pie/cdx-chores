@@ -10,10 +10,16 @@ import {
   actionVideoGif,
   actionVideoResize,
 } from "./actions";
+import { defaultOutputPath, formatPathForDisplay, resolveFromCwd } from "./fs-utils";
 import type { CliRuntime } from "./types";
 
 async function promptPath(message: string): Promise<string> {
   return await input({ message, validate: (value) => (value.trim().length > 0 ? true : "Required") });
+}
+
+function formatDefaultOutputHint(runtime: CliRuntime, inputPath: string, nextExtension: string): string {
+  const derived = defaultOutputPath(inputPath, nextExtension);
+  return formatPathForDisplay(runtime, resolveFromCwd(runtime, derived));
 }
 
 export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
@@ -45,7 +51,8 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
 
   if (action === "data:json-to-csv") {
     const inputPath = await promptPath("Input JSON file");
-    const outputPath = await input({ message: "Output CSV file (optional)" });
+    const outputHint = formatDefaultOutputHint(runtime, inputPath, ".csv");
+    const outputPath = await input({ message: `Output CSV file (optional, default: ${outputHint})` });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionJsonToCsv(runtime, { input: inputPath, output: outputPath || undefined, overwrite });
     return;
@@ -53,7 +60,8 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
 
   if (action === "data:csv-to-json") {
     const inputPath = await promptPath("Input CSV file");
-    const outputPath = await input({ message: "Output JSON file (optional)" });
+    const outputHint = formatDefaultOutputHint(runtime, inputPath, ".json");
+    const outputPath = await input({ message: `Output JSON file (optional, default: ${outputHint})` });
     const pretty = await confirm({ message: "Pretty-print JSON?", default: true });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionCsvToJson(runtime, {
@@ -67,7 +75,8 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
 
   if (action === "md:to-docx") {
     const inputPath = await promptPath("Input Markdown file");
-    const outputPath = await input({ message: "Output DOCX file (optional)" });
+    const outputHint = formatDefaultOutputHint(runtime, inputPath, ".docx");
+    const outputPath = await input({ message: `Output DOCX file (optional, default: ${outputHint})` });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionMdToDocx(runtime, {
       input: inputPath,
@@ -122,7 +131,8 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
 
   if (action === "video:gif") {
     const inputPath = await promptPath("Input video file");
-    const outputPath = await input({ message: "Output GIF file (optional)" });
+    const outputHint = formatDefaultOutputHint(runtime, inputPath, ".gif");
+    const outputPath = await input({ message: `Output GIF file (optional, default: ${outputHint})` });
     const widthInput = await input({ message: "Width in px (optional)", default: "480" });
     const fpsInput = await input({ message: "FPS (optional)", default: "10" });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
@@ -135,4 +145,3 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     });
   }
 }
-

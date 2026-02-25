@@ -8,6 +8,7 @@ import { CliError } from "./errors";
 import {
   applyPlannedRenames,
   defaultOutputPath,
+  formatPathForDisplay,
   planBatchRename,
   readTextFileRequired,
   resolveFromCwd,
@@ -18,6 +19,10 @@ import type { CliRuntime, PlannedRename } from "./types";
 
 function printLine(stream: NodeJS.WritableStream, line = ""): void {
   stream.write(`${line}\n`);
+}
+
+function displayPath(runtime: CliRuntime, path: string): string {
+  return formatPathForDisplay(runtime, path);
 }
 
 function assertNonEmpty(value: string | undefined, label: string): string {
@@ -144,7 +149,7 @@ export async function actionJsonToCsv(runtime: CliRuntime, options: JsonToCsvOpt
   const csv = stringifyCsv(rows);
   await writeTextFileSafe(outputPath, csv, { overwrite: options.overwrite });
 
-  printLine(runtime.stdout, `Wrote CSV: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote CSV: ${displayPath(runtime, outputPath)}`);
   printLine(runtime.stdout, `Rows: ${rows.length}`);
 }
 
@@ -166,7 +171,7 @@ export async function actionCsvToJson(runtime: CliRuntime, options: CsvToJsonOpt
   const json = `${JSON.stringify(records, null, options.pretty ? 2 : 0)}\n`;
   await writeTextFileSafe(outputPath, json, { overwrite: options.overwrite });
 
-  printLine(runtime.stdout, `Wrote JSON: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote JSON: ${displayPath(runtime, outputPath)}`);
   printLine(runtime.stdout, `Rows: ${records.length}`);
 }
 
@@ -205,7 +210,7 @@ export async function actionMdToDocx(runtime: CliRuntime, options: MdToDocxOptio
     });
   }
 
-  printLine(runtime.stdout, `Wrote DOCX: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote DOCX: ${displayPath(runtime, outputPath)}`);
 }
 
 function formatRenamePreviewLine(plan: PlannedRename): string {
@@ -233,7 +238,7 @@ export async function actionRenameBatch(
   const totalCount = plans.length;
   const changedCount = plans.filter((plan) => plan.changed).length;
 
-  printLine(runtime.stdout, `Directory: ${directoryPath}`);
+  printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `Files found: ${totalCount}`);
   printLine(runtime.stdout, `Files to rename: ${changedCount}`);
   printLine(runtime.stdout);
@@ -295,7 +300,7 @@ export async function actionVideoConvert(runtime: CliRuntime, options: VideoConv
 
   const args = [options.overwrite ? "-y" : "-n", "-i", inputPath, outputPath];
   await runFfmpeg(runtime, args);
-  printLine(runtime.stdout, `Wrote video: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote video: ${displayPath(runtime, outputPath)}`);
 }
 
 export async function actionVideoResize(runtime: CliRuntime, options: VideoResizeOptions): Promise<void> {
@@ -318,7 +323,7 @@ export async function actionVideoResize(runtime: CliRuntime, options: VideoResiz
     outputPath,
   ];
   await runFfmpeg(runtime, args);
-  printLine(runtime.stdout, `Wrote resized video: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote resized video: ${displayPath(runtime, outputPath)}`);
 }
 
 export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptions): Promise<void> {
@@ -341,7 +346,7 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     outputPath,
   ];
   await runFfmpeg(runtime, args);
-  printLine(runtime.stdout, `Wrote GIF: ${outputPath}`);
+  printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
 }
 
 export async function actionDeferred(runtime: CliRuntime, label: string): Promise<void> {
