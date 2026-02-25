@@ -13,7 +13,9 @@ Implement Phase 4 traversal/symlink policy behavior and a Phase 5 audit baseline
 
 - Added recursive traversal support to `rename batch` / `batch-rename`
   - CLI flag: `--recursive`
+  - CLI flag: `--max-depth <n>` (root depth = `0`)
   - interactive prompt: "Traverse subdirectories recursively?"
+  - interactive optional max depth prompt when recursive mode is enabled
 - Updated batch planner (`src/cli/fs-utils.ts`)
   - traverses subdirectories when recursive mode is enabled
   - preserves in-place renames within each file's current directory

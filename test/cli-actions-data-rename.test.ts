@@ -470,6 +470,87 @@ describe("cli action modules: rename", () => {
     }
   });
 
+  test("actionRenameBatch limits recursive traversal with maxDepth", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPathA: string | undefined;
+    let planCsvPathB: string | undefined;
+    try {
+      const dirPath = join(fixtureDir, "rename-max-depth");
+      const d1 = join(dirPath, "level1");
+      const d2 = join(d1, "level2");
+      await mkdir(d2, { recursive: true });
+
+      await writeFile(join(dirPath, "root.txt"), "r", "utf8");
+      await writeFile(join(d1, "child.txt"), "c", "utf8");
+      await writeFile(join(d2, "grand.txt"), "g", "utf8");
+
+      const a = createCapturedRuntime();
+      const rootOnly = await actionRenameBatch(a.runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        recursive: true,
+        maxDepth: 0,
+      });
+      planCsvPathA = rootOnly.planCsvPath;
+      expect(rootOnly.totalCount).toBe(1);
+      expect(a.stdout.text).toContain("Files found: 1");
+      expect(a.stdout.text).toContain("root.txt ->");
+      expect(a.stdout.text).not.toContain("child.txt");
+
+      const b = createCapturedRuntime();
+      const depthOne = await actionRenameBatch(b.runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        recursive: true,
+        maxDepth: 1,
+      });
+      planCsvPathB = depthOne.planCsvPath;
+      expect(depthOne.totalCount).toBe(2);
+      expect(b.stdout.text).toContain("root.txt ->");
+      expect(b.stdout.text).toContain("child.txt ->");
+      expect(b.stdout.text).not.toContain("grand.txt");
+    } finally {
+      await removeIfPresent(planCsvPathA);
+      await removeIfPresent(planCsvPathB);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch validates maxDepth usage", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const dirPath = join(fixtureDir, "rename-max-depth-invalid");
+      await mkdir(dirPath, { recursive: true });
+
+      const a = createCapturedRuntime();
+      await expectCliError(
+        () =>
+          actionRenameBatch(a.runtime, {
+            directory: toRepoRelativePath(dirPath),
+            dryRun: true,
+            maxDepth: 1,
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--max-depth requires --recursive." },
+      );
+
+      const b = createCapturedRuntime();
+      await expectCliError(
+        () =>
+          actionRenameBatch(b.runtime, {
+            directory: toRepoRelativePath(dirPath),
+            dryRun: true,
+            recursive: true,
+            maxDepth: -1,
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--max-depth must be a non-negative integer." },
+      );
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch scopes files with regex and extension filters", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;

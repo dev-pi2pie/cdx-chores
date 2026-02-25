@@ -80,13 +80,16 @@ export async function planBatchRename(
     titleOverrides?: Map<string, string>;
     fileFilter?: (entryName: string) => boolean;
     recursive?: boolean;
+    maxDepth?: number;
   } = {},
 ): Promise<{ directoryPath: string; plans: PlannedRename[]; skipped: SkippedRenameItem[] }> {
   const directoryPath = resolveFromCwd(runtime, directoryInput);
   const skipped: SkippedRenameItem[] = [];
   const files: Array<{ directoryPath: string; name: string }> = [];
+  const recursive = options.recursive ?? false;
+  const maxDepth = recursive ? (options.maxDepth ?? Number.POSITIVE_INFINITY) : 0;
 
-  const visitDirectory = async (currentDirectoryPath: string): Promise<void> => {
+  const visitDirectory = async (currentDirectoryPath: string, depth: number): Promise<void> => {
     const entries = await readdir(currentDirectoryPath, { withFileTypes: true });
     const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -99,8 +102,8 @@ export async function planBatchRename(
       }
 
       if (entry.isDirectory()) {
-        if (options.recursive ?? false) {
-          await visitDirectory(entryPath);
+        if (recursive && depth < maxDepth) {
+          await visitDirectory(entryPath, depth + 1);
         }
         continue;
       }
@@ -117,7 +120,7 @@ export async function planBatchRename(
     }
   };
 
-  await visitDirectory(directoryPath);
+  await visitDirectory(directoryPath, 0);
 
   const prefix = slugifyName(options.prefix?.trim() || "file");
   const plannedTargets = new Set<string>();

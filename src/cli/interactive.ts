@@ -94,12 +94,22 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     const directory = await promptPath("Target directory");
     const prefix = await input({ message: "Filename prefix", default: "file" });
     const recursive = await confirm({ message: "Traverse subdirectories recursively?", default: false });
+    const maxDepthInput = recursive
+      ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
+      : "";
     const dryRun = await confirm({ message: "Dry run only?", default: true });
     const codex = await confirm({
       message: "Use Codex-assisted image titles when possible?",
       default: false,
     });
-    const result = await actionRenameBatch(runtime, { directory, prefix, recursive, dryRun, codex });
+    const result = await actionRenameBatch(runtime, {
+      directory,
+      prefix,
+      recursive,
+      maxDepth: maxDepthInput.trim() ? Number(maxDepthInput) : undefined,
+      dryRun,
+      codex,
+    });
 
     if (!dryRun && result.changedCount > 0) {
       return;

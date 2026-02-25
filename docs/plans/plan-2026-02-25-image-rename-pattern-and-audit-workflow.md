@@ -137,6 +137,7 @@ This prevents dry-run/apply drift caused by:
 ## Recursive and Symlink Policy (Phase 4 Decision + Implementation)
 
 - `rename batch --recursive` traverses subdirectories under the selected root
+- `--max-depth <n>` limits recursive traversal depth (root directory depth = `0`)
 - Renames stay in each file's current directory (no flattening)
 - Symlinks are never traversed and are skipped explicitly
   - applies to symlink files and symlink directories
@@ -214,7 +215,7 @@ Rename plan CSV schema should be documented in a dedicated guide:
 - Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`, including a Codex-assist confirmation prompt.
 - `rename file` and `rename batch` support `--pattern` with validated placeholders (`{prefix}`, `{timestamp}`, `{stem}`).
 - JPEG/TIFF/PNG/WebP images use EXIF-first timestamp naming when EXIF date tags are present, with `mtime` fallback.
-- `rename batch` supports `--recursive`; symlink entries are skipped explicitly and recorded in dry-run CSV audit rows with `reason=symlink`.
+- `rename batch` supports `--recursive` and `--max-depth`; symlink entries are skipped explicitly and recorded in dry-run CSV audit rows with `reason=symlink`.
 - Dry-run CSV rows now include richer Codex-related reasons for fallback/ineligible image cases.
 - `rename file` rejects symlink inputs explicitly (direct-path safety); `rename batch` now also skips symlink entries explicitly and records `reason=symlink` in dry-run CSV rows.
 - `rename batch` now supports file scoping controls for batch selection:

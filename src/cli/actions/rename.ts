@@ -23,6 +23,7 @@ export interface RenameBatchOptions {
   prefix?: string;
   dryRun?: boolean;
   recursive?: boolean;
+  maxDepth?: number;
   matchRegex?: string;
   skipRegex?: string;
   ext?: string[];
@@ -113,6 +114,26 @@ function normalizeExtensions(values: string[] | undefined): Set<string> | undefi
   }
 
   return new Set(normalized);
+}
+
+function normalizeRenameBatchMaxDepth(options: RenameBatchOptions): number | undefined {
+  const value = options.maxDepth;
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!(options.recursive ?? false)) {
+    throw new CliError("--max-depth requires --recursive.", { code: "INVALID_INPUT", exitCode: 2 });
+  }
+
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    throw new CliError("--max-depth must be a non-negative integer.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return value;
 }
 
 function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: string) => boolean {
@@ -223,12 +244,14 @@ export async function actionRenameBatch(
   options: RenameBatchOptions,
 ): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
   const directory = assertNonEmpty(options.directory, "Directory path");
+  const maxDepth = normalizeRenameBatchMaxDepth(options);
   const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
     now: runtime.now(),
     fileFilter,
     recursive: options.recursive,
+    maxDepth,
   });
   const directoryPath = initial.directoryPath;
   const skipped = initial.skipped;
@@ -283,6 +306,7 @@ export async function actionRenameBatch(
         titleOverrides,
         fileFilter,
         recursive: options.recursive,
+        maxDepth,
       })
     : initial;
 

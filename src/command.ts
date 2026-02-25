@@ -207,6 +207,7 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)
+    .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
     .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
@@ -222,6 +223,7 @@ export async function runCli(
           prefix?: string;
           dryRun?: boolean;
           recursive?: boolean;
+          maxDepth?: number;
           matchRegex?: string;
           skipRegex?: string;
           ext?: string[];
@@ -237,6 +239,7 @@ export async function runCli(
         prefix: options.prefix,
         dryRun: options.dryRun,
         recursive: options.recursive,
+        maxDepth: options.maxDepth,
         matchRegex: options.matchRegex,
         skipRegex: options.skipRegex,
         ext: options.ext,
@@ -263,6 +266,7 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)
+    .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
     .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
@@ -278,6 +282,7 @@ export async function runCli(
           prefix?: string;
           dryRun?: boolean;
           recursive?: boolean;
+          maxDepth?: number;
           matchRegex?: string;
           skipRegex?: string;
           ext?: string[];
@@ -293,6 +298,7 @@ export async function runCli(
         prefix: options.prefix,
         dryRun: options.dryRun,
         recursive: options.recursive,
+        maxDepth: options.maxDepth,
         matchRegex: options.matchRegex,
         skipRegex: options.skipRegex,
         ext: options.ext,
