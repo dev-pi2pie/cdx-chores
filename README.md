@@ -81,6 +81,36 @@ Batch rename preview:
 bun run src/bin.ts rename batch ./images --prefix gallery --dry-run
 ```
 
+Single-file rename preview (replayable CSV snapshot):
+
+```bash
+bun run src/bin.ts rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
+```
+
+Codex-assisted batch rename preview (best-effort with deterministic fallback):
+
+```bash
+bun run src/bin.ts rename batch ./images --prefix gallery --codex --dry-run
+```
+
+Apply an exact dry-run snapshot later:
+
+```bash
+bun run src/bin.ts rename apply ./rename-20260225-214012-a1b2c3d4.csv
+```
+
+Recursive image rename with depth limit:
+
+```bash
+bun run src/bin.ts rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
+```
+
+Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{stem}`):
+
+```bash
+bun run src/bin.ts rename batch ./images --prefix trip --pattern "{timestamp}-{stem}" --dry-run
+```
+
 Video to GIF (requires `ffmpeg`):
 
 ```bash

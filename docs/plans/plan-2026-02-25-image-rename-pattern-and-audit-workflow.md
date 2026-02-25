@@ -2,7 +2,7 @@
 title: "Image rename pattern and audit workflow plan"
 created-date: 2026-02-25
 modified-date: 2026-02-25
-status: active
+status: completed
 agent: codex
 ---
 
@@ -63,12 +63,12 @@ Reference inspiration/spec input:
 - [x] Decide whether `rename apply <csv>` is the only replay UX or if `rename batch --rename-csv <path>` alias is also needed
 - [x] Define how Codex-assisted titles are recorded in audit CSV (provider/model metadata may be optional/minimal)
 
-### Phase 6: UX Defaults, Compatibility, and Documentation (Deferred)
+### Phase 6: UX Defaults, Compatibility, and Documentation (Completed)
 
-- [ ] Define confirmation UX for Codex-assisted runs (`--dry-run`, interactive confirm, `--auto` equivalent or not)
-- [ ] Document cost-light defaults (timeout, batch size, retry count) without exposing model-selection flags
-- [ ] Document compatibility/behavior differences from the Python reference script
-- [ ] Add examples for image workflows in docs/README after design is settled
+- [x] Define confirmation UX for Codex-assisted runs (`--dry-run`, interactive confirm, `--auto` equivalent or not)
+- [x] Document cost-light defaults (timeout, batch size, retry count) without exposing model-selection flags
+- [x] Document compatibility/behavior differences from the Python reference script
+- [x] Add examples for image workflows in docs/README after design is settled
 
 ## Draft Naming Pattern (Proposal)
 
@@ -164,6 +164,57 @@ This prevents dry-run/apply drift caused by:
   - timeout/retry/batch limits (if exposed later)
   - apply/preview confirmation behavior
 
+## Codex Confirmation UX (Phase 6 Decision)
+
+- Preview-first is the recommended workflow for Codex-assisted renames:
+  - use `--dry-run`
+  - review planned names
+  - apply exact snapshot with `rename apply <csv>`
+- Interactive mode defaults to dry-run and provides an explicit follow-up confirmation (`Apply now?`) after preview for:
+  - `rename batch`
+  - `rename file`
+- Non-interactive CLI mode does not add an extra confirmation prompt
+  - users opt into preview safety via `--dry-run`
+  - users can apply directly by omitting `--dry-run`
+- No `--auto` / `--yes` equivalent was added for rename workflows in this phase
+  - current direct-apply behavior already covers non-interactive automation use cases
+
+## Cost-Light Defaults (Phase 6 Documentation)
+
+Current Codex-assisted rename defaults are intentionally conservative and model-agnostic:
+
+- no user-facing model selection flag (`Codex` runtime chooses provider/model path)
+- timeout default:
+  - `30_000ms` per Codex request batch (unless overridden)
+- retry default:
+  - `0` retries (unless overridden)
+- batch size default:
+  - all eligible images in one request batch (unless overridden with `--codex-batch-size`)
+
+User-tunable controls (batch and single-file where applicable):
+
+- `--codex-timeout-ms`
+- `--codex-retries`
+- `--codex-batch-size`
+
+## Compatibility / Behavior Differences from Python Reference (Phase 6 Notes)
+
+Compared with the prior Python prototype used as a behavior reference, the `cdx-chores` implementation intentionally differs in several areas:
+
+- local-first replay model:
+  - dry-run writes a replayable CSV snapshot
+  - `rename apply <csv>` replays exact planned paths instead of recomputing
+- no exposed AI model-selection flag:
+  - Codex assist is enabled with `--codex`
+  - model/provider specifics remain internal/runtime-managed
+- deterministic fallback is mandatory:
+  - Codex failure/timeout/ineligible file cases still produce deterministic rename plans
+- symlink handling is explicit:
+  - `rename file` rejects symlink inputs
+  - `rename batch` skips symlink entries and records `reason=symlink`
+- EXIF timestamp scope is built-in and currently limited to supported formats in this plan (`jpg/jpeg/tif/tiff/png/webp`)
+- recursive traversal is opt-in (`--recursive`) and depth-limited optionally (`--max-depth`)
+
 ## Schema Contract
 
 Rename plan CSV schema should be documented in a dedicated guide:
@@ -224,3 +275,8 @@ Rename plan CSV schema should be documented in a dedicated guide:
   - `--ext`
   - `--skip-ext`
 - Extension filters are case-insensitive and apply before dry-run/apply plan generation, so CSV snapshots only include scoped files.
+- Phase 6 documentation/UX defaults are now defined:
+  - preview-first Codex workflow documented
+  - interactive apply confirmations documented
+  - cost-light Codex defaults documented
+  - compatibility notes and README examples added
