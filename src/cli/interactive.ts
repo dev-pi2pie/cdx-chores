@@ -5,6 +5,7 @@ import {
   actionDoctor,
   actionJsonToCsv,
   actionMdToDocx,
+  actionRenameApply,
   actionRenameBatch,
   actionVideoConvert,
   actionVideoGif,
@@ -31,6 +32,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       { name: "data csv-to-json", value: "data:csv-to-json" },
       { name: "md to-docx", value: "md:to-docx" },
       { name: "rename batch", value: "rename:batch" },
+      { name: "rename apply", value: "rename:apply" },
       { name: "video convert", value: "video:convert" },
       { name: "video resize", value: "video:resize" },
       { name: "video gif", value: "video:gif" },
@@ -90,7 +92,11 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     const directory = await promptPath("Target directory");
     const prefix = await input({ message: "Filename prefix", default: "file" });
     const dryRun = await confirm({ message: "Dry run only?", default: true });
-    const result = await actionRenameBatch(runtime, { directory, prefix, dryRun });
+    const codex = await confirm({
+      message: "Use Codex-assisted image titles when possible?",
+      default: false,
+    });
+    const result = await actionRenameBatch(runtime, { directory, prefix, dryRun, codex });
 
     if (!dryRun && result.changedCount > 0) {
       return;
@@ -98,10 +104,16 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
 
     if (dryRun && result.changedCount > 0) {
       const applyNow = await confirm({ message: "Apply these renames now?", default: false });
-      if (applyNow) {
-        await actionRenameBatch(runtime, { directory, prefix, dryRun: false });
+      if (applyNow && result.planCsvPath) {
+        await actionRenameApply(runtime, { csv: result.planCsvPath });
       }
     }
+    return;
+  }
+
+  if (action === "rename:apply") {
+    const csvPath = await promptPath("Rename plan CSV path");
+    await actionRenameApply(runtime, { csv: csvPath });
     return;
   }
 

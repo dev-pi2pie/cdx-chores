@@ -1,5 +1,11 @@
-import { basename } from "node:path";
+import { basename, extname } from "node:path";
 
+import {
+  suggestImageRenameTitlesWithCodex,
+  type CodexImageRenameResult,
+} from "../../adapters/codex/image-rename-titles";
+import { slugifyName } from "../../utils/slug";
+import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
 import { applyPlannedRenames, planBatchRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
@@ -14,24 +20,134 @@ export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
   dryRun?: boolean;
+  codex?: boolean;
+  codexTimeoutMs?: number;
+  codexRetries?: number;
+  codexBatchSize?: number;
+  codexTitleSuggester?: (options: {
+    imagePaths: string[];
+    workingDirectory: string;
+    timeoutMs?: number;
+    retries?: number;
+    batchSize?: number;
+  }) => Promise<CodexImageRenameResult>;
+}
+
+export interface RenameApplyOptions {
+  csv: string;
+}
+
+const IMAGE_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".bmp",
+  ".tif",
+  ".tiff",
+  ".avif",
+]);
+
+function startCodexProgress(
+  runtime: CliRuntime,
+  imageCount: number,
+): { stop: (status: "done" | "fallback") => void } {
+  const stream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean };
+  const label = `Codex: analyzing ${imageCount} image file(s)`;
+
+  if (!stream.isTTY) {
+    printLine(runtime.stdout, `${label}...`);
+    return { stop: () => {} };
+  }
+
+  const frames = ["-", "\\", "|", "/"];
+  let frameIndex = 0;
+  const render = () => {
+    const frame = frames[frameIndex % frames.length] ?? "-";
+    frameIndex += 1;
+    stream.write(`\r${label}... ${frame}`);
+  };
+
+  render();
+  const timer = setInterval(render, 120);
+
+  return {
+    stop: (status) => {
+      clearInterval(timer);
+      stream.write(`\r${label}... ${status === "done" ? "done" : "fallback"}\n`);
+    },
+  };
 }
 
 export async function actionRenameBatch(
   runtime: CliRuntime,
   options: RenameBatchOptions,
-): Promise<{ changedCount: number; totalCount: number; directoryPath: string }> {
+): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
   const directory = assertNonEmpty(options.directory, "Directory path");
-  const { directoryPath, plans } = await planBatchRename(runtime, directory, {
+  const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
     now: runtime.now(),
   });
+  const directoryPath = initial.directoryPath;
+
+  let titleOverrides: Map<string, string> | undefined;
+  let codexImageCount = 0;
+  let codexSuggestedCount = 0;
+  let codexErrorMessage: string | null = null;
+  let codexTitlesByPath: Map<string, string> | undefined;
+
+  if (options.codex ?? false) {
+    const imagePaths = initial.plans
+      .map((plan) => plan.fromPath)
+      .filter((path) => IMAGE_EXTENSIONS.has(extname(path).toLowerCase()));
+    codexImageCount = imagePaths.length;
+
+    if (imagePaths.length > 0) {
+      const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
+      const progress = startCodexProgress(runtime, imagePaths.length);
+      const codexResult = await codexTitleSuggester({
+        imagePaths,
+        workingDirectory: runtime.cwd,
+        timeoutMs: options.codexTimeoutMs,
+        retries: options.codexRetries,
+        batchSize: options.codexBatchSize,
+      });
+      progress.stop(codexResult.errorMessage ? "fallback" : "done");
+      codexErrorMessage = codexResult.errorMessage ?? null;
+
+      if (codexResult.suggestions.length > 0) {
+        codexTitlesByPath = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
+        titleOverrides = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
+        codexSuggestedCount = codexResult.suggestions.length;
+      }
+    }
+  }
+
+  const { plans } = titleOverrides
+    ? await planBatchRename(runtime, directory, {
+        prefix: options.prefix,
+        now: runtime.now(),
+        titleOverrides,
+      })
+    : initial;
 
   const totalCount = plans.length;
   const changedCount = plans.filter((plan) => plan.changed).length;
+  let planCsvPath: string | undefined;
 
   printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `Files found: ${totalCount}`);
   printLine(runtime.stdout, `Files to rename: ${changedCount}`);
+  if (options.codex ?? false) {
+    printLine(
+      runtime.stdout,
+      `Codex image titles: ${codexSuggestedCount}/${codexImageCount} image file(s) suggested${codexErrorMessage ? " (fallback used for others)" : ""}`,
+    );
+    if (codexErrorMessage && codexImageCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexErrorMessage}`);
+    }
+  }
   printLine(runtime.stdout);
 
   for (const plan of plans) {
@@ -39,9 +155,28 @@ export async function actionRenameBatch(
   }
 
   if (options.dryRun ?? false) {
+    const cleanedStemBySourcePath = new Map<string, string>();
+    for (const plan of plans) {
+      const ext = extname(plan.fromPath);
+      const stem = basename(plan.fromPath, ext);
+      const sourceTitle = codexTitlesByPath?.get(plan.fromPath) ?? stem;
+      cleanedStemBySourcePath.set(plan.fromPath, slugifyName(sourceTitle).slice(0, 48));
+    }
+
+    const { rows } = createRenamePlanCsvRows({
+      runtime,
+      plans,
+      cleanedStemBySourcePath,
+      aiNameBySourcePath: codexTitlesByPath,
+      aiProvider: "codex",
+      aiModel: "auto",
+    });
+    planCsvPath = await writeRenamePlanCsv(runtime, rows);
+
     printLine(runtime.stdout);
+    printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, planCsvPath)}`);
     printLine(runtime.stdout, "Dry run only. No files were renamed.");
-    return { changedCount, totalCount, directoryPath };
+    return { changedCount, totalCount, directoryPath, planCsvPath };
   }
 
   await applyPlannedRenames(plans);
@@ -51,3 +186,17 @@ export async function actionRenameBatch(
   return { changedCount, totalCount, directoryPath };
 }
 
+export async function actionRenameApply(
+  runtime: CliRuntime,
+  options: RenameApplyOptions,
+): Promise<{ csvPath: string; appliedCount: number; totalRows: number; skippedCount: number }> {
+  const csv = assertNonEmpty(options.csv, "Rename plan CSV path");
+  const result = await applyRenamePlanCsv(runtime, csv);
+
+  printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, result.csvPath)}`);
+  printLine(runtime.stdout, `Rows in plan: ${result.totalRows}`);
+  printLine(runtime.stdout, `Rows applied: ${result.appliedCount}`);
+  printLine(runtime.stdout, `Rows skipped: ${result.skippedCount}`);
+
+  return result;
+}

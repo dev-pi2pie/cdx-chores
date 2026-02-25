@@ -5,8 +5,7 @@ export { actionCsvToJson, actionJsonToCsv } from "./data";
 export type { CsvToJsonOptions, JsonToCsvOptions } from "./data";
 export { actionMdToDocx } from "./markdown";
 export type { MdToDocxOptions } from "./markdown";
-export { actionRenameBatch } from "./rename";
-export type { RenameBatchOptions } from "./rename";
+export { actionRenameApply, actionRenameBatch } from "./rename";
+export type { RenameApplyOptions, RenameBatchOptions } from "./rename";
 export { actionVideoConvert, actionVideoGif, actionVideoResize } from "./video";
 export type { VideoConvertOptions, VideoGifOptions, VideoResizeOptions } from "./video";
-

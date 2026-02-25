@@ -1,0 +1,127 @@
+---
+title: "CLI Action Tool Integration Guide"
+created-date: 2026-02-25
+status: draft
+agent: codex
+---
+
+## Goal
+
+Provide a practical guide for adding or extending chores commands in `cdx-chores` using the current command/action structure, with clear boundaries for external tools and future Codex SDK adapters.
+
+## Current Integration Pattern (Recommended)
+
+Use this flow for new features:
+
+1. CLI command parsing in `src/command.ts`
+2. User input collection in `src/cli/interactive.ts` (if interactive path is supported)
+3. Shared action orchestration in `src/cli/actions/*.ts`
+4. Tool/system execution via existing helpers/adapters (for example `src/cli/deps.ts`, `src/cli/process.ts`, `src/cli/fs-utils.ts`)
+5. Reusable pure helpers in `src/utils/**` only when they are truly generic
+
+## File Placement Guidelines
+
+### Command wiring
+
+- Use `src/command.ts` for:
+  - command tree definitions
+  - flag parsing
+  - aliases
+  - dispatch into action functions
+
+### Interactive prompts
+
+- Use `src/cli/interactive.ts` for:
+  - prompt UX only
+  - collecting inputs and confirming options
+  - dispatching to the same action functions used by CLI flag mode
+
+Do not duplicate business logic in interactive mode.
+
+### Actions (orchestration layer)
+
+- Use `src/cli/actions/*.ts` for:
+  - validating action-level inputs
+  - coordinating file/process/dependency helpers
+  - shaping user-facing output
+  - sequencing multiple steps in a chore workflow
+
+Avoid direct SDK/tool-client complexity inside action modules when an adapter boundary is appropriate.
+
+### External tool wrappers
+
+- Use `src/cli/deps.ts` for:
+  - dependency inspection and install hints
+- Use `src/cli/process.ts` for:
+  - process execution helpers
+- Add focused adapters when logic grows:
+  - example future path: `src/adapters/codex/**`
+  - example future path: `src/adapters/tools/**` (if wrappers outgrow `src/cli/*`)
+
+## Codex SDK Integration Guidance (Planned)
+
+`@openai/codex-sdk` is currently installed but not used in runtime code.
+
+When integrating it:
+
+- Keep SDK calls out of `src/command.ts`
+- Prefer keeping SDK calls out of `src/cli/actions/*.ts` unless the action remains very thin
+- Add an adapter boundary for:
+  - prompt construction
+  - response parsing
+  - retry/timeout handling
+  - fallback behavior
+
+Recommended shape for image rename assistance:
+
+- action module (`src/cli/actions/rename.ts`) asks a Codex adapter for semantic title suggestions
+- Codex adapter returns normalized structured suggestions (not raw SDK responses)
+- action applies deterministic slug/length/collision handling before file operations
+
+## Designing a New Chore Command (Checklist)
+
+- Define the CLI surface in `src/command.ts`
+- Decide whether interactive mode support is needed in `src/cli/interactive.ts`
+- Add/update action module in `src/cli/actions/`
+- Reuse existing helpers (`fs-utils`, `deps`, `process`) before creating new ones
+- Add tests:
+  - success path
+  - failure path(s)
+  - path display behavior if output paths are printed
+- Update docs:
+  - job record for implementation
+  - plan/research docs if the feature changes architecture or scope
+
+## What Belongs in `src/utils/**` vs Not
+
+Use `src/utils/**` for generic, reusable utilities with minimal CLI coupling.
+
+Examples in this repo:
+
+- CSV helpers
+- path/filename helpers
+- datetime formatting
+- slug utilities
+
+Do not move cohesive subsystems into `src/utils/**` just because they are reusable.
+
+Example:
+
+- `src/markdown/**` should remain a standalone subsystem (parser/types/TOML parsing internals), not `src/utils/markdown/**`, unless a broader source-tree taxonomy refactor is planned.
+
+## Testing Notes
+
+- Prefer isolated temporary fixtures under `examples/playground/` (for example, `examples/playground/.tmp-tests`)
+- Keep black-box CLI tests and action-module unit tests both:
+  - CLI tests validate wiring/flags/end-to-end behavior
+  - action tests validate orchestration and failure handling faster
+
+## Related Plans
+
+- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+
+## Related Research
+
+- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+

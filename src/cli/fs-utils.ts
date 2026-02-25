@@ -74,7 +74,7 @@ export async function writeTextFileSafe(
 export async function planBatchRename(
   runtime: CliRuntime,
   directoryInput: string,
-  options: { prefix?: string; now?: Date } = {},
+  options: { prefix?: string; now?: Date; titleOverrides?: Map<string, string> } = {},
 ): Promise<{ directoryPath: string; plans: PlannedRename[] }> {
   const directoryPath = resolveFromCwd(runtime, directoryInput);
   const entries = await readdir(directoryPath, { withFileTypes: true });
@@ -101,7 +101,8 @@ export async function planBatchRename(
 
     const ext = extname(name).toLowerCase();
     const stem = basename(name, extname(name));
-    const slug = slugifyName(stem).slice(0, 48);
+    const preferredTitle = options.titleOverrides?.get(sourcePath)?.trim();
+    const slug = slugifyName(preferredTitle || stem).slice(0, 48);
     const dt = formatUtcFileDateTime(fileStats.mtime ?? options.now ?? runtime.now());
 
     let counter = 0;

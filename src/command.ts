@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { actionCsvToJson, actionDeferred, actionDoctor, actionJsonToCsv, actionMdToDocx, actionRenameBatch, actionVideoConvert, actionVideoGif, actionVideoResize } from "./cli/actions";
+import { actionCsvToJson, actionDeferred, actionDoctor, actionJsonToCsv, actionMdToDocx, actionRenameApply, actionRenameBatch, actionVideoConvert, actionVideoGif, actionVideoResize } from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
 import { EMBEDDED_PACKAGE_VERSION } from "./cli/program/version-embedded";
@@ -164,12 +164,39 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
-    .action(async (directory: string, options: { prefix?: string; dryRun?: boolean }) => {
+    .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
+    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
+    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
+    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
+    .action(
+      async (
+        directory: string,
+        options: {
+          prefix?: string;
+          dryRun?: boolean;
+          codex?: boolean;
+          codexTimeoutMs?: number;
+          codexRetries?: number;
+          codexBatchSize?: number;
+        },
+      ) => {
       await actionRenameBatch(cliRuntime, {
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        codex: options.codex,
+        codexTimeoutMs: options.codexTimeoutMs,
+        codexRetries: options.codexRetries,
+        codexBatchSize: options.codexBatchSize,
       });
+    });
+
+  renameCommand
+    .command("apply")
+    .description("Apply a previously generated rename plan CSV")
+    .argument("<csv>", "Rename plan CSV path")
+    .action(async (csv: string) => {
+      await actionRenameApply(cliRuntime, { csv });
     });
 
   program
@@ -178,11 +205,30 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
-    .action(async (directory: string, options: { prefix?: string; dryRun?: boolean }) => {
+    .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
+    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
+    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
+    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
+    .action(
+      async (
+        directory: string,
+        options: {
+          prefix?: string;
+          dryRun?: boolean;
+          codex?: boolean;
+          codexTimeoutMs?: number;
+          codexRetries?: number;
+          codexBatchSize?: number;
+        },
+      ) => {
       await actionRenameBatch(cliRuntime, {
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        codex: options.codex,
+        codexTimeoutMs: options.codexTimeoutMs,
+        codexRetries: options.codexRetries,
+        codexBatchSize: options.codexBatchSize,
       });
     });
 
