@@ -205,6 +205,7 @@ export async function runCli(
     .description("Batch rename files in a directory")
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
+    .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
@@ -221,6 +222,7 @@ export async function runCli(
         directory: string,
         options: {
           prefix?: string;
+          profile?: string;
           dryRun?: boolean;
           recursive?: boolean;
           maxDepth?: number;
@@ -237,6 +239,7 @@ export async function runCli(
       await actionRenameBatch(cliRuntime, {
         directory,
         prefix: options.prefix,
+        profile: options.profile,
         dryRun: options.dryRun,
         recursive: options.recursive,
         maxDepth: options.maxDepth,
@@ -255,8 +258,9 @@ export async function runCli(
     .command("apply")
     .description("Apply a previously generated rename plan CSV")
     .argument("<csv>", "Rename plan CSV path")
-    .action(async (csv: string) => {
-      await actionRenameApply(cliRuntime, { csv });
+    .option("--auto-clean", "Delete the plan CSV after a successful apply", false)
+    .action(async (csv: string, options: { autoClean?: boolean }) => {
+      await actionRenameApply(cliRuntime, { csv, autoClean: options.autoClean });
     });
 
   program
@@ -264,6 +268,7 @@ export async function runCli(
     .description("Alias for `rename batch`")
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
+    .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
@@ -280,6 +285,7 @@ export async function runCli(
         directory: string,
         options: {
           prefix?: string;
+          profile?: string;
           dryRun?: boolean;
           recursive?: boolean;
           maxDepth?: number;
@@ -296,6 +302,7 @@ export async function runCli(
       await actionRenameBatch(cliRuntime, {
         directory,
         prefix: options.prefix,
+        profile: options.profile,
         dryRun: options.dryRun,
         recursive: options.recursive,
         maxDepth: options.maxDepth,

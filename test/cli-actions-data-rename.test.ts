@@ -351,6 +351,50 @@ describe("cli action modules: rename", () => {
     }
   });
 
+  test("actionRenameBatch excludes hidden/system junk files by default", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-default-excludes");
+      await mkdir(dirPath, { recursive: true });
+
+      const keptPath = join(dirPath, "photo one.txt");
+      const hiddenPath = join(dirPath, ".gitignore");
+      const dsStorePath = join(dirPath, ".DS_Store");
+      await writeFile(keptPath, "hello", "utf8");
+      await writeFile(hiddenPath, "node_modules\n", "utf8");
+      await writeFile(dsStorePath, "junk", "utf8");
+
+      const fixedTime = new Date("2026-02-25T12:34:56.000Z");
+      await utimes(keptPath, fixedTime, fixedTime);
+      await utimes(hiddenPath, fixedTime, fixedTime);
+      await utimes(dsStorePath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "file",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(result.changedCount).toBe(1);
+      expect(stdout.text).toContain("Files found: 1");
+      expect(stdout.text).not.toContain(".gitignore");
+      expect(stdout.text).not.toContain(".DS_Store");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("photo one.txt");
+      expect(csvText).not.toContain(".gitignore");
+      expect(csvText).not.toContain(".DS_Store");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch applies renames when dryRun is false", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {
@@ -585,6 +629,88 @@ describe("cli action modules: rename", () => {
       expect(stdout.text).not.toContain("notes.txt");
     } finally {
       await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch supports preset file profiles (media/docs/images)", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let mediaPlanCsvPath: string | undefined;
+    let docsPlanCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-profile");
+      await mkdir(dirPath, { recursive: true });
+
+      const mediaFile = join(dirPath, "clip.mp4");
+      const docFile = join(dirPath, "notes.md");
+      const otherFile = join(dirPath, "script.ts");
+      await writeFile(mediaFile, "video", "utf8");
+      await writeFile(docFile, "# notes\n", "utf8");
+      await writeFile(otherFile, "console.log('x')\n", "utf8");
+
+      const fixedTime = new Date("2026-02-25T11:22:33.000Z");
+      await utimes(mediaFile, fixedTime, fixedTime);
+      await utimes(docFile, fixedTime, fixedTime);
+      await utimes(otherFile, fixedTime, fixedTime);
+
+      const relativeDir = toRepoRelativePath(dirPath);
+      const mediaResult = await actionRenameBatch(runtime, {
+        directory: relativeDir,
+        profile: "media",
+        dryRun: true,
+      });
+      mediaPlanCsvPath = mediaResult.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(mediaResult.totalCount).toBe(1);
+      expect(stdout.text).toContain("clip.mp4");
+      expect(stdout.text).not.toContain("notes.md");
+      expect(stdout.text).not.toContain("script.ts");
+
+      stdout.text = "";
+      const docsResult = await actionRenameBatch(runtime, {
+        directory: relativeDir,
+        profile: "docs",
+        dryRun: true,
+      });
+      docsPlanCsvPath = docsResult.planCsvPath;
+
+      expect(docsResult.totalCount).toBe(1);
+      expect(stdout.text).toContain("notes.md");
+      expect(stdout.text).not.toContain("clip.mp4");
+      expect(stdout.text).not.toContain("script.ts");
+    } finally {
+      await removeIfPresent(mediaPlanCsvPath);
+      await removeIfPresent(docsPlanCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch rejects invalid --profile values", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-invalid-profile");
+      await mkdir(dirPath, { recursive: true });
+
+      await expectCliError(
+        () =>
+          actionRenameBatch(runtime, {
+            directory: toRepoRelativePath(dirPath),
+            profile: "banana",
+            dryRun: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Invalid --profile value",
+        },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(stderr.text).toBe("");
+    } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });
@@ -834,6 +960,41 @@ describe("cli action modules: rename", () => {
       const planAfterApply = await readFile(planCsvPath!, "utf8");
       expect(planAfterApply).toContain(",applied,");
       expect(planAfterApply).not.toContain(",planned,");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameApply can auto-clean the plan CSV after successful apply", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-replay-autoclean");
+      await mkdir(dirPath, { recursive: true });
+
+      const originalPath = join(dirPath, "alpha image.png");
+      await writeFile(originalPath, "fake", "utf8");
+      const fixedTime = new Date("2026-02-25T04:05:06.000Z");
+      await utimes(originalPath, fixedTime, fixedTime);
+
+      const dryRunResult = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "img",
+        dryRun: true,
+      });
+      planCsvPath = dryRunResult.planCsvPath;
+      expect(planCsvPath).toBeDefined();
+
+      stdout.text = "";
+      const applyResult = await actionRenameApply(runtime, { csv: planCsvPath!, autoClean: true });
+
+      expect(stderr.text).toBe("");
+      expect(applyResult.appliedCount).toBe(1);
+      expect(stdout.text).toContain("Rows applied: 1");
+      expect(stdout.text).toContain("Plan CSV auto-cleaned.");
+      expect(await stat(planCsvPath!).catch(() => null)).toBeNull();
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

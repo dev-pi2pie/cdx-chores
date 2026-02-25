@@ -1,4 +1,4 @@
-import { stat } from "node:fs/promises";
+import { rm, stat } from "node:fs/promises";
 import { basename, extname } from "node:path";
 
 import {
@@ -21,6 +21,7 @@ function formatRenamePreviewLine(plan: PlannedRename): string {
 export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
+  profile?: string;
   dryRun?: boolean;
   recursive?: boolean;
   maxDepth?: number;
@@ -60,6 +61,7 @@ export interface RenameFileOptions {
 
 export interface RenameApplyOptions {
   csv: string;
+  autoClean?: boolean;
 }
 
 const IMAGE_EXTENSIONS = new Set([
@@ -81,6 +83,89 @@ const CODEX_MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const CODEX_STATIC_IMAGE_EXTENSIONS = new Set(
   [...IMAGE_EXTENSIONS].filter((ext) => ext !== ".gif"),
 );
+
+const DEFAULT_RENAME_BATCH_EXCLUDED_BASENAMES = new Set([
+  ".DS_Store",
+  "Thumbs.db",
+  "desktop.ini",
+]);
+
+const RENAME_BATCH_PROFILE_EXTENSIONS = {
+  images: [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+    ".avif",
+    ".heic",
+    ".heif",
+    ".svg",
+  ],
+  media: [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+    ".avif",
+    ".heic",
+    ".heif",
+    ".svg",
+    ".mp4",
+    ".mov",
+    ".m4v",
+    ".mkv",
+    ".avi",
+    ".webm",
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".opus",
+  ],
+  docs: [
+    ".txt",
+    ".md",
+    ".markdown",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".rtf",
+    ".odt",
+    ".csv",
+    ".tsv",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".xml",
+    ".html",
+    ".htm",
+  ],
+} as const;
+
+type RenameBatchProfileName = keyof typeof RENAME_BATCH_PROFILE_EXTENSIONS;
+
+function isDefaultRenameBatchExcludedEntryName(entryName: string): boolean {
+  if (entryName.startsWith(".")) {
+    return true;
+  }
+
+  if (entryName.startsWith("._")) {
+    return true;
+  }
+
+  return DEFAULT_RENAME_BATCH_EXCLUDED_BASENAMES.has(entryName);
+}
 
 function compileOptionalRegex(
   value: string | undefined,
@@ -116,6 +201,26 @@ function normalizeExtensions(values: string[] | undefined): Set<string> | undefi
   return new Set(normalized);
 }
 
+function normalizeRenameBatchProfile(profile: string | undefined): Set<string> | undefined {
+  const raw = profile?.trim().toLowerCase();
+  if (!raw || raw === "all") {
+    return undefined;
+  }
+
+  const values = RENAME_BATCH_PROFILE_EXTENSIONS[raw as RenameBatchProfileName];
+  if (!values) {
+    throw new CliError(
+      `Invalid --profile value: ${profile}. Expected one of: all, images, media, docs`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return new Set(values);
+}
+
 function normalizeRenameBatchMaxDepth(options: RenameBatchOptions): number | undefined {
   const value = options.maxDepth;
   if (value === undefined) {
@@ -139,10 +244,19 @@ function normalizeRenameBatchMaxDepth(options: RenameBatchOptions): number | und
 function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: string) => boolean {
   const matchRegex = compileOptionalRegex(options.matchRegex, "--match-regex");
   const skipRegex = compileOptionalRegex(options.skipRegex, "--skip-regex");
+  const profileExts = normalizeRenameBatchProfile(options.profile);
   const includeExts = normalizeExtensions(options.ext);
   const excludeExts = normalizeExtensions(options.skipExt);
+  const effectiveIncludeExts =
+    profileExts || includeExts
+      ? new Set<string>([...(profileExts ?? []), ...(includeExts ?? [])])
+      : undefined;
 
   return (entryName: string) => {
+    if (isDefaultRenameBatchExcludedEntryName(entryName)) {
+      return false;
+    }
+
     if (matchRegex && !matchRegex.test(entryName)) {
       return false;
     }
@@ -152,7 +266,7 @@ function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: s
     }
 
     const ext = extname(entryName).toLowerCase();
-    if (includeExts && !includeExts.has(ext)) {
+    if (effectiveIncludeExts && !effectiveIncludeExts.has(ext)) {
       return false;
     }
 
@@ -493,6 +607,10 @@ export async function actionRenameApply(
   printLine(runtime.stdout, `Rows in plan: ${result.totalRows}`);
   printLine(runtime.stdout, `Rows applied: ${result.appliedCount}`);
   printLine(runtime.stdout, `Rows skipped: ${result.skippedCount}`);
+  if (options.autoClean ?? false) {
+    await rm(result.csvPath, { force: true });
+    printLine(runtime.stdout, "Plan CSV auto-cleaned.");
+  }
 
   return result;
 }
