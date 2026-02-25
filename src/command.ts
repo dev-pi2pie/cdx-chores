@@ -206,6 +206,7 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
     .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
@@ -220,6 +221,7 @@ export async function runCli(
         options: {
           prefix?: string;
           dryRun?: boolean;
+          recursive?: boolean;
           matchRegex?: string;
           skipRegex?: string;
           ext?: string[];
@@ -234,6 +236,7 @@ export async function runCli(
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        recursive: options.recursive,
         matchRegex: options.matchRegex,
         skipRegex: options.skipRegex,
         ext: options.ext,
@@ -259,6 +262,7 @@ export async function runCli(
     .argument("<directory>", "Target directory")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
     .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
@@ -273,6 +277,7 @@ export async function runCli(
         options: {
           prefix?: string;
           dryRun?: boolean;
+          recursive?: boolean;
           matchRegex?: string;
           skipRegex?: string;
           ext?: string[];
@@ -287,6 +292,7 @@ export async function runCli(
         directory,
         prefix: options.prefix,
         dryRun: options.dryRun,
+        recursive: options.recursive,
         matchRegex: options.matchRegex,
         skipRegex: options.skipRegex,
         ext: options.ext,

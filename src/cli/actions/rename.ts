@@ -22,6 +22,7 @@ export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
   dryRun?: boolean;
+  recursive?: boolean;
   matchRegex?: string;
   skipRegex?: string;
   ext?: string[];
@@ -142,32 +143,48 @@ function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: s
   };
 }
 
-async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<string[]> {
+async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<{
+  imagePaths: string[];
+  imageCandidateCount: number;
+  skipReasonByPath: Map<string, string>;
+}> {
   const imagePaths: string[] = [];
+  let imageCandidateCount = 0;
+  const skipReasonByPath = new Map<string, string>();
 
   for (const plan of plans) {
     const sourcePath = plan.fromPath;
     const ext = extname(sourcePath).toLowerCase();
+    if (!IMAGE_EXTENSIONS.has(ext)) {
+      continue;
+    }
+
+    imageCandidateCount += 1;
+
     if (!CODEX_STATIC_IMAGE_EXTENSIONS.has(ext)) {
+      skipReasonByPath.set(sourcePath, "codex_skipped_non_static");
       continue;
     }
 
     try {
       const fileStats = await stat(sourcePath);
       if (!fileStats.isFile()) {
+        skipReasonByPath.set(sourcePath, "codex_skipped_unreadable");
         continue;
       }
       if (fileStats.size > CODEX_MAX_IMAGE_BYTES) {
+        skipReasonByPath.set(sourcePath, "codex_skipped_too_large");
         continue;
       }
     } catch {
+      skipReasonByPath.set(sourcePath, "codex_skipped_unreadable");
       continue;
     }
 
     imagePaths.push(sourcePath);
   }
 
-  return imagePaths;
+  return { imagePaths, imageCandidateCount, skipReasonByPath };
 }
 
 function startCodexProgress(
@@ -211,18 +228,25 @@ export async function actionRenameBatch(
     prefix: options.prefix,
     now: runtime.now(),
     fileFilter,
+    recursive: options.recursive,
   });
   const directoryPath = initial.directoryPath;
+  const skipped = initial.skipped;
 
   let titleOverrides: Map<string, string> | undefined;
   let codexImageCount = 0;
   let codexSuggestedCount = 0;
   let codexErrorMessage: string | null = null;
   let codexTitlesByPath: Map<string, string> | undefined;
+  const rowReasonBySourcePath = new Map<string, string>();
 
   if (options.codex ?? false) {
-    const imagePaths = await selectCodexAssistImagePaths(initial.plans);
-    codexImageCount = imagePaths.length;
+    const codexSelection = await selectCodexAssistImagePaths(initial.plans);
+    const imagePaths = codexSelection.imagePaths;
+    codexImageCount = codexSelection.imageCandidateCount;
+    for (const [path, reason] of codexSelection.skipReasonByPath) {
+      rowReasonBySourcePath.set(path, reason);
+    }
 
     if (imagePaths.length > 0) {
       const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
@@ -242,6 +266,13 @@ export async function actionRenameBatch(
         titleOverrides = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
         codexSuggestedCount = codexResult.suggestions.length;
       }
+
+      for (const imagePath of imagePaths) {
+        if (codexTitlesByPath?.has(imagePath)) {
+          continue;
+        }
+        rowReasonBySourcePath.set(imagePath, codexErrorMessage ? "codex_fallback_error" : "codex_no_suggestion");
+      }
     }
   }
 
@@ -251,6 +282,7 @@ export async function actionRenameBatch(
         now: runtime.now(),
         titleOverrides,
         fileFilter,
+        recursive: options.recursive,
       })
     : initial;
 
@@ -261,6 +293,9 @@ export async function actionRenameBatch(
   printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `Files found: ${totalCount}`);
   printLine(runtime.stdout, `Files to rename: ${changedCount}`);
+  if (skipped.length > 0) {
+    printLine(runtime.stdout, `Entries skipped: ${skipped.length}`);
+  }
   if (options.codex ?? false) {
     printLine(
       runtime.stdout,
@@ -274,6 +309,9 @@ export async function actionRenameBatch(
 
   for (const plan of plans) {
     printLine(runtime.stdout, formatRenamePreviewLine(plan));
+  }
+  for (const item of skipped) {
+    printLine(runtime.stdout, `- ${displayPath(runtime, item.path)} (skipped: ${item.reason})`);
   }
 
   if (options.dryRun ?? false) {
@@ -290,6 +328,8 @@ export async function actionRenameBatch(
       plans,
       cleanedStemBySourcePath,
       aiNameBySourcePath: codexTitlesByPath,
+      reasonBySourcePath: rowReasonBySourcePath,
+      skippedItems: skipped,
       aiProvider: "codex",
       aiModel: "auto",
     });
@@ -323,10 +363,15 @@ export async function actionRenameFile(
   let codexSuggestedCount = 0;
   let codexErrorMessage: string | null = null;
   let codexTitlesByPath: Map<string, string> | undefined;
+  const rowReasonBySourcePath = new Map<string, string>();
 
   if (options.codex ?? false) {
-    const imagePaths = await selectCodexAssistImagePaths([initial.plan]);
-    codexImageCount = imagePaths.length;
+    const codexSelection = await selectCodexAssistImagePaths([initial.plan]);
+    const imagePaths = codexSelection.imagePaths;
+    codexImageCount = codexSelection.imageCandidateCount;
+    for (const [path, reason] of codexSelection.skipReasonByPath) {
+      rowReasonBySourcePath.set(path, reason);
+    }
 
     if (imagePaths.length > 0) {
       const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
@@ -353,6 +398,13 @@ export async function actionRenameFile(
           plan = replanned.plan;
           codexSuggestedCount = 1;
         }
+      }
+
+      if (!codexTitlesByPath?.has(initial.plan.fromPath)) {
+        rowReasonBySourcePath.set(
+          initial.plan.fromPath,
+          codexErrorMessage ? "codex_fallback_error" : "codex_no_suggestion",
+        );
       }
     }
   }
@@ -383,6 +435,7 @@ export async function actionRenameFile(
       plans: [plan],
       cleanedStemBySourcePath,
       aiNameBySourcePath: codexTitlesByPath,
+      reasonBySourcePath: rowReasonBySourcePath,
       aiProvider: "codex",
       aiModel: "auto",
     });

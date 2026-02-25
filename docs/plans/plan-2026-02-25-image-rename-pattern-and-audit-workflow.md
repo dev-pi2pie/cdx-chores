@@ -51,17 +51,17 @@ Reference inspiration/spec input:
 - [x] Define timestamp precedence for images (EXIF `DateTimeOriginal` vs file mtime)
 - [x] Decide whether EXIF support is in scope for Node-only launch or requires a separate backend/tool
 
-### Phase 4: Scope Safety and Traversal Policy (Deferred Until Recursive Work)
+### Phase 4: Scope Safety and Traversal Policy (Completed)
 
-- [ ] Define recursive behavior (`--recursive`) and safety boundaries
-- [ ] Define symlink policy (skip, log reason)
+- [x] Define recursive behavior (`--recursive`) and safety boundaries
+- [x] Define symlink policy (skip, log reason)
 
-### Phase 5: Audit and Replay UX Expansion (Deferred)
+### Phase 5: Audit and Replay UX Expansion (Completed Baseline)
 
-- [ ] Define audit CSV format and naming (including dry-run suffix)
-- [ ] Decide whether audit CSV is always written (including dry-run) or opt-in
-- [ ] Decide whether `rename apply <csv>` is the only replay UX or if `rename batch --rename-csv <path>` alias is also needed
-- [ ] Define how Codex-assisted titles are recorded in audit CSV (provider/model metadata may be optional/minimal)
+- [x] Define audit CSV format and naming (including dry-run suffix)
+- [x] Decide whether audit CSV is always written (including dry-run) or opt-in
+- [x] Decide whether `rename apply <csv>` is the only replay UX or if `rename batch --rename-csv <path>` alias is also needed
+- [x] Define how Codex-assisted titles are recorded in audit CSV (provider/model metadata may be optional/minimal)
 
 ### Phase 6: UX Defaults, Compatibility, and Documentation (Deferred)
 
@@ -134,6 +134,18 @@ This prevents dry-run/apply drift caused by:
 - file mtimes changing
 - directory contents changing (collisions/new files)
 
+## Recursive and Symlink Policy (Phase 4 Decision + Implementation)
+
+- `rename batch --recursive` traverses subdirectories under the selected root
+- Renames stay in each file's current directory (no flattening)
+- Symlinks are never traversed and are skipped explicitly
+  - applies to symlink files and symlink directories
+  - skipped entries are logged in CLI preview output with reason `symlink`
+  - skipped entries are written into dry-run CSV rows with `status=skipped` / `reason=symlink`
+- Replay safety remains unchanged:
+  - `rename apply <csv>` only executes rows with `status=planned`
+  - skipped rows remain audit-only
+
 ## Safety and Local-First Principles
 
 - Never rename outside the chosen directory scope
@@ -156,6 +168,24 @@ This prevents dry-run/apply drift caused by:
 Rename plan CSV schema should be documented in a dedicated guide:
 
 - `docs/guides/rename-plan-csv-schema.md`
+
+## Audit CSV Baseline (Phase 5 Decision + Implementation)
+
+- Current audit artifact is the replayable rename plan CSV produced during dry-run:
+  - `rename-<timecode>-<uid>.csv`
+- Dry-run plan CSV writing is always enabled (baseline behavior)
+- Replay UX remains `rename apply <csv>` only (no alias added)
+- Codex-assisted metadata is recorded in existing columns:
+  - `ai_new_name`
+  - `ai_provider`
+  - `ai_model`
+- Row-level `reason` now records additional audit context when applicable (examples):
+  - `unchanged`
+  - `symlink`
+  - `codex_fallback_error`
+  - `codex_no_suggestion`
+  - `codex_skipped_non_static`
+  - `codex_skipped_too_large`
 
 ## Follow-up Jobs
 
@@ -184,7 +214,9 @@ Rename plan CSV schema should be documented in a dedicated guide:
 - Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`, including a Codex-assist confirmation prompt.
 - `rename file` and `rename batch` support `--pattern` with validated placeholders (`{prefix}`, `{timestamp}`, `{stem}`).
 - JPEG/TIFF/PNG/WebP images use EXIF-first timestamp naming when EXIF date tags are present, with `mtime` fallback.
-- `rename file` currently rejects symlink inputs explicitly (direct-path safety); batch-mode symlink policy/audit logging remains a separate checklist item for recursive/audit design.
+- `rename batch` supports `--recursive`; symlink entries are skipped explicitly and recorded in dry-run CSV audit rows with `reason=symlink`.
+- Dry-run CSV rows now include richer Codex-related reasons for fallback/ineligible image cases.
+- `rename file` rejects symlink inputs explicitly (direct-path safety); `rename batch` now also skips symlink entries explicitly and records `reason=symlink` in dry-run CSV rows.
 - `rename batch` now supports file scoping controls for batch selection:
   - `--match-regex`
   - `--skip-regex`

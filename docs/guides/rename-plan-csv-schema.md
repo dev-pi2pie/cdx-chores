@@ -73,7 +73,7 @@ Columns are stored as UTF-8 CSV with a header row.
 - `status`
   - row state (`planned`, `skipped`, `applied`, potentially `failed` later)
 - `reason`
-  - explanatory note for skipped/fallback/failure states (for example `unchanged`)
+  - explanatory note for skipped/fallback/failure states (for example `unchanged`, `symlink`, `codex_fallback_error`)
 
 ## Replay Expectations (`rename apply <csv>`)
 
@@ -81,6 +81,8 @@ Columns are stored as UTF-8 CSV with a header row.
 - Apply should not recompute rename targets
 - Safety checks should verify paths remain within allowed scope before renaming
 - Unchanged rows may be retained in CSV with `status=skipped` / `reason=unchanged`
+- Skipped symlink rows may be included as audit-only rows with `status=skipped` / `reason=symlink`
+- `rename apply <csv>` executes only rows with `status=planned` and ignores audit-only skipped rows
 
 ## Compatibility Notes
 

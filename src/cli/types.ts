@@ -23,3 +23,8 @@ export interface PlannedRename {
   toPath: string;
   changed: boolean;
 }
+
+export interface SkippedRenameItem {
+  path: string;
+  reason: string;
+}

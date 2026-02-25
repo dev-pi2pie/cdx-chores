@@ -303,6 +303,8 @@ describe("cli action modules: rename", () => {
       expect(stdout.text).toContain("Codex note: Codex unavailable in test");
       expect(stdout.text).toContain("- single.png -> img-");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("codex_fallback_error");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
@@ -406,6 +408,62 @@ describe("cli action modules: rename", () => {
       expect(stdout.text).toContain("Files found: 0");
       expect(stdout.text).toContain("Files to rename: 0");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch supports recursive traversal and skips symlinks with audit reasons", async () => {
+    if (process.platform === "win32") {
+      return;
+    }
+
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const first = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-recursive");
+      const nestedDir = join(dirPath, "nested");
+      await mkdir(nestedDir, { recursive: true });
+
+      const rootFile = join(dirPath, "root.txt");
+      const nestedFile = join(nestedDir, "child.txt");
+      const linkPath = join(dirPath, "nested-link");
+      await writeFile(rootFile, "root", "utf8");
+      await writeFile(nestedFile, "child", "utf8");
+      await symlink(nestedDir, linkPath);
+
+      const noRecursive = await actionRenameBatch(first.runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        recursive: false,
+      });
+      await removeIfPresent(noRecursive.planCsvPath);
+
+      expect(noRecursive.totalCount).toBe(1);
+
+      const second = createCapturedRuntime();
+      const recursiveResult = await actionRenameBatch(second.runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        recursive: true,
+      });
+      planCsvPath = recursiveResult.planCsvPath;
+
+      expect(first.stderr.text).toBe("");
+      expect(second.stderr.text).toBe("");
+      expect(recursiveResult.totalCount).toBe(2);
+      expect(recursiveResult.changedCount).toBe(2);
+      expect(second.stdout.text).toContain("Entries skipped: 1");
+      expect(second.stdout.text).toContain("(skipped: symlink)");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("nested-link");
+      expect(csvText).toContain(",skipped,symlink");
+      expect(csvText).toContain("nested/child.txt");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
@@ -600,10 +658,13 @@ describe("cli action modules: rename", () => {
       expect(calls).toHaveLength(1);
       expect(calls[0]?.imagePaths).toHaveLength(1);
       expect(calls[0]?.imagePaths[0]?.endsWith("/ok.png")).toBe(true);
-      expect(stdout.text).toContain("Codex image titles: 1/1 image file(s) suggested");
+      expect(stdout.text).toContain("Codex image titles: 1/3 image file(s) suggested");
       expect(stdout.text).toContain("- animated.gif -> img-");
       expect(stdout.text).toContain("- large.png -> img-");
       expect(stdout.text).toContain("- ok.png -> img-");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("codex_skipped_non_static");
+      expect(csvText).toContain("codex_skipped_too_large");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

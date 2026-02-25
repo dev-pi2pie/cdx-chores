@@ -5,7 +5,7 @@ import { csvRowsToObjects, parseCsv, stringifyCsv } from "../utils/csv";
 import { formatUtcFileDateTime } from "../utils/datetime";
 import { CliError } from "./errors";
 import { applyPlannedRenames, readTextFileRequired, writeTextFileSafe } from "./fs-utils";
-import type { CliRuntime, PlannedRename } from "./types";
+import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 
 export const RENAME_PLAN_CSV_HEADERS = [
   "old_name",
@@ -93,6 +93,8 @@ export function createRenamePlanCsvRows(options: {
   plans: PlannedRename[];
   cleanedStemBySourcePath?: Map<string, string>;
   aiNameBySourcePath?: Map<string, string>;
+  reasonBySourcePath?: Map<string, string>;
+  skippedItems?: SkippedRenameItem[];
   aiProvider?: string;
   aiModel?: string;
 }): { rows: RenamePlanCsvRow[]; planId: string; plannedAt: string } {
@@ -116,11 +118,31 @@ export function createRenamePlanCsvRows(options: {
       planned_at: plannedAt,
       applied_at: "",
       status: changed ? "planned" : "skipped",
-      reason: changed ? "" : "unchanged",
+      reason: options.reasonBySourcePath?.get(plan.fromPath) ?? (changed ? "" : "unchanged"),
     } satisfies RenamePlanCsvRow;
   });
 
-  return { rows, planId, plannedAt };
+  const skippedRows = (options.skippedItems ?? []).map((item) => {
+    const oldName = basename(item.path);
+    return {
+      old_name: oldName,
+      new_name: oldName,
+      cleaned_stem: "",
+      ai_new_name: "",
+      ai_provider: "",
+      ai_model: "",
+      changed_at: "",
+      old_path: toRelativePathFromCwd(options.runtime.cwd, item.path),
+      new_path: toRelativePathFromCwd(options.runtime.cwd, item.path),
+      plan_id: planId,
+      planned_at: plannedAt,
+      applied_at: "",
+      status: "skipped" as const,
+      reason: item.reason,
+    } satisfies RenamePlanCsvRow;
+  });
+
+  return { rows: [...rows, ...skippedRows], planId, plannedAt };
 }
 
 export async function writeRenamePlanCsv(runtime: CliRuntime, rows: RenamePlanCsvRow[]): Promise<string> {

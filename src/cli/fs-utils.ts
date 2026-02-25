@@ -2,7 +2,7 @@ import { lstat, mkdir, readFile, readdir, rename, stat, writeFile } from "node:f
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 import { CliError } from "./errors";
-import type { CliRuntime, PlannedRename } from "./types";
+import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 import { formatUtcFileDateTime } from "../utils/datetime";
 import { defaultOutputPath } from "../utils/paths";
 import { slugifyName, withNumericSuffix } from "../utils/slug";
@@ -79,24 +79,52 @@ export async function planBatchRename(
     now?: Date;
     titleOverrides?: Map<string, string>;
     fileFilter?: (entryName: string) => boolean;
+    recursive?: boolean;
   } = {},
-): Promise<{ directoryPath: string; plans: PlannedRename[] }> {
+): Promise<{ directoryPath: string; plans: PlannedRename[]; skipped: SkippedRenameItem[] }> {
   const directoryPath = resolveFromCwd(runtime, directoryInput);
-  const entries = await readdir(directoryPath, { withFileTypes: true });
-  const files = entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .filter((name) => options.fileFilter?.(name) ?? true)
-    .sort((a, b) => a.localeCompare(b));
+  const skipped: SkippedRenameItem[] = [];
+  const files: Array<{ directoryPath: string; name: string }> = [];
+
+  const visitDirectory = async (currentDirectoryPath: string): Promise<void> => {
+    const entries = await readdir(currentDirectoryPath, { withFileTypes: true });
+    const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const entry of sortedEntries) {
+      const entryPath = join(currentDirectoryPath, entry.name);
+
+      if (entry.isSymbolicLink()) {
+        skipped.push({ path: entryPath, reason: "symlink" });
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        if (options.recursive ?? false) {
+          await visitDirectory(entryPath);
+        }
+        continue;
+      }
+
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      if (!(options.fileFilter?.(entry.name) ?? true)) {
+        continue;
+      }
+
+      files.push({ directoryPath: currentDirectoryPath, name: entry.name });
+    }
+  };
+
+  await visitDirectory(directoryPath);
 
   const prefix = slugifyName(options.prefix?.trim() || "file");
   const plannedTargets = new Set<string>();
-  const sourcePaths = new Set<string>();
   const plans: PlannedRename[] = [];
 
-  for (const name of files) {
-    const sourcePath = join(directoryPath, name);
-    sourcePaths.add(sourcePath);
+  for (const file of files) {
+    const sourcePath = join(file.directoryPath, file.name);
 
     let fileStats;
     try {
@@ -105,8 +133,8 @@ export async function planBatchRename(
       continue;
     }
 
-    const ext = extname(name).toLowerCase();
-    const stem = basename(name, extname(name));
+    const ext = extname(file.name).toLowerCase();
+    const stem = basename(file.name, extname(file.name));
     const preferredTitle = options.titleOverrides?.get(sourcePath)?.trim();
     const slug = slugifyName(preferredTitle || stem).slice(0, 48);
     const dt = formatUtcFileDateTime(fileStats.mtime ?? options.now ?? runtime.now());
@@ -115,7 +143,7 @@ export async function planBatchRename(
     let candidatePath = "";
     while (true) {
       const nextName = `${withNumericSuffix(`${prefix}-${dt}-${slug}`, counter)}${ext}`;
-      candidatePath = join(directoryPath, nextName);
+      candidatePath = join(file.directoryPath, nextName);
       if (!plannedTargets.has(candidatePath)) {
         break;
       }
@@ -130,7 +158,7 @@ export async function planBatchRename(
     });
   }
 
-  return { directoryPath, plans };
+  return { directoryPath, plans, skipped };
 }
 
 export async function planSingleRename(
