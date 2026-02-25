@@ -98,55 +98,61 @@ These defaults should be implemented first and revisited after manual testing ac
 - Multi-select path picking
 - Mouse interaction
 
-## Implementation Strategy
+## Phases
 
-## Phase 1: Refactor prompt APIs and unify path hints
+## Phase 1: Refactor Prompt APIs and Unify Path Hints
 
-1. Introduce a reusable path prompt helper module (used by interactive mode only)
-2. Define prompt option types (kind, required/optional, default hint builder, validation mode)
-3. Replace existing `promptPath()` calls in `src/cli/interactive.ts` with the new helper
-4. Keep behavior equivalent first (no autocomplete yet) to reduce regression risk
+### Task Items
 
-Deliverable:
+- [ ] Introduce a reusable path prompt helper module (interactive mode only)
+- [ ] Define prompt option types (kind, required/optional, default hint builder, validation mode)
+- [ ] Replace existing `promptPath()` calls in `src/cli/interactive.ts` with the new helper
+- [ ] Keep behavior equivalent first (no autocomplete yet) to reduce regression risk
 
-- Interactive mode path prompts routed through one abstraction with consistent hint text
+### Phase Deliverable
 
-## Phase 2: Add autocomplete suggestion engine (logic only)
+- [ ] Interactive mode path prompts are routed through one abstraction with consistent hint text
 
-1. Implement a pure suggestion resolver utility (for example, `src/cli/prompts/path-suggestions.ts`)
-2. Parse input into:
-   - directory segment to inspect
-   - basename fragment to match
-3. Read directory entries and normalize suggestions
-4. Add filtering/sorting/limit behavior
-5. Unit test edge cases (empty input, `./`, `../`, absolute path, nonexistent parent dir, hidden files)
+## Phase 2: Add Autocomplete Suggestion Engine (Logic Only)
 
-Deliverable:
+### Task Items
 
-- Testable path suggestion engine independent of terminal rendering
+- [ ] Implement a pure suggestion resolver utility (for example, `src/cli/prompts/path-suggestions.ts`)
+- [ ] Parse input into a directory segment to inspect and a basename fragment to match
+- [ ] Read directory entries and normalize suggestions
+- [ ] Add filtering, sorting, and result-limit behavior
+- [ ] Unit test edge cases (`""`, `./`, `../`, absolute paths, nonexistent parent dir, hidden files)
 
-## Phase 3: Integrate advanced interactive path prompt UI
+### Phase Deliverable
 
-1. Create an advanced prompt implementation that uses the suggestion engine
-2. Wire key handling for `Tab` accept/cycle and `Enter` submit
-3. Render suggestions in a compact list or inline hint (depending on prompt library constraints)
-4. Fall back to simple prompt if advanced mode errors or is unsupported
-5. Swap interactive command flows to use advanced prompt for path fields
+- [ ] Testable path suggestion engine independent of terminal rendering
 
-Deliverable:
+## Phase 3: Integrate Advanced Interactive Path Prompt UI
 
-- Working interactive path autocomplete for core path-entry prompts
+### Task Items
 
-## Phase 4: Polish, docs, and validation pass
+- [ ] Create an advanced prompt implementation that uses the suggestion engine
+- [ ] Wire key handling for `Tab` accept/cycle and `Enter` submit
+- [ ] Render suggestions in a compact list or inline hint (depending on prompt library constraints)
+- [ ] Fall back to the simple prompt if advanced mode errors or is unsupported
+- [ ] Swap interactive command flows to use the advanced prompt for path fields
 
-1. Verify prompt behavior across commands (`data`, `md`, `rename`, `video`)
-2. Tune suggestion count and matching thresholds
-3. Update docs/help text
-4. Add manual test notes and terminal compatibility notes
+### Phase Deliverable
 
-Deliverable:
+- [ ] Working interactive path autocomplete for core path-entry prompts
 
-- Documented, stable MVP path autocomplete UX with fallback
+## Phase 4: Polish, Docs, and Validation Pass
+
+### Task Items
+
+- [ ] Verify prompt behavior across commands (`data`, `md`, `rename`, `video`)
+- [ ] Tune suggestion count and matching thresholds
+- [ ] Update docs/help text
+- [ ] Add manual test notes and terminal compatibility notes
+
+### Phase Deliverable
+
+- [ ] Documented, stable MVP path autocomplete UX with fallback
 
 ## Technical Design Notes
 
@@ -159,29 +165,25 @@ Deliverable:
 
 ### Manual UX checks
 
-- `cdx-chores` -> choose `data json-to-csv`
-  - output hint is shown and readable
-  - `Tab` completes input path without submitting
-- `rename batch`
-  - directory suggestions show trailing `/`
-  - `Enter` submits typed directory
-- `rename apply`
-  - CSV file path suggestion works for relative path
-- `video gif`
-  - optional output path hint still works when left blank
+- [ ] `cdx-chores` -> choose `data json-to-csv` (output hint is shown and readable)
+- [ ] `cdx-chores` -> choose `data json-to-csv` (`Tab` completes input path without submitting)
+- [ ] `rename batch` directory suggestions show trailing `/`
+- [ ] `rename batch` `Enter` submits typed directory
+- [ ] `rename apply` CSV file path suggestion works for relative path
+- [ ] `video gif` optional output path hint still works when left blank
 
 ### Terminal compatibility checks
 
-- macOS Terminal
-- iTerm2
-- VS Code integrated terminal
+- [ ] macOS Terminal
+- [ ] iTerm2
+- [ ] VS Code integrated terminal
 
 ### Failure-mode checks
 
-- Nonexistent parent directory during typing (no crash; no suggestions)
-- Large directory (suggestions remain capped/responsive)
-- Hidden files present (not shown by default)
-- Advanced prompt disabled/unavailable -> simple prompt still works
+- [ ] Nonexistent parent directory during typing (no crash; no suggestions)
+- [ ] Large directory (suggestions remain capped/responsive)
+- [ ] Hidden files present (not shown by default)
+- [ ] Advanced prompt disabled/unavailable -> simple prompt still works
 
 ## Risks and Mitigations
 
@@ -204,10 +206,10 @@ Deliverable:
 
 ## Follow-up Jobs (After Plan Approval)
 
-- Job: extract path prompt abstraction and unify output hints
-- Job: implement and test path suggestion engine
-- Job: integrate advanced path autocomplete prompt + fallback
-- Job: document keyboard shortcuts and terminal caveats
+- [ ] Job: extract path prompt abstraction and unify output hints
+- [ ] Job: implement and test path suggestion engine
+- [ ] Job: integrate advanced path autocomplete prompt + fallback
+- [ ] Job: document keyboard shortcuts and terminal caveats
 
 ## Related Research
 
