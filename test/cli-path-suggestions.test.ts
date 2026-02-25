@@ -151,5 +151,26 @@ describe("path suggestion engine", () => {
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });
-});
 
+  test("large directories still return a capped suggestion list", async () => {
+    const fixtureDir = await createTempFixtureDir("path-suggestions-large-dir");
+    try {
+      await mkdir(join(fixtureDir, "alpha-dir"));
+      for (let index = 0; index < 80; index += 1) {
+        await writeFile(join(fixtureDir, `alpha-file-${String(index).padStart(2, "0")}.txt`), "x", "utf8");
+      }
+
+      const suggestions = await resolvePathSuggestions({
+        cwd: fixtureDir,
+        input: "alpha",
+        maxSuggestions: 12,
+      });
+
+      expect(suggestions).toHaveLength(12);
+      expect(suggestions[0]?.label).toBe("alpha-dir/");
+      expect(suggestions.every((item) => item.label.startsWith("alpha-"))).toBe(true);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+});

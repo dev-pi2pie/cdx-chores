@@ -129,10 +129,26 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     const profile = await select<string>({
       message: "File profile scope",
       choices: [
-        { name: "All files (default)", value: "all" },
-        { name: "Images", value: "images" },
-        { name: "Media (images/audio/video)", value: "media" },
-        { name: "Docs", value: "docs" },
+        {
+          name: "All files (default)",
+          value: "all",
+          description: "No preset filter (still skips hidden/system junk by default)",
+        },
+        {
+          name: "Images",
+          value: "images",
+          description: "Common image files: .png, .jpg, .webp, .gif, .svg, ...",
+        },
+        {
+          name: "Media (images/audio/video)",
+          value: "media",
+          description: "Images + video/audio files: .mp4, .mov, .mp3, .wav, ...",
+        },
+        {
+          name: "Docs",
+          value: "docs",
+          description: "Docs/data files: .md, .pdf, .docx, .csv, .json, .yaml, ...",
+        },
       ],
     });
     const recursive = await confirm({ message: "Traverse subdirectories recursively?", default: false });

@@ -2,7 +2,7 @@
 title: "Interactive path hints and autocomplete UX implementation plan"
 created-date: 2026-02-25
 modified-date: 2026-02-25
-status: active
+status: completed
 agent: codex
 ---
 
@@ -181,14 +181,14 @@ These defaults should be implemented first and revisited after manual testing ac
 
 ### Task Items
 
-- [ ] Verify prompt behavior across commands (`data`, `md`, `rename`, `video`)
-- [ ] Tune suggestion count and matching thresholds
-- [ ] Update docs/help text (including ghost-hint semantics and fallback env flags)
-- [ ] Add manual test notes and terminal compatibility notes
+- [x] Verify prompt behavior across commands (`data`, `md`, `rename`, `video`)
+- [x] Tune suggestion count and matching thresholds
+- [x] Update docs/help text (including ghost-hint semantics and fallback env flags)
+- [x] Add manual test notes and terminal compatibility notes
 
 ### Phase Deliverable
 
-- [ ] Documented, stable MVP path autocomplete UX with fallback and manual QA notes
+- [x] Documented, stable MVP path autocomplete UX with fallback and manual QA notes
 
 ## Technical Design Notes
 
@@ -207,8 +207,8 @@ These defaults should be implemented first and revisited after manual testing ac
 - [x] `cdx-chores` -> choose `data json-to-csv` (`Tab` accepts/cycles completion without submitting)
 - [x] `rename batch` target directory shows shell-like inline completion behavior (not list-first sub-selection)
 - [x] `rename batch` `Enter` submits typed directory without forcing suggestion acceptance
-- [ ] `rename apply` CSV file path suggestion works for relative path
-- [ ] `video gif` optional output path hint still works when left blank
+- [x] `rename apply` CSV file path suggestion works for relative path
+- [x] `video gif` optional output default/custom selection works (default path used when choosing default)
 
 ### Terminal Compatibility Checks (Manual QA)
 
@@ -218,11 +218,11 @@ These defaults should be implemented first and revisited after manual testing ac
 
 ### Failure-mode checks
 
-- [ ] Nonexistent parent directory during typing (no crash; no suggestions)
-- [ ] Large directory (suggestions remain capped/responsive)
-- [ ] Hidden files present (not shown by default)
-- [ ] Advanced prompt disabled/unavailable -> simple prompt still works
-- [ ] Repeated `Tab` cycling with multiple matches remains predictable and non-destructive
+- [x] Nonexistent parent directory during typing (no crash; no suggestions)
+- [x] Large directory (suggestions remain capped/responsive)
+- [x] Hidden files present (not shown by default)
+- [x] Advanced prompt disabled/unavailable -> simple prompt still works
+- [x] Repeated `Tab` cycling with multiple matches remains predictable and non-destructive
 
 ## Risks and Mitigations
 
@@ -252,7 +252,7 @@ These defaults should be implemented first and revisited after manual testing ac
 - [x] Job: prototype list-first search-based path autocomplete + fallback (superseded)
 - [x] Job: research/choose implementation primitive for inline ghost-hint path prompt
 - [x] Job: implement inline ghost-hint path prompt + fallback
-- [ ] Job: document keyboard shortcuts, ghost-hint semantics, and terminal caveats
+- [x] Job: document keyboard shortcuts, ghost-hint semantics, and terminal caveats
 
 ## Related Research
 
@@ -266,4 +266,4 @@ These defaults should be implemented first and revisited after manual testing ac
 
 - Phase 1 and Phase 2 are complete and remain valid foundations for the replacement implementation path.
 - A list-first `@inquirer/search`-based Phase 3 prototype was implemented and documented, but it is considered a misaligned approach for the default path prompt UX and has been replaced by an input-first inline ghost-hint prompt implementation.
-- Manual QA has not yet been completed for the replacement (Fish-style inline ghost-hint) UX.
+- Manual QA completed for core UX flows, terminal compatibility, and failure-mode checks; remaining improvements are optional polish beyond MVP.
