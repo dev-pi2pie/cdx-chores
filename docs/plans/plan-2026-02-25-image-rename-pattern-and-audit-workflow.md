@@ -43,13 +43,13 @@ Reference inspiration/spec input:
 - [x] Define single-file rename UX (`rename file` command vs `rename batch --file`)
 - [x] Define allowed extensions default list and override behavior (`--ext`)
 
-### Phase 3: Naming Pattern and Template Design (Current Implementation Phase)
+### Phase 3: Naming Pattern and Template Design (Completed)
 
-- [ ] Define canonical rename filename pattern (prefix / timestamp / stem / suffix)
-- [ ] Define custom rename pattern/template support (placeholders + validation)
-- [ ] Decide default prefix behavior (directory name vs fixed `file` vs current behavior compatibility)
-- [ ] Define timestamp precedence for images (EXIF `DateTimeOriginal` vs file mtime)
-- [ ] Decide whether EXIF support is in scope for Node-only launch or requires a separate backend/tool
+- [x] Define canonical rename filename pattern (prefix / timestamp / stem / suffix)
+- [x] Define custom rename pattern/template support (placeholders + validation)
+- [x] Decide default prefix behavior (directory name vs fixed `file` vs current behavior compatibility)
+- [x] Define timestamp precedence for images (EXIF `DateTimeOriginal` vs file mtime)
+- [x] Decide whether EXIF support is in scope for Node-only launch or requires a separate backend/tool
 
 ### Phase 4: Scope Safety and Traversal Policy (Deferred Until Recursive Work)
 
@@ -78,12 +78,47 @@ Candidate format (compatible with current implementation direction):
 
 Where:
 
-- `prefix` defaults to current `rename batch` behavior unless changed by this plan
-- timestamp uses image metadata when available (future), otherwise file mtime
+- `prefix` defaults to `file` (current behavior retained)
+- timestamp uses image metadata when available (EXIF-first for supported formats), otherwise file mtime
 - `stem` comes from:
   - deterministic cleaned filename stem (default)
   - Codex-assisted semantic title when `--codex` succeeds
-- collisions append `-02`, `-03`, ...
+- collisions append `-01`, `-02`, ...
+
+Current template support (implemented):
+
+- `--pattern <template>` for `rename file` and `rename batch`
+- allowed placeholders:
+  - `{prefix}`
+  - `{timestamp}`
+  - `{stem}`
+- file extension is preserved automatically from the source file
+- collision suffix handling remains automatic and is appended after template rendering
+- invalid/unknown placeholders fail fast with `INVALID_INPUT`
+
+## EXIF Timestamp Scope (Phase 3 Decision + Implementation)
+
+Timestamp precedence for rename naming:
+
+1. EXIF `DateTimeOriginal`
+2. EXIF `DateTimeDigitized`
+3. EXIF `DateTime`
+4. file `mtime` fallback
+
+v1 EXIF parsing scope (Node-only launch):
+
+- supported formats for EXIF timestamp extraction:
+  - `.jpg`
+  - `.jpeg`
+  - `.tif`
+  - `.tiff`
+  - `.png` (PNG `eXIf` chunk)
+  - `.webp` (WebP `EXIF` chunk)
+- parser implementation uses an internal Node-compatible reader (no external binary dependency)
+- EXIF parse errors or missing tags fall back silently to `mtime`
+- EXIF timestamps are used as EXIF wall-clock values in filenames (no timezone conversion)
+- `mtime` fallback continues using current UTC-based filename formatting behavior
+- formats without implemented EXIF parsing (for example `.gif`, `.bmp`, `.avif`) continue using `mtime` fallback
 
 ## Dry-Run Snapshot and Replay (Design Decision)
 
@@ -147,6 +182,8 @@ Rename plan CSV schema should be documented in a dedicated guide:
 - `rename file` supports `--prefix`, `--dry-run`, and optional `--codex` best-effort image-title assist (deterministic fallback on failure).
 - `rename file` dry-run writes the same replayable plan CSV schema used by batch mode.
 - Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`, including a Codex-assist confirmation prompt.
+- `rename file` and `rename batch` support `--pattern` with validated placeholders (`{prefix}`, `{timestamp}`, `{stem}`).
+- JPEG/TIFF/PNG/WebP images use EXIF-first timestamp naming when EXIF date tags are present, with `mtime` fallback.
 - `rename file` currently rejects symlink inputs explicitly (direct-path safety); batch-mode symlink policy/audit logging remains a separate checklist item for recursive/audit design.
 - `rename batch` now supports file scoping controls for batch selection:
   - `--match-regex`
