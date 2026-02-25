@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Define the CSV contract used by `rename batch --dry-run` plan snapshots and `rename apply <csv>` replay in `cdx-chores`.
+Define the CSV contract used by `rename batch --dry-run` / `rename file --dry-run` plan snapshots and `rename apply <csv>` replay in `cdx-chores`.
 
 ## Why This Exists
 
@@ -92,4 +92,3 @@ Columns are stored as UTF-8 CSV with a header row.
 
 - `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
 - `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
-

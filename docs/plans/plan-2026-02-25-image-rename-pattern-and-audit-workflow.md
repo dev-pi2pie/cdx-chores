@@ -29,25 +29,42 @@ Reference inspiration/spec input:
 
 - A prior local Python image-rename utility prototype (used as a behavior reference for pattern/audit/safety ideas, not a strict implementation mirror).
 
-## Execution Checklist
+## Execution Checklist By Phase
+
+### Phase 1: Replay-Safe Foundation (Completed)
 
 - [x] Define stable dry-run plan cache workflow (write plan CSV and apply exact snapshot later)
 - [x] Define/apply a rename plan CSV schema contract (with replay-safe path fields)
 - [x] Implement `rename apply <csv>` command to apply an exact dry-run snapshot
-- [ ] Define single-file rename UX (`rename file` command vs `rename batch --file`)
+- [x] Define CSV replay/apply flow (`rename apply <csv>` baseline + safety checks)
+
+### Phase 2: Core Rename Workflows and Scope Controls (Completed)
+
+- [x] Define single-file rename UX (`rename file` command vs `rename batch --file`)
+- [x] Define allowed extensions default list and override behavior (`--ext`)
+
+### Phase 3: Naming Pattern and Template Design (Current Implementation Phase)
+
 - [ ] Define canonical rename filename pattern (prefix / timestamp / stem / suffix)
 - [ ] Define custom rename pattern/template support (placeholders + validation)
 - [ ] Decide default prefix behavior (directory name vs fixed `file` vs current behavior compatibility)
 - [ ] Define timestamp precedence for images (EXIF `DateTimeOriginal` vs file mtime)
 - [ ] Decide whether EXIF support is in scope for Node-only launch or requires a separate backend/tool
-- [x] Define allowed extensions default list and override behavior (`--ext`)
+
+### Phase 4: Scope Safety and Traversal Policy (Deferred Until Recursive Work)
+
 - [ ] Define recursive behavior (`--recursive`) and safety boundaries
 - [ ] Define symlink policy (skip, log reason)
+
+### Phase 5: Audit and Replay UX Expansion (Deferred)
+
 - [ ] Define audit CSV format and naming (including dry-run suffix)
 - [ ] Decide whether audit CSV is always written (including dry-run) or opt-in
-- [x] Define CSV replay/apply flow (`rename apply <csv>` baseline + safety checks)
 - [ ] Decide whether `rename apply <csv>` is the only replay UX or if `rename batch --rename-csv <path>` alias is also needed
 - [ ] Define how Codex-assisted titles are recorded in audit CSV (provider/model metadata may be optional/minimal)
+
+### Phase 6: UX Defaults, Compatibility, and Documentation (Deferred)
+
 - [ ] Define confirmation UX for Codex-assisted runs (`--dry-run`, interactive confirm, `--auto` equivalent or not)
 - [ ] Document cost-light defaults (timeout, batch size, retry count) without exposing model-selection flags
 - [ ] Document compatibility/behavior differences from the Python reference script
@@ -126,6 +143,10 @@ Rename plan CSV schema should be documented in a dedicated guide:
 
 ## Status Notes
 
+- `rename file <path>` is implemented as the single-file workflow (preferred over overloading `rename batch`).
+- `rename file` supports `--prefix` and `--dry-run`, and dry-run writes the same replayable plan CSV schema used by batch mode.
+- Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`.
+- `rename file` currently rejects symlink inputs explicitly (direct-path safety); batch-mode symlink policy/audit logging remains a separate checklist item for recursive/audit design.
 - `rename batch` now supports file scoping controls for batch selection:
   - `--match-regex`
   - `--skip-regex`

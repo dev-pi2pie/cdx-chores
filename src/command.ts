@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { actionCsvToJson, actionDeferred, actionDoctor, actionJsonToCsv, actionMdToDocx, actionRenameApply, actionRenameBatch, actionVideoConvert, actionVideoGif, actionVideoResize } from "./cli/actions";
+import { actionCsvToJson, actionDeferred, actionDoctor, actionJsonToCsv, actionMdToDocx, actionRenameApply, actionRenameBatch, actionRenameFile, actionVideoConvert, actionVideoGif, actionVideoResize } from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
 import { EMBEDDED_PACKAGE_VERSION } from "./cli/program/version-embedded";
@@ -166,6 +166,28 @@ export async function runCli(
   }
 
   const renameCommand = program.command("rename").description("Rename helpers");
+  renameCommand
+    .command("file")
+    .description("Rename a single file")
+    .argument("<path>", "Target file path")
+    .option("--prefix <value>", "Filename prefix", "file")
+    .option("--dry-run", "Preview rename plan only", false)
+    .action(
+      async (
+        path: string,
+        options: {
+          prefix?: string;
+          dryRun?: boolean;
+        },
+      ) => {
+        await actionRenameFile(cliRuntime, {
+          path,
+          prefix: options.prefix,
+          dryRun: options.dryRun,
+        });
+      },
+    );
+
   renameCommand
     .command("batch")
     .description("Batch rename files in a directory")

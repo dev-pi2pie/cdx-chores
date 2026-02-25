@@ -8,7 +8,7 @@ import {
 import { slugifyName } from "../../utils/slug";
 import { CliError } from "../errors";
 import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
-import { applyPlannedRenames, planBatchRename } from "../fs-utils";
+import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
 
@@ -37,6 +37,12 @@ export interface RenameBatchOptions {
     retries?: number;
     batchSize?: number;
   }) => Promise<CodexImageRenameResult>;
+}
+
+export interface RenameFileOptions {
+  path: string;
+  prefix?: string;
+  dryRun?: boolean;
 }
 
 export interface RenameApplyOptions {
@@ -289,6 +295,51 @@ export async function actionRenameBatch(
   printLine(runtime.stdout, `Renamed ${changedCount} file(s).`);
 
   return { changedCount, totalCount, directoryPath };
+}
+
+export async function actionRenameFile(
+  runtime: CliRuntime,
+  options: RenameFileOptions,
+): Promise<{ changed: boolean; filePath: string; directoryPath: string; planCsvPath?: string }> {
+  const inputPath = assertNonEmpty(options.path, "File path");
+  const { directoryPath, plan } = await planSingleRename(runtime, inputPath, {
+    prefix: options.prefix,
+    now: runtime.now(),
+  });
+
+  printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
+  printLine(runtime.stdout, `File: ${displayPath(runtime, plan.fromPath)}`);
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, formatRenamePreviewLine(plan));
+
+  if (options.dryRun ?? false) {
+    const ext = extname(plan.fromPath);
+    const stem = basename(plan.fromPath, ext);
+    const cleanedStemBySourcePath = new Map<string, string>([
+      [plan.fromPath, slugifyName(stem).slice(0, 48)],
+    ]);
+    const { rows } = createRenamePlanCsvRows({
+      runtime,
+      plans: [plan],
+      cleanedStemBySourcePath,
+    });
+    const planCsvPath = await writeRenamePlanCsv(runtime, rows);
+
+    printLine(runtime.stdout);
+    printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, planCsvPath)}`);
+    printLine(runtime.stdout, "Dry run only. No files were renamed.");
+    return { changed: plan.changed, filePath: plan.fromPath, directoryPath, planCsvPath };
+  }
+
+  await applyPlannedRenames([plan]);
+  printLine(runtime.stdout);
+  if (plan.changed) {
+    printLine(runtime.stdout, "Renamed 1 file(s).");
+  } else {
+    printLine(runtime.stdout, "No rename needed.");
+  }
+
+  return { changed: plan.changed, filePath: plan.fromPath, directoryPath };
 }
 
 export async function actionRenameApply(

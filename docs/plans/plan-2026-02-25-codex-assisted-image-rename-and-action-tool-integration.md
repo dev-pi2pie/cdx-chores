@@ -2,7 +2,7 @@
 title: "Codex-assisted image batch rename and action tool integration plan"
 created-date: 2026-02-25
 modified-date: 2026-02-25
-status: active
+status: completed
 agent: codex
 ---
 
@@ -20,7 +20,9 @@ Current `rename batch` behavior is deterministic and useful, but image-heavy wor
 
 At the same time, the codebase now has multiple command/action flows that wrap system tools (`pandoc`, `ffmpeg`) and internal utilities. A lightweight action integration guide will reduce design drift when new chores are added.
 
-## Execution Checklist
+## Execution Checklist By Phase
+
+### Phase 1: Planning and Integration Design (Completed)
 
 - [x] Define Codex-assisted rename mode scope (image inputs only vs general files)
 - [x] Define CLI UX for optional Codex rename mode (flags, prompt flow, fallback behavior)
@@ -28,16 +30,25 @@ At the same time, the codebase now has multiple command/action flows that wrap s
 - [x] Design prompt/response contract for image rename title generation
 - [x] Define offline/unauthenticated fallback behavior and clear user messaging
 - [x] Define cost/latency guardrails (batch size, timeout, retries, sampling)
+- [x] Write and maintain action/tool integration guide for future chores
+
+### Phase 2: Codex-Assisted Batch Rename MVP (Completed)
+
 - [x] Extend `rename batch` plan/implementation approach with Codex-assisted title generation stage
 - [x] Document how interactive mode should expose the Codex-assisted rename option
 - [x] Add visible progress feedback while Codex title generation is running
 - [x] Add automated tests for Codex fallback messaging path (deterministic unit test via injected suggester)
+
+### Phase 3: Reliability and Scope Controls (Completed)
+
 - [x] Tune Codex request settings for better success odds (timeout/network-enabled thread settings)
 - [x] Add user-tunable Codex request controls (timeout, retries, batch size)
 - [x] Define scoping controls for rename batch (regex include/exclude, extension filters)
 - [x] Define behavior for unsupported/non-static/oversized files in Codex-assisted mode (skip Codex assist, still rename deterministically)
-- [ ] Add/update `doctor`/capability messaging only if needed for Codex-backed features
-- [x] Write and maintain action/tool integration guide for future chores
+
+### Phase 4: Capability Messaging and Follow-Up Tracking (Completed for Current MVP)
+
+- [x] Add/update `doctor`/capability messaging only if needed for Codex-backed features (evaluated as not needed for current MVP behavior)
 - [x] Create follow-up implementation job(s) after scope and UX decisions are settled
 
 ## In Scope

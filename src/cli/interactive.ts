@@ -7,6 +7,7 @@ import {
   actionMdToDocx,
   actionRenameApply,
   actionRenameBatch,
+  actionRenameFile,
   actionVideoConvert,
   actionVideoGif,
   actionVideoResize,
@@ -31,6 +32,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       { name: "data json-to-csv", value: "data:json-to-csv" },
       { name: "data csv-to-json", value: "data:csv-to-json" },
       { name: "md to-docx", value: "md:to-docx" },
+      { name: "rename file", value: "rename:file" },
       { name: "rename batch", value: "rename:batch" },
       { name: "rename apply", value: "rename:apply" },
       { name: "video convert", value: "video:convert" },
@@ -107,6 +109,23 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       if (applyNow && result.planCsvPath) {
         await actionRenameApply(runtime, { csv: result.planCsvPath });
       }
+    }
+    return;
+  }
+
+  if (action === "rename:file") {
+    const path = await promptPath("Target file");
+    const prefix = await input({ message: "Filename prefix", default: "file" });
+    const dryRun = await confirm({ message: "Dry run only?", default: true });
+    const result = await actionRenameFile(runtime, { path, prefix, dryRun });
+
+    if (!dryRun || !result.changed) {
+      return;
+    }
+
+    const applyNow = await confirm({ message: "Apply this rename now?", default: false });
+    if (applyNow && result.planCsvPath) {
+      await actionRenameApply(runtime, { csv: result.planCsvPath });
     }
     return;
   }

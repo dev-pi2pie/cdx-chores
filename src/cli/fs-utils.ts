@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 import { CliError } from "./errors";
@@ -131,6 +131,72 @@ export async function planBatchRename(
   }
 
   return { directoryPath, plans };
+}
+
+export async function planSingleRename(
+  runtime: CliRuntime,
+  fileInput: string,
+  options: { prefix?: string; now?: Date; titleOverride?: string } = {},
+): Promise<{ directoryPath: string; plan: PlannedRename }> {
+  const sourcePath = resolveFromCwd(runtime, fileInput);
+
+  let sourceLstat;
+  try {
+    sourceLstat = await lstat(sourcePath);
+  } catch {
+    throw new CliError(`Input file not found: ${sourcePath}`, {
+      code: "FILE_NOT_FOUND",
+      exitCode: 2,
+    });
+  }
+
+  if (sourceLstat.isSymbolicLink()) {
+    throw new CliError(`Symlink inputs are not supported for rename file: ${sourcePath}`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (!sourceLstat.isFile()) {
+    throw new CliError(`Input file not found: ${sourcePath}`, {
+      code: "FILE_NOT_FOUND",
+      exitCode: 2,
+    });
+  }
+
+  const directoryPath = dirname(sourcePath);
+  const currentName = basename(sourcePath);
+  const ext = extname(currentName).toLowerCase();
+  const stem = basename(currentName, extname(currentName));
+  const preferredTitle = options.titleOverride?.trim();
+  const slug = slugifyName(preferredTitle || stem).slice(0, 48);
+  const prefix = slugifyName(options.prefix?.trim() || "file");
+  const dt = formatUtcFileDateTime(sourceLstat.mtime ?? options.now ?? runtime.now());
+
+  const entries = await readdir(directoryPath, { withFileTypes: true });
+  const occupiedNames = new Set(
+    entries.map((entry) => entry.name).filter((entryName) => entryName !== currentName),
+  );
+
+  let counter = 0;
+  let nextName = currentName;
+  while (true) {
+    nextName = `${withNumericSuffix(`${prefix}-${dt}-${slug}`, counter)}${ext}`;
+    if (!occupiedNames.has(nextName)) {
+      break;
+    }
+    counter += 1;
+  }
+
+  const toPath = join(directoryPath, nextName);
+  return {
+    directoryPath,
+    plan: {
+      fromPath: sourcePath,
+      toPath,
+      changed: sourcePath !== toPath,
+    },
+  };
 }
 
 export async function applyPlannedRenames(plans: PlannedRename[]): Promise<void> {

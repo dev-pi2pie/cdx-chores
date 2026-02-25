@@ -1,8 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, readFile, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionCsvToJson, actionJsonToCsv, actionRenameApply, actionRenameBatch } from "../src/cli/actions";
+import {
+  actionCsvToJson,
+  actionJsonToCsv,
+  actionRenameApply,
+  actionRenameBatch,
+  actionRenameFile,
+} from "../src/cli/actions";
 import { CliError } from "../src/cli/errors";
 import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
 
@@ -156,6 +162,115 @@ describe("cli action modules: data failure modes", () => {
 });
 
 describe("cli action modules: rename", () => {
+  test("actionRenameFile dry-run previews one file and writes a replayable CSV plan", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-dry-run");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "cover image.png");
+      await writeFile(filePath, "fake", "utf8");
+      const fixedTime = new Date("2026-02-25T15:16:17.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(filePath),
+        prefix: "img",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(planCsvPath).toBeDefined();
+      expect(stdout.text).toContain(`Directory: ${toRepoRelativePath(dirPath)}`);
+      expect(stdout.text).toContain(`File: ${toRepoRelativePath(filePath)}`);
+      expect(stdout.text).toContain("- cover image.png -> img-");
+      expect(stdout.text).toContain("Plan CSV:");
+      expect(stdout.text).toContain("Dry run only. No files were renamed.");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("cover image.png");
+      expect(csvText).toContain(",planned,");
+      expect((await stat(filePath)).isFile()).toBe(true);
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile applies a single-file rename with collision suffix handling", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-apply");
+      await mkdir(dirPath, { recursive: true });
+
+      const targetPath = join(dirPath, "photo one.txt");
+      await writeFile(targetPath, "a", "utf8");
+      const fixedTime = new Date("2026-02-25T08:09:10.000Z");
+      await utimes(targetPath, fixedTime, fixedTime);
+
+      const conflictingName = "doc-20260225-080910-photo-one.txt";
+      await writeFile(join(dirPath, conflictingName), "occupied", "utf8");
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(targetPath),
+        prefix: "doc",
+        dryRun: false,
+      });
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain(`File: ${toRepoRelativePath(targetPath)}`);
+      expect(stdout.text).toContain("Renamed 1 file(s).");
+
+      const entries = (await readdir(dirPath)).sort();
+      expect(entries).toContain(conflictingName);
+      expect(entries.some((name) => /^doc-20260225-080910-photo-one-01\.txt$/.test(name))).toBe(true);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile rejects symlink input paths", async () => {
+    if (process.platform === "win32") {
+      return;
+    }
+
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-symlink");
+      await mkdir(dirPath, { recursive: true });
+
+      const realPath = join(dirPath, "real.txt");
+      const linkPath = join(dirPath, "link.txt");
+      await writeFile(realPath, "real", "utf8");
+      await symlink(realPath, linkPath);
+
+      await expectCliError(
+        () =>
+          actionRenameFile(runtime, {
+            path: toRepoRelativePath(linkPath),
+            dryRun: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Symlink inputs are not supported for rename file:",
+        },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(stderr.text).toBe("");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch dry-run previews renames and returns counts", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
