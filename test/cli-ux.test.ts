@@ -1,31 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
-
-const REPO_ROOT = resolve(import.meta.dir, "..");
-const TMP_ROOT = join(REPO_ROOT, ".tmp-tests");
-
-function runCli(args: string[], cwd = REPO_ROOT): { exitCode: number; stdout: string; stderr: string } {
-  const proc = Bun.spawnSync({
-    cmd: [process.execPath, "src/bin.ts", ...args],
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  return {
-    exitCode: proc.exitCode,
-    stdout: Buffer.from(proc.stdout).toString("utf8"),
-    stderr: Buffer.from(proc.stderr).toString("utf8"),
-  };
-}
-
-async function createTempFixtureDir(): Promise<string> {
-  await mkdir(TMP_ROOT, { recursive: true });
-  return await mkdtemp(join(TMP_ROOT, "cli-ux-"));
-}
+import { createTempFixtureDir, REPO_ROOT, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
 
 describe("CLI UX flags and path output", () => {
   test("supports both -v and -V for version output", () => {
@@ -41,12 +19,12 @@ describe("CLI UX flags and path output", () => {
   });
 
   test("prints relative output paths by default", async () => {
-    const fixtureDir = await createTempFixtureDir();
+    const fixtureDir = await createTempFixtureDir("cli-ux");
     try {
       const inputPath = join(fixtureDir, "sample.json");
       await writeFile(inputPath, '[{"a":1}]\n', "utf8");
 
-      const relativeInputPath = inputPath.slice(REPO_ROOT.length + 1);
+      const relativeInputPath = toRepoRelativePath(inputPath);
       const expectedRelativeOutputPath = join(relativeInputPath.replace(/\.json$/i, ".csv"));
 
       const result = runCli(["data", "json-to-csv", "-i", relativeInputPath, "--overwrite"]);
@@ -65,12 +43,12 @@ describe("CLI UX flags and path output", () => {
   });
 
   test("prints absolute output paths with --abs alias (even after subcommand args)", async () => {
-    const fixtureDir = await createTempFixtureDir();
+    const fixtureDir = await createTempFixtureDir("cli-ux");
     try {
       const inputPath = join(fixtureDir, "sample.json");
       await writeFile(inputPath, '[{"a":1}]\n', "utf8");
 
-      const relativeInputPath = inputPath.slice(REPO_ROOT.length + 1);
+      const relativeInputPath = toRepoRelativePath(inputPath);
       const absoluteOutputPath = inputPath.replace(/\.json$/i, ".csv");
 
       const result = runCli([

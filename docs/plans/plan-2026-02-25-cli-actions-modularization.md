@@ -1,7 +1,8 @@
 ---
 title: "CLI actions modularization plan"
 created-date: 2026-02-25
-status: draft
+modified-date: 2026-02-25
+status: completed
 agent: codex
 ---
 
@@ -21,6 +22,22 @@ Refactor `src/cli/actions.ts` into smaller modules with clearer ownership, while
 This plan focuses on structure and separation only, not feature expansion.
 
 It also includes a small follow-up design step to clarify source-tree taxonomy boundaries (especially `src/markdown/**` vs `src/utils/**`) so the action refactor does not reinforce a confusing module layout.
+
+## Execution Checklist
+
+- [x] Extract `src/cli/actions.ts` into domain modules under `src/cli/actions/`
+- [x] Add shared action helper module (`shared.ts`)
+- [x] Add `src/cli/actions/index.ts` barrel exports
+- [x] Keep `src/cli/actions.ts` as a compatibility re-export during transition
+- [x] Verify core CLI behavior with smoke checks after refactor
+- [x] Record `src/markdown/**` taxonomy decision (keep in place for now)
+- [x] Add focused CLI regression tests (`-v/-V`, relative/absolute path output)
+- [x] Add unit tests for extracted `data` and `rename` action modules
+- [x] Add failure-mode/edge-case tests for `data` and `rename`
+- [x] Add shared test helper utilities for CLI/action tests
+- [x] Add unit tests for remaining extracted action modules (`doctor`, `markdown`, `video`, `deferred` where meaningful)
+- [x] Address or explicitly plan around the pre-existing `src/markdown/types.ts` -> `../wc/types` TypeScript error
+- [x] Finalize plan status to `completed` after remaining test coverage decision and documentation wrap-up
 
 ## In Scope
 

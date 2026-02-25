@@ -17,6 +17,10 @@ Assumptions:
 - Code may use Bun for development speed and tooling
 - Runtime behavior MUST remain compatible with Node.js
 
+Testing scratch-space note:
+
+- Prefer `examples/playground/` for isolated manual smoke-test artifacts and temporary local test files (instead of creating ad-hoc temp folders at the repository root).
+
 ---
 
 ## Documentation Conventions
