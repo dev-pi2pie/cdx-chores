@@ -27,9 +27,7 @@ This plan is inspired by local-first image rename tools, but adapted to `cdx-cho
 
 Reference inspiration/spec input:
 
-- `scripts/python-ref/rename_images.py`
-
-Use it as a behavior reference (pattern/audit/safety ideas), not a strict implementation mirror.
+- A prior local Python image-rename utility prototype (used as a behavior reference for pattern/audit/safety ideas, not a strict implementation mirror).
 
 ## Execution Checklist
 
