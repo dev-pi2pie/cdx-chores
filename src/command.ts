@@ -172,18 +172,30 @@ export async function runCli(
     .argument("<path>", "Target file path")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--codex", "Use Codex-assisted semantic title for supported image files", false)
+    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
+    .option("--codex-retries <count>", "Retry failed Codex title requests", (value) => Number(value))
+    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
     .action(
       async (
         path: string,
         options: {
           prefix?: string;
           dryRun?: boolean;
+          codex?: boolean;
+          codexTimeoutMs?: number;
+          codexRetries?: number;
+          codexBatchSize?: number;
         },
       ) => {
         await actionRenameFile(cliRuntime, {
           path,
           prefix: options.prefix,
           dryRun: options.dryRun,
+          codex: options.codex,
+          codexTimeoutMs: options.codexTimeoutMs,
+          codexRetries: options.codexRetries,
+          codexBatchSize: options.codexBatchSize,
         });
       },
     );

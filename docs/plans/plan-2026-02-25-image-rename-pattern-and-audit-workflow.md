@@ -144,8 +144,9 @@ Rename plan CSV schema should be documented in a dedicated guide:
 ## Status Notes
 
 - `rename file <path>` is implemented as the single-file workflow (preferred over overloading `rename batch`).
-- `rename file` supports `--prefix` and `--dry-run`, and dry-run writes the same replayable plan CSV schema used by batch mode.
-- Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`.
+- `rename file` supports `--prefix`, `--dry-run`, and optional `--codex` best-effort image-title assist (deterministic fallback on failure).
+- `rename file` dry-run writes the same replayable plan CSV schema used by batch mode.
+- Interactive mode now includes a `rename file` menu entry with the same dry-run/apply-now pattern used by `rename batch`, including a Codex-assist confirmation prompt.
 - `rename file` currently rejects symlink inputs explicitly (direct-path safety); batch-mode symlink policy/audit logging remains a separate checklist item for recursive/audit design.
 - `rename batch` now supports file scoping controls for batch selection:
   - `--match-regex`

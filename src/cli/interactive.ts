@@ -117,7 +117,11 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     const path = await promptPath("Target file");
     const prefix = await input({ message: "Filename prefix", default: "file" });
     const dryRun = await confirm({ message: "Dry run only?", default: true });
-    const result = await actionRenameFile(runtime, { path, prefix, dryRun });
+    const codex = await confirm({
+      message: "Use Codex-assisted image title when possible?",
+      default: false,
+    });
+    const result = await actionRenameFile(runtime, { path, prefix, dryRun, codex });
 
     if (!dryRun || !result.changed) {
       return;

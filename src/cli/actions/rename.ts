@@ -43,6 +43,17 @@ export interface RenameFileOptions {
   path: string;
   prefix?: string;
   dryRun?: boolean;
+  codex?: boolean;
+  codexTimeoutMs?: number;
+  codexRetries?: number;
+  codexBatchSize?: number;
+  codexTitleSuggester?: (options: {
+    imagePaths: string[];
+    workingDirectory: string;
+    timeoutMs?: number;
+    retries?: number;
+    batchSize?: number;
+  }) => Promise<CodexImageRenameResult>;
 }
 
 export interface RenameApplyOptions {
@@ -302,26 +313,78 @@ export async function actionRenameFile(
   options: RenameFileOptions,
 ): Promise<{ changed: boolean; filePath: string; directoryPath: string; planCsvPath?: string }> {
   const inputPath = assertNonEmpty(options.path, "File path");
-  const { directoryPath, plan } = await planSingleRename(runtime, inputPath, {
+  const initial = await planSingleRename(runtime, inputPath, {
     prefix: options.prefix,
     now: runtime.now(),
   });
+  const directoryPath = initial.directoryPath;
+  let plan = initial.plan;
+  let codexImageCount = 0;
+  let codexSuggestedCount = 0;
+  let codexErrorMessage: string | null = null;
+  let codexTitlesByPath: Map<string, string> | undefined;
+
+  if (options.codex ?? false) {
+    const imagePaths = await selectCodexAssistImagePaths([initial.plan]);
+    codexImageCount = imagePaths.length;
+
+    if (imagePaths.length > 0) {
+      const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
+      const progress = startCodexProgress(runtime, imagePaths.length);
+      const codexResult = await codexTitleSuggester({
+        imagePaths,
+        workingDirectory: runtime.cwd,
+        timeoutMs: options.codexTimeoutMs,
+        retries: options.codexRetries,
+        batchSize: options.codexBatchSize,
+      });
+      progress.stop(codexResult.errorMessage ? "fallback" : "done");
+      codexErrorMessage = codexResult.errorMessage ?? null;
+
+      if (codexResult.suggestions.length > 0) {
+        codexTitlesByPath = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
+        const titleOverride = codexTitlesByPath.get(initial.plan.fromPath);
+        if (titleOverride) {
+          const replanned = await planSingleRename(runtime, inputPath, {
+            prefix: options.prefix,
+            now: runtime.now(),
+            titleOverride,
+          });
+          plan = replanned.plan;
+          codexSuggestedCount = 1;
+        }
+      }
+    }
+  }
 
   printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `File: ${displayPath(runtime, plan.fromPath)}`);
+  if (options.codex ?? false) {
+    printLine(
+      runtime.stdout,
+      `Codex image titles: ${codexSuggestedCount}/${codexImageCount} image file(s) suggested${codexErrorMessage ? " (fallback used for others)" : ""}`,
+    );
+    if (codexErrorMessage && codexImageCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexErrorMessage}`);
+    }
+  }
   printLine(runtime.stdout);
   printLine(runtime.stdout, formatRenamePreviewLine(plan));
 
   if (options.dryRun ?? false) {
     const ext = extname(plan.fromPath);
     const stem = basename(plan.fromPath, ext);
+    const sourceTitle = codexTitlesByPath?.get(plan.fromPath) ?? stem;
     const cleanedStemBySourcePath = new Map<string, string>([
-      [plan.fromPath, slugifyName(stem).slice(0, 48)],
+      [plan.fromPath, slugifyName(sourceTitle).slice(0, 48)],
     ]);
     const { rows } = createRenamePlanCsvRows({
       runtime,
       plans: [plan],
       cleanedStemBySourcePath,
+      aiNameBySourcePath: codexTitlesByPath,
+      aiProvider: "codex",
+      aiModel: "auto",
     });
     const planCsvPath = await writeRenamePlanCsv(runtime, rows);
 

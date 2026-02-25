@@ -271,6 +271,44 @@ describe("cli action modules: rename", () => {
     }
   });
 
+  test("actionRenameFile codex mode shows progress and fallback messaging when Codex returns an error", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-codex-fallback");
+      await mkdir(dirPath, { recursive: true });
+
+      const imagePath = join(dirPath, "single.png");
+      await writeFile(imagePath, "fakepng", "utf8");
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(imagePath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(imagePath),
+        prefix: "img",
+        dryRun: true,
+        codex: true,
+        codexTitleSuggester: async () => ({
+          suggestions: [],
+          errorMessage: "Codex unavailable in test",
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 image file(s)...");
+      expect(stdout.text).toContain("Codex image titles: 0/1 image file(s) suggested (fallback used for others)");
+      expect(stdout.text).toContain("Codex note: Codex unavailable in test");
+      expect(stdout.text).toContain("- single.png -> img-");
+      expect(stdout.text).toContain("Dry run only. No files were renamed.");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch dry-run previews renames and returns counts", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
