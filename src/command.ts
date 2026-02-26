@@ -213,18 +213,22 @@ export async function runCli(
     .argument("<path>", "Target file path")
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
-    .option("--codex", "Use Codex-assisted semantic title for supported image files", false)
     .option(
-      "--codex-timeout-ms <ms>",
-      "Codex title generation timeout per request in milliseconds",
+      "--codex-images",
+      "Use Codex-assisted semantic title for supported static image files",
+      false,
+    )
+    .option(
+      "--codex-images-timeout-ms <ms>",
+      "Codex image-title generation timeout per request in milliseconds",
       (value) => Number(value),
     )
-    .option("--codex-retries <count>", "Retry failed Codex title requests", (value) =>
+    .option("--codex-images-retries <count>", "Retry failed Codex image-title requests", (value) =>
       Number(value),
     )
     .option(
-      "--codex-batch-size <count>",
-      "Number of images per Codex title request batch",
+      "--codex-images-batch-size <count>",
+      "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
     .action(
@@ -233,20 +237,20 @@ export async function runCli(
         options: {
           prefix?: string;
           dryRun?: boolean;
-          codex?: boolean;
-          codexTimeoutMs?: number;
-          codexRetries?: number;
-          codexBatchSize?: number;
+          codexImages?: boolean;
+          codexImagesTimeoutMs?: number;
+          codexImagesRetries?: number;
+          codexImagesBatchSize?: number;
         },
       ) => {
         await actionRenameFile(cliRuntime, {
           path,
           prefix: options.prefix,
           dryRun: options.dryRun,
-          codex: options.codex,
-          codexTimeoutMs: options.codexTimeoutMs,
-          codexRetries: options.codexRetries,
-          codexBatchSize: options.codexBatchSize,
+          codexImages: options.codexImages,
+          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+          codexImagesRetries: options.codexImagesRetries,
+          codexImagesBatchSize: options.codexImagesBatchSize,
         });
       },
     );
@@ -274,18 +278,24 @@ export async function runCli(
       collectCsvListOption,
       [],
     )
-    .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
     .option(
-      "--codex-timeout-ms <ms>",
-      "Codex title generation timeout per request in milliseconds",
+      "--codex-images",
+      "Use Codex-assisted semantic titles for supported static image files",
+      false,
+    )
+    .option(
+      "--codex-images-timeout-ms <ms>",
+      "Codex image-title generation timeout per request in milliseconds",
       (value) => Number(value),
     )
-    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) =>
-      Number(value),
+    .option(
+      "--codex-images-retries <count>",
+      "Retry failed Codex image-title requests (per batch)",
+      (value) => Number(value),
     )
     .option(
-      "--codex-batch-size <count>",
-      "Number of images per Codex title request batch",
+      "--codex-images-batch-size <count>",
+      "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
     .action(
@@ -301,10 +311,10 @@ export async function runCli(
           skipRegex?: string;
           ext?: string[];
           skipExt?: string[];
-          codex?: boolean;
-          codexTimeoutMs?: number;
-          codexRetries?: number;
-          codexBatchSize?: number;
+          codexImages?: boolean;
+          codexImagesTimeoutMs?: number;
+          codexImagesRetries?: number;
+          codexImagesBatchSize?: number;
         },
       ) => {
         await actionRenameBatch(cliRuntime, {
@@ -318,10 +328,10 @@ export async function runCli(
           skipRegex: options.skipRegex,
           ext: options.ext,
           skipExt: options.skipExt,
-          codex: options.codex,
-          codexTimeoutMs: options.codexTimeoutMs,
-          codexRetries: options.codexRetries,
-          codexBatchSize: options.codexBatchSize,
+          codexImages: options.codexImages,
+          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+          codexImagesRetries: options.codexImagesRetries,
+          codexImagesBatchSize: options.codexImagesBatchSize,
         });
       },
     );
@@ -358,18 +368,24 @@ export async function runCli(
       collectCsvListOption,
       [],
     )
-    .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
     .option(
-      "--codex-timeout-ms <ms>",
-      "Codex title generation timeout per request in milliseconds",
+      "--codex-images",
+      "Use Codex-assisted semantic titles for supported static image files",
+      false,
+    )
+    .option(
+      "--codex-images-timeout-ms <ms>",
+      "Codex image-title generation timeout per request in milliseconds",
       (value) => Number(value),
     )
-    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) =>
-      Number(value),
+    .option(
+      "--codex-images-retries <count>",
+      "Retry failed Codex image-title requests (per batch)",
+      (value) => Number(value),
     )
     .option(
-      "--codex-batch-size <count>",
-      "Number of images per Codex title request batch",
+      "--codex-images-batch-size <count>",
+      "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
     .action(
@@ -385,10 +401,10 @@ export async function runCli(
           skipRegex?: string;
           ext?: string[];
           skipExt?: string[];
-          codex?: boolean;
-          codexTimeoutMs?: number;
-          codexRetries?: number;
-          codexBatchSize?: number;
+          codexImages?: boolean;
+          codexImagesTimeoutMs?: number;
+          codexImagesRetries?: number;
+          codexImagesBatchSize?: number;
         },
       ) => {
         await actionRenameBatch(cliRuntime, {
@@ -402,10 +418,10 @@ export async function runCli(
           skipRegex: options.skipRegex,
           ext: options.ext,
           skipExt: options.skipExt,
-          codex: options.codex,
-          codexTimeoutMs: options.codexTimeoutMs,
-          codexRetries: options.codexRetries,
-          codexBatchSize: options.codexBatchSize,
+          codexImages: options.codexImages,
+          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+          codexImagesRetries: options.codexImagesRetries,
+          codexImagesBatchSize: options.codexImagesBatchSize,
         });
       },
     );

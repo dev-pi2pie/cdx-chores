@@ -1,13 +1,14 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
+modified-date: 2026-02-26
 status: draft
 agent: codex
 ---
 
 ## Goal
 
-Provide a practical guide for adding or extending chores commands in `cdx-chores` using the current command/action structure, with clear boundaries for external tools and future Codex SDK adapters.
+Provide a practical guide for adding or extending chores commands in `cdx-chores` using the current command/action structure, with clear boundaries for external tools and Codex SDK adapters.
 
 ## Current Integration Pattern (Recommended)
 
@@ -58,11 +59,11 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
   - example future path: `src/adapters/codex/**`
   - example future path: `src/adapters/tools/**` (if wrappers outgrow `src/cli/*`)
 
-## Codex SDK Integration Guidance (Planned)
+## Codex SDK Integration Guidance (Current + Planned)
 
-`@openai/codex-sdk` is currently installed but not used in runtime code.
+`@openai/codex-sdk` is now used in runtime code for rename-time semantic image title suggestions via `src/adapters/codex/image-rename-titles.ts`.
 
-When integrating it:
+When adding or expanding Codex-backed features:
 
 - Keep SDK calls out of `src/command.ts`
 - Prefer keeping SDK calls out of `src/cli/actions/*.ts` unless the action remains very thin
@@ -71,12 +72,48 @@ When integrating it:
   - response parsing
   - retry/timeout handling
   - fallback behavior
+  - capability/eligibility checks (when modality/file-type scope matters)
 
 Recommended shape for image rename assistance:
 
 - action module (`src/cli/actions/rename.ts`) asks a Codex adapter for semantic title suggestions
 - Codex adapter returns normalized structured suggestions (not raw SDK responses)
 - action applies deterministic slug/length/collision handling before file operations
+
+## Rename-Specific Integration Guidance (Important)
+
+Rename flows now combine multiple concerns that should remain explicitly separated:
+
+- file selection scope (profiles, extensions, regex)
+- rename formatting (prefix/pattern/timestamp/stem)
+- safety behavior (dry-run/apply replay, traversal limits, hidden/system-file defaults)
+- optional semantic analyzers (for example Codex-assisted title suggestions)
+
+Recommended boundary for rename work:
+
+- `src/cli/actions/rename.ts`
+  - orchestration, user-facing summaries, dry-run/apply flow, deterministic fallback
+- `src/adapters/codex/**`
+  - Codex-specific analyzer implementations (prompting/parsing/retries/timeouts)
+- future analyzer capability registry (rename-specific)
+  - maps file types to analyzer eligibility and skip reasons
+  - keeps "rename works" separate from "semantic analyzer can analyze"
+
+Design rule for rename:
+
+- deterministic rename planning must remain usable for all scoped files, even when analyzers are unsupported, skipped, or failing
+
+Current scope note:
+
+- Codex semantic rename in this project is currently limited to supported static image files
+- audio/video semantic analysis is deferred for Codex-assisted rename based on current Codex model support docs
+- docs-like semantic analysis is a future analyzer path and should not be implied by `--codex-images` today
+
+See also:
+
+- `docs/guides/rename-scope-and-codex-capability-guide.md`
+- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
 
 ## Designing a New Chore Command (Checklist)
 
@@ -120,8 +157,9 @@ Example:
 
 - `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
 - `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## Related Research
 
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
-
+- `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`

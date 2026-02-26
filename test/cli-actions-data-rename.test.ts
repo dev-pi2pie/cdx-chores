@@ -288,8 +288,8 @@ describe("cli action modules: rename", () => {
         path: toRepoRelativePath(imagePath),
         prefix: "img",
         dryRun: true,
-        codex: true,
-        codexTitleSuggester: async () => ({
+        codexImages: true,
+        codexImagesTitleSuggester: async () => ({
           suggestions: [],
           errorMessage: "Codex unavailable in test",
         }),
@@ -757,8 +757,8 @@ describe("cli action modules: rename", () => {
         directory: relativeDir,
         prefix: "img",
         dryRun: true,
-        codex: true,
-        codexTitleSuggester: async () => ({
+        codexImages: true,
+        codexImagesTitleSuggester: async () => ({
           suggestions: [],
           errorMessage: "Codex unavailable in test",
         }),
@@ -803,11 +803,11 @@ describe("cli action modules: rename", () => {
       const result = await actionRenameBatch(runtime, {
         directory: toRepoRelativePath(dirPath),
         dryRun: true,
-        codex: true,
-        codexTimeoutMs: 12345,
-        codexRetries: 2,
-        codexBatchSize: 1,
-        codexTitleSuggester: async (options) => {
+        codexImages: true,
+        codexImagesTimeoutMs: 12345,
+        codexImagesRetries: 2,
+        codexImagesBatchSize: 1,
+        codexImagesTitleSuggester: async (options) => {
           calls.push(options);
           return { suggestions: [] };
         },
@@ -849,8 +849,8 @@ describe("cli action modules: rename", () => {
         directory: toRepoRelativePath(dirPath),
         prefix: "img",
         dryRun: true,
-        codex: true,
-        codexTitleSuggester: async (options) => {
+        codexImages: true,
+        codexImagesTitleSuggester: async (options) => {
           calls.push({ imagePaths: options.imagePaths });
           return {
             suggestions: options.imagePaths.map((path) => ({ path, title: "only eligible image" })),
