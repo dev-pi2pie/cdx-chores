@@ -75,6 +75,18 @@ Markdown to DOCX (requires `pandoc`):
 bun run src/bin.ts md to-docx -i ./notes.md -o ./notes.docx
 ```
 
+Markdown frontmatter to JSON (default wrapper output):
+
+```bash
+bun run src/bin.ts md frontmatter-to-json -i ./notes.md --pretty
+```
+
+Markdown frontmatter to JSON (data-only for pipelines):
+
+```bash
+bun run src/bin.ts md frontmatter-to-json -i ./notes.md --data-only
+```
+
 Batch rename preview:
 
 ```bash

@@ -1,8 +1,21 @@
 import { Command } from "commander";
-import { actionCsvToJson, actionDeferred, actionDoctor, actionJsonToCsv, actionMdToDocx, actionRenameApply, actionRenameBatch, actionRenameFile, actionVideoConvert, actionVideoGif, actionVideoResize } from "./cli/actions";
+import {
+  actionCsvToJson,
+  actionDeferred,
+  actionDoctor,
+  actionJsonToCsv,
+  actionMdFrontmatterToJson,
+  actionMdToDocx,
+  actionRenameApply,
+  actionRenameBatch,
+  actionRenameFile,
+  actionVideoConvert,
+  actionVideoGif,
+  actionVideoResize,
+} from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
-import { EMBEDDED_PACKAGE_VERSION } from "./cli/program/version-embedded";
+import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
 
 interface NormalizedCliArgv {
@@ -91,7 +104,7 @@ export async function runCli(
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
-    .version(EMBEDDED_PACKAGE_VERSION, "-v, --version");
+    .version(getFormattedVersionLabel(), "-v, --version", "Show version information");
 
   program
     .command("interactive")
@@ -127,9 +140,16 @@ export async function runCli(
     .option("-o, --output <path>", "Output JSON file path")
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .option("--pretty", "Pretty-print JSON output", false)
-    .action(async (options: { input: string; output?: string; overwrite?: boolean; pretty?: boolean }) => {
-      await actionCsvToJson(cliRuntime, options);
-    });
+    .action(
+      async (options: {
+        input: string;
+        output?: string;
+        overwrite?: boolean;
+        pretty?: boolean;
+      }) => {
+        await actionCsvToJson(cliRuntime, options);
+      },
+    );
 
   const mdCommand = program.command("md").description("Markdown utilities");
   applyCommonFileOptions(
@@ -141,6 +161,25 @@ export async function runCli(
         await actionMdToDocx(cliRuntime, options);
       }),
   );
+  mdCommand
+    .command("frontmatter-to-json")
+    .description("Extract Markdown frontmatter to JSON")
+    .requiredOption("-i, --input <path>", "Input Markdown file")
+    .option("-o, --output <path>", "Write JSON to file path (default: stdout)")
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .option("--pretty", "Pretty-print JSON output", false)
+    .option("--data-only", "Emit only the parsed frontmatter object", false)
+    .action(
+      async (options: {
+        input: string;
+        output?: string;
+        overwrite?: boolean;
+        pretty?: boolean;
+        dataOnly?: boolean;
+      }) => {
+        await actionMdFrontmatterToJson(cliRuntime, options);
+      },
+    );
 
   const docxCommand = program.command("docx").description("DOCX utilities");
   docxCommand
@@ -150,7 +189,9 @@ export async function runCli(
       await actionDeferred(cliRuntime, "docx to-pdf");
     });
 
-  const pdfCommand = program.command("pdf").description("PDF utilities (deferred in initial phase)");
+  const pdfCommand = program
+    .command("pdf")
+    .description("PDF utilities (deferred in initial phase)");
   for (const [name, description] of [
     ["to-images", "Convert PDF pages to images (deferred)"],
     ["from-images", "Build PDF from image sequence (deferred)"],
@@ -173,9 +214,19 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix", "file")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--codex", "Use Codex-assisted semantic title for supported image files", false)
-    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
-    .option("--codex-retries <count>", "Retry failed Codex title requests", (value) => Number(value))
-    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
+    .option(
+      "--codex-timeout-ms <ms>",
+      "Codex title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option("--codex-retries <count>", "Retry failed Codex title requests", (value) =>
+      Number(value),
+    )
+    .option(
+      "--codex-batch-size <count>",
+      "Number of images per Codex title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         path: string,
@@ -211,12 +262,32 @@ export async function runCli(
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
-    .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
-    .option("--skip-ext <value>", "Exclude file extensions (repeatable or comma-separated)", collectCsvListOption, [])
+    .option(
+      "--ext <value>",
+      "Only include file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
+    .option(
+      "--skip-ext <value>",
+      "Exclude file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
     .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
-    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
-    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
-    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
+    .option(
+      "--codex-timeout-ms <ms>",
+      "Codex title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) =>
+      Number(value),
+    )
+    .option(
+      "--codex-batch-size <count>",
+      "Number of images per Codex title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         directory: string,
@@ -236,23 +307,24 @@ export async function runCli(
           codexBatchSize?: number;
         },
       ) => {
-      await actionRenameBatch(cliRuntime, {
-        directory,
-        prefix: options.prefix,
-        profile: options.profile,
-        dryRun: options.dryRun,
-        recursive: options.recursive,
-        maxDepth: options.maxDepth,
-        matchRegex: options.matchRegex,
-        skipRegex: options.skipRegex,
-        ext: options.ext,
-        skipExt: options.skipExt,
-        codex: options.codex,
-        codexTimeoutMs: options.codexTimeoutMs,
-        codexRetries: options.codexRetries,
-        codexBatchSize: options.codexBatchSize,
-      });
-    });
+        await actionRenameBatch(cliRuntime, {
+          directory,
+          prefix: options.prefix,
+          profile: options.profile,
+          dryRun: options.dryRun,
+          recursive: options.recursive,
+          maxDepth: options.maxDepth,
+          matchRegex: options.matchRegex,
+          skipRegex: options.skipRegex,
+          ext: options.ext,
+          skipExt: options.skipExt,
+          codex: options.codex,
+          codexTimeoutMs: options.codexTimeoutMs,
+          codexRetries: options.codexRetries,
+          codexBatchSize: options.codexBatchSize,
+        });
+      },
+    );
 
   renameCommand
     .command("apply")
@@ -274,12 +346,32 @@ export async function runCli(
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
     .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
-    .option("--ext <value>", "Only include file extensions (repeatable or comma-separated)", collectCsvListOption, [])
-    .option("--skip-ext <value>", "Exclude file extensions (repeatable or comma-separated)", collectCsvListOption, [])
+    .option(
+      "--ext <value>",
+      "Only include file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
+    .option(
+      "--skip-ext <value>",
+      "Exclude file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
     .option("--codex", "Use Codex-assisted semantic titles for supported image files", false)
-    .option("--codex-timeout-ms <ms>", "Codex title generation timeout per request in milliseconds", (value) => Number(value))
-    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) => Number(value))
-    .option("--codex-batch-size <count>", "Number of images per Codex title request batch", (value) => Number(value))
+    .option(
+      "--codex-timeout-ms <ms>",
+      "Codex title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option("--codex-retries <count>", "Retry failed Codex title requests (per batch)", (value) =>
+      Number(value),
+    )
+    .option(
+      "--codex-batch-size <count>",
+      "Number of images per Codex title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         directory: string,
@@ -299,23 +391,24 @@ export async function runCli(
           codexBatchSize?: number;
         },
       ) => {
-      await actionRenameBatch(cliRuntime, {
-        directory,
-        prefix: options.prefix,
-        profile: options.profile,
-        dryRun: options.dryRun,
-        recursive: options.recursive,
-        maxDepth: options.maxDepth,
-        matchRegex: options.matchRegex,
-        skipRegex: options.skipRegex,
-        ext: options.ext,
-        skipExt: options.skipExt,
-        codex: options.codex,
-        codexTimeoutMs: options.codexTimeoutMs,
-        codexRetries: options.codexRetries,
-        codexBatchSize: options.codexBatchSize,
-      });
-    });
+        await actionRenameBatch(cliRuntime, {
+          directory,
+          prefix: options.prefix,
+          profile: options.profile,
+          dryRun: options.dryRun,
+          recursive: options.recursive,
+          maxDepth: options.maxDepth,
+          matchRegex: options.matchRegex,
+          skipRegex: options.skipRegex,
+          ext: options.ext,
+          skipExt: options.skipExt,
+          codex: options.codex,
+          codexTimeoutMs: options.codexTimeoutMs,
+          codexRetries: options.codexRetries,
+          codexBatchSize: options.codexBatchSize,
+        });
+      },
+    );
 
   const videoCommand = program.command("video").description("Video utilities (ffmpeg-backed)");
   videoCommand
