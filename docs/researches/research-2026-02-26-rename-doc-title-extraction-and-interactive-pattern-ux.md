@@ -318,6 +318,7 @@ Recommended analyzer categories (even if some share a backend):
 
 ## Related Plans
 
+- `docs/plans/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
 
