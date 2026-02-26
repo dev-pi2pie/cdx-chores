@@ -3,7 +3,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
-import { createTempFixtureDir, REPO_ROOT, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
+import { createTempFixtureDir, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
 
 describe("CLI UX flags and path output", () => {
   test("supports both -v and -V for version output", () => {

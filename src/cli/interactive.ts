@@ -314,7 +314,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       recursive,
       maxDepth: maxDepthInput.trim() ? Number(maxDepthInput) : undefined,
       dryRun,
-      codex,
+      codexImages: codex,
     });
 
     if (!dryRun && result.changedCount > 0) {
@@ -345,7 +345,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       message: "Use Codex-assisted image title when possible?",
       default: false,
     });
-    const result = await actionRenameFile(runtime, { path, prefix, dryRun, codex });
+    const result = await actionRenameFile(runtime, { path, prefix, dryRun, codexImages: codex });
 
     if (!dryRun || !result.changed) {
       return;
