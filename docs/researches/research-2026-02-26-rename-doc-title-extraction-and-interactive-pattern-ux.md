@@ -1,6 +1,7 @@
 ---
 title: "Rename doc-title extraction and interactive pattern UX research"
 created-date: 2026-02-26
+modified-date: 2026-02-26
 status: draft
 agent: codex
 ---
@@ -181,13 +182,139 @@ Because completed job docs currently describe behavior not present in source, fo
 - docs updates for changed flag names and interactive prompts
 - test coverage for pattern/template CLI + interactive-adjacent action behavior
 
+## Interim Decisions (2026-02-26)
+
+The repository now includes these dependencies (user-added, uncommitted at time of this research update):
+
+- `mammoth` (`^1.11.0`) in `package.json`
+- `pdfjs-dist` (`^5.4.624`) in `package.json`
+
+These additions support narrowing the near-term design:
+
+- PDF extraction backend direction: prefer `pdfjs-dist` for the first Node-first PDF analyzer path.
+- DOCX extraction backend direction: start with `mammoth` for a pragmatic Word-document baseline.
+- Office-family breadth (`pptx`, `xlsx`, etc.) remains a separate expansion decision and should not block the first doc-title analyzer milestone.
+
+Important distinction (to preserve in docs/plans):
+
+- backend choice and analyzer strategy are separate decisions
+- we may use one backend across multiple formats while still keeping different title-evidence normalizers by file type/category
+
+Recommended analyzer categories (even if some share a backend):
+
+- `document-text` (md/txt/json/yaml/toml/html)
+- `document-word` (docx/odt/rtf narrative docs)
+- `presentation` (pptx/odp)
+- `spreadsheet` (xlsx/ods)
+- `pdf-document`
+
+## What To Do Next (Docs + Design)
+
+1. Keep this research as the active design notes for Phase 4 follow-up (do not overload the completed Phase 1-3 rename-scope plan).
+2. Draft a new plan for a `document-text` analyzer milestone (`.md`/`.txt`/structured text first) and include the interactive pattern UX restoration work only if scope remains manageable.
+3. Draft a separate extractor-spike plan/job for `docx` + `pdf`:
+   - `mammoth` for DOCX evidence prototype
+   - `pdfjs-dist` for PDF evidence prototype
+   - fixture-based comparison criteria (title/author/headings/tocCandidates/leadText extraction quality, latency, fallback reasons)
+4. Add a short docs note (in the future plan/job) that `officeparser` is a candidate for Office-family expansion, but not required for the first DOCX/PDF milestone.
+
 ## Open Questions
 
-1. Should the initial doc analyzer use one shared text-extraction path for all text-like files, or format-specific extractors from day one?
-2. How much extracted content should be sent to Codex per file (line count / byte cap) to balance quality vs latency/cost?
-3. Should doc analyzer suggestions include a confidence or evidence-based fallback reason in the rename plan CSV?
-4. Was prior `--pattern` support intentionally removed, or is this a regression that should be restored as part of the same milestone?
-5. Should interactive mode remember the last-used pattern within a single session (or via config) when renaming multiple files/batches?
+1. Should we use a hybrid extractor design (shared evidence schema + per-filetype extractors)?
+   Current recommendation: yes.
+   A shared `DocumentTitleEvidence` shape can keep Codex prompting stable, while each extractor fills the fields it can (for example `title`, `author`, `headings`, `tocCandidates`, `leadText`, `metadata`, `warnings`).
+   This avoids forcing every file type into the same low-fidelity "plain text only" path.
+
+2. What should be the first DOCX backend for v1 of doc-title extraction?
+   Interim direction: `mammoth` (now added to deps) for the first prototype.
+   Remaining question: is `mammoth` sufficient for title-evidence quality once we add metadata/author and heading extraction requirements, or do we need a second DOCX metadata path?
+
+   Candidate A (Node-first, low dependency): `mammoth`
+   - Good for semantic heading extraction because it maps heading styles to HTML.
+   - Also provides raw text extraction (`extractRawText`), but raw text loses structure.
+   - Gap: metadata/author extraction is not the main focus of the library.
+
+   Candidate B (Node-first, broader output): `officeparser`
+   - Recent README claims format-agnostic AST output with metadata and content nodes (including headings/tables), and CLI support.
+   - Could reduce custom extractor work if output is stable enough for our rename use case.
+   - Tradeoff: larger surface area, less control over normalization, and a third-party AST contract we would need to pin/test carefully.
+
+   Candidate C (external CLI, high structure potential): `pandoc` (`docx` -> text/markdown/json)
+   - Strong converter and broadly available in developer workflows.
+   - Useful for extracting structured headings/text from DOCX when installed.
+   - Tradeoff: external dependency and process startup cost; should be optional fallback, not required for v1.
+
+   Candidate D (custom OOXML parsing)
+   - Parse DOCX zip/XML directly for targeted fields:
+     - `docProps/core.xml` (title/creator/modified)
+     - `word/document.xml` + styles (headings / lead paragraphs)
+   - Highest control and predictable output for rename evidence.
+   - Tradeoff: more implementation effort and edge-case handling.
+
+3. What should be the first PDF backend for v1 of doc-title extraction?
+   Interim direction: `pdfjs-dist` (now added to deps) for the first prototype.
+   Remaining question: how far can we get on title-evidence quality with metadata + outline + first-page text before needing optional CLI fallbacks for difficult PDFs?
+
+   Candidate A (Node-first): `pdfjs-dist` / PDF.js API
+   - Gives direct programmatic access to page text (`getTextContent`) plus document metadata (`getMetadata`) and outline/bookmarks (`getOutline`) when present.
+   - Good fit when we want a pure JS/Node path and structured signals.
+   - Tradeoff: PDF text extraction quality varies by document; some PDFs have poor/empty extractable text without OCR.
+
+   Candidate B (external CLI, pragmatic default on many systems): Poppler tools (`pdftotext` + `pdfinfo`)
+   - `pdftotext` provides plain text and optional layout/bbox modes.
+   - `pdfinfo` exposes metadata fields and can print structure/structure+text for tagged PDFs (`-struct`, `-struct-text`).
+   - Tradeoff: external dependency availability differs by OS; output parsing must be hardened.
+
+   Candidate C (external CLI/JAR): Apache Tika (`tika-app`)
+   - Single tool can extract text and metadata across many file types (including DOCX/PDF), reducing per-format integration work.
+   - Tradeoff: Java dependency, heavier runtime, larger install footprint, and slower startup.
+
+   Suggested direction:
+   - v1 `.pdf` support should prefer one backend only to limit complexity.
+   - `pdfjs-dist` is the current preferred Node-first path.
+   - Poppler/Tika can be added as opt-in fallback adapters behind capability checks later.
+
+4. Should we extract different "title evidence" by file type (not just raw text)?
+   Current recommendation: yes, with a normalized output contract.
+
+   Suggested evidence priorities by type:
+   - Markdown: frontmatter `title`/`author`, first `#` heading, first paragraph, H2 list as TOC candidates.
+   - Plain text: first non-empty line, first paragraph, filename stem fallback.
+   - JSON/YAML/TOML: common keys (`title`, `name`, `description`, `author`) + top-level key summary.
+   - HTML: `<title>`, `<h1>`, meta author tags, first meaningful paragraph.
+   - DOCX: core metadata (`title`, `creator`), heading nodes, first heading, early body paragraphs.
+   - PDF: metadata title/author, outline/bookmarks, first page text sample, page count.
+
+   Important rule:
+   - "TOC-like" should be a best-effort extracted field (`tocCandidates`), not a required field, because many files do not contain a real table of contents.
+
+5. How much extracted content should be sent to Codex per file (line count / byte cap) to balance quality vs latency/cost?
+   Proposed v1 heuristic (to test):
+   - hard byte cap on evidence JSON per file (for example 4-12 KB)
+   - keep high-signal fields first (metadata/title/headings/lead text)
+   - truncate long body text before truncating headings/metadata
+   - record truncation in a `warnings` field so fallback reasoning is auditable
+
+6. Should doc analyzer suggestions include a confidence or evidence-based fallback reason in the rename plan CSV?
+   Recommended minimum for v1:
+   - keep reason codes first (`doc_no_text`, `doc_no_title_signal`, `doc_extractor_unavailable`, `doc_extract_error`, `doc_truncated`)
+   - defer numeric confidence until we have stable evaluator heuristics
+
+7. How should we phase Office-family expansion (`officeparser`) relative to `mammoth` + `pdfjs-dist`?
+   Suggested sequencing:
+   - ship `document-text` and first `docx`/`pdf` prototypes first
+   - evaluate `officeparser` in a separate spike for `pptx`/`xlsx`/OpenDocument breadth
+   - only adopt it if its extracted structure maps cleanly into our title-evidence schema
+
+8. Was prior `--pattern` support intentionally removed, or is this a regression that should be restored as part of the same milestone?
+   This remains open and affects scope planning:
+   - if regression: restore first, then improve interactive pattern UX
+   - if intentional removal: write a short decision note before reintroducing templates
+
+9. Should interactive mode remember the last-used pattern within a single session (or via config) when renaming multiple files/batches?
+   Suggested default:
+   - session-local memory only (low risk, no config migration)
+   - persistent config later only if multiple workflows request it
 
 ## Related Plans
 
