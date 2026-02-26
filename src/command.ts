@@ -231,6 +231,24 @@ export async function runCli(
       "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
+    .option(
+      "--codex-docs",
+      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      false,
+    )
+    .option(
+      "--codex-docs-timeout-ms <ms>",
+      "Codex document-title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option("--codex-docs-retries <count>", "Retry failed Codex document-title requests", (value) =>
+      Number(value),
+    )
+    .option(
+      "--codex-docs-batch-size <count>",
+      "Number of documents per Codex document-title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         path: string,
@@ -241,6 +259,10 @@ export async function runCli(
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
           codexImagesBatchSize?: number;
+          codexDocs?: boolean;
+          codexDocsTimeoutMs?: number;
+          codexDocsRetries?: number;
+          codexDocsBatchSize?: number;
         },
       ) => {
         await actionRenameFile(cliRuntime, {
@@ -251,6 +273,10 @@ export async function runCli(
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,
           codexImagesBatchSize: options.codexImagesBatchSize,
+          codexDocs: options.codexDocs,
+          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+          codexDocsRetries: options.codexDocsRetries,
+          codexDocsBatchSize: options.codexDocsBatchSize,
         });
       },
     );
@@ -298,6 +324,26 @@ export async function runCli(
       "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
+    .option(
+      "--codex-docs",
+      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      false,
+    )
+    .option(
+      "--codex-docs-timeout-ms <ms>",
+      "Codex document-title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-retries <count>",
+      "Retry failed Codex document-title requests (per batch)",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-batch-size <count>",
+      "Number of documents per Codex document-title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         directory: string,
@@ -315,6 +361,10 @@ export async function runCli(
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
           codexImagesBatchSize?: number;
+          codexDocs?: boolean;
+          codexDocsTimeoutMs?: number;
+          codexDocsRetries?: number;
+          codexDocsBatchSize?: number;
         },
       ) => {
         await actionRenameBatch(cliRuntime, {
@@ -332,6 +382,10 @@ export async function runCli(
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,
           codexImagesBatchSize: options.codexImagesBatchSize,
+          codexDocs: options.codexDocs,
+          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+          codexDocsRetries: options.codexDocsRetries,
+          codexDocsBatchSize: options.codexDocsBatchSize,
         });
       },
     );
@@ -388,6 +442,26 @@ export async function runCli(
       "Number of images per Codex image-title request batch",
       (value) => Number(value),
     )
+    .option(
+      "--codex-docs",
+      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      false,
+    )
+    .option(
+      "--codex-docs-timeout-ms <ms>",
+      "Codex document-title generation timeout per request in milliseconds",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-retries <count>",
+      "Retry failed Codex document-title requests (per batch)",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-batch-size <count>",
+      "Number of documents per Codex document-title request batch",
+      (value) => Number(value),
+    )
     .action(
       async (
         directory: string,
@@ -405,6 +479,10 @@ export async function runCli(
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
           codexImagesBatchSize?: number;
+          codexDocs?: boolean;
+          codexDocsTimeoutMs?: number;
+          codexDocsRetries?: number;
+          codexDocsBatchSize?: number;
         },
       ) => {
         await actionRenameBatch(cliRuntime, {
@@ -422,6 +500,10 @@ export async function runCli(
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,
           codexImagesBatchSize: options.codexImagesBatchSize,
+          codexDocs: options.codexDocs,
+          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+          codexDocsRetries: options.codexDocsRetries,
+          codexDocsBatchSize: options.codexDocsBatchSize,
         });
       },
     );

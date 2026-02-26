@@ -2,7 +2,7 @@
 title: "Rename doc-title extraction and interactive pattern UX research"
 created-date: 2026-02-26
 modified-date: 2026-02-26
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -318,6 +318,7 @@ Recommended analyzer categories (even if some share a backend):
 
 ## Related Plans
 
+- `docs/plans/plan-2026-02-26-document-text-rename-analyzer-milestone.md`
 - `docs/plans/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

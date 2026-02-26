@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, readFile, readdir, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -306,6 +306,212 @@ describe("cli action modules: rename", () => {
       const csvText = await readFile(planCsvPath!, "utf8");
       expect(csvText).toContain("codex_fallback_error");
     } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile codex-docs mode applies a suggested title for markdown", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-codex-docs");
+      await mkdir(dirPath, { recursive: true });
+
+      const docPath = join(dirPath, "weekly notes.md");
+      await writeFile(docPath, "# Weekly Sync\n\nAgenda and action items.\n", "utf8");
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(docPath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({ path, title: "weekly sync notes" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
+      expect(stdout.text).toContain("- weekly notes.md -> doc-");
+      expect(stdout.text).toContain("weekly-sync-notes");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("weekly sync notes");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile codex-docs mode marks docx as experimental-disabled by default", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-codex-docx-disabled");
+      await mkdir(dirPath, { recursive: true });
+
+      const docPath = join(dirPath, "draft.docx");
+      await writeFile(docPath, "not-a-real-docx", "utf8");
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(docPath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
+      expect(stdout.text).toContain("DOCX semantic titles are experimental and currently disabled");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("docx_experimental_disabled");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile codex-docs mode records docx extraction error when experimental gate is enabled", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    const previousDocxGate = process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+    process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = "1";
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-codex-docx-error");
+      await mkdir(dirPath, { recursive: true });
+
+      const docPath = join(dirPath, "broken.docx");
+      await writeFile(docPath, "not-a-real-docx", "utf8");
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(docPath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
+      expect(stdout.text).not.toContain("experimental and currently disabled");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("docx_extract_error");
+    } finally {
+      if (previousDocxGate === undefined) {
+        delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+      } else {
+        process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
+      }
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameFile codex-docs mode can route a heading-rich docx fixture when experimental gate is enabled", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    const previousDocxGate = process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+    process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = "1";
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-codex-docx-heading");
+      await mkdir(dirPath, { recursive: true });
+
+      const sourceFixture = join(REPO_ROOT, "test", "fixtures", "docs", "heading-rich.docx");
+      const docPath = join(dirPath, "project-outline.docx");
+      await copyFile(sourceFixture, docPath);
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(docPath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({ path, title: "project goal outline" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
+      expect(stdout.text).not.toContain("experimental and currently disabled");
+      expect(stdout.text).toContain("project-goal-outline");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("project goal outline");
+    } finally {
+      if (previousDocxGate === undefined) {
+        delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+      } else {
+        process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
+      }
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch codex-docs mode records weak-title docx fallback reason when experimental gate is enabled", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    const previousDocxGate = process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+    process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = "1";
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-batch-codex-docx-weak");
+      await mkdir(dirPath, { recursive: true });
+
+      const docPath = join(dirPath, "weak.docx");
+      await writeFile(docPath, "not-a-real-docx-but-gated-integration-test", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: [],
+          reasons: options.documentPaths.map((path) => ({ path, reason: "docx_no_title_signal" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
+      expect(stdout.text).not.toContain("experimental and currently disabled");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("docx_no_title_signal");
+    } finally {
+      if (previousDocxGate === undefined) {
+        delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
+      } else {
+        process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
+      }
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -773,6 +979,205 @@ describe("cli action modules: rename", () => {
       expect(stdout.text).toContain("Codex note: Codex unavailable in test");
       expect(stdout.text).toContain("- a.png -> img-");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch codex-docs mode records doc-specific fallback reasons for text files", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-docs-fallback");
+      await mkdir(dirPath, { recursive: true });
+
+      const txtPath = join(dirPath, "notes.txt");
+      await writeFile(txtPath, "...\n", "utf8");
+      const fixedTime = new Date("2026-02-25T03:04:05.000Z");
+      await utimes(txtPath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: [],
+          reasons: options.documentPaths.map((path) => ({ path, reason: "doc_no_title_signal" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("doc_no_title_signal");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch codex-docs mode records pdf-specific fallback reasons", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-docs-pdf-fallback");
+      await mkdir(dirPath, { recursive: true });
+
+      const pdfPath = join(dirPath, "empty.pdf");
+      await writeFile(pdfPath, "fakepdf", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: [],
+          reasons: options.documentPaths.map((path) => ({ path, reason: "pdf_no_text" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("pdf_no_text");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch can combine codex image and codex doc analyzers in one run", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-mixed");
+      await mkdir(dirPath, { recursive: true });
+
+      const imagePath = join(dirPath, "cover.png");
+      const docPath = join(dirPath, "notes.md");
+      await writeFile(imagePath, "fakepng", "utf8");
+      await writeFile(docPath, "# Project Plan\n\nDraft.\n", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "asset",
+        dryRun: true,
+        codexImages: true,
+        codexDocs: true,
+        codexImagesTitleSuggester: async (options) => ({
+          suggestions: options.imagePaths.map((path) => ({ path, title: "cover photo" })),
+        }),
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({ path, title: "project plan" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(2);
+      expect(stdout.text).toContain("Codex image titles: 1/1 image file(s) suggested");
+      expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
+      expect(stdout.text).toContain("cover-photo");
+      expect(stdout.text).toContain("project-plan");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch codex-docs mode supports json/yaml/toml/html/xml/pdf files", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-docs-textlike");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "meta.json"), '{ "title": "Release Plan", "author": "Ada" }\n', "utf8");
+      await writeFile(join(dirPath, "guide.yaml"), 'title: "Ops Runbook"\nauthor: "Lin"\n', "utf8");
+      await writeFile(join(dirPath, "site.toml"), 'title = "Landing Page"\n', "utf8");
+      await writeFile(
+        join(dirPath, "page.html"),
+        "<html><head><title>Pricing Overview</title></head><body><h1>Pricing Overview</h1><p>Product tiers and add-ons.</p></body></html>\n",
+        "utf8",
+      );
+      await writeFile(
+        join(dirPath, "feed.xml"),
+        '<?xml version="1.0"?><doc><title>Release Feed</title><summary>Build and deploy updates.</summary></doc>\n',
+        "utf8",
+      );
+      await writeFile(join(dirPath, "sheet.pdf"), "fake-pdf-bytes", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({ path, title: "semantic doc title" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(6);
+      expect(stdout.text).toContain("Codex doc titles: 6/6 document file(s) suggested");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("meta.json");
+      expect(csvText).toContain("guide.yaml");
+      expect(csvText).toContain("site.toml");
+      expect(csvText).toContain("page.html");
+      expect(csvText).toContain("feed.xml");
+      expect(csvText).toContain("sheet.pdf");
+      expect(csvText).toContain("semantic doc title");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch codex-docs mode works with docs profile scoping", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-docs-profile");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "notes.md"), "# Release Notes\n\nSummary.\n", "utf8");
+      await writeFile(join(dirPath, "meta.json"), '{ "title": "Deploy Checklist" }\n', "utf8");
+      await writeFile(join(dirPath, "cover.png"), "fakepng", "utf8");
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        profile: "docs",
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({ path, title: "doc semantic title" })),
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(2);
+      expect(stdout.text).toContain("Codex doc titles: 2/2 document file(s) suggested");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("notes.md");
+      expect(csvText).toContain("meta.json");
+      expect(csvText).not.toContain("cover.png");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

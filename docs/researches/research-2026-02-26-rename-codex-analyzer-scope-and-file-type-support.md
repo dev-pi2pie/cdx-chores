@@ -2,7 +2,7 @@
 title: "Rename Codex analyzer scope and file-type support research"
 created-date: 2026-02-26
 modified-date: 2026-02-26
-status: draft
+status: completed
 agent: codex
 ---
 

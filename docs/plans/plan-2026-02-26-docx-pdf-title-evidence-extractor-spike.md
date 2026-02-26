@@ -1,7 +1,8 @@
 ---
 title: "DOCX/PDF title-evidence extractor spike"
 created-date: 2026-02-26
-status: draft
+modified-date: 2026-02-26
+status: completed
 agent: codex
 ---
 
@@ -170,30 +171,30 @@ This matrix is the main output of the spike.
 
 ### Phase 1: Evidence Contract Definition
 
-- [ ] Draft `DocumentTitleEvidence` fields and normalization rules in docs
-- [ ] Define field priority order for Codex prompt payload truncation
-- [ ] Draft fallback reason codes for partial/failed extraction
+- [x] Draft `DocumentTitleEvidence` fields and normalization rules in docs
+- [x] Define field priority order for Codex prompt payload truncation
+- [x] Draft fallback reason codes for partial/failed extraction
 
 ### Phase 2: DOCX Spike (`mammoth`)
 
-- [ ] Create a small DOCX extraction prototype (script or isolated module)
-- [ ] Extract title-like, heading-like, and lead-text signals
-- [ ] Verify whether author/title metadata is available directly; if not, document the gap clearly
-- [ ] Capture fixture results and edge cases
+- [x] Create a small DOCX extraction prototype (script or isolated module)
+- [x] Extract title-like, heading-like, and lead-text signals
+- [x] Verify whether author/title metadata is available directly; if not, document the gap clearly
+- [x] Capture fixture results and edge cases
 
 ### Phase 3: PDF Spike (`pdfjs-dist`)
 
-- [ ] Create a small PDF extraction prototype (script or isolated module)
-- [ ] Extract metadata, outline/bookmarks, first-page text, page count
-- [ ] Capture fixture results including weak/scanned PDF behavior
-- [ ] Document practical limits and fallback conditions
+- [x] Create a small PDF extraction prototype (script or isolated module)
+- [x] Extract metadata, outline/bookmarks, first-page text, page count
+- [x] Capture fixture results including weak/scanned PDF behavior
+- [x] Document practical limits and fallback conditions
 
 ### Phase 4: Recommendation and Follow-up Plan Inputs
 
-- [ ] Recommend ship-ready subset for the first doc analyzer milestone
-- [ ] Propose capability gating/eligibility checks (size/page-count/timeouts as needed)
-- [ ] Record open gaps requiring later backends or external tools
-- [ ] Draft follow-up implementation plan/job references
+- [x] Recommend ship-ready subset for the first doc analyzer milestone
+- [x] Propose capability gating/eligibility checks (size/page-count/timeouts as needed)
+- [x] Record open gaps requiring later backends or external tools
+- [x] Draft follow-up implementation plan/job references
 
 ## Success Criteria
 
@@ -220,11 +221,13 @@ This spike is successful if it produces:
 
 ## Related Research
 
+- `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
 - `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 
+- `docs/plans/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
