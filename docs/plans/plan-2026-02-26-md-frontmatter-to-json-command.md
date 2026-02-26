@@ -1,6 +1,7 @@
 ---
 title: "md frontmatter-to-json command"
 created-date: 2026-02-26
+modified-date: 2026-02-26
 status: draft
 agent: codex
 ---
@@ -33,11 +34,15 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 - Output:
   - default: print JSON to stdout
   - optional `--output <path>` writes JSON file
+  - optional `--data-only` emits only the parsed frontmatter object (without wrapper metadata)
 - Formatting:
-  - `--pretty` (default `true`) for human-readable JSON
+  - use `--pretty` as the common formatting flag for JSON-like output
+  - flag mode: compact JSON by default (`--pretty` opt-in)
+  - interactive mode: pretty-print prompt defaults to `true`
 - Behavior:
   - error if no frontmatter exists
   - error if frontmatter exists but parsing fails / does not produce an object
+  - initial output contract uses a wrapper object with `frontmatterType` and `data` by default
   - include trailing newline in JSON output
 
 ### Interactive Mode
@@ -46,23 +51,65 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 - Prompts:
   - input markdown file
   - output mode (`stdout` vs file) or optional output path prompt (implementation choice)
+  - output shape (`wrapper` default vs `data-only`)
   - overwrite confirmation when writing file
-  - pretty-print confirmation (if not defaulted silently)
+  - pretty-print confirmation (default `true`)
+
+## Output Shape Examples (Initial Output Contract)
+
+### Example input (YAML frontmatter)
+
+```md
+---
+title: "Release Notes"
+draft: false
+tags:
+  - cli
+  - markdown
+version: 2
+---
+
+# Changelog
+```
+
+### Default output (metadata wrapper, selected)
+
+```json
+{
+  "frontmatterType": "yaml",
+  "data": {
+    "title": "Release Notes",
+    "draft": false,
+    "tags": ["cli", "markdown"],
+    "version": 2
+  }
+}
+```
+
+### `--data-only` output (supported option)
+
+Useful for piping and compact scripting output:
+
+```json
+{"title":"Release Notes","draft":false,"tags":["cli","markdown"],"version":2}
+```
 
 ## Design Principles / Constraints
 
 - Reuse `src/markdown/parse-markdown.ts` as the parsing source of truth (no duplicate parser logic in CLI action code).
 - Preserve Node.js runtime compatibility.
 - Follow existing action-layer pattern (`src/cli/actions/*`) and shared fs/path helpers.
-- Keep the first version focused on extraction/serialization, not transformation of frontmatter values.
+- Use `--pretty` as the standard formatting flag for JSON-like CLI outputs (including this command).
+- Keep the initial version focused on extraction/serialization, not transformation of frontmatter values.
 
 ## In Scope
 
 - New action handler for `md frontmatter-to-json`
 - New `commander` subcommand wiring under `md`
 - Interactive-mode submenu option and prompt flow
-- JSON stdout/file output behavior
+- JSON stdout/file output behavior (including wrapper default and `--data-only`)
 - Validation and error handling for missing/invalid frontmatter
+- A guide/schema-style document in `docs/guides/` describing the command output contract and examples
 - Tests for action/parser integration edge cases (as practical)
 
 ## Out of Scope (Initial Version)
@@ -80,12 +127,14 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 
 #### Task Items
 
-- [ ] Define `MdFrontmatterToJsonOptions` (input, output?, pretty?, overwrite?).
+- [ ] Define `MdFrontmatterToJsonOptions` (input, output?, pretty?, overwrite?, dataOnly?).
 - [ ] Decide stdout/file-output prompt UX for interactive mode (simple + consistent with current prompts).
+- [ ] Define output-shape selection behavior (wrapper default vs `--data-only`).
 - [ ] Define error messages/codes for:
   - missing frontmatter
   - invalid/unparseable frontmatter
   - non-object parsed payload (if encountered)
+- [ ] Document the initial output contract (`{ frontmatterType, data }` default) and `--data-only` behavior.
 
 #### Phase Deliverable
 
@@ -97,7 +146,7 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 
 - [ ] Add `actionMdFrontmatterToJson(...)` in `src/cli/actions/markdown.ts` (or split file if needed).
 - [ ] Read markdown file via existing fs helpers and parse with `parseMarkdown(...)`.
-- [ ] Serialize parsed `data` to JSON with pretty/plain formatting and trailing newline.
+- [ ] Serialize either wrapper output (`{ frontmatterType, data }`) or data-only output based on option, with pretty/plain formatting and trailing newline.
 - [ ] Write to stdout or file output path via existing output helpers (safe overwrite handling).
 - [ ] Emit clear success messages for file output (and optionally concise stdout-mode status to stderr/stdout conventions).
 
@@ -110,9 +159,10 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 #### Task Items
 
 - [ ] Export the new action from `src/cli/actions/index.ts`.
-- [ ] Add `md frontmatter-to-json` in `src/command.ts` with options (`--input`, `--output`, `--overwrite`, `--pretty`).
+- [ ] Add `md frontmatter-to-json` in `src/command.ts` with options (`--input`, `--output`, `--overwrite`, `--pretty`, `--data-only`).
 - [ ] Add interactive menu action key + submenu entry in `src/cli/interactive.ts`.
 - [ ] Implement interactive prompt flow for the new subcommand.
+- [ ] Keep interactive defaults aligned with decision: stdout default + wrapper default + pretty prompt default `true`.
 
 #### Phase Deliverable
 
@@ -129,11 +179,16 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
   - missing frontmatter
   - malformed frontmatter
 - [ ] Add CLI usage examples to `README.md` (or relevant docs).
+- [ ] Add a guide/schema-style doc in `docs/guides/` for `md frontmatter-to-json` output contract:
+  - default wrapper shape (`frontmatterType` + `data`)
+  - `--data-only` shape
+  - `--pretty` formatting examples
+  - error cases / expectations (missing or invalid frontmatter)
 - [ ] Add a job record documenting implementation and manual checks.
 
 #### Phase Deliverable
 
-- [ ] `md frontmatter-to-json` is documented and verified across supported frontmatter types.
+- [ ] `md frontmatter-to-json` is documented (including `docs/guides/` output-contract guide) and verified across supported frontmatter types.
 
 ## Verification Plan
 
@@ -142,6 +197,8 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 - [ ] YAML-frontmatter markdown -> stdout JSON output
 - [ ] TOML-frontmatter markdown -> stdout JSON output
 - [ ] JSON-frontmatter markdown -> stdout JSON output
+- [ ] `--data-only` emits only the parsed frontmatter object
+- [ ] `--pretty` formats both wrapper and `--data-only` outputs consistently
 - [ ] `--output` writes JSON file with overwrite protection
 - [ ] Interactive `md` submenu shows `frontmatter-to-json`
 - [ ] Interactive flow routes to the new command and prompts correctly
@@ -152,11 +209,12 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 - [ ] `md to-docx` behavior remains unchanged
 - [ ] Existing `src/markdown/*` parsing behavior is reused, not forked
 
-## Open Questions (To Resolve During Implementation)
+## Reviewed Decisions (2026-02-26)
 
-1. Should stdout be the default output mode, or should the command default to `<input>.frontmatter.json` for consistency with file-conversion commands?
-2. Should the output include metadata (for example, `frontmatterType`) in a wrapper object, or emit only the parsed frontmatter object in v1?
-3. Should `--pretty` default to `true` for readability, or `false` for script-friendly compact output (with `--pretty` opt-in)?
+1. Default output mode is stdout; `--output <path>` is optional.
+2. The initial output contract emits a wrapper object with `frontmatterType` and `data` by default.
+3. `--data-only` is supported and emits only the parsed frontmatter object for pipeline-heavy usage.
+4. `--pretty` is the common formatting flag for JSON-like output; flag mode defaults to compact JSON, and interactive mode pretty-print prompt defaults to `true`.
 
 ## Related Research
 
@@ -165,4 +223,3 @@ Add a new `md frontmatter-to-json` command that parses Markdown frontmatter (YAM
 ## Related Plans
 
 - `docs/plans/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
-
