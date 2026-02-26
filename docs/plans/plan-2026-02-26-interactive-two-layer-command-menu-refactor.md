@@ -2,7 +2,7 @@
 title: "Interactive two-layer command menu refactor"
 created-date: 2026-02-26
 modified-date: 2026-02-26
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -90,73 +90,73 @@ It also creates a cleaner foundation for upcoming command growth within existing
 
 #### Task Items
 
-- [ ] Add a typed config structure for interactive menu groups and subcommands (name, value, description).
-- [ ] Represent top-level groups (`doctor`, `data`, `md`, `rename`, `video`, `cancel`) in one place.
-- [ ] Map subcommand choices to existing flattened action values (for example, `data` + `json-to-csv` -> `data:json-to-csv`).
+- [x] Add a typed config structure for interactive menu groups and subcommands (name, value, description).
+- [x] Represent top-level groups (`doctor`, `data`, `md`, `rename`, `video`, `cancel`) in one place.
+- [x] Map subcommand choices to existing flattened action values (for example, `data` + `json-to-csv` -> `data:json-to-csv`).
 
 #### Phase Deliverable
 
-- [ ] Interactive menu choices are data-driven and grouped by command domain.
+- [x] Interactive menu choices are data-driven and grouped by command domain.
 
 ### Phase 2: Implement Two-Layer Selection Flow
 
 #### Task Items
 
-- [ ] Replace the current single flat command `select(...)` with layer-1 group selection.
-- [ ] Add a layer-2 subcommand `select(...)` for groups that have subcommands.
-- [ ] Keep direct-run behavior for `doctor` and direct-exit behavior for `cancel`.
-- [ ] Resolve final selection into the same internal action key format used by the current dispatch code.
+- [x] Replace the current single flat command `select(...)` with layer-1 group selection.
+- [x] Add a layer-2 subcommand `select(...)` for groups that have subcommands.
+- [x] Keep direct-run behavior for `doctor` and direct-exit behavior for `cancel`.
+- [x] Resolve final selection into the same internal action key format used by the current dispatch code.
 
 #### Phase Deliverable
 
-- [ ] Interactive mode routes from group menu -> subcommand menu -> existing action flow.
+- [x] Interactive mode routes from group menu -> subcommand menu -> existing action flow.
 
 ### Phase 3: Polish UX and Reduce Refactor Risk
 
 #### Task Items
 
-- [ ] Add clear submenu messages (for example, `Choose a data command`).
-- [ ] Add both `Back` and `Cancel` behavior for second-layer menus.
-- [ ] Preserve or improve choice descriptions for discoverability (especially for `doctor` and common categories).
-- [ ] Keep prompt wording stable after action selection to avoid accidental UX regressions.
+- [x] Add clear submenu messages (for example, `Choose a data command`).
+- [x] Add both `Back` and `Cancel` behavior for second-layer menus.
+- [x] Preserve or improve choice descriptions for discoverability (especially for `doctor` and common categories).
+- [x] Keep prompt wording stable after action selection to avoid accidental UX regressions.
 
 #### Phase Deliverable
 
-- [ ] Two-layer menus are predictable and easy to navigate without changing action prompt behavior.
+- [x] Two-layer menus are predictable and easy to navigate without changing action prompt behavior.
 
 ### Phase 4: Manual Verification and Docs Notes
 
 #### Task Items
 
-- [ ] Verify first-layer menu shows only top-level entries.
-- [ ] Verify each submenu maps to the correct existing action flow.
-- [ ] Verify `doctor` still runs correctly (including JSON prompt).
-- [ ] Verify `cancel` exits cleanly.
-- [ ] Verify `rename batch/file/apply` post-action follow-up prompts still behave correctly.
-- [ ] Record any menu-navigation caveats in a job record.
+- [x] Verify first-layer menu shows only top-level entries.
+- [x] Verify each submenu maps to the correct existing action flow.
+- [x] Verify `doctor` still runs correctly (including JSON prompt).
+- [x] Verify `cancel` exits cleanly.
+- [x] Verify `rename batch/file/apply` post-action follow-up prompts still behave correctly.
+- [x] Record any menu-navigation caveats in a job record.
 
 #### Phase Deliverable
 
-- [ ] Refactor is validated and documented with no action-level behavior changes.
+- [x] Refactor is validated and documented with no action-level behavior changes.
 
 ## Verification Plan
 
 ### Manual Checks
 
-- [ ] Run `cdx-chores` with no args and confirm first layer is: `doctor`, `data`, `md`, `rename`, `video`, `cancel`.
-- [ ] `data` submenu shows `json-to-csv` and `csv-to-json`, and each routes to the correct prompts.
-- [ ] `md` submenu shows `to-docx` and routes correctly.
-- [ ] `rename` submenu shows `file`, `batch`, `apply`, and each route matches current behavior.
-- [ ] `video` submenu shows `convert`, `resize`, `gif`, and each route matches current behavior.
-- [ ] `doctor` still prompts for JSON output and runs the existing action.
-- [ ] `cancel` exits without additional prompts.
-- [ ] Second-layer `Back` returns to the first-layer menu without exiting.
-- [ ] Second-layer `Cancel` exits interactive mode cleanly.
+- [x] Run `cdx-chores` with no args and confirm first layer is: `doctor`, `data`, `md`, `rename`, `video`, `cancel`.
+- [x] `data` submenu shows `json-to-csv` and `csv-to-json`, and each routes to the correct prompts.
+- [x] `md` submenu shows `to-docx` and routes correctly.
+- [x] `rename` submenu shows `file`, `batch`, `apply`, and each route matches current behavior.
+- [x] `video` submenu shows `convert`, `resize`, `gif`, and each route matches current behavior.
+- [x] `doctor` still prompts for JSON output and runs the existing action.
+- [x] `cancel` exits without additional prompts.
+- [x] Second-layer `Back` returns to the first-layer menu without exiting.
+- [x] Second-layer `Cancel` exits interactive mode cleanly.
 
 ### Regression Focus
 
-- [ ] No prompt flow changes after action selection (path prompts, overwrite confirms, dry-run/apply follow-up).
-- [ ] No broken internal action keys from submenu mapping.
+- [x] No prompt flow changes after action selection (path prompts, overwrite confirms, dry-run/apply follow-up).
+- [x] No broken internal action keys from submenu mapping.
 
 ## Reviewed Decisions (2026-02-26)
 
@@ -171,4 +171,4 @@ It also creates a cleaner foundation for upcoming command growth within existing
 
 ## Related Plans
 
-- Follow-up plan needed: `md frontmatter-to-json` command (parsing-focused, likely reusing `src/markdown/*`)
+- `docs/plans/plan-2026-02-26-md-frontmatter-to-json-command.md`

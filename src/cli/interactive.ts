@@ -4,6 +4,7 @@ import {
   actionCsvToJson,
   actionDoctor,
   actionJsonToCsv,
+  actionMdFrontmatterToJson,
   actionMdToDocx,
   actionRenameApply,
   actionRenameBatch,
@@ -25,6 +26,7 @@ type InteractiveActionKey =
   | "data:json-to-csv"
   | "data:csv-to-json"
   | "md:to-docx"
+  | "md:frontmatter-to-json"
   | "rename:file"
   | "rename:batch"
   | "rename:apply"
@@ -66,7 +68,10 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   },
   md: {
     message: "Choose a markdown command",
-    choices: [{ name: "to-docx", value: "md:to-docx" }],
+    choices: [
+      { name: "to-docx", value: "md:to-docx" },
+      { name: "frontmatter-to-json", value: "md:frontmatter-to-json" },
+    ],
   },
   rename: {
     message: "Choose a rename command",
@@ -204,6 +209,60 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       input: inputPath,
       output: outputPath,
       overwrite,
+    });
+    return;
+  }
+
+  if (action === "md:frontmatter-to-json") {
+    const inputPath = await promptRequiredPathWithConfig("Input Markdown file", {
+      kind: "file",
+      ...pathPromptContext,
+    });
+    const outputMode = await select<"stdout" | "file">({
+      message: "JSON output destination",
+      choices: [
+        { name: "Print to stdout (default)", value: "stdout" },
+        { name: "Write to file", value: "file" },
+      ],
+    });
+    const outputShape = await select<"wrapper" | "data-only">({
+      message: "JSON output shape",
+      choices: [
+        {
+          name: "Wrapper (default)",
+          value: "wrapper",
+          description: "{ frontmatterType, data }",
+        },
+        {
+          name: "Data only",
+          value: "data-only",
+          description: "Only the parsed frontmatter object",
+        },
+      ],
+    });
+    const pretty = await confirm({ message: "Pretty-print JSON?", default: true });
+
+    let outputPath: string | undefined;
+    let overwrite = false;
+    if (outputMode === "file") {
+      const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".frontmatter.json");
+      outputPath = await promptOptionalOutputPathChoice({
+        message: "Output JSON file",
+        defaultHint: outputHint,
+        kind: "file",
+        ...pathPromptContext,
+        customMessage: "Custom JSON output path",
+      });
+      overwrite = await confirm({ message: "Overwrite if exists?", default: false });
+    }
+
+    await actionMdFrontmatterToJson(runtime, {
+      input: inputPath,
+      toStdout: outputMode === "stdout",
+      output: outputPath,
+      overwrite,
+      pretty,
+      dataOnly: outputShape === "data-only",
     });
     return;
   }

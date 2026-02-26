@@ -14,8 +14,10 @@ describe("CLI UX flags and path output", () => {
     expect(upper.exitCode).toBe(0);
     expect(lower.stderr).toBe("");
     expect(upper.stderr).toBe("");
-    expect(lower.stdout.trim()).toBe(EMBEDDED_PACKAGE_VERSION);
-    expect(upper.stdout.trim()).toBe(EMBEDDED_PACKAGE_VERSION);
+    expect(lower.stdout).toContain("cdx-chores");
+    expect(upper.stdout).toContain("cdx-chores");
+    expect(lower.stdout).toContain(`ver.${EMBEDDED_PACKAGE_VERSION}`);
+    expect(upper.stdout).toContain(`ver.${EMBEDDED_PACKAGE_VERSION}`);
   });
 
   test("prints relative output paths by default", async () => {

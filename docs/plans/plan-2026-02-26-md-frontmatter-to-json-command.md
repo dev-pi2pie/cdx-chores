@@ -2,7 +2,7 @@
 title: "md frontmatter-to-json command"
 created-date: 2026-02-26
 modified-date: 2026-02-26
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -127,87 +127,87 @@ Useful for piping and compact scripting output:
 
 #### Task Items
 
-- [ ] Define `MdFrontmatterToJsonOptions` (input, output?, pretty?, overwrite?, dataOnly?).
-- [ ] Decide stdout/file-output prompt UX for interactive mode (simple + consistent with current prompts).
-- [ ] Define output-shape selection behavior (wrapper default vs `--data-only`).
-- [ ] Define error messages/codes for:
+- [x] Define `MdFrontmatterToJsonOptions` (input, output?, pretty?, overwrite?, dataOnly?).
+- [x] Decide stdout/file-output prompt UX for interactive mode (simple + consistent with current prompts).
+- [x] Define output-shape selection behavior (wrapper default vs `--data-only`).
+- [x] Define error messages/codes for:
   - missing frontmatter
   - invalid/unparseable frontmatter
   - non-object parsed payload (if encountered)
-- [ ] Document the initial output contract (`{ frontmatterType, data }` default) and `--data-only` behavior.
+- [x] Document the initial output contract (`{ frontmatterType, data }` default) and `--data-only` behavior.
 
 #### Phase Deliverable
 
-- [ ] Stable action contract and user-visible behavior for `md frontmatter-to-json`.
+- [x] Stable action contract and user-visible behavior for `md frontmatter-to-json`.
 
 ### Phase 2: Implement Action Handler
 
 #### Task Items
 
-- [ ] Add `actionMdFrontmatterToJson(...)` in `src/cli/actions/markdown.ts` (or split file if needed).
-- [ ] Read markdown file via existing fs helpers and parse with `parseMarkdown(...)`.
-- [ ] Serialize either wrapper output (`{ frontmatterType, data }`) or data-only output based on option, with pretty/plain formatting and trailing newline.
-- [ ] Write to stdout or file output path via existing output helpers (safe overwrite handling).
-- [ ] Emit clear success messages for file output (and optionally concise stdout-mode status to stderr/stdout conventions).
+- [x] Add `actionMdFrontmatterToJson(...)` in `src/cli/actions/markdown.ts` (or split file if needed).
+- [x] Read markdown file via existing fs helpers and parse with `parseMarkdown(...)`.
+- [x] Serialize either wrapper output (`{ frontmatterType, data }`) or data-only output based on option, with pretty/plain formatting and trailing newline.
+- [x] Write to stdout or file output path via existing output helpers (safe overwrite handling).
+- [x] Emit clear success messages for file output (and optionally concise stdout-mode status to stderr/stdout conventions).
 
 #### Phase Deliverable
 
-- [ ] Working action-layer implementation using existing markdown parser utilities.
+- [x] Working action-layer implementation using existing markdown parser utilities.
 
 ### Phase 3: Wire CLI + Interactive Mode
 
 #### Task Items
 
-- [ ] Export the new action from `src/cli/actions/index.ts`.
-- [ ] Add `md frontmatter-to-json` in `src/command.ts` with options (`--input`, `--output`, `--overwrite`, `--pretty`, `--data-only`).
-- [ ] Add interactive menu action key + submenu entry in `src/cli/interactive.ts`.
-- [ ] Implement interactive prompt flow for the new subcommand.
-- [ ] Keep interactive defaults aligned with decision: stdout default + wrapper default + pretty prompt default `true`.
+- [x] Export the new action from `src/cli/actions/index.ts`.
+- [x] Add `md frontmatter-to-json` in `src/command.ts` with options (`--input`, `--output`, `--overwrite`, `--pretty`, `--data-only`).
+- [x] Add interactive menu action key + submenu entry in `src/cli/interactive.ts`.
+- [x] Implement interactive prompt flow for the new subcommand.
+- [x] Keep interactive defaults aligned with decision: stdout default + wrapper default + pretty prompt default `true`.
 
 #### Phase Deliverable
 
-- [ ] Command is available in both flag mode and interactive mode.
+- [x] Command is available in both flag mode and interactive mode.
 
 ### Phase 4: Tests, Docs, and Verification
 
 #### Task Items
 
-- [ ] Add/extend tests for parser/action integration:
+- [x] Add/extend tests for parser/action integration:
   - YAML frontmatter
   - TOML frontmatter
   - JSON frontmatter
   - missing frontmatter
   - malformed frontmatter
-- [ ] Add CLI usage examples to `README.md` (or relevant docs).
-- [ ] Add a guide/schema-style doc in `docs/guides/` for `md frontmatter-to-json` output contract:
+- [x] Add CLI usage examples to `README.md` (or relevant docs).
+- [x] Add a guide/schema-style doc in `docs/guides/` for `md frontmatter-to-json` output contract:
   - default wrapper shape (`frontmatterType` + `data`)
   - `--data-only` shape
   - `--pretty` formatting examples
   - error cases / expectations (missing or invalid frontmatter)
-- [ ] Add a job record documenting implementation and manual checks.
+- [x] Add a job record documenting implementation and manual checks.
 
 #### Phase Deliverable
 
-- [ ] `md frontmatter-to-json` is documented (including `docs/guides/` output-contract guide) and verified across supported frontmatter types.
+- [x] `md frontmatter-to-json` is documented (including `docs/guides/` output-contract guide) and verified across supported frontmatter types.
 
 ## Verification Plan
 
 ### Manual Checks
 
-- [ ] YAML-frontmatter markdown -> stdout JSON output
-- [ ] TOML-frontmatter markdown -> stdout JSON output
-- [ ] JSON-frontmatter markdown -> stdout JSON output
-- [ ] `--data-only` emits only the parsed frontmatter object
-- [ ] `--pretty` formats both wrapper and `--data-only` outputs consistently
-- [ ] `--output` writes JSON file with overwrite protection
-- [ ] Interactive `md` submenu shows `frontmatter-to-json`
-- [ ] Interactive flow routes to the new command and prompts correctly
-- [ ] Missing frontmatter returns a clear, actionable error
+- [x] YAML-frontmatter markdown -> stdout JSON output
+- [x] TOML-frontmatter markdown -> stdout JSON output
+- [x] JSON-frontmatter markdown -> stdout JSON output
+- [x] `--data-only` emits only the parsed frontmatter object
+- [x] `--pretty` formats both wrapper and `--data-only` outputs consistently
+- [x] `--output` writes JSON file with overwrite protection
+- [x] Interactive `md` submenu shows `frontmatter-to-json`
+- [x] Interactive flow routes to the new command and prompts correctly
+- [x] Missing frontmatter returns a clear, actionable error
 
 ### Regression Focus
 
-- [ ] `md to-docx` behavior remains unchanged
-- [ ] Existing `src/markdown/*` parsing behavior is reused, not forked
+- [x] `md to-docx` behavior remains unchanged
+- [x] Existing `src/markdown/*` parsing behavior is reused, not forked
 
 ## Reviewed Decisions (2026-02-26)
 
