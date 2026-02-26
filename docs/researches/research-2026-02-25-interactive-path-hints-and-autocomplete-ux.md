@@ -1,8 +1,8 @@
 ---
 title: "Interactive path hints and path autocomplete UX research"
 created-date: 2026-02-25
-modified-date: 2026-02-25
-status: draft
+modified-date: 2026-02-26
+status: completed
 agent: codex
 ---
 
