@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
@@ -92,5 +92,33 @@ describe("CLI UX flags and path output", () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.");
+  });
+
+  test("rename batch honors embedded serial start when no CLI override is provided", async () => {
+    const fixtureDir = await createTempFixtureDir("cli-ux");
+    try {
+      const dirPath = join(fixtureDir, "serial-pattern-start");
+      await mkdir(dirPath, { recursive: true });
+      await writeFile(join(dirPath, "new-hello.txt"), "hello\n", "utf8");
+      await writeFile(join(dirPath, "new-hi.txt"), "hi\n", "utf8");
+      await writeFile(join(dirPath, "new-hoho.txt"), "hoho\n", "utf8");
+
+      const result = runCli([
+        "rename",
+        "batch",
+        toRepoRelativePath(dirPath),
+        "--pattern",
+        "{stem}-{serial_start_3}",
+        "--dry-run",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("new-hello.txt -> new-hello-3.txt");
+      expect(result.stdout).toContain("new-hi.txt -> new-hi-4.txt");
+      expect(result.stdout).toContain("new-hoho.txt -> new-hoho-5.txt");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
   });
 });

@@ -99,15 +99,13 @@ function applyRenameTemplateOptions(command: Command): void {
     )
     .option(
       "--serial-order <value>",
-      `Serial ordering mode (${RENAME_SERIAL_ORDER_VALUES.join(", ")}). mtime = modified time.`,
+      `Serial ordering mode override (${RENAME_SERIAL_ORDER_VALUES.join(", ")}). mtime = modified time. Default when unspecified: ${DEFAULT_RENAME_SERIAL_ORDER}.`,
       parseSerialOrderOption,
-      DEFAULT_RENAME_SERIAL_ORDER,
     )
     .option(
       "--serial-start <value>",
-      "Serial start value (non-negative integer)",
+      `Serial start value override (non-negative integer). Default when unspecified: ${DEFAULT_RENAME_SERIAL_START}.`,
       (value) => parseNonNegativeIntegerOption(value, "--serial-start"),
-      DEFAULT_RENAME_SERIAL_START,
     )
     .option(
       "--serial-width <value>",
@@ -116,9 +114,8 @@ function applyRenameTemplateOptions(command: Command): void {
     )
     .option(
       "--serial-scope <value>",
-      `Serial scope mode (${RENAME_SERIAL_SCOPE_VALUES.join(", ")})`,
+      `Serial scope mode override (${RENAME_SERIAL_SCOPE_VALUES.join(", ")}). Default when unspecified: global.`,
       parseSerialScopeOption,
-      "global",
     );
 }
 
