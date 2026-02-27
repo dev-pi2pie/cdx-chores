@@ -12,6 +12,11 @@ import {
 import { slugifyName } from "../../utils/slug";
 import { CliError } from "../errors";
 import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
+import {
+  resolveAutoCodexFlagsForFilePath,
+  resolveAutoCodexFlagsForPaths,
+  resolveCodexFlagsFromCliOptions,
+} from "../rename-interactive-router";
 import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
@@ -43,6 +48,7 @@ export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
   pattern?: string;
+  codex?: boolean;
   serialOrder?: RenameSerialOrder;
   serialStart?: number;
   serialWidth?: number;
@@ -71,6 +77,7 @@ export interface RenameFileOptions {
   path: string;
   prefix?: string;
   pattern?: string;
+  codex?: boolean;
   serialOrder?: RenameSerialOrder;
   serialStart?: number;
   serialWidth?: number;
@@ -632,6 +639,14 @@ export async function actionRenameBatch(
   });
   const directoryPath = initial.directoryPath;
   const skipped = initial.skipped;
+  const effectiveCodexFlags = resolveCodexFlagsFromCliOptions({
+    cli: {
+      codex: options.codex,
+      codexImages: options.codexImages,
+      codexDocs: options.codexDocs,
+    },
+    fallbackAuto: resolveAutoCodexFlagsForPaths(initial.plans.map((plan) => plan.fromPath)),
+  });
 
   let titleOverrides: Map<string, string> | undefined;
   let codexImageCount = 0;
@@ -648,7 +663,7 @@ export async function actionRenameBatch(
   let codexDocTitlesByPath: Map<string, string> | undefined;
   const rowReasonBySourcePath = new Map<string, string>();
 
-  if (options.codexImages ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     const codexAnalyzer = createCodexStaticImageTitleAnalyzer({
       titleSuggester: options.codexImagesTitleSuggester,
     });
@@ -671,7 +686,7 @@ export async function actionRenameBatch(
     }
   }
 
-  if (options.codexDocs ?? false) {
+  if (effectiveCodexFlags.codexDocs) {
     const codexDocAnalyzer = createCodexDocumentTextTitleAnalyzer({
       titleSuggester: options.codexDocsTitleSuggester,
     });
@@ -723,7 +738,7 @@ export async function actionRenameBatch(
   if (skipped.length > 0) {
     printLine(runtime.stdout, `Entries skipped: ${skipped.length}`);
   }
-  if (options.codexImages ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     printLine(
       runtime.stdout,
       `${codexImageSummaryLabel}: ${codexImageSuggestedCount}/${codexImageCount} image file(s) suggested${codexImageErrorMessage ? " (fallback used for others)" : ""}`,
@@ -743,7 +758,7 @@ export async function actionRenameBatch(
       printLine(runtime.stdout, `Codex note: ${codexImageErrorMessage}`);
     }
   }
-  if (options.codexDocs ?? false) {
+  if (effectiveCodexFlags.codexDocs) {
     printLine(
       runtime.stdout,
       `${codexDocSummaryLabel}: ${codexDocSuggestedCount}/${codexDocCount} document file(s) suggested${codexDocErrorMessage ? " (fallback used for others)" : ""}`,
@@ -762,6 +777,12 @@ export async function actionRenameBatch(
     if (codexDocErrorMessage && codexDocCount > 0) {
       printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
     }
+  }
+  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      "Codex note: no supported Codex analyzer inputs are in scope; deterministic rename is used.",
+    );
   }
   printLine(runtime.stdout);
 
@@ -820,6 +841,14 @@ export async function actionRenameFile(
     serialScope: options.serialScope,
     now: runtime.now(),
   });
+  const effectiveCodexFlags = resolveCodexFlagsFromCliOptions({
+    cli: {
+      codex: options.codex,
+      codexImages: options.codexImages,
+      codexDocs: options.codexDocs,
+    },
+    fallbackAuto: resolveAutoCodexFlagsForFilePath(initial.plan.fromPath),
+  });
   const directoryPath = initial.directoryPath;
   let plan = initial.plan;
   let codexImageCount = 0;
@@ -836,7 +865,7 @@ export async function actionRenameFile(
   let codexDocSummaryLabel = "Codex doc titles";
   const rowReasonBySourcePath = new Map<string, string>();
 
-  if (options.codexImages ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     const codexAnalyzer = createCodexStaticImageTitleAnalyzer({
       titleSuggester: options.codexImagesTitleSuggester,
     });
@@ -856,7 +885,7 @@ export async function actionRenameFile(
     }
   }
 
-  if (options.codexDocs ?? false) {
+  if (effectiveCodexFlags.codexDocs) {
     const codexDocAnalyzer = createCodexDocumentTextTitleAnalyzer({
       titleSuggester: options.codexDocsTitleSuggester,
     });
@@ -897,7 +926,7 @@ export async function actionRenameFile(
 
   printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `File: ${displayPath(runtime, plan.fromPath)}`);
-  if (options.codexImages ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     printLine(
       runtime.stdout,
       `${codexImageSummaryLabel}: ${codexImageSuggestedCount}/${codexImageCount} image file(s) suggested${codexImageErrorMessage ? " (fallback used for others)" : ""}`,
@@ -917,7 +946,7 @@ export async function actionRenameFile(
       printLine(runtime.stdout, `Codex note: ${codexImageErrorMessage}`);
     }
   }
-  if (options.codexDocs ?? false) {
+  if (effectiveCodexFlags.codexDocs) {
     printLine(
       runtime.stdout,
       `${codexDocSummaryLabel}: ${codexDocSuggestedCount}/${codexDocCount} document file(s) suggested${codexDocErrorMessage ? " (fallback used for others)" : ""}`,
@@ -941,6 +970,12 @@ export async function actionRenameFile(
     if (codexDocErrorMessage && codexDocCount > 0) {
       printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
     }
+  }
+  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      "Codex note: this file is not a supported Codex analyzer input; deterministic rename is used.",
+    );
   }
   printLine(runtime.stdout);
   printLine(runtime.stdout, formatRenamePreviewLine(plan));

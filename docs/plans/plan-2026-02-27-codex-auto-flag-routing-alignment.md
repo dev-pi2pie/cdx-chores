@@ -1,7 +1,8 @@
 ---
 title: "Codex auto flag routing alignment"
 created-date: 2026-02-27
-status: draft
+modified-date: 2026-02-27
+status: completed
 agent: codex
 ---
 
@@ -39,10 +40,10 @@ This draft assumes the following implementation direction:
 
 ### Phase 1: CLI Contract Definition
 
-- [ ] Add `--codex` to `rename file`, `rename batch`, and `batch-rename`
-- [ ] Define help text for `--codex` as auto-routing by file type
-- [ ] Keep `--codex-images` and `--codex-docs` available as explicit overrides
-- [ ] Confirm precedence rule:
+- [x] Add `--codex` to `rename file`, `rename batch`, and `batch-rename`
+- [x] Define help text for `--codex` as auto-routing by file type
+- [x] Keep `--codex-images` and `--codex-docs` available as explicit overrides
+- [x] Confirm precedence rule:
   - `--codex` alone => auto
   - `--codex --codex-images` => images only
   - `--codex --codex-docs` => docs only
@@ -51,42 +52,42 @@ This draft assumes the following implementation direction:
 
 ### Phase 2: Action Wiring and Routing Behavior
 
-- [ ] Normalize parsed CLI flags into one internal routing decision before rename planning
-- [ ] Reuse existing extension-capability routing helpers where possible
-- [ ] For batch rename, split in-scope files by eligible analyzer type after profile/ext/regex filtering
-- [ ] For single-file rename, resolve auto behavior from the selected file extension
-- [ ] Preserve deterministic fallback for unsupported or weak-analysis cases
-- [ ] Preserve existing mixed-run merge behavior when both analyzers are active
+- [x] Normalize parsed CLI flags into one internal routing decision before rename planning
+- [x] Reuse existing extension-capability routing helpers where possible
+- [x] For batch rename, split in-scope files by eligible analyzer type after profile/ext/regex filtering
+- [x] For single-file rename, resolve auto behavior from the selected file extension
+- [x] Preserve deterministic fallback for unsupported or weak-analysis cases
+- [x] Preserve existing mixed-run merge behavior when both analyzers are active
 
 ### Phase 3: UX and Help Surface
 
-- [ ] Update `--help` output to describe `--codex` as the default smart-routing flag
-- [ ] Keep wording clear that `--codex` does not send unsupported files to analyzers
-- [ ] Clarify that `--codex-images` / `--codex-docs` narrow analyzer scope rather than file-selection scope
-- [ ] Review interactive/CLI wording consistency so `auto` and `--codex` read as the same concept
+- [x] Update `--help` output to describe `--codex` as the default smart-routing flag
+- [x] Keep wording clear that `--codex` does not send unsupported files to analyzers
+- [x] Clarify that `--codex-images` / `--codex-docs` narrow analyzer scope rather than file-selection scope
+- [x] Review interactive/CLI wording consistency so `auto` and `--codex` read as the same concept
 
 ### Phase 4: Tests
 
-- [ ] Add CLI/help coverage for the new `--codex` flag
-- [ ] Add rename action tests for `--codex` auto behavior on image-only input
-- [ ] Add rename action tests for `--codex` auto behavior on docs-only input
-- [ ] Add rename action tests for `--codex` auto behavior on mixed docs+images input
-- [ ] Add precedence tests for combined flags (`--codex` with explicit analyzer flags)
-- [ ] Add regression coverage to ensure unsupported file types still fall back deterministically
+- [x] Add CLI/help coverage for the new `--codex` flag
+- [x] Add rename action tests for `--codex` auto behavior on image-only input
+- [x] Add rename action tests for `--codex` auto behavior on docs-only input
+- [x] Add rename action tests for `--codex` auto behavior on mixed docs+images input
+- [x] Add precedence tests for combined flags (`--codex` with explicit analyzer flags)
+- [x] Add regression coverage to ensure unsupported file types still fall back deterministically
 
 ### Phase 5: Documentation
 
-- [ ] Update `README.md` examples to prefer `--codex` for the common smart-routing path
-- [ ] Update `docs/guides/rename-common-usage.md` with `--codex` examples and flag guidance
-- [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` with the new CLI contract and precedence rules
-- [ ] Record that `--codex` is the CLI equivalent of interactive `auto`
+- [x] Update `README.md` examples to prefer `--codex` for the common smart-routing path
+- [x] Update `docs/guides/rename-common-usage.md` with `--codex` examples and flag guidance
+- [x] Update `docs/guides/rename-scope-and-codex-capability-guide.md` with the new CLI contract and precedence rules
+- [x] Record that `--codex` is the CLI equivalent of interactive `auto`
 
 ### Phase 6: Verification
 
-- [ ] Run `bunx tsc --noEmit`
-- [ ] Run focused tests for CLI UX and rename actions
-- [ ] Run `bun test`
-- [ ] Run a focused smoke check for mixed-scope auto-routing in `examples/playground/`
+- [x] Run `bunx tsc --noEmit`
+- [x] Run focused tests for CLI UX and rename actions
+- [x] Run `bun test`
+- [x] Run a focused smoke check for mixed-scope auto-routing in `examples/playground/`
 
 ## Completion Criteria
 

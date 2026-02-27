@@ -93,10 +93,10 @@ Single-file rename preview (replayable CSV snapshot):
 cdx-chores rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
 ```
 
-Codex-assisted batch rename preview (best-effort with deterministic fallback):
+Codex-assisted batch rename preview (auto-routing by eligible file type):
 
 ```bash
-cdx-chores rename batch ./images --prefix gallery --codex-images --dry-run
+cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 ```
 
 Apply an exact dry-run snapshot later:
@@ -120,6 +120,8 @@ cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}
 Serial template note:
 
 - `--prefix` is optional; omit it for no prefix.
+- `--codex` is the common smart-routing flag for CLI mode.
+- `--codex-images` and `--codex-docs` are explicit analyzer overrides.
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.

@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import {
   resolveAutoCodexFlagsForBatchProfile,
   resolveAutoCodexFlagsForFilePath,
+  resolveAutoCodexFlagsForPaths,
+  resolveCodexFlagsFromCliOptions,
   resolveCodexFlagsFromScope,
 } from "../src/cli/rename-interactive-router";
 
@@ -41,6 +43,17 @@ describe("rename interactive smart router", () => {
     });
   });
 
+  test("resolves auto flags from a mixed path list", () => {
+    expect(resolveAutoCodexFlagsForPaths(["/tmp/a.png", "/tmp/b.md"])).toEqual({
+      codexImages: true,
+      codexDocs: true,
+    });
+    expect(resolveAutoCodexFlagsForPaths(["/tmp/a.mp4"])).toEqual({
+      codexImages: false,
+      codexDocs: false,
+    });
+  });
+
   test("applies scope override rules", () => {
     const fallback = { codexImages: true, codexDocs: true };
 
@@ -69,6 +82,57 @@ describe("rename interactive smart router", () => {
     ).toEqual({
       codexImages: false,
       codexDocs: true,
+    });
+  });
+
+  test("applies CLI codex auto and explicit precedence rules", () => {
+    const fallback = { codexImages: true, codexDocs: true };
+
+    expect(
+      resolveCodexFlagsFromCliOptions({
+        cli: { codex: true },
+        fallbackAuto: fallback,
+      }),
+    ).toEqual(fallback);
+
+    expect(
+      resolveCodexFlagsFromCliOptions({
+        cli: { codex: true, codexImages: true },
+        fallbackAuto: fallback,
+      }),
+    ).toEqual({
+      codexImages: true,
+      codexDocs: false,
+    });
+
+    expect(
+      resolveCodexFlagsFromCliOptions({
+        cli: { codex: true, codexDocs: true },
+        fallbackAuto: fallback,
+      }),
+    ).toEqual({
+      codexImages: false,
+      codexDocs: true,
+    });
+
+    expect(
+      resolveCodexFlagsFromCliOptions({
+        cli: { codexImages: true, codexDocs: true },
+        fallbackAuto: fallback,
+      }),
+    ).toEqual({
+      codexImages: true,
+      codexDocs: true,
+    });
+
+    expect(
+      resolveCodexFlagsFromCliOptions({
+        cli: {},
+        fallbackAuto: fallback,
+      }),
+    ).toEqual({
+      codexImages: false,
+      codexDocs: false,
     });
   });
 });

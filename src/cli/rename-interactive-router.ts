@@ -7,6 +7,12 @@ export interface RenameInteractiveCodexFlags {
   codexDocs: boolean;
 }
 
+export interface RenameCliCodexOptions {
+  codex?: boolean;
+  codexImages?: boolean;
+  codexDocs?: boolean;
+}
+
 const SUPPORTED_IMAGE_EXTENSIONS = new Set([
   ".png",
   ".jpg",
@@ -55,6 +61,22 @@ export function resolveAutoCodexFlagsForFilePath(path: string): RenameInteractiv
   };
 }
 
+export function resolveAutoCodexFlagsForPaths(paths: string[]): RenameInteractiveCodexFlags {
+  let codexImages = false;
+  let codexDocs = false;
+
+  for (const path of paths) {
+    const flags = resolveAutoCodexFlagsForFilePath(path);
+    codexImages = codexImages || flags.codexImages;
+    codexDocs = codexDocs || flags.codexDocs;
+    if (codexImages && codexDocs) {
+      break;
+    }
+  }
+
+  return { codexImages, codexDocs };
+}
+
 export function resolveCodexFlagsFromScope(options: {
   scope: RenameInteractiveCodexScope;
   fallbackAuto: RenameInteractiveCodexFlags;
@@ -68,4 +90,29 @@ export function resolveCodexFlagsFromScope(options: {
     default:
       return options.fallbackAuto;
   }
+}
+
+export function resolveCodexFlagsFromCliOptions(options: {
+  cli: RenameCliCodexOptions;
+  fallbackAuto: RenameInteractiveCodexFlags;
+}): RenameInteractiveCodexFlags {
+  const explicitImages = options.cli.codexImages ?? false;
+  const explicitDocs = options.cli.codexDocs ?? false;
+  const hasExplicitFlags = explicitImages || explicitDocs;
+
+  if (hasExplicitFlags) {
+    return {
+      codexImages: explicitImages,
+      codexDocs: explicitDocs,
+    };
+  }
+
+  if (options.cli.codex ?? false) {
+    return options.fallbackAuto;
+  }
+
+  return {
+    codexImages: false,
+    codexDocs: false,
+  };
 }

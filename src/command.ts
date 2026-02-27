@@ -287,8 +287,13 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix (optional)")
     .option("--dry-run", "Preview rename plan only", false)
     .option(
+      "--codex",
+      "Auto-route eligible files to Codex analyzers by file type",
+      false,
+    )
+    .option(
       "--codex-images",
-      "Use Codex-assisted semantic title for supported static image files",
+      "Use only the Codex image analyzer for supported static image files",
       false,
     )
     .option(
@@ -306,7 +311,7 @@ export async function runCli(
     )
     .option(
       "--codex-docs",
-      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
       false,
     )
     .option(
@@ -334,6 +339,7 @@ export async function runCli(
           serialWidth?: number;
           serialScope?: RenameSerialScope;
           dryRun?: boolean;
+          codex?: boolean;
           codexImages?: boolean;
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
@@ -353,6 +359,7 @@ export async function runCli(
           serialWidth: options.serialWidth,
           serialScope: options.serialScope,
           dryRun: options.dryRun,
+          codex: options.codex,
           codexImages: options.codexImages,
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,
@@ -389,8 +396,13 @@ export async function runCli(
       [],
     )
     .option(
+      "--codex",
+      "Auto-route eligible files to Codex analyzers by file type",
+      false,
+    )
+    .option(
       "--codex-images",
-      "Use Codex-assisted semantic titles for supported static image files",
+      "Use only the Codex image analyzer for supported static image files",
       false,
     )
     .option(
@@ -410,7 +422,7 @@ export async function runCli(
     )
     .option(
       "--codex-docs",
-      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
       false,
     )
     .option(
@@ -447,6 +459,7 @@ export async function runCli(
           skipRegex?: string;
           ext?: string[];
           skipExt?: string[];
+          codex?: boolean;
           codexImages?: boolean;
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
@@ -473,6 +486,7 @@ export async function runCli(
           skipRegex: options.skipRegex,
           ext: options.ext,
           skipExt: options.skipExt,
+          codex: options.codex,
           codexImages: options.codexImages,
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,
@@ -518,8 +532,13 @@ export async function runCli(
       [],
     )
     .option(
+      "--codex",
+      "Auto-route eligible files to Codex analyzers by file type",
+      false,
+    )
+    .option(
       "--codex-images",
-      "Use Codex-assisted semantic titles for supported static image files",
+      "Use only the Codex image analyzer for supported static image files",
       false,
     )
     .option(
@@ -539,7 +558,7 @@ export async function runCli(
     )
     .option(
       "--codex-docs",
-      "Use Codex-assisted semantic titles for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
       false,
     )
     .option(
@@ -576,6 +595,7 @@ export async function runCli(
           skipRegex?: string;
           ext?: string[];
           skipExt?: string[];
+          codex?: boolean;
           codexImages?: boolean;
           codexImagesTimeoutMs?: number;
           codexImagesRetries?: number;
@@ -602,6 +622,7 @@ export async function runCli(
           skipRegex: options.skipRegex,
           ext: options.ext,
           skipExt: options.skipExt,
+          codex: options.codex,
           codexImages: options.codexImages,
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
           codexImagesRetries: options.codexImagesRetries,

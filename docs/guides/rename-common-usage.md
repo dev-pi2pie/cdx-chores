@@ -81,12 +81,25 @@ Notes:
 
 ## Codex Assistant Usage
 
-Enable Codex only when needed:
+Common CLI smart-routing path:
+
+```bash
+cdx-chores rename batch ./mixed-folder --codex --dry-run
+```
+
+Explicit analyzer-only paths:
 
 ```bash
 cdx-chores rename batch ./docs --codex-docs --dry-run
 cdx-chores rename batch ./images --codex-images --dry-run
 ```
+
+Flag notes:
+
+- `--codex` is the CLI equivalent of interactive `auto`.
+- `--codex` routes eligible files by file type after normal rename filtering.
+- `--codex-images` and `--codex-docs` override `--codex` when combined.
+- unsupported files remain deterministic rename only.
 
 Interactive mode now asks once for assistant enablement, then one scope selector:
 

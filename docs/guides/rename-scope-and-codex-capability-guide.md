@@ -77,10 +77,33 @@ Interactive rename also keeps pattern-related prompts conditional:
 
 Mixed docs+images in `auto` enables both analyzers.
 
+## CLI Flag Contract
+
+CLI uses `--codex` as the common smart-routing flag:
+
+- `--codex` => auto-route eligible files by file type
+- `--codex-images` => use only the image analyzer
+- `--codex-docs` => use only the document analyzer
+
+Precedence rules:
+
+- `--codex` alone => auto
+- `--codex --codex-images` => image analyzer only
+- `--codex --codex-docs` => document analyzer only
+- `--codex-images --codex-docs` => both explicit
+- explicit analyzer flags win when combined with `--codex`
+
+Important:
+
+- these flags affect analyzer routing, not file-selection scope
+- unsupported files still use deterministic rename behavior
+
 ## Command Outcome Reference
 
 | Command shape | Semantic behavior |
 | --- | --- |
+| `rename batch --codex` | Auto-routes eligible files to image/doc analyzers by file type |
+| `rename file <file> --codex` | Auto-routes from the selected file extension |
 | `rename batch --profile images --codex-images` | Eligible static images analyzed; others fallback |
 | `rename batch --profile docs --codex-docs` | Eligible docs/PDF analyzed; others fallback |
 | `rename batch --profile docs --codex-images` | No image semantic analysis expected |

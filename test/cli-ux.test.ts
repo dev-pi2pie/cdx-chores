@@ -79,6 +79,8 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--pattern <template>");
     expect(result.stdout).toContain("--prefix <value>");
     expect(result.stdout).toContain("Filename prefix (optional)");
+    expect(result.stdout).toContain("--codex");
+    expect(result.stdout).toContain("Auto-route eligible files to Codex");
     expect(result.stdout).toContain("--serial-order <value>");
     expect(result.stdout).toContain("--serial-start <value>");
     expect(result.stdout).toContain("--serial-width <value>");
