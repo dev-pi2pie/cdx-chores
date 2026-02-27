@@ -117,6 +117,13 @@ Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{date}`, `{d
 cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}" --dry-run
 ```
 
+Serial template note:
+
+- `--prefix` is optional; omit it for no prefix.
+- `{serial...}` in the template enables serial controls.
+- Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
+- `--serial-width` uses a digit count such as `2` or `4`, not `#`.
+
 Video to GIF (requires `ffmpeg`):
 
 ```bash

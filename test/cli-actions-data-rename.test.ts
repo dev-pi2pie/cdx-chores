@@ -235,6 +235,35 @@ describe("cli action modules: rename", () => {
     }
   });
 
+  test("actionRenameFile without prefix omits the old implicit file prefix", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-no-prefix");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "photo one.txt");
+      await writeFile(filePath, "fake", "utf8");
+      const fixedTime = new Date("2026-02-25T15:16:17.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(filePath),
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("- photo one.txt -> 20260225-151617-photo-one.txt");
+      expect(stdout.text).not.toContain("file-20260225-151617-photo-one.txt");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameFile rejects symlink input paths", async () => {
     if (process.platform === "win32") {
       return;
@@ -551,6 +580,36 @@ describe("cli action modules: rename", () => {
 
       const after = await stat(filePath);
       expect(after.isFile()).toBe(true);
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch without prefix omits the old implicit file prefix", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-batch-no-prefix");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "photo one.txt");
+      await writeFile(filePath, "hello", "utf8");
+      const fixedTime = new Date("2026-02-25T12:34:56.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(1);
+      expect(result.changedCount).toBe(1);
+      expect(stdout.text).toContain("photo one.txt -> 20260225-123456-photo-one.txt");
+      expect(stdout.text).not.toContain("file-20260225-123456-photo-one.txt");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

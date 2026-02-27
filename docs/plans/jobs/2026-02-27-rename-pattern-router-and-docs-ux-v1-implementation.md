@@ -1,6 +1,7 @@
 ---
 title: "Complete rename pattern, smart router, and docs UX v1 implementation"
 created-date: 2026-02-27
+modified-date: 2026-02-27
 status: completed
 agent: codex
 ---
@@ -22,6 +23,15 @@ Finish the v1 implementation for rename template flexibility, interactive smart 
   - compacted `docs/guides/rename-scope-and-codex-capability-guide.md` for print/PDF-friendly width
   - updated `README.md` command examples to `cdx-chores`
   - cross-linked README and rename guides
+- Follow-up interactive rename UX adjustment:
+  - serial questions are now shown only when the selected template includes `{serial...}`
+  - prefix prompt is now optional and shown only when the selected template includes `{prefix}`
+  - interactive serial width wording now clarifies that input expects digit count (for example `2` => `01`)
+  - README and rename guides were updated to reflect the revised interactive serial/prefix behavior
+- Follow-up CLI alignment adjustment:
+  - non-interactive rename commands no longer inject the old implicit `file` prefix when `--prefix` is omitted
+  - rename help text now marks `--prefix` as optional
+  - regression tests were added for prefix-less rename behavior
 - Completed plan tracking updates:
   - `docs/plans/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`
   - all phase checklist items checked

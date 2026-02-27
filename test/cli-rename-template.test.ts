@@ -5,6 +5,8 @@ import {
   parseSerialToken,
   resolveRenamePatternTemplate,
   serializeSerialToken,
+  templateContainsPrefixPlaceholder,
+  templateContainsSerialPlaceholder,
 } from "../src/cli/rename-template";
 
 describe("rename template contracts", () => {
@@ -66,5 +68,16 @@ describe("rename template contracts", () => {
     expect(() => parseSerialToken("{serial_badparam}")).toThrow(
       "Unknown serial token parameter 'badparam'.",
     );
+  });
+
+  test("detects whether template uses serial placeholder", () => {
+    expect(templateContainsSerialPlaceholder("{date}-{stem}")).toBe(false);
+    expect(templateContainsSerialPlaceholder("{date}-{stem}-{serial}")).toBe(true);
+    expect(templateContainsSerialPlaceholder("{serial_###_start_2_order_mtime_asc}-{stem}")).toBe(true);
+  });
+
+  test("detects whether template uses prefix placeholder", () => {
+    expect(templateContainsPrefixPlaceholder("{date}-{stem}")).toBe(false);
+    expect(templateContainsPrefixPlaceholder("{prefix}-{timestamp}-{stem}")).toBe(true);
   });
 });

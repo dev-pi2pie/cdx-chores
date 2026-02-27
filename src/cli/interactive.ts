@@ -26,6 +26,8 @@ import {
   RENAME_SERIAL_ORDER_VALUES,
   normalizeSerialPlaceholderInTemplate,
   resolveRenamePatternTemplate,
+  templateContainsPrefixPlaceholder,
+  templateContainsSerialPlaceholder,
 } from "./rename-template";
 import {
   type RenameInteractiveCodexFlags as InteractiveCodexFlags,
@@ -84,8 +86,9 @@ async function promptRenamePatternConfig(options: {
   includeSerialScope: boolean;
 }): Promise<{
   pattern: string;
-  serialOrder: RenameSerialOrder;
-  serialStart: number;
+  usesPrefix: boolean;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
   serialWidth?: number;
   serialScope: RenameSerialScope;
 }> {
@@ -118,8 +121,11 @@ async function promptRenamePatternConfig(options: {
   const customTemplate =
     preset === "custom"
       ? await input({
-          message:
-            "Custom filename template (placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
+          message: [
+            "Custom filename template",
+            "Placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
+            "Example: {date}-{stem}-{serial}",
+          ].join("\n"),
           validate: (value) => (value.trim() ? true : "Required"),
         })
       : undefined;
@@ -128,32 +134,40 @@ async function promptRenamePatternConfig(options: {
     preset,
     customTemplate,
   });
+  const usesPrefix = templateContainsPrefixPlaceholder(basePattern);
+  const usesSerial = templateContainsSerialPlaceholder(basePattern);
 
-  const serialOrder = await select<RenameSerialOrder>({
-    message: "Serial order (for {serial...})",
-    choices: RENAME_SERIAL_ORDER_VALUES.map((value) => ({
-      name: value,
-      value,
-      description: value.startsWith("mtime_")
-        ? "mtime uses file modified time"
-        : "path uses deterministic path ordering",
-    })),
-    default: "path_asc",
-  });
+  const serialOrder = usesSerial
+    ? await select<RenameSerialOrder>({
+        message: "Serial order",
+        choices: RENAME_SERIAL_ORDER_VALUES.map((value) => ({
+          name: value,
+          value,
+          description: value.startsWith("mtime_")
+            ? "mtime uses file modified time"
+            : "path uses deterministic path ordering",
+        })),
+        default: "path_asc",
+      })
+    : undefined;
 
-  const serialStartInput = await input({
-    message: "Serial start (for {serial...})",
-    default: "1",
-    validate: (value) => validateIntegerInput(value, { min: 0 }),
-  });
+  const serialStartInput = usesSerial
+    ? await input({
+        message: "Serial start number",
+        default: "1",
+        validate: (value) => validateIntegerInput(value, { min: 0 }),
+      })
+    : "";
 
-  const serialWidthInput = await input({
-    message: "Serial width (optional, for {serial...})",
-    default: "",
-    validate: (value) => validateIntegerInput(value, { min: 1, allowEmpty: true }),
-  });
+  const serialWidthInput = usesSerial
+    ? await input({
+        message: "Serial min width in digits (optional, e.g. 2 => 01)",
+        default: "",
+        validate: (value) => validateIntegerInput(value, { min: 1, allowEmpty: true }),
+      })
+    : "";
 
-  const serialScope = options.includeSerialScope
+  const serialScope = options.includeSerialScope && usesSerial
     ? await select<RenameSerialScope>({
         message: "Serial scope",
         choices: [
@@ -172,19 +186,23 @@ async function promptRenamePatternConfig(options: {
       })
     : "global";
 
-  const serialStart = Number(serialStartInput.trim());
+  const serialStart = serialStartInput.trim() ? Number(serialStartInput.trim()) : undefined;
   const serialWidth = serialWidthInput.trim() ? Number(serialWidthInput.trim()) : undefined;
-  const pattern = normalizeSerialPlaceholderInTemplate({
-    template: basePattern,
-    serial: {
-      order: serialOrder,
-      start: serialStart,
-      width: serialWidth,
-    },
-  });
+  const pattern =
+    usesSerial && serialOrder !== undefined && serialStart !== undefined
+      ? normalizeSerialPlaceholderInTemplate({
+          template: basePattern,
+          serial: {
+            order: serialOrder,
+            start: serialStart,
+            width: serialWidth,
+          },
+        })
+      : basePattern;
 
   return {
     pattern,
+    usesPrefix,
     serialOrder,
     serialStart,
     serialWidth,
@@ -415,7 +433,6 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       kind: "directory",
       ...pathPromptContext,
     });
-    const prefix = await input({ message: "Filename prefix", default: "file" });
     const profile = await select<string>({
       message: "File profile scope",
       choices: [
@@ -443,6 +460,12 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     });
     const recursive = await confirm({ message: "Traverse subdirectories recursively?", default: false });
     const patternConfig = await promptRenamePatternConfig({ includeSerialScope: recursive });
+    const prefix = patternConfig.usesPrefix
+      ? await input({
+          message: "Filename prefix (optional)",
+          default: "",
+        })
+      : undefined;
     const maxDepthInput = recursive
       ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
       : "";
@@ -517,8 +540,13 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       kind: "file",
       ...pathPromptContext,
     });
-    const prefix = await input({ message: "Filename prefix", default: "file" });
     const patternConfig = await promptRenamePatternConfig({ includeSerialScope: false });
+    const prefix = patternConfig.usesPrefix
+      ? await input({
+          message: "Filename prefix (optional)",
+          default: "",
+        })
+      : undefined;
     const dryRun = await confirm({ message: "Dry run only?", default: true });
     const codexEnabled = await confirm({
       message: "Enable Codex assistant when eligible?",

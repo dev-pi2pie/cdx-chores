@@ -284,7 +284,7 @@ export async function runCli(
     .command("file")
     .description("Rename a single file")
     .argument("<path>", "Target file path")
-    .option("--prefix <value>", "Filename prefix", "file")
+    .option("--prefix <value>", "Filename prefix (optional)")
     .option("--dry-run", "Preview rename plan only", false)
     .option(
       "--codex-images",
@@ -369,7 +369,7 @@ export async function runCli(
     .command("batch")
     .description("Batch rename files in a directory")
     .argument("<directory>", "Target directory")
-    .option("--prefix <value>", "Filename prefix", "file")
+    .option("--prefix <value>", "Filename prefix (optional)")
     .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)
@@ -498,7 +498,7 @@ export async function runCli(
     .command("batch-rename")
     .description("Alias for `rename batch`")
     .argument("<directory>", "Target directory")
-    .option("--prefix <value>", "Filename prefix", "file")
+    .option("--prefix <value>", "Filename prefix (optional)")
     .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
     .option("--recursive", "Traverse subdirectories recursively", false)

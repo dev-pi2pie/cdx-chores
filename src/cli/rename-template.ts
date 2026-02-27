@@ -214,3 +214,11 @@ export function normalizeSerialPlaceholderInTemplate(options: {
   });
   return options.template.replace(/\{serial(?:_[^{}]+)?\}/g, token);
 }
+
+export function templateContainsSerialPlaceholder(template: string): boolean {
+  return /\{serial(?:_[^{}]+)?\}/.test(template);
+}
+
+export function templateContainsPrefixPlaceholder(template: string): boolean {
+  return /\{prefix\}/.test(template);
+}

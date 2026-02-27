@@ -1,6 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
+modified-date: 2026-02-27
 status: completed
 agent: codex
 ---
@@ -70,9 +71,13 @@ brand-{timestamp}-{stem}
 
 Notes:
 
+- `--prefix` is optional in CLI mode; omit it for no prefix.
 - Empty `prefix` is allowed; separators are normalized.
 - `{serial...}` parameters are order-insensitive.
 - Supported serial order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`.
+- Interactive mode asks serial questions only when the selected template includes `{serial...}`.
+- Interactive serial width expects a digit count such as `2` for `01`, not `##`.
+- Interactive prefix input is optional; leaving it blank means no prefix.
 
 ## Codex Assistant Usage
 

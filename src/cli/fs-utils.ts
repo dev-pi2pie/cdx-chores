@@ -70,10 +70,7 @@ function formatUtcDate(date: Date): string {
 }
 
 function normalizePrefix(prefix: string | undefined): string {
-  if (prefix === undefined) {
-    return "file";
-  }
-  const trimmed = prefix.trim();
+  const trimmed = (prefix ?? "").trim();
   if (!trimmed) {
     return "";
   }

@@ -49,10 +49,13 @@ Supported placeholders:
 
 Serial token notes:
 
+- `--prefix` is optional in CLI mode and interactive mode
 - canonical style: `{serial_###_start_1_order_mtime_asc}`
 - marker order is flexible in input and normalized internally
 - order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`
 - optional recursive per-directory reset with `--serial-scope directory`
+- interactive serial prompts appear only when the selected template includes `{serial...}`
+- interactive serial width uses digit count input such as `2` or `4`, not `#`
 
 ## Interactive Smart Router
 
@@ -61,6 +64,11 @@ Interactive rename asks once for Codex enablement, then a scope selector:
 - `auto`
 - `images`
 - `docs`
+
+Interactive rename also keeps pattern-related prompts conditional:
+
+- `Filename prefix` is asked only when the chosen template includes `{prefix}`
+- serial settings are asked only when the chosen template includes `{serial...}`
 
 `auto` uses effective scope:
 
