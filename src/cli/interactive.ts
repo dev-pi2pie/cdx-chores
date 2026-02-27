@@ -1,4 +1,5 @@
 import { confirm, input, select } from "@inquirer/prompts";
+import { extname } from "node:path";
 
 import {
   actionCsvToJson,
@@ -19,6 +20,14 @@ import {
   promptRequiredPathWithConfig,
 } from "./prompts/path";
 import { resolvePathPromptRuntimeConfig } from "./prompts/path-config";
+import {
+  type RenameSerialOrder,
+  type RenameSerialScope,
+  type RenameTemplatePreset,
+  RENAME_SERIAL_ORDER_VALUES,
+  normalizeSerialPlaceholderInTemplate,
+  resolveRenamePatternTemplate,
+} from "./rename-template";
 import type { CliRuntime } from "./types";
 
 type InteractiveActionKey =
@@ -48,6 +57,203 @@ type InteractiveSubmenuConfig = {
   message: string;
   choices: Array<InteractiveMenuChoice<InteractiveActionKey>>;
 };
+
+type InteractiveCodexScope = "auto" | "images" | "docs";
+
+type InteractiveCodexFlags = {
+  codexImages: boolean;
+  codexDocs: boolean;
+};
+
+const INTERACTIVE_SUPPORTED_IMAGE_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".bmp",
+  ".tif",
+  ".tiff",
+  ".avif",
+]);
+
+const INTERACTIVE_SUPPORTED_DOC_EXTENSIONS = new Set([
+  ".md",
+  ".markdown",
+  ".txt",
+  ".json",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".xml",
+  ".html",
+  ".htm",
+  ".pdf",
+  ".docx",
+]);
+
+function validateIntegerInput(value: string, options: { min?: number; allowEmpty?: boolean }): true | string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return options.allowEmpty ? true : "Required";
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return "Must be a non-negative integer";
+  }
+  const parsed = Number(trimmed);
+  const min = options.min ?? 0;
+  if (parsed < min) {
+    return `Must be >= ${min}`;
+  }
+  return true;
+}
+
+function resolveAutoCodexFlagsForBatchProfile(profile: string): InteractiveCodexFlags {
+  switch (profile) {
+    case "images":
+      return { codexImages: true, codexDocs: false };
+    case "media":
+      return { codexImages: true, codexDocs: false };
+    case "docs":
+      return { codexImages: false, codexDocs: true };
+    default:
+      return { codexImages: true, codexDocs: true };
+  }
+}
+
+function resolveAutoCodexFlagsForFilePath(path: string): InteractiveCodexFlags {
+  const ext = extname(path).toLowerCase();
+  const codexImages = INTERACTIVE_SUPPORTED_IMAGE_EXTENSIONS.has(ext);
+  const codexDocs = INTERACTIVE_SUPPORTED_DOC_EXTENSIONS.has(ext);
+  return { codexImages, codexDocs };
+}
+
+function resolveCodexFlagsFromScope(options: {
+  scope: InteractiveCodexScope;
+  fallbackAuto: InteractiveCodexFlags;
+}): InteractiveCodexFlags {
+  switch (options.scope) {
+    case "images":
+      return { codexImages: true, codexDocs: false };
+    case "docs":
+      return { codexImages: false, codexDocs: true };
+    case "auto":
+    default:
+      return options.fallbackAuto;
+  }
+}
+
+async function promptRenamePatternConfig(options: {
+  includeSerialScope: boolean;
+}): Promise<{
+  pattern: string;
+  serialOrder: RenameSerialOrder;
+  serialStart: number;
+  serialWidth?: number;
+  serialScope: RenameSerialScope;
+}> {
+  const preset = await select<RenameTemplatePreset>({
+    message: "Filename template preset",
+    choices: [
+      {
+        name: "default",
+        value: "default",
+        description: "{prefix}-{timestamp}-{stem}",
+      },
+      {
+        name: "timestamp-first",
+        value: "timestamp-first",
+        description: "{timestamp}-{prefix}-{stem}",
+      },
+      {
+        name: "stem-first",
+        value: "stem-first",
+        description: "{stem}-{timestamp}-{prefix}",
+      },
+      {
+        name: "custom",
+        value: "custom",
+        description: "Provide a custom template string",
+      },
+    ],
+  });
+
+  const customTemplate =
+    preset === "custom"
+      ? await input({
+          message:
+            "Custom filename template (placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
+          validate: (value) => (value.trim() ? true : "Required"),
+        })
+      : undefined;
+
+  const basePattern = resolveRenamePatternTemplate({
+    preset,
+    customTemplate,
+  });
+
+  const serialOrder = await select<RenameSerialOrder>({
+    message: "Serial order (for {serial...})",
+    choices: RENAME_SERIAL_ORDER_VALUES.map((value) => ({
+      name: value,
+      value,
+      description: value.startsWith("mtime_")
+        ? "mtime uses file modified time"
+        : "path uses deterministic path ordering",
+    })),
+    default: "path_asc",
+  });
+
+  const serialStartInput = await input({
+    message: "Serial start (for {serial...})",
+    default: "1",
+    validate: (value) => validateIntegerInput(value, { min: 0 }),
+  });
+
+  const serialWidthInput = await input({
+    message: "Serial width (optional, for {serial...})",
+    default: "",
+    validate: (value) => validateIntegerInput(value, { min: 1, allowEmpty: true }),
+  });
+
+  const serialScope = options.includeSerialScope
+    ? await select<RenameSerialScope>({
+        message: "Serial scope",
+        choices: [
+          {
+            name: "global",
+            value: "global",
+            description: "Single serial sequence across recursive traversal",
+          },
+          {
+            name: "directory",
+            value: "directory",
+            description: "Reset serial per directory when recursive",
+          },
+        ],
+        default: "global",
+      })
+    : "global";
+
+  const serialStart = Number(serialStartInput.trim());
+  const serialWidth = serialWidthInput.trim() ? Number(serialWidthInput.trim()) : undefined;
+  const pattern = normalizeSerialPlaceholderInTemplate({
+    template: basePattern,
+    serial: {
+      order: serialOrder,
+      start: serialStart,
+      width: serialWidth,
+    },
+  });
+
+  return {
+    pattern,
+    serialOrder,
+    serialStart,
+    serialWidth,
+    serialScope,
+  };
+}
 
 const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
   { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
@@ -299,27 +505,57 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       ],
     });
     const recursive = await confirm({ message: "Traverse subdirectories recursively?", default: false });
+    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: recursive });
     const maxDepthInput = recursive
       ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
       : "";
     const dryRun = await confirm({ message: "Dry run only?", default: true });
-    const codex = await confirm({
-      message: "Use Codex-assisted image titles when possible?",
+    const codexEnabled = await confirm({
+      message: "Enable Codex assistant when eligible?",
       default: false,
     });
-    const codexDocs = await confirm({
-      message: "Use Codex-assisted document titles for supported docs?",
-      default: false,
-    });
+    let codexFlags: InteractiveCodexFlags = { codexImages: false, codexDocs: false };
+    if (codexEnabled) {
+      const scope = await select<InteractiveCodexScope>({
+        message: "Codex assistant scope",
+        choices: [
+          {
+            name: "auto",
+            value: "auto",
+            description: "Route based on profile scope and supported extensions",
+          },
+          {
+            name: "images",
+            value: "images",
+            description: "Enable only image analyzer",
+          },
+          {
+            name: "docs",
+            value: "docs",
+            description: "Enable only document analyzer",
+          },
+        ],
+        default: "auto",
+      });
+      codexFlags = resolveCodexFlagsFromScope({
+        scope,
+        fallbackAuto: resolveAutoCodexFlagsForBatchProfile(profile),
+      });
+    }
     const result = await actionRenameBatch(runtime, {
       directory,
       prefix,
+      pattern: patternConfig.pattern,
+      serialOrder: patternConfig.serialOrder,
+      serialStart: patternConfig.serialStart,
+      serialWidth: patternConfig.serialWidth,
+      serialScope: recursive ? patternConfig.serialScope : "global",
       profile: profile === "all" ? undefined : profile,
       recursive,
       maxDepth: maxDepthInput.trim() ? Number(maxDepthInput) : undefined,
       dryRun,
-      codexImages: codex,
-      codexDocs,
+      codexImages: codexFlags.codexImages,
+      codexDocs: codexFlags.codexDocs,
     });
 
     if (!dryRun && result.changedCount > 0) {
@@ -345,21 +581,51 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       ...pathPromptContext,
     });
     const prefix = await input({ message: "Filename prefix", default: "file" });
+    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: false });
     const dryRun = await confirm({ message: "Dry run only?", default: true });
-    const codex = await confirm({
-      message: "Use Codex-assisted image title when possible?",
+    const codexEnabled = await confirm({
+      message: "Enable Codex assistant when eligible?",
       default: false,
     });
-    const codexDocs = await confirm({
-      message: "Use Codex-assisted document title for supported docs?",
-      default: false,
-    });
+    let codexFlags: InteractiveCodexFlags = { codexImages: false, codexDocs: false };
+    if (codexEnabled) {
+      const scope = await select<InteractiveCodexScope>({
+        message: "Codex assistant scope",
+        choices: [
+          {
+            name: "auto",
+            value: "auto",
+            description: "Route based on selected file extension and supported analyzers",
+          },
+          {
+            name: "images",
+            value: "images",
+            description: "Enable only image analyzer",
+          },
+          {
+            name: "docs",
+            value: "docs",
+            description: "Enable only document analyzer",
+          },
+        ],
+        default: "auto",
+      });
+      codexFlags = resolveCodexFlagsFromScope({
+        scope,
+        fallbackAuto: resolveAutoCodexFlagsForFilePath(path),
+      });
+    }
     const result = await actionRenameFile(runtime, {
       path,
       prefix,
+      pattern: patternConfig.pattern,
+      serialOrder: patternConfig.serialOrder,
+      serialStart: patternConfig.serialStart,
+      serialWidth: patternConfig.serialWidth,
+      serialScope: "global",
       dryRun,
-      codexImages: codex,
-      codexDocs,
+      codexImages: codexFlags.codexImages,
+      codexDocs: codexFlags.codexDocs,
     });
 
     if (!dryRun || !result.changed) {

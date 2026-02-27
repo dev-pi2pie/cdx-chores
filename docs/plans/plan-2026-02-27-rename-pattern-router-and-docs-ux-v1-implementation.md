@@ -1,7 +1,8 @@
 ---
 title: "Rename pattern, smart router, and docs UX v1 implementation"
 created-date: 2026-02-27
-status: draft
+modified-date: 2026-02-27
+status: active
 agent: codex
 ---
 
@@ -34,12 +35,12 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 
 ### Phase 1: Contracts and UX Surface
 
-- [ ] Define canonical template grammar updates for serial/date tokens.
-- [ ] Define serial parameter parser behavior (order-insensitive token params).
-- [ ] Define canonical serializer for `{serial_...}` token composition.
-- [ ] Add/confirm CLI options for serial order/start/width and serial scope reset mode.
-- [ ] Define interactive prompt contract for pattern presets and custom template flow.
-- [ ] Define interactive assistant routing prompt contract:
+- [x] Define canonical template grammar updates for serial/date tokens.
+- [x] Define serial parameter parser behavior (order-insensitive token params).
+- [x] Define canonical serializer for `{serial_...}` token composition.
+- [x] Add/confirm CLI options for serial order/start/width and serial scope reset mode.
+- [x] Define interactive prompt contract for pattern presets and custom template flow.
+- [x] Define interactive assistant routing prompt contract:
   - one enable prompt
   - one scope prompt (`auto | images | docs`) when enabled.
 
@@ -59,11 +60,11 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 
 ### Phase 3: Interactive Smart Router
 
-- [ ] Add internal extension-capability schema for docs/images routing.
-- [ ] Implement `auto` scope resolution from effective extension scope.
-- [ ] Route mixed docs+images `auto` to both analyzers internally.
-- [ ] Remove duplicated codex-assistant prompts from interactive rename flows.
-- [ ] Preserve existing fallback-safe behavior for unsupported/weak analyzer cases.
+- [x] Add internal extension-capability schema for docs/images routing.
+- [x] Implement `auto` scope resolution from effective extension scope.
+- [x] Route mixed docs+images `auto` to both analyzers internally.
+- [x] Remove duplicated codex-assistant prompts from interactive rename flows.
+- [x] Preserve existing fallback-safe behavior for unsupported/weak analyzer cases.
 
 ### Phase 4: Documentation Refactor
 
@@ -76,7 +77,7 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 
 ### Phase 5: Tests and Verification
 
-- [ ] Add unit tests for template parser/serializer and validation.
+- [x] Add unit tests for template parser/serializer and validation.
 - [ ] Add planner tests for serial order modes and reset-per-directory behavior.
 - [ ] Add tests for date placeholders and prefix-null normalization.
 - [ ] Add interactive-flow tests for smart router prompt branching.

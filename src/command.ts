@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
   actionDeferred,
@@ -15,6 +15,14 @@ import {
 } from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
+import {
+  DEFAULT_RENAME_SERIAL_ORDER,
+  DEFAULT_RENAME_SERIAL_START,
+  RENAME_SERIAL_ORDER_VALUES,
+  RENAME_SERIAL_SCOPE_VALUES,
+  type RenameSerialOrder,
+  type RenameSerialScope,
+} from "./cli/rename-template";
 import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
 
@@ -47,6 +55,71 @@ function collectCsvListOption(value: string, previous: string[] = []): string[] 
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
   return [...previous, ...next];
+}
+
+function parseNonNegativeIntegerOption(value: string, label: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new InvalidArgumentError(`${label} must be a non-negative integer.`);
+  }
+  return parsed;
+}
+
+function parsePositiveIntegerOption(value: string, label: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new InvalidArgumentError(`${label} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function parseSerialOrderOption(value: string): RenameSerialOrder {
+  if ((RENAME_SERIAL_ORDER_VALUES as readonly string[]).includes(value)) {
+    return value as RenameSerialOrder;
+  }
+  throw new InvalidArgumentError(
+    `--serial-order must be one of: ${RENAME_SERIAL_ORDER_VALUES.join(", ")}.`,
+  );
+}
+
+function parseSerialScopeOption(value: string): RenameSerialScope {
+  if ((RENAME_SERIAL_SCOPE_VALUES as readonly string[]).includes(value)) {
+    return value as RenameSerialScope;
+  }
+  throw new InvalidArgumentError(
+    `--serial-scope must be one of: ${RENAME_SERIAL_SCOPE_VALUES.join(", ")}.`,
+  );
+}
+
+function applyRenameTemplateOptions(command: Command): void {
+  command
+    .option(
+      "--pattern <template>",
+      "Custom filename template (supports {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
+    )
+    .option(
+      "--serial-order <value>",
+      `Serial ordering mode (${RENAME_SERIAL_ORDER_VALUES.join(", ")}). mtime = modified time.`,
+      parseSerialOrderOption,
+      DEFAULT_RENAME_SERIAL_ORDER,
+    )
+    .option(
+      "--serial-start <value>",
+      "Serial start value (non-negative integer)",
+      (value) => parseNonNegativeIntegerOption(value, "--serial-start"),
+      DEFAULT_RENAME_SERIAL_START,
+    )
+    .option(
+      "--serial-width <value>",
+      "Minimum serial width in digits",
+      (value) => parsePositiveIntegerOption(value, "--serial-width"),
+    )
+    .option(
+      "--serial-scope <value>",
+      `Serial scope mode (${RENAME_SERIAL_SCOPE_VALUES.join(", ")})`,
+      parseSerialScopeOption,
+      "global",
+    );
 }
 
 function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
@@ -207,7 +280,7 @@ export async function runCli(
   }
 
   const renameCommand = program.command("rename").description("Rename helpers");
-  renameCommand
+  const renameFileCommand = renameCommand
     .command("file")
     .description("Rename a single file")
     .argument("<path>", "Target file path")
@@ -248,12 +321,18 @@ export async function runCli(
       "--codex-docs-batch-size <count>",
       "Number of documents per Codex document-title request batch",
       (value) => Number(value),
-    )
-    .action(
+    );
+  applyRenameTemplateOptions(renameFileCommand);
+  renameFileCommand.action(
       async (
         path: string,
         options: {
           prefix?: string;
+          pattern?: string;
+          serialOrder?: RenameSerialOrder;
+          serialStart?: number;
+          serialWidth?: number;
+          serialScope?: RenameSerialScope;
           dryRun?: boolean;
           codexImages?: boolean;
           codexImagesTimeoutMs?: number;
@@ -268,6 +347,11 @@ export async function runCli(
         await actionRenameFile(cliRuntime, {
           path,
           prefix: options.prefix,
+          pattern: options.pattern,
+          serialOrder: options.serialOrder,
+          serialStart: options.serialStart,
+          serialWidth: options.serialWidth,
+          serialScope: options.serialScope,
           dryRun: options.dryRun,
           codexImages: options.codexImages,
           codexImagesTimeoutMs: options.codexImagesTimeoutMs,
@@ -281,7 +365,7 @@ export async function runCli(
       },
     );
 
-  renameCommand
+  const renameBatchCommand = renameCommand
     .command("batch")
     .description("Batch rename files in a directory")
     .argument("<directory>", "Target directory")
@@ -343,12 +427,18 @@ export async function runCli(
       "--codex-docs-batch-size <count>",
       "Number of documents per Codex document-title request batch",
       (value) => Number(value),
-    )
-    .action(
+    );
+  applyRenameTemplateOptions(renameBatchCommand);
+  renameBatchCommand.action(
       async (
         directory: string,
         options: {
           prefix?: string;
+          pattern?: string;
+          serialOrder?: RenameSerialOrder;
+          serialStart?: number;
+          serialWidth?: number;
+          serialScope?: RenameSerialScope;
           profile?: string;
           dryRun?: boolean;
           recursive?: boolean;
@@ -370,6 +460,11 @@ export async function runCli(
         await actionRenameBatch(cliRuntime, {
           directory,
           prefix: options.prefix,
+          pattern: options.pattern,
+          serialOrder: options.serialOrder,
+          serialStart: options.serialStart,
+          serialWidth: options.serialWidth,
+          serialScope: options.serialScope,
           profile: options.profile,
           dryRun: options.dryRun,
           recursive: options.recursive,
@@ -399,7 +494,7 @@ export async function runCli(
       await actionRenameApply(cliRuntime, { csv, autoClean: options.autoClean });
     });
 
-  program
+  const batchRenameAliasCommand = program
     .command("batch-rename")
     .description("Alias for `rename batch`")
     .argument("<directory>", "Target directory")
@@ -461,12 +556,18 @@ export async function runCli(
       "--codex-docs-batch-size <count>",
       "Number of documents per Codex document-title request batch",
       (value) => Number(value),
-    )
-    .action(
+    );
+  applyRenameTemplateOptions(batchRenameAliasCommand);
+  batchRenameAliasCommand.action(
       async (
         directory: string,
         options: {
           prefix?: string;
+          pattern?: string;
+          serialOrder?: RenameSerialOrder;
+          serialStart?: number;
+          serialWidth?: number;
+          serialScope?: RenameSerialScope;
           profile?: string;
           dryRun?: boolean;
           recursive?: boolean;
@@ -488,6 +589,11 @@ export async function runCli(
         await actionRenameBatch(cliRuntime, {
           directory,
           prefix: options.prefix,
+          pattern: options.pattern,
+          serialOrder: options.serialOrder,
+          serialStart: options.serialStart,
+          serialWidth: options.serialWidth,
+          serialScope: options.serialScope,
           profile: options.profile,
           dryRun: options.dryRun,
           recursive: options.recursive,

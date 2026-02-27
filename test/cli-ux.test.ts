@@ -70,4 +70,23 @@ describe("CLI UX flags and path output", () => {
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });
+
+  test("rename help includes template and serial controls", () => {
+    const result = runCli(["rename", "batch", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--pattern <template>");
+    expect(result.stdout).toContain("--serial-order <value>");
+    expect(result.stdout).toContain("--serial-start <value>");
+    expect(result.stdout).toContain("--serial-width <value>");
+    expect(result.stdout).toContain("--serial-scope <value>");
+  });
+
+  test("rename rejects unsupported serial order alias values", () => {
+    const result = runCli(["rename", "file", "dummy.txt", "--serial-order", "time_asc"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.");
+  });
 });

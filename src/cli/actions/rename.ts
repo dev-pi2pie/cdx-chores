@@ -12,6 +12,7 @@ import {
 import { slugifyName } from "../../utils/slug";
 import { CliError } from "../errors";
 import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
+import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
@@ -41,6 +42,11 @@ type CodexDocumentRenameTitleSuggester = (options: {
 export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
+  pattern?: string;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
   profile?: string;
   dryRun?: boolean;
   recursive?: boolean;
@@ -64,6 +70,11 @@ export interface RenameBatchOptions {
 export interface RenameFileOptions {
   path: string;
   prefix?: string;
+  pattern?: string;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
   dryRun?: boolean;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
