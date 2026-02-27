@@ -6,9 +6,9 @@ Current launch-phase focus:
 
 - interactive mode + nested CLI commands
 - `doctor` dependency/capability checks
-- basic data conversions (`json <-> csv`)
+- data conversions (`json <-> csv`)
 - `md -> docx` via `pandoc`
-- batch rename with safe preview (`--dry-run`)
+- batch/file rename with safe preview (`--dry-run`)
 - ffmpeg-backed video command wrappers
 
 ## Quick Start
@@ -19,28 +19,28 @@ Install dependencies:
 bun install
 ```
 
-Build the package (generates embedded version + bundles with `tsdown`):
+Build the package:
 
 ```bash
 bun run build
 ```
 
-Run from source (development):
+Link the CLI locally so `cdx-chores` is available on your PATH:
 
 ```bash
-bun run src/bin.ts --help
+npm link
+```
+
+Check the command:
+
+```bash
+cdx-chores --help
 ```
 
 Start interactive mode (default when no args):
 
 ```bash
-bun run src/bin.ts
-```
-
-Run the built CLI bundle:
-
-```bash
-node dist/esm/bin.mjs --help
+cdx-chores
 ```
 
 ## Examples
@@ -48,88 +48,87 @@ node dist/esm/bin.mjs --help
 Doctor (text):
 
 ```bash
-bun run src/bin.ts doctor
+cdx-chores doctor
 ```
 
 Doctor (JSON):
 
 ```bash
-bun run src/bin.ts doctor --json
+cdx-chores doctor --json
 ```
 
 JSON to CSV:
 
 ```bash
-bun run src/bin.ts data json-to-csv -i ./input.json -o ./output.csv
+cdx-chores data json-to-csv -i ./input.json -o ./output.csv
 ```
 
 CSV to JSON:
 
 ```bash
-bun run src/bin.ts data csv-to-json -i ./input.csv -o ./output.json --pretty
+cdx-chores data csv-to-json -i ./input.csv -o ./output.json --pretty
 ```
 
 Markdown to DOCX (requires `pandoc`):
 
 ```bash
-bun run src/bin.ts md to-docx -i ./notes.md -o ./notes.docx
+cdx-chores md to-docx -i ./notes.md -o ./notes.docx
 ```
 
 Markdown frontmatter to JSON (default wrapper output):
 
 ```bash
-bun run src/bin.ts md frontmatter-to-json -i ./notes.md --pretty
-```
-
-Markdown frontmatter to JSON (data-only for pipelines):
-
-```bash
-bun run src/bin.ts md frontmatter-to-json -i ./notes.md --data-only
+cdx-chores md frontmatter-to-json -i ./notes.md --pretty
 ```
 
 Batch rename preview:
 
 ```bash
-bun run src/bin.ts rename batch ./images --prefix gallery --dry-run
+cdx-chores rename batch ./images --prefix gallery --dry-run
 ```
 
 Single-file rename preview (replayable CSV snapshot):
 
 ```bash
-bun run src/bin.ts rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
+cdx-chores rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
 ```
 
 Codex-assisted batch rename preview (best-effort with deterministic fallback):
 
 ```bash
-bun run src/bin.ts rename batch ./images --prefix gallery --codex --dry-run
+cdx-chores rename batch ./images --prefix gallery --codex-images --dry-run
 ```
 
 Apply an exact dry-run snapshot later:
 
 ```bash
-bun run src/bin.ts rename apply ./rename-20260225-214012-a1b2c3d4.csv
+cdx-chores rename apply ./rename-20260225-214012-a1b2c3d4.csv
 ```
 
 Recursive image rename with depth limit:
 
 ```bash
-bun run src/bin.ts rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
+cdx-chores rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
 ```
 
-Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{stem}`):
+Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
 
 ```bash
-bun run src/bin.ts rename batch ./images --prefix trip --pattern "{timestamp}-{stem}" --dry-run
+cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}" --dry-run
 ```
 
 Video to GIF (requires `ffmpeg`):
 
 ```bash
-bun run src/bin.ts video gif -i ./clip.mp4 -o ./clip.gif --width 480 --fps 10
+cdx-chores video gif -i ./clip.mp4 -o ./clip.gif --width 480 --fps 10
 ```
 
-## Dependencies (Launch Phase)
+## Rename Guides
+
+- Common operational usage: `docs/guides/rename-common-usage.md`
+- Scope and Codex capability details: `docs/guides/rename-scope-and-codex-capability-guide.md`
+
+## Dependencies
 
 - Required for all commands: Node.js `>= 20` runtime
 - Development tooling: Bun
@@ -137,4 +136,4 @@ bun run src/bin.ts video gif -i ./clip.mp4 -o ./clip.gif --width 480 --fps 10
   - `pandoc` for `md to-docx`
   - `ffmpeg` for `video` commands
 
-Use `doctor` to check what is available on your machine.
+Use `cdx-chores doctor` to check what is available on your machine.

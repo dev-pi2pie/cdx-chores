@@ -1,5 +1,4 @@
 import { confirm, input, select } from "@inquirer/prompts";
-import { extname } from "node:path";
 
 import {
   actionCsvToJson,
@@ -28,6 +27,13 @@ import {
   normalizeSerialPlaceholderInTemplate,
   resolveRenamePatternTemplate,
 } from "./rename-template";
+import {
+  type RenameInteractiveCodexFlags as InteractiveCodexFlags,
+  type RenameInteractiveCodexScope as InteractiveCodexScope,
+  resolveAutoCodexFlagsForBatchProfile,
+  resolveAutoCodexFlagsForFilePath,
+  resolveCodexFlagsFromScope,
+} from "./rename-interactive-router";
 import type { CliRuntime } from "./types";
 
 type InteractiveActionKey =
@@ -58,40 +64,6 @@ type InteractiveSubmenuConfig = {
   choices: Array<InteractiveMenuChoice<InteractiveActionKey>>;
 };
 
-type InteractiveCodexScope = "auto" | "images" | "docs";
-
-type InteractiveCodexFlags = {
-  codexImages: boolean;
-  codexDocs: boolean;
-};
-
-const INTERACTIVE_SUPPORTED_IMAGE_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".gif",
-  ".bmp",
-  ".tif",
-  ".tiff",
-  ".avif",
-]);
-
-const INTERACTIVE_SUPPORTED_DOC_EXTENSIONS = new Set([
-  ".md",
-  ".markdown",
-  ".txt",
-  ".json",
-  ".yaml",
-  ".yml",
-  ".toml",
-  ".xml",
-  ".html",
-  ".htm",
-  ".pdf",
-  ".docx",
-]);
-
 function validateIntegerInput(value: string, options: { min?: number; allowEmpty?: boolean }): true | string {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -106,41 +78,6 @@ function validateIntegerInput(value: string, options: { min?: number; allowEmpty
     return `Must be >= ${min}`;
   }
   return true;
-}
-
-function resolveAutoCodexFlagsForBatchProfile(profile: string): InteractiveCodexFlags {
-  switch (profile) {
-    case "images":
-      return { codexImages: true, codexDocs: false };
-    case "media":
-      return { codexImages: true, codexDocs: false };
-    case "docs":
-      return { codexImages: false, codexDocs: true };
-    default:
-      return { codexImages: true, codexDocs: true };
-  }
-}
-
-function resolveAutoCodexFlagsForFilePath(path: string): InteractiveCodexFlags {
-  const ext = extname(path).toLowerCase();
-  const codexImages = INTERACTIVE_SUPPORTED_IMAGE_EXTENSIONS.has(ext);
-  const codexDocs = INTERACTIVE_SUPPORTED_DOC_EXTENSIONS.has(ext);
-  return { codexImages, codexDocs };
-}
-
-function resolveCodexFlagsFromScope(options: {
-  scope: InteractiveCodexScope;
-  fallbackAuto: InteractiveCodexFlags;
-}): InteractiveCodexFlags {
-  switch (options.scope) {
-    case "images":
-      return { codexImages: true, codexDocs: false };
-    case "docs":
-      return { codexImages: false, codexDocs: true };
-    case "auto":
-    default:
-      return options.fallbackAuto;
-  }
 }
 
 async function promptRenamePatternConfig(options: {

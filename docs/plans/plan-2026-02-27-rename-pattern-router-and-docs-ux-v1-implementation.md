@@ -2,7 +2,7 @@
 title: "Rename pattern, smart router, and docs UX v1 implementation"
 created-date: 2026-02-27
 modified-date: 2026-02-27
-status: active
+status: completed
 agent: codex
 ---
 
@@ -68,20 +68,20 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 
 ### Phase 4: Documentation Refactor
 
-- [ ] Add `docs/guides/rename-common-usage.md` with concise operational examples.
-- [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md`:
+- [x] Add `docs/guides/rename-common-usage.md` with concise operational examples.
+- [x] Update `docs/guides/rename-scope-and-codex-capability-guide.md`:
   - include template/pattern section
   - convert wide tables into compact print/PDF-friendly format.
-- [ ] Update `README.md` wording and command examples to `cdx-chores`.
-- [ ] Cross-link README and guides to reduce duplication.
+- [x] Update `README.md` wording and command examples to `cdx-chores`.
+- [x] Cross-link README and guides to reduce duplication.
 
 ### Phase 5: Tests and Verification
 
 - [x] Add unit tests for template parser/serializer and validation.
 - [x] Add planner tests for serial order modes and reset-per-directory behavior.
 - [x] Add tests for date placeholders and prefix-null normalization.
-- [ ] Add interactive-flow tests for smart router prompt branching.
-- [ ] Run verification:
+- [x] Add interactive-flow tests for smart router prompt branching.
+- [x] Run verification:
   - `bunx tsc --noEmit`
   - `bun test`
   - focused rename smoke checks in `examples/playground/`.
