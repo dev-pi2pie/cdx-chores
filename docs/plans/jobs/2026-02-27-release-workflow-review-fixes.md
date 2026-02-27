@@ -49,3 +49,9 @@ Fix the release workflow and stable release notes script issues found during rev
 ## Verification
 
 - `bun test test/release-scripts.test.ts` ✅ (`3 pass`, `0 fail`)
+
+## Follow-up Fix
+
+- The GitHub Actions step `Generate release notes (stable, curated aggregate)` failed with exit code `126` because `scripts/generate-stable-release-notes.sh` was tracked without the executable bit, so direct execution returned `Permission denied`.
+- Updated `.github/workflows/release.yml` to invoke the script via `bash`, which avoids depending on checkout file mode for this CI step.
+- Restored the executable bit on `scripts/generate-stable-release-notes.sh` in git so direct local execution remains valid.

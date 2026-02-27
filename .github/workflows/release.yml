@@ -181,7 +181,7 @@ jobs:
                     ARGS+=(--previous-tag "$PREVIOUS_TAG")
                   fi
 
-                  NOTES="$("$SCRIPT_PATH" "${ARGS[@]}")"
+                  NOTES="$(bash "$SCRIPT_PATH" "${ARGS[@]}")"
 
                   {
                     echo "content<<__RELEASE_NOTES__"
