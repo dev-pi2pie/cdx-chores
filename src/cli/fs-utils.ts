@@ -136,6 +136,15 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
   const tokens = parseTemplateTokens(template);
 
   const serialTokens = tokens.filter((token) => token === "serial" || token.startsWith("serial_"));
+  if (serialTokens.length > 1) {
+    throw new CliError(
+      "Invalid --pattern: only one {serial...} placeholder is supported per template.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
   let serial:
     | {
         order: RenameSerialOrder;

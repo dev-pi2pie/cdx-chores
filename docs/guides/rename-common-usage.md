@@ -74,6 +74,7 @@ Notes:
 - `--prefix` is optional in CLI mode; omit it for no prefix.
 - Empty `prefix` is allowed; separators are normalized.
 - `{serial...}` parameters are order-insensitive.
+- Use at most one `{serial...}` placeholder in a template. Multiple serial placeholders are rejected.
 - Supported serial order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`.
 - Interactive mode asks serial questions only when the selected template includes `{serial...}`.
 - Interactive serial width expects a digit count such as `2` for `01`, not `##`.

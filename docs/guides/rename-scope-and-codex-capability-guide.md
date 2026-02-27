@@ -52,6 +52,7 @@ Serial token notes:
 - `--prefix` is optional in CLI mode and interactive mode
 - canonical style: `{serial_###_start_1_order_mtime_asc}`
 - marker order is flexible in input and normalized internally
+- only one `{serial...}` placeholder is allowed per template
 - order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`
 - optional recursive per-directory reset with `--serial-scope directory`
 - interactive serial prompts appear only when the selected template includes `{serial...}`

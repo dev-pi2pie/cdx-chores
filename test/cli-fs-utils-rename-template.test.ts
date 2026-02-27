@@ -142,6 +142,15 @@ describe("rename planner template + serial behavior", () => {
       ).rejects.toMatchObject({
         code: "INVALID_INPUT",
       });
+
+      await expect(
+        planSingleRename(runtime, toRepoRelativePath(path), {
+          pattern: "{serial}-{serial_###}-{stem}",
+        }),
+      ).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: "Invalid --pattern: only one {serial...} placeholder is supported per template.",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
