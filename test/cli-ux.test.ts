@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
@@ -87,10 +87,65 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--serial-scope <value>");
   });
 
+  test("video resize help documents scale-first and explicit-dimension modes", () => {
+    const result = runCli(["video", "resize", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("-s, --scale <factor>");
+    expect(result.stdout).toContain("Scale factor multiplier");
+    expect(result.stdout).toContain("--width <px>");
+    expect(result.stdout).toContain("--height <px>");
+    expect(result.stdout).toContain("Preferred: --scale 0.5");
+    expect(result.stdout).toContain("Explicit override: --width 1280 --height 720");
+  });
+
+  test("video resize accepts scale-only flags and reaches input validation", () => {
+    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--scale", "0.5"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Input file not found:");
+  });
+
+  test("video resize rejects incomplete explicit dimensions with a clear error", () => {
+    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--width", "640"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Width and height must be provided together.");
+  });
+
   test("rename rejects unsupported serial order alias values", () => {
     const result = runCli(["rename", "file", "dummy.txt", "--serial-order", "time_asc"]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.");
+  });
+
+  test("rename batch honors embedded serial start when no CLI override is provided", async () => {
+    const fixtureDir = await createTempFixtureDir("cli-ux");
+    try {
+      const dirPath = join(fixtureDir, "serial-pattern-start");
+      await mkdir(dirPath, { recursive: true });
+      await writeFile(join(dirPath, "new-hello.txt"), "hello\n", "utf8");
+      await writeFile(join(dirPath, "new-hi.txt"), "hi\n", "utf8");
+      await writeFile(join(dirPath, "new-hoho.txt"), "hoho\n", "utf8");
+
+      const result = runCli([
+        "rename",
+        "batch",
+        toRepoRelativePath(dirPath),
+        "--pattern",
+        "{stem}-{serial_start_3}",
+        "--dry-run",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("new-hello.txt -> new-hello-3.txt");
+      expect(result.stdout).toContain("new-hi.txt -> new-hi-4.txt");
+      expect(result.stdout).toContain("new-hoho.txt -> new-hoho-5.txt");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
   });
 });

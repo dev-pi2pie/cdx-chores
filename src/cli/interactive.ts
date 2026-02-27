@@ -644,16 +644,24 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       kind: "file",
       ...pathPromptContext,
     });
-    const width = Number(await input({ message: "Width (px)", validate: (value) => (value.trim() ? true : "Required") }));
-    const height = Number(
-      await input({ message: "Height (px)", validate: (value) => (value.trim() ? true : "Required") }),
+    const scale = Number(
+      await input({
+        message: "Scale factor (for example 0.5 halves size, 2 doubles it)",
+        validate: (value) => {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return "Required";
+          }
+          const parsed = Number(trimmed);
+          return Number.isFinite(parsed) && parsed > 0 ? true : "Enter a positive number.";
+        },
+      }),
     );
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionVideoResize(runtime, {
       input: inputPath,
       output: outputPath,
-      width,
-      height,
+      scale,
       overwrite,
     });
     return;

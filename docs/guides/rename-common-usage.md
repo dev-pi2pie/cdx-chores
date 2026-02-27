@@ -76,6 +76,9 @@ Notes:
 - `{serial...}` parameters are order-insensitive.
 - Use at most one `{serial...}` placeholder in a template. Multiple serial placeholders are rejected.
 - Supported serial order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`.
+- Serial precedence is: explicit `--serial-*` flag override, then embedded `{serial...}` token value, then built-in default.
+- Example: `--pattern '{stem}-{serial_start_3}'` starts at `3`, while `--pattern '{stem}-{serial_start_3}' --serial-start 10` starts at `10`.
+- If the template does not include `{serial...}`, `--serial-order`, `--serial-start`, `--serial-width`, and `--serial-scope` have no effect.
 - Interactive mode asks serial questions only when the selected template includes `{serial...}`.
 - Interactive serial width expects a digit count such as `2` for `01`, not `##`.
 - Interactive prefix input is optional; leaving it blank means no prefix.
