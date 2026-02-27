@@ -1,5 +1,5 @@
 import { access, readFile } from "node:fs/promises";
-import { basename, extname } from "node:path";
+import { basename, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as mammoth from "mammoth";
@@ -53,6 +53,11 @@ interface DocumentTitleEvidence {
   keySummary?: string[];
   metadata?: Record<string, unknown>;
   warnings?: string[];
+}
+
+interface PromptDocumentTitleEvidence extends Omit<DocumentTitleEvidence, "filename"> {
+  basename: string;
+  filename: string;
 }
 
 const DOC_MARKDOWN_EXTENSIONS = new Set([".md", ".markdown"]);
@@ -786,12 +791,44 @@ export async function __testOnlyExtractDocumentTitleEvidenceForPath(
   return extractEvidenceForPath(path);
 }
 
-function buildPrompt(evidences: DocumentTitleEvidence[]): string {
+export function __testOnlyBuildDocumentPrompt(options: {
+  evidences: Array<{ path: string; evidence: DocumentTitleEvidence }>;
+  workingDirectory: string;
+}): string {
+  return buildPrompt(
+    options.evidences.map((item) =>
+      createPromptEvidence({
+        evidence: item.evidence,
+        path: item.path,
+        workingDirectory: options.workingDirectory,
+      }),
+    ),
+  );
+}
+
+function toPromptFilename(path: string, workingDirectory: string): string {
+  return relative(workingDirectory, path).replaceAll("\\", "/");
+}
+
+function createPromptEvidence(options: {
+  evidence: DocumentTitleEvidence;
+  path: string;
+  workingDirectory: string;
+}): PromptDocumentTitleEvidence {
+  return {
+    ...options.evidence,
+    basename: options.evidence.filename,
+    filename: toPromptFilename(options.path, options.workingDirectory),
+  };
+}
+
+function buildPrompt(evidences: PromptDocumentTitleEvidence[]): string {
   return [
     "Generate concise semantic filename titles for these document files from extracted text evidence.",
     "Return JSON only following the provided schema.",
     "Rules:",
     "- One suggestion per listed filename when there is enough signal.",
+    "- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.",
     "- `title` should be 2-6 words.",
     "- No file extensions.",
     "- No punctuation except spaces and hyphens.",
@@ -804,7 +841,7 @@ function buildPrompt(evidences: DocumentTitleEvidence[]): string {
 }
 
 async function suggestSingleBatch(options: {
-  evidences: Array<{ path: string; evidence: DocumentTitleEvidence }>;
+  evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
   workingDirectory: string;
   timeoutMs?: number;
 }): Promise<CodexDocumentRenameResult> {
@@ -813,9 +850,16 @@ async function suggestSingleBatch(options: {
   }
 
   const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const promptEvidences = options.evidences.map((item) =>
+    createPromptEvidence({
+      evidence: item.evidence,
+      path: item.path,
+      workingDirectory: options.workingDirectory,
+    }),
+  );
 
   const turn = await thread.run(
-    [{ type: "text", text: buildPrompt(options.evidences.map((item) => item.evidence)) }],
+    [{ type: "text", text: buildPrompt(promptEvidences) }],
     {
       outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
       signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
@@ -826,7 +870,7 @@ async function suggestSingleBatch(options: {
 
   const suggestions: CodexDocumentRenameSuggestion[] = [];
   for (const item of options.evidences) {
-    const title = suggestionsByFilename.get(item.evidence.filename);
+    const title = suggestionsByFilename.get(item.promptFilename);
     if (!title) {
       continue;
     }
@@ -844,7 +888,7 @@ export async function suggestDocumentRenameTitlesWithCodex(
   }
 
   const reasons: CodexDocumentRenameReason[] = [];
-  const evidenceItems: Array<{ path: string; evidence: DocumentTitleEvidence }> = [];
+  const evidenceItems: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }> = [];
 
   for (const path of options.documentPaths) {
     const extracted = await extractEvidenceForPath(path);
@@ -853,7 +897,11 @@ export async function suggestDocumentRenameTitlesWithCodex(
       continue;
     }
     if (extracted.evidence) {
-      evidenceItems.push({ path, evidence: extracted.evidence });
+      evidenceItems.push({
+        path,
+        promptFilename: toPromptFilename(path, options.workingDirectory),
+        evidence: extracted.evidence,
+      });
     }
   }
 

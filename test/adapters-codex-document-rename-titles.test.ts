@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { __testOnlyExtractDocumentTitleEvidenceForPath } from "../src/adapters/codex/document-rename-titles";
+import {
+  __testOnlyBuildDocumentPrompt,
+  __testOnlyExtractDocumentTitleEvidenceForPath,
+} from "../src/adapters/codex/document-rename-titles";
 import { createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
 
 describe("codex document rename title extractor", () => {
@@ -49,6 +52,42 @@ describe("codex document rename title extractor", () => {
 
       expect(result).toEqual({ reason: "pdf_extract_error" });
       expect(toRepoRelativePath(invalidPdfPath)).toContain("examples/playground/.tmp-tests");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("builds unique prompt filenames for duplicate basenames", async () => {
+    const fixtureDir = await createTempFixtureDir("doc-prompt");
+    try {
+      const baseDir = join(fixtureDir, "duplicate-basename");
+      const aDir = join(baseDir, "a");
+      const bDir = join(baseDir, "b");
+      await mkdir(aDir, { recursive: true });
+      await mkdir(bDir, { recursive: true });
+
+      const aPath = join(aDir, "report.md");
+      const bPath = join(bDir, "report.md");
+      await writeFile(aPath, "# Alpha Report\n\nA.\n", "utf8");
+      await writeFile(bPath, "# Beta Report\n\nB.\n", "utf8");
+
+      const alpha = await __testOnlyExtractDocumentTitleEvidenceForPath(aPath);
+      const beta = await __testOnlyExtractDocumentTitleEvidenceForPath(bPath);
+      if (!alpha.evidence || !beta.evidence) {
+        throw new Error("Expected markdown evidence");
+      }
+
+      const prompt = __testOnlyBuildDocumentPrompt({
+        evidences: [
+          { path: aPath, evidence: alpha.evidence },
+          { path: bPath, evidence: beta.evidence },
+        ],
+        workingDirectory: baseDir,
+      });
+
+      expect(prompt).toContain('"filename": "a/report.md"');
+      expect(prompt).toContain('"filename": "b/report.md"');
+      expect(prompt).toContain('"basename": "report.md"');
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
