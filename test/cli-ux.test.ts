@@ -3,7 +3,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
-import { createTempFixtureDir, REPO_ROOT, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
+import { createTempFixtureDir, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
 
 describe("CLI UX flags and path output", () => {
   test("supports both -v and -V for version output", () => {
@@ -69,5 +69,28 @@ describe("CLI UX flags and path output", () => {
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
+  });
+
+  test("rename help includes template and serial controls", () => {
+    const result = runCli(["rename", "batch", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--pattern <template>");
+    expect(result.stdout).toContain("--prefix <value>");
+    expect(result.stdout).toContain("Filename prefix (optional)");
+    expect(result.stdout).toContain("--codex");
+    expect(result.stdout).toContain("Auto-route eligible files to Codex");
+    expect(result.stdout).toContain("--serial-order <value>");
+    expect(result.stdout).toContain("--serial-start <value>");
+    expect(result.stdout).toContain("--serial-width <value>");
+    expect(result.stdout).toContain("--serial-scope <value>");
+  });
+
+  test("rename rejects unsupported serial order alias values", () => {
+    const result = runCli(["rename", "file", "dummy.txt", "--serial-order", "time_asc"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.");
   });
 });

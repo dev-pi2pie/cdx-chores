@@ -2,12 +2,22 @@ import { rm, stat } from "node:fs/promises";
 import { basename, extname } from "node:path";
 
 import {
+  suggestDocumentRenameTitlesWithCodex,
+  type CodexDocumentRenameResult,
+} from "../../adapters/codex/document-rename-titles";
+import {
   suggestImageRenameTitlesWithCodex,
   type CodexImageRenameResult,
 } from "../../adapters/codex/image-rename-titles";
 import { slugifyName } from "../../utils/slug";
 import { CliError } from "../errors";
 import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
+import {
+  resolveAutoCodexFlagsForFilePath,
+  resolveAutoCodexFlagsForPaths,
+  resolveCodexFlagsFromCliOptions,
+} from "../rename-interactive-router";
+import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
@@ -18,9 +28,31 @@ function formatRenamePreviewLine(plan: PlannedRename): string {
   return plan.changed ? `- ${fromName} -> ${toName}` : `- ${fromName} (unchanged)`;
 }
 
+type CodexImageRenameTitleSuggester = (options: {
+  imagePaths: string[];
+  workingDirectory: string;
+  timeoutMs?: number;
+  retries?: number;
+  batchSize?: number;
+}) => Promise<CodexImageRenameResult>;
+
+type CodexDocumentRenameTitleSuggester = (options: {
+  documentPaths: string[];
+  workingDirectory: string;
+  timeoutMs?: number;
+  retries?: number;
+  batchSize?: number;
+}) => Promise<CodexDocumentRenameResult>;
+
 export interface RenameBatchOptions {
   directory: string;
   prefix?: string;
+  pattern?: string;
+  codex?: boolean;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
   profile?: string;
   dryRun?: boolean;
   recursive?: boolean;
@@ -29,34 +61,38 @@ export interface RenameBatchOptions {
   skipRegex?: string;
   ext?: string[];
   skipExt?: string[];
-  codex?: boolean;
-  codexTimeoutMs?: number;
-  codexRetries?: number;
-  codexBatchSize?: number;
-  codexTitleSuggester?: (options: {
-    imagePaths: string[];
-    workingDirectory: string;
-    timeoutMs?: number;
-    retries?: number;
-    batchSize?: number;
-  }) => Promise<CodexImageRenameResult>;
+  codexImages?: boolean;
+  codexImagesTimeoutMs?: number;
+  codexImagesRetries?: number;
+  codexImagesBatchSize?: number;
+  codexImagesTitleSuggester?: CodexImageRenameTitleSuggester;
+  codexDocs?: boolean;
+  codexDocsTimeoutMs?: number;
+  codexDocsRetries?: number;
+  codexDocsBatchSize?: number;
+  codexDocsTitleSuggester?: CodexDocumentRenameTitleSuggester;
 }
 
 export interface RenameFileOptions {
   path: string;
   prefix?: string;
-  dryRun?: boolean;
+  pattern?: string;
   codex?: boolean;
-  codexTimeoutMs?: number;
-  codexRetries?: number;
-  codexBatchSize?: number;
-  codexTitleSuggester?: (options: {
-    imagePaths: string[];
-    workingDirectory: string;
-    timeoutMs?: number;
-    retries?: number;
-    batchSize?: number;
-  }) => Promise<CodexImageRenameResult>;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
+  dryRun?: boolean;
+  codexImages?: boolean;
+  codexImagesTimeoutMs?: number;
+  codexImagesRetries?: number;
+  codexImagesBatchSize?: number;
+  codexImagesTitleSuggester?: CodexImageRenameTitleSuggester;
+  codexDocs?: boolean;
+  codexDocsTimeoutMs?: number;
+  codexDocsRetries?: number;
+  codexDocsBatchSize?: number;
+  codexDocsTitleSuggester?: CodexDocumentRenameTitleSuggester;
 }
 
 export interface RenameApplyOptions {
@@ -83,6 +119,28 @@ const CODEX_MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const CODEX_STATIC_IMAGE_EXTENSIONS = new Set(
   [...IMAGE_EXTENSIONS].filter((ext) => ext !== ".gif"),
 );
+
+const CODEX_TEXT_DOCUMENT_EXTENSIONS = new Set([
+  ".md",
+  ".markdown",
+  ".txt",
+  ".json",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".xml",
+  ".html",
+  ".htm",
+]);
+const CODEX_PDF_DOCUMENT_EXTENSIONS = new Set([".pdf"]);
+const CODEX_DOCX_DOCUMENT_EXTENSIONS = new Set([".docx"]);
+const CODEX_MAX_TEXT_DOCUMENT_BYTES = 512 * 1024;
+const CODEX_MAX_PDF_DOCUMENT_BYTES = 20 * 1024 * 1024;
+const CODEX_MAX_DOCX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+function isCodexDocxExperimentalEnabled(): boolean {
+  return process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL === "1";
+}
 
 const DEFAULT_RENAME_BATCH_EXCLUDED_BASENAMES = new Set([
   ".DS_Store",
@@ -278,13 +336,51 @@ function createRenameBatchFileFilter(options: RenameBatchOptions): (entryName: s
   };
 }
 
-async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<{
-  imagePaths: string[];
-  imageCandidateCount: number;
+interface RenameTitleAnalyzerSuggestion {
+  path: string;
+  title: string;
+}
+
+interface RenameTitleAnalyzerSuggestionResult {
+  suggestions: RenameTitleAnalyzerSuggestion[];
+  errorMessage?: string;
+  reasonByPath?: Map<string, string>;
+}
+
+interface RenameTitleAnalyzerSelection {
+  candidateCount: number;
+  eligiblePaths: string[];
   skipReasonByPath: Map<string, string>;
-}> {
-  const imagePaths: string[] = [];
-  let imageCandidateCount = 0;
+}
+
+interface RenameTitleAnalyzerRunResult {
+  candidateCount: number;
+  eligibleCount: number;
+  suggestedCount: number;
+  errorMessage: string | null;
+  titlesByPath?: Map<string, string>;
+  reasonBySourcePath: Map<string, string>;
+}
+
+interface RenameTitleAnalyzer {
+  id: string;
+  summaryLabel: string;
+  progressLabelForCount: (eligibleCount: number) => string;
+  selectCandidates: (plans: PlannedRename[]) => Promise<RenameTitleAnalyzerSelection>;
+  suggestTitles: (options: {
+    paths: string[];
+    workingDirectory: string;
+    timeoutMs?: number;
+    retries?: number;
+    batchSize?: number;
+  }) => Promise<RenameTitleAnalyzerSuggestionResult>;
+}
+
+async function selectCodexStaticImageCandidates(
+  plans: PlannedRename[],
+): Promise<RenameTitleAnalyzerSelection> {
+  const eligiblePaths: string[] = [];
+  let candidateCount = 0;
   const skipReasonByPath = new Map<string, string>();
 
   for (const plan of plans) {
@@ -294,7 +390,7 @@ async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<{
       continue;
     }
 
-    imageCandidateCount += 1;
+    candidateCount += 1;
 
     if (!CODEX_STATIC_IMAGE_EXTENSIONS.has(ext)) {
       skipReasonByPath.set(sourcePath, "codex_skipped_non_static");
@@ -316,18 +412,124 @@ async function selectCodexAssistImagePaths(plans: PlannedRename[]): Promise<{
       continue;
     }
 
-    imagePaths.push(sourcePath);
+    eligiblePaths.push(sourcePath);
   }
 
-  return { imagePaths, imageCandidateCount, skipReasonByPath };
+  return { candidateCount, eligiblePaths, skipReasonByPath };
 }
 
-function startCodexProgress(
+function createCodexStaticImageTitleAnalyzer(options: {
+  titleSuggester?: CodexImageRenameTitleSuggester;
+}): RenameTitleAnalyzer {
+  const titleSuggester = options.titleSuggester ?? suggestImageRenameTitlesWithCodex;
+  return {
+    id: "codex-static-image",
+    summaryLabel: "Codex image titles",
+    progressLabelForCount: (eligibleCount) => `Codex: analyzing ${eligibleCount} image file(s)`,
+    selectCandidates: selectCodexStaticImageCandidates,
+    suggestTitles: async ({ paths, workingDirectory, timeoutMs, retries, batchSize }) => {
+      const result = await titleSuggester({
+        imagePaths: paths,
+        workingDirectory,
+        timeoutMs,
+        retries,
+        batchSize,
+      });
+      return { suggestions: result.suggestions, errorMessage: result.errorMessage };
+    },
+  };
+}
+
+async function selectCodexDocumentTextCandidates(
+  plans: PlannedRename[],
+): Promise<RenameTitleAnalyzerSelection> {
+  const eligiblePaths: string[] = [];
+  let candidateCount = 0;
+  const skipReasonByPath = new Map<string, string>();
+
+  for (const plan of plans) {
+    const sourcePath = plan.fromPath;
+    const ext = extname(sourcePath).toLowerCase();
+    const isTextLike = CODEX_TEXT_DOCUMENT_EXTENSIONS.has(ext);
+    const isPdf = CODEX_PDF_DOCUMENT_EXTENSIONS.has(ext);
+    const isDocx = CODEX_DOCX_DOCUMENT_EXTENSIONS.has(ext);
+    if (!isTextLike && !isPdf && !isDocx) {
+      continue;
+    }
+
+    candidateCount += 1;
+
+    if (isDocx && !isCodexDocxExperimentalEnabled()) {
+      skipReasonByPath.set(sourcePath, "docx_experimental_disabled");
+      continue;
+    }
+
+    try {
+      const fileStats = await stat(sourcePath);
+      if (!fileStats.isFile()) {
+        skipReasonByPath.set(
+          sourcePath,
+          isPdf ? "pdf_skipped_unreadable" : isDocx ? "docx_skipped_unreadable" : "doc_skipped_unreadable",
+        );
+        continue;
+      }
+      const sizeLimit = isPdf
+        ? CODEX_MAX_PDF_DOCUMENT_BYTES
+        : isDocx
+          ? CODEX_MAX_DOCX_DOCUMENT_BYTES
+          : CODEX_MAX_TEXT_DOCUMENT_BYTES;
+      if (fileStats.size > sizeLimit) {
+        skipReasonByPath.set(
+          sourcePath,
+          isPdf ? "pdf_skipped_too_large" : isDocx ? "docx_skipped_too_large" : "doc_skipped_too_large",
+        );
+        continue;
+      }
+    } catch {
+      skipReasonByPath.set(
+        sourcePath,
+        isPdf ? "pdf_skipped_unreadable" : isDocx ? "docx_skipped_unreadable" : "doc_skipped_unreadable",
+      );
+      continue;
+    }
+
+    eligiblePaths.push(sourcePath);
+  }
+
+  return { candidateCount, eligiblePaths, skipReasonByPath };
+}
+
+function createCodexDocumentTextTitleAnalyzer(options: {
+  titleSuggester?: CodexDocumentRenameTitleSuggester;
+}): RenameTitleAnalyzer {
+  const titleSuggester = options.titleSuggester ?? suggestDocumentRenameTitlesWithCodex;
+  return {
+    id: "codex-document-text",
+    summaryLabel: "Codex doc titles",
+    progressLabelForCount: (eligibleCount) => `Codex: analyzing ${eligibleCount} document file(s)`,
+    selectCandidates: selectCodexDocumentTextCandidates,
+    suggestTitles: async ({ paths, workingDirectory, timeoutMs, retries, batchSize }) => {
+      const result = await titleSuggester({
+        documentPaths: paths,
+        workingDirectory,
+        timeoutMs,
+        retries,
+        batchSize,
+      });
+      return {
+        suggestions: result.suggestions,
+        errorMessage: result.errorMessage,
+        reasonByPath: result.reasons ? new Map(result.reasons.map((item) => [item.path, item.reason])) : undefined,
+      };
+    },
+  };
+}
+
+function startAnalyzerProgress(
   runtime: CliRuntime,
-  imageCount: number,
+  label: string,
 ): { stop: (status: "done" | "fallback") => void } {
   const stream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean };
-  const label = `Codex: analyzing ${imageCount} image file(s)`;
 
   if (!stream.isTTY) {
     printLine(runtime.stdout, `${label}...`);
@@ -353,6 +555,69 @@ function startCodexProgress(
   };
 }
 
+async function runRenameTitleAnalyzer(
+  runtime: CliRuntime,
+  plans: PlannedRename[],
+  analyzer: RenameTitleAnalyzer,
+  options: {
+    timeoutMs?: number;
+    retries?: number;
+    batchSize?: number;
+  },
+): Promise<RenameTitleAnalyzerRunResult> {
+  const selection = await analyzer.selectCandidates(plans);
+  const reasonBySourcePath = new Map(selection.skipReasonByPath);
+  let errorMessage: string | null = null;
+  let titlesByPath: Map<string, string> | undefined;
+  let suggestedCount = 0;
+
+  if (selection.eligiblePaths.length > 0) {
+    const progress = startAnalyzerProgress(runtime, analyzer.progressLabelForCount(selection.eligiblePaths.length));
+    const result = await analyzer.suggestTitles({
+      paths: selection.eligiblePaths,
+      workingDirectory: runtime.cwd,
+      timeoutMs: options.timeoutMs,
+      retries: options.retries,
+      batchSize: options.batchSize,
+    });
+    progress.stop(result.errorMessage ? "fallback" : "done");
+    errorMessage = result.errorMessage ?? null;
+
+    if (result.suggestions.length > 0) {
+      titlesByPath = new Map(result.suggestions.map((item) => [item.path, item.title]));
+      suggestedCount = result.suggestions.length;
+    }
+
+    if (result.reasonByPath) {
+      for (const [path, reason] of result.reasonByPath) {
+        if (titlesByPath?.has(path)) {
+          continue;
+        }
+        reasonBySourcePath.set(path, reason);
+      }
+    }
+
+    for (const path of selection.eligiblePaths) {
+      if (titlesByPath?.has(path)) {
+        continue;
+      }
+      if (reasonBySourcePath.has(path)) {
+        continue;
+      }
+      reasonBySourcePath.set(path, errorMessage ? "codex_fallback_error" : "codex_no_suggestion");
+    }
+  }
+
+  return {
+    candidateCount: selection.candidateCount,
+    eligibleCount: selection.eligiblePaths.length,
+    suggestedCount,
+    errorMessage,
+    titlesByPath,
+    reasonBySourcePath,
+  };
+}
+
 export async function actionRenameBatch(
   runtime: CliRuntime,
   options: RenameBatchOptions,
@@ -362,6 +627,11 @@ export async function actionRenameBatch(
   const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
     now: runtime.now(),
     fileFilter,
     recursive: options.recursive,
@@ -369,53 +639,87 @@ export async function actionRenameBatch(
   });
   const directoryPath = initial.directoryPath;
   const skipped = initial.skipped;
+  const effectiveCodexFlags = resolveCodexFlagsFromCliOptions({
+    cli: {
+      codex: options.codex,
+      codexImages: options.codexImages,
+      codexDocs: options.codexDocs,
+    },
+    fallbackAuto: resolveAutoCodexFlagsForPaths(initial.plans.map((plan) => plan.fromPath)),
+  });
 
   let titleOverrides: Map<string, string> | undefined;
   let codexImageCount = 0;
-  let codexSuggestedCount = 0;
-  let codexErrorMessage: string | null = null;
-  let codexTitlesByPath: Map<string, string> | undefined;
+  let codexEligibleStaticImageCount = 0;
+  let codexImageSuggestedCount = 0;
+  let codexImageErrorMessage: string | null = null;
+  let codexImageSummaryLabel = "Codex image titles";
+  let codexImageTitlesByPath: Map<string, string> | undefined;
+  let codexDocCount = 0;
+  let codexEligibleDocCount = 0;
+  let codexDocSuggestedCount = 0;
+  let codexDocErrorMessage: string | null = null;
+  let codexDocSummaryLabel = "Codex doc titles";
+  let codexDocTitlesByPath: Map<string, string> | undefined;
   const rowReasonBySourcePath = new Map<string, string>();
 
-  if (options.codex ?? false) {
-    const codexSelection = await selectCodexAssistImagePaths(initial.plans);
-    const imagePaths = codexSelection.imagePaths;
-    codexImageCount = codexSelection.imageCandidateCount;
-    for (const [path, reason] of codexSelection.skipReasonByPath) {
+  if (effectiveCodexFlags.codexImages) {
+    const codexAnalyzer = createCodexStaticImageTitleAnalyzer({
+      titleSuggester: options.codexImagesTitleSuggester,
+    });
+    codexImageSummaryLabel = codexAnalyzer.summaryLabel;
+    const codexRun = await runRenameTitleAnalyzer(runtime, initial.plans, codexAnalyzer, {
+      timeoutMs: options.codexImagesTimeoutMs,
+      retries: options.codexImagesRetries,
+      batchSize: options.codexImagesBatchSize,
+    });
+    codexImageCount = codexRun.candidateCount;
+    codexEligibleStaticImageCount = codexRun.eligibleCount;
+    codexImageSuggestedCount = codexRun.suggestedCount;
+    codexImageErrorMessage = codexRun.errorMessage;
+    codexImageTitlesByPath = codexRun.titlesByPath;
+    for (const [path, reason] of codexRun.reasonBySourcePath) {
       rowReasonBySourcePath.set(path, reason);
     }
-
-    if (imagePaths.length > 0) {
-      const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
-      const progress = startCodexProgress(runtime, imagePaths.length);
-      const codexResult = await codexTitleSuggester({
-        imagePaths,
-        workingDirectory: runtime.cwd,
-        timeoutMs: options.codexTimeoutMs,
-        retries: options.codexRetries,
-        batchSize: options.codexBatchSize,
-      });
-      progress.stop(codexResult.errorMessage ? "fallback" : "done");
-      codexErrorMessage = codexResult.errorMessage ?? null;
-
-      if (codexResult.suggestions.length > 0) {
-        codexTitlesByPath = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
-        titleOverrides = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
-        codexSuggestedCount = codexResult.suggestions.length;
-      }
-
-      for (const imagePath of imagePaths) {
-        if (codexTitlesByPath?.has(imagePath)) {
-          continue;
-        }
-        rowReasonBySourcePath.set(imagePath, codexErrorMessage ? "codex_fallback_error" : "codex_no_suggestion");
-      }
+    if (codexImageTitlesByPath && codexImageTitlesByPath.size > 0) {
+      titleOverrides = new Map(codexImageTitlesByPath);
     }
   }
+
+  if (effectiveCodexFlags.codexDocs) {
+    const codexDocAnalyzer = createCodexDocumentTextTitleAnalyzer({
+      titleSuggester: options.codexDocsTitleSuggester,
+    });
+    codexDocSummaryLabel = codexDocAnalyzer.summaryLabel;
+    const codexDocRun = await runRenameTitleAnalyzer(runtime, initial.plans, codexDocAnalyzer, {
+      timeoutMs: options.codexDocsTimeoutMs,
+      retries: options.codexDocsRetries,
+      batchSize: options.codexDocsBatchSize,
+    });
+    codexDocCount = codexDocRun.candidateCount;
+    codexEligibleDocCount = codexDocRun.eligibleCount;
+    codexDocSuggestedCount = codexDocRun.suggestedCount;
+    codexDocErrorMessage = codexDocRun.errorMessage;
+    codexDocTitlesByPath = codexDocRun.titlesByPath;
+    for (const [path, reason] of codexDocRun.reasonBySourcePath) {
+      rowReasonBySourcePath.set(path, reason);
+    }
+    if (codexDocTitlesByPath && codexDocTitlesByPath.size > 0) {
+      titleOverrides = new Map([...(titleOverrides ?? []), ...codexDocTitlesByPath]);
+    }
+  }
+
+  const codexTitlesByPath =
+    titleOverrides && titleOverrides.size > 0 ? new Map(titleOverrides) : undefined;
 
   const { plans } = titleOverrides
     ? await planBatchRename(runtime, directory, {
         prefix: options.prefix,
+        pattern: options.pattern,
+        serialOrder: options.serialOrder,
+        serialStart: options.serialStart,
+        serialWidth: options.serialWidth,
+        serialScope: options.serialScope,
         now: runtime.now(),
         titleOverrides,
         fileFilter,
@@ -434,14 +738,51 @@ export async function actionRenameBatch(
   if (skipped.length > 0) {
     printLine(runtime.stdout, `Entries skipped: ${skipped.length}`);
   }
-  if (options.codex ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     printLine(
       runtime.stdout,
-      `Codex image titles: ${codexSuggestedCount}/${codexImageCount} image file(s) suggested${codexErrorMessage ? " (fallback used for others)" : ""}`,
+      `${codexImageSummaryLabel}: ${codexImageSuggestedCount}/${codexImageCount} image file(s) suggested${codexImageErrorMessage ? " (fallback used for others)" : ""}`,
     );
-    if (codexErrorMessage && codexImageCount > 0) {
-      printLine(runtime.stdout, `Codex note: ${codexErrorMessage}`);
+    if (totalCount > 0 && codexImageCount === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex note: no supported static image files in scope; other file types use deterministic rename.",
+      );
+    } else if (codexImageCount > 0 && codexEligibleStaticImageCount === 0 && !codexImageErrorMessage) {
+      printLine(
+        runtime.stdout,
+        "Codex note: image files were found, but none were eligible static-image inputs (see preview/CSV reasons).",
+      );
     }
+    if (codexImageErrorMessage && codexImageCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexImageErrorMessage}`);
+    }
+  }
+  if (effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      `${codexDocSummaryLabel}: ${codexDocSuggestedCount}/${codexDocCount} document file(s) suggested${codexDocErrorMessage ? " (fallback used for others)" : ""}`,
+    );
+    if (totalCount > 0 && codexDocCount === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex note: no supported document files in scope for --codex-docs; other file types use deterministic rename.",
+      );
+    } else if (codexDocCount > 0 && codexEligibleDocCount === 0 && !codexDocErrorMessage) {
+      printLine(
+        runtime.stdout,
+        "Codex note: document files were found, but none were eligible document inputs (see preview/CSV reasons).",
+      );
+    }
+    if (codexDocErrorMessage && codexDocCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
+    }
+  }
+  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      "Codex note: no supported Codex analyzer inputs are in scope; deterministic rename is used.",
+    );
   }
   printLine(runtime.stdout);
 
@@ -493,70 +834,148 @@ export async function actionRenameFile(
   const inputPath = assertNonEmpty(options.path, "File path");
   const initial = await planSingleRename(runtime, inputPath, {
     prefix: options.prefix,
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
     now: runtime.now(),
+  });
+  const effectiveCodexFlags = resolveCodexFlagsFromCliOptions({
+    cli: {
+      codex: options.codex,
+      codexImages: options.codexImages,
+      codexDocs: options.codexDocs,
+    },
+    fallbackAuto: resolveAutoCodexFlagsForFilePath(initial.plan.fromPath),
   });
   const directoryPath = initial.directoryPath;
   let plan = initial.plan;
   let codexImageCount = 0;
-  let codexSuggestedCount = 0;
-  let codexErrorMessage: string | null = null;
-  let codexTitlesByPath: Map<string, string> | undefined;
+  let codexEligibleStaticImageCount = 0;
+  let codexImageSuggestedCount = 0;
+  let codexImageErrorMessage: string | null = null;
+  let codexImageTitlesByPath: Map<string, string> | undefined;
+  let codexImageSummaryLabel = "Codex image titles";
+  let codexDocCount = 0;
+  let codexEligibleDocCount = 0;
+  let codexDocSuggestedCount = 0;
+  let codexDocErrorMessage: string | null = null;
+  let codexDocTitlesByPath: Map<string, string> | undefined;
+  let codexDocSummaryLabel = "Codex doc titles";
   const rowReasonBySourcePath = new Map<string, string>();
 
-  if (options.codex ?? false) {
-    const codexSelection = await selectCodexAssistImagePaths([initial.plan]);
-    const imagePaths = codexSelection.imagePaths;
-    codexImageCount = codexSelection.imageCandidateCount;
-    for (const [path, reason] of codexSelection.skipReasonByPath) {
+  if (effectiveCodexFlags.codexImages) {
+    const codexAnalyzer = createCodexStaticImageTitleAnalyzer({
+      titleSuggester: options.codexImagesTitleSuggester,
+    });
+    codexImageSummaryLabel = codexAnalyzer.summaryLabel;
+    const codexRun = await runRenameTitleAnalyzer(runtime, [initial.plan], codexAnalyzer, {
+      timeoutMs: options.codexImagesTimeoutMs,
+      retries: options.codexImagesRetries,
+      batchSize: options.codexImagesBatchSize,
+    });
+    codexImageCount = codexRun.candidateCount;
+    codexEligibleStaticImageCount = codexRun.eligibleCount;
+    codexImageSuggestedCount = codexRun.suggestedCount;
+    codexImageErrorMessage = codexRun.errorMessage;
+    codexImageTitlesByPath = codexRun.titlesByPath;
+    for (const [path, reason] of codexRun.reasonBySourcePath) {
       rowReasonBySourcePath.set(path, reason);
     }
+  }
 
-    if (imagePaths.length > 0) {
-      const codexTitleSuggester = options.codexTitleSuggester ?? suggestImageRenameTitlesWithCodex;
-      const progress = startCodexProgress(runtime, imagePaths.length);
-      const codexResult = await codexTitleSuggester({
-        imagePaths,
-        workingDirectory: runtime.cwd,
-        timeoutMs: options.codexTimeoutMs,
-        retries: options.codexRetries,
-        batchSize: options.codexBatchSize,
-      });
-      progress.stop(codexResult.errorMessage ? "fallback" : "done");
-      codexErrorMessage = codexResult.errorMessage ?? null;
-
-      if (codexResult.suggestions.length > 0) {
-        codexTitlesByPath = new Map(codexResult.suggestions.map((item) => [item.path, item.title]));
-        const titleOverride = codexTitlesByPath.get(initial.plan.fromPath);
-        if (titleOverride) {
-          const replanned = await planSingleRename(runtime, inputPath, {
-            prefix: options.prefix,
-            now: runtime.now(),
-            titleOverride,
-          });
-          plan = replanned.plan;
-          codexSuggestedCount = 1;
-        }
-      }
-
-      if (!codexTitlesByPath?.has(initial.plan.fromPath)) {
-        rowReasonBySourcePath.set(
-          initial.plan.fromPath,
-          codexErrorMessage ? "codex_fallback_error" : "codex_no_suggestion",
-        );
-      }
+  if (effectiveCodexFlags.codexDocs) {
+    const codexDocAnalyzer = createCodexDocumentTextTitleAnalyzer({
+      titleSuggester: options.codexDocsTitleSuggester,
+    });
+    codexDocSummaryLabel = codexDocAnalyzer.summaryLabel;
+    const codexDocRun = await runRenameTitleAnalyzer(runtime, [initial.plan], codexDocAnalyzer, {
+      timeoutMs: options.codexDocsTimeoutMs,
+      retries: options.codexDocsRetries,
+      batchSize: options.codexDocsBatchSize,
+    });
+    codexDocCount = codexDocRun.candidateCount;
+    codexEligibleDocCount = codexDocRun.eligibleCount;
+    codexDocSuggestedCount = codexDocRun.suggestedCount;
+    codexDocErrorMessage = codexDocRun.errorMessage;
+    codexDocTitlesByPath = codexDocRun.titlesByPath;
+    for (const [path, reason] of codexDocRun.reasonBySourcePath) {
+      rowReasonBySourcePath.set(path, reason);
     }
+  }
+
+  const codexTitlesByPath = new Map<string, string>([
+    ...(codexImageTitlesByPath ?? []),
+    ...(codexDocTitlesByPath ?? []),
+  ]);
+  const titleOverride = codexTitlesByPath.get(initial.plan.fromPath);
+  if (titleOverride) {
+    const replanned = await planSingleRename(runtime, inputPath, {
+      prefix: options.prefix,
+      pattern: options.pattern,
+      serialOrder: options.serialOrder,
+      serialStart: options.serialStart,
+      serialWidth: options.serialWidth,
+      serialScope: options.serialScope,
+      now: runtime.now(),
+      titleOverride,
+    });
+    plan = replanned.plan;
   }
 
   printLine(runtime.stdout, `Directory: ${displayPath(runtime, directoryPath)}`);
   printLine(runtime.stdout, `File: ${displayPath(runtime, plan.fromPath)}`);
-  if (options.codex ?? false) {
+  if (effectiveCodexFlags.codexImages) {
     printLine(
       runtime.stdout,
-      `Codex image titles: ${codexSuggestedCount}/${codexImageCount} image file(s) suggested${codexErrorMessage ? " (fallback used for others)" : ""}`,
+      `${codexImageSummaryLabel}: ${codexImageSuggestedCount}/${codexImageCount} image file(s) suggested${codexImageErrorMessage ? " (fallback used for others)" : ""}`,
     );
-    if (codexErrorMessage && codexImageCount > 0) {
-      printLine(runtime.stdout, `Codex note: ${codexErrorMessage}`);
+    if (codexImageCount === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex note: this file is not a supported static image input; deterministic rename is used.",
+      );
+    } else if (codexEligibleStaticImageCount === 0 && !codexImageErrorMessage) {
+      printLine(
+        runtime.stdout,
+        "Codex note: this image file is not an eligible static-image input (for example GIF, too large, or unreadable).",
+      );
     }
+    if (codexImageErrorMessage && codexImageCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexImageErrorMessage}`);
+    }
+  }
+  if (effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      `${codexDocSummaryLabel}: ${codexDocSuggestedCount}/${codexDocCount} document file(s) suggested${codexDocErrorMessage ? " (fallback used for others)" : ""}`,
+    );
+    if (codexDocCount === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex note: this file is not a supported document input for --codex-docs; deterministic rename is used.",
+      );
+    } else if (rowReasonBySourcePath.get(plan.fromPath) === "docx_experimental_disabled") {
+      printLine(
+        runtime.stdout,
+        "Codex note: DOCX semantic titles are experimental and currently disabled (set CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1 to opt in).",
+      );
+    } else if (codexEligibleDocCount === 0 && !codexDocErrorMessage) {
+      printLine(
+        runtime.stdout,
+        "Codex note: this document file is not an eligible document input (for example too large or unreadable).",
+      );
+    }
+    if (codexDocErrorMessage && codexDocCount > 0) {
+      printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
+    }
+  }
+  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+    printLine(
+      runtime.stdout,
+      "Codex note: this file is not a supported Codex analyzer input; deterministic rename is used.",
+    );
   }
   printLine(runtime.stdout);
   printLine(runtime.stdout, formatRenamePreviewLine(plan));
@@ -564,7 +983,7 @@ export async function actionRenameFile(
   if (options.dryRun ?? false) {
     const ext = extname(plan.fromPath);
     const stem = basename(plan.fromPath, ext);
-    const sourceTitle = codexTitlesByPath?.get(plan.fromPath) ?? stem;
+    const sourceTitle = codexTitlesByPath.get(plan.fromPath) ?? stem;
     const cleanedStemBySourcePath = new Map<string, string>([
       [plan.fromPath, slugifyName(sourceTitle).slice(0, 48)],
     ]);
@@ -572,7 +991,7 @@ export async function actionRenameFile(
       runtime,
       plans: [plan],
       cleanedStemBySourcePath,
-      aiNameBySourcePath: codexTitlesByPath,
+      aiNameBySourcePath: codexTitlesByPath.size > 0 ? codexTitlesByPath : undefined,
       reasonBySourcePath: rowReasonBySourcePath,
       aiProvider: "codex",
       aiModel: "auto",

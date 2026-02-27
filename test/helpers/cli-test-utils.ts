@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import type { CliRuntime } from "../../src/cli/types";
@@ -33,6 +33,15 @@ export async function createTempFixtureDir(prefix: string): Promise<string> {
   return await mkdtemp(join(TMP_ROOT, `${prefix}-`));
 }
 
+export async function withTempFixtureDir<T>(prefix: string, run: (fixtureDir: string) => Promise<T>): Promise<T> {
+  const fixtureDir = await createTempFixtureDir(prefix);
+  try {
+    return await run(fixtureDir);
+  } finally {
+    await rm(fixtureDir, { recursive: true, force: true });
+  }
+}
+
 export class CaptureStream {
   public text = "";
 
@@ -65,4 +74,3 @@ export function createCapturedRuntime(
     stderr,
   };
 }
-

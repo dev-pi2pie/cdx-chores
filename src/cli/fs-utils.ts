@@ -2,12 +2,344 @@ import { lstat, mkdir, readFile, readdir, rename, stat, writeFile } from "node:f
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 import { CliError } from "./errors";
+import {
+  type RenameSerialOrder,
+  type RenameSerialScope,
+  normalizeSerialPlaceholderInTemplate,
+  parseSerialToken,
+} from "./rename-template";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 import { formatUtcFileDateTime } from "../utils/datetime";
 import { defaultOutputPath } from "../utils/paths";
 import { slugifyName, withNumericSuffix } from "../utils/slug";
 
 export { defaultOutputPath } from "../utils/paths";
+
+const RENAME_TEMPLATE_DEFAULT = "{prefix}-{timestamp}-{stem}";
+const RENAME_TEMPLATE_TOKEN_PATTERN = /\{([^{}]+)\}/g;
+const RENAME_TEMPLATE_SIMPLE_TOKENS = new Set([
+  "prefix",
+  "timestamp",
+  "date",
+  "date_local",
+  "date_utc",
+  "stem",
+]);
+
+interface RenamePatternOptions {
+  pattern?: string;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
+  recursive?: boolean;
+}
+
+interface PreparedRenamePattern {
+  template: string;
+  serial?: {
+    order: RenameSerialOrder;
+    start: number;
+    width?: number;
+    scope: RenameSerialScope;
+  };
+}
+
+interface RenameCandidateEntry {
+  sourcePath: string;
+  directoryPath: string;
+  currentName: string;
+  ext: string;
+  stemSlug: string;
+  mtimeDate: Date;
+  mtimeMs: number;
+}
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatUtcDate(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizePrefix(prefix: string | undefined): string {
+  const trimmed = (prefix ?? "").trim();
+  if (!trimmed) {
+    return "";
+  }
+  return slugifyName(trimmed);
+}
+
+function ensureValidTemplateBraces(template: string): void {
+  let inToken = false;
+  for (const char of template) {
+    if (char === "{") {
+      if (inToken) {
+        throw new CliError("Invalid --pattern: nested '{' is not supported.", {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+      inToken = true;
+      continue;
+    }
+    if (char === "}") {
+      if (!inToken) {
+        throw new CliError("Invalid --pattern: unmatched '}' found.", {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+      inToken = false;
+    }
+  }
+  if (inToken) {
+    throw new CliError("Invalid --pattern: missing closing '}'.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+}
+
+function parseTemplateTokens(template: string): string[] {
+  const tokens: string[] = [];
+  for (const match of template.matchAll(RENAME_TEMPLATE_TOKEN_PATTERN)) {
+    const token = (match[1] ?? "").trim();
+    if (!token) {
+      throw new CliError("Invalid --pattern: empty placeholder '{}'.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    tokens.push(token);
+  }
+  return tokens;
+}
+
+function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRenamePattern {
+  const template = (options.pattern ?? RENAME_TEMPLATE_DEFAULT).trim();
+  if (!template) {
+    throw new CliError("Invalid --pattern: template cannot be empty.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  ensureValidTemplateBraces(template);
+  const tokens = parseTemplateTokens(template);
+
+  const serialTokens = tokens.filter((token) => token === "serial" || token.startsWith("serial_"));
+  if (serialTokens.length > 1) {
+    throw new CliError(
+      "Invalid --pattern: only one {serial...} placeholder is supported per template.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+  let serial:
+    | {
+        order: RenameSerialOrder;
+        start: number;
+        width?: number;
+        scope: RenameSerialScope;
+      }
+    | undefined;
+  let normalizedTemplate = template;
+
+  if (serialTokens.length > 0) {
+    let parsed;
+    try {
+      parsed = parseSerialToken(serialTokens[0] ?? "serial");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CliError(`Invalid --pattern serial token: ${message}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const start = options.serialStart ?? parsed.start;
+    if (!Number.isInteger(start) || start < 0) {
+      throw new CliError("Invalid --serial-start: must be a non-negative integer.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const width = options.serialWidth ?? parsed.width;
+    if (width !== undefined && (!Number.isInteger(width) || width <= 0)) {
+      throw new CliError("Invalid --serial-width: must be a positive integer.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const order = options.serialOrder ?? parsed.order;
+    const scope = options.serialScope ?? "global";
+
+    serial = { order, start, width, scope };
+    normalizedTemplate = normalizeSerialPlaceholderInTemplate({
+      template,
+      serial: {
+        order: serial.order,
+        start: serial.start,
+        width: serial.width,
+      },
+      includeDefaults: true,
+    });
+  }
+
+  const normalizedTokens = parseTemplateTokens(normalizedTemplate);
+  for (const token of normalizedTokens) {
+    if (RENAME_TEMPLATE_SIMPLE_TOKENS.has(token)) {
+      continue;
+    }
+    if (token === "serial" || token.startsWith("serial_")) {
+      try {
+        parseSerialToken(token);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new CliError(`Invalid --pattern serial token: ${message}`, {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+      continue;
+    }
+    throw new CliError(
+      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return { template: normalizedTemplate, serial };
+}
+
+function normalizeRenderedBaseName(value: string, fallback = "file"): string {
+  const sanitized = value
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+    .replace(/\s+/g, " ")
+    .replace(/--+/g, "-")
+    .replace(/__+/g, "_")
+    .replace(/-_+/g, "-")
+    .replace(/_-+/g, "-")
+    .replace(/^[-_.\s]+|[-_.\s]+$/g, "");
+  return sanitized || fallback;
+}
+
+function compareEntriesBySerialOrder(
+  a: RenameCandidateEntry,
+  b: RenameCandidateEntry,
+  rootDirectoryPath: string,
+  order: RenameSerialOrder,
+): number {
+  const pathA = relative(rootDirectoryPath, a.sourcePath);
+  const pathB = relative(rootDirectoryPath, b.sourcePath);
+
+  if (order === "path_asc") {
+    return pathA.localeCompare(pathB);
+  }
+  if (order === "path_desc") {
+    return pathB.localeCompare(pathA);
+  }
+
+  const delta = a.mtimeMs - b.mtimeMs;
+  if (delta !== 0) {
+    return order === "mtime_asc" ? delta : -delta;
+  }
+
+  return pathA.localeCompare(pathB);
+}
+
+function buildSerialByPath(options: {
+  entries: RenameCandidateEntry[];
+  rootDirectoryPath: string;
+  serial: NonNullable<PreparedRenamePattern["serial"]>;
+  recursive: boolean;
+}): Map<string, string> {
+  const groups = new Map<string, RenameCandidateEntry[]>();
+  for (const entry of options.entries) {
+    const key =
+      options.serial.scope === "directory" && options.recursive ? entry.directoryPath : "__global__";
+    const current = groups.get(key);
+    if (current) {
+      current.push(entry);
+    } else {
+      groups.set(key, [entry]);
+    }
+  }
+
+  const serialByPath = new Map<string, string>();
+  for (const groupEntries of groups.values()) {
+    const sorted = [...groupEntries].sort((a, b) =>
+      compareEntriesBySerialOrder(a, b, options.rootDirectoryPath, options.serial.order),
+    );
+
+    const maxSerialValue = options.serial.start + sorted.length - 1;
+    const computedWidth = String(Math.max(maxSerialValue, 0)).length;
+    const width = Math.max(options.serial.width ?? 0, computedWidth);
+
+    for (let index = 0; index < sorted.length; index += 1) {
+      const entry = sorted[index];
+      if (!entry) {
+        continue;
+      }
+      const serialValue = options.serial.start + index;
+      const serialText = String(serialValue).padStart(width, "0");
+      serialByPath.set(entry.sourcePath, serialText);
+    }
+  }
+
+  return serialByPath;
+}
+
+function renderBaseNameFromTemplate(options: {
+  template: string;
+  prefix: string;
+  stem: string;
+  mtimeDate: Date;
+  serialText?: string;
+}): string {
+  const timestamp = formatUtcFileDateTime(options.mtimeDate);
+  const dateLocal = formatLocalDate(options.mtimeDate);
+  const dateUtc = formatUtcDate(options.mtimeDate);
+
+  const rendered = options.template.replace(RENAME_TEMPLATE_TOKEN_PATTERN, (_, rawToken: string) => {
+    const token = rawToken.trim();
+    switch (token) {
+      case "prefix":
+        return options.prefix;
+      case "timestamp":
+        return timestamp;
+      case "date":
+      case "date_local":
+        return dateLocal;
+      case "date_utc":
+        return dateUtc;
+      case "stem":
+        return options.stem;
+      default:
+        if (token === "serial" || token.startsWith("serial_")) {
+          return options.serialText ?? "";
+        }
+        return "";
+    }
+  });
+
+  return normalizeRenderedBaseName(rendered);
+}
 
 export function resolveFromCwd(runtime: CliRuntime, filePath: string): string {
   return resolve(runtime.cwd, filePath);
@@ -76,6 +408,11 @@ export async function planBatchRename(
   directoryInput: string,
   options: {
     prefix?: string;
+    pattern?: string;
+    serialOrder?: RenameSerialOrder;
+    serialStart?: number;
+    serialWidth?: number;
+    serialScope?: RenameSerialScope;
     now?: Date;
     titleOverrides?: Map<string, string>;
     fileFilter?: (entryName: string) => boolean;
@@ -122,9 +459,18 @@ export async function planBatchRename(
 
   await visitDirectory(directoryPath, 0);
 
-  const prefix = slugifyName(options.prefix?.trim() || "file");
+  const prefix = normalizePrefix(options.prefix);
+  const preparedPattern = getPreparedRenamePattern({
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
+    recursive,
+  });
   const plannedTargets = new Set<string>();
   const plans: PlannedRename[] = [];
+  const entries: RenameCandidateEntry[] = [];
 
   for (const file of files) {
     const sourcePath = join(file.directoryPath, file.name);
@@ -139,14 +485,42 @@ export async function planBatchRename(
     const ext = extname(file.name).toLowerCase();
     const stem = basename(file.name, extname(file.name));
     const preferredTitle = options.titleOverrides?.get(sourcePath)?.trim();
-    const slug = slugifyName(preferredTitle || stem).slice(0, 48);
-    const dt = formatUtcFileDateTime(fileStats.mtime ?? options.now ?? runtime.now());
+    const stemSlug = slugifyName(preferredTitle || stem).slice(0, 48);
+    const mtimeDate = fileStats.mtime ?? options.now ?? runtime.now();
+    entries.push({
+      sourcePath,
+      directoryPath: file.directoryPath,
+      currentName: file.name,
+      ext,
+      stemSlug,
+      mtimeDate,
+      mtimeMs: mtimeDate.getTime(),
+    });
+  }
+
+  const serialByPath = preparedPattern.serial
+    ? buildSerialByPath({
+        entries,
+        rootDirectoryPath: directoryPath,
+        serial: preparedPattern.serial,
+        recursive,
+      })
+    : undefined;
+
+  for (const entry of entries) {
+    const baseName = renderBaseNameFromTemplate({
+      template: preparedPattern.template,
+      prefix,
+      stem: entry.stemSlug,
+      mtimeDate: entry.mtimeDate,
+      serialText: serialByPath?.get(entry.sourcePath),
+    });
 
     let counter = 0;
     let candidatePath = "";
     while (true) {
-      const nextName = `${withNumericSuffix(`${prefix}-${dt}-${slug}`, counter)}${ext}`;
-      candidatePath = join(file.directoryPath, nextName);
+      const nextName = `${withNumericSuffix(baseName, counter)}${entry.ext}`;
+      candidatePath = join(entry.directoryPath, nextName);
       if (!plannedTargets.has(candidatePath)) {
         break;
       }
@@ -155,9 +529,9 @@ export async function planBatchRename(
 
     plannedTargets.add(candidatePath);
     plans.push({
-      fromPath: sourcePath,
+      fromPath: entry.sourcePath,
       toPath: candidatePath,
-      changed: sourcePath !== candidatePath,
+      changed: entry.sourcePath !== candidatePath,
     });
   }
 
@@ -167,7 +541,16 @@ export async function planBatchRename(
 export async function planSingleRename(
   runtime: CliRuntime,
   fileInput: string,
-  options: { prefix?: string; now?: Date; titleOverride?: string } = {},
+  options: {
+    prefix?: string;
+    pattern?: string;
+    serialOrder?: RenameSerialOrder;
+    serialStart?: number;
+    serialWidth?: number;
+    serialScope?: RenameSerialScope;
+    now?: Date;
+    titleOverride?: string;
+  } = {},
 ): Promise<{ directoryPath: string; plan: PlannedRename }> {
   const sourcePath = resolveFromCwd(runtime, fileInput);
 
@@ -201,8 +584,16 @@ export async function planSingleRename(
   const stem = basename(currentName, extname(currentName));
   const preferredTitle = options.titleOverride?.trim();
   const slug = slugifyName(preferredTitle || stem).slice(0, 48);
-  const prefix = slugifyName(options.prefix?.trim() || "file");
-  const dt = formatUtcFileDateTime(sourceLstat.mtime ?? options.now ?? runtime.now());
+  const prefix = normalizePrefix(options.prefix);
+  const mtimeDate = sourceLstat.mtime ?? options.now ?? runtime.now();
+  const preparedPattern = getPreparedRenamePattern({
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
+    recursive: false,
+  });
 
   const entries = await readdir(directoryPath, { withFileTypes: true });
   const occupiedNames = new Set(
@@ -211,8 +602,24 @@ export async function planSingleRename(
 
   let counter = 0;
   let nextName = currentName;
+  const serialText = preparedPattern.serial
+    ? String(preparedPattern.serial.start).padStart(
+        Math.max(
+          preparedPattern.serial.width ?? 0,
+          String(Math.max(preparedPattern.serial.start, 0)).length,
+        ),
+        "0",
+      )
+    : undefined;
+  const baseName = renderBaseNameFromTemplate({
+    template: preparedPattern.template,
+    prefix,
+    stem: slug,
+    mtimeDate,
+    serialText,
+  });
   while (true) {
-    nextName = `${withNumericSuffix(`${prefix}-${dt}-${slug}`, counter)}${ext}`;
+    nextName = `${withNumericSuffix(baseName, counter)}${ext}`;
     if (!occupiedNames.has(nextName)) {
       break;
     }

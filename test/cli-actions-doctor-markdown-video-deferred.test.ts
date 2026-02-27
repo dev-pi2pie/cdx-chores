@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { rm, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -10,38 +10,16 @@ import {
   actionVideoGif,
   actionVideoResize,
 } from "../src/cli/actions";
-import { CliError } from "../src/cli/errors";
-import { createCapturedRuntime, createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
-
-async function expectCliError(
-  run: () => Promise<unknown>,
-  expected: { code: string; exitCode?: number; messageIncludes?: string },
-): Promise<CliError> {
-  try {
-    await run();
-  } catch (error) {
-    expect(error).toBeInstanceOf(CliError);
-    const cliError = error as CliError;
-    expect(cliError.code).toBe(expected.code);
-    if (expected.exitCode !== undefined) {
-      expect(cliError.exitCode).toBe(expected.exitCode);
-    }
-    if (expected.messageIncludes) {
-      expect(cliError.message).toContain(expected.messageIncludes);
-    }
-    return cliError;
-  }
-
-  throw new Error("Expected CliError but action resolved successfully");
-}
+import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: doctor", () => {
   test("actionDoctor emits machine-readable JSON payload", async () => {
-    const { runtime, stdout, stderr } = createCapturedRuntime();
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
 
     await actionDoctor(runtime, { json: true });
 
-    expect(stderr.text).toBe("");
+    expectNoStderr();
     const payload = JSON.parse(stdout.text);
     expect(typeof payload.generatedAt).toBe("string");
     expect(payload.platform).toBe(process.platform);
@@ -55,11 +33,11 @@ describe("cli action modules: doctor", () => {
   });
 
   test("actionDoctor emits human-readable text report", async () => {
-    const { runtime, stdout, stderr } = createCapturedRuntime();
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
 
     await actionDoctor(runtime);
 
-    expect(stderr.text).toBe("");
+    expectNoStderr();
     expect(stdout.text).toContain("cdx-chores doctor");
     expect(stdout.text).toContain("Platform:");
     expect(stdout.text).toContain("Node.js:");
@@ -71,7 +49,7 @@ describe("cli action modules: doctor", () => {
 
 describe("cli action modules: deferred", () => {
   test("actionDeferred throws a deferred feature error", async () => {
-    const { runtime, stdout, stderr } = createCapturedRuntime();
+    const { runtime, expectNoOutput } = createActionTestRuntime();
 
     await expectCliError(
       () => actionDeferred(runtime, "pdf merge"),
@@ -82,16 +60,14 @@ describe("cli action modules: deferred", () => {
       },
     );
 
-    expect(stdout.text).toBe("");
-    expect(stderr.text).toBe("");
+    expectNoOutput();
   });
 });
 
 describe("cli action modules: markdown/video failure paths", () => {
   test("actionMdToDocx rejects missing input before dependency execution", async () => {
-    const fixtureDir = await createTempFixtureDir("actions");
-    try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
       const missing = join(fixtureDir, "missing.md");
 
       await expectCliError(
@@ -99,17 +75,13 @@ describe("cli action modules: markdown/video failure paths", () => {
         { code: "FILE_NOT_FOUND", exitCode: 2, messageIncludes: "Input file not found:" },
       );
 
-      expect(stdout.text).toBe("");
-      expect(stderr.text).toBe("");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
+      expectNoOutput();
+    });
   });
 
   test("actionVideoConvert rejects missing input before ffmpeg execution", async () => {
-    const fixtureDir = await createTempFixtureDir("actions");
-    try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
       const missing = join(fixtureDir, "missing.mp4");
 
       await expectCliError(
@@ -120,17 +92,13 @@ describe("cli action modules: markdown/video failure paths", () => {
         { code: "FILE_NOT_FOUND", exitCode: 2, messageIncludes: "Input file not found:" },
       );
 
-      expect(stdout.text).toBe("");
-      expect(stderr.text).toBe("");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
+      expectNoOutput();
+    });
   });
 
   test("actionVideoGif rejects missing input before ffmpeg execution", async () => {
-    const fixtureDir = await createTempFixtureDir("actions");
-    try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
       const missing = join(fixtureDir, "missing.mp4");
 
       await expectCliError(
@@ -138,17 +106,13 @@ describe("cli action modules: markdown/video failure paths", () => {
         { code: "FILE_NOT_FOUND", exitCode: 2, messageIncludes: "Input file not found:" },
       );
 
-      expect(stdout.text).toBe("");
-      expect(stderr.text).toBe("");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
+      expectNoOutput();
+    });
   });
 
   test("actionVideoResize validates width before file checks", async () => {
-    const fixtureDir = await createTempFixtureDir("actions");
-    try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
       const inputPath = join(fixtureDir, "input.mp4");
       await writeFile(inputPath, "fake", "utf8");
 
@@ -162,17 +126,13 @@ describe("cli action modules: markdown/video failure paths", () => {
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Width must be a positive number." },
       );
 
-      expect(stdout.text).toBe("");
-      expect(stderr.text).toBe("");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
+      expectNoOutput();
+    });
   });
 
   test("actionVideoResize validates height before file checks", async () => {
-    const fixtureDir = await createTempFixtureDir("actions");
-    try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
       const inputPath = join(fixtureDir, "input.mp4");
       await writeFile(inputPath, "fake", "utf8");
 
@@ -186,10 +146,7 @@ describe("cli action modules: markdown/video failure paths", () => {
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Height must be a positive number." },
       );
 
-      expect(stdout.text).toBe("");
-      expect(stderr.text).toBe("");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
+      expectNoOutput();
+    });
   });
 });
