@@ -46,17 +46,17 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 
 ### Phase 2: Template Engine and Rename Planner
 
-- [ ] Implement extended placeholder rendering in rename planner.
-- [ ] Implement prefix-null separator normalization.
-- [ ] Implement serial width guardrail with planned-target pre-counting.
-- [ ] Implement serial ordering modes:
+- [x] Implement extended placeholder rendering in rename planner.
+- [x] Implement prefix-null separator normalization.
+- [x] Implement serial width guardrail with planned-target pre-counting.
+- [x] Implement serial ordering modes:
   - `path_asc`
   - `path_desc`
   - `mtime_asc`
   - `mtime_desc`
-- [ ] Implement deterministic tie-breaker for equal mtime (relative path ascending).
-- [ ] Implement optional serial reset-per-directory behavior for recursive mode.
-- [ ] Add validation errors for unknown/duplicate serial markers and invalid `start_<n>`.
+- [x] Implement deterministic tie-breaker for equal mtime (relative path ascending).
+- [x] Implement optional serial reset-per-directory behavior for recursive mode.
+- [x] Add validation errors for unknown/duplicate serial markers and invalid `start_<n>`.
 
 ### Phase 3: Interactive Smart Router
 
@@ -78,8 +78,8 @@ Implement v1 improvements for rename template flexibility, interactive smart rou
 ### Phase 5: Tests and Verification
 
 - [x] Add unit tests for template parser/serializer and validation.
-- [ ] Add planner tests for serial order modes and reset-per-directory behavior.
-- [ ] Add tests for date placeholders and prefix-null normalization.
+- [x] Add planner tests for serial order modes and reset-per-directory behavior.
+- [x] Add tests for date placeholders and prefix-null normalization.
 - [ ] Add interactive-flow tests for smart router prompt branching.
 - [ ] Run verification:
   - `bunx tsc --noEmit`

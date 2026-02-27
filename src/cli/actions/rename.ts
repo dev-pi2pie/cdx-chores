@@ -620,6 +620,11 @@ export async function actionRenameBatch(
   const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
     now: runtime.now(),
     fileFilter,
     recursive: options.recursive,
@@ -695,6 +700,11 @@ export async function actionRenameBatch(
   const { plans } = titleOverrides
     ? await planBatchRename(runtime, directory, {
         prefix: options.prefix,
+        pattern: options.pattern,
+        serialOrder: options.serialOrder,
+        serialStart: options.serialStart,
+        serialWidth: options.serialWidth,
+        serialScope: options.serialScope,
         now: runtime.now(),
         titleOverrides,
         fileFilter,
@@ -803,6 +813,11 @@ export async function actionRenameFile(
   const inputPath = assertNonEmpty(options.path, "File path");
   const initial = await planSingleRename(runtime, inputPath, {
     prefix: options.prefix,
+    pattern: options.pattern,
+    serialOrder: options.serialOrder,
+    serialStart: options.serialStart,
+    serialWidth: options.serialWidth,
+    serialScope: options.serialScope,
     now: runtime.now(),
   });
   const directoryPath = initial.directoryPath;
@@ -869,6 +884,11 @@ export async function actionRenameFile(
   if (titleOverride) {
     const replanned = await planSingleRename(runtime, inputPath, {
       prefix: options.prefix,
+      pattern: options.pattern,
+      serialOrder: options.serialOrder,
+      serialStart: options.serialStart,
+      serialWidth: options.serialWidth,
+      serialScope: options.serialScope,
       now: runtime.now(),
       titleOverride,
     });
