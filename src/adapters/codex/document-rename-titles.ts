@@ -2,13 +2,20 @@ import { access, readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { Codex } from "@openai/codex-sdk";
 import * as mammoth from "mammoth";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { parseDocument as parseYamlDocument } from "yaml";
 
 import { parseMarkdown } from "../../markdown";
 import { parseTomlFrontmatter } from "../../markdown/toml-simple";
+import {
+  CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
+  chunkItems,
+  executeBatchesWithRetries,
+  parseFilenameTitleSuggestions,
+  startCodexReadOnlyThread,
+  summarizeBatchErrors,
+} from "./shared";
 
 export interface CodexDocumentRenameSuggestion {
   path: string;
@@ -62,52 +69,6 @@ const MAX_HEADINGS = 8;
 const MAX_LEAD_TEXT_CHARS = 800;
 const MAX_KEY_SUMMARY = 12;
 let pdfStandardFontDataUrlPromise: Promise<string | undefined> | undefined;
-
-const OUTPUT_SCHEMA = {
-  type: "object",
-  properties: {
-    suggestions: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          filename: { type: "string" },
-          title: { type: "string" },
-        },
-        required: ["filename", "title"],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ["suggestions"],
-  additionalProperties: false,
-} as const;
-
-function normalizeTitle(value: string): string {
-  return value
-    .replace(/[`"'“”‘’]/g, "")
-    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function chunkItems<T>(items: T[], size: number): T[][] {
-  if (size <= 0) {
-    return [items];
-  }
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size));
-  }
-  return chunks;
-}
-
-async function sleep(ms: number): Promise<void> {
-  if (ms <= 0) {
-    return;
-  }
-  await new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function toSingleLine(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -851,37 +812,17 @@ async function suggestSingleBatch(options: {
     return { suggestions: [] };
   }
 
-  const codex = new Codex();
-  const thread = codex.startThread({
-    workingDirectory: options.workingDirectory,
-    sandboxMode: "read-only",
-    approvalPolicy: "never",
-    modelReasoningEffort: "low",
-    networkAccessEnabled: true,
-    webSearchMode: "disabled",
-  });
+  const thread = startCodexReadOnlyThread(options.workingDirectory);
 
   const turn = await thread.run(
     [{ type: "text", text: buildPrompt(options.evidences.map((item) => item.evidence)) }],
     {
-      outputSchema: OUTPUT_SCHEMA,
+      outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
       signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
     },
   );
 
-  const parsed = JSON.parse(turn.finalResponse) as {
-    suggestions?: Array<{ filename?: string; title?: string }>;
-  };
-
-  const suggestionsByFilename = new Map<string, string>();
-  for (const item of parsed.suggestions ?? []) {
-    const filename = (item.filename ?? "").trim();
-    const title = normalizeTitle((item.title ?? "").trim());
-    if (!filename || !title) {
-      continue;
-    }
-    suggestionsByFilename.set(filename, title);
-  }
+  const suggestionsByFilename = parseFilenameTitleSuggestions(turn.finalResponse);
 
   const suggestions: CodexDocumentRenameSuggestion[] = [];
   for (const item of options.evidences) {
@@ -924,49 +865,23 @@ export async function suggestDocumentRenameTitlesWithCodex(
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? evidenceItems.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(evidenceItems, batchSize);
-    const suggestions: CodexDocumentRenameSuggestion[] = [];
-    const batchErrors: string[] = [];
+    const { suggestions, batchErrors } = await executeBatchesWithRetries({
+      batches,
+      retries,
+      runBatch: async (batch) =>
+        suggestSingleBatch({
+          evidences: batch,
+          workingDirectory: options.workingDirectory,
+          timeoutMs: options.timeoutMs,
+        }),
+    });
 
-    for (const batch of batches) {
-      let batchResult: CodexDocumentRenameResult | null = null;
-      let lastError = "";
-
-      for (let attempt = 0; attempt <= retries; attempt += 1) {
-        try {
-          batchResult = await suggestSingleBatch({
-            evidences: batch,
-            workingDirectory: options.workingDirectory,
-            timeoutMs: options.timeoutMs,
-          });
-          lastError = batchResult.errorMessage ?? "";
-          if (!batchResult.errorMessage) {
-            break;
-          }
-        } catch (error) {
-          lastError = error instanceof Error ? error.message : String(error);
-          batchResult = { suggestions: [], errorMessage: lastError };
-        }
-
-        if (attempt < retries) {
-          await sleep(300 * (attempt + 1));
-        }
-      }
-
-      if (batchResult?.suggestions?.length) {
-        suggestions.push(...batchResult.suggestions);
-      }
-      if (lastError) {
-        batchErrors.push(lastError);
-      }
-    }
-
-    if (batchErrors.length === 0) {
+    const errorSummary = summarizeBatchErrors(batchErrors, suggestions.length > 0);
+    if (!errorSummary) {
       return { suggestions, reasons };
     }
 
-    const uniqueErrors = [...new Set(batchErrors)];
-    const summary = `${suggestions.length > 0 ? "Partial Codex suggestions." : "Codex title generation failed."} ${uniqueErrors[0]}${uniqueErrors.length > 1 ? ` (+${uniqueErrors.length - 1} more error variant(s))` : ""}`;
-    return { suggestions, reasons, errorMessage: summary };
+    return { suggestions, reasons, errorMessage: errorSummary };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { suggestions: [], reasons, errorMessage: message };
