@@ -54,7 +54,11 @@ Serial token notes:
 - marker order is flexible in input and normalized internally
 - only one `{serial...}` placeholder is allowed per template
 - order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`
-- optional recursive per-directory reset with `--serial-scope directory`
+- precedence is: explicit `--serial-*` flag override, then embedded `{serial...}` token value, then built-in default
+- example: `--pattern '{stem}-{serial_start_3}'` starts at `3`, but adding `--serial-start 10` overrides it to `10`
+- if the template does not include `{serial...}`, the serial flags have no effect
+- default serial scope is one global sequence across all matched files
+- use `--serial-scope directory` together with `--recursive` to restart numbering in each directory
 - interactive serial prompts appear only when the selected template includes `{serial...}`
 - interactive serial width uses digit count input such as `2` or `4`, not `#`
 
