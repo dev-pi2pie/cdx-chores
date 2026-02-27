@@ -87,6 +87,33 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--serial-scope <value>");
   });
 
+  test("video resize help documents scale-first and explicit-dimension modes", () => {
+    const result = runCli(["video", "resize", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("-s, --scale <factor>");
+    expect(result.stdout).toContain("Scale factor multiplier");
+    expect(result.stdout).toContain("--width <px>");
+    expect(result.stdout).toContain("--height <px>");
+    expect(result.stdout).toContain("Preferred: --scale 0.5");
+    expect(result.stdout).toContain("Explicit override: --width 1280 --height 720");
+  });
+
+  test("video resize accepts scale-only flags and reaches input validation", () => {
+    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--scale", "0.5"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Input file not found:");
+  });
+
+  test("video resize rejects incomplete explicit dimensions with a clear error", () => {
+    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--width", "640"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Width and height must be provided together.");
+  });
+
   test("rename rejects unsupported serial order alias values", () => {
     const result = runCli(["rename", "file", "dummy.txt", "--serial-order", "time_asc"]);
 

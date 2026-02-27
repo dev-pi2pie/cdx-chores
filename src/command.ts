@@ -73,6 +73,14 @@ function parsePositiveIntegerOption(value: string, label: string): number {
   return parsed;
 }
 
+function parsePositiveNumberOption(value: string, label: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new InvalidArgumentError(`${label} must be a positive number.`);
+  }
+  return parsed;
+}
+
 function parseSerialOrderOption(value: string): RenameSerialOrder {
   if ((RENAME_SERIAL_ORDER_VALUES as readonly string[]).includes(value)) {
     return value as RenameSerialOrder;
@@ -645,18 +653,41 @@ export async function runCli(
 
   videoCommand
     .command("resize")
-    .description("Resize video dimensions via ffmpeg")
+    .description("Resize video via ffmpeg")
     .requiredOption("-i, --input <path>", "Input video file")
     .requiredOption("-o, --output <path>", "Output video file")
-    .requiredOption("--width <px>", "Output width", (value) => Number(value))
-    .requiredOption("--height <px>", "Output height", (value) => Number(value))
+    .option(
+      "-s, --scale <factor>",
+      "Scale factor multiplier (for example 0.5 halves size, 2 doubles it)",
+      (value) => parsePositiveNumberOption(value, "--scale"),
+    )
+    .option(
+      "--width <px>",
+      "Output width in pixels (requires --height)",
+      (value) => parsePositiveIntegerOption(value, "--width"),
+    )
+    .option(
+      "--height <px>",
+      "Output height in pixels (requires --width)",
+      (value) => parsePositiveIntegerOption(value, "--height"),
+    )
     .option("--overwrite", "Overwrite output file if it already exists", false)
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Resize modes:",
+        "  Preferred: --scale 0.5",
+        "  Explicit override: --width 1280 --height 720",
+      ].join("\n"),
+    )
     .action(
       async (options: {
         input: string;
         output: string;
-        width: number;
-        height: number;
+        scale?: number;
+        width?: number;
+        height?: number;
         overwrite?: boolean;
       }) => {
         await actionVideoResize(cliRuntime, options);

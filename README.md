@@ -132,10 +132,26 @@ Video to GIF (requires `ffmpeg`):
 cdx-chores video gif -i ./clip.mp4 -o ./clip.gif --width 480 --fps 10
 ```
 
+Video resize with aspect-ratio-preserving scale (requires `ffmpeg`):
+
+```bash
+cdx-chores video resize -i ./clip.mp4 -o ./clip-small.mp4 --scale 0.5
+```
+
+Video resize with explicit dimensions override:
+
+```bash
+cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 720
+```
+
 ## Rename Guides
 
 - Common operational usage: `docs/guides/rename-common-usage.md`
 - Scope and Codex capability details: `docs/guides/rename-scope-and-codex-capability-guide.md`
+
+## Video Guides
+
+- Resize usage and UX: `docs/guides/video-resize-usage-and-ux.md`
 
 ## Dependencies
 
