@@ -1,10 +1,24 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameApply, actionRenameBatch } from "../src/cli/actions";
 import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { removeIfPresent } from "./helpers/cli-action-test-utils";
+import {
+  captureRenamePlanCsvSnapshot,
+  cleanupRenamePlanCsvSinceSnapshot,
+  removeIfPresent,
+} from "./helpers/cli-action-test-utils";
+
+let renamePlanCsvSnapshot = new Set<string>();
+
+beforeEach(async () => {
+  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
+});
+
+afterEach(async () => {
+  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
+});
 
 describe("cli action modules: rename apply", () => {
   test("actionRenameBatch dry-run writes a replayable CSV plan under cwd", async () => {

@@ -35,7 +35,6 @@ export interface RenameBatchPreviewData {
   skippedSummaryRows: RenamePreviewSkippedSummaryRow[];
   skippedDetailRows: RenamePreviewSkippedDetailRow[];
   fullLines: string[];
-  truncation?: RenamePreviewTruncation;
 }
 
 export interface HeadTailSlice<T> {
@@ -45,6 +44,22 @@ export interface HeadTailSlice<T> {
   totalCount: number;
   truncated: boolean;
 }
+
+export interface RenamePreviewBudget {
+  rowCount: number;
+  headCount: number;
+  tailCount: number;
+}
+
+export interface CompactRenameBatchPreviewData {
+  renameLines: string[];
+  skippedSummaryLines: string[];
+  truncation?: RenamePreviewTruncation;
+}
+
+const DEFAULT_RENAME_PREVIEW_MAX_ROWS = 40;
+const DEFAULT_RENAME_PREVIEW_MIN_ROWS = 6;
+const DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS = 18;
 
 export function formatPlannedRenamePreviewLine(plan: PlannedRename): string {
   const fromName = basename(plan.fromPath);
@@ -112,6 +127,24 @@ export function buildHeadTailSlice<T>(
   };
 }
 
+export function resolveRenamePreviewBudget(runtime: CliRuntime): RenamePreviewBudget {
+  const stream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean; rows?: number };
+  let rowCount = DEFAULT_RENAME_PREVIEW_MAX_ROWS;
+
+  if (stream.isTTY && typeof stream.rows === "number" && Number.isFinite(stream.rows)) {
+    rowCount = Math.min(
+      DEFAULT_RENAME_PREVIEW_MAX_ROWS,
+      Math.max(DEFAULT_RENAME_PREVIEW_MIN_ROWS, Math.floor(stream.rows) - DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS),
+    );
+  }
+
+  return {
+    rowCount,
+    headCount: Math.max(1, Math.ceil(rowCount / 2)),
+    tailCount: Math.max(0, Math.floor(rowCount / 2)),
+  };
+}
+
 export function composeRenameBatchPreviewData(
   runtime: CliRuntime,
   options: {
@@ -146,5 +179,40 @@ export function composeRenameBatchPreviewData(
     skippedSummaryRows,
     skippedDetailRows,
     fullLines,
+  };
+}
+
+export function composeCompactRenameBatchPreviewData(
+  runtime: CliRuntime,
+  options: {
+    plans: readonly PlannedRename[];
+    skipped: readonly SkippedRenameItem[];
+  },
+): CompactRenameBatchPreviewData {
+  const previewData = composeRenameBatchPreviewData(runtime, options);
+  const budget = resolveRenamePreviewBudget(runtime);
+  const renameSlice = buildHeadTailSlice(previewData.renameRows, {
+    headCount: budget.headCount,
+    tailCount: budget.tailCount,
+  });
+
+  const renameLines: string[] = [];
+  appendAll(renameLines, renameSlice.head.map((row) => row.line));
+  if (renameSlice.truncated) {
+    renameLines.push("...");
+    appendAll(renameLines, renameSlice.tail.map((row) => row.line));
+  }
+
+  return {
+    renameLines,
+    skippedSummaryLines: previewData.skippedSummaryRows.map((row) => row.line),
+    truncation: renameSlice.truncated
+      ? {
+          totalCount: renameSlice.totalCount,
+          headCount: renameSlice.head.length,
+          tailCount: renameSlice.tail.length,
+          omittedCount: renameSlice.omittedCount,
+        }
+      : undefined,
   };
 }

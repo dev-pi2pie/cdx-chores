@@ -1,10 +1,25 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
 import { createCapturedRuntime, createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { expectCliError, removeIfPresent } from "./helpers/cli-action-test-utils";
+import {
+  captureRenamePlanCsvSnapshot,
+  cleanupRenamePlanCsvSinceSnapshot,
+  expectCliError,
+  removeIfPresent,
+} from "./helpers/cli-action-test-utils";
+
+let renamePlanCsvSnapshot = new Set<string>();
+
+beforeEach(async () => {
+  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
+});
+
+afterEach(async () => {
+  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
+});
 
 describe("cli action modules: rename batch core", () => {
   test("actionRenameBatch dry-run previews renames and returns counts", async () => {
@@ -224,7 +239,8 @@ describe("cli action modules: rename batch core", () => {
       expect(recursiveResult.totalCount).toBe(2);
       expect(recursiveResult.changedCount).toBe(2);
       expect(second.stdout.text).toContain("Entries skipped: 1");
-      expect(second.stdout.text).toContain("(skipped: symlink)");
+      expect(second.stdout.text).toContain("Skipped summary:");
+      expect(second.stdout.text).toContain("- 1 symlink");
 
       const csvText = await readFile(planCsvPath!, "utf8");
       expect(csvText).toContain("nested-link");
@@ -280,6 +296,46 @@ describe("cli action modules: rename batch core", () => {
     } finally {
       await removeIfPresent(planCsvPathA);
       await removeIfPresent(planCsvPathB);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch dry-run truncates large rename previews and emphasizes the plan csv", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
+
+      const dirPath = join(fixtureDir, "rename-large-preview");
+      await mkdir(dirPath, { recursive: true });
+
+      const fixedTime = new Date("2026-02-25T12:34:56.000Z");
+      for (let index = 1; index <= 20; index += 1) {
+        const filePath = join(dirPath, `photo ${String(index).padStart(2, "0")}.txt`);
+        await writeFile(filePath, "hello", "utf8");
+        await utimes(filePath, fixedTime, fixedTime);
+      }
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "file",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(20);
+      expect(result.changedCount).toBe(20);
+      expect(stdout.text).toContain("Renames: showing first 5 and last 5 of 20 rows; 10 omitted from the middle.");
+      expect(stdout.text).toContain("...");
+      expect(stdout.text).toContain("photo 01.txt ->");
+      expect(stdout.text).toContain("photo 20.txt ->");
+      expect(stdout.text).toContain("Full review: use the generated plan CSV for the complete rename list.");
+      expect(stdout.text).toContain("Plan CSV:");
+      expect(stdout.text).toContain("Dry run only. No files were renamed.");
+    } finally {
+      await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });

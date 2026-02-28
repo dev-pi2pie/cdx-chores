@@ -17,7 +17,11 @@ import {
   resolveAutoCodexFlagsForPaths,
   resolveCodexFlagsFromCliOptions,
 } from "../rename-interactive-router";
-import { composeRenameBatchPreviewData, formatPlannedRenamePreviewLine } from "../rename-preview";
+import {
+  composeCompactRenameBatchPreviewData,
+  composeRenameBatchPreviewData,
+  formatPlannedRenamePreviewLine,
+} from "../rename-preview";
 import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
@@ -781,9 +785,36 @@ export async function actionRenameBatch(
   }
   printLine(runtime.stdout);
 
-  const previewData = composeRenameBatchPreviewData(runtime, { plans, skipped });
-  for (const line of previewData.fullLines) {
-    printLine(runtime.stdout, line);
+  if (options.dryRun ?? false) {
+    const previewData = composeCompactRenameBatchPreviewData(runtime, { plans, skipped });
+
+    if (previewData.truncation) {
+      printLine(
+        runtime.stdout,
+        `Renames: showing first ${previewData.truncation.headCount} and last ${previewData.truncation.tailCount} of ${previewData.truncation.totalCount} rows; ${previewData.truncation.omittedCount} omitted from the middle.`,
+      );
+    } else if (previewData.renameLines.length > 0) {
+      printLine(runtime.stdout, "Renames:");
+    }
+
+    for (const line of previewData.renameLines) {
+      printLine(runtime.stdout, line);
+    }
+
+    if (previewData.skippedSummaryLines.length > 0) {
+      if (previewData.renameLines.length > 0 || previewData.truncation) {
+        printLine(runtime.stdout);
+      }
+      printLine(runtime.stdout, "Skipped summary:");
+      for (const line of previewData.skippedSummaryLines) {
+        printLine(runtime.stdout, line);
+      }
+    }
+  } else {
+    const previewData = composeRenameBatchPreviewData(runtime, { plans, skipped });
+    for (const line of previewData.fullLines) {
+      printLine(runtime.stdout, line);
+    }
   }
 
   if (options.dryRun ?? false) {
@@ -808,6 +839,10 @@ export async function actionRenameBatch(
     planCsvPath = await writeRenamePlanCsv(runtime, rows);
 
     printLine(runtime.stdout);
+    const compactPreviewData = composeCompactRenameBatchPreviewData(runtime, { plans, skipped });
+    if (compactPreviewData.truncation) {
+      printLine(runtime.stdout, "Full review: use the generated plan CSV for the complete rename list.");
+    }
     printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, planCsvPath)}`);
     printLine(runtime.stdout, "Dry run only. No files were renamed.");
     return { changedCount, totalCount, directoryPath, planCsvPath };

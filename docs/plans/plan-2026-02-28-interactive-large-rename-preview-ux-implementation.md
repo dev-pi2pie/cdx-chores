@@ -129,17 +129,17 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Task Items
 
-- [ ] Compute preview budget from terminal height and a fixed maximum cap
-- [ ] Implement head-and-tail truncation for rename rows
-- [ ] Keep summary counts above the preview body
-- [ ] Render skipped summary grouped by reason
-- [ ] Render explicit truncation messaging when rows are omitted
-- [ ] Emphasize the generated plan CSV path for truncated dry runs
-- [ ] Preserve clear output for small result sets with no unnecessary truncation
+- [x] Compute preview budget from terminal height and a fixed maximum cap
+- [x] Implement head-and-tail truncation for rename rows
+- [x] Keep summary counts above the preview body
+- [x] Render skipped summary grouped by reason
+- [x] Render explicit truncation messaging when rows are omitted
+- [x] Emphasize the generated plan CSV path for truncated dry runs
+- [x] Preserve clear output for small result sets with no unnecessary truncation
 
 ### Phase Deliverable
 
-- [ ] `rename ... --dry-run` uses a bounded, compact default preview that remains readable for very large batches
+- [x] `rename ... --dry-run` uses a bounded, compact default preview that remains readable for very large batches
 
 ## Phase 3: Add Explicit Detailed Skipped-Item Rendering (Option B Path)
 
@@ -235,7 +235,7 @@ This plan turns those decisions into an implementation sequence with minimal chu
 ## Follow-up Jobs (After Plan Approval)
 
 - [x] Job: extract rename preview composition helpers
-- [ ] Job: implement bounded Option C dry-run preview
+- [x] Job: implement bounded Option C dry-run preview
 - [ ] Job: add detailed skipped-item rendering path
 - [ ] Job: document inspect-preview artifact/input contract
 - [ ] Job: run large-fixture manual smoke checks and record findings

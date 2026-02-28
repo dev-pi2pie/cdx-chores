@@ -1,10 +1,24 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
 import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { removeIfPresent } from "./helpers/cli-action-test-utils";
+import {
+  captureRenamePlanCsvSnapshot,
+  cleanupRenamePlanCsvSinceSnapshot,
+  removeIfPresent,
+} from "./helpers/cli-action-test-utils";
+
+let renamePlanCsvSnapshot = new Set<string>();
+
+beforeEach(async () => {
+  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
+});
+
+afterEach(async () => {
+  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
+});
 
 describe("cli action modules: rename batch codex images", () => {
   test("actionRenameBatch codex mode shows progress and fallback messaging when Codex returns an error", async () => {
