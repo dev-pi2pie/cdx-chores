@@ -19,6 +19,7 @@ import {
 } from "../rename-interactive-router";
 import {
   composeCompactRenameBatchPreviewData,
+  composeDetailedSkippedPreviewData,
   composeRenameBatchPreviewData,
   formatPlannedRenamePreviewLine,
 } from "../rename-preview";
@@ -54,6 +55,7 @@ export interface RenameBatchOptions {
   serialScope?: RenameSerialScope;
   profile?: string;
   dryRun?: boolean;
+  previewSkips?: "summary" | "detailed";
   recursive?: boolean;
   maxDepth?: number;
   matchRegex?: string;
@@ -70,6 +72,19 @@ export interface RenameBatchOptions {
   codexDocsRetries?: number;
   codexDocsBatchSize?: number;
   codexDocsTitleSuggester?: CodexDocumentRenameTitleSuggester;
+}
+
+function normalizeRenamePreviewSkipsMode(mode: RenameBatchOptions["previewSkips"]): "summary" | "detailed" {
+  if (mode === undefined || mode === "summary") {
+    return "summary";
+  }
+  if (mode === "detailed") {
+    return "detailed";
+  }
+  throw new CliError(`Invalid --preview-skips value: ${mode}. Expected one of: summary, detailed`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
 }
 
 export interface RenameFileOptions {
@@ -622,6 +637,7 @@ export async function actionRenameBatch(
   options: RenameBatchOptions,
 ): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
   const directory = assertNonEmpty(options.directory, "Directory path");
+  const previewSkips = normalizeRenamePreviewSkipsMode(options.previewSkips);
   const maxDepth = normalizeRenameBatchMaxDepth(options);
   const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
@@ -808,6 +824,22 @@ export async function actionRenameBatch(
       printLine(runtime.stdout, "Skipped summary:");
       for (const line of previewData.skippedSummaryLines) {
         printLine(runtime.stdout, line);
+      }
+
+      if (previewSkips === "detailed") {
+        const skippedPreview = composeDetailedSkippedPreviewData(runtime, { skipped });
+        printLine(runtime.stdout);
+        if (skippedPreview.truncation) {
+          printLine(
+            runtime.stdout,
+            `Skipped: showing first ${skippedPreview.truncation.headCount} and last ${skippedPreview.truncation.tailCount} of ${skippedPreview.truncation.totalCount} rows; ${skippedPreview.truncation.omittedCount} omitted from the middle.`,
+          );
+        } else {
+          printLine(runtime.stdout, "Skipped details:");
+        }
+        for (const line of skippedPreview.skippedLines) {
+          printLine(runtime.stdout, line);
+        }
       }
     }
   } else {

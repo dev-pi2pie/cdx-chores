@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-02-27
+modified-date: 2026-02-28
 status: completed
 agent: codex
 ---
@@ -40,6 +40,12 @@ cdx-chores rename batch ./photos \
   --serial-start 1 \
   --serial-width 3 \
   --dry-run
+```
+
+Preview skipped items with per-item detail:
+
+```bash
+cdx-chores rename batch ./photos --dry-run --preview-skips detailed
 ```
 
 ## Pattern and Template Usage
@@ -104,6 +110,8 @@ Flag notes:
 - `--codex` routes eligible files by file type after normal rename filtering.
 - `--codex-images` and `--codex-docs` override `--codex` when combined.
 - unsupported files remain deterministic rename only.
+- `--preview-skips summary` is the default compact dry-run preview mode.
+- `--preview-skips detailed` keeps the skipped summary and also shows a bounded per-item skipped section.
 
 Interactive mode now asks once for assistant enablement, then one scope selector:
 

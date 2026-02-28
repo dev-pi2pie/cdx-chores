@@ -57,6 +57,11 @@ export interface CompactRenameBatchPreviewData {
   truncation?: RenamePreviewTruncation;
 }
 
+export interface DetailedSkippedPreviewData {
+  skippedLines: string[];
+  truncation?: RenamePreviewTruncation;
+}
+
 const DEFAULT_RENAME_PREVIEW_MAX_ROWS = 40;
 const DEFAULT_RENAME_PREVIEW_MIN_ROWS = 6;
 const DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS = 18;
@@ -212,6 +217,53 @@ export function composeCompactRenameBatchPreviewData(
           headCount: renameSlice.head.length,
           tailCount: renameSlice.tail.length,
           omittedCount: renameSlice.omittedCount,
+        }
+      : undefined,
+  };
+}
+
+export function resolveDetailedSkippedPreviewBudget(runtime: CliRuntime): RenamePreviewBudget {
+  const base = resolveRenamePreviewBudget(runtime);
+  const rowCount = Math.min(8, Math.max(4, Math.floor(base.rowCount / 2)));
+  return {
+    rowCount,
+    headCount: Math.max(1, Math.ceil(rowCount / 2)),
+    tailCount: Math.max(0, Math.floor(rowCount / 2)),
+  };
+}
+
+export function composeDetailedSkippedPreviewData(
+  runtime: CliRuntime,
+  options: {
+    skipped: readonly SkippedRenameItem[];
+  },
+): DetailedSkippedPreviewData {
+  const detailRows = options.skipped.map((item) => ({
+    kind: "skipped-detail" as const,
+    item,
+    line: formatSkippedRenamePreviewLine(runtime, item),
+  }));
+  const budget = resolveDetailedSkippedPreviewBudget(runtime);
+  const slice = buildHeadTailSlice(detailRows, {
+    headCount: budget.headCount,
+    tailCount: budget.tailCount,
+  });
+
+  const skippedLines: string[] = [];
+  appendAll(skippedLines, slice.head.map((row) => row.line));
+  if (slice.truncated) {
+    skippedLines.push("...");
+    appendAll(skippedLines, slice.tail.map((row) => row.line));
+  }
+
+  return {
+    skippedLines,
+    truncation: slice.truncated
+      ? {
+          totalCount: slice.totalCount,
+          headCount: slice.head.length,
+          tailCount: slice.tail.length,
+          omittedCount: slice.omittedCount,
         }
       : undefined,
   };

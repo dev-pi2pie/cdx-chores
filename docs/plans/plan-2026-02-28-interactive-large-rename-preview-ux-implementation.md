@@ -145,15 +145,15 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Task Items
 
-- [ ] Define how the user reaches detailed skipped-item output
-- [ ] Render skipped rows as a separate section with their own budget
-- [ ] Keep changed rename rows as the primary preview section
-- [ ] Ensure detailed skipped rendering does not break compact default behavior
-- [ ] Document the difference between compact default output and detailed skipped inspection
+- [x] Define how the user reaches detailed skipped-item output
+- [x] Render skipped rows as a separate section with their own budget
+- [x] Keep changed rename rows as the primary preview section
+- [x] Ensure detailed skipped rendering does not break compact default behavior
+- [x] Document the difference between compact default output and detailed skipped inspection
 
 ### Phase Deliverable
 
-- [ ] A separate detailed skipped-item inspection path exists without changing the default compact preview
+- [x] A separate detailed skipped-item inspection path exists without changing the default compact preview
 
 ## Phase 4: Prepare Inspect-Preview Follow-Up Boundary
 
@@ -236,7 +236,7 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 - [x] Job: extract rename preview composition helpers
 - [x] Job: implement bounded Option C dry-run preview
-- [ ] Job: add detailed skipped-item rendering path
+- [x] Job: add detailed skipped-item rendering path
 - [ ] Job: document inspect-preview artifact/input contract
 - [ ] Job: run large-fixture manual smoke checks and record findings
 

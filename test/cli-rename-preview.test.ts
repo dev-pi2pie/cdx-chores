@@ -3,7 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
   buildHeadTailSlice,
   composeCompactRenameBatchPreviewData,
+  composeDetailedSkippedPreviewData,
   composeRenameBatchPreviewData,
+  resolveDetailedSkippedPreviewBudget,
   resolveRenamePreviewBudget,
   summarizeSkippedRenameItems,
 } from "../src/cli/rename-preview";
@@ -104,5 +106,38 @@ describe("rename preview composition", () => {
     expect(preview.renameLines[0]).toBe("- app-00001.log -> log-00001.log");
     expect(preview.renameLines.at(-1)).toBe("- app-00020.log -> log-00020.log");
     expect(preview.skippedSummaryLines).toEqual(["- 2 hidden_file", "- 1 file_too_large"]);
+  });
+
+  test("resolveDetailedSkippedPreviewBudget uses a smaller bounded budget than the rename preview", () => {
+    const { runtime } = createCapturedRuntime();
+    Object.assign(runtime.stdout as object, { isTTY: true, rows: 32 });
+
+    const budget = resolveDetailedSkippedPreviewBudget(runtime);
+
+    expect(budget.rowCount).toBe(7);
+    expect(budget.headCount).toBe(4);
+    expect(budget.tailCount).toBe(3);
+  });
+
+  test("composeDetailedSkippedPreviewData builds a bounded skipped-item preview", () => {
+    const { runtime } = createCapturedRuntime();
+    Object.assign(runtime.stdout as object, { isTTY: true, rows: 32 });
+
+    const preview = composeDetailedSkippedPreviewData(runtime, {
+      skipped: Array.from({ length: 10 }, (_, index) => ({
+        path: `${runtime.cwd}/examples/playground/huge-logs/skip-${String(index + 1).padStart(2, "0")}.log`,
+        reason: "hidden_file",
+      })),
+    });
+
+    expect(preview.truncation).toEqual({
+      totalCount: 10,
+      headCount: 4,
+      tailCount: 3,
+      omittedCount: 3,
+    });
+    expect(preview.skippedLines).toContain("...");
+    expect(preview.skippedLines[0]).toContain("skip-01.log");
+    expect(preview.skippedLines.at(-1)).toContain("skip-10.log");
   });
 });
