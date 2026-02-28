@@ -1,8 +1,8 @@
 ---
 title: "Interactive large rename preview UX implementation"
 created-date: 2026-02-28
-modified-date: 2026-02-28
-status: active
+modified-date: 2026-03-01
+status: completed
 agent: codex
 ---
 
@@ -172,15 +172,15 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Task Items
 
-- [ ] Update docs or usage notes affected by preview output changes
-- [ ] Smoke test against a large synthetic fixture set in `examples/playground/huge-logs/`
-- [ ] Verify small-batch output remains readable and not over-engineered
-- [ ] Verify large-batch dry-run output truncates predictably
-- [ ] Verify generated plan CSV remains the authoritative full review artifact
+- [x] Update docs or usage notes affected by preview output changes
+- [x] Smoke test against a large synthetic fixture set in `examples/playground/huge-logs/`
+- [x] Verify small-batch output remains readable and not over-engineered
+- [x] Verify large-batch dry-run output truncates predictably
+- [x] Verify generated plan CSV remains the authoritative full review artifact
 
 ### Phase Deliverable
 
-- [ ] The new rename preview UX is documented and manually validated against realistic large-list scenarios
+- [x] The new rename preview UX is documented and manually validated against realistic large-list scenarios
 
 ## Technical Design Notes
 
@@ -196,19 +196,19 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Manual Checks
 
-- [ ] `rename batch <dir> --dry-run` with a small directory shows full rows with no confusing truncation
-- [ ] `rename batch <dir> --dry-run` with a very large directory shows summary counts, bounded rename preview, skipped summary, and plan CSV path
-- [ ] Truncation messaging clearly states what was omitted from the middle
-- [ ] The default compact preview reflects Option C
-- [ ] The detailed skipped-item path reflects Option B semantics
-- [ ] `rename file <path> --dry-run` still feels clear and does not regress
-- [ ] Generated `rename-*.csv` remains valid for `rename apply`
+- [x] `rename batch <dir> --dry-run` with a small directory shows full rows with no confusing truncation
+- [x] `rename batch <dir> --dry-run` with a very large directory shows summary counts, bounded rename preview, skipped summary, and plan CSV path
+- [x] Truncation messaging clearly states what was omitted from the middle
+- [x] The default compact preview reflects Option C
+- [x] The detailed skipped-item path reflects Option B semantics
+- [x] `rename file <path> --dry-run` still feels clear and does not regress
+- [x] Generated `rename-*.csv` remains valid for `rename apply`
 
 ### Smoke-Test Fixture Checks
 
-- [ ] Seed large synthetic fixtures under `examples/playground/huge-logs/`
-- [ ] Run rename dry-run flows against a large fixture set and confirm terminal output remains readable
-- [ ] Confirm plan CSV generation still works under large-result conditions
+- [x] Seed large synthetic fixtures under `examples/playground/huge-logs/`
+- [x] Run rename dry-run flows against a large fixture set and confirm terminal output remains readable
+- [x] Confirm plan CSV generation still works under large-result conditions
 
 ## Risks and Mitigations
 
@@ -238,7 +238,7 @@ This plan turns those decisions into an implementation sequence with minimal chu
 - [x] Job: implement bounded Option C dry-run preview
 - [x] Job: add detailed skipped-item rendering path
 - [x] Job: document inspect-preview artifact/input contract
-- [ ] Job: run large-fixture manual smoke checks and record findings
+- [x] Job: run large-fixture manual smoke checks and record findings
 
 ## Related Research
 
