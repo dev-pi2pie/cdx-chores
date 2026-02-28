@@ -1,6 +1,7 @@
 ---
 title: "Rename Plan CSV Schema"
 created-date: 2026-02-25
+modified-date: 2026-02-28
 status: draft
 agent: codex
 ---
@@ -24,6 +25,13 @@ Dry-run plan files are written under the current working directory (`cwd`) using
 Example:
 
 - `rename-20260225-214012-a1b2c3d4.csv`
+
+Naming contract:
+
+- `rename-*.csv` is reserved for replayable rename plan artifacts
+- `rename apply <csv>` treats this file type as executable input
+- future inspect-preview flows should reuse this file as input rather than creating a second same-looking artifact
+- if a future viewer persists derived output, it should use a different naming pattern so it is not confused with a replayable plan
 
 ## CSV Columns (Current Contract)
 
@@ -83,6 +91,15 @@ Columns are stored as UTF-8 CSV with a header row.
 - Unchanged rows may be retained in CSV with `status=skipped` / `reason=unchanged`
 - Skipped symlink rows may be included as audit-only rows with `status=skipped` / `reason=symlink`
 - `rename apply <csv>` executes only rows with `status=planned` and ignores audit-only skipped rows
+
+## Inspect-Preview Boundary
+
+- A future inspect-preview mode should rebuild preview sections from the existing plan CSV rows instead of recomputing rename plans.
+- Preview rendering should treat the CSV as the source artifact and remain separate from replay/apply semantics.
+- This keeps one artifact contract for rename dry-run output:
+  - dry-run writes `rename-*.csv`
+  - apply replays `rename-*.csv`
+  - inspect-preview reads `rename-*.csv`
 
 ## Compatibility Notes
 

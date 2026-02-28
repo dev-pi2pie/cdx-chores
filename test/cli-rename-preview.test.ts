@@ -3,8 +3,11 @@ import { describe, expect, test } from "bun:test";
 import {
   buildHeadTailSlice,
   composeCompactRenameBatchPreviewData,
+  composeCompactRenameBatchPreviewDataFromPlanCsvRows,
   composeDetailedSkippedPreviewData,
   composeRenameBatchPreviewData,
+  composeRenameBatchPreviewDataFromPlanCsvRows,
+  createRenamePreviewSourceDataFromPlanCsvRows,
   resolveDetailedSkippedPreviewBudget,
   resolveRenamePreviewBudget,
   summarizeSkippedRenameItems,
@@ -139,5 +142,108 @@ describe("rename preview composition", () => {
     expect(preview.skippedLines).toContain("...");
     expect(preview.skippedLines[0]).toContain("skip-01.log");
     expect(preview.skippedLines.at(-1)).toContain("skip-10.log");
+  });
+
+  test("createRenamePreviewSourceDataFromPlanCsvRows rehydrates plans and skipped items from replay rows", () => {
+    const { runtime } = createCapturedRuntime();
+
+    const source = createRenamePreviewSourceDataFromPlanCsvRows(runtime, [
+      {
+        old_name: "a.txt",
+        new_name: "b.txt",
+        cleaned_stem: "",
+        ai_new_name: "",
+        ai_provider: "",
+        ai_model: "",
+        changed_at: "",
+        old_path: "examples/playground/huge-logs/a.txt",
+        new_path: "examples/playground/huge-logs/b.txt",
+        plan_id: "plan-1",
+        planned_at: "2026-02-28T00:00:00.000Z",
+        applied_at: "",
+        status: "planned",
+        reason: "",
+      },
+      {
+        old_name: "skip.txt",
+        new_name: "skip.txt",
+        cleaned_stem: "",
+        ai_new_name: "",
+        ai_provider: "",
+        ai_model: "",
+        changed_at: "",
+        old_path: "examples/playground/huge-logs/skip.txt",
+        new_path: "examples/playground/huge-logs/skip.txt",
+        plan_id: "plan-1",
+        planned_at: "2026-02-28T00:00:00.000Z",
+        applied_at: "",
+        status: "skipped",
+        reason: "symlink",
+      },
+    ]);
+
+    expect(source.plans).toEqual([
+      {
+        fromPath: `${runtime.cwd}/examples/playground/huge-logs/a.txt`,
+        toPath: `${runtime.cwd}/examples/playground/huge-logs/b.txt`,
+        changed: true,
+      },
+    ]);
+    expect(source.skipped).toEqual([
+      {
+        path: `${runtime.cwd}/examples/playground/huge-logs/skip.txt`,
+        reason: "symlink",
+      },
+    ]);
+  });
+
+  test("plan csv row helpers compose the same preview surfaces used by live dry-run output", () => {
+    const { runtime } = createCapturedRuntime();
+    Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
+
+    const rows = [
+      {
+        old_name: "app-00001.log",
+        new_name: "log-00001.log",
+        cleaned_stem: "",
+        ai_new_name: "",
+        ai_provider: "",
+        ai_model: "",
+        changed_at: "",
+        old_path: "examples/playground/huge-logs/app-00001.log",
+        new_path: "examples/playground/huge-logs/log-00001.log",
+        plan_id: "plan-1",
+        planned_at: "2026-02-28T00:00:00.000Z",
+        applied_at: "",
+        status: "planned" as const,
+        reason: "",
+      },
+      {
+        old_name: "skip-a.log",
+        new_name: "skip-a.log",
+        cleaned_stem: "",
+        ai_new_name: "",
+        ai_provider: "",
+        ai_model: "",
+        changed_at: "",
+        old_path: "examples/playground/huge-logs/skip-a.log",
+        new_path: "examples/playground/huge-logs/skip-a.log",
+        plan_id: "plan-1",
+        planned_at: "2026-02-28T00:00:00.000Z",
+        applied_at: "",
+        status: "skipped" as const,
+        reason: "hidden_file",
+      },
+    ];
+
+    const fullPreview = composeRenameBatchPreviewDataFromPlanCsvRows(runtime, rows);
+    const compactPreview = composeCompactRenameBatchPreviewDataFromPlanCsvRows(runtime, rows);
+
+    expect(fullPreview.fullLines).toEqual([
+      "- app-00001.log -> log-00001.log",
+      "- examples/playground/huge-logs/skip-a.log (skipped: hidden_file)",
+    ]);
+    expect(compactPreview.renameLines).toEqual(["- app-00001.log -> log-00001.log"]);
+    expect(compactPreview.skippedSummaryLines).toEqual(["- 1 hidden_file"]);
   });
 });

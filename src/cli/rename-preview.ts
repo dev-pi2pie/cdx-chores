@@ -1,7 +1,8 @@
-import { basename } from "node:path";
+import { basename, resolve } from "node:path";
 
 import { appendAll } from "../utils";
 import { formatPathForDisplay } from "./fs-utils";
+import type { RenamePlanCsvRow } from "./rename-plan-csv";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 
 export interface RenamePreviewTruncation {
@@ -35,6 +36,11 @@ export interface RenameBatchPreviewData {
   skippedSummaryRows: RenamePreviewSkippedSummaryRow[];
   skippedDetailRows: RenamePreviewSkippedDetailRow[];
   fullLines: string[];
+}
+
+export interface RenamePreviewSourceData {
+  plans: PlannedRename[];
+  skipped: SkippedRenameItem[];
 }
 
 export interface HeadTailSlice<T> {
@@ -187,6 +193,53 @@ export function composeRenameBatchPreviewData(
   };
 }
 
+export function createRenamePreviewSourceData(options: {
+  plans: readonly PlannedRename[];
+  skipped: readonly SkippedRenameItem[];
+}): RenamePreviewSourceData {
+  return {
+    plans: [...options.plans],
+    skipped: [...options.skipped],
+  };
+}
+
+export function createRenamePreviewSourceDataFromPlanCsvRows(
+  runtime: CliRuntime,
+  rows: readonly RenamePlanCsvRow[],
+): RenamePreviewSourceData {
+  const plans: PlannedRename[] = [];
+  const skipped: SkippedRenameItem[] = [];
+
+  for (const row of rows) {
+    const fromPath = resolve(runtime.cwd, row.old_path);
+    const toPath = resolve(runtime.cwd, row.new_path);
+
+    if (row.status === "skipped") {
+      skipped.push({
+        path: fromPath,
+        reason: row.reason || "skipped",
+      });
+      continue;
+    }
+
+    plans.push({
+      fromPath,
+      toPath,
+      changed: fromPath !== toPath,
+    });
+  }
+
+  return { plans, skipped };
+}
+
+export function composeRenameBatchPreviewDataFromPlanCsvRows(
+  runtime: CliRuntime,
+  rows: readonly RenamePlanCsvRow[],
+): RenameBatchPreviewData {
+  const source = createRenamePreviewSourceDataFromPlanCsvRows(runtime, rows);
+  return composeRenameBatchPreviewData(runtime, source);
+}
+
 export function composeCompactRenameBatchPreviewData(
   runtime: CliRuntime,
   options: {
@@ -220,6 +273,14 @@ export function composeCompactRenameBatchPreviewData(
         }
       : undefined,
   };
+}
+
+export function composeCompactRenameBatchPreviewDataFromPlanCsvRows(
+  runtime: CliRuntime,
+  rows: readonly RenamePlanCsvRow[],
+): CompactRenameBatchPreviewData {
+  const source = createRenamePreviewSourceDataFromPlanCsvRows(runtime, rows);
+  return composeCompactRenameBatchPreviewData(runtime, source);
 }
 
 export function resolveDetailedSkippedPreviewBudget(runtime: CliRuntime): RenamePreviewBudget {

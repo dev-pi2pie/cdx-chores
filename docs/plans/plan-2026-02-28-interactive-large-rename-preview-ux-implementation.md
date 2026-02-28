@@ -159,14 +159,14 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Task Items
 
-- [ ] Ensure composed preview data can be reused outside immediate `stdout` printing
-- [ ] Keep the generated `rename-*.csv` file as the inspect-preview input artifact
-- [ ] Document the renderer boundary so a future inspect-preview mode can reuse the same data pipeline
-- [ ] Avoid introducing naming ambiguity with replayable plan CSV artifacts
+- [x] Ensure composed preview data can be reused outside immediate `stdout` printing
+- [x] Keep the generated `rename-*.csv` file as the inspect-preview input artifact
+- [x] Document the renderer boundary so a future inspect-preview mode can reuse the same data pipeline
+- [x] Avoid introducing naming ambiguity with replayable plan CSV artifacts
 
 ### Phase Deliverable
 
-- [ ] The bounded preview implementation leaves a clean reuse path for a later inspect-preview mode
+- [x] The bounded preview implementation leaves a clean reuse path for a later inspect-preview mode
 
 ## Phase 5: Docs, Manual QA, and Smoke Checks
 
@@ -237,7 +237,7 @@ This plan turns those decisions into an implementation sequence with minimal chu
 - [x] Job: extract rename preview composition helpers
 - [x] Job: implement bounded Option C dry-run preview
 - [x] Job: add detailed skipped-item rendering path
-- [ ] Job: document inspect-preview artifact/input contract
+- [x] Job: document inspect-preview artifact/input contract
 - [ ] Job: run large-fixture manual smoke checks and record findings
 
 ## Related Research
