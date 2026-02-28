@@ -85,6 +85,36 @@ A future `data preview` command would be broader again:
 
 These layers are related, but they should not be implemented as one scope. Solving rename dry-run preview does not require solving a general-purpose viewer or creating a new `data preview` subcommand.
 
+### 6. Reusable list-composition utilities can support preview-window construction without forcing a full UI framework shift
+
+The new utility `src/utils/append-all.ts` is small, but it points in a useful direction for preview assembly:
+
+- compose head slices, tail slices, summary rows, and optional detail rows explicitly
+- keep list-building logic separate from rendering
+- support reuse later if preview output grows into a more formal inspector surface
+
+This reinforces the idea that current planning can include richer preview composition while still avoiding a premature move to a heavy terminal UI framework.
+
+### 7. Inspect-preview should reuse the existing rename plan CSV artifact instead of inventing a second lookalike artifact
+
+The current dry-run workflow already has a stable, replayable file contract:
+
+- filename pattern: `rename-<timecode>-<uid>.csv`
+- semantic role: replayable rename plan artifact
+- downstream consumer: `rename apply <csv>`
+
+That means inspect-preview should not create a second artifact that looks like the same plan type unless it is actually the same replayable plan.
+
+Recommended rule:
+
+- if inspect-preview is viewing dry-run results, it should read the existing generated plan CSV
+- if inspect-preview ever persists its own derived artifact, it should use a distinct naming pattern so it cannot be confused with an applyable rename plan
+
+This gives the naming pattern a useful type-guard role:
+
+- `rename-*.csv` means replayable rename plan
+- inspect-preview output, if any, should use a clearly different prefix or extension
+
 ## Implications or Recommendations
 
 ### Recommendation A. Solve large-preview UX first without Ink
@@ -109,7 +139,21 @@ The separate draft research for that topic is:
 
 - `docs/researches/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
 
-### Recommendation B. Introduce a dedicated preview pager only if needed
+### Recommendation B. Include inspect-preview in current planning, but scope it as a follow-up layer
+
+An explicit inspect-preview mode for rename results is now worth tracking in the current planning backlog.
+
+Recommended constraints:
+
+- do not make it a prerequisite for the first bounded dry-run preview implementation
+- design the data shape and row composition so that a later inspect-preview mode can reuse them
+- treat the existing rename plan CSV as the primary inspect-preview input artifact
+- preserve the current CSV naming rule as the replayable-plan type guard
+- keep the renderer boundary narrow so future preview surfaces are possible without rewriting rename planning logic
+
+This keeps the feature in active planning while still preserving a sensible implementation order.
+
+### Recommendation C. Introduce a dedicated preview pager only if needed
 
 If truncation is not sufficient, the next step should be a focused preview pager primitive for rename results, not a full interactive framework migration.
 
@@ -122,7 +166,7 @@ That pager could be implemented with the same low-level TTY approach already use
 
 This would scope the complexity to the exact problem surface.
 
-### Recommendation C. Re-evaluate Ink only for a broader app-shell ambition
+### Recommendation D. Re-evaluate Ink only for a broader app-shell ambition
 
 Ink becomes more reasonable only if the product direction changes from "prompt-driven CLI with a few custom TTY widgets" to something closer to a full terminal app:
 
@@ -138,8 +182,9 @@ If that broader ambition is real, Ink can be reconsidered. If not, it is likely 
 1. Add preview truncation/windowing rules to rename output.
 2. Use both terminal height and a fixed cap to derive the visible row budget.
 3. On truncation, show head and tail slices and emphasize the CSV path as the full review artifact.
-4. Add an optional interactive pager only if user testing shows truncation is insufficient.
-5. Defer any Ink adoption decision until there is a wider terminal-app requirement.
+4. Keep inspect-preview in the current plan as a follow-up item, with reusable row/data boundaries.
+5. Add an optional interactive pager only if user testing shows truncation is insufficient or inspect-preview needs it.
+6. Defer any Ink adoption decision until there is a wider terminal-app requirement.
 
 ## Scope Layers
 
@@ -317,6 +362,8 @@ Recommended baseline:
 - detailed skipped-item inspection: optional follow-up mode using the Option B structure
 - full review artifact: generated plan CSV
 - no generic preview-window or `data preview` feature required for the first implementation
+- inspect-preview: keep in the current planning to-do list, but not as a blocker for the first bounded preview pass
+- inspect-preview artifact policy: reuse `rename-*.csv` as input rather than creating another same-shaped file
 
 Why this direction fits best:
 
@@ -325,11 +372,17 @@ Why this direction fits best:
 - skipped details are still available without forcing everyone to read them
 - this does not require a full inner-window/pager implementation as the first step
 - it keeps rename dry-run preview separate from broader terminal-viewer ambitions
+- it still respects a reusable design if inspect-preview is added soon after
+- it keeps the current plan CSV naming contract meaningful and avoids artifact confusion
 
-## Open Questions
+## Current Planning To-Do
 
-- Should skipped items share the same preview budget as changed items, or be summarized separately?
-- Do we want a future explicit "inspect preview" mode for rename results, separate from the command wizard itself?
+- Implement bounded rename dry-run preview with terminal-height-aware head-and-tail truncation.
+- Use Option C as the default terminal shape.
+- Keep Option B available for explicit detailed skipped-item inspection.
+- Structure preview-row composition so the same data can later feed an inspect-preview mode.
+- Treat the generated `rename-*.csv` file as the inspect-preview input artifact.
+- Add inspect-preview as a planned follow-up item after the bounded preview baseline lands.
 
 ### Working Answers So Far
 
@@ -338,8 +391,10 @@ Why this direction fits best:
 - Truncation should prefer head-and-tail slices rather than only the first rows.
 - Default terminal output should follow Option C.
 - Detailed per-item skipped output should remain available as an explicit Option B-style inspection mode.
-- A future explicit inspect-preview mode is interesting, but it should be deferred until the baseline truncation approach is proven insufficient.
-- A reusable preview window belongs to a later infrastructure layer, not the rename v1 scope.
+- The skipped-items question is effectively answered by the Option C default plus Option B detail path.
+- Inspect-preview should be kept in the current planning to-do list as a follow-up feature with reusable design boundaries.
+- Inspect-preview should follow the current dry-run CSV naming rule only as an input contract; it should not emit a second artifact that pretends to be the same replayable plan type.
+- A reusable preview window belongs to a later infrastructure layer, even if inspect-preview is planned earlier.
 - A future `data preview` subcommand belongs to a separate feature track, not this rename-preview research scope.
 - Path prompt sibling-navigation questions have been moved to `docs/researches/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`.
 
@@ -354,4 +409,5 @@ Why this direction fits best:
 - `src/cli/actions/rename.ts`
 - `src/cli/prompts/path-inline.ts`
 - `src/cli/prompts/path.ts`
+- `src/utils/append-all.ts`
 - [Ink](https://github.com/vadimdemedes/ink)
