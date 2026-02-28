@@ -17,16 +17,11 @@ import {
   resolveAutoCodexFlagsForPaths,
   resolveCodexFlagsFromCliOptions,
 } from "../rename-interactive-router";
+import { composeRenameBatchPreviewData, formatPlannedRenamePreviewLine } from "../rename-preview";
 import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
-
-function formatRenamePreviewLine(plan: PlannedRename): string {
-  const fromName = basename(plan.fromPath);
-  const toName = basename(plan.toPath);
-  return plan.changed ? `- ${fromName} -> ${toName}` : `- ${fromName} (unchanged)`;
-}
 
 type CodexImageRenameTitleSuggester = (options: {
   imagePaths: string[];
@@ -786,11 +781,9 @@ export async function actionRenameBatch(
   }
   printLine(runtime.stdout);
 
-  for (const plan of plans) {
-    printLine(runtime.stdout, formatRenamePreviewLine(plan));
-  }
-  for (const item of skipped) {
-    printLine(runtime.stdout, `- ${displayPath(runtime, item.path)} (skipped: ${item.reason})`);
+  const previewData = composeRenameBatchPreviewData(runtime, { plans, skipped });
+  for (const line of previewData.fullLines) {
+    printLine(runtime.stdout, line);
   }
 
   if (options.dryRun ?? false) {
@@ -978,7 +971,7 @@ export async function actionRenameFile(
     );
   }
   printLine(runtime.stdout);
-  printLine(runtime.stdout, formatRenamePreviewLine(plan));
+  printLine(runtime.stdout, formatPlannedRenamePreviewLine(plan));
 
   if (options.dryRun ?? false) {
     const ext = extname(plan.fromPath);

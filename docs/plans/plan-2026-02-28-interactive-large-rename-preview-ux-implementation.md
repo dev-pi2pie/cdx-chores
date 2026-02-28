@@ -1,7 +1,8 @@
 ---
 title: "Interactive large rename preview UX implementation"
 created-date: 2026-02-28
-status: draft
+modified-date: 2026-02-28
+status: active
 agent: codex
 ---
 
@@ -111,18 +112,18 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ### Task Items
 
-- [ ] Define a preview data shape for:
+- [x] Define a preview data shape for:
   - rename rows
   - skipped summary rows
   - optional detailed skipped rows
   - truncation metadata
-- [ ] Add helper utilities to compose head slices, tail slices, separators, and summary rows
-- [ ] Keep list composition separate from direct `stdout` printing
-- [ ] Decide where these helpers should live (`src/cli/actions/rename.ts` extraction vs dedicated helper module)
+- [x] Add helper utilities to compose head slices, tail slices, separators, and summary rows
+- [x] Keep list composition separate from direct `stdout` printing
+- [x] Decide where these helpers should live (`src/cli/actions/rename.ts` extraction vs dedicated helper module)
 
 ### Phase Deliverable
 
-- [ ] Testable preview composition primitives exist independent of terminal output
+- [x] Testable preview composition primitives exist independent of terminal output
 
 ## Phase 2: Implement Bounded Rename Dry-Run Preview (Option C Default)
 
@@ -233,7 +234,7 @@ This plan turns those decisions into an implementation sequence with minimal chu
 
 ## Follow-up Jobs (After Plan Approval)
 
-- [ ] Job: extract rename preview composition helpers
+- [x] Job: extract rename preview composition helpers
 - [ ] Job: implement bounded Option C dry-run preview
 - [ ] Job: add detailed skipped-item rendering path
 - [ ] Job: document inspect-preview artifact/input contract
@@ -242,4 +243,3 @@ This plan turns those decisions into an implementation sequence with minimal chu
 ## Related Research
 
 - `docs/researches/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
-
