@@ -1,20 +1,9 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
 import { createTempFixtureDir, runCli, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { captureRenamePlanCsvSnapshot, cleanupRenamePlanCsvSinceSnapshot } from "./helpers/cli-action-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("CLI UX flags and path output", () => {
   test("supports both -v and -V for version output", () => {

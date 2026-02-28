@@ -2,6 +2,10 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import type { CliRuntime } from "../../src/cli/types";
+import {
+  captureRenamePlanCsvSnapshotSync,
+  cleanupRenamePlanCsvSinceSnapshotSync,
+} from "./rename-plan-test-utils";
 
 export const REPO_ROOT = resolve(import.meta.dir, "../..");
 export const TMP_ROOT = join(REPO_ROOT, "examples", "playground", ".tmp-tests");
@@ -14,12 +18,14 @@ export function runCli(
   args: string[],
   cwd = REPO_ROOT,
 ): { exitCode: number; stdout: string; stderr: string } {
+  const renamePlanCsvSnapshot = captureRenamePlanCsvSnapshotSync();
   const proc = Bun.spawnSync({
     cmd: [process.execPath, "src/bin.ts", ...args],
     cwd,
     stdout: "pipe",
     stderr: "pipe",
   });
+  cleanupRenamePlanCsvSinceSnapshotSync(renamePlanCsvSnapshot);
 
   return {
     exitCode: proc.exitCode,
