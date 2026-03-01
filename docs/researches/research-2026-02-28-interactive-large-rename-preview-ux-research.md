@@ -1,8 +1,8 @@
 ---
 title: "Interactive large rename preview UX research"
 created-date: 2026-02-28
-modified-date: 2026-02-28
-status: draft
+modified-date: 2026-03-01
+status: completed
 agent: codex
 ---
 
@@ -400,6 +400,12 @@ Why this direction fits best:
 
 ## Related Plans
 
+- `docs/plans/plan-2026-02-28-interactive-large-rename-preview-ux-implementation.md`
+- `docs/plans/jobs/2026-02-28-extract-rename-preview-composition-primitives.md`
+- `docs/plans/jobs/2026-02-28-bounded-option-c-rename-dry-run-preview.md`
+- `docs/plans/jobs/2026-02-28-detailed-skipped-item-rendering-path.md`
+- `docs/plans/jobs/2026-02-28-inspect-preview-reuse-boundary-and-csv-contract.md`
+- `docs/plans/jobs/2026-03-01-large-rename-preview-manual-qa-and-smoke-checks.md`
 - `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
 - `docs/plans/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
