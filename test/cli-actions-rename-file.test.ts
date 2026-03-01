@@ -13,6 +13,7 @@ import {
 import { join } from "node:path";
 
 import { actionRenameFile } from "../src/cli/actions";
+import { formatLocalFileDateTime } from "../src/utils/datetime";
 import {
   createCapturedRuntime,
   createTempFixtureDir,
@@ -73,6 +74,20 @@ async function withDocxExperimentalEnabled(run: () => Promise<void>) {
       delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
     } else {
       process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
+    }
+  }
+}
+
+async function withTimezone<T>(timezone: string, run: () => Promise<T>): Promise<T> {
+  const previousTimezone = process.env.TZ;
+  process.env.TZ = timezone;
+  try {
+    return await run();
+  } finally {
+    if (previousTimezone === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTimezone;
     }
   }
 }
@@ -477,4 +492,37 @@ describe("cli action modules: rename file", () => {
       expect(dataLine?.endsWith(",")).toBe(true);
     });
   });
+
+  test("actionRenameFile rewrites legacy timestamps in mixed templates", async () => {
+    await withTimezone("Asia/Taipei", async () => {
+      await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
+        const { filePath } = await createRenameFileFixture(
+          fixtureDir,
+          "tz-file-mixed-legacy",
+          "memo.txt",
+          { time: fixedTime },
+        );
+        const { runtime, stderr } = createCapturedRuntime();
+
+        const result = await actionRenameFile(runtime, {
+          path: toRepoRelativePath(filePath),
+          pattern: "{timestamp}-{timestamp_utc}-{stem}",
+          dryRun: true,
+          timestampTimezone: "local",
+        });
+        trackPlanCsv(result.planCsvPath);
+
+        expect(stderr.text).toBe("");
+
+        const csvText = await readFile(result.planCsvPath!, "utf8");
+        const dataLine = csvText.split("\n").find((line) => line.includes("memo.txt"));
+        expect(dataLine).toBeDefined();
+
+        const newName = dataLine!.split(",")[1] ?? "";
+        expect(newName).toContain(`${formatLocalFileDateTime(fixedTime)}-20260301-150000-memo.txt`);
+      });
+    });
+  });
+
 });

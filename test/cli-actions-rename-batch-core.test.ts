@@ -3,6 +3,7 @@ import { mkdir, readFile, rm, stat, symlink, utimes, writeFile } from "node:fs/p
 import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
+import { formatLocalFileDateTime } from "../src/utils/datetime";
 import {
   createCapturedRuntime,
   createTempFixtureDir,
@@ -24,6 +25,20 @@ beforeEach(async () => {
 afterEach(async () => {
   await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
 });
+
+async function withTimezone<T>(timezone: string, run: () => Promise<T>): Promise<T> {
+  const previousTimezone = process.env.TZ;
+  process.env.TZ = timezone;
+  try {
+    return await run();
+  } finally {
+    if (previousTimezone === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTimezone;
+    }
+  }
+}
 
 describe("cli action modules: rename batch core", () => {
   test("actionRenameBatch dry-run previews renames and returns counts", async () => {
@@ -786,6 +801,43 @@ describe("cli action modules: rename batch core", () => {
       expect(dataLine).toBeDefined();
       // Should still record "local" because the pattern explicitly says so
       expect(dataLine).toContain(",local");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch rewrites legacy timestamps in mixed templates", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      await withTimezone("Asia/Taipei", async () => {
+        const { runtime, stderr } = createCapturedRuntime();
+        const dirPath = join(fixtureDir, "tz-mixed");
+        await mkdir(dirPath, { recursive: true });
+
+        const filePath = join(dirPath, "demo.txt");
+        await writeFile(filePath, "x", "utf8");
+        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
+        await utimes(filePath, fixedTime, fixedTime);
+
+        const result = await actionRenameBatch(runtime, {
+          directory: toRepoRelativePath(dirPath),
+          pattern: "{timestamp}-{timestamp_utc}-{stem}",
+          dryRun: true,
+          timestampTimezone: "local",
+        });
+        planCsvPath = result.planCsvPath;
+
+        expect(stderr.text).toBe("");
+        const csvText = await readFile(planCsvPath!, "utf8");
+        const dataLine = csvText.split("\n").find((line) => line.includes("demo.txt"));
+        expect(dataLine).toBeDefined();
+
+        const newName = dataLine!.split(",")[1] ?? "";
+        const expectedLocalTimestamp = formatLocalFileDateTime(fixedTime);
+        expect(newName).toContain(`${expectedLocalTimestamp}-20260301-150000-demo.txt`);
+      });
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

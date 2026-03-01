@@ -232,14 +232,11 @@ const LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN = /\{\s*timestamp\s*\}/g;
 const EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp_(local|utc)\s*\}/;
 
 /**
- * Returns true when a template contains the legacy `{timestamp}` placeholder
- * but does NOT contain an explicit `{timestamp_local}` or `{timestamp_utc}`.
+ * Returns true when a template contains at least one legacy `{timestamp}`
+ * placeholder, including mixed templates that also contain explicit variants.
  */
 export function templateContainsLegacyTimestamp(template: string): boolean {
-  return (
-    LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN.test(template) &&
-    !EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN.test(template)
-  );
+  return LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN.test(template);
 }
 
 /**
@@ -262,8 +259,8 @@ export function rewriteTimestampPlaceholder(template: string, timezone: Timestam
  * Pure decision: should the interactive flow present a timezone-selection
  * prompt for a given rename pattern?
  *
- * Returns `true` only when the pattern contains a bare `{timestamp}` without
- * any explicit `{timestamp_local}` or `{timestamp_utc}` variant.
+ * Returns `true` whenever the pattern contains a bare `{timestamp}` token,
+ * even if the template also includes explicit timestamp variants.
  */
 export function shouldPromptTimestampTimezone(pattern: string): boolean {
   return templateContainsLegacyTimestamp(pattern);

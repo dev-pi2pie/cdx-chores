@@ -92,6 +92,8 @@ describe("rename template contracts", () => {
     expect(templateContainsLegacyTimestamp("{prefix}-{timestamp}-{stem}")).toBe(true);
     expect(templateContainsLegacyTimestamp("{timestamp}-{stem}")).toBe(true);
     expect(templateContainsLegacyTimestamp("{ prefix }-{ timestamp }-{ stem }")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{timestamp}-{timestamp_utc}-{stem}")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{timestamp_local}-{timestamp}-{stem}")).toBe(true);
 
     // explicit variants should return false
     expect(templateContainsLegacyTimestamp("{prefix}-{timestamp_utc}-{stem}")).toBe(false);
@@ -99,9 +101,6 @@ describe("rename template contracts", () => {
 
     // no timestamp at all
     expect(templateContainsLegacyTimestamp("{prefix}-{stem}")).toBe(false);
-
-    // mixed: has both legacy and explicit → false (explicit takes precedence)
-    expect(templateContainsLegacyTimestamp("{timestamp}-{timestamp_utc}-{stem}")).toBe(false);
   });
 
   test("templateContainsExplicitTimestamp detects {timestamp_local} and {timestamp_utc}", () => {
@@ -131,6 +130,11 @@ describe("rename template contracts", () => {
       "{prefix}-{timestamp_utc}-{stem}",
     );
 
+    // mixed templates rewrite only the legacy placeholder
+    expect(rewriteTimestampPlaceholder("{timestamp}-{timestamp_utc}-{stem}", "local")).toBe(
+      "{timestamp_local}-{timestamp_utc}-{stem}",
+    );
+
     // handles multiple occurrences
     expect(rewriteTimestampPlaceholder("{timestamp}-{stem}-{timestamp}", "local")).toBe(
       "{timestamp_local}-{stem}-{timestamp_local}",
@@ -141,6 +145,7 @@ describe("rename template contracts", () => {
     test("shouldPromptTimestampTimezone returns true only for legacy {timestamp}", () => {
       expect(shouldPromptTimestampTimezone("{prefix}-{timestamp}-{stem}")).toBe(true);
       expect(shouldPromptTimestampTimezone("{ timestamp }-{stem}")).toBe(true);
+      expect(shouldPromptTimestampTimezone("{timestamp}-{timestamp_utc}-{stem}")).toBe(true);
 
       // explicit variants → no prompt
       expect(shouldPromptTimestampTimezone("{prefix}-{timestamp_utc}-{stem}")).toBe(false);
@@ -148,9 +153,6 @@ describe("rename template contracts", () => {
 
       // no timestamp at all → no prompt
       expect(shouldPromptTimestampTimezone("{prefix}-{stem}")).toBe(false);
-
-      // mixed legacy + explicit → no prompt (explicit takes precedence)
-      expect(shouldPromptTimestampTimezone("{timestamp}-{timestamp_utc}-{stem}")).toBe(false);
     });
 
     test("resolveTimestampPatternForInteractive rewrites legacy pattern when timezone selected", () => {
@@ -168,6 +170,11 @@ describe("rename template contracts", () => {
       expect(resolveTimestampPatternForInteractive("{ timestamp }-{stem}", "local")).toBe(
         "{timestamp_local}-{stem}",
       );
+
+      // mixed templates rewrite only the legacy placeholder
+      expect(
+        resolveTimestampPatternForInteractive("{timestamp}-{timestamp_utc}-{stem}", "local"),
+      ).toBe("{timestamp_local}-{timestamp_utc}-{stem}");
     });
 
     test("resolveTimestampPatternForInteractive returns original when no timezone selected", () => {
