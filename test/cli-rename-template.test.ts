@@ -4,7 +4,12 @@ import {
   normalizeSerialPlaceholderInTemplate,
   parseSerialToken,
   resolveRenamePatternTemplate,
+  resolveTimestampPatternForInteractive,
+  rewriteTimestampPlaceholder,
   serializeSerialToken,
+  shouldPromptTimestampTimezone,
+  templateContainsExplicitTimestamp,
+  templateContainsLegacyTimestamp,
   templateContainsPrefixPlaceholder,
   templateContainsSerialPlaceholder,
 } from "../src/cli/rename-template";
@@ -73,11 +78,133 @@ describe("rename template contracts", () => {
   test("detects whether template uses serial placeholder", () => {
     expect(templateContainsSerialPlaceholder("{date}-{stem}")).toBe(false);
     expect(templateContainsSerialPlaceholder("{date}-{stem}-{serial}")).toBe(true);
-    expect(templateContainsSerialPlaceholder("{serial_###_start_2_order_mtime_asc}-{stem}")).toBe(true);
+    expect(templateContainsSerialPlaceholder("{serial_###_start_2_order_mtime_asc}-{stem}")).toBe(
+      true,
+    );
   });
 
   test("detects whether template uses prefix placeholder", () => {
     expect(templateContainsPrefixPlaceholder("{date}-{stem}")).toBe(false);
     expect(templateContainsPrefixPlaceholder("{prefix}-{timestamp}-{stem}")).toBe(true);
+  });
+
+  test("templateContainsLegacyTimestamp detects bare {timestamp} without explicit variants", () => {
+    expect(templateContainsLegacyTimestamp("{prefix}-{timestamp}-{stem}")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{timestamp}-{stem}")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{ prefix }-{ timestamp }-{ stem }")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{timestamp}-{timestamp_utc}-{stem}")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{timestamp_local}-{timestamp}-{stem}")).toBe(true);
+
+    // explicit variants should return false
+    expect(templateContainsLegacyTimestamp("{prefix}-{timestamp_utc}-{stem}")).toBe(false);
+    expect(templateContainsLegacyTimestamp("{prefix}-{timestamp_local}-{stem}")).toBe(false);
+
+    // no timestamp at all
+    expect(templateContainsLegacyTimestamp("{prefix}-{stem}")).toBe(false);
+  });
+
+  test("templateContainsExplicitTimestamp detects {timestamp_local} and {timestamp_utc}", () => {
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_utc}-{stem}")).toBe(true);
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_local}-{stem}")).toBe(true);
+
+    // bare legacy should return false
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp}-{stem}")).toBe(false);
+
+    // no timestamp at all
+    expect(templateContainsExplicitTimestamp("{prefix}-{stem}")).toBe(false);
+  });
+
+  test("rewriteTimestampPlaceholder replaces legacy {timestamp} with explicit form", () => {
+    expect(rewriteTimestampPlaceholder("{prefix}-{timestamp}-{stem}", "local")).toBe(
+      "{prefix}-{timestamp_local}-{stem}",
+    );
+    expect(rewriteTimestampPlaceholder("{ prefix }-{ timestamp }-{ stem }", "local")).toBe(
+      "{ prefix }-{timestamp_local}-{ stem }",
+    );
+    expect(rewriteTimestampPlaceholder("{prefix}-{timestamp}-{stem}", "utc")).toBe(
+      "{prefix}-{timestamp_utc}-{stem}",
+    );
+
+    // no-op when no legacy placeholder present
+    expect(rewriteTimestampPlaceholder("{prefix}-{timestamp_utc}-{stem}", "local")).toBe(
+      "{prefix}-{timestamp_utc}-{stem}",
+    );
+
+    // mixed templates rewrite only the legacy placeholder
+    expect(rewriteTimestampPlaceholder("{timestamp}-{timestamp_utc}-{stem}", "local")).toBe(
+      "{timestamp_local}-{timestamp_utc}-{stem}",
+    );
+
+    // handles multiple occurrences
+    expect(rewriteTimestampPlaceholder("{timestamp}-{stem}-{timestamp}", "local")).toBe(
+      "{timestamp_local}-{stem}-{timestamp_local}",
+    );
+  });
+
+  describe("interactive timestamp timezone flow", () => {
+    test("shouldPromptTimestampTimezone returns true only for legacy {timestamp}", () => {
+      expect(shouldPromptTimestampTimezone("{prefix}-{timestamp}-{stem}")).toBe(true);
+      expect(shouldPromptTimestampTimezone("{ timestamp }-{stem}")).toBe(true);
+      expect(shouldPromptTimestampTimezone("{timestamp}-{timestamp_utc}-{stem}")).toBe(true);
+
+      // explicit variants → no prompt
+      expect(shouldPromptTimestampTimezone("{prefix}-{timestamp_utc}-{stem}")).toBe(false);
+      expect(shouldPromptTimestampTimezone("{prefix}-{timestamp_local}-{stem}")).toBe(false);
+
+      // no timestamp at all → no prompt
+      expect(shouldPromptTimestampTimezone("{prefix}-{stem}")).toBe(false);
+    });
+
+    test("resolveTimestampPatternForInteractive rewrites legacy pattern when timezone selected", () => {
+      // utc selection
+      expect(resolveTimestampPatternForInteractive("{prefix}-{timestamp}-{stem}", "utc")).toBe(
+        "{prefix}-{timestamp_utc}-{stem}",
+      );
+
+      // local selection
+      expect(resolveTimestampPatternForInteractive("{prefix}-{timestamp}-{stem}", "local")).toBe(
+        "{prefix}-{timestamp_local}-{stem}",
+      );
+
+      // whitespace-tolerant
+      expect(resolveTimestampPatternForInteractive("{ timestamp }-{stem}", "local")).toBe(
+        "{timestamp_local}-{stem}",
+      );
+
+      // mixed templates rewrite only the legacy placeholder
+      expect(
+        resolveTimestampPatternForInteractive("{timestamp}-{timestamp_utc}-{stem}", "local"),
+      ).toBe("{timestamp_local}-{timestamp_utc}-{stem}");
+    });
+
+    test("resolveTimestampPatternForInteractive returns original when no timezone selected", () => {
+      const pattern = "{prefix}-{timestamp}-{stem}";
+      expect(resolveTimestampPatternForInteractive(pattern, undefined)).toBe(pattern);
+    });
+
+    test("resolveTimestampPatternForInteractive is a no-op for explicit timestamp patterns", () => {
+      // already explicit — ignores timezone selection entirely
+      expect(
+        resolveTimestampPatternForInteractive("{prefix}-{timestamp_utc}-{stem}", "local"),
+      ).toBe("{prefix}-{timestamp_utc}-{stem}");
+      expect(
+        resolveTimestampPatternForInteractive("{prefix}-{timestamp_local}-{stem}", "utc"),
+      ).toBe("{prefix}-{timestamp_local}-{stem}");
+    });
+
+    test("resolveTimestampPatternForInteractive is a no-op for patterns without timestamps", () => {
+      expect(resolveTimestampPatternForInteractive("{prefix}-{stem}", "utc")).toBe(
+        "{prefix}-{stem}",
+      );
+      expect(resolveTimestampPatternForInteractive("{prefix}-{stem}", undefined)).toBe(
+        "{prefix}-{stem}",
+      );
+    });
+
+    test("resolveTimestampPatternForInteractive handles multiple legacy occurrences", () => {
+      expect(resolveTimestampPatternForInteractive("{timestamp}-{stem}-{timestamp}", "local")).toBe(
+        "{timestamp_local}-{stem}-{timestamp_local}",
+      );
+    });
   });
 });

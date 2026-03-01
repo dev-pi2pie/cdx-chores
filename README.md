@@ -102,7 +102,7 @@ cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 Apply an exact dry-run snapshot later:
 
 ```bash
-cdx-chores rename apply ./rename-20260225-214012-a1b2c3d4.csv
+cdx-chores rename apply ./rename-plan-20260225T214012Z-a1b2c3d4.csv
 ```
 
 Recursive image rename with depth limit:
@@ -111,13 +111,13 @@ Recursive image rename with depth limit:
 cdx-chores rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
 ```
 
-Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
+Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
 
 ```bash
 cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}" --dry-run
 ```
 
-Serial template note:
+Template and serial notes:
 
 - `--prefix` is optional; omit it for no prefix.
 - `--codex` is the common smart-routing flag for CLI mode.
@@ -125,6 +125,14 @@ Serial template note:
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.
+
+Timestamp placeholders:
+
+- `{timestamp}` uses UTC (backward-compatible default).
+- `{timestamp_local}` uses local time explicitly.
+- `{timestamp_utc}` uses UTC explicitly.
+- `--timestamp-timezone local|utc` overrides `{timestamp}` only; explicit placeholders are never rewritten.
+- New users should prefer `{timestamp_local}` or `{timestamp_utc}` for clarity.
 
 Video to GIF (requires `ffmpeg`):
 

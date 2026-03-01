@@ -23,9 +23,12 @@ import {
   type RenameSerialOrder,
   type RenameSerialScope,
   type RenameTemplatePreset,
+  type TimestampTimezone,
   RENAME_SERIAL_ORDER_VALUES,
   normalizeSerialPlaceholderInTemplate,
   resolveRenamePatternTemplate,
+  resolveTimestampPatternForInteractive,
+  shouldPromptTimestampTimezone,
   templateContainsPrefixPlaceholder,
   templateContainsSerialPlaceholder,
 } from "./rename-template";
@@ -66,7 +69,10 @@ type InteractiveSubmenuConfig = {
   choices: Array<InteractiveMenuChoice<InteractiveActionKey>>;
 };
 
-function validateIntegerInput(value: string, options: { min?: number; allowEmpty?: boolean }): true | string {
+function validateIntegerInput(
+  value: string,
+  options: { min?: number; allowEmpty?: boolean },
+): true | string {
   const trimmed = value.trim();
   if (!trimmed) {
     return options.allowEmpty ? true : "Required";
@@ -82,9 +88,7 @@ function validateIntegerInput(value: string, options: { min?: number; allowEmpty
   return true;
 }
 
-async function promptRenamePatternConfig(options: {
-  includeSerialScope: boolean;
-}): Promise<{
+async function promptRenamePatternConfig(options: { includeSerialScope: boolean }): Promise<{
   pattern: string;
   usesPrefix: boolean;
   serialOrder?: RenameSerialOrder;
@@ -123,7 +127,7 @@ async function promptRenamePatternConfig(options: {
       ? await input({
           message: [
             "Custom filename template",
-            "Placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
+            "Placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
             "Example: {date}-{stem}-{serial}",
           ].join("\n"),
           validate: (value) => (value.trim() ? true : "Required"),
@@ -167,24 +171,25 @@ async function promptRenamePatternConfig(options: {
       })
     : "";
 
-  const serialScope = options.includeSerialScope && usesSerial
-    ? await select<RenameSerialScope>({
-        message: "Serial scope",
-        choices: [
-          {
-            name: "global",
-            value: "global",
-            description: "Single serial sequence across recursive traversal",
-          },
-          {
-            name: "directory",
-            value: "directory",
-            description: "Reset serial per directory when recursive",
-          },
-        ],
-        default: "global",
-      })
-    : "global";
+  const serialScope =
+    options.includeSerialScope && usesSerial
+      ? await select<RenameSerialScope>({
+          message: "Serial scope",
+          choices: [
+            {
+              name: "global",
+              value: "global",
+              description: "Single serial sequence across recursive traversal",
+            },
+            {
+              name: "directory",
+              value: "directory",
+              description: "Reset serial per directory when recursive",
+            },
+          ],
+          default: "global",
+        })
+      : "global";
 
   const serialStart = serialStartInput.trim() ? Number(serialStartInput.trim()) : undefined;
   const serialWidth = serialWidthInput.trim() ? Number(serialWidthInput.trim()) : undefined;
@@ -200,8 +205,29 @@ async function promptRenamePatternConfig(options: {
         })
       : basePattern;
 
+  const timestampTimezone: TimestampTimezone | undefined = shouldPromptTimestampTimezone(pattern)
+    ? await select<TimestampTimezone>({
+        message: "Timestamp timezone basis",
+        choices: [
+          {
+            name: "utc",
+            value: "utc",
+            description: "Stable cross-machine/audit naming (default)",
+          },
+          {
+            name: "local",
+            value: "local",
+            description: "Local clock naming for personal use",
+          },
+        ],
+        default: "utc",
+      })
+    : undefined;
+
+  const finalPattern = resolveTimestampPatternForInteractive(pattern, timestampTimezone);
+
   return {
-    pattern,
+    pattern: finalPattern,
     usesPrefix,
     serialOrder,
     serialStart,
@@ -458,7 +484,10 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
         },
       ],
     });
-    const recursive = await confirm({ message: "Traverse subdirectories recursively?", default: false });
+    const recursive = await confirm({
+      message: "Traverse subdirectories recursively?",
+      default: false,
+    });
     const patternConfig = await promptRenamePatternConfig({ includeSerialScope: recursive });
     const prefix = patternConfig.usesPrefix
       ? await input({

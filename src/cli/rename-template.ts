@@ -222,3 +222,62 @@ export function templateContainsSerialPlaceholder(template: string): boolean {
 export function templateContainsPrefixPlaceholder(template: string): boolean {
   return /\{prefix\}/.test(template);
 }
+
+export type TimestampTimezone = "local" | "utc";
+
+export const TIMESTAMP_TIMEZONE_VALUES = ["local", "utc"] as const;
+
+const LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp\s*\}/;
+const LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN = /\{\s*timestamp\s*\}/g;
+const EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp_(local|utc)\s*\}/;
+
+/**
+ * Returns true when a template contains at least one legacy `{timestamp}`
+ * placeholder, including mixed templates that also contain explicit variants.
+ */
+export function templateContainsLegacyTimestamp(template: string): boolean {
+  return LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN.test(template);
+}
+
+/**
+ * Returns true when a template already uses `{timestamp_local}` or `{timestamp_utc}`.
+ */
+export function templateContainsExplicitTimestamp(template: string): boolean {
+  return EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN.test(template);
+}
+
+/**
+ * Rewrite all `{timestamp}` placeholders in a template to the explicit form
+ * based on the chosen timezone. No-op when the template does not contain `{timestamp}`.
+ */
+export function rewriteTimestampPlaceholder(template: string, timezone: TimestampTimezone): string {
+  const target = timezone === "local" ? "{timestamp_local}" : "{timestamp_utc}";
+  return template.replace(LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN, target);
+}
+
+/**
+ * Pure decision: should the interactive flow present a timezone-selection
+ * prompt for a given rename pattern?
+ *
+ * Returns `true` whenever the pattern contains a bare `{timestamp}` token,
+ * even if the template also includes explicit timestamp variants.
+ */
+export function shouldPromptTimestampTimezone(pattern: string): boolean {
+  return templateContainsLegacyTimestamp(pattern);
+}
+
+/**
+ * Apply the result of the interactive timezone prompt to a rename pattern.
+ *
+ * When `selectedTimezone` is defined the legacy `{timestamp}` tokens are
+ * rewritten to the explicit form. Otherwise the pattern is returned as-is.
+ */
+export function resolveTimestampPatternForInteractive(
+  pattern: string,
+  selectedTimezone: TimestampTimezone | undefined,
+): string {
+  if (selectedTimezone === undefined || !templateContainsLegacyTimestamp(pattern)) {
+    return pattern;
+  }
+  return rewriteTimestampPlaceholder(pattern, selectedTimezone);
+}

@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-02-27
+modified-date: 2026-03-01
 status: completed
 agent: codex
 ---
@@ -23,15 +23,15 @@ Rename support and Codex semantic support are separate layers:
 
 ## Compact Capability Matrix
 
-| Category | Deterministic rename | Codex semantic support | Notes |
-| --- | --- | --- | --- |
-| Static raster images (`.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tif`, `.tiff`, `.avif`) | Yes | `--codex-images` | Best-effort; fallback-safe |
-| GIF (`.gif`) | Yes | No (currently skipped) | Recorded as non-static skip |
-| Text-like docs (`.md`, `.txt`, `.json`, `.yaml`, `.toml`, `.xml`, `.html`) | Yes | `--codex-docs` | Best-effort; fallback-safe |
-| PDF (`.pdf`) | Yes | `--codex-docs` | PDF metadata/outline/page-text extraction |
-| DOCX (`.docx`) | Yes | Experimental (env-gated) | Requires `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` |
-| Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.) | Yes | No | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
-| Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles) | Skipped by default in batch | N/A | Safety default |
+| Category                                                                                  | Deterministic rename        | Codex semantic support   | Notes                                                                        |
+| ----------------------------------------------------------------------------------------- | --------------------------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Static raster images (`.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tif`, `.tiff`, `.avif`) | Yes                         | `--codex-images`         | Best-effort; fallback-safe                                                   |
+| GIF (`.gif`)                                                                              | Yes                         | No (currently skipped)   | Recorded as non-static skip                                                  |
+| Text-like docs (`.md`, `.txt`, `.json`, `.yaml`, `.toml`, `.xml`, `.html`)                | Yes                         | `--codex-docs`           | Best-effort; fallback-safe                                                   |
+| PDF (`.pdf`)                                                                              | Yes                         | `--codex-docs`           | PDF metadata/outline/page-text extraction                                    |
+| DOCX (`.docx`)                                                                            | Yes                         | Experimental (env-gated) | Requires `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`                         |
+| Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                       | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
+| Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                      | Safety default                                                               |
 
 ## Pattern/Template Coverage
 
@@ -40,12 +40,20 @@ Rename support and Codex semantic support are separate layers:
 Supported placeholders:
 
 - `{prefix}` (nullable)
-- `{timestamp}`
+- `{timestamp}` (UTC, backward-compatible alias)
+- `{timestamp_local}` (local time, explicit)
+- `{timestamp_utc}` (UTC, explicit)
 - `{date}`
 - `{date_local}`
 - `{date_utc}`
 - `{stem}`
 - `{serial...}`
+
+Timestamp notes:
+
+- `{timestamp}` defaults to UTC for backward compatibility.
+- Use `{timestamp_local}` or `{timestamp_utc}` for explicit timezone control.
+- `--timestamp-timezone local|utc` overrides only `{timestamp}`; explicit placeholders are never rewritten.
 
 Serial token notes:
 
@@ -105,16 +113,16 @@ Important:
 
 ## Command Outcome Reference
 
-| Command shape | Semantic behavior |
-| --- | --- |
-| `rename batch --codex` | Auto-routes eligible files to image/doc analyzers by file type |
-| `rename file <file> --codex` | Auto-routes from the selected file extension |
-| `rename batch --profile images --codex-images` | Eligible static images analyzed; others fallback |
-| `rename batch --profile docs --codex-docs` | Eligible docs/PDF analyzed; others fallback |
-| `rename batch --profile docs --codex-images` | No image semantic analysis expected |
-| `rename batch --profile media --codex-images` | Only eligible static images analyzed |
-| `rename file <file> --codex-images` | Depends on file extension eligibility |
-| `rename file <file> --codex-docs` | Depends on doc/PDF/DOCX eligibility |
+| Command shape                                  | Semantic behavior                                              |
+| ---------------------------------------------- | -------------------------------------------------------------- |
+| `rename batch --codex`                         | Auto-routes eligible files to image/doc analyzers by file type |
+| `rename file <file> --codex`                   | Auto-routes from the selected file extension                   |
+| `rename batch --profile images --codex-images` | Eligible static images analyzed; others fallback               |
+| `rename batch --profile docs --codex-docs`     | Eligible docs/PDF analyzed; others fallback                    |
+| `rename batch --profile docs --codex-images`   | No image semantic analysis expected                            |
+| `rename batch --profile media --codex-images`  | Only eligible static images analyzed                           |
+| `rename file <file> --codex-images`            | Depends on file extension eligibility                          |
+| `rename file <file> --codex-docs`              | Depends on doc/PDF/DOCX eligibility                            |
 
 ## Related Guides
 
@@ -130,4 +138,5 @@ Important:
 - `src/adapters/codex/document-rename-titles.ts`
 
 [^gpt5-codex]: OpenAI model docs (GPT-5-Codex): audio/video not supported: https://platform.openai.com/docs/models/gpt-5-codex
+
 [^codex-mini]: OpenAI model docs (codex-mini-latest): audio/video not supported: https://platform.openai.com/docs/models/codex-mini-latest

@@ -22,6 +22,8 @@ import {
   RENAME_SERIAL_SCOPE_VALUES,
   type RenameSerialOrder,
   type RenameSerialScope,
+  type TimestampTimezone,
+  TIMESTAMP_TIMEZONE_VALUES,
 } from "./cli/rename-template";
 import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
@@ -99,11 +101,21 @@ function parseSerialScopeOption(value: string): RenameSerialScope {
   );
 }
 
+function parseTimestampTimezoneOption(value: string): TimestampTimezone {
+  const normalized = value.trim().toLowerCase();
+  if ((TIMESTAMP_TIMEZONE_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as TimestampTimezone;
+  }
+  throw new InvalidArgumentError(
+    `--timestamp-timezone must be one of: ${TIMESTAMP_TIMEZONE_VALUES.join(", ")}.`,
+  );
+}
+
 function applyRenameTemplateOptions(command: Command): void {
   command
     .option(
       "--pattern <template>",
-      "Custom filename template (supports {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
+      "Custom filename template (supports {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
     )
     .option(
       "--serial-order <value>",
@@ -115,15 +127,18 @@ function applyRenameTemplateOptions(command: Command): void {
       `Serial start value override (non-negative integer). Default when unspecified: ${DEFAULT_RENAME_SERIAL_START}.`,
       (value) => parseNonNegativeIntegerOption(value, "--serial-start"),
     )
-    .option(
-      "--serial-width <value>",
-      "Minimum serial width in digits",
-      (value) => parsePositiveIntegerOption(value, "--serial-width"),
+    .option("--serial-width <value>", "Minimum serial width in digits", (value) =>
+      parsePositiveIntegerOption(value, "--serial-width"),
     )
     .option(
       "--serial-scope <value>",
       `Serial scope mode override (${RENAME_SERIAL_SCOPE_VALUES.join(", ")}). Default when unspecified: global.`,
       parseSerialScopeOption,
+    )
+    .option(
+      "--timestamp-timezone <value>",
+      `Timestamp timezone basis for legacy {timestamp} placeholder (${TIMESTAMP_TIMEZONE_VALUES.join(", ")}). Default when unspecified: utc.`,
+      parseTimestampTimezoneOption,
     );
 }
 
@@ -291,11 +306,7 @@ export async function runCli(
     .argument("<path>", "Target file path")
     .option("--prefix <value>", "Filename prefix (optional)")
     .option("--dry-run", "Preview rename plan only", false)
-    .option(
-      "--codex",
-      "Auto-route eligible files to Codex analyzers by file type",
-      false,
-    )
+    .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
     .option(
       "--codex-images",
       "Use only the Codex image analyzer for supported static image files",
@@ -334,48 +345,50 @@ export async function runCli(
     );
   applyRenameTemplateOptions(renameFileCommand);
   renameFileCommand.action(
-      async (
-        path: string,
-        options: {
-          prefix?: string;
-          pattern?: string;
-          serialOrder?: RenameSerialOrder;
-          serialStart?: number;
-          serialWidth?: number;
-          serialScope?: RenameSerialScope;
-          dryRun?: boolean;
-          codex?: boolean;
-          codexImages?: boolean;
-          codexImagesTimeoutMs?: number;
-          codexImagesRetries?: number;
-          codexImagesBatchSize?: number;
-          codexDocs?: boolean;
-          codexDocsTimeoutMs?: number;
-          codexDocsRetries?: number;
-          codexDocsBatchSize?: number;
-        },
-      ) => {
-        await actionRenameFile(cliRuntime, {
-          path,
-          prefix: options.prefix,
-          pattern: options.pattern,
-          serialOrder: options.serialOrder,
-          serialStart: options.serialStart,
-          serialWidth: options.serialWidth,
-          serialScope: options.serialScope,
-          dryRun: options.dryRun,
-          codex: options.codex,
-          codexImages: options.codexImages,
-          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
-          codexImagesRetries: options.codexImagesRetries,
-          codexImagesBatchSize: options.codexImagesBatchSize,
-          codexDocs: options.codexDocs,
-          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
-          codexDocsRetries: options.codexDocsRetries,
-          codexDocsBatchSize: options.codexDocsBatchSize,
-        });
+    async (
+      path: string,
+      options: {
+        prefix?: string;
+        pattern?: string;
+        serialOrder?: RenameSerialOrder;
+        serialStart?: number;
+        serialWidth?: number;
+        serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
+        dryRun?: boolean;
+        codex?: boolean;
+        codexImages?: boolean;
+        codexImagesTimeoutMs?: number;
+        codexImagesRetries?: number;
+        codexImagesBatchSize?: number;
+        codexDocs?: boolean;
+        codexDocsTimeoutMs?: number;
+        codexDocsRetries?: number;
+        codexDocsBatchSize?: number;
       },
-    );
+    ) => {
+      await actionRenameFile(cliRuntime, {
+        path,
+        prefix: options.prefix,
+        pattern: options.pattern,
+        serialOrder: options.serialOrder,
+        serialStart: options.serialStart,
+        serialWidth: options.serialWidth,
+        serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
+        dryRun: options.dryRun,
+        codex: options.codex,
+        codexImages: options.codexImages,
+        codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+        codexImagesRetries: options.codexImagesRetries,
+        codexImagesBatchSize: options.codexImagesBatchSize,
+        codexDocs: options.codexDocs,
+        codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+        codexDocsRetries: options.codexDocsRetries,
+        codexDocsBatchSize: options.codexDocsBatchSize,
+      });
+    },
+  );
 
   const renameBatchCommand = renameCommand
     .command("batch")
@@ -401,11 +414,7 @@ export async function runCli(
       collectCsvListOption,
       [],
     )
-    .option(
-      "--codex",
-      "Auto-route eligible files to Codex analyzers by file type",
-      false,
-    )
+    .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
     .option(
       "--codex-images",
       "Use only the Codex image analyzer for supported static image files",
@@ -448,64 +457,66 @@ export async function runCli(
     );
   applyRenameTemplateOptions(renameBatchCommand);
   renameBatchCommand.action(
-      async (
-        directory: string,
-        options: {
-          prefix?: string;
-          pattern?: string;
-          serialOrder?: RenameSerialOrder;
-          serialStart?: number;
-          serialWidth?: number;
-          serialScope?: RenameSerialScope;
-          profile?: string;
-          dryRun?: boolean;
-          previewSkips?: "summary" | "detailed";
-          recursive?: boolean;
-          maxDepth?: number;
-          matchRegex?: string;
-          skipRegex?: string;
-          ext?: string[];
-          skipExt?: string[];
-          codex?: boolean;
-          codexImages?: boolean;
-          codexImagesTimeoutMs?: number;
-          codexImagesRetries?: number;
-          codexImagesBatchSize?: number;
-          codexDocs?: boolean;
-          codexDocsTimeoutMs?: number;
-          codexDocsRetries?: number;
-          codexDocsBatchSize?: number;
-        },
-      ) => {
-        await actionRenameBatch(cliRuntime, {
-          directory,
-          prefix: options.prefix,
-          pattern: options.pattern,
-          serialOrder: options.serialOrder,
-          serialStart: options.serialStart,
-          serialWidth: options.serialWidth,
-          serialScope: options.serialScope,
-          profile: options.profile,
-          dryRun: options.dryRun,
-          previewSkips: options.previewSkips,
-          recursive: options.recursive,
-          maxDepth: options.maxDepth,
-          matchRegex: options.matchRegex,
-          skipRegex: options.skipRegex,
-          ext: options.ext,
-          skipExt: options.skipExt,
-          codex: options.codex,
-          codexImages: options.codexImages,
-          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
-          codexImagesRetries: options.codexImagesRetries,
-          codexImagesBatchSize: options.codexImagesBatchSize,
-          codexDocs: options.codexDocs,
-          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
-          codexDocsRetries: options.codexDocsRetries,
-          codexDocsBatchSize: options.codexDocsBatchSize,
-        });
+    async (
+      directory: string,
+      options: {
+        prefix?: string;
+        pattern?: string;
+        serialOrder?: RenameSerialOrder;
+        serialStart?: number;
+        serialWidth?: number;
+        serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
+        profile?: string;
+        dryRun?: boolean;
+        previewSkips?: "summary" | "detailed";
+        recursive?: boolean;
+        maxDepth?: number;
+        matchRegex?: string;
+        skipRegex?: string;
+        ext?: string[];
+        skipExt?: string[];
+        codex?: boolean;
+        codexImages?: boolean;
+        codexImagesTimeoutMs?: number;
+        codexImagesRetries?: number;
+        codexImagesBatchSize?: number;
+        codexDocs?: boolean;
+        codexDocsTimeoutMs?: number;
+        codexDocsRetries?: number;
+        codexDocsBatchSize?: number;
       },
-    );
+    ) => {
+      await actionRenameBatch(cliRuntime, {
+        directory,
+        prefix: options.prefix,
+        pattern: options.pattern,
+        serialOrder: options.serialOrder,
+        serialStart: options.serialStart,
+        serialWidth: options.serialWidth,
+        serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
+        profile: options.profile,
+        dryRun: options.dryRun,
+        previewSkips: options.previewSkips,
+        recursive: options.recursive,
+        maxDepth: options.maxDepth,
+        matchRegex: options.matchRegex,
+        skipRegex: options.skipRegex,
+        ext: options.ext,
+        skipExt: options.skipExt,
+        codex: options.codex,
+        codexImages: options.codexImages,
+        codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+        codexImagesRetries: options.codexImagesRetries,
+        codexImagesBatchSize: options.codexImagesBatchSize,
+        codexDocs: options.codexDocs,
+        codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+        codexDocsRetries: options.codexDocsRetries,
+        codexDocsBatchSize: options.codexDocsBatchSize,
+      });
+    },
+  );
 
   renameCommand
     .command("apply")
@@ -540,11 +551,7 @@ export async function runCli(
       collectCsvListOption,
       [],
     )
-    .option(
-      "--codex",
-      "Auto-route eligible files to Codex analyzers by file type",
-      false,
-    )
+    .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
     .option(
       "--codex-images",
       "Use only the Codex image analyzer for supported static image files",
@@ -587,64 +594,66 @@ export async function runCli(
     );
   applyRenameTemplateOptions(batchRenameAliasCommand);
   batchRenameAliasCommand.action(
-      async (
-        directory: string,
-        options: {
-          prefix?: string;
-          pattern?: string;
-          serialOrder?: RenameSerialOrder;
-          serialStart?: number;
-          serialWidth?: number;
-          serialScope?: RenameSerialScope;
-          profile?: string;
-          dryRun?: boolean;
-          previewSkips?: "summary" | "detailed";
-          recursive?: boolean;
-          maxDepth?: number;
-          matchRegex?: string;
-          skipRegex?: string;
-          ext?: string[];
-          skipExt?: string[];
-          codex?: boolean;
-          codexImages?: boolean;
-          codexImagesTimeoutMs?: number;
-          codexImagesRetries?: number;
-          codexImagesBatchSize?: number;
-          codexDocs?: boolean;
-          codexDocsTimeoutMs?: number;
-          codexDocsRetries?: number;
-          codexDocsBatchSize?: number;
-        },
-      ) => {
-        await actionRenameBatch(cliRuntime, {
-          directory,
-          prefix: options.prefix,
-          pattern: options.pattern,
-          serialOrder: options.serialOrder,
-          serialStart: options.serialStart,
-          serialWidth: options.serialWidth,
-          serialScope: options.serialScope,
-          profile: options.profile,
-          dryRun: options.dryRun,
-          previewSkips: options.previewSkips,
-          recursive: options.recursive,
-          maxDepth: options.maxDepth,
-          matchRegex: options.matchRegex,
-          skipRegex: options.skipRegex,
-          ext: options.ext,
-          skipExt: options.skipExt,
-          codex: options.codex,
-          codexImages: options.codexImages,
-          codexImagesTimeoutMs: options.codexImagesTimeoutMs,
-          codexImagesRetries: options.codexImagesRetries,
-          codexImagesBatchSize: options.codexImagesBatchSize,
-          codexDocs: options.codexDocs,
-          codexDocsTimeoutMs: options.codexDocsTimeoutMs,
-          codexDocsRetries: options.codexDocsRetries,
-          codexDocsBatchSize: options.codexDocsBatchSize,
-        });
+    async (
+      directory: string,
+      options: {
+        prefix?: string;
+        pattern?: string;
+        serialOrder?: RenameSerialOrder;
+        serialStart?: number;
+        serialWidth?: number;
+        serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
+        profile?: string;
+        dryRun?: boolean;
+        previewSkips?: "summary" | "detailed";
+        recursive?: boolean;
+        maxDepth?: number;
+        matchRegex?: string;
+        skipRegex?: string;
+        ext?: string[];
+        skipExt?: string[];
+        codex?: boolean;
+        codexImages?: boolean;
+        codexImagesTimeoutMs?: number;
+        codexImagesRetries?: number;
+        codexImagesBatchSize?: number;
+        codexDocs?: boolean;
+        codexDocsTimeoutMs?: number;
+        codexDocsRetries?: number;
+        codexDocsBatchSize?: number;
       },
-    );
+    ) => {
+      await actionRenameBatch(cliRuntime, {
+        directory,
+        prefix: options.prefix,
+        pattern: options.pattern,
+        serialOrder: options.serialOrder,
+        serialStart: options.serialStart,
+        serialWidth: options.serialWidth,
+        serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
+        profile: options.profile,
+        dryRun: options.dryRun,
+        previewSkips: options.previewSkips,
+        recursive: options.recursive,
+        maxDepth: options.maxDepth,
+        matchRegex: options.matchRegex,
+        skipRegex: options.skipRegex,
+        ext: options.ext,
+        skipExt: options.skipExt,
+        codex: options.codex,
+        codexImages: options.codexImages,
+        codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+        codexImagesRetries: options.codexImagesRetries,
+        codexImagesBatchSize: options.codexImagesBatchSize,
+        codexDocs: options.codexDocs,
+        codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+        codexDocsRetries: options.codexDocsRetries,
+        codexDocsBatchSize: options.codexDocsBatchSize,
+      });
+    },
+  );
 
   const videoCommand = program.command("video").description("Video utilities (ffmpeg-backed)");
   videoCommand
@@ -667,15 +676,11 @@ export async function runCli(
       "Scale factor multiplier (for example 0.5 halves size, 2 doubles it)",
       (value) => parsePositiveNumberOption(value, "--scale"),
     )
-    .option(
-      "--width <px>",
-      "Output width in pixels (requires --height)",
-      (value) => parsePositiveIntegerOption(value, "--width"),
+    .option("--width <px>", "Output width in pixels (requires --height)", (value) =>
+      parsePositiveIntegerOption(value, "--width"),
     )
-    .option(
-      "--height <px>",
-      "Output height in pixels (requires --width)",
-      (value) => parsePositiveIntegerOption(value, "--height"),
+    .option("--height <px>", "Output height in pixels (requires --width)", (value) =>
+      parsePositiveIntegerOption(value, "--height"),
     )
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .addHelpText(

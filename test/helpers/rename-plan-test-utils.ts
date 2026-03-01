@@ -2,7 +2,7 @@ import { readdir, rm } from "node:fs/promises";
 import { readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-const RENAME_PLAN_CSV_PATTERN = /^rename-\d{8}-\d{6}-[a-f0-9]{8}\.csv$/;
+const RENAME_PLAN_CSV_PATTERN = /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/;
 const REPO_ROOT = resolve(import.meta.dir, "../..");
 
 function matchRenamePlanCsvName(name: string): boolean {
