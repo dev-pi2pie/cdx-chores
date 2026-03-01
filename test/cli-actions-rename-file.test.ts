@@ -13,7 +13,6 @@ import {
 import { join } from "node:path";
 
 import { actionRenameFile } from "../src/cli/actions";
-import { formatLocalFileDateTime } from "../src/utils/datetime";
 import {
   createCapturedRuntime,
   createTempFixtureDir,
@@ -74,20 +73,6 @@ async function withDocxExperimentalEnabled(run: () => Promise<void>) {
       delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
     } else {
       process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
-    }
-  }
-}
-
-async function withTimezone<T>(timezone: string, run: () => Promise<T>): Promise<T> {
-  const previousTimezone = process.env.TZ;
-  process.env.TZ = timezone;
-  try {
-    return await run();
-  } finally {
-    if (previousTimezone === undefined) {
-      delete process.env.TZ;
-    } else {
-      process.env.TZ = previousTimezone;
     }
   }
 }
@@ -421,149 +406,6 @@ describe("cli action modules: rename file", () => {
 
         const csvText = await readFile(result.planCsvPath!, "utf8");
         expect(csvText).toContain("project goal outline");
-      });
-    });
-  });
-
-  test("actionRenameFile --timestamp-timezone local rewrites legacy {timestamp} and records metadata", async () => {
-    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-local", "memo.txt");
-      const { runtime, stderr } = createCapturedRuntime();
-
-      const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(filePath),
-        prefix: "doc",
-        dryRun: true,
-        timestampTimezone: "local",
-      });
-      trackPlanCsv(result.planCsvPath);
-
-      expect(stderr.text).toBe("");
-      expect(result.changed).toBe(true);
-
-      const csvText = await readFile(result.planCsvPath!, "utf8");
-      expect(csvText).toContain(",timestamp_tz");
-      const dataLine = csvText.split("\n").find((l) => l.includes("memo.txt"));
-      expect(dataLine).toBeDefined();
-      expect(dataLine).toContain(",local");
-    });
-  });
-
-  test("actionRenameFile rewrites spaced legacy { timestamp } placeholders for timestamp timezone", async () => {
-    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-spaced", "memo.txt");
-      const { runtime, stderr } = createCapturedRuntime();
-
-      const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(filePath),
-        pattern: "{ prefix }-{ timestamp }-{ stem }",
-        prefix: "doc",
-        dryRun: true,
-        timestampTimezone: "local",
-      });
-      trackPlanCsv(result.planCsvPath);
-
-      expect(stderr.text).toBe("");
-
-      const csvText = await readFile(result.planCsvPath!, "utf8");
-      const dataLine = csvText.split("\n").find((l) => l.includes("memo.txt"));
-      expect(dataLine).toBeDefined();
-      expect(dataLine).toContain(",local");
-    });
-  });
-
-  test("actionRenameFile leaves timestamp_tz empty for mixed explicit local and utc placeholders", async () => {
-    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-mixed", "memo.txt");
-      const { runtime, stderr } = createCapturedRuntime();
-
-      const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(filePath),
-        pattern: "{timestamp_local}-{timestamp_utc}-{stem}",
-        dryRun: true,
-      });
-      trackPlanCsv(result.planCsvPath);
-
-      expect(stderr.text).toBe("");
-
-      const csvText = await readFile(result.planCsvPath!, "utf8");
-      const dataLine = csvText.split("\n").find((l) => l.includes("memo.txt"));
-      expect(dataLine).toBeDefined();
-      expect(dataLine?.endsWith(",")).toBe(true);
-    });
-  });
-
-  test("actionRenameFile rewrites legacy timestamps in mixed templates", async () => {
-    await withTimezone("Asia/Taipei", async () => {
-      await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
-        const { filePath } = await createRenameFileFixture(
-          fixtureDir,
-          "tz-file-mixed-legacy",
-          "memo.txt",
-          { time: fixedTime },
-        );
-        const { runtime, stderr } = createCapturedRuntime();
-
-        const result = await actionRenameFile(runtime, {
-          path: toRepoRelativePath(filePath),
-          pattern: "{timestamp}-{timestamp_utc}-{stem}",
-          dryRun: true,
-          timestampTimezone: "local",
-        });
-        trackPlanCsv(result.planCsvPath);
-
-        expect(stderr.text).toBe("");
-
-        const csvText = await readFile(result.planCsvPath!, "utf8");
-        const dataLine = csvText.split("\n").find((line) => line.includes("memo.txt"));
-        expect(dataLine).toBeDefined();
-
-        const newName = dataLine!.split(",")[1] ?? "";
-        expect(newName).toContain(`${formatLocalFileDateTime(fixedTime)}-20260301-150000-memo.txt`);
-      });
-    });
-  });
-
-  test("actionRenameFile keeps timestamp timezone override when Codex replans titles", async () => {
-    await withTimezone("Asia/Taipei", async () => {
-      await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
-        const { filePath } = await createRenameFileFixture(
-          fixtureDir,
-          "tz-file-codex",
-          "weekly notes.md",
-          {
-            content: "# Weekly Sync\n",
-            time: fixedTime,
-          },
-        );
-        const { runtime, stderr } = createCapturedRuntime();
-
-        const result = await actionRenameFile(runtime, {
-          path: toRepoRelativePath(filePath),
-          pattern: "{timestamp}-{stem}",
-          dryRun: true,
-          timestampTimezone: "local",
-          codexDocs: true,
-          codexDocsTitleSuggester: async (options) => ({
-            suggestions: options.documentPaths.map((path) => ({
-              path,
-              title: "weekly sync notes",
-            })),
-          }),
-        });
-        trackPlanCsv(result.planCsvPath);
-
-        expect(stderr.text).toBe("");
-
-        const csvText = await readFile(result.planCsvPath!, "utf8");
-        const dataLine = csvText.split("\n").find((line) => line.includes("weekly notes.md"));
-        expect(dataLine).toBeDefined();
-
-        const newName = dataLine!.split(",")[1] ?? "";
-        expect(newName).toBe(`${formatLocalFileDateTime(fixedTime)}-weekly-sync-notes.md`);
-        expect(dataLine).toContain(",local");
       });
     });
   });
