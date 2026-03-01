@@ -26,6 +26,13 @@ export const RENAME_PLAN_CSV_HEADERS = [
 ] as const;
 
 export type RenamePlanCsvStatus = "planned" | "skipped" | "applied" | "failed";
+const RENAME_PLAN_CSV_REPLAY_REQUIRED_HEADERS = [
+  "old_path",
+  "new_path",
+  "status",
+  "plan_id",
+  "planned_at",
+] as const;
 
 export interface RenamePlanCsvRow {
   old_name: string;
@@ -81,6 +88,148 @@ function assertPathWithinCwd(cwd: string, pathValue: string, label: string): str
     });
   }
   return resolved;
+}
+
+function normalizeHeader(value: string, index: number): string {
+  return (index === 0 ? value.replace(/^\uFEFF/, "") : value).trim();
+}
+
+function isRenamePlanCsvStatus(value: string): value is RenamePlanCsvStatus {
+  return ["planned", "skipped", "applied", "failed"].includes(value);
+}
+
+function validateRenamePlanCsvHeaders(headerRow: string[]): void {
+  const headers = headerRow.map((header, index) => normalizeHeader(header, index));
+  const missing = RENAME_PLAN_CSV_REPLAY_REQUIRED_HEADERS.filter(
+    (header) => !headers.includes(header),
+  );
+  if (missing.length > 0) {
+    throw new CliError(
+      `Rename plan CSV missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`,
+      {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+      },
+    );
+  }
+}
+
+function assertRequiredReplayField(value: string, field: string, rowNumber: number): void {
+  if (!value) {
+    throw new CliError(`Rename plan CSV row ${rowNumber} missing required field: ${field}`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  }
+}
+
+function validateAndParseRenamePlanCsvRow(
+  record: Record<string, string>,
+  rowNumber: number,
+): RenamePlanCsvRow {
+  const statusValue = (record.status ?? "").trim();
+  if (!statusValue) {
+    throw new CliError(`Rename plan CSV row ${rowNumber} missing required field: status`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  }
+  if (!isRenamePlanCsvStatus(statusValue)) {
+    throw new CliError(`Invalid rename plan status '${statusValue}' in CSV row ${rowNumber}`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  }
+
+  return {
+    old_name: (record.old_name ?? "").trim(),
+    new_name: (record.new_name ?? "").trim(),
+    cleaned_stem: (record.cleaned_stem ?? "").trim(),
+    ai_new_name: (record.ai_new_name ?? "").trim(),
+    ai_provider: (record.ai_provider ?? "").trim(),
+    ai_model: (record.ai_model ?? "").trim(),
+    changed_at: (record.changed_at ?? "").trim(),
+    old_path: (record.old_path ?? "").trim(),
+    new_path: (record.new_path ?? "").trim(),
+    plan_id: (record.plan_id ?? "").trim(),
+    planned_at: (record.planned_at ?? "").trim(),
+    applied_at: (record.applied_at ?? "").trim(),
+    status: statusValue,
+    reason: (record.reason ?? "").trim(),
+    timestamp_tz: (record.timestamp_tz ?? "").trim(),
+  } satisfies RenamePlanCsvRow;
+}
+
+function assertSingleReplayMetadataValue(
+  rows: RenamePlanCsvRow[],
+  field: "plan_id" | "planned_at",
+): void {
+  const values = new Set(rows.map((row) => row[field]));
+  if (values.size > 1) {
+    throw new CliError(`Rename plan CSV has inconsistent ${field} values across rows`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  }
+}
+
+function assertNoDuplicateExecutablePath(
+  seen: Map<string, number>,
+  resolvedPath: string,
+  rowNumber: number,
+  label: "old_path" | "new_path",
+): void {
+  const previousRowNumber = seen.get(resolvedPath);
+  if (previousRowNumber !== undefined) {
+    throw new CliError(
+      `Rename plan CSV has duplicate executable ${label} entries at rows ${previousRowNumber} and ${rowNumber}`,
+      {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+      },
+    );
+  }
+  seen.set(resolvedPath, rowNumber);
+}
+
+function validateExecutableApplyRows(
+  runtime: CliRuntime,
+  rows: RenamePlanCsvRow[],
+): PlannedRename[] {
+  // Validate per-row replay metadata before cross-row checks.
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    assertRequiredReplayField(row.plan_id, "plan_id", rowNumber);
+    assertRequiredReplayField(row.planned_at, "planned_at", rowNumber);
+  });
+
+  assertSingleReplayMetadataValue(rows, "plan_id");
+  assertSingleReplayMetadataValue(rows, "planned_at");
+
+  const seenOldPaths = new Map<string, number>();
+  const seenNewPaths = new Map<string, number>();
+  const plans: PlannedRename[] = [];
+
+  rows.forEach((row, index) => {
+    if (row.status !== "planned") {
+      return;
+    }
+
+    const rowNumber = index + 2;
+    const fromPath = assertPathWithinCwd(runtime.cwd, row.old_path, "old_path");
+    const toPath = assertPathWithinCwd(runtime.cwd, row.new_path, "new_path");
+
+    assertNoDuplicateExecutablePath(seenOldPaths, fromPath, rowNumber, "old_path");
+    assertNoDuplicateExecutablePath(seenNewPaths, toPath, rowNumber, "new_path");
+
+    plans.push({
+      fromPath,
+      toPath,
+      changed: fromPath !== toPath,
+    });
+  });
+
+  return plans;
 }
 
 function stringifyRenamePlanCsv(rows: RenamePlanCsvRow[]): string {
@@ -167,35 +316,11 @@ export async function readRenamePlanCsv(
 ): Promise<{ csvPath: string; rows: RenamePlanCsvRow[] }> {
   const csvPath = resolve(runtime.cwd, csvPathInput);
   const text = await readTextFileRequired(csvPath);
-  const records = csvRowsToObjects(parseCsv(text));
+  const parsedRows = parseCsv(text);
+  validateRenamePlanCsvHeaders(parsedRows[0] ?? []);
 
-  const rows = records.map((record) => {
-    const statusValue = (record.status || "planned").trim();
-    if (!["planned", "skipped", "applied", "failed"].includes(statusValue)) {
-      throw new CliError(`Invalid rename plan status '${statusValue}' in CSV`, {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-      });
-    }
-
-    return {
-      old_name: (record.old_name ?? "").trim(),
-      new_name: (record.new_name ?? "").trim(),
-      cleaned_stem: (record.cleaned_stem ?? "").trim(),
-      ai_new_name: (record.ai_new_name ?? "").trim(),
-      ai_provider: (record.ai_provider ?? "").trim(),
-      ai_model: (record.ai_model ?? "").trim(),
-      changed_at: (record.changed_at ?? "").trim(),
-      old_path: (record.old_path ?? "").trim(),
-      new_path: (record.new_path ?? "").trim(),
-      plan_id: (record.plan_id ?? "").trim(),
-      planned_at: (record.planned_at ?? "").trim(),
-      applied_at: (record.applied_at ?? "").trim(),
-      status: statusValue as RenamePlanCsvStatus,
-      reason: (record.reason ?? "").trim(),
-      timestamp_tz: (record.timestamp_tz ?? "").trim(),
-    } satisfies RenamePlanCsvRow;
-  });
+  const records = csvRowsToObjects(parsedRows);
+  const rows = records.map((record, index) => validateAndParseRenamePlanCsvRow(record, index + 2));
 
   return { csvPath, rows };
 }
@@ -210,17 +335,8 @@ export async function applyRenamePlanCsv(
   skippedCount: number;
 }> {
   const { csvPath, rows } = await readRenamePlanCsv(runtime, csvPathInput);
-
+  const plans = validateExecutableApplyRows(runtime, rows);
   const executableRows = rows.filter((row) => row.status === "planned");
-  const plans: PlannedRename[] = executableRows.map((row) => {
-    const fromPath = assertPathWithinCwd(runtime.cwd, row.old_path, "old_path");
-    const toPath = assertPathWithinCwd(runtime.cwd, row.new_path, "new_path");
-    return {
-      fromPath,
-      toPath,
-      changed: fromPath !== toPath,
-    };
-  });
 
   await applyPlannedRenames(plans);
 

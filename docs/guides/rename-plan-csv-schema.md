@@ -96,9 +96,20 @@ Columns are stored as UTF-8 CSV with a header row.
 - Skipped symlink rows may be included as audit-only rows with `status=skipped` / `reason=symlink`
 - `rename apply <csv>` executes only rows with `status=planned` and ignores audit-only skipped rows
 
+## Read vs Apply Validation Boundary
+
+Reading a plan CSV (`readRenamePlanCsv`) applies lenient validation:
+
+- required header columns must be present (`old_path`, `new_path`, `status`, `plan_id`, `planned_at`)
+- each row must have a valid `status` value (`planned`, `skipped`, `applied`, `failed`)
+- all other fields are trimmed but allowed to be empty
+- unknown/additive columns are ignored
+
+This keeps reads usable for preview, inspection, and debugging even if a CSV is hand-edited or partially filled.
+
 ## Strict Replay Contract
 
-`rename apply <csv>` should be strict only about the fields that control executable replay:
+`rename apply <csv>` applies additional strict validation on top of the read layer:
 
 - `old_path`
 - `new_path`
@@ -106,9 +117,9 @@ Columns are stored as UTF-8 CSV with a header row.
 - `plan_id`
 - `planned_at`
 
-Validation boundary:
+Validation boundary (apply only):
 
-- all rows must have non-empty `status`, `plan_id`, and `planned_at`
+- all rows must have non-empty `plan_id` and `planned_at`
 - executable rows (`status=planned`) must have valid cwd-relative `old_path` and `new_path`
 - executable rows must fail preflight on duplicate `old_path` or duplicate `new_path`
 - a single apply input must not mix `plan_id` values

@@ -162,34 +162,35 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 5: Apply Validation and CSV Contract Hardening
 
-- [ ] Define strict replay-field contract for apply:
+- [x] Define strict replay-field contract for apply:
   - `old_path`
   - `new_path`
   - `status`
   - `plan_id`
   - `planned_at`
-- [ ] Add a dedicated row validator/type guard for rename plan CSV rows.
-- [ ] Reject missing `status` for apply input instead of defaulting it to `planned`.
-- [ ] Validate replay metadata on all rows before apply:
+- [x] Add a dedicated row validator/type guard for rename plan CSV rows.
+- [x] Reject missing `status` for apply input instead of defaulting it to `planned`.
+- [x] Keep `readRenamePlanCsv` lenient: validate headers and `status`, but allow empty `plan_id`/`planned_at` for preview/inspection use.
+- [x] Validate replay metadata on apply path only (`validateExecutableApplyRows`):
   - non-empty `plan_id`
   - non-empty `planned_at`
-  - valid `status`
-- [ ] Validate executable row path fields before apply for `status=planned` rows only:
+  - valid `status` (enforced at read-time)
+- [x] Validate executable row path fields before apply for `status=planned` rows only:
   - non-empty
   - cwd-relative
   - no cwd escape
-- [ ] Add cross-row preflight validation before any rename executes:
+- [x] Add cross-row preflight validation before any rename executes:
   - duplicate `old_path`
   - duplicate `new_path`
   - inconsistent `plan_id`
   - inconsistent `planned_at`
-- [ ] Define compatibility rule for unknown/additive columns:
+- [x] Define compatibility rule for unknown/additive columns:
   - ignore unknown columns
   - reject missing required replay columns
-- [ ] Keep basename and reporting fields non-blocking in this phase:
+- [x] Keep basename and reporting fields non-blocking in this phase:
   - do not reject `old_name` / `new_name` mismatches
   - do not validate `timestamp_tz`, `reason`, `changed_at`, `applied_at`, or AI metadata for replay eligibility
-- [ ] Ensure apply fails early before partial execution on invalid CSV structure.
+- [x] Ensure apply fails early before partial execution on invalid CSV structure.
 
 ### Phase 6: Documentation and Help Text
 
@@ -197,15 +198,15 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 - [ ] Update `README.md` examples and placeholder descriptions.
 - [ ] Update `docs/guides/rename-common-usage.md` with explicit timestamp guidance.
 - [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` if placeholder behavior is documented there.
-- [ ] Review `docs/guides/rename-plan-csv-schema.md` against the final strict apply contract.
+- [x] Review `docs/guides/rename-plan-csv-schema.md` against the final strict apply contract.
 - [ ] Review `docs/guides/rename-common-usage.md` for any examples that imply loose apply behavior.
 - [ ] Review `README.md` rename examples and wording for plan CSV naming and apply expectations.
 - [ ] Document migration guidance:
   - existing `{timestamp}` users keep current UTC behavior
   - new users should prefer `{timestamp_local}` or `{timestamp_utc}`
-- [ ] Document malformed CSV failure behavior and required replay fields.
-- [ ] Document compatibility policy for future additive columns.
-- [ ] Document the new plan CSV filename shape and why it remains UTC-based.
+- [x] Document malformed CSV failure behavior and required replay fields.
+- [x] Document compatibility policy for future additive columns.
+- [x] Document the new plan CSV filename shape and why it remains UTC-based.
 
 ### Phase 7: Tests and Verification
 
@@ -217,7 +218,7 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 - [ ] Add interactive-flow tests for the conditional timezone prompt.
 - [x] Add tests for plan CSV filename format with explicit `Z`.
 - [x] Add regression tests to confirm existing `{timestamp}` behavior remains UTC.
-- [ ] Add malformed-CSV apply tests for:
+- [x] Add malformed-CSV apply tests for:
   - missing required replay fields
   - invalid `status`
   - missing `plan_id`
