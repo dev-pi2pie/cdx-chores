@@ -470,6 +470,24 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
       : "";
     const dryRun = await confirm({ message: "Dry run only?", default: true });
+    const previewSkips = dryRun
+      ? await select<"summary" | "detailed">({
+          message: "Skipped-item preview mode",
+          choices: [
+            {
+              name: "summary",
+              value: "summary",
+              description: "Compact skipped summary grouped by reason",
+            },
+            {
+              name: "detailed",
+              value: "detailed",
+              description: "Show skipped summary plus bounded per-item skipped rows",
+            },
+          ],
+          default: "summary",
+        })
+      : "summary";
     const codexEnabled = await confirm({
       message: "Enable Codex assistant when eligible?",
       default: false,
@@ -514,6 +532,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       recursive,
       maxDepth: maxDepthInput.trim() ? Number(maxDepthInput) : undefined,
       dryRun,
+      previewSkips,
       codexImages: codexFlags.codexImages,
       codexDocs: codexFlags.codexDocs,
     });

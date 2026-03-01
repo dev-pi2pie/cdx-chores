@@ -384,6 +384,7 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix (optional)")
     .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--preview-skips <mode>", "Skipped-item preview mode: summary or detailed")
     .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
@@ -458,6 +459,7 @@ export async function runCli(
           serialScope?: RenameSerialScope;
           profile?: string;
           dryRun?: boolean;
+          previewSkips?: "summary" | "detailed";
           recursive?: boolean;
           maxDepth?: number;
           matchRegex?: string;
@@ -485,6 +487,7 @@ export async function runCli(
           serialScope: options.serialScope,
           profile: options.profile,
           dryRun: options.dryRun,
+          previewSkips: options.previewSkips,
           recursive: options.recursive,
           maxDepth: options.maxDepth,
           matchRegex: options.matchRegex,
@@ -520,6 +523,7 @@ export async function runCli(
     .option("--prefix <value>", "Filename prefix (optional)")
     .option("--profile <name>", "Preset file profile: all, images, media, docs")
     .option("--dry-run", "Preview rename plan only", false)
+    .option("--preview-skips <mode>", "Skipped-item preview mode: summary or detailed")
     .option("--recursive", "Traverse subdirectories recursively", false)
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
     .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
@@ -594,6 +598,7 @@ export async function runCli(
           serialScope?: RenameSerialScope;
           profile?: string;
           dryRun?: boolean;
+          previewSkips?: "summary" | "detailed";
           recursive?: boolean;
           maxDepth?: number;
           matchRegex?: string;
@@ -621,6 +626,7 @@ export async function runCli(
           serialScope: options.serialScope,
           profile: options.profile,
           dryRun: options.dryRun,
+          previewSkips: options.previewSkips,
           recursive: options.recursive,
           maxDepth: options.maxDepth,
           matchRegex: options.matchRegex,

@@ -17,16 +17,16 @@ import {
   resolveAutoCodexFlagsForPaths,
   resolveCodexFlagsFromCliOptions,
 } from "../rename-interactive-router";
+import {
+  composeCompactRenameBatchPreviewData,
+  composeDetailedSkippedPreviewData,
+  composeRenameBatchPreviewData,
+  formatPlannedRenamePreviewLine,
+} from "../rename-preview";
 import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
-
-function formatRenamePreviewLine(plan: PlannedRename): string {
-  const fromName = basename(plan.fromPath);
-  const toName = basename(plan.toPath);
-  return plan.changed ? `- ${fromName} -> ${toName}` : `- ${fromName} (unchanged)`;
-}
 
 type CodexImageRenameTitleSuggester = (options: {
   imagePaths: string[];
@@ -55,6 +55,7 @@ export interface RenameBatchOptions {
   serialScope?: RenameSerialScope;
   profile?: string;
   dryRun?: boolean;
+  previewSkips?: "summary" | "detailed";
   recursive?: boolean;
   maxDepth?: number;
   matchRegex?: string;
@@ -71,6 +72,19 @@ export interface RenameBatchOptions {
   codexDocsRetries?: number;
   codexDocsBatchSize?: number;
   codexDocsTitleSuggester?: CodexDocumentRenameTitleSuggester;
+}
+
+function normalizeRenamePreviewSkipsMode(mode: RenameBatchOptions["previewSkips"]): "summary" | "detailed" {
+  if (mode === undefined || mode === "summary") {
+    return "summary";
+  }
+  if (mode === "detailed") {
+    return "detailed";
+  }
+  throw new CliError(`Invalid --preview-skips value: ${mode}. Expected one of: summary, detailed`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
 }
 
 export interface RenameFileOptions {
@@ -623,6 +637,7 @@ export async function actionRenameBatch(
   options: RenameBatchOptions,
 ): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
   const directory = assertNonEmpty(options.directory, "Directory path");
+  const previewSkips = normalizeRenamePreviewSkipsMode(options.previewSkips);
   const maxDepth = normalizeRenameBatchMaxDepth(options);
   const fileFilter = createRenameBatchFileFilter(options);
   const initial = await planBatchRename(runtime, directory, {
@@ -786,11 +801,52 @@ export async function actionRenameBatch(
   }
   printLine(runtime.stdout);
 
-  for (const plan of plans) {
-    printLine(runtime.stdout, formatRenamePreviewLine(plan));
-  }
-  for (const item of skipped) {
-    printLine(runtime.stdout, `- ${displayPath(runtime, item.path)} (skipped: ${item.reason})`);
+  if (options.dryRun ?? false) {
+    const previewData = composeCompactRenameBatchPreviewData(runtime, { plans, skipped });
+
+    if (previewData.truncation) {
+      printLine(
+        runtime.stdout,
+        `Renames: showing first ${previewData.truncation.headCount} and last ${previewData.truncation.tailCount} of ${previewData.truncation.totalCount} rows; ${previewData.truncation.omittedCount} omitted from the middle.`,
+      );
+    } else if (previewData.renameLines.length > 0) {
+      printLine(runtime.stdout, "Renames:");
+    }
+
+    for (const line of previewData.renameLines) {
+      printLine(runtime.stdout, line);
+    }
+
+    if (previewData.skippedSummaryLines.length > 0) {
+      if (previewData.renameLines.length > 0 || previewData.truncation) {
+        printLine(runtime.stdout);
+      }
+      printLine(runtime.stdout, "Skipped summary:");
+      for (const line of previewData.skippedSummaryLines) {
+        printLine(runtime.stdout, line);
+      }
+
+      if (previewSkips === "detailed") {
+        const skippedPreview = composeDetailedSkippedPreviewData(runtime, { skipped });
+        printLine(runtime.stdout);
+        if (skippedPreview.truncation) {
+          printLine(
+            runtime.stdout,
+            `Skipped: showing first ${skippedPreview.truncation.headCount} and last ${skippedPreview.truncation.tailCount} of ${skippedPreview.truncation.totalCount} rows; ${skippedPreview.truncation.omittedCount} omitted from the middle.`,
+          );
+        } else {
+          printLine(runtime.stdout, "Skipped details:");
+        }
+        for (const line of skippedPreview.skippedLines) {
+          printLine(runtime.stdout, line);
+        }
+      }
+    }
+  } else {
+    const previewData = composeRenameBatchPreviewData(runtime, { plans, skipped });
+    for (const line of previewData.fullLines) {
+      printLine(runtime.stdout, line);
+    }
   }
 
   if (options.dryRun ?? false) {
@@ -815,6 +871,10 @@ export async function actionRenameBatch(
     planCsvPath = await writeRenamePlanCsv(runtime, rows);
 
     printLine(runtime.stdout);
+    const compactPreviewData = composeCompactRenameBatchPreviewData(runtime, { plans, skipped });
+    if (compactPreviewData.truncation) {
+      printLine(runtime.stdout, "Full review: use the generated plan CSV for the complete rename list.");
+    }
     printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, planCsvPath)}`);
     printLine(runtime.stdout, "Dry run only. No files were renamed.");
     return { changedCount, totalCount, directoryPath, planCsvPath };
@@ -978,7 +1038,7 @@ export async function actionRenameFile(
     );
   }
   printLine(runtime.stdout);
-  printLine(runtime.stdout, formatRenamePreviewLine(plan));
+  printLine(runtime.stdout, formatPlannedRenamePreviewLine(plan));
 
   if (options.dryRun ?? false) {
     const ext = extname(plan.fromPath);

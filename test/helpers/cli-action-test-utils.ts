@@ -3,6 +3,10 @@ import { rm } from "node:fs/promises";
 
 import { CliError } from "../../src/cli/errors";
 import { createCapturedRuntime } from "./cli-test-utils";
+export {
+  captureRenamePlanCsvSnapshot,
+  cleanupRenamePlanCsvSinceSnapshot,
+} from "./rename-plan-test-utils";
 
 export function createActionTestRuntime(options?: Parameters<typeof createCapturedRuntime>[0]) {
   const captured = createCapturedRuntime(options);

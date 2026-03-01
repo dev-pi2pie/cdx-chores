@@ -1,10 +1,25 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { copyFile, mkdir, readFile, readdir, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameFile } from "../src/cli/actions";
 import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { expectCliError, removeIfPresent } from "./helpers/cli-action-test-utils";
+import {
+  captureRenamePlanCsvSnapshot,
+  cleanupRenamePlanCsvSinceSnapshot,
+  expectCliError,
+  removeIfPresent,
+} from "./helpers/cli-action-test-utils";
+
+let renamePlanCsvSnapshot = new Set<string>();
+
+beforeEach(async () => {
+  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
+});
+
+afterEach(async () => {
+  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
+});
 
 const DEFAULT_RENAME_TIME = new Date("2026-02-25T03:04:05.000Z");
 
