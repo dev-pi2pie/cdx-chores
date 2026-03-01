@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
 import {
@@ -685,7 +685,7 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime();
       const dirPath = join(fixtureDir, "tz-local");
       await mkdir(dirPath, { recursive: true });
 
@@ -729,7 +729,7 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime();
       const dirPath = join(fixtureDir, "tz-utc");
       await mkdir(dirPath, { recursive: true });
 
@@ -761,7 +761,7 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime();
       const dirPath = join(fixtureDir, "tz-explicit");
       await mkdir(dirPath, { recursive: true });
 
@@ -796,7 +796,7 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime();
       const dirPath = join(fixtureDir, "tz-none");
       await mkdir(dirPath, { recursive: true });
 

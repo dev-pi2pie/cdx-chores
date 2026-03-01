@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    "dist/**",
+    "coverage/**",
+    "examples/playground/**",
+    "node_modules/**"
+  ]
+}

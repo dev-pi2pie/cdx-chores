@@ -413,7 +413,7 @@ describe("cli action modules: rename file", () => {
   test("actionRenameFile --timestamp-timezone local rewrites legacy {timestamp} and records metadata", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
       const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-local", "memo.txt");
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime();
 
       const result = await actionRenameFile(runtime, {
         path: toRepoRelativePath(filePath),

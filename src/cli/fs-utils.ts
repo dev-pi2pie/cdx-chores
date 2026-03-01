@@ -231,7 +231,7 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
 
 function normalizeRenderedBaseName(value: string, fallback = "file"): string {
   const sanitized = value
-    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+    .replace(/[\p{Cc}<>:"/\\|?*]/gu, "-")
     .replace(/\s+/g, " ")
     .replace(/--+/g, "-")
     .replace(/__+/g, "_")

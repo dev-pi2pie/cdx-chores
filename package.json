@@ -24,7 +24,11 @@
   },
   "scripts": {
     "build": "node scripts/generate-embedded-version.mjs && tsdown",
-    "cli": "node dist/esm/bin.mjs"
+    "cli": "node dist/esm/bin.mjs",
+    "lint": "oxlint --tsconfig tsconfig.json src test scripts",
+    "lint:fix": "oxlint --tsconfig tsconfig.json --fix src test scripts",
+    "format": "oxfmt src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json",
+    "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
