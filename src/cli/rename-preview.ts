@@ -258,7 +258,12 @@ export function composeCompactRenameBatchPreviewData(
 ): CompactRenameBatchPreviewData {
   const previewData = composeRenameBatchPreviewData(runtime, options);
   const budget = resolveRenamePreviewBudget(runtime);
-  const renameSlice = buildHeadTailSlice(previewData.renameRows, {
+  const changedRenameRows = previewData.renameRows.filter((row) => row.plan.changed);
+  const renameRowsForCompactPreview =
+    previewData.renameRows.length > budget.rowCount && changedRenameRows.length > 0
+      ? changedRenameRows
+      : previewData.renameRows;
+  const renameSlice = buildHeadTailSlice(renameRowsForCompactPreview, {
     headCount: budget.headCount,
     tailCount: budget.tailCount,
   });

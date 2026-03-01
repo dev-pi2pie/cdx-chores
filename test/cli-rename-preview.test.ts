@@ -111,6 +111,42 @@ describe("rename preview composition", () => {
     expect(preview.skippedSummaryLines).toEqual(["- 2 hidden_file", "- 1 file_too_large"]);
   });
 
+  test("composeCompactRenameBatchPreviewData prefers changed rows when a mixed batch would truncate", () => {
+    const { runtime } = createCapturedRuntime();
+    Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
+
+    const plans = [
+      ...Array.from({ length: 8 }, (_, index) => ({
+        fromPath: `${runtime.cwd}/examples/playground/huge-logs/a-${String(index + 1).padStart(2, "0")}.log`,
+        toPath: `${runtime.cwd}/examples/playground/huge-logs/a-${String(index + 1).padStart(2, "0")}.log`,
+        changed: false,
+      })),
+      ...Array.from({ length: 4 }, (_, index) => ({
+        fromPath: `${runtime.cwd}/examples/playground/huge-logs/m ${String(index + 1).padStart(2, "0")}.log`,
+        toPath: `${runtime.cwd}/examples/playground/huge-logs/m-${String(index + 1).padStart(2, "0")}.log`,
+        changed: true,
+      })),
+      ...Array.from({ length: 8 }, (_, index) => ({
+        fromPath: `${runtime.cwd}/examples/playground/huge-logs/z-${String(index + 1).padStart(2, "0")}.log`,
+        toPath: `${runtime.cwd}/examples/playground/huge-logs/z-${String(index + 1).padStart(2, "0")}.log`,
+        changed: false,
+      })),
+    ];
+
+    const preview = composeCompactRenameBatchPreviewData(runtime, {
+      plans,
+      skipped: [],
+    });
+
+    expect(preview.truncation).toBeUndefined();
+    expect(preview.renameLines).toEqual([
+      "- m 01.log -> m-01.log",
+      "- m 02.log -> m-02.log",
+      "- m 03.log -> m-03.log",
+      "- m 04.log -> m-04.log",
+    ]);
+  });
+
   test("resolveDetailedSkippedPreviewBudget uses a smaller bounded budget than the rename preview", () => {
     const { runtime } = createCapturedRuntime();
     Object.assign(runtime.stdout as object, { isTTY: true, rows: 32 });

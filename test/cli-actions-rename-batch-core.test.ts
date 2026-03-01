@@ -378,6 +378,56 @@ describe("cli action modules: rename batch core", () => {
     }
   });
 
+  test("actionRenameBatch dry-run keeps changed rows visible when unchanged rows would fill the compact window", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
+
+      const dirPath = join(fixtureDir, "rename-mixed-preview");
+      await mkdir(dirPath, { recursive: true });
+
+      const fixedTime = new Date("2026-02-25T12:34:56.000Z");
+      for (let index = 1; index <= 8; index += 1) {
+        const filePath = join(dirPath, `a-${String(index).padStart(2, "0")}.txt`);
+        await writeFile(filePath, "hello", "utf8");
+        await utimes(filePath, fixedTime, fixedTime);
+      }
+      for (let index = 1; index <= 4; index += 1) {
+        const filePath = join(dirPath, `m ${String(index).padStart(2, "0")}.txt`);
+        await writeFile(filePath, "hello", "utf8");
+        await utimes(filePath, fixedTime, fixedTime);
+      }
+      for (let index = 1; index <= 8; index += 1) {
+        const filePath = join(dirPath, `z-${String(index).padStart(2, "0")}.txt`);
+        await writeFile(filePath, "hello", "utf8");
+        await utimes(filePath, fixedTime, fixedTime);
+      }
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        pattern: "{stem}",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(20);
+      expect(result.changedCount).toBe(4);
+      expect(stdout.text).toContain("Renames:");
+      expect(stdout.text).toContain("m 01.txt -> m-01.txt");
+      expect(stdout.text).toContain("m 04.txt -> m-04.txt");
+      expect(stdout.text).not.toContain("Renames: showing first");
+      expect(stdout.text).not.toContain("...");
+      expect(stdout.text).not.toContain("a-01.txt (unchanged)");
+      expect(stdout.text).not.toContain("z-08.txt (unchanged)");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch can render detailed skipped-item output separately from the default summary", async () => {
     if (process.platform === "win32") {
       return;
