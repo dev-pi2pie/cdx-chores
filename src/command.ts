@@ -22,6 +22,8 @@ import {
   RENAME_SERIAL_SCOPE_VALUES,
   type RenameSerialOrder,
   type RenameSerialScope,
+  type TimestampTimezone,
+  TIMESTAMP_TIMEZONE_VALUES,
 } from "./cli/rename-template";
 import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
@@ -99,6 +101,16 @@ function parseSerialScopeOption(value: string): RenameSerialScope {
   );
 }
 
+function parseTimestampTimezoneOption(value: string): TimestampTimezone {
+  const normalized = value.trim().toLowerCase();
+  if ((TIMESTAMP_TIMEZONE_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as TimestampTimezone;
+  }
+  throw new InvalidArgumentError(
+    `--timestamp-timezone must be one of: ${TIMESTAMP_TIMEZONE_VALUES.join(", ")}.`,
+  );
+}
+
 function applyRenameTemplateOptions(command: Command): void {
   command
     .option(
@@ -122,6 +134,11 @@ function applyRenameTemplateOptions(command: Command): void {
       "--serial-scope <value>",
       `Serial scope mode override (${RENAME_SERIAL_SCOPE_VALUES.join(", ")}). Default when unspecified: global.`,
       parseSerialScopeOption,
+    )
+    .option(
+      "--timestamp-timezone <value>",
+      `Timestamp timezone basis for legacy {timestamp} placeholder (${TIMESTAMP_TIMEZONE_VALUES.join(", ")}). Default when unspecified: utc.`,
+      parseTimestampTimezoneOption,
     );
 }
 
@@ -337,6 +354,7 @@ export async function runCli(
         serialStart?: number;
         serialWidth?: number;
         serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
         dryRun?: boolean;
         codex?: boolean;
         codexImages?: boolean;
@@ -357,6 +375,7 @@ export async function runCli(
         serialStart: options.serialStart,
         serialWidth: options.serialWidth,
         serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
         dryRun: options.dryRun,
         codex: options.codex,
         codexImages: options.codexImages,
@@ -447,6 +466,7 @@ export async function runCli(
         serialStart?: number;
         serialWidth?: number;
         serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
         profile?: string;
         dryRun?: boolean;
         previewSkips?: "summary" | "detailed";
@@ -475,6 +495,7 @@ export async function runCli(
         serialStart: options.serialStart,
         serialWidth: options.serialWidth,
         serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
         profile: options.profile,
         dryRun: options.dryRun,
         previewSkips: options.previewSkips,
@@ -582,6 +603,7 @@ export async function runCli(
         serialStart?: number;
         serialWidth?: number;
         serialScope?: RenameSerialScope;
+        timestampTimezone?: TimestampTimezone;
         profile?: string;
         dryRun?: boolean;
         previewSkips?: "summary" | "detailed";
@@ -610,6 +632,7 @@ export async function runCli(
         serialStart: options.serialStart,
         serialWidth: options.serialWidth,
         serialScope: options.serialScope,
+        timestampTimezone: options.timestampTimezone,
         profile: options.profile,
         dryRun: options.dryRun,
         previewSkips: options.previewSkips,

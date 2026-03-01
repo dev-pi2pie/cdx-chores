@@ -53,7 +53,7 @@ describe("cli action modules: rename apply", () => {
 
       const csvText = await readFile(planCsvPath!, "utf8");
       expect(csvText).toContain(
-        "old_name,new_name,cleaned_stem,ai_new_name,ai_provider,ai_model,changed_at,old_path,new_path,plan_id,planned_at,applied_at,status,reason",
+        "old_name,new_name,cleaned_stem,ai_new_name,ai_provider,ai_model,changed_at,old_path,new_path,plan_id,planned_at,applied_at,status,reason,timestamp_tz",
       );
       expect(csvText).toContain("sample image.png");
       expect(csvText).toContain(",planned,");

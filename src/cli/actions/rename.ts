@@ -11,7 +11,11 @@ import {
 } from "../../adapters/codex/image-rename-titles";
 import { slugifyName } from "../../utils/slug";
 import { CliError } from "../errors";
-import { applyRenamePlanCsv, createRenamePlanCsvRows, writeRenamePlanCsv } from "../rename-plan-csv";
+import {
+  applyRenamePlanCsv,
+  createRenamePlanCsvRows,
+  writeRenamePlanCsv,
+} from "../rename-plan-csv";
 import {
   resolveAutoCodexFlagsForFilePath,
   resolveAutoCodexFlagsForPaths,
@@ -23,7 +27,13 @@ import {
   composeRenameBatchPreviewData,
   formatPlannedRenamePreviewLine,
 } from "../rename-preview";
-import type { RenameSerialOrder, RenameSerialScope } from "../rename-template";
+import {
+  type RenameSerialOrder,
+  type RenameSerialScope,
+  type TimestampTimezone,
+  rewriteTimestampPlaceholder,
+  templateContainsLegacyTimestamp,
+} from "../rename-template";
 import { applyPlannedRenames, planBatchRename, planSingleRename } from "../fs-utils";
 import type { CliRuntime, PlannedRename } from "../types";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
@@ -53,6 +63,7 @@ export interface RenameBatchOptions {
   serialStart?: number;
   serialWidth?: number;
   serialScope?: RenameSerialScope;
+  timestampTimezone?: TimestampTimezone;
   profile?: string;
   dryRun?: boolean;
   previewSkips?: "summary" | "detailed";
@@ -74,7 +85,9 @@ export interface RenameBatchOptions {
   codexDocsTitleSuggester?: CodexDocumentRenameTitleSuggester;
 }
 
-function normalizeRenamePreviewSkipsMode(mode: RenameBatchOptions["previewSkips"]): "summary" | "detailed" {
+function normalizeRenamePreviewSkipsMode(
+  mode: RenameBatchOptions["previewSkips"],
+): "summary" | "detailed" {
   if (mode === undefined || mode === "summary") {
     return "summary";
   }
@@ -96,6 +109,7 @@ export interface RenameFileOptions {
   serialStart?: number;
   serialWidth?: number;
   serialScope?: RenameSerialScope;
+  timestampTimezone?: TimestampTimezone;
   dryRun?: boolean;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
@@ -112,6 +126,37 @@ export interface RenameFileOptions {
 export interface RenameApplyOptions {
   csv: string;
   autoClean?: boolean;
+}
+
+/**
+ * Apply `--timestamp-timezone` rewriting to the pattern before planning.
+ * - Explicit placeholders (`{timestamp_local}`, `{timestamp_utc}`) are never rewritten.
+ * - When a pattern is `undefined` (default template), rewriting applies to the default.
+ * - When nothing is specified, legacy `{timestamp}` remains UTC.
+ */
+function resolveEffectivePattern(
+  pattern: string | undefined,
+  timestampTimezone: TimestampTimezone | undefined,
+): string | undefined {
+  if (timestampTimezone === undefined) {
+    return pattern;
+  }
+  if (pattern !== undefined && !templateContainsLegacyTimestamp(pattern)) {
+    return pattern;
+  }
+  const target = pattern ?? "{prefix}-{timestamp}-{stem}";
+  return rewriteTimestampPlaceholder(target, timestampTimezone);
+}
+
+/**
+ * Derive effective timestamp timezone mode from the resolved pattern for CSV metadata.
+ * Returns "local", "utc", or "" (when no timestamp placeholder is present).
+ */
+function deriveTimestampTzMetadata(pattern: string | undefined): string {
+  const p = pattern ?? "{prefix}-{timestamp}-{stem}";
+  if (/\{timestamp_local\}/.test(p)) return "local";
+  if (/\{timestamp_utc\}/.test(p) || /\{timestamp\}/.test(p)) return "utc";
+  return "";
 }
 
 const IMAGE_EXTENSIONS = new Set([
@@ -156,11 +201,7 @@ function isCodexDocxExperimentalEnabled(): boolean {
   return process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL === "1";
 }
 
-const DEFAULT_RENAME_BATCH_EXCLUDED_BASENAMES = new Set([
-  ".DS_Store",
-  "Thumbs.db",
-  "desktop.ini",
-]);
+const DEFAULT_RENAME_BATCH_EXCLUDED_BASENAMES = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
 
 const RENAME_BATCH_PROFILE_EXTENSIONS = {
   images: [
@@ -483,7 +524,11 @@ async function selectCodexDocumentTextCandidates(
       if (!fileStats.isFile()) {
         skipReasonByPath.set(
           sourcePath,
-          isPdf ? "pdf_skipped_unreadable" : isDocx ? "docx_skipped_unreadable" : "doc_skipped_unreadable",
+          isPdf
+            ? "pdf_skipped_unreadable"
+            : isDocx
+              ? "docx_skipped_unreadable"
+              : "doc_skipped_unreadable",
         );
         continue;
       }
@@ -495,14 +540,22 @@ async function selectCodexDocumentTextCandidates(
       if (fileStats.size > sizeLimit) {
         skipReasonByPath.set(
           sourcePath,
-          isPdf ? "pdf_skipped_too_large" : isDocx ? "docx_skipped_too_large" : "doc_skipped_too_large",
+          isPdf
+            ? "pdf_skipped_too_large"
+            : isDocx
+              ? "docx_skipped_too_large"
+              : "doc_skipped_too_large",
         );
         continue;
       }
     } catch {
       skipReasonByPath.set(
         sourcePath,
-        isPdf ? "pdf_skipped_unreadable" : isDocx ? "docx_skipped_unreadable" : "doc_skipped_unreadable",
+        isPdf
+          ? "pdf_skipped_unreadable"
+          : isDocx
+            ? "docx_skipped_unreadable"
+            : "doc_skipped_unreadable",
       );
       continue;
     }
@@ -533,7 +586,9 @@ function createCodexDocumentTextTitleAnalyzer(options: {
       return {
         suggestions: result.suggestions,
         errorMessage: result.errorMessage,
-        reasonByPath: result.reasons ? new Map(result.reasons.map((item) => [item.path, item.reason])) : undefined,
+        reasonByPath: result.reasons
+          ? new Map(result.reasons.map((item) => [item.path, item.reason]))
+          : undefined,
       };
     },
   };
@@ -586,7 +641,10 @@ async function runRenameTitleAnalyzer(
   let suggestedCount = 0;
 
   if (selection.eligiblePaths.length > 0) {
-    const progress = startAnalyzerProgress(runtime, analyzer.progressLabelForCount(selection.eligiblePaths.length));
+    const progress = startAnalyzerProgress(
+      runtime,
+      analyzer.progressLabelForCount(selection.eligiblePaths.length),
+    );
     const result = await analyzer.suggestTitles({
       paths: selection.eligiblePaths,
       workingDirectory: runtime.cwd,
@@ -635,14 +693,20 @@ async function runRenameTitleAnalyzer(
 export async function actionRenameBatch(
   runtime: CliRuntime,
   options: RenameBatchOptions,
-): Promise<{ changedCount: number; totalCount: number; directoryPath: string; planCsvPath?: string }> {
+): Promise<{
+  changedCount: number;
+  totalCount: number;
+  directoryPath: string;
+  planCsvPath?: string;
+}> {
   const directory = assertNonEmpty(options.directory, "Directory path");
   const previewSkips = normalizeRenamePreviewSkipsMode(options.previewSkips);
   const maxDepth = normalizeRenameBatchMaxDepth(options);
   const fileFilter = createRenameBatchFileFilter(options);
+  const effectivePattern = resolveEffectivePattern(options.pattern, options.timestampTimezone);
   const initial = await planBatchRename(runtime, directory, {
     prefix: options.prefix,
-    pattern: options.pattern,
+    pattern: effectivePattern,
     serialOrder: options.serialOrder,
     serialStart: options.serialStart,
     serialWidth: options.serialWidth,
@@ -763,7 +827,11 @@ export async function actionRenameBatch(
         runtime.stdout,
         "Codex note: no supported static image files in scope; other file types use deterministic rename.",
       );
-    } else if (codexImageCount > 0 && codexEligibleStaticImageCount === 0 && !codexImageErrorMessage) {
+    } else if (
+      codexImageCount > 0 &&
+      codexEligibleStaticImageCount === 0 &&
+      !codexImageErrorMessage
+    ) {
       printLine(
         runtime.stdout,
         "Codex note: image files were found, but none were eligible static-image inputs (see preview/CSV reasons).",
@@ -793,7 +861,11 @@ export async function actionRenameBatch(
       printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
     }
   }
-  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+  if (
+    (options.codex ?? false) &&
+    !effectiveCodexFlags.codexImages &&
+    !effectiveCodexFlags.codexDocs
+  ) {
     printLine(
       runtime.stdout,
       "Codex note: no supported Codex analyzer inputs are in scope; deterministic rename is used.",
@@ -867,13 +939,17 @@ export async function actionRenameBatch(
       skippedItems: skipped,
       aiProvider: "codex",
       aiModel: "auto",
+      timestampTz: deriveTimestampTzMetadata(effectivePattern),
     });
     planCsvPath = await writeRenamePlanCsv(runtime, rows);
 
     printLine(runtime.stdout);
     const compactPreviewData = composeCompactRenameBatchPreviewData(runtime, { plans, skipped });
     if (compactPreviewData.truncation) {
-      printLine(runtime.stdout, "Full review: use the generated plan CSV for the complete rename list.");
+      printLine(
+        runtime.stdout,
+        "Full review: use the generated plan CSV for the complete rename list.",
+      );
     }
     printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, planCsvPath)}`);
     printLine(runtime.stdout, "Dry run only. No files were renamed.");
@@ -892,9 +968,10 @@ export async function actionRenameFile(
   options: RenameFileOptions,
 ): Promise<{ changed: boolean; filePath: string; directoryPath: string; planCsvPath?: string }> {
   const inputPath = assertNonEmpty(options.path, "File path");
+  const effectivePattern = resolveEffectivePattern(options.pattern, options.timestampTimezone);
   const initial = await planSingleRename(runtime, inputPath, {
     prefix: options.prefix,
-    pattern: options.pattern,
+    pattern: effectivePattern,
     serialOrder: options.serialOrder,
     serialStart: options.serialStart,
     serialWidth: options.serialWidth,
@@ -1031,7 +1108,11 @@ export async function actionRenameFile(
       printLine(runtime.stdout, `Codex note: ${codexDocErrorMessage}`);
     }
   }
-  if ((options.codex ?? false) && !effectiveCodexFlags.codexImages && !effectiveCodexFlags.codexDocs) {
+  if (
+    (options.codex ?? false) &&
+    !effectiveCodexFlags.codexImages &&
+    !effectiveCodexFlags.codexDocs
+  ) {
     printLine(
       runtime.stdout,
       "Codex note: this file is not a supported Codex analyzer input; deterministic rename is used.",
@@ -1055,6 +1136,7 @@ export async function actionRenameFile(
       reasonBySourcePath: rowReasonBySourcePath,
       aiProvider: "codex",
       aiModel: "auto",
+      timestampTz: deriveTimestampTzMetadata(effectivePattern),
     });
     const planCsvPath = await writeRenamePlanCsv(runtime, rows);
 

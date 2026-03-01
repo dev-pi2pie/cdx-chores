@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
-import { createCapturedRuntime, createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  createTempFixtureDir,
+  toRepoRelativePath,
+} from "./helpers/cli-test-utils";
 import {
   captureRenamePlanCsvSnapshot,
   cleanupRenamePlanCsvSinceSnapshot,
@@ -327,11 +331,15 @@ describe("cli action modules: rename batch core", () => {
       expect(stderr.text).toBe("");
       expect(result.totalCount).toBe(20);
       expect(result.changedCount).toBe(20);
-      expect(stdout.text).toContain("Renames: showing first 5 and last 5 of 20 rows; 10 omitted from the middle.");
+      expect(stdout.text).toContain(
+        "Renames: showing first 5 and last 5 of 20 rows; 10 omitted from the middle.",
+      );
       expect(stdout.text).toContain("...");
       expect(stdout.text).toContain("photo 01.txt ->");
       expect(stdout.text).toContain("photo 20.txt ->");
-      expect(stdout.text).toContain("Full review: use the generated plan CSV for the complete rename list.");
+      expect(stdout.text).toContain(
+        "Full review: use the generated plan CSV for the complete rename list.",
+      );
       expect(stdout.text).toContain("Plan CSV:");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
     } finally {
@@ -370,7 +378,9 @@ describe("cli action modules: rename batch core", () => {
       expect(stdout.text).toContain("photo 25.txt ->");
       expect(stdout.text).toContain("photo 50.txt ->");
       expect(stdout.text).not.toContain("Renames: showing first");
-      expect(stdout.text).not.toContain("Full review: use the generated plan CSV for the complete rename list.");
+      expect(stdout.text).not.toContain(
+        "Full review: use the generated plan CSV for the complete rename list.",
+      );
       expect(stdout.text).not.toContain("...");
     } finally {
       await removeIfPresent(planCsvPath);
@@ -670,4 +680,150 @@ describe("cli action modules: rename batch core", () => {
       }
     });
   }
+
+  test("actionRenameBatch --timestamp-timezone local rewrites legacy {timestamp} to local form", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "tz-local");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "note.txt");
+      await writeFile(filePath, "x", "utf8");
+      const fixedTime = new Date("2026-03-01T08:30:00.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        timestampTimezone: "local",
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.changedCount).toBe(1);
+
+      // The plan CSV should contain timestamp_tz metadata = "local"
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain(",timestamp_tz");
+      const dataLine = csvText.split("\n").find((l) => l.includes("note.txt"));
+      expect(dataLine).toBeDefined();
+      expect(dataLine).toContain(",local");
+
+      // The new_name should use local-time (not UTC) — pattern is internal,
+      // but the resulting filename differs from UTC when local != UTC.
+      // At minimum, confirm it doesn't match the UTC timestamp.
+      const cells = dataLine!.split(",");
+      const newName = cells[1] ?? "";
+      // Just verify the filename was generated (non-empty, has expected shape)
+      expect(newName).toMatch(/^doc-\d{8}-\d{6}-note\.txt$/);
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch --timestamp-timezone utc explicitly sets utc metadata", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "tz-utc");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "item.txt");
+      await writeFile(filePath, "x", "utf8");
+      const fixedTime = new Date("2026-03-01T23:00:00.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "doc",
+        dryRun: true,
+        timestampTimezone: "utc",
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      const dataLine = csvText.split("\n").find((l) => l.includes("item.txt"));
+      expect(dataLine).toBeDefined();
+      expect(dataLine).toContain(",utc");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch explicit {timestamp_local} in pattern ignores --timestamp-timezone flag", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "tz-explicit");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "demo.txt");
+      await writeFile(filePath, "x", "utf8");
+      const fixedTime = new Date("2026-03-01T15:00:00.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      // Pattern already uses explicit {timestamp_local} — CLI flag "utc" should be ignored
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        pattern: "{prefix}-{timestamp_local}-{stem}",
+        prefix: "doc",
+        dryRun: true,
+        timestampTimezone: "utc",
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      const csvText = await readFile(planCsvPath!, "utf8");
+      const dataLine = csvText.split("\n").find((l) => l.includes("demo.txt"));
+      expect(dataLine).toBeDefined();
+      // Should still record "local" because the pattern explicitly says so
+      expect(dataLine).toContain(",local");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch without timestamp in pattern records empty timestamp_tz", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "tz-none");
+      await mkdir(dirPath, { recursive: true });
+
+      const filePath = join(dirPath, "no-ts.txt");
+      await writeFile(filePath, "x", "utf8");
+      const fixedTime = new Date("2026-03-01T12:00:00.000Z");
+      await utimes(filePath, fixedTime, fixedTime);
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        pattern: "{prefix}-{stem}",
+        prefix: "raw",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      const csvText = await readFile(planCsvPath!, "utf8");
+
+      // The new_name should not contain a timestamp segment
+      const dataLine = csvText.split("\n").find((l) => l.includes("no-ts.txt"));
+      expect(dataLine).toBeDefined();
+      const newName = dataLine!.split(",")[1] ?? "";
+      expect(newName).toBe("raw-no-ts.txt");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
 });

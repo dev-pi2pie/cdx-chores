@@ -63,7 +63,9 @@ describe("rename preview composition", () => {
     });
 
     expect(preview.renameRows).toHaveLength(1);
-    expect(preview.skippedSummaryRows.map((row) => row.line)).toEqual(["- 1 default_excluded_entry"]);
+    expect(preview.skippedSummaryRows.map((row) => row.line)).toEqual([
+      "- 1 default_excluded_entry",
+    ]);
     expect(preview.skippedDetailRows).toHaveLength(1);
     expect(preview.fullLines).toEqual([
       "- app-00001.log -> log-00001.log",
@@ -199,6 +201,7 @@ describe("rename preview composition", () => {
         applied_at: "",
         status: "planned",
         reason: "",
+        timestamp_tz: "",
       },
       {
         old_name: "skip.txt",
@@ -215,6 +218,7 @@ describe("rename preview composition", () => {
         applied_at: "",
         status: "skipped",
         reason: "symlink",
+        timestamp_tz: "",
       },
     ]);
 
@@ -253,6 +257,7 @@ describe("rename preview composition", () => {
         applied_at: "",
         status: "planned" as const,
         reason: "",
+        timestamp_tz: "",
       },
       {
         old_name: "skip-a.log",
@@ -269,6 +274,7 @@ describe("rename preview composition", () => {
         applied_at: "",
         status: "skipped" as const,
         reason: "hidden_file",
+        timestamp_tz: "",
       },
     ];
 

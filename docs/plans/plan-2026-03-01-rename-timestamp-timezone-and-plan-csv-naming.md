@@ -105,14 +105,14 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
   - `{timestamp_local}`
   - `{timestamp_utc}`
 - [x] Define formatting contract for local and UTC timestamp tokens.
-- [ ] Define final CLI option contract for `--timestamp-timezone local|utc`.
-- [ ] Define exact precedence rules across:
+- [x] Define final CLI option contract for `--timestamp-timezone local|utc`.
+- [x] Define exact precedence rules across:
   - explicit placeholders
   - interactive selection
   - CLI override
   - legacy default behavior
 - [x] Define final UTC-explicit plan CSV filename format.
-- [ ] Define additive CSV metadata fields for effective timestamp timezone mode.
+- [x] Define additive CSV metadata fields for effective timestamp timezone mode.
 
 ### Phase 2: Template Engine and Rename Planner
 
@@ -125,21 +125,21 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 3: Interactive UX
 
-- [ ] Add conditional timestamp-basis prompt for templates that contain legacy `{timestamp}`.
-- [ ] Skip the prompt when the resolved template already uses explicit timestamp placeholders.
-- [ ] Rewrite preset/custom templates internally to explicit timestamp placeholders after selection.
-- [ ] Keep the prompt wording concise and clear about tradeoffs:
+- [x] Add conditional timestamp-basis prompt for templates that contain legacy `{timestamp}`.
+- [x] Skip the prompt when the resolved template already uses explicit timestamp placeholders.
+- [x] Rewrite preset/custom templates internally to explicit timestamp placeholders after selection.
+- [x] Keep the prompt wording concise and clear about tradeoffs:
   - `local` for personal/local clock naming
   - `utc` for stable cross-machine/audit naming
-- [ ] Preserve existing interactive flow shape outside the new conditional prompt.
+- [x] Preserve existing interactive flow shape outside the new conditional prompt.
 
 ### Phase 4: CLI Surface and Replay Metadata
 
-- [ ] Add `--timestamp-timezone local|utc` to rename CLI commands that accept `--pattern`.
-- [ ] Apply the CLI option only to legacy `{timestamp}`.
-- [ ] Record the effective timestamp timezone mode in generated plan CSV metadata.
-- [ ] Ensure `rename apply <csv>` continues replaying exact planned paths without recomputation.
-- [ ] Keep plan CSV filename generation in explicit UTC with `Z`.
+- [x] Add `--timestamp-timezone local|utc` to rename CLI commands that accept `--pattern`.
+- [x] Apply the CLI option only to legacy `{timestamp}`.
+- [x] Record the effective timestamp timezone mode in generated plan CSV metadata.
+- [x] Ensure `rename apply <csv>` continues replaying exact planned paths without recomputation.
+- [x] Keep plan CSV filename generation in explicit UTC with `Z`.
 
 ### Phase 5: Apply Validation and CSV Contract Hardening
 
@@ -186,14 +186,14 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 7: Tests and Verification
 
-- [ ] Add unit tests for placeholder validation and rendering:
+- [x] Add unit tests for placeholder validation and rendering:
   - `{timestamp}`
   - `{timestamp_local}`
   - `{timestamp_utc}`
-- [ ] Add tests for precedence behavior between explicit placeholders and `--timestamp-timezone`.
+- [x] Add tests for precedence behavior between explicit placeholders and `--timestamp-timezone`.
 - [ ] Add interactive-flow tests for the conditional timezone prompt.
-- [ ] Add tests for plan CSV filename format with explicit `Z`.
-- [ ] Add regression tests to confirm existing `{timestamp}` behavior remains UTC.
+- [x] Add tests for plan CSV filename format with explicit `Z`.
+- [x] Add regression tests to confirm existing `{timestamp}` behavior remains UTC.
 - [ ] Add malformed-CSV apply tests for:
   - missing required replay fields
   - invalid `status`

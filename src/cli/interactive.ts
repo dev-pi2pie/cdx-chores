@@ -23,9 +23,12 @@ import {
   type RenameSerialOrder,
   type RenameSerialScope,
   type RenameTemplatePreset,
+  type TimestampTimezone,
   RENAME_SERIAL_ORDER_VALUES,
   normalizeSerialPlaceholderInTemplate,
   resolveRenamePatternTemplate,
+  rewriteTimestampPlaceholder,
+  templateContainsLegacyTimestamp,
   templateContainsPrefixPlaceholder,
   templateContainsSerialPlaceholder,
 } from "./rename-template";
@@ -202,8 +205,32 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
         })
       : basePattern;
 
+  const timestampTimezone: TimestampTimezone | undefined = templateContainsLegacyTimestamp(pattern)
+    ? await select<TimestampTimezone>({
+        message: "Timestamp timezone basis",
+        choices: [
+          {
+            name: "utc",
+            value: "utc",
+            description: "Stable cross-machine/audit naming (default)",
+          },
+          {
+            name: "local",
+            value: "local",
+            description: "Local clock naming for personal use",
+          },
+        ],
+        default: "utc",
+      })
+    : undefined;
+
+  const finalPattern =
+    timestampTimezone !== undefined
+      ? rewriteTimestampPlaceholder(pattern, timestampTimezone)
+      : pattern;
+
   return {
-    pattern,
+    pattern: finalPattern,
     usesPrefix,
     serialOrder,
     serialStart,

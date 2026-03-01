@@ -22,6 +22,7 @@ export const RENAME_PLAN_CSV_HEADERS = [
   "applied_at",
   "status",
   "reason",
+  "timestamp_tz",
 ] as const;
 
 export type RenamePlanCsvStatus = "planned" | "skipped" | "applied" | "failed";
@@ -41,6 +42,7 @@ export interface RenamePlanCsvRow {
   applied_at: string;
   status: RenamePlanCsvStatus;
   reason: string;
+  timestamp_tz: string;
 }
 
 function toRelativePathFromCwd(cwd: string, absolutePath: string): string {
@@ -97,9 +99,11 @@ export function createRenamePlanCsvRows(options: {
   skippedItems?: SkippedRenameItem[];
   aiProvider?: string;
   aiModel?: string;
+  timestampTz?: string;
 }): { rows: RenamePlanCsvRow[]; planId: string; plannedAt: string } {
   const plannedAt = options.runtime.now().toISOString();
   const planId = `${formatUtcFileDateTimeISO(options.runtime.now())}-${randomUUID().slice(0, 8)}`;
+  const timestampTz = options.timestampTz ?? "";
 
   const rows = options.plans.map((plan) => {
     const aiNewName = options.aiNameBySourcePath?.get(plan.fromPath) ?? "";
@@ -119,6 +123,7 @@ export function createRenamePlanCsvRows(options: {
       applied_at: "",
       status: changed ? "planned" : "skipped",
       reason: options.reasonBySourcePath?.get(plan.fromPath) ?? (changed ? "" : "unchanged"),
+      timestamp_tz: timestampTz,
     } satisfies RenamePlanCsvRow;
   });
 
@@ -139,6 +144,7 @@ export function createRenamePlanCsvRows(options: {
       applied_at: "",
       status: "skipped" as const,
       reason: item.reason,
+      timestamp_tz: timestampTz,
     } satisfies RenamePlanCsvRow;
   });
 
@@ -187,6 +193,7 @@ export async function readRenamePlanCsv(
       applied_at: (record.applied_at ?? "").trim(),
       status: statusValue as RenamePlanCsvStatus,
       reason: (record.reason ?? "").trim(),
+      timestamp_tz: (record.timestamp_tz ?? "").trim(),
     } satisfies RenamePlanCsvRow;
   });
 
