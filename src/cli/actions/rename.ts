@@ -797,7 +797,7 @@ export async function actionRenameBatch(
   const { plans } = titleOverrides
     ? await planBatchRename(runtime, directory, {
         prefix: options.prefix,
-        pattern: options.pattern,
+        pattern: effectivePattern,
         serialOrder: options.serialOrder,
         serialStart: options.serialStart,
         serialWidth: options.serialWidth,
@@ -1053,7 +1053,7 @@ export async function actionRenameFile(
   if (titleOverride) {
     const replanned = await planSingleRename(runtime, inputPath, {
       prefix: options.prefix,
-      pattern: options.pattern,
+      pattern: effectivePattern,
       serialOrder: options.serialOrder,
       serialStart: options.serialStart,
       serialWidth: options.serialWidth,

@@ -844,6 +844,50 @@ describe("cli action modules: rename batch core", () => {
     }
   });
 
+  test("actionRenameBatch keeps timestamp timezone override when Codex replans titles", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      await withTimezone("Asia/Taipei", async () => {
+        const { runtime, stderr } = createCapturedRuntime();
+        const dirPath = join(fixtureDir, "tz-codex");
+        await mkdir(dirPath, { recursive: true });
+
+        const filePath = join(dirPath, "weekly notes.md");
+        await writeFile(filePath, "# Weekly Sync\n", "utf8");
+        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
+        await utimes(filePath, fixedTime, fixedTime);
+
+        const result = await actionRenameBatch(runtime, {
+          directory: toRepoRelativePath(dirPath),
+          pattern: "{timestamp}-{stem}",
+          dryRun: true,
+          timestampTimezone: "local",
+          codexDocs: true,
+          codexDocsTitleSuggester: async (options) => ({
+            suggestions: options.documentPaths.map((path) => ({
+              path,
+              title: "weekly sync notes",
+            })),
+          }),
+        });
+        planCsvPath = result.planCsvPath;
+
+        expect(stderr.text).toBe("");
+        const csvText = await readFile(planCsvPath!, "utf8");
+        const dataLine = csvText.split("\n").find((line) => line.includes("weekly notes.md"));
+        expect(dataLine).toBeDefined();
+
+        const newName = dataLine!.split(",")[1] ?? "";
+        expect(newName).toBe(`${formatLocalFileDateTime(fixedTime)}-weekly-sync-notes.md`);
+        expect(dataLine).toContain(",local");
+      });
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch without timestamp in pattern records empty timestamp_tz", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;

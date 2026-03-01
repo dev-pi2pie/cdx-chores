@@ -525,4 +525,47 @@ describe("cli action modules: rename file", () => {
     });
   });
 
+  test("actionRenameFile keeps timestamp timezone override when Codex replans titles", async () => {
+    await withTimezone("Asia/Taipei", async () => {
+      await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+        const fixedTime = new Date("2026-03-01T15:00:00.000Z");
+        const { filePath } = await createRenameFileFixture(
+          fixtureDir,
+          "tz-file-codex",
+          "weekly notes.md",
+          {
+            content: "# Weekly Sync\n",
+            time: fixedTime,
+          },
+        );
+        const { runtime, stderr } = createCapturedRuntime();
+
+        const result = await actionRenameFile(runtime, {
+          path: toRepoRelativePath(filePath),
+          pattern: "{timestamp}-{stem}",
+          dryRun: true,
+          timestampTimezone: "local",
+          codexDocs: true,
+          codexDocsTitleSuggester: async (options) => ({
+            suggestions: options.documentPaths.map((path) => ({
+              path,
+              title: "weekly sync notes",
+            })),
+          }),
+        });
+        trackPlanCsv(result.planCsvPath);
+
+        expect(stderr.text).toBe("");
+
+        const csvText = await readFile(result.planCsvPath!, "utf8");
+        const dataLine = csvText.split("\n").find((line) => line.includes("weekly notes.md"));
+        expect(dataLine).toBeDefined();
+
+        const newName = dataLine!.split(",")[1] ?? "";
+        expect(newName).toBe(`${formatLocalFileDateTime(fixedTime)}-weekly-sync-notes.md`);
+        expect(dataLine).toContain(",local");
+      });
+    });
+  });
+
 });
