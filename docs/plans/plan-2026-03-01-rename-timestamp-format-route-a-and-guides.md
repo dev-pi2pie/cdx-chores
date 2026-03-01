@@ -1,6 +1,7 @@
 ---
 title: "Rename timestamp format Route A and guide refresh"
 created-date: 2026-03-01
+modified-date: 2026-03-01
 status: draft
 agent: codex
 ---
@@ -134,8 +135,8 @@ The new guide should include a compact matrix table covering:
 
 ### Phase 4: Guides and Documentation Refresh
 
-- [ ] Create `docs/guides/rename-timestamp-format-matrix.md`.
-- [ ] Add a table matrix that explains:
+- [x] Create `docs/guides/rename-timestamp-format-matrix.md`.
+- [x] Add a table matrix that explains:
   - placeholder
   - timezone
   - style
