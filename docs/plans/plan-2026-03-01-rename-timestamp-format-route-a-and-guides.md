@@ -2,7 +2,7 @@
 title: "Rename timestamp format Route A and guide refresh"
 created-date: 2026-03-01
 modified-date: 2026-03-01
-status: draft
+status: active
 agent: codex
 ---
 
@@ -48,7 +48,7 @@ The next step should stay narrow:
 - `{timestamp_local}` -> compact local 24-hour (`YYYYMMDD-HHMMSS`)
 - `{timestamp_utc}` -> compact UTC 24-hour (`YYYYMMDD-HHMMSS`)
 
-### New Explicit Placeholder Candidates
+### Final Route A Placeholder Set
 
 - `{timestamp_utc_iso}` -> compact UTC ISO-like output with `Z`
 - `{timestamp_local_iso}` -> compact local ISO-like output with numeric offset
@@ -94,44 +94,44 @@ The new guide should include a compact matrix table covering:
 
 ### Phase 1: Contract and Placeholder Decisions
 
-- [ ] Confirm the final Route A placeholder set.
-- [ ] Confirm exact output shapes for:
+- [x] Confirm the final Route A placeholder set.
+- [x] Confirm exact output shapes for:
   - `{timestamp_utc_iso}`
   - `{timestamp_local_iso}`
   - `{timestamp_local_12h}`
   - `{timestamp_utc_12h}`
-- [ ] Confirm whether Route A should ship all four new placeholders or a smaller first subset.
-- [ ] Confirm exact local ISO offset format:
+- [x] Confirm Route A will ship all four new placeholders in this phase.
+- [x] Confirm exact local ISO offset format:
   - `+0800`
   - not `Z`
-- [ ] Confirm exact 12-hour suffix shape:
+- [x] Confirm exact 12-hour suffix shape:
   - `AM`
   - `PM`
-- [ ] Confirm that `date` stays unchanged in this phase.
-- [ ] Confirm interactive UX rule:
+- [x] Confirm that `date` stays unchanged in this phase.
+- [x] Confirm interactive UX rule:
   - current behavior remains the top/default option
   - new formats are opt-in
 
 ### Phase 2: Formatter and Template Engine
 
-- [ ] Add formatter helpers for:
+- [x] Add formatter helpers for:
   - UTC ISO-like compact timestamp with `Z`
   - local ISO-like compact timestamp with numeric offset
   - compact 12-hour UTC timestamp with `AM` / `PM`
   - compact 12-hour local timestamp with `AM` / `PM`
-- [ ] Extend rename template validation to accept the final Route A placeholders.
-- [ ] Extend template rendering in the shared rename planner.
-- [ ] Ensure single-file and batch rename paths use the same rendering logic.
-- [ ] Keep `{timestamp}`, `{timestamp_local}`, and `{timestamp_utc}` behavior unchanged.
-- [ ] Ensure collision handling and basename normalization remain unchanged after the new placeholder rendering.
+- [x] Extend rename template validation to accept the final Route A placeholders.
+- [x] Extend template rendering in the shared rename planner.
+- [x] Ensure single-file and batch rename paths use the same rendering logic.
+- [x] Keep `{timestamp}`, `{timestamp_local}`, and `{timestamp_utc}` behavior unchanged.
+- [x] Ensure collision handling and basename normalization remain unchanged after the new placeholder rendering.
 
 ### Phase 3: Interactive and Help Surface
 
-- [ ] Review whether interactive preset/custom flow should expose Route A format selection directly or rely on custom templates only.
-- [ ] If interactive prompts are extended, keep the current timestamp path as the first/default choice.
-- [ ] Ensure legacy `{timestamp}` rewrite behavior remains limited to timezone selection only.
-- [ ] Update CLI help text for `--pattern` placeholder support.
-- [ ] Keep help text concise enough to avoid turning the command help into a wall of tokens.
+- [x] Review whether interactive preset/custom flow should expose Route A format selection directly or rely on custom templates only.
+- [x] Keep Route A discoverable through custom templates first and avoid adding a new interactive prompt branch in this phase.
+- [x] Ensure legacy `{timestamp}` rewrite behavior remains limited to timezone selection only.
+- [x] Update CLI help text for `--pattern` placeholder support.
+- [x] Keep help text concise enough to avoid turning the command help into a wall of tokens.
 
 ### Phase 4: Guides and Documentation Refresh
 
@@ -153,18 +153,18 @@ The new guide should include a compact matrix table covering:
 
 ### Phase 5: Tests and Verification
 
-- [ ] Add unit tests for the new formatter helpers.
-- [ ] Add rename planner tests for each new Route A placeholder.
-- [ ] Add regression tests confirming unchanged behavior for:
+- [x] Add unit tests for the new formatter helpers.
+- [x] Add rename planner tests for each new Route A placeholder.
+- [x] Add regression tests confirming unchanged behavior for:
   - `{timestamp}`
   - `{timestamp_local}`
   - `{timestamp_utc}`
-- [ ] Add tests for local ISO offset formatting.
-- [ ] Add tests for 12-hour compact rendering and `AM` / `PM` boundaries.
+- [x] Add tests for local ISO offset formatting.
+- [x] Add tests for 12-hour compact rendering and `AM` / `PM` boundaries.
 - [ ] Add or adjust interactive tests if the prompt flow changes.
-- [ ] Run verification:
+- [x] Run verification:
   - `bunx tsc --noEmit`
-  - `bun test`
+  - `bun test test/cli-fs-utils-rename-template.test.ts test/cli-rename-template.test.ts test/utils-datetime.test.ts`
   - focused rename dry-run checks in `examples/playground/`
 
 ## Completion Criteria

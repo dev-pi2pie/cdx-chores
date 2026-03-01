@@ -127,7 +127,7 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
       ? await input({
           message: [
             "Custom filename template",
-            "Placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
+            "Placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
             "Example: {date}-{stem}-{serial}",
           ].join("\n"),
           validate: (value) => (value.trim() ? true : "Required"),

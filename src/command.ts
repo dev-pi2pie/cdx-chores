@@ -115,7 +115,7 @@ function applyRenameTemplateOptions(command: Command): void {
   command
     .option(
       "--pattern <template>",
-      "Custom filename template (supports {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
+      "Custom filename template (supports {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {serial...})",
     )
     .option(
       "--serial-order <value>",

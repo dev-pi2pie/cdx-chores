@@ -1,6 +1,7 @@
 ---
 title: "Rename timestamp format and template UX research"
 created-date: 2026-03-01
+modified-date: 2026-03-01
 status: draft
 agent: codex
 ---
@@ -169,10 +170,10 @@ Current preferred posture:
 
 - keep `{timestamp}` as legacy compact UTC
 - keep `{timestamp_local}` and `{timestamp_utc}` unchanged
-- consider adding a small explicit placeholder set for new display shapes
-- keep numeric timezone offsets such as `+0800` out of the first additive step unless the design is promoted to parameterized timestamp tokens
+- add a small explicit placeholder set for new display shapes
+- when `local` and `iso` are combined, include a numeric offset such as `+0800`
 
-This keeps compatibility stable while still letting the project test whether ISO-style output is enough for real usage before opening a broader timestamp-parameter design.
+This keeps compatibility stable while still letting the project test whether explicit ISO-style and compact 12-hour placeholders are enough before opening a broader timestamp-parameter design.
 
 ## Longer-Term Recommendation
 
