@@ -27,8 +27,8 @@ import {
   RENAME_SERIAL_ORDER_VALUES,
   normalizeSerialPlaceholderInTemplate,
   resolveRenamePatternTemplate,
-  rewriteTimestampPlaceholder,
-  templateContainsLegacyTimestamp,
+  resolveTimestampPatternForInteractive,
+  shouldPromptTimestampTimezone,
   templateContainsPrefixPlaceholder,
   templateContainsSerialPlaceholder,
 } from "./rename-template";
@@ -205,7 +205,7 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
         })
       : basePattern;
 
-  const timestampTimezone: TimestampTimezone | undefined = templateContainsLegacyTimestamp(pattern)
+  const timestampTimezone: TimestampTimezone | undefined = shouldPromptTimestampTimezone(pattern)
     ? await select<TimestampTimezone>({
         message: "Timestamp timezone basis",
         choices: [
@@ -224,10 +224,7 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
       })
     : undefined;
 
-  const finalPattern =
-    timestampTimezone !== undefined
-      ? rewriteTimestampPlaceholder(pattern, timestampTimezone)
-      : pattern;
+  const finalPattern = resolveTimestampPatternForInteractive(pattern, timestampTimezone);
 
   return {
     pattern: finalPattern,

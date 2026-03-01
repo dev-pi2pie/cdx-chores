@@ -257,3 +257,30 @@ export function rewriteTimestampPlaceholder(template: string, timezone: Timestam
   const target = timezone === "local" ? "{timestamp_local}" : "{timestamp_utc}";
   return template.replace(LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN, target);
 }
+
+/**
+ * Pure decision: should the interactive flow present a timezone-selection
+ * prompt for a given rename pattern?
+ *
+ * Returns `true` only when the pattern contains a bare `{timestamp}` without
+ * any explicit `{timestamp_local}` or `{timestamp_utc}` variant.
+ */
+export function shouldPromptTimestampTimezone(pattern: string): boolean {
+  return templateContainsLegacyTimestamp(pattern);
+}
+
+/**
+ * Apply the result of the interactive timezone prompt to a rename pattern.
+ *
+ * When `selectedTimezone` is defined the legacy `{timestamp}` tokens are
+ * rewritten to the explicit form. Otherwise the pattern is returned as-is.
+ */
+export function resolveTimestampPatternForInteractive(
+  pattern: string,
+  selectedTimezone: TimestampTimezone | undefined,
+): string {
+  if (selectedTimezone === undefined || !templateContainsLegacyTimestamp(pattern)) {
+    return pattern;
+  }
+  return rewriteTimestampPlaceholder(pattern, selectedTimezone);
+}

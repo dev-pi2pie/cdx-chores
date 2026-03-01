@@ -2,7 +2,7 @@
 title: "Rename timestamp timezone selection and plan CSV naming"
 created-date: 2026-03-01
 modified-date: 2026-03-01
-status: active
+status: completed
 agent: "codex, copilot"
 ---
 
@@ -194,14 +194,14 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 6: Documentation and Help Text
 
-- [ ] Update CLI help text for rename pattern placeholders.
-- [ ] Update `README.md` examples and placeholder descriptions.
-- [ ] Update `docs/guides/rename-common-usage.md` with explicit timestamp guidance.
-- [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` if placeholder behavior is documented there.
+- [x] Update CLI help text for rename pattern placeholders.
+- [x] Update `README.md` examples and placeholder descriptions.
+- [x] Update `docs/guides/rename-common-usage.md` with explicit timestamp guidance.
+- [x] Update `docs/guides/rename-scope-and-codex-capability-guide.md` if placeholder behavior is documented there.
 - [x] Review `docs/guides/rename-plan-csv-schema.md` against the final strict apply contract.
-- [ ] Review `docs/guides/rename-common-usage.md` for any examples that imply loose apply behavior.
-- [ ] Review `README.md` rename examples and wording for plan CSV naming and apply expectations.
-- [ ] Document migration guidance:
+- [x] Review `docs/guides/rename-common-usage.md` for any examples that imply loose apply behavior.
+- [x] Review `README.md` rename examples and wording for plan CSV naming and apply expectations.
+- [x] Document migration guidance:
   - existing `{timestamp}` users keep current UTC behavior
   - new users should prefer `{timestamp_local}` or `{timestamp_utc}`
 - [x] Document malformed CSV failure behavior and required replay fields.
@@ -215,7 +215,7 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
   - `{timestamp_local}`
   - `{timestamp_utc}`
 - [x] Add tests for precedence behavior between explicit placeholders and `--timestamp-timezone`.
-- [ ] Add interactive-flow tests for the conditional timezone prompt.
+- [x] Add interactive-flow tests for the conditional timezone prompt.
 - [x] Add tests for plan CSV filename format with explicit `Z`.
 - [x] Add regression tests to confirm existing `{timestamp}` behavior remains UTC.
 - [x] Add malformed-CSV apply tests for:
@@ -229,7 +229,7 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
   - inconsistent `plan_id`
   - inconsistent `planned_at`
   - additive unknown columns being ignored
-- [ ] Run verification:
+- [x] Run verification:
   - `bunx tsc --noEmit`
   - `bun test`
   - focused rename dry-run smoke checks in `examples/playground/`

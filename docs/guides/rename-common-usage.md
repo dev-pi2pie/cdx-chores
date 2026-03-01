@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-02-28
+modified-date: 2026-03-01
 status: completed
 agent: codex
 ---
@@ -21,7 +21,7 @@ cdx-chores rename batch ./images --prefix gallery --dry-run
 Apply a previously generated plan CSV:
 
 ```bash
-cdx-chores rename apply ./rename-20260227-120000-ab12cd34.csv
+cdx-chores rename apply ./rename-plan-20260227T120000Z-ab12cd34.csv
 ```
 
 Preview single-file rename:
@@ -60,7 +60,9 @@ Preset options in interactive mode:
 Supported placeholders:
 
 - `{prefix}`
-- `{timestamp}`
+- `{timestamp}` (UTC, backward-compatible alias)
+- `{timestamp_local}` (local time, explicit)
+- `{timestamp_utc}` (UTC, explicit)
 - `{date}`
 - `{date_local}`
 - `{date_utc}`
@@ -88,6 +90,25 @@ Notes:
 - Interactive mode asks serial questions only when the selected template includes `{serial...}`.
 - Interactive serial width expects a digit count such as `2` for `01`, not `##`.
 - Interactive prefix input is optional; leaving it blank means no prefix.
+
+### Timestamp Timezone Selection
+
+- `{timestamp}` uses UTC and remains backward-compatible.
+- `{timestamp_local}` uses local time explicitly.
+- `{timestamp_utc}` uses UTC explicitly.
+- Use `--timestamp-timezone local|utc` in CLI mode to override `{timestamp}` behavior. Explicit placeholders (`{timestamp_local}`, `{timestamp_utc}`) are never rewritten by this flag.
+- In interactive mode, when a selected template contains `{timestamp}`, a timezone question is asked. Templates with explicit placeholders skip this question.
+- Precedence: explicit placeholders > CLI `--timestamp-timezone` / interactive prompt > default UTC.
+
+Migration:
+
+- Existing `{timestamp}` users keep current UTC behavior with no changes needed.
+- New users should prefer `{timestamp_local}` or `{timestamp_utc}` for clarity.
+
+### Plan CSV Naming
+
+- Plan CSV filenames use ISO 8601 UTC with `Z` suffix: `rename-plan-20260301T091530Z-ab12cd34.csv`
+- Filenames remain UTC-based even when rename output uses local timestamps.
 
 ## Codex Assistant Usage
 
@@ -124,4 +145,5 @@ Interactive mode now asks once for assistant enablement, then one scope selector
 ## Related Guides
 
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
+- `docs/guides/rename-plan-csv-schema.md`
 - `README.md`
