@@ -340,6 +340,44 @@ describe("cli action modules: rename batch core", () => {
     }
   });
 
+  test("actionRenameBatch dry-run keeps full rename previews on non-tty output", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+
+      const dirPath = join(fixtureDir, "rename-large-preview-non-tty");
+      await mkdir(dirPath, { recursive: true });
+
+      const fixedTime = new Date("2026-02-25T12:34:56.000Z");
+      for (let index = 1; index <= 50; index += 1) {
+        const filePath = join(dirPath, `photo ${String(index).padStart(2, "0")}.txt`);
+        await writeFile(filePath, "hello", "utf8");
+        await utimes(filePath, fixedTime, fixedTime);
+      }
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "file",
+        dryRun: true,
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(50);
+      expect(result.changedCount).toBe(50);
+      expect(stdout.text).toContain("photo 01.txt ->");
+      expect(stdout.text).toContain("photo 25.txt ->");
+      expect(stdout.text).toContain("photo 50.txt ->");
+      expect(stdout.text).not.toContain("Renames: showing first");
+      expect(stdout.text).not.toContain("Full review: use the generated plan CSV for the complete rename list.");
+      expect(stdout.text).not.toContain("...");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionRenameBatch can render detailed skipped-item output separately from the default summary", async () => {
     if (process.platform === "win32") {
       return;

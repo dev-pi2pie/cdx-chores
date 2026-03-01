@@ -71,6 +71,7 @@ export interface DetailedSkippedPreviewData {
 const DEFAULT_RENAME_PREVIEW_MAX_ROWS = 40;
 const DEFAULT_RENAME_PREVIEW_MIN_ROWS = 6;
 const DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS = 18;
+const UNBOUNDED_PREVIEW_ROWS = Number.MAX_SAFE_INTEGER;
 
 export function formatPlannedRenamePreviewLine(plan: PlannedRename): string {
   const fromName = basename(plan.fromPath);
@@ -140,9 +141,17 @@ export function buildHeadTailSlice<T>(
 
 export function resolveRenamePreviewBudget(runtime: CliRuntime): RenamePreviewBudget {
   const stream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean; rows?: number };
+  if (!stream.isTTY) {
+    return {
+      rowCount: UNBOUNDED_PREVIEW_ROWS,
+      headCount: UNBOUNDED_PREVIEW_ROWS,
+      tailCount: 0,
+    };
+  }
+
   let rowCount = DEFAULT_RENAME_PREVIEW_MAX_ROWS;
 
-  if (stream.isTTY && typeof stream.rows === "number" && Number.isFinite(stream.rows)) {
+  if (typeof stream.rows === "number" && Number.isFinite(stream.rows)) {
     rowCount = Math.min(
       DEFAULT_RENAME_PREVIEW_MAX_ROWS,
       Math.max(DEFAULT_RENAME_PREVIEW_MIN_ROWS, Math.floor(stream.rows) - DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS),
