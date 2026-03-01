@@ -89,6 +89,7 @@ describe("rename template contracts", () => {
   test("templateContainsLegacyTimestamp detects bare {timestamp} without explicit variants", () => {
     expect(templateContainsLegacyTimestamp("{prefix}-{timestamp}-{stem}")).toBe(true);
     expect(templateContainsLegacyTimestamp("{timestamp}-{stem}")).toBe(true);
+    expect(templateContainsLegacyTimestamp("{ prefix }-{ timestamp }-{ stem }")).toBe(true);
 
     // explicit variants should return false
     expect(templateContainsLegacyTimestamp("{prefix}-{timestamp_utc}-{stem}")).toBe(false);
@@ -115,6 +116,9 @@ describe("rename template contracts", () => {
   test("rewriteTimestampPlaceholder replaces legacy {timestamp} with explicit form", () => {
     expect(rewriteTimestampPlaceholder("{prefix}-{timestamp}-{stem}", "local")).toBe(
       "{prefix}-{timestamp_local}-{stem}",
+    );
+    expect(rewriteTimestampPlaceholder("{ prefix }-{ timestamp }-{ stem }", "local")).toBe(
+      "{ prefix }-{timestamp_local}-{ stem }",
     );
     expect(rewriteTimestampPlaceholder("{prefix}-{timestamp}-{stem}", "utc")).toBe(
       "{prefix}-{timestamp_utc}-{stem}",

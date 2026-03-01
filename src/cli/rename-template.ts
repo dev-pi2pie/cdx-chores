@@ -227,19 +227,26 @@ export type TimestampTimezone = "local" | "utc";
 
 export const TIMESTAMP_TIMEZONE_VALUES = ["local", "utc"] as const;
 
+const LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp\s*\}/;
+const LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN = /\{\s*timestamp\s*\}/g;
+const EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp_(local|utc)\s*\}/;
+
 /**
  * Returns true when a template contains the legacy `{timestamp}` placeholder
  * but does NOT contain an explicit `{timestamp_local}` or `{timestamp_utc}`.
  */
 export function templateContainsLegacyTimestamp(template: string): boolean {
-  return /\{timestamp\}/.test(template) && !/\{timestamp_(local|utc)\}/.test(template);
+  return (
+    LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN.test(template) &&
+    !EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN.test(template)
+  );
 }
 
 /**
  * Returns true when a template already uses `{timestamp_local}` or `{timestamp_utc}`.
  */
 export function templateContainsExplicitTimestamp(template: string): boolean {
-  return /\{timestamp_(local|utc)\}/.test(template);
+  return EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN.test(template);
 }
 
 /**
@@ -248,5 +255,5 @@ export function templateContainsExplicitTimestamp(template: string): boolean {
  */
 export function rewriteTimestampPlaceholder(template: string, timezone: TimestampTimezone): string {
   const target = timezone === "local" ? "{timestamp_local}" : "{timestamp_utc}";
-  return template.replace(/\{timestamp\}/g, target);
+  return template.replace(LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN, target);
 }

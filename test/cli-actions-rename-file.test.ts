@@ -433,4 +433,48 @@ describe("cli action modules: rename file", () => {
       expect(dataLine).toContain(",local");
     });
   });
+
+  test("actionRenameFile rewrites spaced legacy { timestamp } placeholders for timestamp timezone", async () => {
+    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+      const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-spaced", "memo.txt");
+      const { runtime, stderr } = createCapturedRuntime();
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(filePath),
+        pattern: "{ prefix }-{ timestamp }-{ stem }",
+        prefix: "doc",
+        dryRun: true,
+        timestampTimezone: "local",
+      });
+      trackPlanCsv(result.planCsvPath);
+
+      expect(stderr.text).toBe("");
+
+      const csvText = await readFile(result.planCsvPath!, "utf8");
+      const dataLine = csvText.split("\n").find((l) => l.includes("memo.txt"));
+      expect(dataLine).toBeDefined();
+      expect(dataLine).toContain(",local");
+    });
+  });
+
+  test("actionRenameFile leaves timestamp_tz empty for mixed explicit local and utc placeholders", async () => {
+    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+      const { filePath } = await createRenameFileFixture(fixtureDir, "tz-file-mixed", "memo.txt");
+      const { runtime, stderr } = createCapturedRuntime();
+
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(filePath),
+        pattern: "{timestamp_local}-{timestamp_utc}-{stem}",
+        dryRun: true,
+      });
+      trackPlanCsv(result.planCsvPath);
+
+      expect(stderr.text).toBe("");
+
+      const csvText = await readFile(result.planCsvPath!, "utf8");
+      const dataLine = csvText.split("\n").find((l) => l.includes("memo.txt"));
+      expect(dataLine).toBeDefined();
+      expect(dataLine?.endsWith(",")).toBe(true);
+    });
+  });
 });
