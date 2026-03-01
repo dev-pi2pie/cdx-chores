@@ -1,7 +1,7 @@
 ---
 title: "Rename Plan CSV Schema"
 created-date: 2026-02-25
-modified-date: 2026-02-28
+modified-date: 2026-03-01
 status: draft
 agent: codex
 ---
@@ -20,18 +20,19 @@ This schema provides a stable snapshot so apply can replay the exact planned ren
 
 Dry-run plan files are written under the current working directory (`cwd`) using:
 
-- `rename-<timecode>-<uid>.csv`
+- `rename-plan-<utc-timestamp>Z-<uid>.csv`
 
 Example:
 
-- `rename-20260225-214012-a1b2c3d4.csv`
+- `rename-plan-20260301T091530Z-a1b2c3d4.csv`
 
 Naming contract:
 
-- `rename-*.csv` is reserved for replayable rename plan artifacts
+- `rename-plan-*.csv` is reserved for replayable rename plan artifacts
 - `rename apply <csv>` treats this file type as executable input
 - future inspect-preview flows should reuse this file as input rather than creating a second same-looking artifact
 - if a future viewer persists derived output, it should use a different naming pattern so it is not confused with a replayable plan
+- filenames remain UTC-based even if rename output content uses local timestamps
 
 ## CSV Columns (Current Contract)
 
@@ -51,6 +52,7 @@ Columns are stored as UTF-8 CSV with a header row.
 - `applied_at`
 - `status`
 - `reason`
+- `timestamp_tz`
 
 ## Column Semantics
 
@@ -82,30 +84,63 @@ Columns are stored as UTF-8 CSV with a header row.
   - row state (`planned`, `skipped`, `applied`, potentially `failed` later)
 - `reason`
   - explanatory note for skipped/fallback/failure states (for example `unchanged`, `symlink`, `codex_fallback_error`)
+- `timestamp_tz`
+  - effective timestamp timezone mode recorded at plan generation time when applicable; metadata only, not replay input
 
 ## Replay Expectations (`rename apply <csv>`)
 
 - Apply uses `old_path` -> `new_path` as the source of truth
 - Apply should not recompute rename targets
-- Safety checks should verify paths remain within allowed scope before renaming
+- Replay validation should complete before any rename executes
 - Unchanged rows may be retained in CSV with `status=skipped` / `reason=unchanged`
 - Skipped symlink rows may be included as audit-only rows with `status=skipped` / `reason=symlink`
 - `rename apply <csv>` executes only rows with `status=planned` and ignores audit-only skipped rows
+
+## Strict Replay Contract
+
+`rename apply <csv>` should be strict only about the fields that control executable replay:
+
+- `old_path`
+- `new_path`
+- `status`
+- `plan_id`
+- `planned_at`
+
+Validation boundary:
+
+- all rows must have non-empty `status`, `plan_id`, and `planned_at`
+- executable rows (`status=planned`) must have valid cwd-relative `old_path` and `new_path`
+- executable rows must fail preflight on duplicate `old_path` or duplicate `new_path`
+- a single apply input must not mix `plan_id` values
+- a single apply input must not mix `planned_at` values
+
+Non-goals for this phase:
+
+- enforcing `old_name === basename(old_path)`
+- enforcing `new_name === basename(new_path)`
+- validating `timestamp_tz`, `reason`, `changed_at`, `applied_at`, or AI metadata before replay
+- rejecting additive unknown columns
 
 ## Inspect-Preview Boundary
 
 - A future inspect-preview mode should rebuild preview sections from the existing plan CSV rows instead of recomputing rename plans.
 - Preview rendering should treat the CSV as the source artifact and remain separate from replay/apply semantics.
 - This keeps one artifact contract for rename dry-run output:
-  - dry-run writes `rename-*.csv`
-  - apply replays `rename-*.csv`
-  - inspect-preview reads `rename-*.csv`
+  - dry-run writes `rename-plan-*.csv`
+  - apply replays `rename-plan-*.csv`
+  - inspect-preview reads `rename-plan-*.csv`
 
 ## Compatibility Notes
 
 - Additional columns may be appended in future versions
 - Replay should ignore unknown columns where possible
-- Required replay fields should be validated strictly (`old_path`, `new_path`, `status` at minimum)
+- Required replay fields should be validated strictly:
+  - `old_path`
+  - `new_path`
+  - `status`
+  - `plan_id`
+  - `planned_at`
+- Reporting and audit metadata should remain non-blocking unless a future phase explicitly promotes a field into the strict replay contract
 
 ## Related Plans
 

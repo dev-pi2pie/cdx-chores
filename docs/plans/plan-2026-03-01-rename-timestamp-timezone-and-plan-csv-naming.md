@@ -82,12 +82,31 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 - Treat `rename apply <csv>` input as strict executable input, not as a loosely parsed report artifact.
 - Keep compatibility permissive for unknown/additive columns.
-- Keep compatibility strict for required replay fields and executable row validation.
+- Keep compatibility strict only for required replay fields and executable row validation.
 - Perform CSV validation and cross-row preflight checks before any rename is executed.
 - Keep replay semantics unchanged:
   - apply uses `old_path` -> `new_path` as the source of truth
   - apply does not recompute rename targets
   - invalid CSV structure should fail before partial execution begins
+- Define the strict replay contract as:
+  - `old_path`
+  - `new_path`
+  - `status`
+  - `plan_id`
+  - `planned_at`
+- Treat non-replay metadata as additive/reporting fields:
+  - `old_name`
+  - `new_name`
+  - `cleaned_stem`
+  - `ai_*`
+  - `changed_at`
+  - `applied_at`
+  - `reason`
+  - `timestamp_tz`
+- Do not enforce basename consistency in this phase:
+  - `old_name` vs `old_path`
+  - `new_name` vs `new_path`
+- Optimize this phase for fail-fast execution safety, replay determinism, and forward-compatible additive columns rather than full semantic validation of every CSV field.
 
 ## Out Of Scope
 
@@ -143,7 +162,7 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 5: Apply Validation and CSV Contract Hardening
 
-- [ ] Define strict required-field contract for executable apply rows:
+- [ ] Define strict replay-field contract for apply:
   - `old_path`
   - `new_path`
   - `status`
@@ -151,7 +170,11 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
   - `planned_at`
 - [ ] Add a dedicated row validator/type guard for rename plan CSV rows.
 - [ ] Reject missing `status` for apply input instead of defaulting it to `planned`.
-- [ ] Validate executable row path fields before apply:
+- [ ] Validate replay metadata on all rows before apply:
+  - non-empty `plan_id`
+  - non-empty `planned_at`
+  - valid `status`
+- [ ] Validate executable row path fields before apply for `status=planned` rows only:
   - non-empty
   - cwd-relative
   - no cwd escape
@@ -159,13 +182,13 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
   - duplicate `old_path`
   - duplicate `new_path`
   - inconsistent `plan_id`
-  - inconsistent `planned_at` when required
+  - inconsistent `planned_at`
 - [ ] Define compatibility rule for unknown/additive columns:
   - ignore unknown columns
   - reject missing required replay columns
-- [ ] Decide and implement whether basename consistency checks should be enforced for:
-  - `old_name` vs `old_path`
-  - `new_name` vs `new_path`
+- [ ] Keep basename and reporting fields non-blocking in this phase:
+  - do not reject `old_name` / `new_name` mismatches
+  - do not validate `timestamp_tz`, `reason`, `changed_at`, `applied_at`, or AI metadata for replay eligibility
 - [ ] Ensure apply fails early before partial execution on invalid CSV structure.
 
 ### Phase 6: Documentation and Help Text
@@ -197,10 +220,14 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 - [ ] Add malformed-CSV apply tests for:
   - missing required replay fields
   - invalid `status`
+  - missing `plan_id`
+  - missing `planned_at`
   - duplicate executable source paths
   - duplicate executable target paths
   - cwd-escaping paths
-  - inconsistent row-level replay metadata where enforced
+  - inconsistent `plan_id`
+  - inconsistent `planned_at`
+  - additive unknown columns being ignored
 - [ ] Run verification:
   - `bunx tsc --noEmit`
   - `bun test`
