@@ -43,6 +43,10 @@ Supported placeholders:
 - `{timestamp}` (UTC, backward-compatible alias)
 - `{timestamp_local}` (local time, explicit)
 - `{timestamp_utc}` (UTC, explicit)
+- `{timestamp_local_iso}` (local ISO-like timestamp with numeric offset)
+- `{timestamp_utc_iso}` (UTC ISO-like timestamp with `Z`)
+- `{timestamp_local_12h}` (local compact `12hr` timestamp)
+- `{timestamp_utc_12h}` (UTC compact `12hr` timestamp)
 - `{date}`
 - `{date_local}`
 - `{date_utc}`
@@ -53,7 +57,15 @@ Timestamp notes:
 
 - `{timestamp}` defaults to UTC for backward compatibility.
 - Use `{timestamp_local}` or `{timestamp_utc}` for explicit timezone control.
+- Route A also supports explicit format variants:
+  - `{timestamp_local_iso}`
+  - `{timestamp_utc_iso}`
+  - `{timestamp_local_12h}`
+  - `{timestamp_utc_12h}`
+- Local ISO output uses a numeric offset such as `+0800`.
+- `Z` remains UTC-only.
 - `--timestamp-timezone local|utc` overrides only `{timestamp}`; explicit placeholders are never rewritten.
+- Use `docs/guides/rename-timestamp-format-matrix.md` for the full placeholder matrix and examples.
 
 Serial token notes:
 
@@ -126,6 +138,7 @@ Important:
 
 ## Related Guides
 
+- `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-common-usage.md`
 - `README.md`
 

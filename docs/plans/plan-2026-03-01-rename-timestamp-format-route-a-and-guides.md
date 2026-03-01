@@ -2,7 +2,7 @@
 title: "Rename timestamp format Route A and guide refresh"
 created-date: 2026-03-01
 modified-date: 2026-03-01
-status: active
+status: completed
 agent: codex
 ---
 
@@ -143,13 +143,13 @@ The new guide should include a compact matrix table covering:
   - offset
   - sample output
   - notes
-- [ ] Update `docs/guides/rename-common-usage.md` with Route A examples.
-- [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` to summarize Route A placeholder behavior without duplicating the full matrix.
-- [ ] Update `README.md` placeholder list and one or two practical examples.
-- [ ] Add migration wording:
+- [x] Update `docs/guides/rename-common-usage.md` with Route A examples.
+- [x] Update `docs/guides/rename-scope-and-codex-capability-guide.md` to summarize Route A placeholder behavior without duplicating the full matrix.
+- [x] Update `README.md` placeholder list and one or two practical examples.
+- [x] Add migration wording:
   - existing `{timestamp}` users do not need to change anything
   - Route A placeholders are explicit opt-in formats
-- [ ] Cross-link the new matrix guide from `README.md` and the rename guides.
+- [x] Cross-link the new matrix guide from `README.md` and the rename guides.
 
 ### Phase 5: Tests and Verification
 
@@ -161,7 +161,7 @@ The new guide should include a compact matrix table covering:
   - `{timestamp_utc}`
 - [x] Add tests for local ISO offset formatting.
 - [x] Add tests for 12-hour compact rendering and `AM` / `PM` boundaries.
-- [ ] Add or adjust interactive tests if the prompt flow changes.
+- [x] Confirm no additional interactive tests are required because the prompt flow did not change.
 - [x] Run verification:
   - `bunx tsc --noEmit`
   - `bun test test/cli-fs-utils-rename-template.test.ts test/cli-rename-template.test.ts test/utils-datetime.test.ts`
