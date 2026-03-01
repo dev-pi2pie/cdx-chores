@@ -1,8 +1,9 @@
 ---
 title: "Rename timestamp timezone selection and plan CSV naming"
 created-date: 2026-03-01
-status: draft
-agent: codex
+modified-date: 2026-03-01
+status: active
+agent: "codex, copilot"
 ---
 
 ## Goal
@@ -99,28 +100,28 @@ This plan aims to remove ambiguity without breaking existing rename scripts or p
 
 ### Phase 1: Contract and Naming Decisions
 
-- [ ] Define canonical placeholder set for timestamp timezone support:
+- [x] Define canonical placeholder set for timestamp timezone support:
   - `{timestamp}`
   - `{timestamp_local}`
   - `{timestamp_utc}`
-- [ ] Define formatting contract for local and UTC timestamp tokens.
+- [x] Define formatting contract for local and UTC timestamp tokens.
 - [ ] Define final CLI option contract for `--timestamp-timezone local|utc`.
 - [ ] Define exact precedence rules across:
   - explicit placeholders
   - interactive selection
   - CLI override
   - legacy default behavior
-- [ ] Define final UTC-explicit plan CSV filename format.
+- [x] Define final UTC-explicit plan CSV filename format.
 - [ ] Define additive CSV metadata fields for effective timestamp timezone mode.
 
 ### Phase 2: Template Engine and Rename Planner
 
-- [ ] Implement `{timestamp_local}` rendering.
-- [ ] Implement `{timestamp_utc}` rendering.
-- [ ] Keep `{timestamp}` mapped to UTC for backward compatibility.
-- [ ] Update template validation to allow the new timestamp placeholders.
-- [ ] Ensure single-file and batch rename paths use the same timezone placeholder behavior.
-- [ ] Ensure collision handling remains unchanged after timestamp rendering updates.
+- [x] Implement `{timestamp_local}` rendering.
+- [x] Implement `{timestamp_utc}` rendering.
+- [x] Keep `{timestamp}` mapped to UTC for backward compatibility.
+- [x] Update template validation to allow the new timestamp placeholders.
+- [x] Ensure single-file and batch rename paths use the same timezone placeholder behavior.
+- [x] Ensure collision handling remains unchanged after timestamp rendering updates.
 
 ### Phase 3: Interactive UX
 

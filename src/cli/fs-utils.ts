@@ -9,7 +9,7 @@ import {
   parseSerialToken,
 } from "./rename-template";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
-import { formatUtcFileDateTime } from "../utils/datetime";
+import { formatLocalFileDateTime, formatUtcFileDateTime } from "../utils/datetime";
 import { defaultOutputPath } from "../utils/paths";
 import { slugifyName, withNumericSuffix } from "../utils/slug";
 
@@ -20,6 +20,8 @@ const RENAME_TEMPLATE_TOKEN_PATTERN = /\{([^{}]+)\}/g;
 const RENAME_TEMPLATE_SIMPLE_TOKENS = new Set([
   "prefix",
   "timestamp",
+  "timestamp_local",
+  "timestamp_utc",
   "date",
   "date_local",
   "date_utc",
@@ -216,7 +218,7 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
       continue;
     }
     throw new CliError(
-      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
+      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -272,7 +274,9 @@ function buildSerialByPath(options: {
   const groups = new Map<string, RenameCandidateEntry[]>();
   for (const entry of options.entries) {
     const key =
-      options.serial.scope === "directory" && options.recursive ? entry.directoryPath : "__global__";
+      options.serial.scope === "directory" && options.recursive
+        ? entry.directoryPath
+        : "__global__";
     const current = groups.get(key);
     if (current) {
       current.push(entry);
@@ -312,31 +316,38 @@ function renderBaseNameFromTemplate(options: {
   mtimeDate: Date;
   serialText?: string;
 }): string {
-  const timestamp = formatUtcFileDateTime(options.mtimeDate);
+  const timestampUtc = formatUtcFileDateTime(options.mtimeDate);
+  const timestampLocal = formatLocalFileDateTime(options.mtimeDate);
   const dateLocal = formatLocalDate(options.mtimeDate);
   const dateUtc = formatUtcDate(options.mtimeDate);
 
-  const rendered = options.template.replace(RENAME_TEMPLATE_TOKEN_PATTERN, (_, rawToken: string) => {
-    const token = rawToken.trim();
-    switch (token) {
-      case "prefix":
-        return options.prefix;
-      case "timestamp":
-        return timestamp;
-      case "date":
-      case "date_local":
-        return dateLocal;
-      case "date_utc":
-        return dateUtc;
-      case "stem":
-        return options.stem;
-      default:
-        if (token === "serial" || token.startsWith("serial_")) {
-          return options.serialText ?? "";
-        }
-        return "";
-    }
-  });
+  const rendered = options.template.replace(
+    RENAME_TEMPLATE_TOKEN_PATTERN,
+    (_, rawToken: string) => {
+      const token = rawToken.trim();
+      switch (token) {
+        case "prefix":
+          return options.prefix;
+        case "timestamp":
+        case "timestamp_utc":
+          return timestampUtc;
+        case "timestamp_local":
+          return timestampLocal;
+        case "date":
+        case "date_local":
+          return dateLocal;
+        case "date_utc":
+          return dateUtc;
+        case "stem":
+          return options.stem;
+        default:
+          if (token === "serial" || token.startsWith("serial_")) {
+            return options.serialText ?? "";
+          }
+          return "";
+      }
+    },
+  );
 
   return normalizeRenderedBaseName(rendered);
 }

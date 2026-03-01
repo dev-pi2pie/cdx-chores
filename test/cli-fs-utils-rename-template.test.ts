@@ -3,7 +3,11 @@ import { mkdir, rm, utimes, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import { planBatchRename, planSingleRename } from "../src/cli/fs-utils";
-import { createCapturedRuntime, createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  createTempFixtureDir,
+  toRepoRelativePath,
+} from "./helpers/cli-test-utils";
 
 describe("rename planner template + serial behavior", () => {
   test("applies mtime serial ordering with pre-count width guardrail", async () => {
@@ -18,8 +22,16 @@ describe("rename planner template + serial behavior", () => {
       await writeFile(aPath, "a", "utf8");
       await writeFile(bPath, "b", "utf8");
 
-      await utimes(aPath, new Date("2026-02-27T10:00:00.000Z"), new Date("2026-02-27T10:00:00.000Z"));
-      await utimes(bPath, new Date("2026-02-27T09:00:00.000Z"), new Date("2026-02-27T09:00:00.000Z"));
+      await utimes(
+        aPath,
+        new Date("2026-02-27T10:00:00.000Z"),
+        new Date("2026-02-27T10:00:00.000Z"),
+      );
+      await utimes(
+        bPath,
+        new Date("2026-02-27T09:00:00.000Z"),
+        new Date("2026-02-27T09:00:00.000Z"),
+      );
 
       const result = await planBatchRename(runtime, toRepoRelativePath(dirPath), {
         pattern: "{serial}-{stem}",
@@ -98,7 +110,11 @@ describe("rename planner template + serial behavior", () => {
       await mkdir(dirPath, { recursive: true });
       const path = join(dirPath, "entry.txt");
       await writeFile(path, "x", "utf8");
-      await utimes(path, new Date("2026-02-27T12:00:00.000Z"), new Date("2026-02-27T12:00:00.000Z"));
+      await utimes(
+        path,
+        new Date("2026-02-27T12:00:00.000Z"),
+        new Date("2026-02-27T12:00:00.000Z"),
+      );
 
       const defaultDate = await planSingleRename(runtime, toRepoRelativePath(path), {
         pattern: "{date}-{stem}",
@@ -151,6 +167,81 @@ describe("rename planner template + serial behavior", () => {
         code: "INVALID_INPUT",
         message: "Invalid --pattern: only one {serial...} placeholder is supported per template.",
       });
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp} remains UTC (backward compatibility)", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-compat");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T23:45:00.000Z"),
+        new Date("2026-02-27T23:45:00.000Z"),
+      );
+
+      const result = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp}-{stem}",
+      });
+      expect(basename(result.plan.toPath)).toBe("20260227-234500-note.txt");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp_utc} produces same output as {timestamp}", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-utc-explicit");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T23:45:00.000Z"),
+        new Date("2026-02-27T23:45:00.000Z"),
+      );
+
+      const legacy = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp}-{stem}",
+      });
+      const explicit = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp_utc}-{stem}",
+      });
+      expect(basename(explicit.plan.toPath)).toBe(basename(legacy.plan.toPath));
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp_local} uses local time and is accepted as a valid placeholder", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-local");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T12:00:00.000Z"),
+        new Date("2026-02-27T12:00:00.000Z"),
+      );
+
+      const result = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp_local}-{stem}",
+      });
+      const name = basename(result.plan.toPath);
+      // Should match YYYYMMDD-HHMMSS-note.txt format
+      expect(name).toMatch(/^\d{8}-\d{6}-note\.txt$/);
+      // Must not throw (validates token acceptance)
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

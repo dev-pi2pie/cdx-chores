@@ -3,7 +3,12 @@ import { mkdir, readFile, readdir, rm, stat, utimes, writeFile } from "node:fs/p
 import { join } from "node:path";
 
 import { actionRenameApply, actionRenameBatch } from "../src/cli/actions";
-import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  createTempFixtureDir,
+  REPO_ROOT,
+  toRepoRelativePath,
+} from "./helpers/cli-test-utils";
 import {
   captureRenamePlanCsvSnapshot,
   cleanupRenamePlanCsvSinceSnapshot,
@@ -44,10 +49,12 @@ describe("cli action modules: rename apply", () => {
       expect(stderr.text).toBe("");
       expect(planCsvPath).toBeDefined();
       expect(planCsvPath?.startsWith(REPO_ROOT)).toBe(true);
-      expect(planCsvPath).toMatch(/rename-\d{8}-\d{6}-[a-f0-9]{8}\.csv$/);
+      expect(planCsvPath).toMatch(/rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/);
 
       const csvText = await readFile(planCsvPath!, "utf8");
-      expect(csvText).toContain("old_name,new_name,cleaned_stem,ai_new_name,ai_provider,ai_model,changed_at,old_path,new_path,plan_id,planned_at,applied_at,status,reason");
+      expect(csvText).toContain(
+        "old_name,new_name,cleaned_stem,ai_new_name,ai_provider,ai_model,changed_at,old_path,new_path,plan_id,planned_at,applied_at,status,reason",
+      );
       expect(csvText).toContain("sample image.png");
       expect(csvText).toContain(",planned,");
       expect(stdout.text).toContain(`Plan CSV: ${toRepoRelativePath(planCsvPath!)}`);
@@ -79,7 +86,8 @@ describe("cli action modules: rename apply", () => {
       expect(planCsvPath).toBeDefined();
 
       const planBeforeApply = await readFile(planCsvPath!, "utf8");
-      const rowLine = planBeforeApply.split("\n").find((line) => line.includes("zeta image.png")) ?? "";
+      const rowLine =
+        planBeforeApply.split("\n").find((line) => line.includes("zeta image.png")) ?? "";
       expect(rowLine).not.toBe("");
       const csvCells = rowLine.split(",");
       const newName = csvCells[1] ?? "";

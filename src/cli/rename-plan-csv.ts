@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { basename, isAbsolute, relative, resolve } from "node:path";
 
 import { csvRowsToObjects, parseCsv, stringifyCsv } from "../utils/csv";
-import { formatUtcFileDateTime } from "../utils/datetime";
+import { formatUtcFileDateTimeISO } from "../utils/datetime";
 import { CliError } from "./errors";
 import { applyPlannedRenames, readTextFileRequired, writeTextFileSafe } from "./fs-utils";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
@@ -99,7 +99,7 @@ export function createRenamePlanCsvRows(options: {
   aiModel?: string;
 }): { rows: RenamePlanCsvRow[]; planId: string; plannedAt: string } {
   const plannedAt = options.runtime.now().toISOString();
-  const planId = `${formatUtcFileDateTime(options.runtime.now())}-${randomUUID().slice(0, 8)}`;
+  const planId = `${formatUtcFileDateTimeISO(options.runtime.now())}-${randomUUID().slice(0, 8)}`;
 
   const rows = options.plans.map((plan) => {
     const aiNewName = options.aiNameBySourcePath?.get(plan.fromPath) ?? "";
@@ -145,8 +145,11 @@ export function createRenamePlanCsvRows(options: {
   return { rows: [...rows, ...skippedRows], planId, plannedAt };
 }
 
-export async function writeRenamePlanCsv(runtime: CliRuntime, rows: RenamePlanCsvRow[]): Promise<string> {
-  const filename = `rename-${formatUtcFileDateTime(runtime.now())}-${randomUUID().slice(0, 8)}.csv`;
+export async function writeRenamePlanCsv(
+  runtime: CliRuntime,
+  rows: RenamePlanCsvRow[],
+): Promise<string> {
+  const filename = `rename-plan-${formatUtcFileDateTimeISO(runtime.now())}-${randomUUID().slice(0, 8)}.csv`;
   const csvPath = resolve(runtime.cwd, filename);
   await writeTextFileSafe(csvPath, stringifyRenamePlanCsv(rows), { overwrite: false });
   return csvPath;
