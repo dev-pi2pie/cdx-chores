@@ -9,7 +9,14 @@ import {
   parseSerialToken,
 } from "./rename-template";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
-import { formatLocalFileDateTime, formatUtcFileDateTime } from "../utils/datetime";
+import {
+  formatLocalFileDateTime,
+  formatLocalFileDateTime12Hour,
+  formatLocalFileDateTimeISO,
+  formatUtcFileDateTime,
+  formatUtcFileDateTime12Hour,
+  formatUtcFileDateTimeISO,
+} from "../utils/datetime";
 import { defaultOutputPath } from "../utils/paths";
 import { slugifyName, withNumericSuffix } from "../utils/slug";
 
@@ -22,6 +29,10 @@ const RENAME_TEMPLATE_SIMPLE_TOKENS = new Set([
   "timestamp",
   "timestamp_local",
   "timestamp_utc",
+  "timestamp_local_iso",
+  "timestamp_utc_iso",
+  "timestamp_local_12h",
+  "timestamp_utc_12h",
   "date",
   "date_local",
   "date_utc",
@@ -218,7 +229,7 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
       continue;
     }
     throw new CliError(
-      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
+      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -318,6 +329,10 @@ function renderBaseNameFromTemplate(options: {
 }): string {
   const timestampUtc = formatUtcFileDateTime(options.mtimeDate);
   const timestampLocal = formatLocalFileDateTime(options.mtimeDate);
+  const timestampUtcIso = formatUtcFileDateTimeISO(options.mtimeDate);
+  const timestampLocalIso = formatLocalFileDateTimeISO(options.mtimeDate);
+  const timestampUtc12Hour = formatUtcFileDateTime12Hour(options.mtimeDate);
+  const timestampLocal12Hour = formatLocalFileDateTime12Hour(options.mtimeDate);
   const dateLocal = formatLocalDate(options.mtimeDate);
   const dateUtc = formatUtcDate(options.mtimeDate);
 
@@ -333,6 +348,14 @@ function renderBaseNameFromTemplate(options: {
           return timestampUtc;
         case "timestamp_local":
           return timestampLocal;
+        case "timestamp_utc_iso":
+          return timestampUtcIso;
+        case "timestamp_local_iso":
+          return timestampLocalIso;
+        case "timestamp_utc_12h":
+          return timestampUtc12Hour;
+        case "timestamp_local_12h":
+          return timestampLocal12Hour;
         case "date":
         case "date_local":
           return dateLocal;

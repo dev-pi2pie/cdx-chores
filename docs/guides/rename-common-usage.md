@@ -63,6 +63,10 @@ Supported placeholders:
 - `{timestamp}` (UTC, backward-compatible alias)
 - `{timestamp_local}` (local time, explicit)
 - `{timestamp_utc}` (UTC, explicit)
+- `{timestamp_local_iso}` (local ISO-like timestamp with numeric offset)
+- `{timestamp_utc_iso}` (UTC ISO-like timestamp with `Z`)
+- `{timestamp_local_12h}` (local compact `12hr` timestamp)
+- `{timestamp_utc_12h}` (UTC compact `12hr` timestamp)
 - `{date}`
 - `{date_local}`
 - `{date_utc}`
@@ -75,6 +79,8 @@ Custom template examples:
 {date}-{stem}-{serial}
 brand-{timestamp}-{stem}
 {prefix}-{serial_###_start_1_order_mtime_asc}-{stem}
+{timestamp_utc_iso}-{stem}
+{timestamp_local_12h}-{stem}
 ```
 
 Notes:
@@ -96,6 +102,9 @@ Notes:
 - `{timestamp}` uses UTC and remains backward-compatible.
 - `{timestamp_local}` uses local time explicitly.
 - `{timestamp_utc}` uses UTC explicitly.
+- `{timestamp_local_iso}` uses local time with a numeric offset such as `+0800`.
+- `{timestamp_utc_iso}` uses UTC with `Z`.
+- `{timestamp_local_12h}` and `{timestamp_utc_12h}` use compact `12hr` output with `AM` / `PM`.
 - Use `--timestamp-timezone local|utc` in CLI mode to override `{timestamp}` behavior. Explicit placeholders (`{timestamp_local}`, `{timestamp_utc}`) are never rewritten by this flag.
 - In interactive mode, when a selected template contains `{timestamp}`, a timezone question is asked. Templates with explicit placeholders skip this question.
 - Precedence: explicit placeholders > CLI `--timestamp-timezone` / interactive prompt > default UTC.
@@ -103,7 +112,19 @@ Notes:
 Migration:
 
 - Existing `{timestamp}` users keep current UTC behavior with no changes needed.
-- New users should prefer `{timestamp_local}` or `{timestamp_utc}` for clarity.
+- Route A placeholders are explicit opt-in formats for ISO-like and compact `12hr` output.
+- New users should prefer explicit placeholders such as `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, or `{timestamp_utc_iso}`.
+
+Route A examples:
+
+```bash
+cdx-chores rename file ./images/IMG_1024.JPG --pattern "{timestamp_utc_iso}-{stem}" --dry-run
+cdx-chores rename batch ./images --pattern "{timestamp_local_12h}-{stem}" --dry-run
+```
+
+Reference:
+
+- Detailed placeholder matrix: `docs/guides/rename-timestamp-format-matrix.md`
 
 ### Plan CSV Naming
 
@@ -144,6 +165,7 @@ Interactive mode now asks once for assistant enablement, then one scope selector
 
 ## Related Guides
 
+- `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 - `docs/guides/rename-plan-csv-schema.md`
 - `README.md`

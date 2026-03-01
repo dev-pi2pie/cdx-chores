@@ -229,7 +229,8 @@ export const TIMESTAMP_TIMEZONE_VALUES = ["local", "utc"] as const;
 
 const LEGACY_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp\s*\}/;
 const LEGACY_TIMESTAMP_PLACEHOLDER_GLOBAL_PATTERN = /\{\s*timestamp\s*\}/g;
-const EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN = /\{\s*timestamp_(local|utc)\s*\}/;
+const EXPLICIT_TIMESTAMP_PLACEHOLDER_PATTERN =
+  /\{\s*timestamp_(local|utc)(?:_(iso|12h))?\s*\}/;
 
 /**
  * Returns true when a template contains at least one legacy `{timestamp}`

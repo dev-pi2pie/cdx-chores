@@ -103,9 +103,13 @@ describe("rename template contracts", () => {
     expect(templateContainsLegacyTimestamp("{prefix}-{stem}")).toBe(false);
   });
 
-  test("templateContainsExplicitTimestamp detects {timestamp_local} and {timestamp_utc}", () => {
+  test("templateContainsExplicitTimestamp detects explicit timestamp placeholders", () => {
     expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_utc}-{stem}")).toBe(true);
     expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_local}-{stem}")).toBe(true);
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_utc_iso}-{stem}")).toBe(true);
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_local_iso}-{stem}")).toBe(true);
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_utc_12h}-{stem}")).toBe(true);
+    expect(templateContainsExplicitTimestamp("{prefix}-{timestamp_local_12h}-{stem}")).toBe(true);
 
     // bare legacy should return false
     expect(templateContainsExplicitTimestamp("{prefix}-{timestamp}-{stem}")).toBe(false);

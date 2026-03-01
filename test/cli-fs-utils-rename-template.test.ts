@@ -246,4 +246,121 @@ describe("rename planner template + serial behavior", () => {
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });
+
+  test("{timestamp_utc_iso} renders compact UTC ISO with Z suffix", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-utc-iso");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T23:45:00.000Z"),
+        new Date("2026-02-27T23:45:00.000Z"),
+      );
+
+      const result = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp_utc_iso}-{stem}",
+      });
+      expect(basename(result.plan.toPath)).toBe("20260227T234500Z-note.txt");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp_local_iso} renders compact local ISO with numeric offset", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-local-iso");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T12:34:56.000Z"),
+        new Date("2026-02-27T12:34:56.000Z"),
+      );
+
+      const result = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp_local_iso}-{stem}",
+      });
+      const name = basename(result.plan.toPath);
+      expect(name).toMatch(/^\d{8}T\d{6}[+-]\d{4}-note\.txt$/);
+      expect(name.includes("Z")).toBe(false);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp_local_12h} is accepted and uses compact AM/PM suffix", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-local-12h");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "note.txt");
+      await writeFile(path, "x", "utf8");
+      await utimes(
+        path,
+        new Date("2026-02-27T12:34:56.000Z"),
+        new Date("2026-02-27T12:34:56.000Z"),
+      );
+
+      const result = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{timestamp_local_12h}-{stem}",
+      });
+      expect(basename(result.plan.toPath)).toMatch(/^\d{8}-\d{6}(AM|PM)-note\.txt$/);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{timestamp_utc_12h} uses compact UTC AM/PM output", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "ts-utc-12h");
+      await mkdir(dirPath, { recursive: true });
+      const morningPath = join(dirPath, "morning.txt");
+      const noonPath = join(dirPath, "noon.txt");
+      const midnightPath = join(dirPath, "midnight.txt");
+      await writeFile(morningPath, "x", "utf8");
+      await writeFile(noonPath, "x", "utf8");
+      await writeFile(midnightPath, "x", "utf8");
+      await utimes(
+        morningPath,
+        new Date("2026-02-27T09:15:30.000Z"),
+        new Date("2026-02-27T09:15:30.000Z"),
+      );
+      await utimes(
+        noonPath,
+        new Date("2026-02-27T12:00:00.000Z"),
+        new Date("2026-02-27T12:00:00.000Z"),
+      );
+      await utimes(
+        midnightPath,
+        new Date("2026-02-27T00:00:00.000Z"),
+        new Date("2026-02-27T00:00:00.000Z"),
+      );
+
+      const morning = await planSingleRename(runtime, toRepoRelativePath(morningPath), {
+        pattern: "{timestamp_utc_12h}-{stem}",
+      });
+      const noon = await planSingleRename(runtime, toRepoRelativePath(noonPath), {
+        pattern: "{timestamp_utc_12h}-{stem}",
+      });
+      const midnight = await planSingleRename(runtime, toRepoRelativePath(midnightPath), {
+        pattern: "{timestamp_utc_12h}-{stem}",
+      });
+
+      expect(basename(morning.plan.toPath)).toBe("20260227-091530AM-morning.txt");
+      expect(basename(noon.plan.toPath)).toBe("20260227-120000PM-noon.txt");
+      expect(basename(midnight.plan.toPath)).toBe("20260227-120000AM-midnight.txt");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
 });

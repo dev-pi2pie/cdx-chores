@@ -111,7 +111,7 @@ Recursive image rename with depth limit:
 cdx-chores rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
 ```
 
-Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
+Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, `{timestamp_utc_iso}`, `{timestamp_local_12h}`, `{timestamp_utc_12h}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
 
 ```bash
 cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}" --dry-run
@@ -131,8 +131,20 @@ Timestamp placeholders:
 - `{timestamp}` uses UTC (backward-compatible default).
 - `{timestamp_local}` uses local time explicitly.
 - `{timestamp_utc}` uses UTC explicitly.
+- `{timestamp_local_iso}` uses local time with a numeric offset such as `+0800`.
+- `{timestamp_utc_iso}` uses UTC with `Z`.
+- `{timestamp_local_12h}` and `{timestamp_utc_12h}` use compact `12hr` output with `AM` / `PM`.
 - `--timestamp-timezone local|utc` overrides `{timestamp}` only; explicit placeholders are never rewritten.
-- New users should prefer `{timestamp_local}` or `{timestamp_utc}` for clarity.
+- Existing `{timestamp}` users do not need to change anything.
+- Route A placeholders are explicit opt-in formats.
+- New users should prefer explicit placeholders such as `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, or `{timestamp_utc_iso}`.
+
+Route A examples:
+
+```bash
+cdx-chores rename file ./images/IMG_1024.JPG --pattern "{timestamp_utc_iso}-{stem}" --dry-run
+cdx-chores rename batch ./images --pattern "{timestamp_local_12h}-{stem}" --dry-run
+```
 
 Video to GIF (requires `ffmpeg`):
 
@@ -155,6 +167,7 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 ## Rename Guides
 
 - Common operational usage: `docs/guides/rename-common-usage.md`
+- Timestamp format matrix: `docs/guides/rename-timestamp-format-matrix.md`
 - Scope and Codex capability details: `docs/guides/rename-scope-and-codex-capability-guide.md`
 
 ## Video Guides

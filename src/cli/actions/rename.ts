@@ -154,8 +154,8 @@ function resolveEffectivePattern(
  */
 function deriveTimestampTzMetadata(pattern: string | undefined): string {
   const p = pattern ?? "{prefix}-{timestamp}-{stem}";
-  const hasLocal = /\{\s*timestamp_local\s*\}/.test(p);
-  const hasUtc = /\{\s*timestamp_utc\s*\}/.test(p) || /\{\s*timestamp\s*\}/.test(p);
+  const hasLocal = /\{\s*timestamp_local(?:_(?:iso|12h))?\s*\}/.test(p);
+  const hasUtc = /\{\s*(?:timestamp|timestamp_utc(?:_(?:iso|12h))?)\s*\}/.test(p);
   if (hasLocal && hasUtc) return "";
   if (hasLocal) return "local";
   if (hasUtc) return "utc";
