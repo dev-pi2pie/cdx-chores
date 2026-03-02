@@ -2,7 +2,7 @@
 title: "Interactive module folder refactor"
 created-date: 2026-03-02
 modified-date: 2026-03-02
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -84,76 +84,76 @@ Notes:
 
 ### Task Items
 
-- [ ] move menu choice types/constants into `src/cli/interactive/menu.ts`
-- [ ] move submenu selection flow into `src/cli/interactive/menu.ts`
-- [ ] make the `index.ts` contract explicit: create `pathPromptContext` once and pass it to domain handlers
-- [ ] only add `src/cli/interactive/shared.ts` if at least one helper is truly used across multiple domain modules
-- [ ] keep the entrypoint thin and avoid speculative abstractions
+- [x] move menu choice types/constants into `src/cli/interactive/menu.ts`
+- [x] move submenu selection flow into `src/cli/interactive/menu.ts`
+- [x] make the `index.ts` contract explicit: create `pathPromptContext` once and pass it to domain handlers
+- [x] only add `src/cli/interactive/shared.ts` if at least one helper is truly used across multiple domain modules
+- [x] keep the entrypoint thin and avoid speculative abstractions
 
 ### Phase Deliverable
 
-- [ ] menu selection is isolated and the handler contract is explicit before domain extraction begins
+- [x] menu selection is isolated and the handler contract is explicit before domain extraction begins
 
 ## Phase 2: Extract the rename flow intact
 
 ### Task Items
 
-- [ ] move rename batch/file/apply interactive orchestration into `src/cli/interactive/rename.ts`
-- [ ] move `promptRenamePatternConfig()` into `src/cli/interactive/rename.ts`
-- [ ] keep `validateIntegerInput()` with rename unless another module proves a real need
-- [ ] preserve current Codex routing questions and rename apply follow-up flow exactly
-- [ ] keep action dispatch in the existing action layer; do not move business logic into prompt helpers
+- [x] move rename batch/file/apply interactive orchestration into `src/cli/interactive/rename.ts`
+- [x] move `promptRenamePatternConfig()` into `src/cli/interactive/rename.ts`
+- [x] keep `validateIntegerInput()` with rename unless another module proves a real need
+- [x] preserve current Codex routing questions and rename apply follow-up flow exactly
+- [x] keep action dispatch in the existing action layer; do not move business logic into prompt helpers
 
 ### Phase Deliverable
 
-- [ ] rename interactive flow is isolated behind a focused module boundary without splitting its prompt logic across multiple files
+- [x] rename interactive flow is isolated behind a focused module boundary without splitting its prompt logic across multiple files
 
 ## Phase 3: Extract remaining flows and finalize the folder module
 
 ### Task Items
 
-- [ ] move data interactive flows into `src/cli/interactive/data.ts`
-- [ ] move markdown interactive flows into `src/cli/interactive/markdown.ts`
-- [ ] move video interactive flows into `src/cli/interactive/video.ts`
-- [ ] add `src/cli/interactive/index.ts` as the thin entrypoint for `runInteractiveMode()`
-- [ ] keep `doctor` inline in `index.ts` unless extraction becomes justified during implementation
-- [ ] remove `src/cli/interactive.ts` once imports resolve through the folder entrypoint
-- [ ] ensure imports elsewhere in the codebase resolve cleanly to the new entrypoint
-- [ ] rerun verification after the split settles
+- [x] move data interactive flows into `src/cli/interactive/data.ts`
+- [x] move markdown interactive flows into `src/cli/interactive/markdown.ts`
+- [x] move video interactive flows into `src/cli/interactive/video.ts`
+- [x] add `src/cli/interactive/index.ts` as the thin entrypoint for `runInteractiveMode()`
+- [x] keep `doctor` inline in `index.ts` unless extraction becomes justified during implementation
+- [x] remove `src/cli/interactive.ts` once imports resolve through the folder entrypoint
+- [x] ensure imports elsewhere in the codebase resolve cleanly to the new entrypoint
+- [x] rerun verification after the split settles
 
 ### Phase Deliverable
 
-- [ ] interactive mode is folder-based, readable by domain, and exposed through a thin entry module
+- [x] interactive mode is folder-based, readable by domain, and exposed through a thin entry module
 
 ## Verification Plan
 
 ### Functional checks
 
-- [ ] `bun test test/cli-actions-data.test.ts`
-- [ ] `bun test test/cli-actions-doctor-markdown-video-deferred.test.ts`
-- [ ] `bun test test/cli-actions-rename-batch-core.test.ts`
-- [ ] `bun test test/cli-actions-rename-file.test.ts`
-- [ ] `bun test test/cli-actions-rename-apply-replay.test.ts`
-- [ ] `bun test test/cli-rename-interactive-router.test.ts`
-- [ ] `bun test test/cli-path.test.ts`
+- [x] `bun test test/cli-actions-data.test.ts`
+- [x] `bun test test/cli-actions-doctor-markdown-video-deferred.test.ts`
+- [x] `bun test test/cli-actions-rename-batch-core.test.ts`
+- [x] `bun test test/cli-actions-rename-file.test.ts`
+- [x] `bun test test/cli-actions-rename-apply-replay.test.ts`
+- [x] `bun test test/cli-rename-interactive-router.test.ts`
+- [x] `bun test test/cli-path.test.ts`
 
 Notes:
 
-- [ ] do not treat `test/cli-ux.test.ts` as interactive refactor coverage unless that file starts exercising interactive mode later
+- [x] do not treat `test/cli-ux.test.ts` as interactive refactor coverage unless that file starts exercising interactive mode later
 
 ### Structural checks
 
-- [ ] `src/cli/interactive.ts` no longer remains as the 742-line mixed interactive implementation
-- [ ] interactive modules are organized by domain or shared responsibility
-- [ ] no new oversized mixed-responsibility interactive helper file replaces the current hotspot
-- [ ] `pathPromptContext` creation remains explicit and is not reintroduced as hidden shared state
+- [x] `src/cli/interactive.ts` no longer remains as the 742-line mixed interactive implementation
+- [x] interactive modules are organized by domain or shared responsibility
+- [x] no new oversized mixed-responsibility interactive helper file replaces the current hotspot
+- [x] `pathPromptContext` creation remains explicit and is not reintroduced as hidden shared state
 
 ### Quality checks
 
-- [ ] `bunx tsc --noEmit`
-- [ ] `bunx oxlint --tsconfig tsconfig.json src test scripts`
-- [ ] `bun run build`
-- [ ] `bun test`
+- [x] `bunx tsc --noEmit`
+- [x] `bunx oxlint --tsconfig tsconfig.json src test scripts`
+- [x] `bun run build`
+- [x] `bun test`
 
 ## Risks and Mitigations
 

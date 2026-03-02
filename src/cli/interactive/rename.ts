@@ -1,24 +1,14 @@
 import { confirm, input, select } from "@inquirer/prompts";
 
+import { actionRenameApply, actionRenameBatch, actionRenameFile } from "../actions";
+import { promptRequiredPathWithConfig } from "../prompts/path";
 import {
-  actionCsvToJson,
-  actionDoctor,
-  actionJsonToCsv,
-  actionMdFrontmatterToJson,
-  actionMdToDocx,
-  actionRenameApply,
-  actionRenameBatch,
-  actionRenameFile,
-  actionVideoConvert,
-  actionVideoGif,
-  actionVideoResize,
-} from "./actions";
-import {
-  formatDefaultOutputPathHint,
-  promptOptionalOutputPathChoice,
-  promptRequiredPathWithConfig,
-} from "./prompts/path";
-import { resolvePathPromptRuntimeConfig } from "./prompts/path-config";
+  type RenameInteractiveCodexFlags as InteractiveCodexFlags,
+  type RenameInteractiveCodexScope as InteractiveCodexScope,
+  resolveAutoCodexFlagsForBatchProfile,
+  resolveAutoCodexFlagsForFilePath,
+  resolveCodexFlagsFromScope,
+} from "../rename-interactive-router";
 import {
   type RenameSerialOrder,
   type RenameSerialScope,
@@ -31,43 +21,10 @@ import {
   shouldPromptTimestampTimezone,
   templateContainsPrefixPlaceholder,
   templateContainsSerialPlaceholder,
-} from "./rename-template";
-import {
-  type RenameInteractiveCodexFlags as InteractiveCodexFlags,
-  type RenameInteractiveCodexScope as InteractiveCodexScope,
-  resolveAutoCodexFlagsForBatchProfile,
-  resolveAutoCodexFlagsForFilePath,
-  resolveCodexFlagsFromScope,
-} from "./rename-interactive-router";
-import type { CliRuntime } from "./types";
-
-type InteractiveActionKey =
-  | "doctor"
-  | "data:json-to-csv"
-  | "data:csv-to-json"
-  | "md:to-docx"
-  | "md:frontmatter-to-json"
-  | "rename:file"
-  | "rename:batch"
-  | "rename:apply"
-  | "video:convert"
-  | "video:resize"
-  | "video:gif";
-
-type InteractiveRootChoice = "doctor" | "data" | "md" | "rename" | "video" | "cancel";
-type InteractiveSubmenuGroup = Exclude<InteractiveRootChoice, "doctor" | "cancel">;
-type InteractiveSubmenuChoice = InteractiveActionKey | "back" | "cancel";
-
-type InteractiveMenuChoice<T extends string> = {
-  name: string;
-  value: T;
-  description?: string;
-};
-
-type InteractiveSubmenuConfig = {
-  message: string;
-  choices: Array<InteractiveMenuChoice<InteractiveActionKey>>;
-};
+} from "../rename-template";
+import type { CliRuntime } from "../types";
+import type { RenameInteractiveActionKey } from "./menu";
+import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
 function validateIntegerInput(
   value: string,
@@ -236,224 +193,11 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
   };
 }
 
-const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
-  { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
-  { name: "data", value: "data", description: "JSON/CSV conversions" },
-  { name: "md", value: "md", description: "Markdown utilities" },
-  { name: "rename", value: "rename", description: "File/batch rename workflows" },
-  { name: "video", value: "video", description: "Video conversion tools" },
-  { name: "cancel", value: "cancel" },
-];
-
-const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuConfig> = {
-  data: {
-    message: "Choose a data command",
-    choices: [
-      { name: "json-to-csv", value: "data:json-to-csv" },
-      { name: "csv-to-json", value: "data:csv-to-json" },
-    ],
-  },
-  md: {
-    message: "Choose a markdown command",
-    choices: [
-      { name: "to-docx", value: "md:to-docx" },
-      { name: "frontmatter-to-json", value: "md:frontmatter-to-json" },
-    ],
-  },
-  rename: {
-    message: "Choose a rename command",
-    choices: [
-      { name: "file", value: "rename:file" },
-      { name: "batch", value: "rename:batch" },
-      { name: "apply", value: "rename:apply" },
-    ],
-  },
-  video: {
-    message: "Choose a video command",
-    choices: [
-      { name: "convert", value: "video:convert" },
-      { name: "resize", value: "video:resize" },
-      { name: "gif", value: "video:gif" },
-    ],
-  },
-};
-
-async function selectInteractiveAction(): Promise<InteractiveActionKey | "cancel"> {
-  while (true) {
-    const rootChoice = await select<InteractiveRootChoice>({
-      message: "Choose a command",
-      choices: INTERACTIVE_ROOT_CHOICES,
-    });
-
-    if (rootChoice === "cancel") {
-      return "cancel";
-    }
-
-    if (rootChoice === "doctor") {
-      return "doctor";
-    }
-
-    const submenu = INTERACTIVE_SUBMENUS[rootChoice];
-    const submenuChoice = await select<InteractiveSubmenuChoice>({
-      message: submenu.message,
-      choices: [
-        ...submenu.choices,
-        { name: "Back", value: "back", description: "Return to the main command menu" },
-        { name: "Cancel", value: "cancel", description: "Exit interactive mode" },
-      ],
-    });
-
-    if (submenuChoice === "back") {
-      continue;
-    }
-
-    if (submenuChoice === "cancel") {
-      return "cancel";
-    }
-
-    return submenuChoice;
-  }
-}
-
-export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
-  const pathPromptRuntimeConfig = resolvePathPromptRuntimeConfig();
-  const pathPromptContext = {
-    runtimeConfig: pathPromptRuntimeConfig,
-    cwd: runtime.cwd,
-    stdin: runtime.stdin,
-    stdout: runtime.stdout,
-  } as const;
-  const action = await selectInteractiveAction();
-
-  if (action === "cancel") {
-    runtime.stdout.write("Cancelled.\n");
-    return;
-  }
-
-  if (action === "doctor") {
-    const asJson = await confirm({ message: "Output as JSON?", default: false });
-    await actionDoctor(runtime, { json: asJson });
-    return;
-  }
-
-  if (action === "data:json-to-csv") {
-    const inputPath = await promptRequiredPathWithConfig("Input JSON file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".csv");
-    const outputPath = await promptOptionalOutputPathChoice({
-      message: "Output CSV file",
-      defaultHint: outputHint,
-      kind: "file",
-      ...pathPromptContext,
-      customMessage: "Custom CSV output path",
-    });
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionJsonToCsv(runtime, { input: inputPath, output: outputPath, overwrite });
-    return;
-  }
-
-  if (action === "data:csv-to-json") {
-    const inputPath = await promptRequiredPathWithConfig("Input CSV file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".json");
-    const outputPath = await promptOptionalOutputPathChoice({
-      message: "Output JSON file",
-      defaultHint: outputHint,
-      kind: "file",
-      ...pathPromptContext,
-      customMessage: "Custom JSON output path",
-    });
-    const pretty = await confirm({ message: "Pretty-print JSON?", default: true });
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionCsvToJson(runtime, {
-      input: inputPath,
-      output: outputPath,
-      pretty,
-      overwrite,
-    });
-    return;
-  }
-
-  if (action === "md:to-docx") {
-    const inputPath = await promptRequiredPathWithConfig("Input Markdown file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".docx");
-    const outputPath = await promptOptionalOutputPathChoice({
-      message: "Output DOCX file",
-      defaultHint: outputHint,
-      kind: "file",
-      ...pathPromptContext,
-      customMessage: "Custom DOCX output path",
-    });
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionMdToDocx(runtime, {
-      input: inputPath,
-      output: outputPath,
-      overwrite,
-    });
-    return;
-  }
-
-  if (action === "md:frontmatter-to-json") {
-    const inputPath = await promptRequiredPathWithConfig("Input Markdown file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputMode = await select<"stdout" | "file">({
-      message: "JSON output destination",
-      choices: [
-        { name: "Print to stdout (default)", value: "stdout" },
-        { name: "Write to file", value: "file" },
-      ],
-    });
-    const outputShape = await select<"wrapper" | "data-only">({
-      message: "JSON output shape",
-      choices: [
-        {
-          name: "Wrapper (default)",
-          value: "wrapper",
-          description: "{ frontmatterType, data }",
-        },
-        {
-          name: "Data only",
-          value: "data-only",
-          description: "Only the parsed frontmatter object",
-        },
-      ],
-    });
-    const pretty = await confirm({ message: "Pretty-print JSON?", default: true });
-
-    let outputPath: string | undefined;
-    let overwrite = false;
-    if (outputMode === "file") {
-      const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".frontmatter.json");
-      outputPath = await promptOptionalOutputPathChoice({
-        message: "Output JSON file",
-        defaultHint: outputHint,
-        kind: "file",
-        ...pathPromptContext,
-        customMessage: "Custom JSON output path",
-      });
-      overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    }
-
-    await actionMdFrontmatterToJson(runtime, {
-      input: inputPath,
-      toStdout: outputMode === "stdout",
-      output: outputPath,
-      overwrite,
-      pretty,
-      dataOnly: outputShape === "data-only",
-    });
-    return;
-  }
-
+export async function handleRenameInteractiveAction(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  action: RenameInteractiveActionKey,
+): Promise<void> {
   if (action === "rename:batch") {
     const directory = await promptRequiredPathWithConfig("Target directory", {
       kind: "directory",
@@ -656,87 +400,17 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
     return;
   }
 
-  if (action === "rename:apply") {
-    const csvPath = await promptRequiredPathWithConfig("Rename plan CSV path", {
-      kind: "csv",
-      ...pathPromptContext,
-    });
-    const autoClean = await confirm({
-      message: "Auto-clean plan CSV after apply?",
-      default: true,
-    });
-    await actionRenameApply(runtime, { csv: csvPath, autoClean });
-    return;
+  if (action !== "rename:apply") {
+    assertNeverInteractiveAction(action);
   }
 
-  if (action === "video:convert") {
-    const inputPath = await promptRequiredPathWithConfig("Input video file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputPath = await promptRequiredPathWithConfig("Output video file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionVideoConvert(runtime, { input: inputPath, output: outputPath, overwrite });
-    return;
-  }
-
-  if (action === "video:resize") {
-    const inputPath = await promptRequiredPathWithConfig("Input video file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputPath = await promptRequiredPathWithConfig("Output video file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const scale = Number(
-      await input({
-        message: "Scale factor (for example 0.5 halves size, 2 doubles it)",
-        validate: (value) => {
-          const trimmed = value.trim();
-          if (!trimmed) {
-            return "Required";
-          }
-          const parsed = Number(trimmed);
-          return Number.isFinite(parsed) && parsed > 0 ? true : "Enter a positive number.";
-        },
-      }),
-    );
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionVideoResize(runtime, {
-      input: inputPath,
-      output: outputPath,
-      scale,
-      overwrite,
-    });
-    return;
-  }
-
-  if (action === "video:gif") {
-    const inputPath = await promptRequiredPathWithConfig("Input video file", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".gif");
-    const outputPath = await promptOptionalOutputPathChoice({
-      message: "Output GIF file",
-      defaultHint: outputHint,
-      kind: "file",
-      ...pathPromptContext,
-      customMessage: "Custom GIF output path",
-    });
-    const widthInput = await input({ message: "Width in px (optional)", default: "480" });
-    const fpsInput = await input({ message: "FPS (optional)", default: "10" });
-    const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-    await actionVideoGif(runtime, {
-      input: inputPath,
-      output: outputPath,
-      width: widthInput.trim() ? Number(widthInput) : undefined,
-      fps: fpsInput.trim() ? Number(fpsInput) : undefined,
-      overwrite,
-    });
-  }
+  const csvPath = await promptRequiredPathWithConfig("Rename plan CSV path", {
+    kind: "csv",
+    ...pathPromptContext,
+  });
+  const autoClean = await confirm({
+    message: "Auto-clean plan CSV after apply?",
+    default: true,
+  });
+  await actionRenameApply(runtime, { csv: csvPath, autoClean });
 }
