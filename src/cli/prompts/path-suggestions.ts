@@ -29,7 +29,7 @@ interface SuggestionDirEntry {
   isFile: boolean;
 }
 
-interface ParsedPathSuggestionInput {
+export interface ParsedPathSuggestionInput {
   rawInput: string;
   directoryInput: string;
   fragment: string;
@@ -40,7 +40,7 @@ function findLastSeparatorIndex(value: string): number {
   return Math.max(value.lastIndexOf("/"), value.lastIndexOf("\\"));
 }
 
-function parsePathSuggestionInput(cwd: string, input: string): ParsedPathSuggestionInput {
+export function parsePathSuggestionInput(cwd: string, input: string): ParsedPathSuggestionInput {
   const lastSeparatorIndex = findLastSeparatorIndex(input);
   const directoryInput = lastSeparatorIndex >= 0 ? input.slice(0, lastSeparatorIndex + 1) : "";
   const fragment = lastSeparatorIndex >= 0 ? input.slice(lastSeparatorIndex + 1) : input;
@@ -122,6 +122,7 @@ export async function resolvePathSuggestions(
   const extensionFilter = normalizeExtensions(options.fileExtensions);
   const targetKind = options.targetKind ?? "any";
   const includeHidden = options.includeHidden ?? false;
+  const effectiveIncludeHidden = includeHidden || parsed.fragment.startsWith(".");
 
   let entries: SuggestionDirEntry[];
   try {
@@ -131,7 +132,7 @@ export async function resolvePathSuggestions(
   }
 
   const filtered = entries
-    .filter((entry) => (includeHidden ? true : !entry.name.startsWith(".")))
+    .filter((entry) => (effectiveIncludeHidden ? true : !entry.name.startsWith(".")))
     .filter((entry) => entry.name.startsWith(parsed.fragment))
     .filter((entry) => {
       if (targetKind === "directory") {
@@ -167,4 +168,3 @@ export async function resolvePathSuggestions(
     };
   });
 }
-

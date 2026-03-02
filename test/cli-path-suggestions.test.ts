@@ -44,13 +44,19 @@ describe("path suggestion engine", () => {
     }
   });
 
-  test("hides dotfiles by default and can include them when enabled", async () => {
+  test("keeps hidden entries out of generic browsing by default but reveals them for explicit dot-prefix input", async () => {
     const fixtureDir = await createTempFixtureDir("path-suggestions-hidden");
     try {
       await writeFile(join(fixtureDir, ".secret.csv"), "x", "utf8");
       await writeFile(join(fixtureDir, "visible.csv"), "x", "utf8");
 
-      const hiddenOff = await resolvePathSuggestions({
+      const hiddenOffGeneric = await resolvePathSuggestions({
+        cwd: fixtureDir,
+        input: "",
+        includeHidden: false,
+        enforceTrigger: false,
+      });
+      const explicitDotPrefix = await resolvePathSuggestions({
         cwd: fixtureDir,
         input: ".",
         includeHidden: false,
@@ -58,13 +64,14 @@ describe("path suggestion engine", () => {
       });
       const hiddenOn = await resolvePathSuggestions({
         cwd: fixtureDir,
-        input: ".",
+        input: "",
         includeHidden: true,
         enforceTrigger: false,
       });
 
-      expect(hiddenOff.map((item) => item.label)).toEqual([]);
-      expect(hiddenOn.map((item) => item.label)).toEqual([".secret.csv"]);
+      expect(hiddenOffGeneric.map((item) => item.label)).toEqual(["visible.csv"]);
+      expect(explicitDotPrefix.map((item) => item.label)).toEqual([".secret.csv"]);
+      expect(hiddenOn.map((item) => item.label)).toEqual([".secret.csv", "visible.csv"]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

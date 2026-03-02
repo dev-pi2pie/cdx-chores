@@ -1,6 +1,7 @@
 ---
 title: "Interactive Path Prompt UX Guide"
 created-date: 2026-02-25
+modified-date: 2026-03-02
 status: completed
 agent: codex
 ---
@@ -37,15 +38,19 @@ The path prompt is input-first (Fish-style), not list-first.
 ### Arrow-key behavior (MVP)
 
 - `Left Arrow`: jump back to the previous path segment boundary (parent-segment shortcut)
-- `Up Arrow`: no-op (history is not implemented)
-- `Down Arrow`: no-op (history is not implemented)
+- `Up Arrow`: preview the previous sibling candidate for the current path segment
+- `Down Arrow`: preview the next sibling candidate for the current path segment
+- sibling navigation wraps at the ends of the sibling list
+- sibling preview does not commit into the input until you accept it with `Tab` or `Right Arrow`
 
 ## Ghost-Hint Semantics
 
 - The ghost hint is a suggested completion suffix for the current input.
+- When sibling navigation is active, the ghost hint shows the active sibling preview instead of the default best completion.
 - Accepting a ghost hint updates the input value; it does not submit the prompt.
 - Directory suggestions render with a trailing `/`.
-- Hidden files are not shown by default.
+- Hidden files are not shown by default during generic browsing.
+- Explicit dot-prefix input (for example `./.g`) can still reveal hidden matches even when hidden suggestions are globally disabled.
 - Validation still happens at prompt/action level; autocomplete is a UX aid, not a source of truth.
 
 ## Optional Output Path UX (Default vs Custom)
@@ -69,7 +74,7 @@ Verified manually:
 
 - Nonexistent parent directory while typing: no crash; suggestions return empty
 - Large directories: suggestions are capped (default cap is 12)
-- Hidden files present: hidden files are excluded by default unless enabled via env
+- Hidden files present: hidden files are excluded from generic browsing by default unless enabled via env, but explicit dot-prefix input can still reveal matching hidden entries
 - Simple fallback mode: supported via env (`CDX_CHORES_PATH_PROMPT_MODE=simple`)
 
 ## Runtime Controls (Environment Variables)

@@ -9,6 +9,13 @@ export interface SiblingPreviewState {
   activeIndex: number;
 }
 
+export interface SiblingPreviewCandidateSet {
+  scopeKey: string;
+  replacements: string[];
+}
+
+export type SiblingPreviewDirection = "previous" | "next";
+
 export interface InlinePromptInteractionState {
   cycleState?: CycleState;
   siblingPreviewState?: SiblingPreviewState;
@@ -119,5 +126,45 @@ export function acceptSiblingPreview(
     accepted: true,
     nextState: clearInteractionState(),
     nextValue: previewReplacement,
+  };
+}
+
+export function advanceSiblingPreview(
+  state: InlinePromptInteractionState,
+  candidates: SiblingPreviewCandidateSet,
+  direction: SiblingPreviewDirection,
+): {
+  changed: boolean;
+  nextState: InlinePromptInteractionState;
+  previewReplacement?: string;
+} {
+  if (candidates.replacements.length === 0) {
+    return {
+      changed: false,
+      nextState: clearInteractionState(),
+    };
+  }
+
+  const activePreview = state.siblingPreviewState;
+  const isSameScope = activePreview?.scopeKey === candidates.scopeKey;
+  const delta = direction === "next" ? 1 : -1;
+
+  const nextIndex = isSameScope
+    ? (activePreview.activeIndex + delta + candidates.replacements.length) %
+      candidates.replacements.length
+    : direction === "next"
+      ? 0
+      : candidates.replacements.length - 1;
+
+  const nextState = enterSiblingPreviewState(state, {
+    scopeKey: candidates.scopeKey,
+    replacements: candidates.replacements,
+    activeIndex: nextIndex,
+  });
+
+  return {
+    changed: true,
+    nextState,
+    previewReplacement: candidates.replacements[nextIndex],
   };
 }

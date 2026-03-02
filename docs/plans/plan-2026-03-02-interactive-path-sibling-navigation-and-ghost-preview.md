@@ -114,39 +114,39 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 ### Task Items
 
-- [ ] add a sibling-resolution helper for the current segment scope
-- [ ] support empty-fragment browsing inside a resolved parent directory
-- [ ] cache the resolved sibling set per segment scope and invalidate it only when that scope changes
-- [ ] implement previous/next navigation with wrap-around semantics
-- [ ] treat a one-candidate sibling set as wrap-to-self and beep only when there are zero candidates
-- [ ] apply directory-first sorting and max-suggestion limits consistently
-- [ ] implement the hidden-entry policy for both empty-fragment browsing and explicit dot-prefix access
+- [x] add a sibling-resolution helper for the current segment scope
+- [x] support empty-fragment browsing inside a resolved parent directory
+- [x] cache the resolved sibling set per segment scope and invalidate it only when that scope changes
+- [x] implement previous/next navigation with wrap-around semantics
+- [x] treat a one-candidate sibling set as wrap-to-self and beep only when there are zero candidates
+- [x] apply directory-first sorting and max-suggestion limits consistently
+- [x] implement the hidden-entry policy for both empty-fragment browsing and explicit dot-prefix access
 
 ### Phase Deliverable
 
-- prompt can browse a stable sibling set for the current segment without mutating committed input
+- [x] prompt can browse a stable sibling set for the current segment without mutating committed input
 
 ## Phase 3: Wire keys and preserve existing completion semantics
 
 ### Task Items
 
-- [ ] replace the current `Up` / `Down` no-op behavior with sibling preview navigation
-- [ ] make `Tab` accept the active sibling preview before falling back to existing completion/cycle logic
-- [ ] make `Up` / `Down` abandon any active legacy `Tab` cycle and enter sibling-preview mode
-- [ ] keep `Right Arrow` accepting the visible ghost preview
-- [ ] refresh ghost/completion state immediately after accepting a sibling preview so the next `Tab` operates on the new value
-- [ ] beep only when there are no siblings to browse or no preview to accept
+- [x] replace the current `Up` / `Down` no-op behavior with sibling preview navigation
+- [x] make `Tab` accept the active sibling preview before falling back to existing completion/cycle logic
+- [x] make `Up` / `Down` abandon any active legacy `Tab` cycle and enter sibling-preview mode
+- [x] keep `Right Arrow` accepting the visible ghost preview
+- [x] refresh ghost/completion state immediately after accepting a sibling preview so the next `Tab` operates on the new value
+- [x] beep only when there are no siblings to browse or no preview to accept
 
 ### Phase Deliverable
 
-- working keyboard flow for preview-first sibling navigation with predictable acceptance rules
+- [x] working keyboard flow for preview-first sibling navigation with predictable acceptance rules
 
 ## Phase 4: Docs, tests, and manual QA
 
 ### Task Items
 
 - [ ] add or update tests around sibling ordering, empty-prefix browsing, hidden entries, and wrap behavior
-- [ ] update `docs/guides/interactive-path-prompt-ux.md`
+- [x] update `docs/guides/interactive-path-prompt-ux.md`
 - [ ] run focused manual checks in supported terminals for `./`, nested directories, and mixed file/directory sibling sets
 - [ ] document any remaining terminal escape-sequence caveats
 

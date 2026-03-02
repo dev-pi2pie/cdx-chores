@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   acceptSiblingPreview,
+  advanceSiblingPreview,
   clearInteractionState,
   deriveGhostSuffixFromPreview,
   enterSiblingPreviewState,
@@ -89,5 +90,50 @@ describe("inline path prompt interaction state", () => {
     expect(deriveGhostSuffixFromPreview("./docs/", "./other/")).toBe("");
     expect(deriveGhostSuffixFromPreview("./docs/", "./docs/")).toBe("");
     expect(deriveGhostSuffixFromPreview("./docs/", undefined)).toBe("");
+  });
+
+  test("advanceSiblingPreview wraps through the cached sibling set", () => {
+    const initialState = clearInteractionState();
+    const candidates = {
+      scopeKey: "./docs/",
+      replacements: ["./docs/guides/", "./docs/researches/"],
+    };
+
+    const first = advanceSiblingPreview(initialState, candidates, "next");
+    const second = advanceSiblingPreview(first.nextState, candidates, "next");
+    const wrapped = advanceSiblingPreview(second.nextState, candidates, "next");
+    const previous = advanceSiblingPreview(first.nextState, candidates, "previous");
+
+    expect(first.previewReplacement).toBe("./docs/guides/");
+    expect(second.previewReplacement).toBe("./docs/researches/");
+    expect(wrapped.previewReplacement).toBe("./docs/guides/");
+    expect(previous.previewReplacement).toBe("./docs/researches/");
+  });
+
+  test("advanceSiblingPreview beeps at zero candidates but wraps to self for one candidate", () => {
+    const empty = advanceSiblingPreview(
+      setCycleState(clearInteractionState(), {
+        replacements: ["./docs/guides/"],
+        index: 0,
+      }),
+      {
+        scopeKey: "./docs/",
+        replacements: [],
+      },
+      "next",
+    );
+    const single = advanceSiblingPreview(
+      clearInteractionState(),
+      {
+        scopeKey: "./docs/",
+        replacements: ["./docs/guides/"],
+      },
+      "previous",
+    );
+
+    expect(empty.changed).toBe(false);
+    expect(empty.nextState).toEqual({});
+    expect(single.changed).toBe(true);
+    expect(single.previewReplacement).toBe("./docs/guides/");
   });
 });
