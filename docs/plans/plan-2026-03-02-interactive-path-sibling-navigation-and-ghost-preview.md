@@ -2,7 +2,7 @@
 title: "Interactive path sibling navigation and ghost preview implementation plan"
 created-date: 2026-03-02
 modified-date: 2026-03-02
-status: active
+status: completed
 agent: codex
 ---
 
@@ -145,14 +145,14 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 ### Task Items
 
-- [ ] add or update tests around sibling ordering, empty-prefix browsing, hidden entries, and wrap behavior
+- [x] add or update tests around sibling ordering, empty-prefix browsing, hidden entries, and wrap behavior
 - [x] update `docs/guides/interactive-path-prompt-ux.md`
-- [ ] run focused manual checks in supported terminals for `./`, nested directories, and mixed file/directory sibling sets
-- [ ] document any remaining terminal escape-sequence caveats
+- [x] run focused manual checks in supported terminals for `./`, nested directories, and mixed file/directory sibling sets
+- [x] document any remaining terminal escape-sequence caveats
 
 ### Phase Deliverable
 
-- documented and verified sibling-navigation UX integrated into the interactive path prompt
+- [x] documented and verified sibling-navigation UX integrated into the interactive path prompt
 
 ## Technical Design Notes
 
@@ -170,21 +170,21 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 ### Manual UX checks
 
-- [ ] `./` + `Down` previews visible siblings from the current working directory
-- [ ] `./docs/` + `Up` / `Down` browses siblings under `./docs/` with wrap-around
-- [ ] `./do` + `Down` previews only matching siblings for that fragment
-- [ ] `Tab` commits the active preview without submitting
-- [ ] `Right Arrow` commits the active preview without submitting
-- [ ] typing after preview resets the sibling-preview state and recalculates ghost text
-- [ ] hidden entries remain absent from empty-prefix browsing when hidden suggestions are off
-- [ ] explicit dot-prefix typing such as `./.g` can still reveal hidden matches under the proposed policy
+- [x] `./` + `Down` previews visible siblings from the current working directory
+- [x] `./docs/` + `Up` / `Down` browses siblings under `./docs/` with wrap-around
+- [x] `./do` + `Down` previews only matching siblings for that fragment
+- [x] `Tab` commits the active preview without submitting
+- [x] `Right Arrow` commits the active preview without submitting
+- [x] typing after preview resets the sibling-preview state and recalculates ghost text
+- [x] hidden entries remain absent from empty-prefix browsing when hidden suggestions are off
+- [x] explicit dot-prefix typing such as `./.g` can still reveal hidden matches under the proposed policy
 
 ### Failure-mode checks
 
-- [ ] nonexistent parent directory during navigation does not crash
-- [ ] no sibling matches causes a beep and leaves typed input unchanged
-- [ ] large directories remain bounded by the configured suggestion limit
-- [ ] fallback simple mode still bypasses advanced sibling-navigation behavior
+- [x] nonexistent parent directory during navigation does not crash
+- [x] no sibling matches causes a beep and leaves typed input unchanged
+- [x] large directories remain bounded by the configured suggestion limit
+- [x] fallback simple mode still bypasses advanced sibling-navigation behavior
 
 ## Risks and Mitigations
 

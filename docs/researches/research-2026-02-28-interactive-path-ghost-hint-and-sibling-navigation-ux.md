@@ -2,7 +2,7 @@
 title: "Interactive path ghost hint and sibling navigation UX research"
 created-date: 2026-02-28
 modified-date: 2026-03-02
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -127,9 +127,12 @@ Resolved on 2026-03-02:
 - Hidden entries should stay excluded from sibling browsing when hidden suggestions are globally disabled, with one exception: explicit dot-prefix typing (for example `./.g`) may reveal hidden matches via ghost hint even when the global hidden toggle is off.
 - `Tab` should accept the active sibling-navigation preview.
 
+These decisions were implemented and manually validated on 2026-03-02.
+
 ## Related Plans
 
 - `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
 
 ## Related Research
 
