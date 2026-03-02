@@ -17,6 +17,10 @@ export interface PromptPathOptions {
   cwd?: string;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
+  promptImpls?: {
+    simpleInput?: typeof input;
+    advancedInline?: typeof promptPathInlineGhost;
+  };
 }
 
 function formatPromptMessage(options: PromptPathOptions): string {
@@ -115,7 +119,8 @@ function pathKindToSuggestionFilter(
 async function promptPathAdvanced(options: PromptPathOptions): Promise<string> {
   try {
     const filter = pathKindToSuggestionFilter(options.kind);
-    return await promptPathInlineGhost({
+    const advancedInline = options.promptImpls?.advancedInline ?? promptPathInlineGhost;
+    return await advancedInline({
       message: formatInlinePromptMessage(options),
       cwd: options.cwd!,
       optional: options.optional,
@@ -137,7 +142,8 @@ async function promptPathAdvanced(options: PromptPathOptions): Promise<string> {
 }
 
 async function promptPathSimple(options: PromptPathOptions): Promise<string> {
-  return await input({
+  const simpleInput = options.promptImpls?.simpleInput ?? input;
+  return await simpleInput({
     message: formatPromptMessage(options),
     default: options.defaultValue,
     validate: buildPathValidator(options),

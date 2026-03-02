@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-03-01
+modified-date: 2026-03-02
 status: completed
 agent: codex
 ---
@@ -144,7 +144,9 @@ Important:
 
 ## References
 
-- `src/cli/actions/rename.ts`
+- `src/cli/actions/rename/index.ts`
+- `src/cli/actions/rename/codex.ts`
+- `src/cli/actions/rename/filters.ts`
 - `src/cli/interactive.ts`
 - `src/cli/fs-utils.ts`
 - `src/adapters/codex/image-rename-titles.ts`
