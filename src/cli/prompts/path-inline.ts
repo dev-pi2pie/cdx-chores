@@ -1,6 +1,21 @@
 import { emitKeypressEvents } from "node:readline";
 
 import type { PathPromptRuntimeConfig } from "./path-config";
+import {
+  advanceSiblingPreview,
+  acceptSiblingPreview,
+  clearInteractionState,
+  deriveGhostSuffixFromPreview,
+  derivePreferredGhostSuffix,
+  getActiveSiblingPreviewReplacement,
+  setCycleState,
+  type SiblingPreviewDirection,
+  type InlinePromptInteractionState,
+} from "./path-inline-state";
+import {
+  deriveSiblingPreviewScopeKey,
+  resolveSiblingPreviewCandidates,
+} from "./path-sibling-preview";
 import { resolvePathSuggestions } from "./path-suggestions";
 
 type ValidationFn = (value: string) => true | string | Promise<true | string>;
@@ -29,11 +44,6 @@ interface KeypressInfo {
   meta?: boolean;
   shift?: boolean;
   sequence?: string;
-}
-
-interface CycleState {
-  replacements: string[];
-  index: number;
 }
 
 function dim(text: string): string {
@@ -127,7 +137,7 @@ export async function promptPathInlineGhost(
 
   let value = "";
   let ghostSuffix = "";
-  let cycleState: CycleState | undefined;
+  let interactionState: InlinePromptInteractionState = clearInteractionState();
   let renderScheduled = false;
   let resolvingSuggestions = false;
   let needsRefreshAgain = false;
@@ -162,6 +172,15 @@ export async function promptPathInlineGhost(
 
   const computeGhostSuffix = async (): Promise<void> => {
     const refreshSeq = ++activeRefreshSeq;
+    const previewGhostSuffix = derivePreferredGhostSuffix({
+      value,
+      state: interactionState,
+    });
+    if (previewGhostSuffix.length > 0) {
+      ghostSuffix = previewGhostSuffix;
+      return;
+    }
+
     const suggestions = await resolvePathSuggestions({
       cwd: options.cwd,
       input: value,
@@ -176,13 +195,11 @@ export async function promptPathInlineGhost(
       return;
     }
 
-    const best = suggestions[0];
-    if (!best || !best.replacement.startsWith(value) || best.replacement.length <= value.length) {
-      ghostSuffix = "";
-      return;
-    }
-
-    ghostSuffix = best.replacement.slice(value.length);
+    ghostSuffix = derivePreferredGhostSuffix({
+      value,
+      state: interactionState,
+      fallbackReplacement: suggestions[0]?.replacement,
+    });
   };
 
   const refreshGhost = async (): Promise<void> => {
@@ -205,9 +222,14 @@ export async function promptPathInlineGhost(
   };
 
   const startOrAdvanceCycle = async (): Promise<boolean> => {
+    const cycleState = interactionState.cycleState;
     if (cycleState && cycleState.replacements.length > 0) {
-      cycleState.index = (cycleState.index + 1) % cycleState.replacements.length;
-      value = cycleState.replacements[cycleState.index] ?? value;
+      const nextIndex = (cycleState.index + 1) % cycleState.replacements.length;
+      interactionState = setCycleState(interactionState, {
+        ...cycleState,
+        index: nextIndex,
+      });
+      value = cycleState.replacements[nextIndex] ?? value;
       ghostSuffix = "";
       scheduleRender();
       return true;
@@ -239,18 +261,18 @@ export async function promptPathInlineGhost(
       return false;
     }
 
-    cycleState = {
+    interactionState = setCycleState(interactionState, {
       replacements: deduped,
       index: 0,
-    };
+    });
     value = deduped[0] ?? value;
     ghostSuffix = "";
     scheduleRender();
     return true;
   };
 
-  const resetCycleState = (): void => {
-    cycleState = undefined;
+  const resetInteractionState = (): void => {
+    interactionState = clearInteractionState();
   };
 
   const clearPendingEscapeAbort = (): void => {
@@ -271,15 +293,33 @@ export async function promptPathInlineGhost(
   };
 
   const acceptGhostSuffix = async (): Promise<boolean> => {
+    const previewAccepted = await acceptActiveSiblingPreview();
+    if (previewAccepted) {
+      return true;
+    }
+
     if (ghostSuffix.length === 0) {
       return false;
     }
 
     value += ghostSuffix;
     ghostSuffix = "";
-    resetCycleState();
+    resetInteractionState();
     await refreshGhost();
     return true;
+  };
+
+  const acceptActiveSiblingPreview = async (): Promise<boolean> => {
+    const siblingPreviewAcceptance = acceptSiblingPreview(value, interactionState);
+    if (siblingPreviewAcceptance.accepted) {
+      value = siblingPreviewAcceptance.nextValue;
+      interactionState = siblingPreviewAcceptance.nextState;
+      ghostSuffix = "";
+      await refreshGhost();
+      return true;
+    }
+
+    return false;
   };
 
   const moveToParentPathSegment = async (): Promise<boolean> => {
@@ -290,8 +330,47 @@ export async function promptPathInlineGhost(
 
     value = nextValue;
     ghostSuffix = "";
-    resetCycleState();
+    resetInteractionState();
     await refreshGhost();
+    return true;
+  };
+
+  const browseSiblingPreview = async (direction: SiblingPreviewDirection): Promise<boolean> => {
+    const scopeKey = deriveSiblingPreviewScopeKey({
+      cwd: options.cwd,
+      input: value,
+      includeHidden: options.runtimeConfig.autocomplete.includeHidden,
+      maxSuggestions: options.runtimeConfig.autocomplete.maxSuggestions,
+      targetKind: options.suggestionFilter.targetKind,
+      fileExtensions: options.suggestionFilter.fileExtensions,
+    });
+
+    const cachedPreviewState = interactionState.siblingPreviewState;
+    const candidates =
+      cachedPreviewState?.scopeKey === scopeKey
+        ? {
+            scopeKey: cachedPreviewState.scopeKey,
+            replacements: cachedPreviewState.replacements,
+          }
+        : await resolveSiblingPreviewCandidates({
+            cwd: options.cwd,
+            input: value,
+            includeHidden: options.runtimeConfig.autocomplete.includeHidden,
+            maxSuggestions: options.runtimeConfig.autocomplete.maxSuggestions,
+            targetKind: options.suggestionFilter.targetKind,
+            fileExtensions: options.suggestionFilter.fileExtensions,
+          });
+
+    const previewAdvance = advanceSiblingPreview(interactionState, candidates, direction);
+    interactionState = previewAdvance.nextState;
+
+    if (!previewAdvance.changed) {
+      ghostSuffix = "";
+      return false;
+    }
+
+    ghostSuffix = deriveGhostSuffixFromPreview(value, previewAdvance.previewReplacement);
+    scheduleRender();
     return true;
   };
 
@@ -358,8 +437,14 @@ export async function promptPathInlineGhost(
             escapeSequenceBuffer === "\x1b[A" ||
             escapeSequenceBuffer === "\x1b[B"
           ) {
+            const direction: SiblingPreviewDirection =
+              key.name === "up" || escapeSequenceBuffer === "\x1b[A" ? "previous" : "next";
             escapeSequenceBuffer = "";
-            scheduleRender();
+            const navigated = await browseSiblingPreview(direction);
+            if (!navigated) {
+              beep(stdout);
+              scheduleRender();
+            }
             return;
           }
 
@@ -399,6 +484,11 @@ export async function promptPathInlineGhost(
         }
 
         if (key.name === "tab") {
+          const acceptedPreview = await acceptActiveSiblingPreview();
+          if (acceptedPreview) {
+            return;
+          }
+
           const cycled = await startOrAdvanceCycle();
           if (!cycled) {
             beep(stdout);
@@ -426,15 +516,18 @@ export async function promptPathInlineGhost(
         }
 
         if (key.name === "up" || key.name === "down") {
-          // Explicit no-op for MVP (no per-prompt history yet).
-          scheduleRender();
+          const navigated = await browseSiblingPreview(key.name === "up" ? "previous" : "next");
+          if (!navigated) {
+            beep(stdout);
+            scheduleRender();
+          }
           return;
         }
 
         if (key.ctrl && key.name === "u") {
           value = "";
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }
@@ -447,7 +540,7 @@ export async function promptPathInlineGhost(
           }
           value = value.slice(0, -1);
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }
@@ -455,7 +548,7 @@ export async function promptPathInlineGhost(
         if (isPrintableInput(str, key)) {
           value += str;
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }

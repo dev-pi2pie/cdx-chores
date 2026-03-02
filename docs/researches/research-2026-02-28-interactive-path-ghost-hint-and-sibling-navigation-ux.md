@@ -1,7 +1,8 @@
 ---
 title: "Interactive path ghost hint and sibling navigation UX research"
 created-date: 2026-02-28
-status: draft
+modified-date: 2026-03-02
+status: completed
 agent: codex
 ---
 
@@ -117,16 +118,21 @@ If these states are not visually distinct enough, navigation may feel ambiguous.
 
 ## Open Questions
 
-- Should `Up` and `Down` wrap around at the ends of the sibling list, or stop and beep?
-- Should sibling navigation work when the current segment prefix is empty, such as `./docs/`?
-- When a sibling candidate is selected with arrows, is it immediately written into the input, or previewed as a ghost state first?
-- Should directories sort before files during sibling navigation?
-- Should hidden entries participate in sibling navigation only when hidden-file suggestions are enabled globally?
-- How should `Tab` cycling interact with an active sibling-navigation state?
+Resolved on 2026-03-02:
+
+- `Up` and `Down` should wrap around at the ends of the sibling list.
+- Sibling navigation should work when the current segment prefix is empty, including root-level cases such as `./`.
+- Arrow-selected sibling candidates should be previewed as ghost state first, not immediately written into the committed input.
+- Directories should sort before files during sibling navigation.
+- Hidden entries should stay excluded from sibling browsing when hidden suggestions are globally disabled, with one exception: explicit dot-prefix typing (for example `./.g`) may reveal hidden matches via ghost hint even when the global hidden toggle is off.
+- `Tab` should accept the active sibling-navigation preview.
+
+These decisions were implemented and manually validated on 2026-03-02.
 
 ## Related Plans
 
 - `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
 
 ## Related Research
 
