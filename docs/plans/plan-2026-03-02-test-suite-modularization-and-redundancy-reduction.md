@@ -60,9 +60,9 @@ That lower-level coverage is good, but some controller/action files are still re
 
 ### Rename workflow modularization
 
-- split `src/cli/actions/rename.ts` into smaller implementation units
-- extract shared reporting, Codex orchestration, and CSV-plan concerns where practical
-- align file boundaries with the new test boundaries where possible
+- replace the single `src/cli/actions/rename.ts` hotspot with a `src/cli/actions/rename/` module folder
+- separate batch flow, single-file flow, apply flow, and shared helper concerns into child files with clear ownership
+- align source boundaries with the new test boundaries where possible
 
 ### Verification and docs
 
@@ -94,21 +94,21 @@ test/
 Recommended source target structure:
 
 ```text
-src/cli/actions/
-  rename.ts                         # keep public action exports thin
-  rename-batch.ts                   # batch action orchestration
-  rename-file.ts                    # single-file action orchestration
-  rename-filters.ts                 # batch filter/profile/regex/extension helpers
-  rename-reporting.ts               # preview/summary printing helpers
-  rename-codex.ts                   # codex analyzer orchestration helpers
-  rename-plan-output.ts             # plan csv row building/writing helpers
+src/cli/actions/rename/
+  index.ts                          # thin public action surface
+  batch.ts                          # batch action orchestration
+  file.ts                           # single-file action orchestration
+  apply.ts                          # apply action wrapper
+  filters.ts                        # batch filter/profile/regex/extension helpers
+  reporting.ts                      # preview/summary printing helpers
+  codex.ts                          # codex analyzer orchestration helpers
+  plan-output.ts                    # plan csv row building/writing helpers
 ```
 
 Notes:
 
-- `actionRenameApply()` is already a very thin wrapper today, so it does not need its own tiny module by default.
-- If apply-related logic is moved, prefer grouping it with CSV plan helpers rather than extracting a trivially small `rename-apply.ts`.
-- The exact filenames can change during implementation if a simpler boundary emerges, but the end state should remove the current single-file concentration.
+- `actionRenameApply()` is already a very thin wrapper today, so its module should stay intentionally small.
+- The exact filenames can still change during implementation if a simpler boundary emerges, but the end state should remove the old single-file concentration and make `rename/` the canonical module root.
 
 ## Phases
 
@@ -116,103 +116,101 @@ Notes:
 
 ### Task Items
 
-- [ ] map each large test file to the exact behavior families it owns today
-- [ ] mark which behaviors already have direct lower-level coverage and should not be asserted repeatedly at the action/controller layer
-- [ ] define the minimum action-level smoke coverage to keep for:
-  - [ ] rename batch preview output
-  - [ ] rename apply replay flow
-  - [ ] path inline controller lifecycle
-- [ ] produce a literal keep/move/remove decision matrix with one row per existing test case in each heavy file and columns for:
-  - [ ] keep in place
-  - [ ] move to target file
-  - [ ] merge into another case
-  - [ ] remove because covered by another test
-- [ ] record which tests are duplicate-in-spirit versus merely heavy but still distinct
-- [ ] confirm the planned splits do not leave any user-visible contract with only one brittle assertion path
-- [ ] explicitly map timestamp and serial-order coverage to its intended long-term file home
+- [x] map each large test file to the exact behavior families it owns today
+- [x] mark which behaviors already have direct lower-level coverage and should not be asserted repeatedly at the action/controller layer
+- [x] define the minimum action-level smoke coverage to keep for:
+  - [x] rename batch preview output
+  - [x] rename apply replay flow
+  - [x] path inline controller lifecycle
+- [x] produce a literal keep/move/remove decision matrix with one row per existing test case in each heavy file and columns for:
+  - [x] keep in place
+  - [x] move to target file
+  - [x] merge into another case
+  - [x] remove because covered by another test
+- [x] record which tests are duplicate-in-spirit versus merely heavy but still distinct
+- [x] confirm the planned splits do not leave any user-visible contract with only one brittle assertion path
+- [x] explicitly map timestamp and serial-order coverage to its intended long-term file home
 
 ### Findings Addressed
 
-- [ ] preview behavior is tested both in `test/cli-rename-preview.test.ts` and `test/cli-actions-rename-batch-core.test.ts`
-- [ ] path inline behavior is tested both in helper/state files and in `test/cli-path-inline.test.ts`
+- [x] preview behavior is tested both in `test/cli-rename-preview.test.ts` and `test/cli-actions-rename-batch-core.test.ts`
+- [x] path inline behavior is tested both in helper/state files and in `test/cli-path-inline.test.ts`
 
 ### Phase Deliverable
 
-- [ ] a literal keep/move/remove matrix for each heavy test file, including timestamp and serial coverage ownership
+- [x] a literal keep/move/remove matrix for each heavy test file, including timestamp and serial coverage ownership
 
 ## Phase 2: Split and compact rename batch tests
 
 ### Task Items
 
-- [ ] split `test/cli-actions-rename-batch-core.test.ts` by responsibility
-- [ ] move recursion and symlink coverage into `test/cli-actions-rename-batch-recursion.test.ts`
-- [ ] move regex, extension, and profile filter coverage into `test/cli-actions-rename-batch-filters.test.ts`
-- [ ] move compact preview and skipped-detail output coverage into `test/cli-actions-rename-batch-preview.test.ts`
-- [ ] keep `test/cli-actions-rename-batch-core.test.ts` focused on:
-  - [ ] dry-run happy path
-  - [ ] apply happy path
-  - [ ] empty-directory behavior
-  - [ ] one representative preview/reporting integration assertion
-- [ ] decide explicitly whether timestamp and serial-order batch assertions should:
-  - [ ] stay in `test/cli-actions-rename-batch-core.test.ts` as small core coverage
-  - [ ] move into `test/cli-actions-rename-timestamp.test.ts`
-- [ ] remove or merge repetitive preview assertions that are already guaranteed by `test/cli-rename-preview.test.ts`
+- [x] split `test/cli-actions-rename-batch-core.test.ts` by responsibility
+- [x] move recursion and symlink coverage into `test/cli-actions-rename-batch-recursion.test.ts`
+- [x] move regex, extension, and profile filter coverage into `test/cli-actions-rename-batch-filters.test.ts`
+- [x] move compact preview and skipped-detail output coverage into `test/cli-actions-rename-batch-preview.test.ts`
+- [x] keep `test/cli-actions-rename-batch-core.test.ts` focused on:
+  - [x] dry-run happy path
+  - [x] apply happy path
+  - [x] empty-directory behavior
+  - [x] one representative preview/reporting integration assertion
+- [x] decide explicitly whether timestamp and serial-order batch assertions should:
+  - [x] stay in `test/cli-actions-rename-batch-core.test.ts` as small core coverage
+  - [x] move into `test/cli-actions-rename-timestamp.test.ts`
+- [x] remove or merge repetitive preview assertions that are already guaranteed by `test/cli-rename-preview.test.ts`
 
 ### Findings Addressed
 
-- [ ] `test/cli-actions-rename-batch-core.test.ts` is too large and currently mixes unrelated concerns
-- [ ] compact truncation, changed-row preference, and skipped-detail rendering are already covered directly in `test/cli-rename-preview.test.ts`
+- [x] `test/cli-actions-rename-batch-core.test.ts` is too large and currently mixes unrelated concerns
+- [x] compact truncation, changed-row preference, and skipped-detail rendering are already covered directly in `test/cli-rename-preview.test.ts`
 
 ### Phase Deliverable
 
-- [ ] batch rename tests are separated by behavior area and the old mixed bucket is materially smaller
+- [x] batch rename tests are separated by behavior area and the old mixed bucket is materially smaller
 
 ## Phase 3: Split rename apply replay vs validation coverage
 
 ### Task Items
 
-- [ ] split `test/cli-actions-rename-apply.test.ts` into replay-focused and validation-focused files
-- [ ] keep dry-run CSV generation, replay apply, and auto-clean coverage together in `test/cli-actions-rename-apply-replay.test.ts`
-- [ ] move CSV schema and row validation failures into `test/cli-actions-rename-apply-validation.test.ts`
-- [ ] factor shared CSV row/header fixture builders into a small helper if both new files need them
-- [ ] ensure lenient inspection-read coverage remains explicit and is not lost during the split
+- [x] split `test/cli-actions-rename-apply.test.ts` into replay-focused and validation-focused files
+- [x] keep dry-run CSV generation, replay apply, and auto-clean coverage together in `test/cli-actions-rename-apply-replay.test.ts`
+- [x] move CSV schema and row validation failures into `test/cli-actions-rename-apply-validation.test.ts`
+- [x] factor shared CSV row/header fixture builders into a small helper if both new files need them
+- [x] ensure lenient inspection-read coverage remains explicit and is not lost during the split
 
 ### Findings Addressed
 
-- [ ] `test/cli-actions-rename-apply.test.ts` is heavy due to mixed responsibilities more than true redundancy
+- [x] `test/cli-actions-rename-apply.test.ts` is heavy due to mixed responsibilities more than true redundancy
 
 ### Phase Deliverable
 
-- [ ] rename apply tests clearly separate success-path replay behavior from validation behavior
+- [x] rename apply tests clearly separate success-path replay behavior from validation behavior
 
 ## Phase 4: Modularize rename action implementation
 
 ### Priority Note
 
-- [ ] treat this as higher priority than path inline test compaction because it addresses the main 1180-line source hotspot
+- [x] treat this as higher priority than path inline test compaction because it addresses the main 1180-line source hotspot
 
 ### Task Items
 
-- [ ] extract batch-specific orchestration from `src/cli/actions/rename.ts`
-- [ ] extract single-file orchestration from `src/cli/actions/rename.ts`
-- [ ] extract shared batch filter/profile/regex/extension normalization helpers into:
-  - [ ] `src/cli/actions/rename-filters.ts`
-  - [ ] or a clearly bounded section of `rename-batch.ts`
-- [ ] extract shared dry-run/report printing helpers
-- [ ] extract Codex analyzer orchestration helpers shared by batch and file flows
-- [ ] extract rename plan CSV row creation and output helpers if that boundary reduces duplication
-- [ ] keep `src/cli/actions/rename.ts` as a thin public surface or compatibility layer if needed
-- [ ] keep `actionRenameApply()` in the thin surface layer unless a larger plan/csv module makes grouping more coherent
-- [ ] preserve all current option handling and messaging semantics through focused tests
+- [x] move batch-specific orchestration into `src/cli/actions/rename/batch.ts`
+- [x] move single-file orchestration into `src/cli/actions/rename/file.ts`
+- [x] move shared batch filter/profile/regex/extension normalization helpers into `src/cli/actions/rename/filters.ts`
+- [x] extract shared dry-run/report printing helpers
+- [x] extract Codex analyzer orchestration helpers shared by batch and file flows
+- [x] extract rename plan CSV row creation and output helpers if that boundary reduces duplication
+- [x] keep `src/cli/actions/rename/index.ts` as a thin public surface over the child modules
+- [x] keep `actionRenameApply()` as a thin wrapper inside the `rename/` module
+- [x] preserve all current option handling and messaging semantics through focused tests
 
 ### Findings Addressed
 
-- [ ] `src/cli/actions/rename.ts` remains the main implementation hotspot and the current test concentration mirrors that source concentration
-- [ ] filter/profile/regex/extension helpers currently lack an explicit target extraction boundary in the original plan
+- [x] `src/cli/actions/rename.ts` remains the main implementation hotspot and the current test concentration mirrors that source concentration
+- [x] filter/profile/regex/extension helpers currently lack an explicit target extraction boundary in the original plan
 
 ### Phase Deliverable
 
-- [ ] rename actions are split into smaller modules with clearer ownership and a thinner top-level entry file
+- [x] rename actions live under `src/cli/actions/rename/` with clearer ownership and a thin top-level `index.ts`
 
 ## Phase 5: Reduce path inline controller duplication
 
@@ -247,9 +245,9 @@ Notes:
 
 ### Task Items
 
-- [ ] rerun focused tests after each split or extraction step
-- [ ] run the full test suite after the refactor settles
-- [ ] update or add job records for concrete implementation passes
+- [x] rerun focused tests after each split or extraction step
+- [x] run the full test suite after the refactor settles
+- [x] update or add job records for concrete implementation passes
 - [ ] update this plan with `modified-date` when implementation materially changes its scope or sequencing
 - [ ] confirm no audit-backed task item was dropped silently during execution
 
@@ -261,29 +259,29 @@ Notes:
 
 ### Functional checks
 
-- [ ] `bun test test/cli-rename-preview.test.ts`
-- [ ] `bun test test/cli-actions-rename-batch-core.test.ts`
-- [ ] `bun test test/cli-actions-rename-batch-filters.test.ts`
-- [ ] `bun test test/cli-actions-rename-batch-recursion.test.ts`
-- [ ] `bun test test/cli-actions-rename-batch-preview.test.ts`
-- [ ] `bun test test/cli-actions-rename-apply-replay.test.ts`
-- [ ] `bun test test/cli-actions-rename-apply-validation.test.ts`
-- [ ] `bun test test/cli-actions-rename-timestamp.test.ts`
-- [ ] `bun test test/cli-path-inline.test.ts`
-- [ ] `bun test test/cli-path-inline-state.test.ts`
-- [ ] `bun test test/cli-path-sibling-preview.test.ts`
-- [ ] `bun test test/cli-path-suggestions.test.ts`
+- [x] `bun test test/cli-rename-preview.test.ts`
+- [x] `bun test test/cli-actions-rename-batch-core.test.ts`
+- [x] `bun test test/cli-actions-rename-batch-filters.test.ts`
+- [x] `bun test test/cli-actions-rename-batch-recursion.test.ts`
+- [x] `bun test test/cli-actions-rename-batch-preview.test.ts`
+- [x] `bun test test/cli-actions-rename-apply-replay.test.ts`
+- [x] `bun test test/cli-actions-rename-apply-validation.test.ts`
+- [x] `bun test test/cli-actions-rename-timestamp.test.ts`
+- [x] `bun test test/cli-path-inline.test.ts`
+- [x] `bun test test/cli-path-inline-state.test.ts`
+- [x] `bun test test/cli-path-sibling-preview.test.ts`
+- [x] `bun test test/cli-path-suggestions.test.ts`
 
 ### Structural checks
 
-- [ ] no new oversized mixed-responsibility test bucket replaces the current ones
-- [ ] `src/cli/actions/rename.ts` is materially smaller than 1180 lines
-- [ ] each new test file name reflects a single behavior area
+- [x] no new oversized mixed-responsibility test bucket replaces the current ones
+- [x] `src/cli/actions/rename.ts` is materially smaller than 1180 lines
+- [x] each new test file name reflects a single behavior area
 
 ### Quality checks
 
-- [ ] `bun test`
-- [ ] `bunx tsc --noEmit`
+- [x] `bun test`
+- [x] `bunx tsc --noEmit`
 - [ ] `bunx oxlint --tsconfig tsconfig.json src test scripts`
 
 ## Risks and Mitigations
