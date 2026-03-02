@@ -2,7 +2,7 @@
 title: "Test suite modularization and redundancy reduction"
 created-date: 2026-03-02
 modified-date: 2026-03-02
-status: active
+status: completed
 agent: codex
 ---
 
@@ -248,12 +248,12 @@ Notes:
 - [x] rerun focused tests after each split or extraction step
 - [x] run the full test suite after the refactor settles
 - [x] update or add job records for concrete implementation passes
-- [ ] update this plan with `modified-date` when implementation materially changes its scope or sequencing
-- [ ] confirm no audit-backed task item was dropped silently during execution
+- [x] update this plan with `modified-date` when implementation materially changes its scope or sequencing
+- [x] confirm no audit-backed task item was dropped silently during execution
 
 ### Phase Deliverable
 
-- [ ] the refactor lands with preserved behavior, smaller files, and traceable documentation
+- [x] the refactor lands with preserved behavior, smaller files, and traceable documentation
 
 ## Verification Plan
 
@@ -282,7 +282,7 @@ Notes:
 
 - [x] `bun test`
 - [x] `bunx tsc --noEmit`
-- [ ] `bunx oxlint --tsconfig tsconfig.json src test scripts`
+- [x] `bunx oxlint --tsconfig tsconfig.json src test scripts`
 
 ## Risks and Mitigations
 

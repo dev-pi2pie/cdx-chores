@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameApply } from "../src/cli/actions";

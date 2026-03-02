@@ -11,7 +11,6 @@ import {
 import {
   captureRenamePlanCsvSnapshot,
   cleanupRenamePlanCsvSinceSnapshot,
-  expectCliError,
   removeIfPresent,
 } from "./helpers/cli-action-test-utils";
 
