@@ -1,6 +1,7 @@
 ---
 title: "Interactive path sibling navigation and ghost preview implementation plan"
 created-date: 2026-03-02
+modified-date: 2026-03-02
 status: draft
 agent: codex
 ---
@@ -99,8 +100,10 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 ### Task Items
 
 - [ ] add internal prompt state for sibling candidate list, active preview index, and preview replacement
+- [ ] define how sibling-preview mode abandons any active legacy `Tab` cycle state
 - [ ] define helper functions for deriving a ghost suffix from the active preview
 - [ ] reset preview state on typing, backspace, clear, and parent-segment navigation
+- [ ] clear the sibling candidate cache as part of full-input reset actions such as `Ctrl+U`
 - [ ] document the precedence between active preview acceptance and legacy `Tab` cycling
 
 ### Phase Deliverable
@@ -113,7 +116,9 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 - [ ] add a sibling-resolution helper for the current segment scope
 - [ ] support empty-fragment browsing inside a resolved parent directory
+- [ ] cache the resolved sibling set per segment scope and invalidate it only when that scope changes
 - [ ] implement previous/next navigation with wrap-around semantics
+- [ ] treat a one-candidate sibling set as wrap-to-self and beep only when there are zero candidates
 - [ ] apply directory-first sorting and max-suggestion limits consistently
 - [ ] implement the hidden-entry policy for both empty-fragment browsing and explicit dot-prefix access
 
@@ -127,7 +132,9 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 - [ ] replace the current `Up` / `Down` no-op behavior with sibling preview navigation
 - [ ] make `Tab` accept the active sibling preview before falling back to existing completion/cycle logic
+- [ ] make `Up` / `Down` abandon any active legacy `Tab` cycle and enter sibling-preview mode
 - [ ] keep `Right Arrow` accepting the visible ghost preview
+- [ ] refresh ghost/completion state immediately after accepting a sibling preview so the next `Tab` operates on the new value
 - [ ] beep only when there are no siblings to browse or no preview to accept
 
 ### Phase Deliverable
@@ -151,7 +158,9 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 - Prefer extending the existing suggestion engine instead of duplicating filesystem traversal logic.
 - Treat sibling navigation as a segment-local concern: resolve `parent path + current fragment`, never rewrite earlier segments during preview.
+- Resolve and cache the sibling candidate list once per segment-scope change; `Up` / `Down` should move within that cached set instead of triggering a fresh filesystem read on every keypress.
 - Keep the committed `value` string authoritative for validation and submission until the user explicitly accepts a preview.
+- Entering sibling-preview mode should abandon any active legacy `cycleState`, and accepting a sibling preview should also clear legacy cycle state before refreshing completions for the new committed value.
 - Derive rendered ghost text from either:
   - the active sibling preview when one exists
   - the current best completion candidate otherwise
