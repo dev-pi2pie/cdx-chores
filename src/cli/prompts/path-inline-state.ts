@@ -105,6 +105,31 @@ export function deriveGhostSuffixFromPreview(
   return previewReplacement.slice(value.length);
 }
 
+export function derivePreferredGhostSuffix(options: {
+  value: string;
+  state: InlinePromptInteractionState;
+  fallbackReplacement?: string;
+}): string {
+  const previewGhostSuffix = deriveGhostSuffixFromPreview(
+    options.value,
+    getActiveSiblingPreviewReplacement(options.state),
+  );
+  if (previewGhostSuffix.length > 0) {
+    return previewGhostSuffix;
+  }
+
+  const fallbackReplacement = options.fallbackReplacement;
+  if (
+    !fallbackReplacement ||
+    !fallbackReplacement.startsWith(options.value) ||
+    fallbackReplacement.length <= options.value.length
+  ) {
+    return "";
+  }
+
+  return fallbackReplacement.slice(options.value.length);
+}
+
 export function acceptSiblingPreview(
   value: string,
   state: InlinePromptInteractionState,

@@ -6,6 +6,7 @@ import {
   acceptSiblingPreview,
   clearInteractionState,
   deriveGhostSuffixFromPreview,
+  derivePreferredGhostSuffix,
   getActiveSiblingPreviewReplacement,
   setCycleState,
   type SiblingPreviewDirection,
@@ -171,10 +172,10 @@ export async function promptPathInlineGhost(
 
   const computeGhostSuffix = async (): Promise<void> => {
     const refreshSeq = ++activeRefreshSeq;
-    const previewGhostSuffix = deriveGhostSuffixFromPreview(
+    const previewGhostSuffix = derivePreferredGhostSuffix({
       value,
-      getActiveSiblingPreviewReplacement(interactionState),
-    );
+      state: interactionState,
+    });
     if (previewGhostSuffix.length > 0) {
       ghostSuffix = previewGhostSuffix;
       return;
@@ -194,13 +195,11 @@ export async function promptPathInlineGhost(
       return;
     }
 
-    const best = suggestions[0];
-    if (!best || !best.replacement.startsWith(value) || best.replacement.length <= value.length) {
-      ghostSuffix = "";
-      return;
-    }
-
-    ghostSuffix = best.replacement.slice(value.length);
+    ghostSuffix = derivePreferredGhostSuffix({
+      value,
+      state: interactionState,
+      fallbackReplacement: suggestions[0]?.replacement,
+    });
   };
 
   const refreshGhost = async (): Promise<void> => {

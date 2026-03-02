@@ -5,6 +5,7 @@ import {
   advanceSiblingPreview,
   clearInteractionState,
   deriveGhostSuffixFromPreview,
+  derivePreferredGhostSuffix,
   enterSiblingPreviewState,
   getActiveSiblingPreviewReplacement,
   setCycleState,
@@ -90,6 +91,32 @@ describe("inline path prompt interaction state", () => {
     expect(deriveGhostSuffixFromPreview("./docs/", "./other/")).toBe("");
     expect(deriveGhostSuffixFromPreview("./docs/", "./docs/")).toBe("");
     expect(deriveGhostSuffixFromPreview("./docs/", undefined)).toBe("");
+  });
+
+  test("derivePreferredGhostSuffix keeps an active sibling preview ahead of fallback suggestions", () => {
+    const previewState = enterSiblingPreviewState(clearInteractionState(), {
+      scopeKey: "./docs/",
+      replacements: ["./docs/researches/"],
+      activeIndex: 0,
+    });
+
+    expect(
+      derivePreferredGhostSuffix({
+        value: "./docs/",
+        state: previewState,
+        fallbackReplacement: "./docs/guides/",
+      }),
+    ).toBe("researches/");
+  });
+
+  test("derivePreferredGhostSuffix falls back to the best suggestion when no preview is active", () => {
+    expect(
+      derivePreferredGhostSuffix({
+        value: "./docs/",
+        state: clearInteractionState(),
+        fallbackReplacement: "./docs/guides/",
+      }),
+    ).toBe("guides/");
   });
 
   test("advanceSiblingPreview wraps through the cached sibling set", () => {
