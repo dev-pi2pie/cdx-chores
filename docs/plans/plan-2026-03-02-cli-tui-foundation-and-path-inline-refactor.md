@@ -1,7 +1,8 @@
 ---
 title: "CLI TUI foundation and path inline refactor"
 created-date: 2026-03-02
-status: draft
+modified-date: 2026-03-02
+status: completed
 agent: codex
 ---
 
@@ -129,74 +130,74 @@ Recommended responsibilities:
 
 ### Task Items
 
-- [ ] identify the exact raw-session responsibilities currently embedded in `src/cli/prompts/path-inline.ts`
-- [ ] extract cursor hide/show, raw-mode enable/disable, stdin resume/pause, and cleanup sequencing into `src/cli/tui/raw-session.ts`
-- [ ] make `raw-session.ts` own `emitKeypressEvents(stdin)` as part of session setup
-- [ ] support prompt-local teardown hooks so path-inline-specific timers/buffers can still be cleaned up without moving prompt state into `src/cli/tui/`
-- [ ] preserve current prompt cleanup guarantees on success, abort, and thrown error paths
-- [ ] keep the extracted API small and synchronous where possible
+- [x] identify the exact raw-session responsibilities currently embedded in `src/cli/prompts/path-inline.ts`
+- [x] extract cursor hide/show, raw-mode enable/disable, stdin resume/pause, and cleanup sequencing into `src/cli/tui/raw-session.ts`
+- [x] make `raw-session.ts` own `emitKeypressEvents(stdin)` as part of session setup
+- [x] support prompt-local teardown hooks so path-inline-specific timers/buffers can still be cleaned up without moving prompt state into `src/cli/tui/`
+- [x] preserve current prompt cleanup guarantees on success, abort, and thrown error paths
+- [x] keep the extracted API small and synchronous where possible
 
 ### Phase Deliverable
 
-- [ ] `path-inline.ts` no longer owns low-level raw-session lifecycle directly
+- [x] `path-inline.ts` no longer owns low-level raw-session lifecycle directly
 
 ## Phase 2: Extract key normalization and escape handling
 
 ### Task Items
 
-- [ ] identify the current escape-sequence buffering logic and arrow-key decoding in `src/cli/prompts/path-inline.ts`
-- [ ] extract that logic into `src/cli/tui/keys.ts` as an explicit stateful escape/key parser rather than vague stateless helpers
-- [ ] provide a normalized key event shape that the path prompt controller can consume
-- [ ] preserve existing support for `Tab`, `Enter`, `Backspace`, `Ctrl+C`, `Ctrl+U`, arrows, and `Esc`
+- [x] identify the current escape-sequence buffering logic and arrow-key decoding in `src/cli/prompts/path-inline.ts`
+- [x] extract that logic into `src/cli/tui/keys.ts` as an explicit stateful escape/key parser rather than vague stateless helpers
+- [x] provide a normalized key event shape that the path prompt controller can consume
+- [x] preserve existing support for `Tab`, `Enter`, `Backspace`, `Ctrl+C`, `Ctrl+U`, arrows, and `Esc`
 
 ### Phase Deliverable
 
-- [ ] key interpretation is reusable, stateful where necessary, and path-inline-specific branching is reduced
+- [x] key interpretation is reusable, stateful where necessary, and path-inline-specific branching is reduced
 
 ## Phase 3: Extract render helpers and shrink path-inline controller scope
 
 ### Task Items
 
-- [ ] move generic line-clearing, cursor-movement, `beep`, and dim/styling helpers into `src/cli/tui/screen.ts`
-- [ ] keep prompt-line composition either in `path-inline.ts` or a path-specific helper, depending on whether it remains path-specific
-- [ ] leave `path-inline.ts` responsible mainly for:
+- [x] move generic line-clearing, cursor-movement, `beep`, and dim/styling helpers into `src/cli/tui/screen.ts`
+- [x] keep prompt-line composition either in `path-inline.ts` or a path-specific helper, depending on whether it remains path-specific
+- [x] leave `path-inline.ts` responsible mainly for:
   - prompt-local state
   - invoking path suggestion helpers
   - mapping normalized keys to prompt actions
   - scheduling rerenders
-- [ ] confirm the file becomes materially smaller and easier to scan
+- [x] confirm the file becomes materially smaller and easier to scan
 
 ### Phase Deliverable
 
-- [ ] `path-inline.ts` is reduced to a focused controller instead of a mixed engine/controller file
+- [x] `path-inline.ts` is reduced to a focused controller instead of a mixed engine/controller file
 
 ## Phase 4: Record future viewport boundary without forcing implementation
 
 ### Task Items
 
-- [ ] document the desired row-window concerns for a future table viewer:
+- [x] document the desired row-window concerns for a future table viewer:
   - visible count
   - offset clamping
   - page up/down movement
   - home/end movement
-- [ ] explicitly defer `src/cli/tui/viewport.ts` implementation until a real table/preview consumer exists, unless the extraction work reveals an immediate generic use case
+- [x] explicitly defer `src/cli/tui/viewport.ts` implementation until a real table/preview consumer exists, unless the extraction work reveals an immediate generic use case
 
 ### Phase Deliverable
 
-- [ ] the future table/preview plan has a clearer boundary without forcing premature API design in this refactor
+- [x] the future table/preview plan has a clearer boundary without forcing premature API design in this refactor
 
 ## Phase 5: Tests, docs, and lint posture
 
 ### Task Items
 
-- [ ] add focused unit coverage for extracted helpers where behavior is deterministic and non-trivial
-- [ ] rerun the current path prompt tests to confirm no behavior regression
-- [ ] add a short architecture note or plan follow-up note if file placement needs explanation for later agents
-- [ ] keep `.oxlintrc.json` unchanged unless a concrete false-positive case proves a narrowly scoped exception is necessary
+- [x] add focused unit coverage for extracted helpers where behavior is deterministic and non-trivial
+- [x] rerun the current path prompt tests to confirm no behavior regression
+- [x] add a short architecture note or plan follow-up note if file placement needs explanation for later agents
+- [x] keep `.oxlintrc.json` unchanged unless a concrete false-positive case proves a narrowly scoped exception is necessary
 
 ### Phase Deliverable
 
-- [ ] the TUI foundation refactor lands without UX regression or lint-quality backsliding
+- [x] the TUI foundation refactor lands without UX regression or lint-quality backsliding
 
 ## Technical Design Notes
 
@@ -208,6 +209,7 @@ Recommended responsibilities:
 - Treat alternate-screen support as optional follow-up capability for future table views, not a requirement for the first refactor pass.
 - `raw-session.ts` should own generic terminal session setup, including `emitKeypressEvents(stdin)`, while still allowing prompt-local teardown hooks for timers, escape buffers, or controller-specific listener cleanup.
 - `keys.ts` should model the current behavior as a stateful parser/session object, because the existing escape handling is not just pure input normalization.
+- `keys.ts` remains callback-based for bare-escape abort rather than returning a separate `escape-abort` event; the API should not mix both models.
 - `screen.ts` should justify its existence by owning reusable terminal output helpers such as `clearLine`, `beep`, `dim`, and cursor movement helpers.
 - Keep unused-variable lint warnings enabled. During refactor work, remove dead bindings instead of normalizing them away through looser config.
 
@@ -215,27 +217,27 @@ Recommended responsibilities:
 
 ### Functional checks
 
-- [ ] current advanced path prompt still supports ghost suffix rendering
-- [ ] `Tab` completion/cycling behavior remains intact
-- [ ] `Right Arrow` still accepts ghost text
-- [ ] `Left Arrow` still navigates to the parent segment
-- [ ] sibling preview with `Up` / `Down` still works
-- [ ] `Ctrl+U`, `Backspace`, `Enter`, and `Esc` behavior remain intact
-- [ ] simple fallback prompt still activates correctly when advanced mode is unavailable
-- [ ] add at least one controller-level integration test for `promptPathInlineGhost()` using mock stdin/stdout so the refactor is not validated only through helper-module tests and manual QA
+- [x] current advanced path prompt still supports ghost suffix rendering
+- [x] `Tab` completion/cycling behavior remains intact
+- [x] `Right Arrow` still accepts ghost text
+- [x] `Left Arrow` still navigates to the parent segment
+- [x] sibling preview with `Up` / `Down` still works
+- [x] `Ctrl+U`, `Backspace`, `Enter`, and `Esc` behavior remain intact
+- [x] simple fallback prompt still activates correctly when advanced mode is unavailable
+- [x] add at least one controller-level integration test for `promptPathInlineGhost()` using mock stdin/stdout so the refactor is not validated only through helper-module tests and manual QA
 
 ### Structural checks
 
-- [ ] `src/cli/tui/` contains only reusable terminal primitives
-- [ ] `src/cli/prompts/path-inline.ts` is materially smaller than before
-- [ ] no path-specific filesystem suggestion code is moved into `src/cli/tui/`
-- [ ] no forced `viewport.ts` lands unless a real extracted consumer appears during the refactor
+- [x] `src/cli/tui/` contains only reusable terminal primitives
+- [x] `src/cli/prompts/path-inline.ts` is materially smaller than before
+- [x] no path-specific filesystem suggestion code is moved into `src/cli/tui/`
+- [x] no forced `viewport.ts` lands unless a real extracted consumer appears during the refactor
 
 ### Quality checks
 
-- [ ] `bunx oxlint --tsconfig tsconfig.json src test scripts`
-- [ ] focused prompt-related tests pass
-- [ ] `bunx tsc --noEmit`
+- [x] `bunx oxlint --tsconfig tsconfig.json src test scripts`
+- [x] focused prompt-related tests pass
+- [x] `bunx tsc --noEmit`
 
 ## Risks and Mitigations
 
@@ -258,13 +260,16 @@ Recommended responsibilities:
 - clearer documented boundary for future table/preview viewport work without premature implementation
 - no global relaxation of unused-var linting
 
+## Related Guides
+
+- `docs/guides/cli-tui-architecture.md`
+
 ## Follow-up Jobs (After Plan Approval)
 
-- [ ] Job: extract raw-session and screen primitives from `src/cli/prompts/path-inline.ts`
-- [ ] Job: extract the stateful escape/key parser to `src/cli/tui/keys.ts`
-- [ ] Job: trim `src/cli/prompts/path-inline.ts` into a controller-only module
-- [ ] Job: add controller-level integration coverage for `promptPathInlineGhost()`
-- [ ] Job: run prompt regression tests and lint/type checks
+- [x] Job: extract raw-session and screen primitives from `src/cli/prompts/path-inline.ts`
+- [x] Job: extract the stateful escape/key parser to `src/cli/tui/keys.ts`
+- [x] Job: add controller-level integration coverage for `promptPathInlineGhost()`
+- [x] Job: run prompt regression tests and lint/type checks
 
 ## Related Research
 

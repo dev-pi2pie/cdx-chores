@@ -1,5 +1,14 @@
-import { emitKeypressEvents } from "node:readline";
-
+import {
+  beep,
+  clearCurrentLine,
+  createKeypressParser,
+  dim,
+  moveCursorLeft,
+  startRawSession,
+  supportsRawSessionIO,
+  type RawSession,
+  type RawSessionKeypressInfo,
+} from "../tui";
 import type { PathPromptRuntimeConfig } from "./path-config";
 import {
   advanceSiblingPreview,
@@ -7,7 +16,6 @@ import {
   clearInteractionState,
   deriveGhostSuffixFromPreview,
   derivePreferredGhostSuffix,
-  getActiveSiblingPreviewReplacement,
   setCycleState,
   type SiblingPreviewDirection,
   type InlinePromptInteractionState,
@@ -16,7 +24,11 @@ import {
   deriveSiblingPreviewScopeKey,
   resolveSiblingPreviewCandidates,
 } from "./path-sibling-preview";
-import { resolvePathSuggestions } from "./path-suggestions";
+import {
+  resolvePathSuggestions,
+  type PathSuggestion,
+  type ResolvePathSuggestionsOptions,
+} from "./path-suggestions";
 
 type ValidationFn = (value: string) => true | string | Promise<true | string>;
 
@@ -24,7 +36,7 @@ type SuggestionFilter =
   | { targetKind: "any" | "directory"; fileExtensions?: string[] }
   | { targetKind: "any" | "directory"; fileExtensions?: undefined };
 
-interface InlinePathPromptOptions {
+export interface InlinePathPromptOptions {
   message: string;
   cwd: string;
   kindLabel?: string;
@@ -36,41 +48,15 @@ interface InlinePathPromptOptions {
   stdout: NodeJS.WritableStream;
   validate: ValidationFn;
   suggestionFilter: SuggestionFilter;
+  resolveSuggestions?: (options: ResolvePathSuggestionsOptions) => Promise<PathSuggestion[]>;
 }
 
-interface KeypressInfo {
-  name?: string;
-  ctrl?: boolean;
-  meta?: boolean;
-  shift?: boolean;
-  sequence?: string;
-}
-
-function dim(text: string): string {
-  return text.length > 0 ? `\x1b[2m${text}\x1b[22m` : "";
-}
-
-function clearLine(stdout: NodeJS.WritableStream): void {
-  stdout.write("\r\x1b[2K");
-}
-
-function beep(stdout: NodeJS.WritableStream): void {
-  stdout.write("\x07");
-}
+type KeypressInfo = RawSessionKeypressInfo;
 
 function createPromptAbortError(): Error {
   const error = new Error("User aborted prompt");
   error.name = "ExitPromptError";
   return error;
-}
-
-function supportsRawPromptIO(stdin: NodeJS.ReadStream, stdout: NodeJS.WritableStream): boolean {
-  const stdoutWithTTY = stdout as NodeJS.WritableStream & { isTTY?: boolean };
-  return Boolean(
-    stdin.isTTY &&
-      stdoutWithTTY.isTTY &&
-      typeof (stdin as unknown as { setRawMode?: unknown }).setRawMode === "function",
-  );
 }
 
 function buildPromptLine(options: {
@@ -128,12 +114,12 @@ function moveToParentPathSegmentValue(value: string): string | undefined {
 export async function promptPathInlineGhost(
   options: InlinePathPromptOptions,
 ): Promise<string> {
-  if (!supportsRawPromptIO(options.stdin, options.stdout)) {
+  if (!supportsRawSessionIO(options.stdin, options.stdout)) {
     throw new Error("Inline path prompt requires TTY stdin/stdout with raw mode support");
   }
 
-  const stdinWithRawMode = options.stdin as NodeJS.ReadStream & { setRawMode(flag: boolean): void };
   const stdout = options.stdout;
+  const resolveSuggestions = options.resolveSuggestions ?? resolvePathSuggestions;
 
   let value = "";
   let ghostSuffix = "";
@@ -142,11 +128,13 @@ export async function promptPathInlineGhost(
   let resolvingSuggestions = false;
   let needsRefreshAgain = false;
   let activeRefreshSeq = 0;
-  let pendingEscapeAbortTimer: ReturnType<typeof setTimeout> | undefined;
-  let escapeSequenceBuffer = "";
+  let closed = false;
 
   const render = (): void => {
-    clearLine(stdout);
+    if (closed) {
+      return;
+    }
+    clearCurrentLine(stdout);
     const { line, cursorBackCount } = buildPromptLine({
       message: options.message,
       value,
@@ -154,12 +142,13 @@ export async function promptPathInlineGhost(
       showGhost: true,
     });
     stdout.write(line);
-    if (cursorBackCount > 0) {
-      stdout.write(`\x1b[${cursorBackCount}D`);
-    }
+    moveCursorLeft(stdout, cursorBackCount);
   };
 
   const scheduleRender = (): void => {
+    if (closed) {
+      return;
+    }
     if (renderScheduled) {
       return;
     }
@@ -171,6 +160,9 @@ export async function promptPathInlineGhost(
   };
 
   const computeGhostSuffix = async (): Promise<void> => {
+    if (closed) {
+      return;
+    }
     const refreshSeq = ++activeRefreshSeq;
     const previewGhostSuffix = derivePreferredGhostSuffix({
       value,
@@ -181,7 +173,7 @@ export async function promptPathInlineGhost(
       return;
     }
 
-    const suggestions = await resolvePathSuggestions({
+    const suggestions = await resolveSuggestions({
       cwd: options.cwd,
       input: value,
       minChars: options.runtimeConfig.autocomplete.minChars,
@@ -191,7 +183,7 @@ export async function promptPathInlineGhost(
       fileExtensions: options.suggestionFilter.fileExtensions,
     });
 
-    if (refreshSeq !== activeRefreshSeq) {
+    if (closed || refreshSeq !== activeRefreshSeq) {
       return;
     }
 
@@ -203,6 +195,9 @@ export async function promptPathInlineGhost(
   };
 
   const refreshGhost = async (): Promise<void> => {
+    if (closed) {
+      return;
+    }
     if (resolvingSuggestions) {
       needsRefreshAgain = true;
       return;
@@ -213,11 +208,16 @@ export async function promptPathInlineGhost(
       await computeGhostSuffix();
     } finally {
       resolvingSuggestions = false;
-      scheduleRender();
-      if (needsRefreshAgain) {
-        needsRefreshAgain = false;
-        void refreshGhost();
-      }
+    }
+
+    if (closed) {
+      return;
+    }
+
+    scheduleRender();
+    if (needsRefreshAgain) {
+      needsRefreshAgain = false;
+      void refreshGhost();
     }
   };
 
@@ -235,7 +235,7 @@ export async function promptPathInlineGhost(
       return true;
     }
 
-    const suggestions = await resolvePathSuggestions({
+    const suggestions = await resolveSuggestions({
       cwd: options.cwd,
       input: value,
       minChars: options.runtimeConfig.autocomplete.minChars,
@@ -273,23 +273,6 @@ export async function promptPathInlineGhost(
 
   const resetInteractionState = (): void => {
     interactionState = clearInteractionState();
-  };
-
-  const clearPendingEscapeAbort = (): void => {
-    if (!pendingEscapeAbortTimer) {
-      return;
-    }
-    clearTimeout(pendingEscapeAbortTimer);
-    pendingEscapeAbortTimer = undefined;
-  };
-
-  const scheduleEscapeAbort = (settleReject: (error: unknown) => void): void => {
-    clearPendingEscapeAbort();
-    pendingEscapeAbortTimer = setTimeout(() => {
-      pendingEscapeAbortTimer = undefined;
-      escapeSequenceBuffer = "";
-      settleReject(createPromptAbortError());
-    }, 120);
   };
 
   const acceptGhostSuffix = async (): Promise<boolean> => {
@@ -379,14 +362,22 @@ export async function promptPathInlineGhost(
 
   return await new Promise<string>((resolve, reject) => {
     let settled = false;
+    let session: RawSession | undefined;
+    const keyParser = createKeypressParser({
+      onEscapeAbort: () => {
+        settleReject(createPromptAbortError());
+      },
+    });
 
     const settleResolve = (result: string): void => {
       if (settled) {
         return;
       }
       settled = true;
+      closed = true;
+      activeRefreshSeq += 1;
       cleanup();
-      clearLine(stdout);
+      clearCurrentLine(stdout);
       stdout.write(`${options.message} ${result}\n`);
       resolve(result);
     };
@@ -396,23 +387,24 @@ export async function promptPathInlineGhost(
         return;
       }
       settled = true;
+      closed = true;
+      activeRefreshSeq += 1;
       cleanup();
-      clearLine(stdout);
+      clearCurrentLine(stdout);
       stdout.write("\n");
       reject(error);
     };
 
     const keypressHandler = (str: string, key: KeypressInfo = {}): void => {
       void (async () => {
-        if (key.name !== "escape") {
-          clearPendingEscapeAbort();
+        const parsed = keyParser.handle(str, key);
+
+        if (parsed.kind === "incomplete") {
+          return;
         }
 
-        if (escapeSequenceBuffer.length > 0 && key.name !== "escape") {
-          escapeSequenceBuffer += str;
-
-          if (key.name === "right" || escapeSequenceBuffer === "\x1b[C") {
-            escapeSequenceBuffer = "";
+        if (parsed.kind === "arrow") {
+          if (parsed.direction === "right") {
             const accepted = await acceptGhostSuffix();
             if (!accepted) {
               beep(stdout);
@@ -421,8 +413,7 @@ export async function promptPathInlineGhost(
             return;
           }
 
-          if (key.name === "left" || escapeSequenceBuffer === "\x1b[D") {
-            escapeSequenceBuffer = "";
+          if (parsed.direction === "left") {
             const moved = await moveToParentPathSegment();
             if (!moved) {
               beep(stdout);
@@ -431,48 +422,25 @@ export async function promptPathInlineGhost(
             return;
           }
 
-          if (
-            key.name === "up" ||
-            key.name === "down" ||
-            escapeSequenceBuffer === "\x1b[A" ||
-            escapeSequenceBuffer === "\x1b[B"
-          ) {
-            const direction: SiblingPreviewDirection =
-              key.name === "up" || escapeSequenceBuffer === "\x1b[A" ? "previous" : "next";
-            escapeSequenceBuffer = "";
-            const navigated = await browseSiblingPreview(direction);
-            if (!navigated) {
-              beep(stdout);
-              scheduleRender();
-            }
-            return;
+          const navigated = await browseSiblingPreview(
+            parsed.direction === "up" ? "previous" : "next",
+          );
+          if (!navigated) {
+            beep(stdout);
+            scheduleRender();
           }
-
-          if (
-            escapeSequenceBuffer === "\x1b[" ||
-            escapeSequenceBuffer === "\x1bO" ||
-            escapeSequenceBuffer === "\x1b[1;" ||
-            escapeSequenceBuffer === "\x1b[1;2"
-          ) {
-            return;
-          }
-
-          // If this was not a recognized escape sequence, drop sequence state and continue.
-          escapeSequenceBuffer = "";
+          return;
         }
 
-        if (key.ctrl && key.name === "c") {
+        const nextStr = parsed.str;
+        const nextKey = parsed.key;
+
+        if (nextKey.ctrl && nextKey.name === "c") {
           settleReject(createPromptAbortError());
           return;
         }
 
-        if (key.name === "escape") {
-          escapeSequenceBuffer = "\x1b";
-          scheduleEscapeAbort(settleReject);
-          return;
-        }
-
-        if (key.name === "return" || key.name === "enter") {
+        if (nextKey.name === "return" || nextKey.name === "enter") {
           const validation = await options.validate(value);
           if (validation === true) {
             settleResolve(value);
@@ -483,7 +451,7 @@ export async function promptPathInlineGhost(
           return;
         }
 
-        if (key.name === "tab") {
+        if (nextKey.name === "tab") {
           const acceptedPreview = await acceptActiveSiblingPreview();
           if (acceptedPreview) {
             return;
@@ -497,34 +465,7 @@ export async function promptPathInlineGhost(
           return;
         }
 
-        if (key.name === "right") {
-          const accepted = await acceptGhostSuffix();
-          if (!accepted) {
-            beep(stdout);
-            scheduleRender();
-          }
-          return;
-        }
-
-        if (key.name === "left") {
-          const moved = await moveToParentPathSegment();
-          if (!moved) {
-            beep(stdout);
-            scheduleRender();
-          }
-          return;
-        }
-
-        if (key.name === "up" || key.name === "down") {
-          const navigated = await browseSiblingPreview(key.name === "up" ? "previous" : "next");
-          if (!navigated) {
-            beep(stdout);
-            scheduleRender();
-          }
-          return;
-        }
-
-        if (key.ctrl && key.name === "u") {
+        if (nextKey.ctrl && nextKey.name === "u") {
           value = "";
           ghostSuffix = "";
           resetInteractionState();
@@ -532,7 +473,7 @@ export async function promptPathInlineGhost(
           return;
         }
 
-        if (key.name === "backspace") {
+        if (nextKey.name === "backspace") {
           if (value.length === 0) {
             beep(stdout);
             scheduleRender();
@@ -545,8 +486,8 @@ export async function promptPathInlineGhost(
           return;
         }
 
-        if (isPrintableInput(str, key)) {
-          value += str;
+        if (isPrintableInput(nextStr, nextKey)) {
+          value += nextStr;
           ghostSuffix = "";
           resetInteractionState();
           await refreshGhost();
@@ -561,14 +502,7 @@ export async function promptPathInlineGhost(
     };
 
     const cleanup = (): void => {
-      clearPendingEscapeAbort();
-      escapeSequenceBuffer = "";
-      options.stdin.off("keypress", keypressHandler as never);
-      stdinWithRawMode.setRawMode(false);
-      if (typeof options.stdin.pause === "function") {
-        options.stdin.pause();
-      }
-      stdout.write("\x1b[?25h");
+      session?.close();
     };
 
     try {
@@ -576,13 +510,14 @@ export async function promptPathInlineGhost(
         const label = options.defaultHintLabel?.trim() || "Default path";
         stdout.write(`${dim(`${label}: ${options.defaultHint}`)}\n`);
       }
-      emitKeypressEvents(options.stdin);
-      if (typeof options.stdin.resume === "function") {
-        options.stdin.resume();
-      }
-      stdinWithRawMode.setRawMode(true);
-      stdout.write("\x1b[?25l");
-      options.stdin.on("keypress", keypressHandler as never);
+      session = startRawSession({
+        stdin: options.stdin,
+        stdout,
+        onTeardown: () => {
+          keyParser.dispose();
+        },
+      });
+      session.addKeypressListener(keypressHandler);
     } catch (error) {
       settleReject(error);
     }
