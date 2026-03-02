@@ -2,7 +2,7 @@
 title: "Interactive path sibling navigation and ghost preview implementation plan"
 created-date: 2026-03-02
 modified-date: 2026-03-02
-status: draft
+status: active
 agent: codex
 ---
 
@@ -99,16 +99,16 @@ This keeps empty-prefix browsing like `./` or `./docs/` from flooding the cycle 
 
 ### Task Items
 
-- [ ] add internal prompt state for sibling candidate list, active preview index, and preview replacement
-- [ ] define how sibling-preview mode abandons any active legacy `Tab` cycle state
-- [ ] define helper functions for deriving a ghost suffix from the active preview
-- [ ] reset preview state on typing, backspace, clear, and parent-segment navigation
-- [ ] clear the sibling candidate cache as part of full-input reset actions such as `Ctrl+U`
-- [ ] document the precedence between active preview acceptance and legacy `Tab` cycling
+- [x] add internal prompt state for sibling candidate list, active preview index, and preview replacement
+- [x] define how sibling-preview mode abandons any active legacy `Tab` cycle state
+- [x] define helper functions for deriving a ghost suffix from the active preview
+- [x] reset preview state on typing, backspace, clear, and parent-segment navigation
+- [x] clear the sibling candidate cache as part of full-input reset actions such as `Ctrl+U`
+- [x] document the precedence between active preview acceptance and legacy `Tab` cycling
 
 ### Phase Deliverable
 
-- prompt internals can represent typed input and sibling preview separately
+- [x] prompt internals can represent typed input and sibling preview separately
 
 ## Phase 2: Implement sibling candidate resolution and wrap navigation
 

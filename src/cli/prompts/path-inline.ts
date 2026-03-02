@@ -1,6 +1,14 @@
 import { emitKeypressEvents } from "node:readline";
 
 import type { PathPromptRuntimeConfig } from "./path-config";
+import {
+  acceptSiblingPreview,
+  clearInteractionState,
+  deriveGhostSuffixFromPreview,
+  getActiveSiblingPreviewReplacement,
+  setCycleState,
+  type InlinePromptInteractionState,
+} from "./path-inline-state";
 import { resolvePathSuggestions } from "./path-suggestions";
 
 type ValidationFn = (value: string) => true | string | Promise<true | string>;
@@ -29,11 +37,6 @@ interface KeypressInfo {
   meta?: boolean;
   shift?: boolean;
   sequence?: string;
-}
-
-interface CycleState {
-  replacements: string[];
-  index: number;
 }
 
 function dim(text: string): string {
@@ -127,7 +130,7 @@ export async function promptPathInlineGhost(
 
   let value = "";
   let ghostSuffix = "";
-  let cycleState: CycleState | undefined;
+  let interactionState: InlinePromptInteractionState = clearInteractionState();
   let renderScheduled = false;
   let resolvingSuggestions = false;
   let needsRefreshAgain = false;
@@ -162,6 +165,15 @@ export async function promptPathInlineGhost(
 
   const computeGhostSuffix = async (): Promise<void> => {
     const refreshSeq = ++activeRefreshSeq;
+    const previewGhostSuffix = deriveGhostSuffixFromPreview(
+      value,
+      getActiveSiblingPreviewReplacement(interactionState),
+    );
+    if (previewGhostSuffix.length > 0) {
+      ghostSuffix = previewGhostSuffix;
+      return;
+    }
+
     const suggestions = await resolvePathSuggestions({
       cwd: options.cwd,
       input: value,
@@ -205,9 +217,14 @@ export async function promptPathInlineGhost(
   };
 
   const startOrAdvanceCycle = async (): Promise<boolean> => {
+    const cycleState = interactionState.cycleState;
     if (cycleState && cycleState.replacements.length > 0) {
-      cycleState.index = (cycleState.index + 1) % cycleState.replacements.length;
-      value = cycleState.replacements[cycleState.index] ?? value;
+      const nextIndex = (cycleState.index + 1) % cycleState.replacements.length;
+      interactionState = setCycleState(interactionState, {
+        ...cycleState,
+        index: nextIndex,
+      });
+      value = cycleState.replacements[nextIndex] ?? value;
       ghostSuffix = "";
       scheduleRender();
       return true;
@@ -239,18 +256,18 @@ export async function promptPathInlineGhost(
       return false;
     }
 
-    cycleState = {
+    interactionState = setCycleState(interactionState, {
       replacements: deduped,
       index: 0,
-    };
+    });
     value = deduped[0] ?? value;
     ghostSuffix = "";
     scheduleRender();
     return true;
   };
 
-  const resetCycleState = (): void => {
-    cycleState = undefined;
+  const resetInteractionState = (): void => {
+    interactionState = clearInteractionState();
   };
 
   const clearPendingEscapeAbort = (): void => {
@@ -271,13 +288,22 @@ export async function promptPathInlineGhost(
   };
 
   const acceptGhostSuffix = async (): Promise<boolean> => {
+    const siblingPreviewAcceptance = acceptSiblingPreview(value, interactionState);
+    if (siblingPreviewAcceptance.accepted) {
+      value = siblingPreviewAcceptance.nextValue;
+      interactionState = siblingPreviewAcceptance.nextState;
+      ghostSuffix = "";
+      await refreshGhost();
+      return true;
+    }
+
     if (ghostSuffix.length === 0) {
       return false;
     }
 
     value += ghostSuffix;
     ghostSuffix = "";
-    resetCycleState();
+    resetInteractionState();
     await refreshGhost();
     return true;
   };
@@ -290,7 +316,7 @@ export async function promptPathInlineGhost(
 
     value = nextValue;
     ghostSuffix = "";
-    resetCycleState();
+    resetInteractionState();
     await refreshGhost();
     return true;
   };
@@ -434,7 +460,7 @@ export async function promptPathInlineGhost(
         if (key.ctrl && key.name === "u") {
           value = "";
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }
@@ -447,7 +473,7 @@ export async function promptPathInlineGhost(
           }
           value = value.slice(0, -1);
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }
@@ -455,7 +481,7 @@ export async function promptPathInlineGhost(
         if (isPrintableInput(str, key)) {
           value += str;
           ghostSuffix = "";
-          resetCycleState();
+          resetInteractionState();
           await refreshGhost();
           return;
         }
