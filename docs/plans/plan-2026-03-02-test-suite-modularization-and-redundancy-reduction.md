@@ -216,30 +216,30 @@ Notes:
 
 ### Priority Note
 
-- [ ] keep this phase behind rename batch/apply compaction and source modularization unless fresh evidence shows larger overlap than the current audit suggests
+- [x] keep this phase behind rename batch/apply compaction and source modularization unless fresh evidence shows larger overlap than the current audit suggests
 
 ### Task Items
 
-- [ ] review `test/cli-path-inline.test.ts` line by line against:
-  - [ ] `test/cli-path-inline-state.test.ts`
-  - [ ] `test/cli-path-sibling-preview.test.ts`
-  - [ ] `test/cli-path-suggestions.test.ts`
-- [ ] keep controller-level assertions only where the full prompt wiring matters
-- [ ] preserve controller tests for:
-  - [ ] raw-session lifecycle and teardown
-  - [ ] direct key handling integration
-  - [ ] late async suggestion resolution not repainting after settle
-  - [ ] one sibling-preview end-to-end flow
-- [ ] merge or remove controller tests that mainly restate lower-level state transition contracts
-- [ ] confirm prompt coverage still spans ghost text, tab cycle, parent navigation, abort, and async-race safety
+- [x] review `test/cli-path-inline.test.ts` line by line against:
+  - [x] `test/cli-path-inline-state.test.ts`
+  - [x] `test/cli-path-sibling-preview.test.ts`
+  - [x] `test/cli-path-suggestions.test.ts`
+- [x] keep controller-level assertions only where the full prompt wiring matters
+- [x] preserve controller tests for:
+  - [x] raw-session lifecycle and teardown
+  - [x] direct key handling integration
+  - [x] late async suggestion resolution not repainting after settle
+  - [x] one sibling-preview end-to-end flow
+- [x] merge or remove controller tests that mainly restate lower-level state transition contracts
+- [x] confirm prompt coverage still spans ghost text, tab cycle, parent navigation, abort, and async-race safety
 
 ### Findings Addressed
 
-- [ ] `test/cli-path-inline.test.ts` currently duplicates part of the behavior already covered in lower-level path prompt files
+- [x] `test/cli-path-inline.test.ts` currently duplicates part of the behavior already covered in lower-level path prompt files
 
 ### Phase Deliverable
 
-- [ ] path inline controller tests remain integration-focused instead of repeating helper/state contracts
+- [x] path inline controller tests remain integration-focused instead of repeating helper/state contracts
 
 ## Phase 6: Verification, docs, and cleanup
 
@@ -275,7 +275,7 @@ Notes:
 ### Structural checks
 
 - [x] no new oversized mixed-responsibility test bucket replaces the current ones
-- [x] `src/cli/actions/rename.ts` is materially smaller than 1180 lines
+- [x] the old 1180-line `src/cli/actions/rename.ts` hotspot was replaced by the `src/cli/actions/rename/` module folder
 - [x] each new test file name reflects a single behavior area
 
 ### Quality checks

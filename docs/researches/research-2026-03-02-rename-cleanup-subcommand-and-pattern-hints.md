@@ -1,6 +1,7 @@
 ---
 title: "Rename cleanup subcommand and pattern hints"
 created-date: 2026-03-02
+modified-date: 2026-03-02
 status: draft
 agent: codex
 ---
@@ -50,6 +51,8 @@ The repo already has a strong rename safety boundary:
 - compute planned renames
 - preview / write plan CSV
 - optionally apply later through `rename apply`
+
+The current rename implementation boundary now lives under `src/cli/actions/rename/`, with separate `batch.ts`, `file.ts`, and `apply.ts` entrypoints over shared helper modules.
 
 That same model fits cleanup well.
 
@@ -355,7 +358,9 @@ Current preferred direction:
 ## References
 
 - `src/command.ts`
-- `src/cli/actions/rename.ts`
+- `src/cli/actions/rename/index.ts`
+- `src/cli/actions/rename/batch.ts`
+- `src/cli/actions/rename/apply.ts`
 - `src/cli/rename-template.ts`
 - `src/cli/rename-plan-csv.ts`
 - `src/utils/slug.ts`

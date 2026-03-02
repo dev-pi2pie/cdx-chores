@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-02-26
+modified-date: 2026-03-02
 status: draft
 agent: codex
 ---
@@ -16,7 +16,7 @@ Use this flow for new features:
 
 1. CLI command parsing in `src/command.ts`
 2. User input collection in `src/cli/interactive.ts` (if interactive path is supported)
-3. Shared action orchestration in `src/cli/actions/*.ts`
+3. Shared action orchestration in `src/cli/actions/*.ts` or `src/cli/actions/<feature>/**`
 4. Tool/system execution via existing helpers/adapters (for example `src/cli/deps.ts`, `src/cli/process.ts`, `src/cli/fs-utils.ts`)
 5. Reusable pure helpers in `src/utils/**` only when they are truly generic
 
@@ -46,6 +46,7 @@ Do not duplicate business logic in interactive mode.
   - coordinating file/process/dependency helpers
   - shaping user-facing output
   - sequencing multiple steps in a chore workflow
+- When one feature area grows beyond a single file, prefer a folder boundary such as `src/cli/actions/rename/**`.
 
 Avoid direct SDK/tool-client complexity inside action modules when an adapter boundary is appropriate.
 
@@ -76,7 +77,7 @@ When adding or expanding Codex-backed features:
 
 Recommended shape for image rename assistance:
 
-- action module (`src/cli/actions/rename.ts`) asks a Codex adapter for semantic title suggestions
+- rename action module (`src/cli/actions/rename/codex.ts`) coordinates semantic title suggestions through Codex adapters
 - Codex adapter returns normalized structured suggestions (not raw SDK responses)
 - action applies deterministic slug/length/collision handling before file operations
 
@@ -91,8 +92,10 @@ Rename flows now combine multiple concerns that should remain explicitly separat
 
 Recommended boundary for rename work:
 
-- `src/cli/actions/rename.ts`
-  - orchestration, user-facing summaries, dry-run/apply flow, deterministic fallback
+- `src/cli/actions/rename/`
+  - `index.ts` for the thin public action surface
+  - `batch.ts` / `file.ts` / `apply.ts` for orchestration entrypoints
+  - `filters.ts` / `reporting.ts` / `plan-output.ts` / `codex.ts` for shared rename-specific helper boundaries
 - `src/adapters/codex/**`
   - Codex-specific analyzer implementations (prompting/parsing/retries/timeouts)
 - future analyzer capability registry (rename-specific)

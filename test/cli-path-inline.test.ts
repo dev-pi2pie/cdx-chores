@@ -39,39 +39,63 @@ class FakePromptWriteStream {
   }
 }
 
+async function nextRenderTick(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function createPromptHarness(options?: {
+  fixtureName?: string;
+  setup?: (fixtureDir: string) => Promise<void>;
+  resolveSuggestions?: Parameters<typeof promptPathInlineGhost>[0]["resolveSuggestions"];
+}): Promise<{
+  fixtureDir: string;
+  stdin: FakePromptReadStream;
+  stdout: FakePromptWriteStream;
+  prompt: ReturnType<typeof promptPathInlineGhost>;
+}> {
+  const fixtureDir = await createTempFixtureDir(options?.fixtureName ?? "path-inline");
+  if (options?.setup) {
+    await options.setup(fixtureDir);
+  }
+
+  const stdin = new FakePromptReadStream();
+  const stdout = new FakePromptWriteStream();
+  const prompt = promptPathInlineGhost({
+    message: "Path",
+    cwd: fixtureDir,
+    runtimeConfig: {
+      mode: "auto",
+      autocomplete: {
+        enabled: true,
+        minChars: 1,
+        maxSuggestions: 12,
+        includeHidden: false,
+      },
+    },
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    stdout: stdout as unknown as NodeJS.WritableStream,
+    validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    suggestionFilter: { targetKind: "any" },
+    resolveSuggestions: options?.resolveSuggestions,
+  });
+
+  await nextRenderTick();
+
+  return { fixtureDir, stdin, stdout, prompt };
+}
+
 describe("path inline prompt controller", () => {
   test("promptPathInlineGhost renders a dimmed ghost suffix for the best completion", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      setup: async (dir) => {
+        await mkdir(join(dir, "docs"), { recursive: true });
+      },
+    });
     try {
-      const docsDir = join(fixtureDir, "docs");
-      await mkdir(docsDir, { recursive: true });
-
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
       stdin.emit("keypress", ".", { name: "." });
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
 
       expect(stdout.text).toContain("Path ./d");
       expect(stdout.text).toContain("\x1b[2mocs/\x1b[22m");
@@ -84,31 +108,8 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost accepts typed input, submits it, and restores the raw session", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness();
     try {
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
       stdin.emit("keypress", "a", { name: "a" });
       stdin.emit("keypress", "\r", { name: "return" });
 
@@ -126,39 +127,18 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost accepts ghost text from a direct right-arrow key event", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      setup: async (dir) => {
+        const docsDir = join(dir, "docs");
+        await mkdir(docsDir, { recursive: true });
+        await writeFile(join(docsDir, "guide.md"), "# guide\n", "utf8");
+      },
+    });
     try {
-      const docsDir = join(fixtureDir, "docs");
-      await mkdir(docsDir, { recursive: true });
-      await writeFile(join(docsDir, "guide.md"), "# guide\n", "utf8");
-
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
       stdin.emit("keypress", ".", { name: "." });
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "", { name: "right" });
       stdin.emit("keypress", "\r", { name: "return" });
 
@@ -170,41 +150,21 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost keeps Tab completion and cycling behavior", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      setup: async (dir) => {
+        await mkdir(join(dir, "docs"), { recursive: true });
+        await mkdir(join(dir, "downloads"), { recursive: true });
+      },
+    });
     try {
-      await mkdir(join(fixtureDir, "docs"), { recursive: true });
-      await mkdir(join(fixtureDir, "downloads"), { recursive: true });
-
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
       stdin.emit("keypress", ".", { name: "." });
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "\t", { name: "tab" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "\t", { name: "tab" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "\r", { name: "return" });
 
       await expect(prompt).resolves.toBe("./downloads/");
@@ -215,30 +175,8 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost left arrow moves to the parent segment", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, prompt } = await createPromptHarness();
     try {
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
       for (const [str, name] of [
         [".", "."],
         ["/", "/"],
@@ -261,41 +199,21 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost supports sibling preview with arrow navigation", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      setup: async (dir) => {
+        await mkdir(join(dir, "docs"), { recursive: true });
+        await mkdir(join(dir, "downloads"), { recursive: true });
+      },
+    });
     try {
-      await mkdir(join(fixtureDir, "docs"), { recursive: true });
-      await mkdir(join(fixtureDir, "downloads"), { recursive: true });
-
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
       stdin.emit("keypress", ".", { name: "." });
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "", { name: "up" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "", { name: "right" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
       stdin.emit("keypress", "\r", { name: "return" });
 
       await expect(prompt).resolves.toBe("./downloads/");
@@ -305,70 +223,9 @@ describe("path inline prompt controller", () => {
     }
   });
 
-  test("promptPathInlineGhost supports Backspace, Ctrl+U, and Enter", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
-    try {
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      stdin.emit("keypress", "a", { name: "a" });
-      stdin.emit("keypress", "b", { name: "b" });
-      stdin.emit("keypress", "\b", { name: "backspace" });
-      stdin.emit("keypress", "", { name: "u", ctrl: true });
-      stdin.emit("keypress", "c", { name: "c" });
-      stdin.emit("keypress", "\r", { name: "return" });
-
-      await expect(prompt).resolves.toBe("c");
-      expect(stdout.text).toContain("Path c");
-    } finally {
-      await rm(fixtureDir, { recursive: true, force: true });
-    }
-  });
-
   test("promptPathInlineGhost rejects on Esc and restores the raw session", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness();
     try {
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
       stdin.emit("keypress", "\x1b", { name: "escape" });
 
       await expect(prompt).rejects.toMatchObject({
@@ -383,42 +240,20 @@ describe("path inline prompt controller", () => {
   });
 
   test("promptPathInlineGhost does not repaint after settling when a late async suggestion resolves", async () => {
-    const fixtureDir = await createTempFixtureDir("path-inline");
-    try {
-      const stdin = new FakePromptReadStream();
-      const stdout = new FakePromptWriteStream();
-      let releaseSuggestions: (() => void) | undefined;
-
-      const prompt = promptPathInlineGhost({
-        message: "Path",
-        cwd: fixtureDir,
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        stdin: stdin as unknown as NodeJS.ReadStream,
-        stdout: stdout as unknown as NodeJS.WritableStream,
-        validate: (value) => (value.trim().length > 0 ? true : "Required"),
-        suggestionFilter: { targetKind: "any" },
-        resolveSuggestions: async (options) => {
-          if (options.input !== "a") {
-            return [];
-          }
-
-          await new Promise<void>((resolve) => {
-            releaseSuggestions = resolve;
-          });
+    let releaseSuggestions: (() => void) | undefined;
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      resolveSuggestions: async (options) => {
+        if (options.input !== "a") {
           return [];
-        },
-      });
+        }
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
+        await new Promise<void>((resolve) => {
+          releaseSuggestions = resolve;
+        });
+        return [];
+      },
+    });
+    try {
       stdin.emit("keypress", "a", { name: "a" });
       stdin.emit("keypress", "\r", { name: "return" });
 
@@ -426,8 +261,8 @@ describe("path inline prompt controller", () => {
       const outputAfterSettle = stdout.text;
 
       releaseSuggestions?.();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextRenderTick();
+      await nextRenderTick();
 
       expect(stdout.text).toBe(outputAfterSettle);
     } finally {

@@ -1,6 +1,7 @@
 ---
 title: "Test suite audit for redundancy and modularization"
 created-date: 2026-03-02
+modified-date: 2026-03-02
 status: completed
 agent: codex
 ---
@@ -55,11 +56,33 @@ Review the current test suite for redundant coverage, identify oversized test fi
     - plan CSV row creation/writing
     - shared output summary formatting for batch vs file flows
 
+## Later Outcome
+
+This audit has now been acted on by the active plan in `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`.
+
+Current status after implementation:
+
+- the old `src/cli/actions/rename.ts` hotspot was replaced by the folder-based `src/cli/actions/rename/` module
+- `test/cli-actions-rename-apply.test.ts` was split into:
+  - `test/cli-actions-rename-apply-replay.test.ts`
+  - `test/cli-actions-rename-apply-validation.test.ts`
+- `test/cli-actions-rename-batch-core.test.ts` was split so related coverage now also lives in:
+  - `test/cli-actions-rename-batch-filters.test.ts`
+  - `test/cli-actions-rename-batch-recursion.test.ts`
+  - `test/cli-actions-rename-batch-preview.test.ts`
+- `test/cli-path-inline.test.ts` was compacted so it remains controller-focused while lower-level coverage continues to live in:
+  - `test/cli-path-inline-state.test.ts`
+  - `test/cli-path-sibling-preview.test.ts`
+  - `test/cli-path-suggestions.test.ts`
+
+The original findings are preserved above because they describe the state that triggered the plan, but this note should now be read as an audit snapshot plus outcome pointer rather than a description of the current file layout.
+
 ## Related Plans
 
 - `docs/plans/jobs/2026-02-27-test-suite-second-pass-redundancy-audit.md`
 - `docs/plans/jobs/2026-02-27-test-suite-rename-action-split-refactor.md`
 - `docs/plans/jobs/2026-03-02-refactor-rename-timestamp-tests.md`
+- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## References
 
