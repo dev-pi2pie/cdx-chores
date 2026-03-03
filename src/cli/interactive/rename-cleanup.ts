@@ -215,15 +215,16 @@ async function promptCleanupSettingsFromSuggestion(
       "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
     >;
   },
-): Promise<
-  | {
-      hints: RenameCleanupHint[];
-      style: RenameCleanupStyle;
-      timestampAction?: RenameCleanupTimestampAction;
-      analysisReportPath?: string;
-    }
-  | undefined
-> {
+): Promise<{
+  settings?:
+    | {
+        hints: RenameCleanupHint[];
+        style: RenameCleanupStyle;
+        timestampAction?: RenameCleanupTimestampAction;
+      }
+    | undefined;
+  analysisReportPath?: string;
+}> {
   const status = createInteractiveAnalyzerStatus(runtime.stdout);
   try {
     status.start("Sampling filenames for cleanup analysis...");
@@ -249,7 +250,7 @@ async function promptCleanupSettingsFromSuggestion(
         printLine(runtime.stdout, "Falling back to manual cleanup settings.");
         printLine(runtime.stdout);
       }
-      return undefined;
+      return {};
     }
 
     printCleanupCodexSuggestion(runtime, {
@@ -282,13 +283,15 @@ async function promptCleanupSettingsFromSuggestion(
       default: true,
     });
     if (!useSuggestion) {
-      return undefined;
+      return { analysisReportPath };
     }
 
     return {
-      hints: result.suggestion.recommendedHints,
-      style: result.suggestion.recommendedStyle,
-      timestampAction: result.suggestion.recommendedTimestampAction,
+      settings: {
+        hints: result.suggestion.recommendedHints,
+        style: result.suggestion.recommendedStyle,
+        timestampAction: result.suggestion.recommendedTimestampAction,
+      },
       analysisReportPath,
     };
   } catch (error) {
@@ -297,7 +300,7 @@ async function promptCleanupSettingsFromSuggestion(
     printLine(runtime.stdout, `Codex cleanup suggestion unavailable: ${message}`);
     printLine(runtime.stdout, "Falling back to manual cleanup settings.");
     printLine(runtime.stdout);
-    return undefined;
+    return {};
   }
 }
 
@@ -340,16 +343,16 @@ export async function runInteractiveRenameCleanup(
     message: "Suggest cleanup hints with Codex?",
     default: false,
   });
-  const suggestedSettings = suggestWithCodex
+  const suggestionResult = suggestWithCodex
     ? await promptCleanupSettingsFromSuggestion(runtime, { path, scope })
     : undefined;
-  const cleanupSettings = suggestedSettings ?? (await promptManualCleanupSettings());
+  const cleanupSettings = suggestionResult?.settings ?? (await promptManualCleanupSettings());
   const cleanupActionSettings = {
     hints: cleanupSettings.hints,
     style: cleanupSettings.style,
     timestampAction: cleanupSettings.timestampAction,
   };
-  const analysisReportPath = suggestedSettings?.analysisReportPath;
+  const analysisReportPath = suggestionResult?.analysisReportPath;
 
   const conflictStrategy = await promptCleanupConflictStrategy();
   const dryRun = await confirm({ message: "Dry run only?", default: true });

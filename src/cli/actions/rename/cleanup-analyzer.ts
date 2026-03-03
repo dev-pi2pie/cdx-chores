@@ -49,8 +49,9 @@ function clampPositiveInteger(value: number | undefined, fallback: number): numb
 }
 
 function normalizeCleanupAnalyzerPattern(fileName: string): string {
-  const extension = extname(fileName).toLowerCase();
-  const stem = basename(fileName, extension);
+  const originalExtension = extname(fileName);
+  const extension = originalExtension.toLowerCase();
+  const stem = basename(fileName, originalExtension);
 
   const normalizedStem = stem
     .toLowerCase()

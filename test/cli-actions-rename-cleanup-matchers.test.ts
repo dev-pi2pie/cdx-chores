@@ -109,4 +109,17 @@ describe("rename cleanup matcher internals", () => {
       nextStem: "report final",
     });
   });
+
+  test("buildTemporalCleanupStem defers slug styling until all selected hints finish", () => {
+    expect(
+      buildTemporalCleanupStem(
+        "Screenshot 2026-03-02 at 4.53.04 PM (2)",
+        ["timestamp", "serial"],
+        "slug",
+        "keep",
+      ),
+    ).toEqual({
+      nextStem: "screenshot-20260302-165304",
+    });
+  });
 });

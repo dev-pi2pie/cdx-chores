@@ -198,6 +198,61 @@ describe("interactive rename routing", () => {
     });
   });
 
+  test("retains analysis report cleanup when suggested settings are rejected", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "number", "detailed"],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, false, true, true, true, true],
+      cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["serial"],
+        recommendedStyle: "slug",
+        confidence: 0.86,
+        reasoningSummary: "Most sampled names differ only by trailing counters.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:analysis-report",
+        options: {
+          csvPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: true,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain("Wrote cleanup analysis report: reports/cleanup-analysis.csv");
+    expect(result.stdout).toContain("Cleanup analysis report auto-cleaned: reports/cleanup-analysis.csv");
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Use these suggested cleanup settings?",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Auto-clean plan/report CSV after apply?",
+    });
+  });
+
   test("falls back to manual cleanup settings when analyzer suggestion fails", () => {
     const result = runInteractiveHarness({
       mode: "run",

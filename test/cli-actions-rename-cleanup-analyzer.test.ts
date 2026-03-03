@@ -79,6 +79,30 @@ describe("cli action modules: rename cleanup analyzer evidence", () => {
     });
   });
 
+  test("normalizes grouped patterns correctly for uppercase file extensions", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      const dirPath = join(fixtureDir, "cleanup-dir");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "IMG_0001.JPG"), "a", "utf8");
+      await writeFile(join(dirPath, "IMG_0002.JPG"), "b", "utf8");
+
+      const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
+        path: "cleanup-dir",
+      });
+
+      expectNoOutput();
+      expect(evidence.groupedPatterns).toEqual([
+        {
+          pattern: "img-{serial}.jpg",
+          count: 2,
+          examples: ["IMG_0001.JPG", "IMG_0002.JPG"],
+        },
+      ]);
+    });
+  });
+
   test("captures mixed grouped patterns with representative relative examples", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
       const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });

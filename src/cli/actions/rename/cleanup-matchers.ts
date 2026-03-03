@@ -76,6 +76,10 @@ function buildTextStyleStem(value: string, style: CleanupTextStyle): string {
   return style === "slug" ? slugifyName(value) : normalizePreserveStem(value);
 }
 
+function normalizeIntermediateCleanupStem(value: string): string {
+  return normalizePreserveStem(value);
+}
+
 function findTimestampRanges(stem: string): Array<{ start: number; end: number }> {
   return [...stem.matchAll(MACOS_TIMESTAMP_PATTERN_GLOBAL)]
     .map((match) => {
@@ -184,7 +188,7 @@ export function matchCleanupUid(stem: string): CleanupUidMatch | undefined {
 
 function buildTimestampCleanupStem(
   stem: string,
-  style: CleanupTextStyle,
+  _style: CleanupTextStyle,
   timestampAction: CleanupTimestampAction,
 ): { nextStem: string; reason?: string } {
   const match = matchCleanupTimestamp(stem);
@@ -197,12 +201,16 @@ function buildTimestampCleanupStem(
     parts.push(match.normalizedTimestamp);
   }
   parts.push(match.suffix);
-  return { nextStem: buildTextStyleStem(parts.filter((part) => part.length > 0).join(" "), style) };
+  return {
+    nextStem: normalizeIntermediateCleanupStem(
+      parts.filter((part) => part.length > 0).join(" "),
+    ),
+  };
 }
 
 function buildDateCleanupStem(
   stem: string,
-  style: CleanupTextStyle,
+  _style: CleanupTextStyle,
 ): { nextStem: string; reason?: string } {
   const match = matchCleanupDate(stem);
   if (!match) {
@@ -210,18 +218,17 @@ function buildDateCleanupStem(
   }
 
   return {
-    nextStem: buildTextStyleStem(
+    nextStem: normalizeIntermediateCleanupStem(
       [match.prefix, match.normalizedDate, match.suffix]
         .filter((part) => part.length > 0)
         .join(" "),
-      style,
     ),
   };
 }
 
 function buildSerialCleanupStem(
   stem: string,
-  style: CleanupTextStyle,
+  _style: CleanupTextStyle,
 ): { nextStem: string; reason?: string } {
   const match = matchCleanupSerial(stem);
   if (!match) {
@@ -229,13 +236,13 @@ function buildSerialCleanupStem(
   }
 
   return {
-    nextStem: buildTextStyleStem(match.prefix, style),
+    nextStem: normalizeIntermediateCleanupStem(match.prefix),
   };
 }
 
 function buildUidCleanupStem(
   stem: string,
-  style: CleanupTextStyle,
+  _style: CleanupTextStyle,
 ): { nextStem: string; reason?: string } {
   const match = matchCleanupUid(stem);
   if (!match) {
@@ -243,9 +250,8 @@ function buildUidCleanupStem(
   }
 
   return {
-    nextStem: buildTextStyleStem(
+    nextStem: normalizeIntermediateCleanupStem(
       [match.prefix, match.suffix].filter((part) => part.length > 0).join(" "),
-      style,
     ),
   };
 }
@@ -281,7 +287,7 @@ export function buildTemporalCleanupStem(
   }
 
   if (matchedAny) {
-    return { nextStem };
+    return { nextStem: buildTextStyleStem(nextStem, style) };
   }
 
   return { nextStem: stem, reason: buildNoMatchReason(hints) };
