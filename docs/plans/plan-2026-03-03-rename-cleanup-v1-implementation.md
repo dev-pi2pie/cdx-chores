@@ -1,7 +1,8 @@
 ---
 title: "Rename cleanup v1 implementation"
 created-date: 2026-03-03
-status: draft
+modified-date: 2026-03-03
+status: active
 agent: codex
 ---
 
@@ -223,40 +224,40 @@ Notes:
 This phase is not for reopening the research decisions.
 It exists to codify them into implementation-facing rules and ensure the CLI surface matches the settled contract exactly.
 
-- [ ] codify final CLI option names for:
-  - [ ] `--style`
-  - [ ] `--timestamp-action`
-- [ ] codify `--hint` parsing behavior:
-  - [ ] repeatable
-  - [ ] comma-separated
-  - [ ] `--hints` alias
-- [ ] codify v1 hint family set:
-  - [ ] `date`
-  - [ ] `timestamp`
-  - [ ] `serial`
-- [ ] codify disjoint temporal matching:
-  - [ ] `date` = date-only
-  - [ ] `timestamp` = date-plus-time
-- [ ] codify the v1 serial matcher family:
-  - [ ] zero-padded trailing counters
-  - [ ] parenthesized copy-style counters
-  - [ ] trailing dash/space/underscore counters
-- [ ] codify default style behavior:
-  - [ ] `preserve`
-- [ ] codify file-mode validation rejects directory-only options
-- [ ] codify directory names remain out of scope
-- [ ] codify `--hint uid` as deferred from v1
+- [x] codify final CLI option names for:
+  - [x] `--style`
+  - [x] `--timestamp-action`
+- [x] codify `--hint` parsing behavior:
+  - [x] repeatable
+  - [x] comma-separated
+  - [x] `--hints` alias
+- [x] codify v1 hint family set:
+  - [x] `date`
+  - [x] `timestamp`
+  - [x] `serial`
+- [x] codify disjoint temporal matching:
+  - [x] `date` = date-only
+  - [x] `timestamp` = date-plus-time
+- [x] codify the v1 serial matcher family:
+  - [x] zero-padded trailing counters
+  - [x] parenthesized copy-style counters
+  - [x] trailing dash/space/underscore counters
+- [x] codify default style behavior:
+  - [x] `preserve`
+- [x] codify file-mode validation rejects directory-only options
+- [x] codify directory names remain out of scope
+- [x] codify `--hint uid` as deferred from v1
 
 ### Phase 2: Add CLI entrypoint and validation
 
-- [ ] add `rename cleanup <path>` to `.command("rename")` in `src/command.ts`
-- [ ] parse `--hint` and `--hints` into one normalized internal list
-- [ ] add cleanup-specific option validation
-- [ ] reject invalid combinations such as:
-  - [ ] file path with `--recursive`
-  - [ ] file path with `--max-depth`
-  - [ ] file path with directory-scoped filters
-- [ ] ensure help text stays concise and documents only the essential contract
+- [x] add `rename cleanup <path>` to `.command("rename")` in `src/command.ts`
+- [x] parse `--hint` and `--hints` into one normalized internal list
+- [x] add cleanup-specific option validation
+- [x] reject invalid combinations such as:
+  - [x] file path with `--recursive`
+  - [x] file path with `--max-depth`
+  - [x] file path with directory-scoped filters
+- [x] ensure help text stays concise and documents only the essential contract
 
 ### Phase 3: Build cleanup detectors and transformers
 
