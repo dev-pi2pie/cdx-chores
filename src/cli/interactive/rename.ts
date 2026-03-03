@@ -28,28 +28,10 @@ import {
   templateContainsSerialPlaceholder,
 } from "../rename-template";
 import type { CliRuntime } from "../types";
+import { validateIntegerInput } from "./input-validation";
 import type { RenameInteractiveActionKey } from "./menu";
 import { runInteractiveRenameCleanup } from "./rename-cleanup";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
-
-function validateIntegerInput(
-  value: string,
-  options: { min?: number; allowEmpty?: boolean },
-): true | string {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return options.allowEmpty ? true : "Required";
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return "Must be a non-negative integer";
-  }
-  const parsed = Number(trimmed);
-  const min = options.min ?? 0;
-  if (parsed < min) {
-    return `Must be >= ${min}`;
-  }
-  return true;
-}
 
 async function promptRenamePatternConfig(options: {
   includeSerialScope: boolean;

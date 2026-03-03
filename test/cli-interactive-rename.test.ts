@@ -95,6 +95,32 @@ describe("interactive rename routing", () => {
     });
   });
 
+  test("re-prompts cleanup max depth until a non-negative integer is provided", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip", "summary"],
+      requiredPathQueue: ["docs"],
+      inputQueue: ["1.5", "1"],
+      confirmQueue: [true, false, false, true, false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "skip",
+          recursive: true,
+          maxDepth: 1,
+          dryRun: true,
+          previewSkips: "summary",
+        },
+      },
+    ]);
+  });
+
   test("routes an analyzer-assisted cleanup flow without manual hint prompts", () => {
     const result = runInteractiveHarness({
       mode: "run",

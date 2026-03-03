@@ -21,6 +21,7 @@ import type {
   RenameCleanupTimestampAction,
 } from "../actions";
 import { createInteractiveAnalyzerStatus } from "./analyzer-status";
+import { validateIntegerInput } from "./input-validation";
 import type { InteractivePathPromptContext } from "./shared";
 
 const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
@@ -143,7 +144,11 @@ async function promptCleanupScopeOptions(pathKind: "file" | "directory"): Promis
       : false;
   const maxDepthInput =
     pathKind === "directory" && recursive
-      ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
+      ? await input({
+          message: "Max recursive depth (optional, root=0)",
+          default: "",
+          validate: (value) => validateIntegerInput(value, { min: 0, allowEmpty: true }),
+        })
       : "";
   const filterFiles =
     pathKind === "directory"

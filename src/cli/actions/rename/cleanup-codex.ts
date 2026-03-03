@@ -6,7 +6,7 @@ const CLEANUP_HINT_VALUES = ["date", "timestamp", "serial", "uid"] as const sati
 const CLEANUP_STYLE_VALUES = ["preserve", "slug"] as const satisfies readonly RenameCleanupStyle[];
 const CLEANUP_TIMESTAMP_ACTION_VALUES = ["keep", "remove"] as const satisfies readonly RenameCleanupTimestampAction[];
 
-const CLEANUP_CLEANUP_SUGGESTION_OUTPUT_SCHEMA = {
+const CLEANUP_SUGGESTION_OUTPUT_SCHEMA = {
   type: "object",
   properties: {
     recommended_hints: {
@@ -186,7 +186,7 @@ async function runRenameCleanupCodexPrompt(options: {
 }): Promise<string> {
   const thread = startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: CLEANUP_CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
+    outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
   });
   return turn.finalResponse;

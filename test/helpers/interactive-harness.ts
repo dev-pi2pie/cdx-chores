@@ -45,6 +45,7 @@ export function runInteractiveHarness(
 ): InteractiveHarnessResult {
   const childScript = `
     import { mock } from "bun:test";
+    import { dirname, resolve as resolvePath } from "node:path";
 
     const scenario = ${JSON.stringify(scenario)};
     const promptCalls = [];
@@ -67,6 +68,14 @@ export function runInteractiveHarness(
       return queue.shift();
     }
 
+    function resolveHarnessPath(inputPath) {
+      return resolvePath(process.cwd(), String(inputPath ?? ""));
+    }
+
+    function directoryPathForFile(inputPath) {
+      return dirname(resolveHarnessPath(inputPath));
+    }
+
     mock.module("@inquirer/prompts", () => ({
       select: async (options) => {
         promptCalls.push({ kind: "select", message: options.message });
@@ -78,7 +87,16 @@ export function runInteractiveHarness(
       },
       input: async (options) => {
         promptCalls.push({ kind: "input", message: options.message });
-        return shiftQueueValue(scenario.inputQueue ?? [], \`input:\${options.message}\`);
+        while (true) {
+          const nextValue = shiftQueueValue(scenario.inputQueue ?? [], \`input:\${options.message}\`);
+          if (!options.validate) {
+            return nextValue;
+          }
+          const validation = await options.validate(nextValue);
+          if (validation === true) {
+            return nextValue;
+          }
+        }
       },
     }));
 
@@ -110,8 +128,8 @@ export function runInteractiveHarness(
         actionCalls.push({ name: "rename:file", options });
         return {
           changed: false,
-          filePath: String(options.path ?? ""),
-          directoryPath: String(options.path ?? ""),
+          filePath: resolveHarnessPath(options.path),
+          directoryPath: directoryPathForFile(options.path),
         };
       },
       actionRenameApply: async (_runtime, options) => {
@@ -130,15 +148,15 @@ export function runInteractiveHarness(
             kind: "directory",
             changedCount: 2,
             totalCount: 3,
-            directoryPath: "docs",
+            directoryPath: resolveHarnessPath("docs"),
             planCsvPath: "plans/cleanup.csv",
           };
         }
         return {
           kind: "file",
           changed: false,
-          filePath: String(options.path ?? ""),
-          directoryPath: String(options.path ?? ""),
+          filePath: resolveHarnessPath(options.path),
+          directoryPath: directoryPathForFile(options.path),
         };
       },
       resolveRenameCleanupTarget: async (_runtime, inputPath) => {
