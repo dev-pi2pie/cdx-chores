@@ -1,7 +1,7 @@
 ---
 title: "Rename cleanup subcommand and pattern hints"
 created-date: 2026-03-02
-modified-date: 2026-03-02
+modified-date: 2026-03-03
 status: draft
 agent: codex
 ---
@@ -203,24 +203,210 @@ Example:
 
 This keeps the timestamp signal while making the filename shell-friendly and consistent.
 
+### 9. `--hint` should stay singular and repeatable
+
+The current CLI already uses singular repeatable selectors such as:
+
+- `--ext`
+- `--skip-ext`
+
+That makes `--hint` a better fit than `--hints`.
+
+Recommended rule:
+
+- keep the flag name as `--hint`
+- accept `--hints` as a compatibility alias for user ergonomics and typo tolerance
+- allow repeated usage, for example `--hint timestamp --hint date`
+- also allow comma-separated input if that matches the existing option collector style
+
+Implication:
+
+- the flag stays consistent with the rest of the CLI
+- users who instinctively type `--hints` do not get blocked
+- the command surface stays simple without introducing a second pluralized convention
+
+### 10. Detection and transformation should stay separate
+
+The user intent behind:
+
+- detect timestamp-like input
+- keep it
+- normalize it
+- or remove it
+
+is real, but that should not be encoded into the hint itself.
+
+The research already treats hints as input selectors.
+That should remain true.
+
+Recommended rule:
+
+- `--hint timestamp` means "look for timestamp-family fragments"
+- whether the matched fragment is kept or removed should be controlled by a separate option
+
+Practical v1 shape:
+
+- default matched timestamp behavior: preserve in canonical normalized form
+- explicit removal: a dedicated option such as `--timestamp-action remove`
+- interactive mode should ask the keep-vs-remove question separately from output style
+
+Implication:
+
+- hints stay easy to reason about
+- output behavior remains explicit instead of overloading one flag with two jobs
+
+### 11. `uid` should prefer an explicit marker-based shape
+
+Reusing the current rename-plan artifact feel is a good instinct because it reduces mental burden.
+But cleanup has an additional requirement:
+
+- generated IDs should be easy to detect and remove later
+
+That matters more here than visual similarity to the existing rename-plan artifact naming.
+
+Recommended rule:
+
+- prefer a marker-based file UID shape such as `uid-<token>`
+- do not use a fresh random UUID slice as the cleanup basename default
+- derive `<token>` deterministically so repeated planning yields the same target
+
+Practical example direction:
+
+- `uid-7K3M9Q2X.png`
+
+Where:
+
+- the `uid-` marker makes the fragment easy to detect and clean safely
+- the token is derived deterministically from stable source identity rather than new randomness per run
+
+Implication:
+
+- the user gets a compact and recognizable shape
+- the cleanup flow stays predictable
+- advanced future modes can still add explicit `timestamp+uid`, `random`, `ulid`, or hash-algorithm variants later
+
+### 11a. Candidate `uid` formats should optimize for detectability, not just brevity
+
+If cleanup is expected to detect and optionally remove generated `uid` fragments later, the shape should be intentionally recognizable.
+
+Three practical candidate directions:
+
+1. shortest
+
+- shape: `<token>`
+- example: `7K3M9Q2X`
+- pros:
+  - shortest visible basename
+  - easy to read and copy
+- cons:
+  - weak regex detectability without context
+  - higher false-positive risk
+  - not a good cleanup anchor by itself
+
+2. easiest to regex-clean
+
+- shape: `uid-<token>`
+- example: `uid-7K3M9Q2X`
+- pros:
+  - trivial to detect and remove safely
+  - low false-positive risk
+  - explicit to users and future tooling
+- cons:
+  - slightly longer
+  - less visually similar to current rename-plan artifacts
+
+3. deterministic and preview-stable
+
+- shape: `<timestamp>-uid-<token>`
+- example: `20260303T101530Z-uid-7K3M9Q2X`
+- pros:
+  - easy regex detection
+  - stable preview/apply behavior when `<token>` is hash-derived
+  - preserves sortability and some human context
+- cons:
+  - longest of the three
+  - may feel redundant when the file already has a meaningful timestamp elsewhere
+
+Recommended direction:
+
+- for cleanup-generated file UIDs, prefer a marker-based format over bare short hex
+- make `uid-<token>` the default shape
+- allow `<timestamp>-uid-<token>` later as an optional style when timestamp context is important
+
+Example safe regex anchors:
+
+- `uid-[A-Z0-9]{8,16}`
+- `\\d{8}T\\d{6}Z-uid-[A-Z0-9]{8,16}`
+
+Implication:
+
+- future cleanup can target generated IDs precisely
+- the design avoids relying on ambiguous bare hex fragments such as `[a-f0-9]{8}`
+
+### 12. macOS labels should survive, and conflicts should be handled by the planner
+
+Labels such as:
+
+- `Screenshot`
+- `Screen Recording`
+
+should be treated as meaningful surviving words, not removable boilerplate.
+
+The real issue is collision risk after timestamp cleanup.
+That should not be delegated to the operating system.
+
+Recommended rule:
+
+- preserve those labels by default
+- detect name collisions during planning
+- default conflict behavior should be to skip conflicting rows with an explicit reason
+- future options may add explicit conflict strategies such as appending a serial or UID
+
+Implication:
+
+- cleanup preserves recognizable file intent
+- conflict handling stays inside the existing preview/apply safety model
+
+### 13. Cleanup should accept a path and auto-detect file versus directory
+
+The follow-up question about scope is important.
+Directory-only cleanup would be awkward because the same cleanup logic clearly applies to one file too.
+
+Recommended v1 rule:
+
+- `rename cleanup <path>` accepts either a file or a directory
+- when the path is a file, plan cleanup for that one file
+- when the path is a directory, run batch cleanup for files inside it
+- `--recursive` remains an explicit toggle for directory traversal
+- directory names themselves are not renamed in v1
+
+Implication:
+
+- the command keeps one cleanup mental model
+- users do not have to choose between separate `file` and `batch` variants for the same operation
+- recursive traversal is supported without expanding scope into directory renaming
+
 ## Implications or Recommendations
 
-### Recommendation A. Add `rename cleanup` as a sibling of `rename file` and `rename batch`
+### Recommendation A. Add a single `rename cleanup <path>` entrypoint
 
 Recommended command family:
 
 ```bash
 cdx-chores rename cleanup ./screenshots --hint timestamp --dry-run
+cdx-chores rename cleanup ./screenshots/shot.png --hint timestamp --dry-run
 cdx-chores rename cleanup ./screenshots --hint timestamp --style slug --dry-run
 ```
 
 This should be its own action path rather than a `rename batch --cleanup ...` overload.
+The command should auto-detect whether `<path>` is a file or directory.
 
 Why:
 
 - the mental model is different
 - the prompting flow will be different
 - the validation surface is different
+- the same cleanup rules should work for one file or many files
 - the future analyzer-assisted mode will also fit more naturally here
 
 ### Recommendation B. Require `--hint` in v1
@@ -229,7 +415,9 @@ Recommended v1 contract:
 
 - `--hint <value>` is required
 - accepted first values: `date`, `timestamp`, `serial`
-- comma-separated or repeated values are allowed
+- repeated or comma-separated values are allowed
+- keep the flag name singular as `--hint`, not `--hints`
+- accept `--hints` as a parsing alias, but document only `--hint`
 
 This keeps the transform intentionally scoped and lowers the risk of destructive "cleanup" guesses.
 
@@ -259,13 +447,29 @@ Suggested semantics:
 
 For `uid`, the CLI should decide whether the identifier is:
 
-- random
-- time-sortable
-- or derived from a deterministic hash
+- visually similar to current rename-plan identifiers
+- but stable across repeated dry runs
 
-That needs a separate small design choice, but it should still remain explicit and documented.
+The practical v1 answer is:
 
-### Recommendation E. Reuse the current rename plan CSV contract
+- use `uid-<token>` as the default shape
+- derive the token deterministically rather than generating fresh randomness per run
+
+Future advanced options can expose explicit `random`, `ulid`, or hash-family variants later.
+
+If timestamp context is useful later, `<timestamp>-uid-<token>` is still a compatible extension path.
+
+### Recommendation E. Preserve normalized timestamps by default, remove them only explicitly
+
+Recommended v1 contract:
+
+- if `--hint timestamp` matches a supported timestamp family, preserve it in canonical normalized form by default
+- if the user wants to remove it, require an explicit option
+- do not encode keep-vs-remove behavior into the hint name itself
+
+This keeps cleanup deterministic while avoiding a destructive default.
+
+### Recommendation F. Reuse the current rename plan CSV contract
 
 Cleanup results should still:
 
@@ -275,14 +479,26 @@ Cleanup results should still:
 
 That preserves one operational model across rename features.
 
+### Recommendation G. Preserve macOS screenshot / recording labels by default
+
+Recommended v1 contract:
+
+- keep `Screenshot` and `Screen Recording` as surviving words
+- handle resulting collisions in the planner, not by relying on OS auto-renaming
+- default conflicting rows to skipped-plan output with an explicit reason
+
 ## Proposed Command Shape
 
 Conservative v1:
 
 ```bash
 cdx-chores rename cleanup ./screenshots --hint timestamp --dry-run
+cdx-chores rename cleanup ./screenshots/shot.png --hint timestamp --dry-run
 cdx-chores rename cleanup ./photos --hint serial --style preserve --dry-run
 cdx-chores rename cleanup ./captures --hint timestamp,date --style slug --dry-run
+cdx-chores rename cleanup ./captures --hint timestamp --timestamp-action remove --dry-run
+cdx-chores rename cleanup ./captures --hint timestamp --recursive --max-depth 1 --dry-run
+cdx-chores rename cleanup ./captures --hints timestamp --dry-run
 ```
 
 Possible later analyzer-assisted shape:
@@ -295,9 +511,10 @@ Possible interactive prompt sequence:
 
 1. Choose target path
 2. Choose hint families
-3. Choose output style
-4. Preview planned renames
-5. Save/apply through the existing plan flow
+3. Choose matched-fragment action for supported families such as timestamp keep vs remove
+4. Choose output style
+5. Preview planned renames
+6. Save/apply through the existing plan flow
 
 ## Example Transform Directions
 
@@ -319,7 +536,7 @@ Timestamp hint plus uid style:
 
 ```text
 Screenshot 2026-03-02 at 4.53.04 PM.png
--> 01jnxxxxxxx.png
+-> uid-7K3M9Q2X.png
 ```
 
 Serial hint plus slug style:
@@ -335,19 +552,23 @@ These are example directions, not final output contracts.
 
 Current preferred direction:
 
-- add a new `rename cleanup` subcommand
+- add a new `rename cleanup <path>` subcommand with file/directory auto-detect
 - require explicit hint families in v1
 - keep v1 deterministic
 - support `preserve`, `slug`, and `uid` output styles
+- preserve normalized timestamps by default and remove them only explicitly
+- preserve macOS screenshot / recording labels by default
+- support recursive directory traversal behind an explicit toggle
 - reuse the current rename plan/apply artifact flow
 - defer analyzer-assisted naming-pattern inference until after the deterministic contract is stable
 
-## Open Questions
+## Resolved Decisions
 
-1. Should `uid` be random UUID-derived, ULID-like, or hash-derived from the original filename/path?
-2. Should a matched timestamp fragment be preserved in normalized form by default, or removed unless explicitly requested?
-3. Should macOS-style labels like `Screenshot` and `Screen Recording` be treated as removable boilerplate under the timestamp hint, or as meaningful surviving words?
-4. Should cleanup support recursive directory traversal in v1, or start with flat-directory behavior only?
+1. `uid` should use a marker-based default shape such as `uid-<token>`, and the token should stay stable across repeated previews rather than using fresh random output on every run.
+2. A matched timestamp fragment should be preserved in normalized form by default and removed only when the user explicitly requests removal.
+3. macOS-style labels such as `Screenshot` and `Screen Recording` should survive cleanup by default.
+4. Cleanup should support recursive directory traversal in v1 behind an explicit `--recursive` toggle.
+5. Cleanup should accept either a file or directory path, but v1 should still only rename files, not directories.
 
 ## Related Research
 
