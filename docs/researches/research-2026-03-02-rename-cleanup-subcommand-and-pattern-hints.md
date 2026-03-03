@@ -255,7 +255,49 @@ Implication:
 - hints stay easy to reason about
 - output behavior remains explicit instead of overloading one flag with two jobs
 
-### 11. `uid` should prefer an explicit marker-based shape
+### 10a. `date` and `timestamp` should be disjoint in v1
+
+The temporal hint families need a clean boundary so users can predict what will match.
+
+Recommended v1 rule:
+
+- `timestamp` matches date-plus-time fragments
+- `date` matches date-only fragments
+- a full timestamp should match `timestamp`, not `date`
+
+Practical examples:
+
+- `2026-03-02 at 4.53.04 PM` -> `timestamp`
+- `2026-03-02` -> `date`
+
+Implication:
+
+- users can choose the narrower temporal cleanup they intend
+- mixed temporal behavior does not depend on hidden overlap rules
+
+### 10b. `serial` needs concrete v1 patterns
+
+`serial` should not mean "anything numeric".
+The first version needs a small explicit pattern family.
+
+Recommended v1 serial patterns:
+
+- standalone zero-padded counters such as `001`, `0023`, `000045`
+- parenthesized copy-style counters such as `(1)`, `(2)`, `(12)`
+- trailing dash/space/underscore counters such as `-01`, `_02`, ` 003` when they appear as a terminal fragment
+
+Explicitly out of scope for v1:
+
+- camera-style stems such as `IMG_1234`
+- camera-style stems such as `DSC01234`
+- arbitrary embedded numbers that are not acting as a trailing serial fragment
+
+Implication:
+
+- implementers have a narrow rule set to build and test
+- users are less likely to see surprising numeric cleanup
+
+### 11. `uid` output should prefer an explicit marker-based shape
 
 Reusing the current rename-plan artifact feel is a good instinct because it reduces mental burden.
 But cleanup has an additional requirement:
@@ -269,10 +311,11 @@ Recommended rule:
 - prefer a marker-based file UID shape such as `uid-<token>`
 - do not use a fresh random UUID slice as the cleanup basename default
 - derive `<token>` deterministically so repeated planning yields the same target
+- use a stable, regex-friendly alphabet and fixed length
 
 Practical example direction:
 
-- `uid-7K3M9Q2X.png`
+- `uid-7k3m9q2x4t.png`
 
 Where:
 
@@ -284,6 +327,31 @@ Implication:
 - the user gets a compact and recognizable shape
 - the cleanup flow stays predictable
 - advanced future modes can still add explicit `timestamp+uid`, `random`, `ulid`, or hash-algorithm variants later
+
+Recommended token contract:
+
+- alphabet: Crockford-style base32 without ambiguous letters
+- output casing: lowercase
+- allowed output characters: `0-9`, `a-h`, `j-k`, `m-n`, `p-t`, `v-z`
+- default token length: `10`
+
+Why this contract:
+
+- lowercase base32 is compact, shell-friendly, and visually calmer in filenames
+- excluding ambiguous letters such as `I`, `L`, `O`, and `U` improves readability
+- length `10` gives more collision headroom than `8` while staying short enough for filenames
+
+Recommended example:
+
+- `uid-7k3m9q2x4t.png`
+
+Recommended regex anchor:
+
+- `uid-[0-9a-hjkmnp-tv-z]{10}`
+
+Recommended detection rule:
+
+- UID cleanup detection should be case-insensitive so previously generated mixed-case variants are still recognized safely
 
 ### 11a. Candidate `uid` formats should optimize for detectability, not just brevity
 
@@ -306,7 +374,7 @@ Three practical candidate directions:
 2. easiest to regex-clean
 
 - shape: `uid-<token>`
-- example: `uid-7K3M9Q2X`
+- example: `uid-7k3m9q2x4t`
 - pros:
   - trivial to detect and remove safely
   - low false-positive risk
@@ -318,7 +386,7 @@ Three practical candidate directions:
 3. deterministic and preview-stable
 
 - shape: `<timestamp>-uid-<token>`
-- example: `20260303T101530Z-uid-7K3M9Q2X`
+- example: `20260303T101530Z-uid-7k3m9q2x4t`
 - pros:
   - easy regex detection
   - stable preview/apply behavior when `<token>` is hash-derived
@@ -335,8 +403,8 @@ Recommended direction:
 
 Example safe regex anchors:
 
-- `uid-[A-Z0-9]{8,16}`
-- `\\d{8}T\\d{6}Z-uid-[A-Z0-9]{8,16}`
+- `uid-[0-9a-hjkmnp-tv-z]{10}`
+- `\\d{8}T\\d{6}Z-uid-[0-9a-hjkmnp-tv-z]{10}`
 
 Implication:
 
@@ -385,6 +453,40 @@ Implication:
 - the command keeps one cleanup mental model
 - users do not have to choose between separate `file` and `batch` variants for the same operation
 - recursive traversal is supported without expanding scope into directory renaming
+
+### 14. File mode and directory mode should have explicit option behavior
+
+Auto-detecting the path type is useful, but only if the CLI contract stays strict.
+
+Recommended v1 rule:
+
+- when `<path>` resolves to a file:
+  - cleanup plans exactly one rename candidate
+  - `--recursive` and `--max-depth` are invalid
+  - directory-scoped filtering options should be invalid rather than silently ignored
+  - dry run writes the standard rename plan CSV with one executable row
+  - non-dry-run applies the one rename immediately
+- when `<path>` resolves to a directory:
+  - cleanup evaluates files inside that directory only by default
+  - subdirectories are traversed only with `--recursive`
+  - directory entries themselves are never rename targets in v1
+  - preview and dry-run behavior follow the current batch rename safety model
+
+Recommended directory-scoped options:
+
+- `--recursive`
+- `--max-depth`
+- `--match-regex`
+- `--skip-regex`
+- `--ext`
+- `--skip-ext`
+- `--preview-skips`
+
+Implication:
+
+- the command remains predictable in both modes
+- invalid option combinations fail early instead of being half-applied
+- the implementation can share one entrypoint without blurring single-file and batch semantics
 
 ## Implications or Recommendations
 
@@ -445,6 +547,10 @@ Suggested semantics:
 - `slug`: route the surviving content through `slugifyName(...)`
 - `uid`: replace the basename with a generated identifier and keep the extension
 
+Recommended default:
+
+- default `--style` should be `preserve`
+
 For `uid`, the CLI should decide whether the identifier is:
 
 - visually similar to current rename-plan identifiers
@@ -454,6 +560,7 @@ The practical v1 answer is:
 
 - use `uid-<token>` as the default shape
 - derive the token deterministically rather than generating fresh randomness per run
+- use lowercase Crockford-style base32 with a default length of `10`
 
 Future advanced options can expose explicit `random`, `ulid`, or hash-family variants later.
 
@@ -536,7 +643,7 @@ Timestamp hint plus uid style:
 
 ```text
 Screenshot 2026-03-02 at 4.53.04 PM.png
--> uid-7K3M9Q2X.png
+-> uid-7k3m9q2x4t.png
 ```
 
 Serial hint plus slug style:
@@ -556,19 +663,31 @@ Current preferred direction:
 - require explicit hint families in v1
 - keep v1 deterministic
 - support `preserve`, `slug`, and `uid` output styles
+- default `--style` to `preserve`
 - preserve normalized timestamps by default and remove them only explicitly
 - preserve macOS screenshot / recording labels by default
 - support recursive directory traversal behind an explicit toggle
+- use `uid-<token>` as the default UID style, with a deterministic lowercase base32 token of length `10`
 - reuse the current rename plan/apply artifact flow
 - defer analyzer-assisted naming-pattern inference until after the deterministic contract is stable
+- defer `--hint uid` cleanup detection from v1 unless a stronger immediate use case appears
 
 ## Resolved Decisions
 
-1. `uid` should use a marker-based default shape such as `uid-<token>`, and the token should stay stable across repeated previews rather than using fresh random output on every run.
+1. `uid` should use the default shape `uid-<token>`, where `<token>` is a deterministic lowercase Crockford-style base32 token of length `10`, stable across repeated previews rather than freshly random per run.
 2. A matched timestamp fragment should be preserved in normalized form by default and removed only when the user explicitly requests removal.
 3. macOS-style labels such as `Screenshot` and `Screen Recording` should survive cleanup by default.
 4. Cleanup should support recursive directory traversal in v1 behind an explicit `--recursive` toggle.
 5. Cleanup should accept either a file or directory path, but v1 should still only rename files, not directories.
+6. File mode and directory mode should reject incompatible option combinations instead of silently ignoring directory-scoped flags for single-file cleanup.
+7. `date` and `timestamp` should be disjoint in v1: `date` is date-only, `timestamp` is date-plus-time.
+8. `serial` should start with a small explicit trailing-counter pattern family, not a broad numeric matcher.
+9. `--style` should default to `preserve`.
+10. `--hint uid` should be deferred from v1 unless a stronger immediate use case appears.
+
+## Related Plans
+
+- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 
