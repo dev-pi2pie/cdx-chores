@@ -1,7 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 
-import { slugifyName } from "../../../utils/slug";
 import { createRenamePlanCsvRows, writeRenamePlanCsv } from "../../rename-plan-csv";
 import { applyPlannedRenames } from "../../fs-utils";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "../../types";
@@ -266,7 +265,7 @@ function buildCleanupSinglePlanCsvRows(
   reason: string | undefined,
 ): ReturnType<typeof createRenamePlanCsvRows>["rows"] {
   const cleanedStemBySourcePath = new Map<string, string>([
-    [plan.fromPath, slugifyName(basename(plan.toPath, extname(plan.toPath)))],
+    [plan.fromPath, basename(plan.toPath, extname(plan.toPath))],
   ]);
   const reasonBySourcePath = reason
     ? new Map<string, string>([[plan.fromPath, reason]])
@@ -286,10 +285,7 @@ function buildCleanupBatchPlanCsvRows(
 ): ReturnType<typeof createRenamePlanCsvRows>["rows"] {
   const cleanedStemBySourcePath = new Map<string, string>();
   for (const plan of plans) {
-    cleanedStemBySourcePath.set(
-      plan.fromPath,
-      slugifyName(basename(plan.toPath, extname(plan.toPath))),
-    );
+    cleanedStemBySourcePath.set(plan.fromPath, basename(plan.toPath, extname(plan.toPath)));
   }
 
   return createRenamePlanCsvRows({
