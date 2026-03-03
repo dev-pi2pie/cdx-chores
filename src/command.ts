@@ -8,6 +8,7 @@ import {
   actionMdToDocx,
   actionRenameApply,
   actionRenameBatch,
+  actionRenameCleanup,
   actionRenameFile,
   actionVideoConvert,
   actionVideoGif,
@@ -25,6 +26,11 @@ import {
   type TimestampTimezone,
   TIMESTAMP_TIMEZONE_VALUES,
 } from "./cli/rename-template";
+import type {
+  RenameCleanupConflictStrategy,
+  RenameCleanupStyle,
+  RenameCleanupTimestampAction,
+} from "./cli/actions/rename";
 import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
 
@@ -109,6 +115,30 @@ function parseTimestampTimezoneOption(value: string): TimestampTimezone {
   throw new InvalidArgumentError(
     `--timestamp-timezone must be one of: ${TIMESTAMP_TIMEZONE_VALUES.join(", ")}.`,
   );
+}
+
+function parseRenameCleanupStyleOption(value: string): RenameCleanupStyle {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "preserve" || normalized === "slug") {
+    return normalized;
+  }
+  throw new InvalidArgumentError("--style must be one of: preserve, slug.");
+}
+
+function parseRenameCleanupTimestampActionOption(value: string): RenameCleanupTimestampAction {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "keep" || normalized === "remove") {
+    return normalized;
+  }
+  throw new InvalidArgumentError("--timestamp-action must be one of: keep, remove.");
+}
+
+function parseRenameCleanupConflictStrategyOption(value: string): RenameCleanupConflictStrategy {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "skip" || normalized === "number" || normalized === "uid-suffix") {
+    return normalized;
+  }
+  throw new InvalidArgumentError("--conflict-strategy must be one of: skip, number, uid-suffix.");
 }
 
 function applyRenameTemplateOptions(command: Command): void {
@@ -517,6 +547,92 @@ export async function runCli(
       });
     },
   );
+
+  renameCommand
+    .command("cleanup")
+    .description("Normalize existing filenames by explicit hint families")
+    .argument("<path>", "Target file or directory path")
+    .option(
+      "--hint <value>",
+      "Cleanup hint family (repeatable or comma-separated): date, timestamp, serial, uid",
+      collectCsvListOption,
+      [],
+    )
+    .option(
+      "--hints <value>",
+      "Alias for --hint (repeatable or comma-separated): date, timestamp, serial, uid",
+      collectCsvListOption,
+      [],
+    )
+    .option(
+      "--style <value>",
+      "Cleanup output style: preserve, slug",
+      parseRenameCleanupStyleOption,
+    )
+    .option(
+      "--timestamp-action <value>",
+      "Timestamp fragment handling when --hint timestamp is active: keep or remove",
+      parseRenameCleanupTimestampActionOption,
+    )
+    .option(
+      "--conflict-strategy <value>",
+      "Cleanup conflict strategy: skip, number, uid-suffix",
+      parseRenameCleanupConflictStrategyOption,
+    )
+    .option("--dry-run", "Preview cleanup plan only", false)
+    .option("--preview-skips <mode>", "Skipped-item preview mode: summary or detailed")
+    .option("--recursive", "Traverse subdirectories recursively", false)
+    .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
+    .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
+    .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
+    .option(
+      "--ext <value>",
+      "Only include file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
+    .option(
+      "--skip-ext <value>",
+      "Exclude file extensions (repeatable or comma-separated)",
+      collectCsvListOption,
+      [],
+    )
+    .action(
+      async (
+        path: string,
+        options: {
+          hint?: string[];
+          hints?: string[];
+          style?: RenameCleanupStyle;
+          timestampAction?: RenameCleanupTimestampAction;
+          conflictStrategy?: RenameCleanupConflictStrategy;
+          dryRun?: boolean;
+          previewSkips?: "summary" | "detailed";
+          recursive?: boolean;
+          maxDepth?: number;
+          matchRegex?: string;
+          skipRegex?: string;
+          ext?: string[];
+          skipExt?: string[];
+        },
+      ) => {
+        await actionRenameCleanup(cliRuntime, {
+          path,
+          hints: [...(options.hint ?? []), ...(options.hints ?? [])],
+          style: options.style,
+          timestampAction: options.timestampAction,
+          conflictStrategy: options.conflictStrategy,
+          dryRun: options.dryRun,
+          previewSkips: options.previewSkips,
+          recursive: options.recursive,
+          maxDepth: options.maxDepth,
+          matchRegex: options.matchRegex,
+          skipRegex: options.skipRegex,
+          ext: options.ext,
+          skipExt: options.skipExt,
+        });
+      },
+    );
 
   renameCommand
     .command("apply")

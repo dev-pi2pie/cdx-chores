@@ -1,19 +1,22 @@
-import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { REPO_ROOT } from "./helpers/cli-test-utils";
+import { REPO_ROOT } from "./cli-test-utils";
 
-interface InteractiveHarnessScenario {
+export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
   confirmQueue?: boolean[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
+  cleanupAnalyzerEvidence?: Record<string, unknown>;
+  cleanupAnalyzerSuggestion?: Record<string, unknown>;
+  cleanupAnalyzerErrorMessage?: string;
+  cleanupAnalysisReportPath?: string;
 }
 
-interface InteractiveHarnessResult {
+export interface InteractiveHarnessResult {
   promptCalls: Array<{ kind: "select" | "confirm" | "input"; message: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
@@ -30,16 +33,19 @@ interface InteractiveHarnessResult {
 
 const actionsModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/actions/index.ts")).href;
 const pathModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path.ts")).href;
-const pathConfigModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path-config.ts")).href;
+const pathConfigModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/prompts/path-config.ts"),
+).href;
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
 
-function runInteractiveHarness(
+export function runInteractiveHarness(
   scenario: InteractiveHarnessScenario,
   options: { allowFailure?: boolean } = {},
 ): InteractiveHarnessResult {
   const childScript = `
     import { mock } from "bun:test";
+    import { dirname, resolve as resolvePath } from "node:path";
 
     const scenario = ${JSON.stringify(scenario)};
     const promptCalls = [];
@@ -62,6 +68,14 @@ function runInteractiveHarness(
       return queue.shift();
     }
 
+    function resolveHarnessPath(inputPath) {
+      return resolvePath(process.cwd(), String(inputPath ?? ""));
+    }
+
+    function directoryPathForFile(inputPath) {
+      return dirname(resolveHarnessPath(inputPath));
+    }
+
     mock.module("@inquirer/prompts", () => ({
       select: async (options) => {
         promptCalls.push({ kind: "select", message: options.message });
@@ -73,7 +87,16 @@ function runInteractiveHarness(
       },
       input: async (options) => {
         promptCalls.push({ kind: "input", message: options.message });
-        return shiftQueueValue(scenario.inputQueue ?? [], \`input:\${options.message}\`);
+        while (true) {
+          const nextValue = shiftQueueValue(scenario.inputQueue ?? [], \`input:\${options.message}\`);
+          if (!options.validate) {
+            return nextValue;
+          }
+          const validation = await options.validate(nextValue);
+          if (validation === true) {
+            return nextValue;
+          }
+        }
       },
     }));
 
@@ -105,8 +128,8 @@ function runInteractiveHarness(
         actionCalls.push({ name: "rename:file", options });
         return {
           changed: false,
-          filePath: String(options.path ?? ""),
-          directoryPath: String(options.path ?? ""),
+          filePath: resolveHarnessPath(options.path),
+          directoryPath: directoryPathForFile(options.path),
         };
       },
       actionRenameApply: async (_runtime, options) => {
@@ -117,6 +140,89 @@ function runInteractiveHarness(
           totalRows: 1,
           skippedCount: 0,
         };
+      },
+      actionRenameCleanup: async (_runtime, options) => {
+        actionCalls.push({ name: "rename:cleanup", options });
+        if (String(options.path ?? "") === "docs") {
+          return {
+            kind: "directory",
+            changedCount: 2,
+            totalCount: 3,
+            directoryPath: resolveHarnessPath("docs"),
+            planCsvPath: "plans/cleanup.csv",
+          };
+        }
+        return {
+          kind: "file",
+          changed: false,
+          filePath: resolveHarnessPath(options.path),
+          directoryPath: directoryPathForFile(options.path),
+        };
+      },
+      resolveRenameCleanupTarget: async (_runtime, inputPath) => {
+        if (String(inputPath) === "docs") {
+          return { kind: "directory", path: "docs" };
+        }
+        return { kind: "file", path: String(inputPath ?? "") };
+      },
+      collectRenameCleanupAnalyzerEvidence: async (_runtime, options) => {
+        options.onProgress?.("sampling");
+        if (scenario.cleanupAnalyzerEvidence) {
+          options.onProgress?.("grouping");
+          return scenario.cleanupAnalyzerEvidence;
+        }
+        const inputPath = String(options.path ?? "");
+        if (inputPath === "docs") {
+          options.onProgress?.("grouping");
+          return {
+            targetKind: "directory",
+            targetPath: "docs",
+            totalCandidateCount: 3,
+            sampledCount: 3,
+            sampleNames: ["app-00001.log", "app-00002.log", "app-00003.log"],
+            groupedPatterns: [
+              {
+                pattern: "app-{serial}.log",
+                count: 3,
+                examples: ["app-00001.log", "app-00002.log", "app-00003.log"],
+              },
+            ],
+          };
+        }
+        options.onProgress?.("grouping");
+        return {
+          targetKind: "file",
+          targetPath: inputPath,
+          totalCandidateCount: 1,
+          sampledCount: 1,
+          sampleNames: [inputPath],
+          groupedPatterns: [
+            {
+              pattern: "file.txt",
+              count: 1,
+              examples: [inputPath],
+            },
+          ],
+        };
+      },
+      suggestRenameCleanupWithCodex: async () => {
+        if (scenario.cleanupAnalyzerErrorMessage) {
+          return { errorMessage: scenario.cleanupAnalyzerErrorMessage };
+        }
+        return {
+          suggestion:
+            scenario.cleanupAnalyzerSuggestion ?? {
+              recommendedHints: ["serial"],
+              recommendedStyle: "slug",
+              confidence: 0.86,
+              reasoningSummary: "Most sampled names differ only by trailing counters.",
+            },
+        };
+      },
+      writeRenameCleanupAnalysisCsv: async () => {
+        const csvPath = scenario.cleanupAnalysisReportPath ?? "reports/cleanup-analysis.csv";
+        actionCalls.push({ name: "rename:cleanup:analysis-report", options: { csvPath } });
+        return csvPath;
       },
       actionVideoConvert: async (_runtime, options) => {
         actionCalls.push({ name: "video:convert", options });
@@ -224,131 +330,3 @@ function runInteractiveHarness(
 
   return parsed;
 }
-
-describe("interactive mode routing", () => {
-  test("routes the doctor flow from the root menu", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["doctor"],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([{ name: "doctor", options: { json: true } }]);
-    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
-      "select:Choose a command",
-      "confirm:Output as JSON?",
-    ]);
-    expect(result.pathCalls).toHaveLength(0);
-  });
-
-  test("routes a data flow and passes shared path prompt context", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["data", "data:json-to-csv"],
-      requiredPathQueue: ["fixtures/input.json"],
-      optionalPathQueue: [undefined],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "data:json-to-csv",
-        options: {
-          input: "fixtures/input.json",
-          output: null,
-          overwrite: true,
-        },
-      },
-    ]);
-    expect(result.pathCalls[0]).toMatchObject({
-      kind: "required",
-      message: "Input JSON file",
-      options: {
-        kind: "file",
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        cwd: REPO_ROOT,
-      },
-    });
-  });
-
-  test("routes a markdown flow through file output options", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["md", "md:frontmatter-to-json", "file", "data-only"],
-      requiredPathQueue: ["fixtures/doc.md"],
-      optionalPathQueue: ["fixtures/doc.frontmatter.json"],
-      confirmQueue: [true, false],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "md:frontmatter-to-json",
-        options: {
-          input: "fixtures/doc.md",
-          toStdout: false,
-          output: "fixtures/doc.frontmatter.json",
-          overwrite: false,
-          pretty: true,
-          dataOnly: true,
-        },
-      },
-    ]);
-  });
-
-  test("routes a rename flow through apply", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["rename", "rename:apply"],
-      requiredPathQueue: ["plans/rename.csv"],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "rename:apply",
-        options: {
-          csv: "plans/rename.csv",
-          autoClean: true,
-        },
-      },
-    ]);
-  });
-
-  test("routes a video flow through gif generation", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["video", "video:gif"],
-      requiredPathQueue: ["fixtures/input.mp4"],
-      optionalPathQueue: ["fixtures/output.gif"],
-      inputQueue: ["320", "12"],
-      confirmQueue: [false],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "video:gif",
-        options: {
-          input: "fixtures/input.mp4",
-          output: "fixtures/output.gif",
-          width: 320,
-          fps: 12,
-          overwrite: false,
-        },
-      },
-    ]);
-  });
-
-  test("throws when a handler receives an unknown action", () => {
-    const result = runInteractiveHarness({ mode: "invalid-data-action" }, { allowFailure: true });
-
-    expect(result.error).toBe("Unhandled interactive action: data:unknown");
-  });
-});

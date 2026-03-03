@@ -1,7 +1,12 @@
 import { confirm, input, select } from "@inquirer/prompts";
 
-import { actionRenameApply, actionRenameBatch, actionRenameFile } from "../actions";
+import {
+  actionRenameApply,
+  actionRenameBatch,
+  actionRenameFile,
+} from "../actions";
 import { promptRequiredPathWithConfig } from "../prompts/path";
+import { promptTextWithGhost } from "../prompts/text-inline";
 import {
   type RenameInteractiveCodexFlags as InteractiveCodexFlags,
   type RenameInteractiveCodexScope as InteractiveCodexScope,
@@ -23,29 +28,15 @@ import {
   templateContainsSerialPlaceholder,
 } from "../rename-template";
 import type { CliRuntime } from "../types";
+import { validateIntegerInput } from "./input-validation";
 import type { RenameInteractiveActionKey } from "./menu";
+import { runInteractiveRenameCleanup } from "./rename-cleanup";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
-function validateIntegerInput(
-  value: string,
-  options: { min?: number; allowEmpty?: boolean },
-): true | string {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return options.allowEmpty ? true : "Required";
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return "Must be a non-negative integer";
-  }
-  const parsed = Number(trimmed);
-  const min = options.min ?? 0;
-  if (parsed < min) {
-    return `Must be >= ${min}`;
-  }
-  return true;
-}
-
-async function promptRenamePatternConfig(options: { includeSerialScope: boolean }): Promise<{
+async function promptRenamePatternConfig(options: {
+  includeSerialScope: boolean;
+  pathPromptContext: InteractivePathPromptContext;
+}): Promise<{
   pattern: string;
   usesPrefix: boolean;
   serialOrder?: RenameSerialOrder;
@@ -81,12 +72,16 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
 
   const customTemplate =
     preset === "custom"
-      ? await input({
+      ? await promptTextWithGhost({
           message: [
             "Custom filename template",
-            "Placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {serial...}",
-            "Example: {date}-{stem}-{serial}",
+            "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {serial}",
+            "Advanced: explicit timestamp variants and {serial...} params are also supported.",
           ].join("\n"),
+          ghostText: "{timestamp}-{stem}",
+          runtimeConfig: options.pathPromptContext.runtimeConfig,
+          stdin: options.pathPromptContext.stdin,
+          stdout: options.pathPromptContext.stdout,
           validate: (value) => (value.trim() ? true : "Required"),
         })
       : undefined;
@@ -232,7 +227,10 @@ export async function handleRenameInteractiveAction(
       message: "Traverse subdirectories recursively?",
       default: false,
     });
-    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: recursive });
+    const patternConfig = await promptRenamePatternConfig({
+      includeSerialScope: recursive,
+      pathPromptContext,
+    });
     const prefix = patternConfig.usesPrefix
       ? await input({
           message: "Filename prefix (optional)",
@@ -327,12 +325,20 @@ export async function handleRenameInteractiveAction(
     return;
   }
 
+  if (action === "rename:cleanup") {
+    await runInteractiveRenameCleanup(runtime, pathPromptContext);
+    return;
+  }
+
   if (action === "rename:file") {
     const path = await promptRequiredPathWithConfig("Target file", {
       kind: "file",
       ...pathPromptContext,
     });
-    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: false });
+    const patternConfig = await promptRenamePatternConfig({
+      includeSerialScope: false,
+      pathPromptContext,
+    });
     const prefix = patternConfig.usesPrefix
       ? await input({
           message: "Filename prefix (optional)",

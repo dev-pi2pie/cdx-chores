@@ -93,6 +93,18 @@ Single-file rename preview (replayable CSV snapshot):
 cdx-chores rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
 ```
 
+Cleanup an existing filename by normalizing a matched timestamp:
+
+```bash
+cdx-chores rename cleanup ./captures/'Screenshot 2026-03-02 at 4.53.04 PM.png' --hint timestamp --style slug --dry-run
+```
+
+Cleanup a directory with mixed hint families and recursive traversal:
+
+```bash
+cdx-chores rename cleanup ./captures --hint date,serial,uid --recursive --max-depth 1 --dry-run
+```
+
 Codex-assisted batch rename preview (auto-routing by eligible file type):
 
 ```bash
@@ -122,6 +134,7 @@ Template and serial notes:
 - `--prefix` is optional; omit it for no prefix.
 - `--codex` is the common smart-routing flag for CLI mode.
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides.
+- `{uid}` is not a supported `--pattern` placeholder today.
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.
@@ -169,6 +182,38 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 - Common operational usage: `docs/guides/rename-common-usage.md`
 - Timestamp format matrix: `docs/guides/rename-timestamp-format-matrix.md`
 - Scope and Codex capability details: `docs/guides/rename-scope-and-codex-capability-guide.md`
+
+Cleanup notes:
+
+- `rename cleanup <path>` accepts either a single file or a directory.
+- `--hint` is the canonical flag; `--hints` is accepted as an alias.
+- Supported v1 cleanup hint families are `date`, `timestamp`, `serial`, and `uid`.
+- `uid` in cleanup is a cleanup-only hint family for now, not a general rename template placeholder.
+- When multiple hint families are selected, cleanup applies them sequentially in v1 order: `timestamp`, then `date`, then `serial`, then `uid`.
+- `--style` defaults to `preserve`; the current supported values are `preserve` and `slug`.
+- `--style` only formats the surviving basename text after cleanup matching. It does not resolve collisions or synthesize fallback names.
+- `serial` cleanup removes only the matched serial fragment and keeps the rest of the basename intact.
+- `uid` cleanup removes only the matched `uid-<token>` fragment and keeps surrounding prefix/suffix text intact.
+- cleanup detects existing uid fragments case-insensitively for compatibility.
+- `timestamp` and `date` are intentionally disjoint: full date-plus-time fragments match `timestamp`, while date-only fragments match `date`.
+- `--timestamp-action keep|remove` applies only when `--hint timestamp` is active.
+- `--conflict-strategy` currently supports `skip`, `number`, and `uid-suffix`.
+- conflict strategy applies only when the cleaned target collides. The first non-conflicting winner keeps the clean basename.
+- Directory cleanup is flat by default; use `--recursive` to descend into subdirectories. Directories themselves are not rename targets in v1.
+- `skip` keeps the current safe behavior and leaves collided rows as `target conflict`.
+- `number` appends `-1`, `-2`, `-3` only for collided targets.
+- `uid-suffix` appends `-uid-<token>` only for collided targets.
+- Generated `rename-plan-*.csv` dry-run artifacts are ignored as cleanup inputs during directory scans.
+- interactive analyzer-assisted cleanup can optionally write a separate advisory report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
+
+Cleanup option comparison:
+
+| Surface | Current role | Current values / scope |
+| ------- | ------------ | ---------------------- |
+| `--hint` | choose fragment families to clean | `date`, `timestamp`, `serial`, `uid` |
+| `--style` | format surviving text after cleanup | `preserve`, `slug` |
+| `--timestamp-action` | keep or remove matched timestamp text | `keep`, `remove` with `--hint timestamp` |
+| `--conflict-strategy` | resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix` |
 
 ## Video Guides
 
