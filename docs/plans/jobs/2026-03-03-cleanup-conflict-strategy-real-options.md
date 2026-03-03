@@ -28,14 +28,15 @@ Expand `rename cleanup` conflict handling from skip-only wiring into the real st
 - `src/cli/actions/rename/cleanup.ts`
 - `src/command.ts`
 - `src/cli/interactive/rename.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
-- `test/cli-interactive.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-cleanup-directory.test.ts`
+- `test/cli-interactive-rename.test.ts`
 - `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-interactive.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
 
 ## Follow-up
 

@@ -20,7 +20,7 @@ Land the first implementation slice of the new interactive rename UX plan by:
 - `src/cli/actions/index.ts`
 - `src/cli/actions/rename/index.ts`
 - `src/cli/actions/rename/cleanup.ts`
-- `test/cli-interactive.test.ts`
+- `test/cli-interactive-rename.test.ts`
 - `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Implemented
@@ -51,7 +51,7 @@ Land the first implementation slice of the new interactive rename UX plan by:
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-interactive.test.ts test/cli-actions-rename-cleanup.test.ts`
+- `bun test test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts`
 
 ## Notes
 

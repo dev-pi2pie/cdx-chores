@@ -14,7 +14,8 @@ Complete the Phase 3 cleanup engine slice for `rename cleanup` by implementing t
 
 - `src/cli/actions/rename/cleanup.ts`
 - `src/cli/actions/rename/cleanup-uid.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-cleanup-directory.test.ts`
 - `test/cli-actions-rename-cleanup-uid.test.ts`
 - `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
@@ -54,7 +55,7 @@ Complete the Phase 3 cleanup engine slice for `rename cleanup` by implementing t
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
 
 ## Notes
 

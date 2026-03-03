@@ -18,7 +18,8 @@ Finish the remaining user-facing documentation and manual verification items for
 - `docs/plans/jobs/2026-03-03-rename-cleanup-phase3.md`
 - `examples/playground/rename-cleanup-smoke/`
 - `src/cli/actions/rename/cleanup.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-cleanup-directory.test.ts`
 
 ## Implemented
 
@@ -36,7 +37,7 @@ Finish the remaining user-facing documentation and manual verification items for
 - Updated `docs/guides/rename-scope-and-codex-capability-guide.md` to state that `rename cleanup` is deterministic-only in v1 and does not use Codex analyzers.
 - Added a dedicated manual smoke fixture directory under `examples/playground/rename-cleanup-smoke/`.
 - During the manual smoke pass, found and fixed a serial false positive where trailing date fragments such as `2026-03-02` could be misread as serial counters.
-- Added a regression test for that serial/date boundary in `test/cli-actions-rename-cleanup.test.ts`.
+- Added a regression test for that serial/date boundary in the cleanup action test suite, now split across `test/cli-actions-rename-cleanup-single.test.ts` and `test/cli-actions-rename-cleanup-directory.test.ts`.
 
 ## Manual Smoke Checks
 
@@ -65,7 +66,7 @@ Observed results:
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
 - manual dry-run smoke checks listed above
 
 ## Related Plans

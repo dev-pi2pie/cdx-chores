@@ -1,10 +1,9 @@
-import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { REPO_ROOT } from "./helpers/cli-test-utils";
+import { REPO_ROOT } from "./cli-test-utils";
 
-interface InteractiveHarnessScenario {
+export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
   confirmQueue?: boolean[];
@@ -13,7 +12,7 @@ interface InteractiveHarnessScenario {
   optionalPathQueue?: Array<string | undefined>;
 }
 
-interface InteractiveHarnessResult {
+export interface InteractiveHarnessResult {
   promptCalls: Array<{ kind: "select" | "confirm" | "input"; message: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
@@ -36,7 +35,7 @@ const pathConfigModuleUrl = pathToFileURL(
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
 
-function runInteractiveHarness(
+export function runInteractiveHarness(
   scenario: InteractiveHarnessScenario,
   options: { allowFailure?: boolean } = {},
 ): InteractiveHarnessResult {
@@ -250,222 +249,3 @@ function runInteractiveHarness(
 
   return parsed;
 }
-
-describe("interactive mode routing", () => {
-  test("routes the doctor flow from the root menu", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["doctor"],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([{ name: "doctor", options: { json: true } }]);
-    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
-      "select:Choose a command",
-      "confirm:Output as JSON?",
-    ]);
-    expect(result.pathCalls).toHaveLength(0);
-  });
-
-  test("routes a data flow and passes shared path prompt context", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["data", "data:json-to-csv"],
-      requiredPathQueue: ["fixtures/input.json"],
-      optionalPathQueue: [undefined],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "data:json-to-csv",
-        options: {
-          input: "fixtures/input.json",
-          output: null,
-          overwrite: true,
-        },
-      },
-    ]);
-    expect(result.pathCalls[0]).toMatchObject({
-      kind: "required",
-      message: "Input JSON file",
-      options: {
-        kind: "file",
-        runtimeConfig: {
-          mode: "auto",
-          autocomplete: {
-            enabled: true,
-            minChars: 1,
-            maxSuggestions: 12,
-            includeHidden: false,
-          },
-        },
-        cwd: REPO_ROOT,
-      },
-    });
-  });
-
-  test("routes a markdown flow through file output options", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["md", "md:frontmatter-to-json", "file", "data-only"],
-      requiredPathQueue: ["fixtures/doc.md"],
-      optionalPathQueue: ["fixtures/doc.frontmatter.json"],
-      confirmQueue: [true, false],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "md:frontmatter-to-json",
-        options: {
-          input: "fixtures/doc.md",
-          toStdout: false,
-          output: "fixtures/doc.frontmatter.json",
-          overwrite: false,
-          pretty: true,
-          dataOnly: true,
-        },
-      },
-    ]);
-  });
-
-  test("routes a rename flow through apply", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["rename", "rename:apply"],
-      requiredPathQueue: ["plans/rename.csv"],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "rename:apply",
-        options: {
-          csv: "plans/rename.csv",
-          autoClean: true,
-        },
-      },
-    ]);
-  });
-
-  test("uses the shortened custom template hint text", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["rename", "rename:file", "custom", "path_asc"],
-      requiredPathQueue: ["README.md"],
-      inputQueue: ["{date}-{stem}-{serial}", "1", ""],
-      confirmQueue: [true, false],
-    });
-
-    expect(result.promptCalls).toContainEqual({
-      kind: "input",
-      message: [
-        "Custom filename template",
-        "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {serial}",
-        "Advanced: explicit timestamp variants and {serial...} params are also supported.",
-      ].join("\n"),
-    });
-  });
-
-  test("routes a cleanup file flow", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
-      requiredPathQueue: ["README.md"],
-      confirmQueue: [true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "rename:cleanup",
-        options: {
-          path: "README.md",
-          hints: ["date"],
-          style: "preserve",
-          conflictStrategy: "skip",
-          dryRun: true,
-        },
-      },
-    ]);
-  });
-
-  test("routes a cleanup directory dry-run flow and offers immediate apply", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: [
-        "rename",
-        "rename:cleanup",
-        "timestamp",
-        "done",
-        "slug",
-        "remove",
-        "number",
-        "detailed",
-      ],
-      requiredPathQueue: ["docs"],
-      inputQueue: [""],
-      confirmQueue: [true, false, true, true, true],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "rename:cleanup",
-        options: {
-          path: "docs",
-          hints: ["timestamp"],
-          style: "slug",
-          timestampAction: "remove",
-          conflictStrategy: "number",
-          recursive: true,
-          dryRun: true,
-          previewSkips: "detailed",
-        },
-      },
-      {
-        name: "rename:apply",
-        options: {
-          csv: "plans/cleanup.csv",
-          autoClean: true,
-        },
-      },
-    ]);
-    expect(result.promptCalls).toContainEqual({
-      kind: "select",
-      message: "Cleanup conflict strategy",
-    });
-    expect(result.promptCalls).toContainEqual({
-      kind: "confirm",
-      message: "Filter files before cleanup?",
-    });
-  });
-
-  test("routes a video flow through gif generation", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
-      selectQueue: ["video", "video:gif"],
-      requiredPathQueue: ["fixtures/input.mp4"],
-      optionalPathQueue: ["fixtures/output.gif"],
-      inputQueue: ["320", "12"],
-      confirmQueue: [false],
-    });
-
-    expect(result.actionCalls).toEqual([
-      {
-        name: "video:gif",
-        options: {
-          input: "fixtures/input.mp4",
-          output: "fixtures/output.gif",
-          width: 320,
-          fps: 12,
-          overwrite: false,
-        },
-      },
-    ]);
-  });
-
-  test("throws when a handler receives an unknown action", () => {
-    const result = runInteractiveHarness({ mode: "invalid-data-action" }, { allowFailure: true });
-
-    expect(result.error).toBe("Unhandled interactive action: data:unknown");
-  });
-});

@@ -31,7 +31,7 @@ Close the final remaining checklist item in the `rename cleanup` v1 plan by addi
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-uid.test.ts test/cli-actions-rename-cleanup-matchers.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts test/cli-actions-rename-cleanup-uid.test.ts test/cli-actions-rename-cleanup-matchers.test.ts`
 
 ## Related Plans
 

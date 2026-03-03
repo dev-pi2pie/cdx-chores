@@ -19,7 +19,7 @@ Advance Phase 2.1 and Phase 2.2 of the interactive cleanup plan by:
 - `src/cli/actions/rename/cleanup.ts`
 - `src/cli/actions/rename/cleanup-target.ts`
 - `src/cli/interactive/rename.ts`
-- `test/cli-interactive.test.ts`
+- `test/cli-interactive-rename.test.ts`
 - `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
@@ -45,7 +45,7 @@ Advance Phase 2.1 and Phase 2.2 of the interactive cleanup plan by:
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-interactive.test.ts test/cli-actions-rename-cleanup.test.ts`
+- `bun test test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts`
 
 ## Notes
 

@@ -25,7 +25,7 @@ Closed the remaining implementation work for the interactive rename template and
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-interactive.test.ts test/cli-text-inline.test.ts test/cli-path-inline.test.ts`
+- `bun test test/cli-interactive-routing.test.ts test/cli-interactive-rename.test.ts test/cli-text-inline.test.ts test/cli-path-inline.test.ts`
 - manual interactive smoke checks completed in the CLI TTY flow
 
 ## Related Plan

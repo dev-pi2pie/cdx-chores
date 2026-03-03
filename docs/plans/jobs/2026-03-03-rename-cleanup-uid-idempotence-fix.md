@@ -12,7 +12,7 @@ Address the `rename cleanup --style uid` review finding so rerunning cleanup on 
 ## Scope
 
 - `src/cli/actions/rename/cleanup-uid.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
 - `test/cli-actions-rename-cleanup-uid.test.ts`
 
 ## Implemented
@@ -21,11 +21,11 @@ Address the `rename cleanup --style uid` review finding so rerunning cleanup on 
 - Preserved lowercase canonicalization for existing UID basenames.
 - Added regression coverage for:
   - canonical UID basename reuse in the helper
-  - repeated `rename cleanup --hint uid --style uid` runs becoming a no-op after the first rename
+  - the helper-level idempotence boundary for canonical UID basenames before later cleanup semantics removed `--style uid`
 
 ## Verification
 
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-uid.test.ts`
 
 ## Related Plans
 

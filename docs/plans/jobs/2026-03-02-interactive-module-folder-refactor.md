@@ -39,7 +39,7 @@ Implement the folder-based split of `src/cli/interactive.ts` so interactive menu
 
 - `bunx tsc --noEmit` ✅
 - `bun test test/cli-actions-data.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-actions-rename-batch-core.test.ts test/cli-actions-rename-file.test.ts test/cli-actions-rename-apply-replay.test.ts test/cli-rename-interactive-router.test.ts test/cli-path.test.ts` ✅
-- `bun test test/cli-interactive.test.ts` ✅
+- `bun test test/cli-interactive-routing.test.ts test/cli-interactive-rename.test.ts` ✅
 - `bun run build` ✅
 - `bunx oxlint --tsconfig tsconfig.json src test scripts` ✅
 - `bun test` ✅

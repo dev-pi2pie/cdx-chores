@@ -24,7 +24,8 @@ Align `rename cleanup` with the intended fragment-removal contract for `serial` 
 - `src/cli/actions/rename/cleanup.ts`
 - `src/cli/interactive/rename.ts`
 - `src/command.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-cleanup-directory.test.ts`
 - `test/cli-actions-rename-cleanup-matchers.test.ts`
 - `README.md`
 - `docs/guides/rename-common-usage.md`
@@ -34,4 +35,4 @@ Align `rename cleanup` with the intended fragment-removal contract for `serial` 
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-matchers.test.ts test/cli-interactive.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-matchers.test.ts test/cli-interactive-rename.test.ts`

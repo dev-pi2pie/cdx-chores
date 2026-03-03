@@ -13,7 +13,8 @@ Address the final code review findings for `rename cleanup`, focusing on multi-h
 
 - `src/cli/actions/rename/cleanup.ts`
 - `src/cli/actions/rename/cleanup-matchers.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-cleanup-directory.test.ts`
 - `test/cli-actions-rename-cleanup-matchers.test.ts`
 - `README.md`
 - `docs/guides/rename-common-usage.md`
@@ -37,7 +38,7 @@ Address the final code review findings for `rename cleanup`, focusing on multi-h
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts test/cli-actions-rename-cleanup-uid.test.ts test/cli-actions-rename-cleanup-matchers.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts test/cli-actions-rename-cleanup-uid.test.ts test/cli-actions-rename-cleanup-matchers.test.ts`
 
 ## Related Plans
 

@@ -2,13 +2,22 @@
 title: "Codex analyzer-assisted rename cleanup"
 created-date: 2026-03-03
 modified-date: 2026-03-03
-status: draft
+status: active
 agent: codex
 ---
 
 ## Goal
 
 Define the first implementation-ready plan for analyzer-assisted `rename cleanup` without blurring deterministic cleanup and Codex suggestion behavior.
+
+## Current State
+
+- deterministic `rename cleanup` is already implemented in both CLI and interactive mode
+- cleanup currently remains explicit and deterministic by default
+- analyzer-assisted cleanup is still unimplemented
+- the contract-level research is already captured in `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+
+This plan now starts from that settled research baseline rather than reopening the core product direction.
 
 ## Scope
 
@@ -41,17 +50,36 @@ Define the first implementation-ready plan for analyzer-assisted `rename cleanup
 5. The user accepts or edits those settings.
 6. Normal deterministic cleanup planning and preview continue.
 
+## First Implementation Slice
+
+Start with the narrowest useful path:
+
+- interactive mode only
+- explicit opt-in step: `Suggest cleanup hints with Codex?`
+- filename-list evidence only
+- bounded local sampling/grouping before any analyzer request
+- structured suggestion response mapped onto existing cleanup controls
+- clean fallback to manual deterministic cleanup when analyzer support is unavailable or low-confidence
+
+## Likely Touchpoints
+
+- `src/cli/interactive/rename.ts`
+- `src/cli/actions/rename/cleanup.ts`
+- `src/cli/actions/rename/codex.ts`
+- `test/cli-interactive-rename.test.ts`
+- new focused analyzer-assisted cleanup tests under `test/`
+
 ## Phase Checklist
 
 ### Phase 1: Freeze analyzer contract
 
-- [ ] confirm the interactive entry shape:
+- [x] confirm the interactive entry shape:
+  - [x] optional `Suggest cleanup hints with Codex?` step
   - [ ] separate cleanup branch
-  - [ ] or optional `Suggest cleanup hints with Codex?` step
-- [ ] confirm filename-only input for the first pass
-- [ ] confirm bounded sampling and local grouping rules before sending analyzer input
-- [ ] confirm the structured analyzer response shape
-- [ ] confirm low-confidence and unavailable-Codex fallback behavior
+- [x] confirm filename-only input for the first pass
+- [x] confirm bounded sampling and local grouping rules before sending analyzer input
+- [x] confirm the structured analyzer response shape
+- [x] confirm low-confidence and unavailable-Codex fallback behavior
 
 ### Phase 2: Local sampling and request shaping
 
@@ -80,8 +108,13 @@ Define the first implementation-ready plan for analyzer-assisted `rename cleanup
 - first-pass analyzer input uses filename lists only
 - suggestions map cleanly onto existing cleanup controls
 - failures or low-confidence suggestions fall back to manual deterministic cleanup without blocking the user
+- the implementation does not reopen cleanup hint semantics, style semantics, or conflict-strategy behavior
 
 ## Related Research
 
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+
+## Related Plans
+
+- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`

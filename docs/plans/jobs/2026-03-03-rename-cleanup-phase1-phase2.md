@@ -15,7 +15,8 @@ Land the first implementation-facing slice of `rename cleanup` by codifying the 
 - `src/cli/actions/index.ts`
 - `src/cli/actions/rename/index.ts`
 - `src/cli/actions/rename/cleanup.ts`
-- `test/cli-actions-rename-cleanup.test.ts`
+- `test/cli-actions-rename-cleanup-validation.test.ts`
+- `test/cli-command-rename-cleanup.test.ts`
 - `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 - `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
 
@@ -45,7 +46,7 @@ Land the first implementation-facing slice of `rename cleanup` by codifying the 
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-actions-rename-cleanup.test.ts`
+- `bun test test/cli-actions-rename-cleanup-validation.test.ts test/cli-command-rename-cleanup.test.ts`
 
 ## Notes
 
