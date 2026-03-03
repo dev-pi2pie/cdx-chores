@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { REPO_ROOT } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./helpers/interactive-harness";
 
 describe("interactive rename routing", () => {
@@ -100,7 +101,7 @@ describe("interactive rename routing", () => {
       selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
-      confirmQueue: [true, false, true, true, true, true, true],
+      confirmQueue: [true, false, true, false, true, true, true, true],
       cleanupAnalyzerSuggestion: {
         recommendedHints: ["serial"],
         recommendedStyle: "slug",
@@ -130,9 +131,99 @@ describe("interactive rename routing", () => {
         },
       },
     ]);
+    expect(result.stdout).toContain("Sampling filenames for cleanup analysis...");
+    expect(result.stdout).toContain("Grouping filename patterns for cleanup analysis...");
+    expect(result.stdout).toContain("Waiting for Codex cleanup suggestions...");
     expect(result.stdout).toContain("Codex cleanup suggestion:");
     expect(result.stdout).toContain("- hints: serial");
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Write grouped cleanup analysis report CSV?",
+    });
     expect(result.promptCalls).not.toContainEqual({
+      kind: "select",
+      message: "Cleanup output style",
+    });
+  });
+
+  test("writes an analysis report csv during analyzer-assisted cleanup flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, true, true, true, true],
+      cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["serial"],
+        recommendedStyle: "slug",
+        confidence: 0.86,
+        reasoningSummary: "Most sampled names differ only by trailing counters.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:analysis-report",
+        options: {
+          csvPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["serial"],
+          style: "slug",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: true,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain("Wrote cleanup analysis report: reports/cleanup-analysis.csv");
+    expect(result.stdout).toContain("Cleanup analysis report auto-cleaned: reports/cleanup-analysis.csv");
+    expect(result.stdout).not.toContain(REPO_ROOT);
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Auto-clean plan/report CSV after apply?",
+    });
+  });
+
+  test("falls back to manual cleanup settings when analyzer suggestion fails", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
+      requiredPathQueue: ["README.md"],
+      confirmQueue: [true, true],
+      cleanupAnalyzerErrorMessage: "mocked analyzer failure",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "README.md",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "skip",
+          dryRun: true,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain("Sampling filenames for cleanup analysis...");
+    expect(result.stdout).toContain("Waiting for Codex cleanup suggestions...");
+    expect(result.stdout).toContain("Codex cleanup suggestion unavailable: mocked analyzer failure");
+    expect(result.stdout).toContain("Falling back to manual cleanup settings.");
+    expect(result.promptCalls).toContainEqual({
       kind: "select",
       message: "Cleanup output style",
     });

@@ -204,6 +204,7 @@ Cleanup notes:
 - `number` appends `-1`, `-2`, `-3` only for collided targets.
 - `uid-suffix` appends `-uid-<token>` only for collided targets.
 - Generated `rename-plan-*.csv` dry-run artifacts are ignored as cleanup inputs during directory scans.
+- interactive analyzer-assisted cleanup can optionally write a separate advisory report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
 
 Cleanup option comparison:
 

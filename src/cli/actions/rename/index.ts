@@ -17,6 +17,11 @@ export type {
   RenameCleanupAnalyzerEvidenceOptions,
   RenameCleanupAnalyzerGroup,
 } from "./cleanup-analyzer";
+export {
+  createRenameCleanupAnalysisCsvRows,
+  writeRenameCleanupAnalysisCsv,
+} from "./cleanup-analysis-csv";
+export type { RenameCleanupAnalysisCsvRow } from "./cleanup-analysis-csv";
 export { suggestRenameCleanupWithCodex } from "./cleanup-codex";
 export type {
   RenameCleanupCodexRunner,

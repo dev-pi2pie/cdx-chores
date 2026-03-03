@@ -77,6 +77,9 @@ cdx-chores rename cleanup ./captures --hint date,uid --match-regex '^Meeting|rep
 Notes:
 
 - `rename cleanup <path>` auto-detects file vs directory mode.
+- interactive `rename cleanup` now has an optional `Suggest cleanup hints with Codex?` step.
+- analyzer-assisted cleanup is currently interactive-only; direct CLI `rename cleanup` remains deterministic.
+- analyzer-assisted cleanup can now optionally write a grouped advisory CSV report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
 - `--hint` is the documented flag. `--hints` is accepted as a compatibility alias.
 - Supported v1 hints are `date`, `timestamp`, `serial`, and `uid`.
 - `uid` in cleanup is a hint family, not a general rename template placeholder. `{uid}` is not supported in `rename file` / `rename batch` `--pattern` templates today.
@@ -102,6 +105,32 @@ Notes:
 - `number` appends `-1`, `-2`, `-3` only for collided targets.
 - `uid-suffix` appends `-uid-<token>` only for collided targets.
 - Generated `rename-plan-*.csv` dry-run artifacts are ignored as directory cleanup inputs.
+
+### Analyzer-Assisted Playground Fixtures
+
+Use the dedicated analyzer playground root for manual smoke checks:
+
+- `examples/playground/cleanup-analyzer/`
+- `examples/playground/cleanup-analyzer/timestamp-family/`
+- `examples/playground/cleanup-analyzer/date-family/`
+- `examples/playground/cleanup-analyzer/serial-family/`
+- `examples/playground/cleanup-analyzer/uid-family/`
+- `examples/playground/cleanup-analyzer/mixed-family/`
+
+Fixture script:
+
+```bash
+node scripts/generate-cleanup-analyzer-fixtures.mjs seed
+node scripts/generate-cleanup-analyzer-fixtures.mjs clean
+node scripts/generate-cleanup-analyzer-fixtures.mjs reset --count-per-family 6
+```
+
+Notes:
+
+- the generator keeps each family compact for analyzer smoke tests
+- `mixed-family/` includes grouped and nested examples for recursive/manual review
+- the fixture tree is separate from `examples/playground/huge-logs/`, which is still the conflict-heavy cleanup fixture
+- interactive analyzer-assisted cleanup can optionally export grouped analysis rows from these fixtures into a separate advisory CSV artifact
 
 ### Cleanup Option Roles
 

@@ -13,6 +13,7 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
+  cleanupAnalysisReportPath?: string;
 }
 
 export interface InteractiveHarnessResult {
@@ -147,11 +148,14 @@ export function runInteractiveHarness(
         return { kind: "file", path: String(inputPath ?? "") };
       },
       collectRenameCleanupAnalyzerEvidence: async (_runtime, options) => {
+        options.onProgress?.("sampling");
         if (scenario.cleanupAnalyzerEvidence) {
+          options.onProgress?.("grouping");
           return scenario.cleanupAnalyzerEvidence;
         }
         const inputPath = String(options.path ?? "");
         if (inputPath === "docs") {
+          options.onProgress?.("grouping");
           return {
             targetKind: "directory",
             targetPath: "docs",
@@ -167,6 +171,7 @@ export function runInteractiveHarness(
             ],
           };
         }
+        options.onProgress?.("grouping");
         return {
           targetKind: "file",
           targetPath: inputPath,
@@ -195,6 +200,11 @@ export function runInteractiveHarness(
               reasoningSummary: "Most sampled names differ only by trailing counters.",
             },
         };
+      },
+      writeRenameCleanupAnalysisCsv: async () => {
+        const csvPath = scenario.cleanupAnalysisReportPath ?? "reports/cleanup-analysis.csv";
+        actionCalls.push({ name: "rename:cleanup:analysis-report", options: { csvPath } });
+        return csvPath;
       },
       actionVideoConvert: async (_runtime, options) => {
         actionCalls.push({ name: "video:convert", options });

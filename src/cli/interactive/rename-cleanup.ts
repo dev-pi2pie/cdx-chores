@@ -1,3 +1,5 @@
+import { rm } from "node:fs/promises";
+
 import { confirm, input, select } from "@inquirer/prompts";
 
 import {
@@ -6,8 +8,9 @@ import {
   collectRenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
   suggestRenameCleanupWithCodex,
+  writeRenameCleanupAnalysisCsv,
 } from "../actions";
-import { printLine } from "../actions/shared";
+import { displayPath, printLine } from "../actions/shared";
 import { promptRequiredPathWithConfig } from "../prompts/path";
 import type { CliRuntime } from "../types";
 import type {
@@ -17,6 +20,7 @@ import type {
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "../actions";
+import { createInteractiveAnalyzerStatus } from "./analyzer-status";
 import type { InteractivePathPromptContext } from "./shared";
 
 const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
@@ -216,22 +220,33 @@ async function promptCleanupSettingsFromSuggestion(
       hints: RenameCleanupHint[];
       style: RenameCleanupStyle;
       timestampAction?: RenameCleanupTimestampAction;
+      analysisReportPath?: string;
     }
   | undefined
 > {
+  const status = createInteractiveAnalyzerStatus(runtime.stdout);
   try {
+    status.start("Sampling filenames for cleanup analysis...");
     const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
       path: options.path,
       ...options.scope,
+      onProgress: (phase) => {
+        if (phase === "grouping") {
+          status.update("Grouping filename patterns for cleanup analysis...");
+        }
+      },
     });
+    status.wait("Waiting for Codex cleanup suggestions...");
     const result = await suggestRenameCleanupWithCodex({
       evidence,
       workingDirectory: runtime.cwd,
     });
+    status.stop();
 
     if (!result.suggestion) {
       if (result.errorMessage) {
         printLine(runtime.stdout, `Codex cleanup suggestion unavailable: ${result.errorMessage}`);
+        printLine(runtime.stdout, "Falling back to manual cleanup settings.");
         printLine(runtime.stdout);
       }
       return undefined;
@@ -245,6 +260,23 @@ async function promptCleanupSettingsFromSuggestion(
       reasoningSummary: result.suggestion.reasoningSummary,
     });
 
+    const writeAnalysisReport = await confirm({
+      message: "Write grouped cleanup analysis report CSV?",
+      default: false,
+    });
+    let analysisReportPath: string | undefined;
+    if (writeAnalysisReport) {
+      analysisReportPath = await writeRenameCleanupAnalysisCsv(runtime, {
+        evidence,
+        suggestion: result.suggestion,
+      });
+      printLine(
+        runtime.stdout,
+        `Wrote cleanup analysis report: ${displayPath(runtime, analysisReportPath)}`,
+      );
+      printLine(runtime.stdout);
+    }
+
     const useSuggestion = await confirm({
       message: "Use these suggested cleanup settings?",
       default: true,
@@ -257,10 +289,13 @@ async function promptCleanupSettingsFromSuggestion(
       hints: result.suggestion.recommendedHints,
       style: result.suggestion.recommendedStyle,
       timestampAction: result.suggestion.recommendedTimestampAction,
+      analysisReportPath,
     };
   } catch (error) {
+    status.stop();
     const message = error instanceof Error ? error.message : String(error);
     printLine(runtime.stdout, `Codex cleanup suggestion unavailable: ${message}`);
+    printLine(runtime.stdout, "Falling back to manual cleanup settings.");
     printLine(runtime.stdout);
     return undefined;
   }
@@ -309,6 +344,12 @@ export async function runInteractiveRenameCleanup(
     ? await promptCleanupSettingsFromSuggestion(runtime, { path, scope })
     : undefined;
   const cleanupSettings = suggestedSettings ?? (await promptManualCleanupSettings());
+  const cleanupActionSettings = {
+    hints: cleanupSettings.hints,
+    style: cleanupSettings.style,
+    timestampAction: cleanupSettings.timestampAction,
+  };
+  const analysisReportPath = suggestedSettings?.analysisReportPath;
 
   const conflictStrategy = await promptCleanupConflictStrategy();
   const dryRun = await confirm({ message: "Dry run only?", default: true });
@@ -334,7 +375,7 @@ export async function runInteractiveRenameCleanup(
 
   const result = await actionRenameCleanup(runtime, {
     path,
-    ...cleanupSettings,
+    ...cleanupActionSettings,
     conflictStrategy,
     ...scope,
     dryRun,
@@ -349,9 +390,18 @@ export async function runInteractiveRenameCleanup(
   const applyNow = await confirm({ message: "Apply these renames now?", default: false });
   if (applyNow) {
     const autoClean = await confirm({
-      message: "Auto-clean plan CSV after apply?",
+      message: analysisReportPath
+        ? "Auto-clean plan/report CSV after apply?"
+        : "Auto-clean plan CSV after apply?",
       default: true,
     });
     await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean });
+    if (autoClean && analysisReportPath) {
+      await rm(analysisReportPath, { force: true });
+      printLine(
+        runtime.stdout,
+        `Cleanup analysis report auto-cleaned: ${displayPath(runtime, analysisReportPath)}`,
+      );
+    }
   }
 }

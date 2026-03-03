@@ -1,6 +1,7 @@
 ---
 title: "Codex analyzer-assisted rename cleanup suggestions"
 created-date: 2026-03-03
+modified-date: 2026-03-03
 status: in-progress
 agent: codex
 ---
@@ -11,7 +12,7 @@ Define the first practical contract for Codex analyzer-assisted `rename cleanup`
 
 ## Status Note
 
-This research remains in progress while analyzer-assisted cleanup is still deferred from implementation and tracked in a dedicated follow-up plan.
+This research remains in progress as a living contract reference. The first implementation now exists and is tracked in `docs/plans/jobs/2026-03-03-analyzer-assisted-rename-cleanup-implementation.md`, while the remaining open verification item stays in the dedicated follow-up plan.
 
 ## Milestone Goal
 
@@ -26,6 +27,10 @@ Set a narrow first-pass design that:
 
 - `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+
+## Related Job Record
+
+- `docs/plans/jobs/2026-03-03-analyzer-assisted-rename-cleanup-implementation.md`
 
 ## Key Findings
 

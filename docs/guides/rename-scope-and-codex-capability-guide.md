@@ -18,7 +18,8 @@ Clarify the difference between:
 Rename support and Codex semantic support are separate layers:
 
 - `rename` can process broad file sets.
-- `rename cleanup` is deterministic only in v1 and does not use Codex analyzers.
+- CLI `rename cleanup` remains deterministic by default.
+- interactive `rename cleanup` can now optionally ask Codex for filename-only cleanup suggestions before deterministic cleanup runs.
 - cleanup conflict handling is also deterministic today; `skip`, `number`, and `uid-suffix` are planner-side strategies, not analyzer behavior.
 - Codex analyzers only run for eligible file types.
 - Unsupported or weak semantic cases safely fall back to deterministic rename.
@@ -138,7 +139,7 @@ Important:
 | ---------------------------------------------- | -------------------------------------------------------------- |
 | `rename batch --codex`                         | Auto-routes eligible files to image/doc analyzers by file type |
 | `rename file <file> --codex`                   | Auto-routes from the selected file extension                   |
-| `rename cleanup <path> --hint ...`             | Deterministic cleanup only; no Codex semantic analyzer path    |
+| `rename cleanup <path> --hint ...`             | Deterministic cleanup in CLI; interactive cleanup also has an opt-in filename analyzer suggestion step |
 | `rename batch --profile images --codex-images` | Eligible static images analyzed; others fallback               |
 | `rename batch --profile docs --codex-docs`     | Eligible docs/PDF analyzed; others fallback                    |
 | `rename batch --profile docs --codex-images`   | No image semantic analysis expected                            |

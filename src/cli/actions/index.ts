@@ -13,12 +13,15 @@ export {
   collectRenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
   suggestRenameCleanupWithCodex,
+  createRenameCleanupAnalysisCsvRows,
+  writeRenameCleanupAnalysisCsv,
 } from "./rename/index";
 export type {
   RenameApplyOptions,
   RenameCleanupAnalyzerEvidence,
   RenameCleanupAnalyzerEvidenceOptions,
   RenameCleanupAnalyzerGroup,
+  RenameCleanupAnalysisCsvRow,
   RenameBatchOptions,
   RenameCleanupCodexRunner,
   RenameCleanupCodexSuggestion,

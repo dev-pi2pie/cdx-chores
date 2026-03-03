@@ -1,0 +1,111 @@
+import pc from "picocolors";
+
+import { printLine } from "../actions/shared";
+
+const ANALYZER_WAITING_FRAMES = [".  ", ".. ", "...", ".. ", ".  "] as const;
+const ANALYZER_WAITING_INTERVAL_MS = 360;
+
+interface TtyWritableStream extends NodeJS.WritableStream {
+  isTTY?: boolean;
+}
+
+export interface InteractiveAnalyzerStatus {
+  start(message: string): void;
+  update(message: string): void;
+  wait(message: string): void;
+  stop(): void;
+}
+
+function clearStatusLine(stream: NodeJS.WritableStream): void {
+  stream.write("\r\x1b[2K");
+}
+
+function normalizeAnalyzerStatusMessage(message: string): string {
+  if (message.includes("Sampling filenames")) {
+    return "sampling";
+  }
+  if (message.includes("Grouping filename patterns")) {
+    return "grouping";
+  }
+  if (message.includes("Waiting for Codex cleanup suggestions")) {
+    return "waiting";
+  }
+  return message;
+}
+
+function renderStatusLine(stream: NodeJS.WritableStream, message: string): void {
+  const normalizedMessage = normalizeAnalyzerStatusMessage(message);
+  stream.write(`\r\x1b[2K${pc.dim("Codex")} ${pc.white("Thinking...")} ${pc.dim(normalizedMessage)}`);
+}
+
+function renderWaitingStatusLine(
+  stream: NodeJS.WritableStream,
+  message: string,
+  tick: number,
+): void {
+  const normalizedMessage = normalizeAnalyzerStatusMessage(message);
+  const dots = ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
+  stream.write(
+    `\r\x1b[2K${pc.dim("Codex")} ${pc.white("Thinking")} ${pc.dim(normalizedMessage)} ${pc.gray(dots)}`,
+  );
+}
+
+export function createInteractiveAnalyzerStatus(
+  stream: NodeJS.WritableStream,
+): InteractiveAnalyzerStatus {
+  const ttyStream = stream as TtyWritableStream;
+
+  if (!ttyStream.isTTY) {
+    return {
+      start(message) {
+        printLine(stream, message);
+      },
+      update(message) {
+        printLine(stream, message);
+      },
+      wait(message) {
+        printLine(stream, message);
+      },
+      stop() {},
+    };
+  }
+
+  let currentMessage = "";
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let tick = 0;
+
+  const stopTimer = () => {
+    if (!timer) {
+      return;
+    }
+    clearInterval(timer);
+    timer = undefined;
+  };
+
+  return {
+    start(message) {
+      stopTimer();
+      currentMessage = message;
+      renderStatusLine(stream, currentMessage);
+    },
+    update(message) {
+      stopTimer();
+      currentMessage = message;
+      renderStatusLine(stream, currentMessage);
+    },
+    wait(message) {
+      stopTimer();
+      currentMessage = message;
+      tick = 0;
+      renderWaitingStatusLine(stream, currentMessage, tick);
+      timer = setInterval(() => {
+        tick += 1;
+        renderWaitingStatusLine(stream, currentMessage, tick);
+      }, ANALYZER_WAITING_INTERVAL_MS);
+    },
+    stop() {
+      stopTimer();
+      clearStatusLine(stream);
+    },
+  };
+}

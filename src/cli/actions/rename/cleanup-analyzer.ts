@@ -37,6 +37,7 @@ export interface RenameCleanupAnalyzerEvidenceOptions
   sampleLimit?: number;
   groupLimit?: number;
   examplesPerGroup?: number;
+  onProgress?: (phase: "sampling" | "grouping") => void;
 }
 
 function clampPositiveInteger(value: number | undefined, fallback: number): number {
@@ -110,9 +111,11 @@ export async function collectRenameCleanupAnalyzerEvidence(
     options.examplesPerGroup,
     DEFAULT_CLEANUP_ANALYZER_EXAMPLES_PER_GROUP,
   );
+  options.onProgress?.("sampling");
 
   if (target.kind === "file") {
     const fileName = basename(target.path);
+    options.onProgress?.("grouping");
     return {
       targetKind: "file",
       targetPath: target.path,
@@ -135,6 +138,7 @@ export async function collectRenameCleanupAnalyzerEvidence(
     toRelativeDisplayName(target.path, candidate.sourcePath),
   );
   const sampledNames = names.slice(0, sampleLimit);
+  options.onProgress?.("grouping");
 
   return {
     targetKind: "directory",
