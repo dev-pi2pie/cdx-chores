@@ -545,13 +545,13 @@ export async function runCli(
     .argument("<path>", "Target file or directory path")
     .option(
       "--hint <value>",
-      "Cleanup hint family (repeatable or comma-separated): date, timestamp, serial",
+      "Cleanup hint family (repeatable or comma-separated): date, timestamp, serial, uid",
       collectCsvListOption,
       [],
     )
     .option(
       "--hints <value>",
-      "Alias for --hint (repeatable or comma-separated): date, timestamp, serial",
+      "Alias for --hint (repeatable or comma-separated): date, timestamp, serial, uid",
       collectCsvListOption,
       [],
     )

@@ -29,7 +29,7 @@ The research direction is now concrete enough to implement:
 
 - `rename cleanup <path>` auto-detects file vs directory
 - `--hint` is the canonical selector flag, with `--hints` accepted as an alias
-- supported v1 hint families are `date`, `timestamp`, and `serial`
+- supported v1 hint families are `date`, `timestamp`, `serial`, and `uid`
 - `date` and `timestamp` are disjoint in v1:
   - `date` = date-only fragments
   - `timestamp` = date-plus-time fragments
@@ -66,7 +66,7 @@ The research direction is now concrete enough to implement:
 - detect and normalize at least one well-defined timestamp family:
   - macOS `Screenshot ... at ...`
   - macOS `Screen Recording ... at ...`
-- support `date`, `timestamp`, and `serial` hint-driven cleanup
+- support `date`, `timestamp`, `serial`, and `uid` hint-driven cleanup
 - keep `date` and `timestamp` disjoint in v1:
   - `timestamp` matches date-plus-time fragments
   - `date` matches date-only fragments
@@ -235,6 +235,7 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
   - [x] `date`
   - [x] `timestamp`
   - [x] `serial`
+  - [x] `uid`
 - [x] codify disjoint temporal matching:
   - [x] `date` = date-only
   - [x] `timestamp` = date-plus-time
@@ -246,7 +247,9 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
   - [x] `preserve`
 - [x] codify file-mode validation rejects directory-only options
 - [x] codify directory names remain out of scope
-- [x] codify `--hint uid` as deferred from v1
+- [x] codify `--hint uid` support:
+  - [x] cleanup detection accepts existing `uid-<token>` fragments
+  - [x] detection is case-insensitive for compatibility
 
 ### Phase 2: Add CLI entrypoint and validation
 
@@ -261,42 +264,42 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
 
 ### Phase 3: Build cleanup detectors and transformers
 
-- [ ] add timestamp-family detection for the agreed macOS patterns
-- [ ] add date-family detection rules needed by v1
-- [ ] keep `date` and `timestamp` matching disjoint
-- [ ] add serial-family detection rules for the agreed v1 patterns
-- [ ] keep hints as selectors only, separate from transformation behavior
-- [ ] implement timestamp keep/remove handling
-- [ ] implement style transforms:
-  - [ ] `preserve`
-  - [ ] `slug`
-  - [ ] `uid`
-- [ ] preserve macOS labels such as `Screenshot` and `Screen Recording`
+- [x] add timestamp-family detection for the agreed macOS patterns
+- [x] add date-family detection rules needed by v1
+- [x] keep `date` and `timestamp` matching disjoint
+- [x] add serial-family detection rules for the agreed v1 patterns
+- [x] keep hints as selectors only, separate from transformation behavior
+- [x] implement timestamp keep/remove handling
+- [x] implement style transforms:
+  - [x] `preserve`
+  - [x] `slug`
+  - [x] `uid`
+- [x] preserve macOS labels such as `Screenshot` and `Screen Recording`
 
 ### Phase 4: Add deterministic UID generation
 
-- [ ] add a deterministic token generator for `uid-<token>`
-- [ ] hash the payload `rename-cleanup-uid-v1\0<normalized-real-source-path>` with `SHA-256`
-- [ ] use lowercase Crockford-style base32 output
-- [ ] use token length `10`
-- [ ] derive the token from normalized real absolute source path so repeated dry runs are stable across cwd changes
-- [ ] add deterministic widening fallback lengths for collision handling:
-  - [ ] `13`
-  - [ ] `16`
-- [ ] confirm generated basenames preserve the original extension
+- [x] add a deterministic token generator for `uid-<token>`
+- [x] hash the payload `rename-cleanup-uid-v1\0<normalized-real-source-path>` with `SHA-256`
+- [x] use lowercase Crockford-style base32 output
+- [x] use token length `10`
+- [x] derive the token from normalized real absolute source path so repeated dry runs are stable across cwd changes
+- [x] add deterministic widening fallback lengths for collision handling:
+  - [x] `13`
+  - [x] `16`
+- [x] confirm generated basenames preserve the original extension
 
 ### Phase 5: Integrate with rename planning and reporting
 
-- [ ] add cleanup planning for single-file mode
-- [ ] add cleanup planning for directory mode
-- [ ] reuse the standard rename plan CSV writer
-- [ ] reuse `rename apply` for dry-run replay flow
-- [ ] keep single-file non-dry-run behavior immediate, consistent with current `rename file`
-- [ ] add conflict detection and skipped reasons for:
-  - [ ] unchanged names
-  - [ ] duplicate target basenames within the same run
-  - [ ] target-path conflicts against existing files where applicable
-- [ ] ensure preview output remains understandable in both single-file and directory mode
+- [x] add cleanup planning for single-file mode
+- [x] add cleanup planning for directory mode
+- [x] reuse the standard rename plan CSV writer
+- [x] reuse `rename apply` for dry-run replay flow
+- [x] keep single-file non-dry-run behavior immediate, consistent with current `rename file`
+- [x] add conflict detection and skipped reasons for:
+  - [x] unchanged names
+  - [x] duplicate target basenames within the same run
+  - [x] target-path conflicts against existing files where applicable
+- [x] ensure preview output remains understandable in both single-file and directory mode
 
 ### Phase 6: Documentation and examples
 
@@ -315,26 +318,26 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
 ### Phase 7: Tests and verification
 
 - [ ] add unit tests for cleanup hint detection
-- [ ] add unit tests for deterministic UID generation
-- [ ] add unit tests for timestamp keep/remove behavior
-- [ ] add unit tests proving `date` and `timestamp` are disjoint
-- [ ] add unit tests for the agreed v1 serial matcher patterns
-- [ ] add unit tests for style transforms:
-  - [ ] `preserve`
-  - [ ] `slug`
-  - [ ] `uid`
-- [ ] add action-level tests for single-file cleanup:
-  - [ ] dry run
-  - [ ] apply
-  - [ ] invalid directory-only flags
-- [ ] add action-level tests for directory cleanup:
-  - [ ] flat mode
-  - [ ] recursive mode
-  - [ ] filter interaction
-  - [ ] conflict skips
+- [x] add unit tests for deterministic UID generation
+- [x] add unit tests for timestamp keep/remove behavior
+- [x] add unit tests proving `date` and `timestamp` are disjoint
+- [x] add unit tests for the agreed v1 serial matcher patterns
+- [x] add unit tests for style transforms:
+  - [x] `preserve`
+  - [x] `slug`
+  - [x] `uid`
+- [x] add action-level tests for single-file cleanup:
+  - [x] dry run
+  - [x] apply
+  - [x] invalid directory-only flags
+- [x] add action-level tests for directory cleanup:
+  - [x] flat mode
+  - [x] recursive mode
+  - [x] filter interaction
+  - [x] conflict skips
 - [ ] run verification:
-  - [ ] `bunx tsc --noEmit`
-  - [ ] focused `bun test` runs for cleanup-related tests
+  - [x] `bunx tsc --noEmit`
+  - [x] focused `bun test` runs for cleanup-related tests
   - [ ] one or more manual dry-run smoke checks in `examples/playground/`
 
 ## Completion Criteria
