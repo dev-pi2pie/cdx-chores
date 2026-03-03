@@ -17,14 +17,19 @@ import {
 } from "./reporting";
 import { createRenameBatchFileFilter } from "./filters";
 import { buildCleanupUidBasenames } from "./cleanup-uid";
+import {
+  CLEANUP_HINT_VALUES,
+  buildTemporalCleanupStem,
+  type CleanupHint,
+  type CleanupTextStyle,
+} from "./cleanup-matchers";
 
 export type RenameCleanupStyle = "preserve" | "slug" | "uid";
 export type RenameCleanupTimestampAction = "keep" | "remove";
 
-const RENAME_CLEANUP_HINT_VALUES = ["date", "timestamp", "serial", "uid"] as const;
-type RenameCleanupHint = (typeof RENAME_CLEANUP_HINT_VALUES)[number];
-const MACOS_TIMESTAMP_PATTERN =
-  /\b(\d{4})-(\d{2})-(\d{2}) at (\d{1,2})\.(\d{2})\.(\d{2}) (AM|PM)\b/i;
+const RENAME_CLEANUP_HINT_VALUES = CLEANUP_HINT_VALUES;
+type RenameCleanupHint = CleanupHint;
+const RENAME_PLAN_CSV_ARTIFACT_PATTERN = /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/;
 
 export interface RenameCleanupOptions {
   path: string;
@@ -43,28 +48,6 @@ export interface RenameCleanupOptions {
 
 type CleanupPathKind = "file" | "directory";
 type CleanupPathTarget = { kind: CleanupPathKind; path: string };
-
-interface CleanupTimestampMatch {
-  prefix: string;
-  suffix: string;
-  normalizedTimestamp: string;
-}
-
-interface CleanupDateMatch {
-  prefix: string;
-  suffix: string;
-  normalizedDate: string;
-}
-
-interface CleanupSerialMatch {
-  prefix: string;
-  normalizedSerial: string;
-}
-
-interface CleanupUidMatch {
-  prefix: string;
-  suffix: string;
-}
 
 interface CleanupCandidate {
   sourcePath: string;
@@ -205,246 +188,6 @@ async function resolveCleanupTarget(
   });
 }
 
-function normalizePreserveStem(value: string): string {
-  const normalized = value
-    .replace(/\s+/g, " ")
-    .replace(/^[\s._-]+|[\s._-]+$/g, "")
-    .trim();
-  return normalized || "file";
-}
-
-function trimCleanupFragmentEdges(value: string): string {
-  return value.replace(/^[\s._-]+|[\s._-]+$/g, "").trim();
-}
-
-function formatCleanupTimestamp(
-  year: string,
-  month: string,
-  day: string,
-  hourText: string,
-  minute: string,
-  second: string,
-  meridiem: string,
-): string {
-  const hour12 = Number(hourText);
-  const normalizedMeridiem = meridiem.toUpperCase();
-  const hour24 = normalizedMeridiem === "PM" ? (hour12 % 12) + 12 : hour12 % 12;
-  return `${year}${month}${day}-${String(hour24).padStart(2, "0")}${minute}${second}`;
-}
-
-function matchCleanupTimestamp(stem: string): CleanupTimestampMatch | undefined {
-  const match = MACOS_TIMESTAMP_PATTERN.exec(stem);
-  if (!match || match.index === undefined) {
-    return undefined;
-  }
-  const [, year, month, day, hour, minute, second, meridiem] = match;
-  if (!year || !month || !day || !hour || !minute || !second || !meridiem) {
-    return undefined;
-  }
-
-  return {
-    prefix: stem.slice(0, match.index).trim(),
-    suffix: stem.slice(match.index + match[0].length).trim(),
-    normalizedTimestamp: formatCleanupTimestamp(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      meridiem,
-    ),
-  };
-}
-
-function matchCleanupDate(stem: string): CleanupDateMatch | undefined {
-  if (MACOS_TIMESTAMP_PATTERN.test(stem)) {
-    return undefined;
-  }
-
-  const match = /\b(\d{4})-(\d{2})-(\d{2})\b/.exec(stem);
-  if (!match || match.index === undefined) {
-    return undefined;
-  }
-  const [, year, month, day] = match;
-  if (!year || !month || !day) {
-    return undefined;
-  }
-
-  return {
-    prefix: stem.slice(0, match.index).trim(),
-    suffix: stem.slice(match.index + match[0].length).trim(),
-    normalizedDate: `${year}${month}${day}`,
-  };
-}
-
-function matchCleanupSerial(stem: string): CleanupSerialMatch | undefined {
-  const parenthesizedMatch = /^(.*?)(?:[\s._-]*)\((\d{1,})\)$/.exec(stem);
-  if (parenthesizedMatch) {
-    const [, rawPrefix, serial] = parenthesizedMatch;
-    const prefix = trimCleanupFragmentEdges(rawPrefix ?? "");
-    if (serial && prefix) {
-      return { prefix, normalizedSerial: serial };
-    }
-  }
-
-  const separatedMatch = /^(.*?)(?:[\s_-]+)(0\d+)$/.exec(stem);
-  if (!separatedMatch) {
-    return undefined;
-  }
-
-  const [, rawPrefix, serial] = separatedMatch;
-  const prefix = trimCleanupFragmentEdges(rawPrefix ?? "");
-  if (!prefix || !serial) {
-    return undefined;
-  }
-
-  if (/^(img|dsc)$/i.test(prefix)) {
-    return undefined;
-  }
-
-  return { prefix, normalizedSerial: serial };
-}
-
-function matchCleanupUid(stem: string): CleanupUidMatch | undefined {
-  const match = /(^|[\s._-]+)(uid-[0-9a-hjkmnpqrstvwxyz]{10,16})(?=$|[\s._-]+)(.*)$/i.exec(stem);
-  if (!match || match.index === undefined) {
-    return undefined;
-  }
-
-  return {
-    prefix: trimCleanupFragmentEdges(stem.slice(0, match.index)),
-    suffix: trimCleanupFragmentEdges(match[3] ?? ""),
-  };
-}
-
-function buildTimestampCleanupStem(
-  stem: string,
-  style: RenameCleanupStyle,
-  timestampAction: RenameCleanupTimestampAction,
-): { nextStem: string; reason?: string; matchedTimestamp?: string } {
-  const match = matchCleanupTimestamp(stem);
-  if (!match) {
-    return { nextStem: stem, reason: "no timestamp match" };
-  }
-
-  const parts = [match.prefix];
-  if (timestampAction === "keep") {
-    parts.push(match.normalizedTimestamp);
-  }
-  parts.push(match.suffix);
-  const rebuilt = parts.filter((part) => part.length > 0).join(" ");
-  const nextStem =
-    style === "slug" ? slugifyName(rebuilt) : normalizePreserveStem(rebuilt);
-
-  return { nextStem, matchedTimestamp: match.normalizedTimestamp };
-}
-
-function buildDateCleanupStem(
-  stem: string,
-  style: RenameCleanupStyle,
-): { nextStem: string; reason?: string; matchedDate?: string } {
-  const match = matchCleanupDate(stem);
-  if (!match) {
-    return { nextStem: stem, reason: "no date match" };
-  }
-
-  const rebuilt = [match.prefix, match.normalizedDate, match.suffix]
-    .filter((part) => part.length > 0)
-    .join(" ");
-  const nextStem =
-    style === "slug" ? slugifyName(rebuilt) : normalizePreserveStem(rebuilt);
-
-  return { nextStem, matchedDate: match.normalizedDate };
-}
-
-function buildSerialCleanupStem(
-  stem: string,
-  style: RenameCleanupStyle,
-): { nextStem: string; reason?: string; matchedSerial?: string } {
-  const match = matchCleanupSerial(stem);
-  if (!match) {
-    return { nextStem: stem, reason: "no serial match" };
-  }
-
-  const rebuilt = [match.prefix, match.normalizedSerial]
-    .filter((part) => part.length > 0)
-    .join(" ");
-  const nextStem =
-    style === "slug" ? slugifyName(rebuilt) : normalizePreserveStem(rebuilt);
-
-  return { nextStem, matchedSerial: match.normalizedSerial };
-}
-
-function buildUidCleanupStem(
-  stem: string,
-  style: Exclude<RenameCleanupStyle, "uid">,
-): { nextStem: string; reason?: string } {
-  const match = matchCleanupUid(stem);
-  if (!match) {
-    return { nextStem: stem, reason: "no uid match" };
-  }
-
-  const rebuilt = [match.prefix, match.suffix].filter((part) => part.length > 0).join(" ");
-  const nextStem =
-    style === "slug" ? slugifyName(rebuilt) : normalizePreserveStem(rebuilt);
-
-  return { nextStem };
-}
-
-function buildTemporalCleanupStem(
-  stem: string,
-  hints: RenameCleanupHint[],
-  style: RenameCleanupStyle,
-  timestampAction: RenameCleanupTimestampAction,
-): { nextStem: string; reason?: string } {
-  const textStyle: Exclude<RenameCleanupStyle, "uid"> = style === "uid" ? "preserve" : style;
-  if (hints.includes("timestamp")) {
-    const timestampResult = buildTimestampCleanupStem(stem, textStyle, timestampAction);
-    if (!timestampResult.reason) {
-      return { nextStem: timestampResult.nextStem };
-    }
-  }
-
-  if (hints.includes("date")) {
-    const dateResult = buildDateCleanupStem(stem, textStyle);
-    if (!dateResult.reason) {
-      return { nextStem: dateResult.nextStem };
-    }
-  }
-
-  if (hints.includes("serial")) {
-    const serialResult = buildSerialCleanupStem(stem, textStyle);
-    if (!serialResult.reason) {
-      return { nextStem: serialResult.nextStem };
-    }
-  }
-
-  if (hints.includes("uid")) {
-    const uidResult = buildUidCleanupStem(stem, textStyle);
-    if (!uidResult.reason) {
-      return { nextStem: uidResult.nextStem };
-    }
-  }
-
-  if (hints.includes("timestamp") && hints.includes("date")) {
-    return { nextStem: stem, reason: "no date or timestamp match" };
-  }
-  if (hints.includes("timestamp")) {
-    return { nextStem: stem, reason: "no timestamp match" };
-  }
-  if (hints.includes("date")) {
-    return { nextStem: stem, reason: "no date match" };
-  }
-  if (hints.includes("serial")) {
-    return { nextStem: stem, reason: "no serial match" };
-  }
-  if (hints.includes("uid")) {
-    return { nextStem: stem, reason: "no uid match" };
-  }
-  return { nextStem: stem, reason: "no supported hint match" };
-}
-
 async function buildCleanupBasenameCandidates(
   sourcePath: string,
   stem: string,
@@ -452,7 +195,8 @@ async function buildCleanupBasenameCandidates(
   style: RenameCleanupStyle,
   timestampAction: RenameCleanupTimestampAction,
 ): Promise<{ baseNames: string[]; reason?: string }> {
-  const result = buildTemporalCleanupStem(stem, hints, style, timestampAction);
+  const textStyle: CleanupTextStyle = style === "uid" ? "preserve" : style;
+  const result = buildTemporalCleanupStem(stem, hints, textStyle, timestampAction);
   if (result.reason) {
     return { baseNames: [stem], reason: result.reason };
   }
@@ -506,6 +250,10 @@ function buildCleanupBatchPlanCsvRows(
   }).rows;
 }
 
+function isRenamePlanCsvArtifactName(entryName: string): boolean {
+  return RENAME_PLAN_CSV_ARTIFACT_PATTERN.test(entryName);
+}
+
 async function collectDirectoryCleanupCandidates(
   directoryPath: string,
   options: RenameCleanupOptions,
@@ -546,6 +294,9 @@ async function collectDirectoryCleanupCandidates(
       }
 
       occupiedFilePaths.add(entryPath);
+      if (isRenamePlanCsvArtifactName(entry.name)) {
+        continue;
+      }
       if (!fileFilter(entry.name)) {
         continue;
       }

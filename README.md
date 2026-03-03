@@ -93,6 +93,18 @@ Single-file rename preview (replayable CSV snapshot):
 cdx-chores rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
 ```
 
+Cleanup an existing filename by normalizing a matched timestamp:
+
+```bash
+cdx-chores rename cleanup ./captures/'Screenshot 2026-03-02 at 4.53.04 PM.png' --hint timestamp --style slug --dry-run
+```
+
+Cleanup a directory with mixed hint families and recursive traversal:
+
+```bash
+cdx-chores rename cleanup ./captures --hint date,serial,uid --recursive --max-depth 1 --dry-run
+```
+
 Codex-assisted batch rename preview (auto-routing by eligible file type):
 
 ```bash
@@ -169,6 +181,19 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 - Common operational usage: `docs/guides/rename-common-usage.md`
 - Timestamp format matrix: `docs/guides/rename-timestamp-format-matrix.md`
 - Scope and Codex capability details: `docs/guides/rename-scope-and-codex-capability-guide.md`
+
+Cleanup notes:
+
+- `rename cleanup <path>` accepts either a single file or a directory.
+- `--hint` is the canonical flag; `--hints` is accepted as an alias.
+- Supported v1 cleanup hint families are `date`, `timestamp`, `serial`, and `uid`.
+- When multiple hint families are selected, cleanup applies them sequentially in v1 order: `timestamp`, then `date`, then `serial`, then `uid`.
+- `--style` defaults to `preserve`; other supported values are `slug` and `uid`.
+- `uid` output uses lowercase `uid-<token>` values, and cleanup detection accepts existing uid fragments case-insensitively for compatibility.
+- `timestamp` and `date` are intentionally disjoint: full date-plus-time fragments match `timestamp`, while date-only fragments match `date`.
+- `--timestamp-action keep|remove` applies only when `--hint timestamp` is active.
+- Directory cleanup is flat by default; use `--recursive` to descend into subdirectories. Directories themselves are not rename targets in v1.
+- Generated `rename-plan-*.csv` dry-run artifacts are ignored as cleanup inputs during directory scans.
 
 ## Video Guides
 

@@ -243,6 +243,25 @@ describe("cli action modules: rename cleanup", () => {
     });
   });
 
+  test("actionRenameCleanup still cleans standalone date fragments when a timestamp also exists elsewhere", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const fileName = "release 2026-03-01 Screenshot 2026-03-02 at 4.53.04 PM.txt";
+      await writeFile(join(fixtureDir, fileName), "fake", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: fileName,
+        hints: ["date"],
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(
+        `${fileName} -> release 20260301 Screenshot 2026-03-02 at 4.53.04 PM.txt`,
+      );
+    });
+  });
+
   test("actionRenameCleanup dry-runs a single serial cleanup with preserve style", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
@@ -296,6 +315,25 @@ describe("cli action modules: rename cleanup", () => {
 
       expectNoStderr();
       expect(stdout.text).toContain("- IMG_1234.JPG (unchanged)");
+      expect(stdout.text).toContain("Reason: no serial match");
+    });
+  });
+
+  test("actionRenameCleanup does not treat trailing date fragments as serial counters", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const fileName = "Meeting Notes 2026-03-02.txt";
+      await writeFile(join(fixtureDir, fileName), "fake", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: fileName,
+        hints: ["serial"],
+        style: "slug",
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`- ${fileName} (unchanged)`);
       expect(stdout.text).toContain("Reason: no serial match");
     });
   });
@@ -400,6 +438,23 @@ describe("cli action modules: rename cleanup", () => {
 
       expectNoStderr();
       expect(stdout.text).toContain("Screenshot 2026-03-02 at 4.53.04 PM.png -> Screenshot 20260302-165304.png");
+    });
+  });
+
+  test("actionRenameCleanup applies multiple selected hints sequentially on one filename", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const fileName = "report 2026-03-02 uid-7k3m9q2x4t final.txt";
+      await writeFile(join(fixtureDir, fileName), "fake", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: fileName,
+        hints: ["date", "uid"],
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`${fileName} -> report 20260302 final.txt`);
     });
   });
 
@@ -572,6 +627,28 @@ describe("cli action modules: rename cleanup", () => {
       expect(stdout.text).toContain("Skipped details:");
       expect(stdout.text).toContain("Screenshot 2026-03-02 at 4.53.04 PM.png");
       expect(stdout.text).toContain("screenshot.png");
+    });
+  });
+
+  test("actionRenameCleanup ignores generated rename plan csv artifacts in directory scans", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const dirPath = join(fixtureDir, "cleanup-dir");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "Meeting Notes 2026-03-02.txt"), "a", "utf8");
+      await writeFile(join(dirPath, "rename-plan-20260303T070111Z-07e91641.csv"), "plan", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: "cleanup-dir",
+        hints: ["date"],
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Files found: 1");
+      expect(stdout.text).toContain("Files to rename: 1");
+      expect(stdout.text).not.toContain("rename-plan-20260303T070111Z-07e91641.csv");
     });
   });
 });

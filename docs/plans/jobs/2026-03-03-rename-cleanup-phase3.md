@@ -60,9 +60,6 @@ Complete the Phase 3 cleanup engine slice for `rename cleanup` by implementing t
 
 - This job record consolidates the earlier timestamp and date Phase 3 slice notes into one Phase 3 implementation record.
 - Remaining cleanup work is outside this Phase 3 scope:
-  - recursive-specific cleanup coverage
-  - filter-interaction coverage
-  - broader conflict-skip coverage
   - user-facing docs in `README.md` and rename guides
 
 ## Related Plans

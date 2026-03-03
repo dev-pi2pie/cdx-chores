@@ -2,7 +2,7 @@
 title: "Rename cleanup v1 implementation"
 created-date: 2026-03-03
 modified-date: 2026-03-03
-status: active
+status: completed
 agent: codex
 ---
 
@@ -303,21 +303,21 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
 
 ### Phase 6: Documentation and examples
 
-- [ ] update `README.md` with one or two cleanup examples
-- [ ] update rename guide material if cleanup is user-facing in this phase
-- [ ] document:
-  - [ ] canonical `--hint`
-  - [ ] accepted `--hints` alias
-  - [ ] `uid-<token>` format
-  - [ ] lowercase token output plus case-insensitive detection guidance for future compatibility
-  - [ ] file-vs-directory mode behavior
-  - [ ] directory names not being renamed in v1
-  - [ ] disjoint `date` vs `timestamp` behavior
-  - [ ] concrete v1 serial matcher scope
+- [x] update `README.md` with one or two cleanup examples
+- [x] update rename guide material if cleanup is user-facing in this phase
+- [x] document:
+  - [x] canonical `--hint`
+  - [x] accepted `--hints` alias
+  - [x] `uid-<token>` format
+  - [x] lowercase token output plus case-insensitive detection guidance for future compatibility
+  - [x] file-vs-directory mode behavior
+  - [x] directory names not being renamed in v1
+  - [x] disjoint `date` vs `timestamp` behavior
+  - [x] concrete v1 serial matcher scope
 
 ### Phase 7: Tests and verification
 
-- [ ] add unit tests for cleanup hint detection
+- [x] add unit tests for cleanup hint detection
 - [x] add unit tests for deterministic UID generation
 - [x] add unit tests for timestamp keep/remove behavior
 - [x] add unit tests proving `date` and `timestamp` are disjoint
@@ -335,10 +335,10 @@ It exists to codify them into implementation-facing rules and ensure the CLI sur
   - [x] recursive mode
   - [x] filter interaction
   - [x] conflict skips
-- [ ] run verification:
+- [x] run verification:
   - [x] `bunx tsc --noEmit`
   - [x] focused `bun test` runs for cleanup-related tests
-  - [ ] one or more manual dry-run smoke checks in `examples/playground/`
+  - [x] one or more manual dry-run smoke checks in `examples/playground/`
 
 ## Completion Criteria
 

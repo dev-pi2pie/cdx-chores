@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-03-01
+modified-date: 2026-03-03
 status: completed
 agent: codex
 ---
@@ -30,6 +30,12 @@ Preview single-file rename:
 cdx-chores rename file ./images/IMG_1024.JPG --prefix gallery --dry-run
 ```
 
+Preview single-file cleanup:
+
+```bash
+cdx-chores rename cleanup ./captures/'Screenshot 2026-03-02 at 4.53.04 PM.png' --hint timestamp --style slug --dry-run
+```
+
 Recursive batch with per-directory serial reset:
 
 ```bash
@@ -47,6 +53,48 @@ Preview skipped items with per-item detail:
 ```bash
 cdx-chores rename batch ./photos --dry-run --preview-skips detailed
 ```
+
+Preview recursive cleanup with bounded traversal:
+
+```bash
+cdx-chores rename cleanup ./captures --hint date,serial --recursive --max-depth 1 --dry-run
+```
+
+## Cleanup Usage
+
+Use `rename cleanup` when the filename already exists and you want to normalize matched fragments instead of constructing a new name from a template.
+
+Examples:
+
+```bash
+cdx-chores rename cleanup ./captures/'Meeting Notes 2026-03-02.txt' --hint date --dry-run
+cdx-chores rename cleanup ./captures/'scan_003.pdf' --hint serial --style slug --dry-run
+cdx-chores rename cleanup ./captures/'report uid-7k3m9q2x4t final.txt' --hint uid --dry-run
+cdx-chores rename cleanup ./captures --hint timestamp --timestamp-action remove --dry-run
+cdx-chores rename cleanup ./captures --hint date,uid --match-regex '^Meeting|report' --ext txt --dry-run
+```
+
+Notes:
+
+- `rename cleanup <path>` auto-detects file vs directory mode.
+- `--hint` is the documented flag. `--hints` is accepted as a compatibility alias.
+- Supported v1 hints are `date`, `timestamp`, `serial`, and `uid`.
+- When multiple hints are supplied, cleanup applies them sequentially in this v1 order:
+  - `timestamp`
+  - `date`
+  - `serial`
+  - `uid`
+- `--style` defaults to `preserve`.
+- `preserve` keeps readable spaces, `slug` uses kebab-case, and `uid` emits `uid-<token>` while preserving the original extension.
+- `uid-<token>` output uses a deterministic lowercase Crockford-style base32 token of length `10`.
+- cleanup detects existing `uid-<token>` fragments case-insensitively for compatibility with older or mixed-case variants.
+- `timestamp` and `date` are disjoint:
+  - `timestamp` matches date-plus-time fragments
+  - `date` matches date-only fragments
+- `--timestamp-action keep|remove` only applies when `--hint timestamp` is present.
+- Directory cleanup is non-recursive by default. Use `--recursive` and optional `--max-depth` to descend.
+- Directory names are not rename targets in v1.
+- Generated `rename-plan-*.csv` dry-run artifacts are ignored as directory cleanup inputs.
 
 ## Pattern and Template Usage
 
