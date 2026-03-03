@@ -23,4 +23,13 @@ describe("rename cleanup uid generation", () => {
       expect(first[2]?.startsWith(first[1]!)).toBe(true);
     });
   });
+
+  test("buildCleanupUidBasenames reuses an existing canonical uid basename", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "UID-7K3M9Q2X4T.txt");
+      await writeFile(sourcePath, "fake", "utf8");
+
+      await expect(buildCleanupUidBasenames(sourcePath)).resolves.toEqual(["uid-7k3m9q2x4t"]);
+    });
+  });
 });

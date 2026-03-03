@@ -554,6 +554,44 @@ describe("cli action modules: rename cleanup", () => {
     });
   });
 
+  test("actionRenameCleanup leaves canonical uid targets unchanged on repeated uid cleanup runs", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const firstRun = createActionTestRuntime({ cwd: fixtureDir });
+      const sourceName = "report uid-7k3m9q2x4t final.txt";
+      const sourcePath = join(fixtureDir, sourceName);
+      await writeFile(sourcePath, "fake", "utf8");
+
+      await actionRenameCleanup(firstRun.runtime, {
+        path: sourceName,
+        hints: ["uid"],
+        style: "uid",
+      });
+
+      firstRun.expectNoStderr();
+      const entriesAfterFirstRun = await readdir(fixtureDir);
+      const uidEntry = entriesAfterFirstRun.find((entry) =>
+        /^uid-[0-9a-hjkmnpqrstvwxyz]{10}\.txt$/.test(entry),
+      );
+      expect(uidEntry).toBeDefined();
+      const uidEntryName = uidEntry!;
+
+      const secondRun = createActionTestRuntime({ cwd: fixtureDir });
+      await actionRenameCleanup(secondRun.runtime, {
+        path: uidEntryName,
+        hints: ["uid"],
+        style: "uid",
+      });
+
+      secondRun.expectNoStderr();
+      expect(secondRun.stdout.text).toContain(`- ${uidEntryName} (unchanged)`);
+
+      const entriesAfterSecondRun = await readdir(fixtureDir);
+      expect(entriesAfterSecondRun.filter((entry) => entry.endsWith(".txt"))).toEqual([uidEntryName]);
+      await expect(stat(join(fixtureDir, uidEntryName))).resolves.toBeDefined();
+      await expect(stat(sourcePath)).rejects.toBeDefined();
+    });
+  });
+
   test("actionRenameCleanup skips a single file with no uid match", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
