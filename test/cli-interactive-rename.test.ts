@@ -27,7 +27,7 @@ describe("interactive rename routing", () => {
       mode: "run",
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
       requiredPathQueue: ["README.md"],
-      confirmQueue: [true],
+      confirmQueue: [false, true],
     });
 
     expect(result.actionCalls).toEqual([
@@ -59,7 +59,7 @@ describe("interactive rename routing", () => {
       ],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
-      confirmQueue: [true, false, true, true, true],
+      confirmQueue: [true, false, false, true, true, true],
     });
 
     expect(result.actionCalls).toEqual([
@@ -91,6 +91,50 @@ describe("interactive rename routing", () => {
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
       message: "Filter files before cleanup?",
+    });
+  });
+
+  test("routes an analyzer-assisted cleanup flow without manual hint prompts", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, true, true, true],
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["serial"],
+        recommendedStyle: "slug",
+        confidence: 0.86,
+        reasoningSummary: "Most sampled names differ only by trailing counters.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["serial"],
+          style: "slug",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: true,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain("Codex cleanup suggestion:");
+    expect(result.stdout).toContain("- hints: serial");
+    expect(result.promptCalls).not.toContainEqual({
+      kind: "select",
+      message: "Cleanup output style",
     });
   });
 });

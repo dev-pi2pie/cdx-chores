@@ -133,7 +133,10 @@ function isRenamePlanCsvArtifactName(entryName: string): boolean {
 
 export async function collectDirectoryCleanupCandidates(
   directoryPath: string,
-  options: RenameCleanupOptions,
+  options: Pick<
+    RenameCleanupOptions,
+    "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
+  >,
 ): Promise<{
   candidates: CleanupCandidate[];
   skipped: SkippedRenameItem[];

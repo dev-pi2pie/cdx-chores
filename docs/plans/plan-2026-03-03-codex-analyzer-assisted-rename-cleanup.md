@@ -75,7 +75,7 @@ Start with the narrowest useful path:
 
 - [x] confirm the interactive entry shape:
   - [x] optional `Suggest cleanup hints with Codex?` step
-  - [ ] separate cleanup branch
+  - [x] separate cleanup branch
 - [x] confirm filename-only input for the first pass
 - [x] confirm bounded sampling and local grouping rules before sending analyzer input
 - [x] confirm the structured analyzer response shape
@@ -83,23 +83,23 @@ Start with the narrowest useful path:
 
 ### Phase 2: Local sampling and request shaping
 
-- [ ] implement bounded filename sampling for file and directory cleanup scopes
-- [ ] add local grouping/deduping so repeated filename shapes do not bloat analyzer input
-- [ ] define the request payload mapped from grouped filename evidence
-- [ ] keep the first pass free of file-content reads
+- [x] implement bounded filename sampling for file and directory cleanup scopes
+- [x] add local grouping/deduping so repeated filename shapes do not bloat analyzer input
+- [x] define the request payload mapped from grouped filename evidence
+- [x] keep the first pass free of file-content reads
 
 ### Phase 3: Analyzer integration
 
-- [ ] add the analyzer-assisted interactive step without changing the default deterministic path
-- [ ] call Codex only when the user explicitly opts in
-- [ ] parse and validate structured analyzer suggestions
-- [ ] map accepted suggestions back onto existing deterministic cleanup controls
+- [x] add the analyzer-assisted interactive step without changing the default deterministic path
+- [x] call Codex only when the user explicitly opts in
+- [x] parse and validate structured analyzer suggestions
+- [x] map accepted suggestions back onto existing deterministic cleanup controls
 
 ### Phase 4: Review, fallback, and verification
 
-- [ ] show analyzer suggestions as editable recommendations rather than auto-applied settings
-- [ ] ensure analyzer errors or unsupported environments fall back cleanly to manual cleanup setup
-- [ ] add focused tests for sampling, response parsing, and interactive branching
+- [x] show analyzer suggestions as editable recommendations rather than auto-applied settings
+- [x] ensure analyzer errors or unsupported environments fall back cleanly to manual cleanup setup
+- [x] add focused tests for sampling, response parsing, and interactive branching
 - [ ] run manual smoke checks for analyzer-assisted cleanup suggestion flows
 
 ## Success Criteria

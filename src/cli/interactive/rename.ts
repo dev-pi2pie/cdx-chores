@@ -3,9 +3,7 @@ import { confirm, input, select } from "@inquirer/prompts";
 import {
   actionRenameApply,
   actionRenameBatch,
-  actionRenameCleanup,
   actionRenameFile,
-  resolveRenameCleanupTarget,
 } from "../actions";
 import { promptRequiredPathWithConfig } from "../prompts/path";
 import { promptTextWithGhost } from "../prompts/text-inline";
@@ -31,24 +29,8 @@ import {
 } from "../rename-template";
 import type { CliRuntime } from "../types";
 import type { RenameInteractiveActionKey } from "./menu";
+import { runInteractiveRenameCleanup } from "./rename-cleanup";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
-
-type InteractiveCleanupHint = "date" | "timestamp" | "serial" | "uid";
-
-const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
-  name: string;
-  value: InteractiveCleanupHint;
-  description: string;
-}> = [
-  {
-    name: "timestamp",
-    value: "timestamp",
-    description: "Date-plus-time fragments such as macOS screenshot timestamps",
-  },
-  { name: "date", value: "date", description: "Date-only fragments such as 2026-03-03" },
-  { name: "serial", value: "serial", description: "Trailing counters such as (2), -01, or _003" },
-  { name: "uid", value: "uid", description: "Existing uid-<token> fragments" },
-];
 
 function validateIntegerInput(
   value: string,
@@ -224,45 +206,6 @@ async function promptRenamePatternConfig(options: {
   };
 }
 
-function parseInteractiveCsvList(value: string): string[] | undefined {
-  const items = value
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-  return items.length > 0 ? items : undefined;
-}
-
-async function promptInteractiveCleanupHints(): Promise<InteractiveCleanupHint[]> {
-  const selected: InteractiveCleanupHint[] = [];
-
-  while (true) {
-    const remainingChoices = INTERACTIVE_CLEANUP_HINT_CHOICES.filter(
-      (choice) => !selected.includes(choice.value),
-    );
-    const choice = await select<InteractiveCleanupHint | "done">({
-      message: selected.length === 0 ? "Add a cleanup hint" : "Add another cleanup hint or finish",
-      choices: [
-        ...remainingChoices,
-        ...(selected.length > 0
-          ? [
-              {
-                name: "done",
-                value: "done" as const,
-                description: `Selected: ${selected.join(", ")}`,
-              },
-            ]
-          : []),
-      ],
-    });
-
-    if (choice === "done") {
-      return selected;
-    }
-
-    selected.push(choice);
-  }
-}
-
 export async function handleRenameInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
@@ -401,157 +344,7 @@ export async function handleRenameInteractiveAction(
   }
 
   if (action === "rename:cleanup") {
-    const path = await promptRequiredPathWithConfig("Target path", {
-      kind: "path",
-      ...pathPromptContext,
-    });
-    const target = await resolveRenameCleanupTarget(runtime, path);
-    const pathKind = target.kind;
-    const hints = await promptInteractiveCleanupHints();
-    const style = await select<"preserve" | "slug">({
-      message: "Cleanup output style",
-      choices: [
-        {
-          name: "preserve",
-          value: "preserve",
-          description: "Keep readable spacing while normalizing matched fragments",
-        },
-        {
-          name: "slug",
-          value: "slug",
-          description: "Convert the remaining text to kebab-case",
-        },
-      ],
-      default: "preserve",
-    });
-    const timestampAction = hints.includes("timestamp")
-      ? await select<"keep" | "remove">({
-          message: "Timestamp fragment handling",
-          choices: [
-            {
-              name: "keep",
-              value: "keep",
-              description: "Keep matched timestamps in normalized form",
-            },
-            {
-              name: "remove",
-              value: "remove",
-              description: "Remove matched timestamps from the basename",
-            },
-          ],
-          default: "keep",
-        })
-      : undefined;
-    const conflictStrategy = await select<"skip" | "number" | "uid-suffix">({
-      message: "Cleanup conflict strategy",
-      choices: [
-        {
-          name: "skip",
-          value: "skip",
-          description: "Keep the clean target when free and skip only the conflicted rows",
-        },
-        {
-          name: "number",
-          value: "number",
-          description: "Append -1, -2, -3 only when the cleaned target conflicts",
-        },
-        {
-          name: "uid-suffix",
-          value: "uid-suffix",
-          description: "Append -uid-<token> only when the cleaned target conflicts",
-        },
-      ],
-      default: "skip",
-    });
-    const recursive =
-      pathKind === "directory"
-        ? await confirm({
-            message: "Traverse subdirectories recursively?",
-            default: false,
-          })
-        : false;
-    const maxDepthInput =
-      pathKind === "directory" && recursive
-        ? await input({ message: "Max recursive depth (optional, root=0)", default: "" })
-        : "";
-    const addDirectoryFilters =
-      pathKind === "directory"
-        ? await confirm({
-            message: "Filter files before cleanup?",
-            default: false,
-          })
-        : false;
-    const matchRegex =
-      pathKind === "directory" && addDirectoryFilters
-        ? await input({ message: "Match regex (optional)", default: "" })
-        : "";
-    const skipRegex =
-      pathKind === "directory" && addDirectoryFilters
-        ? await input({ message: "Skip regex (optional)", default: "" })
-        : "";
-    const extInput =
-      pathKind === "directory" && addDirectoryFilters
-        ? await input({
-            message: "Only extensions (optional, comma-separated)",
-            default: "",
-          })
-        : "";
-    const skipExtInput =
-      pathKind === "directory" && addDirectoryFilters
-        ? await input({
-            message: "Skip extensions (optional, comma-separated)",
-            default: "",
-          })
-        : "";
-    const dryRun = await confirm({ message: "Dry run only?", default: true });
-    const previewSkips =
-      pathKind === "directory" && dryRun
-        ? await select<"summary" | "detailed">({
-            message: "Skipped-item preview mode",
-            choices: [
-              {
-                name: "summary",
-                value: "summary",
-                description: "Compact skipped summary grouped by reason",
-              },
-              {
-                name: "detailed",
-                value: "detailed",
-                description: "Show skipped summary plus bounded per-item skipped rows",
-              },
-            ],
-            default: "summary",
-          })
-        : undefined;
-    const result = await actionRenameCleanup(runtime, {
-      path,
-      hints,
-      style,
-      timestampAction,
-      conflictStrategy,
-      recursive: pathKind === "directory" ? recursive : undefined,
-      maxDepth: maxDepthInput.trim() ? Number(maxDepthInput.trim()) : undefined,
-      matchRegex: matchRegex.trim() ? matchRegex.trim() : undefined,
-      skipRegex: skipRegex.trim() ? skipRegex.trim() : undefined,
-      ext: parseInteractiveCsvList(extInput),
-      skipExt: parseInteractiveCsvList(skipExtInput),
-      dryRun,
-      previewSkips,
-    });
-
-    const hasChanges = result.kind === "file" ? result.changed : result.changedCount > 0;
-    if (!dryRun || !hasChanges || !result.planCsvPath) {
-      return;
-    }
-
-    const applyNow = await confirm({ message: "Apply these renames now?", default: false });
-    if (applyNow) {
-      const autoClean = await confirm({
-        message: "Auto-clean plan CSV after apply?",
-        default: true,
-      });
-      await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean });
-    }
+    await runInteractiveRenameCleanup(runtime, pathPromptContext);
     return;
   }
 

@@ -10,12 +10,21 @@ export {
   actionRenameBatch,
   actionRenameCleanup,
   actionRenameFile,
+  collectRenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
+  suggestRenameCleanupWithCodex,
 } from "./rename/index";
 export type {
   RenameApplyOptions,
+  RenameCleanupAnalyzerEvidence,
+  RenameCleanupAnalyzerEvidenceOptions,
+  RenameCleanupAnalyzerGroup,
   RenameBatchOptions,
+  RenameCleanupCodexRunner,
+  RenameCleanupCodexSuggestion,
+  RenameCleanupCodexSuggestionResult,
   RenameCleanupConflictStrategy,
+  RenameCleanupHint,
   RenameCleanupOptions,
   RenameCleanupPathKind,
   RenameCleanupPathTarget,
@@ -23,6 +32,7 @@ export type {
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
   RenameFileOptions,
+  SuggestRenameCleanupWithCodexOptions,
 } from "./rename/index";
 export { actionVideoConvert, actionVideoGif, actionVideoResize } from "./video";
 export type { VideoConvertOptions, VideoGifOptions, VideoResizeOptions } from "./video";

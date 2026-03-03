@@ -10,6 +10,9 @@ export interface InteractiveHarnessScenario {
   inputQueue?: string[];
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
+  cleanupAnalyzerEvidence?: Record<string, unknown>;
+  cleanupAnalyzerSuggestion?: Record<string, unknown>;
+  cleanupAnalyzerErrorMessage?: string;
 }
 
 export interface InteractiveHarnessResult {
@@ -142,6 +145,56 @@ export function runInteractiveHarness(
           return { kind: "directory", path: "docs" };
         }
         return { kind: "file", path: String(inputPath ?? "") };
+      },
+      collectRenameCleanupAnalyzerEvidence: async (_runtime, options) => {
+        if (scenario.cleanupAnalyzerEvidence) {
+          return scenario.cleanupAnalyzerEvidence;
+        }
+        const inputPath = String(options.path ?? "");
+        if (inputPath === "docs") {
+          return {
+            targetKind: "directory",
+            targetPath: "docs",
+            totalCandidateCount: 3,
+            sampledCount: 3,
+            sampleNames: ["app-00001.log", "app-00002.log", "app-00003.log"],
+            groupedPatterns: [
+              {
+                pattern: "app-{serial}.log",
+                count: 3,
+                examples: ["app-00001.log", "app-00002.log", "app-00003.log"],
+              },
+            ],
+          };
+        }
+        return {
+          targetKind: "file",
+          targetPath: inputPath,
+          totalCandidateCount: 1,
+          sampledCount: 1,
+          sampleNames: [inputPath],
+          groupedPatterns: [
+            {
+              pattern: "file.txt",
+              count: 1,
+              examples: [inputPath],
+            },
+          ],
+        };
+      },
+      suggestRenameCleanupWithCodex: async () => {
+        if (scenario.cleanupAnalyzerErrorMessage) {
+          return { errorMessage: scenario.cleanupAnalyzerErrorMessage };
+        }
+        return {
+          suggestion:
+            scenario.cleanupAnalyzerSuggestion ?? {
+              recommendedHints: ["serial"],
+              recommendedStyle: "slug",
+              confidence: 0.86,
+              reasoningSummary: "Most sampled names differ only by trailing counters.",
+            },
+        };
       },
       actionVideoConvert: async (_runtime, options) => {
         actionCalls.push({ name: "video:convert", options });
