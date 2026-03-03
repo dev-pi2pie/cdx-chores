@@ -41,6 +41,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
       return;
     case "rename:file":
     case "rename:batch":
+    case "rename:cleanup":
     case "rename:apply":
       await handleRenameInteractiveAction(runtime, pathPromptContext, action);
       return;

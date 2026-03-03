@@ -5,6 +5,7 @@ export type { RenameBatchOptions } from "./batch";
 export { actionRenameCleanup } from "./cleanup";
 export type {
   RenameCleanupOptions,
+  RenameCleanupResult,
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "./cleanup";

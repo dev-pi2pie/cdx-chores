@@ -30,7 +30,9 @@ interface InteractiveHarnessResult {
 
 const actionsModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/actions/index.ts")).href;
 const pathModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path.ts")).href;
-const pathConfigModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path-config.ts")).href;
+const pathConfigModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/prompts/path-config.ts"),
+).href;
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
 
@@ -116,6 +118,24 @@ function runInteractiveHarness(
           appliedCount: 1,
           totalRows: 1,
           skippedCount: 0,
+        };
+      },
+      actionRenameCleanup: async (_runtime, options) => {
+        actionCalls.push({ name: "rename:cleanup", options });
+        if (String(options.path ?? "") === "docs") {
+          return {
+            kind: "directory",
+            changedCount: 2,
+            totalCount: 3,
+            directoryPath: "docs",
+            planCsvPath: "plans/cleanup.csv",
+          };
+        }
+        return {
+          kind: "file",
+          changed: false,
+          filePath: String(options.path ?? ""),
+          directoryPath: String(options.path ?? ""),
         };
       },
       actionVideoConvert: async (_runtime, options) => {
@@ -316,6 +336,78 @@ describe("interactive mode routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/rename.csv",
+          autoClean: true,
+        },
+      },
+    ]);
+  });
+
+  test("uses the shortened custom template hint text", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:file", "custom", "path_asc"],
+      requiredPathQueue: ["README.md"],
+      inputQueue: ["{date}-{stem}-{serial}", "1", ""],
+      confirmQueue: [true, false],
+    });
+
+    expect(result.promptCalls).toContainEqual({
+      kind: "input",
+      message: [
+        "Custom filename template",
+        "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {serial}",
+        "Advanced: explicit timestamp variants and {serial...} params are also supported.",
+      ].join("\n"),
+    });
+  });
+
+  test("routes a cleanup file flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve"],
+      requiredPathQueue: ["README.md"],
+      confirmQueue: [true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "README.md",
+          hints: ["date"],
+          style: "preserve",
+          dryRun: true,
+        },
+      },
+    ]);
+  });
+
+  test("routes a cleanup directory dry-run flow and offers immediate apply", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "timestamp", "done", "slug", "remove", "detailed"],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["timestamp"],
+          style: "slug",
+          timestampAction: "remove",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
           autoClean: true,
         },
       },

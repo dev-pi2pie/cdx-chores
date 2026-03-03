@@ -46,6 +46,22 @@ export interface RenameCleanupOptions {
   skipExt?: string[];
 }
 
+export type RenameCleanupResult =
+  | {
+      kind: "file";
+      changed: boolean;
+      filePath: string;
+      directoryPath: string;
+      planCsvPath?: string;
+    }
+  | {
+      kind: "directory";
+      changedCount: number;
+      totalCount: number;
+      directoryPath: string;
+      planCsvPath?: string;
+    };
+
 type CleanupPathKind = "file" | "directory";
 type CleanupPathTarget = { kind: CleanupPathKind; path: string };
 
@@ -128,7 +144,10 @@ function validateCleanupModeOptions(
     });
   }
 
-  if (options.maxDepth !== undefined && (!Number.isInteger(options.maxDepth) || options.maxDepth < 0)) {
+  if (
+    options.maxDepth !== undefined &&
+    (!Number.isInteger(options.maxDepth) || options.maxDepth < 0)
+  ) {
     throw new CliError("--max-depth must be a non-negative integer.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -257,7 +276,11 @@ function isRenamePlanCsvArtifactName(entryName: string): boolean {
 async function collectDirectoryCleanupCandidates(
   directoryPath: string,
   options: RenameCleanupOptions,
-): Promise<{ candidates: CleanupCandidate[]; skipped: SkippedRenameItem[]; occupiedFilePaths: Set<string> }> {
+): Promise<{
+  candidates: CleanupCandidate[];
+  skipped: SkippedRenameItem[];
+  occupiedFilePaths: Set<string>;
+}> {
   const skipped: SkippedRenameItem[] = [];
   const candidates: CleanupCandidate[] = [];
   const occupiedFilePaths = new Set<string>();
@@ -328,10 +351,7 @@ async function buildDirectoryCleanupPlans(
   const plans: PlannedRename[] = [];
   const skipped: SkippedRenameItem[] = [];
   const sourcePaths = new Set(candidates.map((candidate) => candidate.sourcePath));
-  const tentativeBySourcePath = new Map<
-    string,
-    { targetPath: string; reason?: string }
-  >();
+  const tentativeBySourcePath = new Map<string, { targetPath: string; reason?: string }>();
   const unchangedTargetPaths = new Set<string>();
   const targetCounts = new Map<string, number>();
 
@@ -429,7 +449,7 @@ async function runSingleTemporalCleanup(
     timestampAction: RenameCleanupTimestampAction;
     dryRun: boolean;
   },
-): Promise<void> {
+): Promise<RenameCleanupResult> {
   const sourceName = basename(sourcePath);
   const ext = extname(sourceName);
   const stem = basename(sourceName, ext);
@@ -480,11 +500,23 @@ async function runSingleTemporalCleanup(
     const rows = buildCleanupSinglePlanCsvRows(runtime, plan, finalReason);
     const planCsvPath = await writeRenamePlanCsv(runtime, rows);
     printRenameFileDryRunFooter(runtime, planCsvPath);
-    return;
+    return {
+      kind: "file",
+      changed: plan.changed,
+      filePath: sourcePath,
+      directoryPath,
+      planCsvPath,
+    };
   }
 
   await applyPlannedRenames([plan]);
   printRenameFileApplyFooter(runtime, plan.changed);
+  return {
+    kind: "file",
+    changed: plan.changed,
+    filePath: sourcePath,
+    directoryPath,
+  };
 }
 
 async function runDirectoryTemporalCleanup(
@@ -495,14 +527,18 @@ async function runDirectoryTemporalCleanup(
     style: RenameCleanupStyle;
     timestampAction: RenameCleanupTimestampAction;
   },
-): Promise<void> {
+): Promise<RenameCleanupResult> {
   const previewSkips = normalizeCleanupPreviewSkipsMode(options.previewSkips);
   const collected = await collectDirectoryCleanupCandidates(directoryPath, options);
-  const planned = await buildDirectoryCleanupPlans(collected.candidates, collected.occupiedFilePaths, {
-    hints: options.hints,
-    style: options.style,
-    timestampAction: options.timestampAction,
-  });
+  const planned = await buildDirectoryCleanupPlans(
+    collected.candidates,
+    collected.occupiedFilePaths,
+    {
+      hints: options.hints,
+      style: options.style,
+      timestampAction: options.timestampAction,
+    },
+  );
   const totalCount = collected.candidates.length;
   const changedCount = planned.plans.length;
   const skipped = [...collected.skipped, ...planned.skipped];
@@ -526,17 +562,29 @@ async function runDirectoryTemporalCleanup(
     const rows = buildCleanupBatchPlanCsvRows(runtime, planned.plans, skipped);
     const planCsvPath = await writeRenamePlanCsv(runtime, rows);
     printRenameBatchDryRunFooter(runtime, { planCsvPath, truncated });
-    return;
+    return {
+      kind: "directory",
+      changedCount,
+      totalCount,
+      directoryPath,
+      planCsvPath,
+    };
   }
 
   await applyPlannedRenames(planned.plans);
   printRenameBatchApplyFooter(runtime, changedCount);
+  return {
+    kind: "directory",
+    changedCount,
+    totalCount,
+    directoryPath,
+  };
 }
 
 export async function actionRenameCleanup(
   runtime: CliRuntime,
   options: RenameCleanupOptions,
-): Promise<void> {
+): Promise<RenameCleanupResult> {
   const inputPath = assertNonEmpty(options.path, "Cleanup path");
   const hints = normalizeCleanupHints(options.hints);
   const style = options.style ?? "preserve";
@@ -545,16 +593,15 @@ export async function actionRenameCleanup(
   const timestampAction = options.timestampAction ?? "keep";
 
   if (target.kind === "file") {
-    await runSingleTemporalCleanup(runtime, target.path, {
+    return await runSingleTemporalCleanup(runtime, target.path, {
       hints,
       style,
       timestampAction,
       dryRun: options.dryRun ?? false,
     });
-    return;
   }
 
-  await runDirectoryTemporalCleanup(runtime, target.path, {
+  return await runDirectoryTemporalCleanup(runtime, target.path, {
     ...options,
     hints,
     style,

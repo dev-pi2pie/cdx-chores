@@ -2,16 +2,17 @@
 title: "Interactive rename template and cleanup flow enhancements"
 created-date: 2026-03-03
 modified-date: 2026-03-03
-status: draft
+status: active
 agent: codex
 ---
 
 ## Goal
 
-Improve interactive rename UX in two focused areas without reopening broader rename docs work yet:
+Improve interactive rename UX in three focused areas without reopening a full cleanup-command redesign:
 
 - reduce the custom-template hint surface so it shows only the main placeholder direction plus a very short advanced note
 - add the missing interactive `rename cleanup` entry and flow so interactive mode matches the current CLI feature surface
+- keep `rename cleanup` path-first with automatic file/directory detection while making file-candidate filtering clearer and planning the future Codex-assisted cleanup direction
 
 ## Why This Plan
 
@@ -25,6 +26,7 @@ These should be handled together because they both live in the interactive renam
 
 - copy/hint simplification for the current custom-template entry
 - interactive command-surface completion for `rename cleanup`
+- follow-up UX/design work for auto-detect clarity and analyzer-assisted cleanup suggestion
 
 ## Current State
 
@@ -40,9 +42,11 @@ These should be handled together because they both live in the interactive renam
 
 - `src/command.ts` already exposes `rename cleanup <path>`.
 - `src/cli/actions/rename/cleanup.ts` already implements the cleanup action.
-- `src/cli/interactive/menu.ts` does not list `rename:cleanup`.
-- `src/cli/interactive/index.ts` does not dispatch `rename:cleanup`.
-- `src/cli/interactive/rename.ts` does not implement a cleanup-specific interactive flow.
+- cleanup mode is already auto-detected from the resolved target path rather than chosen up front.
+- the action resolves file vs directory from the path itself.
+- interactive mode currently uses a separate path-kind detection helper instead of sharing the action-side resolver.
+- directory-scope filter prompts are really file-candidate filters, but the current wording can make them sound like a mode toggle.
+- Codex-assisted cleanup pattern analysis is still intentionally absent from v1.
 
 ## Scope
 
@@ -50,12 +54,16 @@ These should be handled together because they both live in the interactive renam
 - decide whether the first pass remains on plain Inquirer input or moves to a TUI-backed input primitive
 - add `rename cleanup` to the interactive rename submenu and dispatcher
 - implement a new interactive cleanup question flow that maps cleanly onto `actionRenameCleanup(...)`
+- refine auto-detect messaging so cleanup stays path-first without asking the user to choose file vs batch mode
+- clarify that cleanup filters are file-selection controls, not mode-selection controls
+- plan the future Codex analyzer-assisted cleanup direction without mixing it into the deterministic v1 behavior
 - add focused tests for interactive menu wiring and any extracted prompt helpers
 - document implementation work with job records only after behavior is settled
 
 ## Out Of Scope
 
 - broad redesign of the full rename template system
+- replacing the CLI `rename cleanup <path>` contract with separate `file` / `batch` cleanup subcommands in this plan
 - changing CLI `--pattern` help text in `src/command.ts` unless implementation reveals a clear mismatch
 - expanding cleanup v1 semantics beyond the current CLI contract
 - reopening cleanup hint-family rules or Route A timestamp placeholder design
@@ -122,6 +130,71 @@ Design rules:
 - keep file-mode prompts smaller than directory-mode prompts
 - preserve existing validation behavior from `actionRenameCleanup(...)`
 
+### Track B.1: Auto-detect clarity without a mode picker
+
+The command should remain path-first and auto-detected.
+Interactive mode should not ask the user to choose `file` vs `batch` / `directory` up front.
+
+Recommended direction:
+
+- keep one target-path prompt
+- resolve the entered path to file vs directory automatically
+- branch prompts from the detected target kind
+- phrase follow-up filters as file-candidate filtering, not as directory-mode configuration
+- omit the filter-entry prompt entirely for single-file targets
+
+Implementation note:
+
+- current auto-detect logic exists in both the cleanup action and interactive mode
+- a follow-up pass should decide whether to centralize that resolver or keep the duplication intentionally narrow
+
+### Track C: Codex analyzer-assisted cleanup suggestion
+
+This is a future direction, not current v1 behavior.
+
+Desired role:
+
+- inspect filename examples
+- suggest likely cleanup hints or cleanup patterns
+- keep the final cleanup action explicit and confirmable by the user
+
+Recommended first implementation boundary:
+
+- start with filename-list analysis only
+- do not read file contents in the first analyzer-assisted cleanup pass
+- send a bounded set of current filenames, ideally pre-grouped or sampled locally first
+- ask Codex for structured cleanup suggestions, not open-ended prose only
+
+Non-goals:
+
+- do not silently infer and apply cleanup rules without review
+- do not blur deterministic cleanup and analyzer suggestion into one opaque step
+
+Likely interaction shape:
+
+- keep deterministic cleanup as the default path
+- add a separate interactive analyzer-assisted branch or suggestion step
+- treat analyzer output as recommendation, not authority
+
+Suggested analyzer result shape:
+
+- recommended hints
+- recommended style
+- recommended timestamp action when applicable
+- confidence
+- short reasoning summary
+
+Suggested first interactive wording:
+
+- `Suggest cleanup hints with Codex?`
+
+If accepted:
+
+- collect a bounded filename sample from the current scope
+- request structured suggestions from Codex
+- show the suggestion summary
+- let the user accept or edit the proposed cleanup settings before running deterministic cleanup
+
 ## Open UX Decisions
 
 ### Cleanup hint selection primitive
@@ -161,6 +234,69 @@ Reason:
 - this matches the existing CLI contract
 - it avoids duplicating the path question
 
+### Auto-detect presentation
+
+Need to decide how clearly interactive mode should surface the detected target kind after path entry.
+
+Recommended default:
+
+- keep auto-detect silent if the subsequent prompts make the mode obvious
+- otherwise add a short detected-kind confirmation line rather than a full mode-selection question
+
+Reason:
+
+- the user asked for auto-detect, not another level of menu choice
+- the real clarity problem is prompt wording, not the absence of a mode selector
+
+### Cleanup filter wording
+
+The current concept is file-based filtering, even in directory mode.
+
+Recommended default:
+
+- replace wording like `Add directory filters?`
+- prefer wording like:
+  - `Filter files before cleanup?`
+  - or `Limit which files are included?`
+- do not show this prompt at all for file targets
+
+Reason:
+
+- filters operate on candidate files
+- they do not define the cleanup mode itself
+
+### Codex analyzer-assisted trigger surface
+
+Need to decide where analyzer-assisted cleanup belongs in interactive mode.
+
+Recommended default:
+
+- keep it out of the main deterministic prompt path until the contract is clearer
+- evaluate either:
+  - a separate `analyze cleanup pattern` branch under cleanup
+  - or an optional `suggest hints with Codex` step before manual hint selection
+
+Reason:
+
+- this is a meaningful product/design expansion
+- it should not be hidden inside the normal deterministic cleanup flow
+
+### Analyzer input scope
+
+Need to decide what data is sent to Codex for cleanup suggestion.
+
+Recommended default:
+
+- send filename lists only in the first pass
+- do not send file contents in the first pass
+- use bounded sampling and local grouping to avoid large noisy payloads
+
+Reason:
+
+- cleanup intent is primarily inferred from filename patterns
+- this keeps cost, privacy exposure, and implementation complexity lower
+- it also makes the analyzer-assisted path easier to explain and review
+
 ### Ghost placeholder upgrade threshold
 
 The real inline placeholder enhancement should proceed only if:
@@ -192,30 +328,57 @@ Possible extraction boundary:
 
 ### Phase 1: Freeze interactive UX targets
 
-- [ ] confirm the reduced custom-template hint wording
-- [ ] confirm the short advanced-note wording
-- [ ] confirm whether the example should be:
-  - [ ] static help text only
+- [x] confirm the reduced custom-template hint wording
+- [x] confirm the short advanced-note wording
+- [x] confirm whether the example should be:
+  - [x] static help text only
   - [ ] or a true ghost placeholder target for a later phase
-- [ ] confirm the interactive cleanup prompt order
-- [ ] confirm the cleanup hint selection primitive
-- [ ] confirm whether immediate apply should be offered after dry-run cleanup previews
+- [x] confirm the interactive cleanup prompt order
+- [x] confirm the cleanup hint selection primitive
+- [x] confirm whether immediate apply should be offered after dry-run cleanup previews
 
 ### Phase 2: Interactive rename cleanup wiring
 
-- [ ] add `rename:cleanup` to `src/cli/interactive/menu.ts`
-- [ ] update interactive action typing to include the new rename action
-- [ ] dispatch `rename:cleanup` in `src/cli/interactive/index.ts`
-- [ ] implement the cleanup interactive flow in `src/cli/interactive/rename.ts`
-- [ ] map interactive answers into `actionRenameCleanup(...)`
-- [ ] keep file-vs-directory behavior aligned with the existing cleanup action validation rules
+- [x] add `rename:cleanup` to `src/cli/interactive/menu.ts`
+- [x] update interactive action typing to include the new rename action
+- [x] dispatch `rename:cleanup` in `src/cli/interactive/index.ts`
+- [x] implement the cleanup interactive flow in `src/cli/interactive/rename.ts`
+- [x] map interactive answers into `actionRenameCleanup(...)`
+- [x] keep file-vs-directory behavior aligned with the existing cleanup action validation rules
+
+### Phase 2.1: Auto-detect cleanup follow-up
+
+- [ ] audit the current path-kind auto-detect logic across:
+  - [ ] `src/cli/actions/rename/cleanup.ts`
+  - [ ] `src/cli/interactive/rename.ts`
+- [ ] decide whether to centralize path-kind resolution or keep a narrow interactive mirror
+- [ ] keep cleanup path-first with no explicit mode-selection prompt
+- [ ] revise interactive wording so filters are clearly file-candidate filters
+- [ ] omit file-filter prompts entirely for single-file cleanup targets
+- [ ] consider adding a light detected-kind confirmation only if later prompt flow still feels ambiguous
+
+### Phase 2.2: Codex analyzer-assisted cleanup planning
+
+- [ ] define the minimum analyzer-assisted cleanup goal:
+  - [ ] suggest hints
+  - [ ] suggest cleanup pattern families
+  - [ ] or suggest a whole cleanup command draft
+- [ ] decide where analyzer-assisted cleanup should appear in interactive mode
+- [ ] define the fallback when Codex is unavailable or unsupported
+- [ ] define how analyzer output is reviewed and confirmed before any cleanup run
+- [ ] define the first-pass analyzer input boundary:
+  - [ ] filename list only
+  - [ ] bounded sample / grouping strategy
+  - [ ] no file-content reading in the initial design
+- [ ] define the structured Codex suggestion response shape
+- [ ] decide whether this should remain a plan-only follow-up or expand into a separate dedicated plan
 
 ### Phase 3: Custom-template hint simplification
 
-- [ ] replace the long placeholder inventory with a short primary-placeholder hint
-- [ ] add a very short note for advanced variants and params
-- [ ] ensure the prompt remains readable in narrow terminals
-- [ ] keep existing rename-template behavior unchanged
+- [x] replace the long placeholder inventory with a short primary-placeholder hint
+- [x] add a very short note for advanced variants and params
+- [x] ensure the prompt remains readable in narrow terminals
+- [x] keep existing rename-template behavior unchanged
 
 ### Phase 4: Optional ghost-placeholder enhancement
 
@@ -226,12 +389,12 @@ Possible extraction boundary:
 
 ### Phase 5: Tests and verification
 
-- [ ] add or update tests for interactive menu wiring
-- [ ] add focused tests for cleanup interactive dispatch and answer mapping
+- [x] add or update tests for interactive menu wiring
+- [x] add focused tests for cleanup interactive dispatch and answer mapping
 - [ ] add prompt-helper tests if extraction occurs
 - [ ] run verification:
-  - [ ] `bunx tsc --noEmit`
-  - [ ] targeted `bun test ...`
+  - [x] `bunx tsc --noEmit`
+  - [x] targeted `bun test ...`
   - [ ] manual interactive smoke checks for:
     - [ ] rename batch custom-template prompt readability
     - [ ] rename file custom-template prompt readability
@@ -244,7 +407,11 @@ Possible extraction boundary:
 - the prompt still signals that advanced variants/params exist without listing every token inline
 - interactive mode exposes `rename cleanup` alongside the other rename actions
 - the cleanup interactive flow covers the current v1 CLI contract without adding new semantics
+- cleanup stays path-first with auto-detect rather than adding a new mode-selection layer
+- cleanup filtering language makes clear that include/exclude rules are file-based candidate filters
+- single-file cleanup does not show file-filter prompts that only make sense for directory candidate sets
 - any real ghost-placeholder upgrade is either implemented narrowly and stably, or explicitly deferred without blocking the rest of the work
+- any analyzer-assisted cleanup direction is explicitly planned rather than half-hidden inside deterministic cleanup
 
 ## Related Plans
 

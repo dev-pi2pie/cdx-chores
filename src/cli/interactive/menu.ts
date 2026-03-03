@@ -8,6 +8,7 @@ export type InteractiveActionKey =
   | "md:frontmatter-to-json"
   | "rename:file"
   | "rename:batch"
+  | "rename:cleanup"
   | "rename:apply"
   | "video:convert"
   | "video:resize"
@@ -62,6 +63,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
     choices: [
       { name: "file", value: "rename:file" },
       { name: "batch", value: "rename:batch" },
+      { name: "cleanup", value: "rename:cleanup" },
       { name: "apply", value: "rename:apply" },
     ],
   },
