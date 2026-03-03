@@ -4,10 +4,13 @@ export { actionRenameBatch } from "./batch";
 export type { RenameBatchOptions } from "./batch";
 export { actionRenameCleanup } from "./cleanup";
 export type {
+  RenameCleanupConflictStrategy,
   RenameCleanupOptions,
   RenameCleanupResult,
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "./cleanup";
+export { resolveRenameCleanupTarget } from "./cleanup-target";
+export type { RenameCleanupPathKind, RenameCleanupPathTarget } from "./cleanup-target";
 export { actionRenameFile } from "./file";
 export type { RenameFileOptions } from "./file";

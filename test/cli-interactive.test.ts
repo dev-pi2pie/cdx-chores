@@ -138,6 +138,12 @@ function runInteractiveHarness(
           directoryPath: String(options.path ?? ""),
         };
       },
+      resolveRenameCleanupTarget: async (_runtime, inputPath) => {
+        if (String(inputPath) === "docs") {
+          return { kind: "directory", path: "docs" };
+        }
+        return { kind: "file", path: String(inputPath ?? "") };
+      },
       actionVideoConvert: async (_runtime, options) => {
         actionCalls.push({ name: "video:convert", options });
       },
@@ -364,7 +370,7 @@ describe("interactive mode routing", () => {
   test("routes a cleanup file flow", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve"],
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
       requiredPathQueue: ["README.md"],
       confirmQueue: [true],
     });
@@ -376,6 +382,7 @@ describe("interactive mode routing", () => {
           path: "README.md",
           hints: ["date"],
           style: "preserve",
+          conflictStrategy: "skip",
           dryRun: true,
         },
       },
@@ -385,7 +392,16 @@ describe("interactive mode routing", () => {
   test("routes a cleanup directory dry-run flow and offers immediate apply", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["rename", "rename:cleanup", "timestamp", "done", "slug", "remove", "detailed"],
+      selectQueue: [
+        "rename",
+        "rename:cleanup",
+        "timestamp",
+        "done",
+        "slug",
+        "remove",
+        "number",
+        "detailed",
+      ],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
       confirmQueue: [true, false, true, true, true],
@@ -399,6 +415,7 @@ describe("interactive mode routing", () => {
           hints: ["timestamp"],
           style: "slug",
           timestampAction: "remove",
+          conflictStrategy: "number",
           recursive: true,
           dryRun: true,
           previewSkips: "detailed",
@@ -412,6 +429,14 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "select",
+      message: "Cleanup conflict strategy",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Filter files before cleanup?",
+    });
   });
 
   test("routes a video flow through gif generation", () => {

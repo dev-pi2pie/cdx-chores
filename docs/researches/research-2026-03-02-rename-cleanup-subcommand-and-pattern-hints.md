@@ -6,6 +6,11 @@ status: draft
 agent: codex
 ---
 
+## Historical Note
+
+This research captures the early cleanup option exploration.
+Later follow-up work removed cleanup `--style uid`, narrowed `--style` to `preserve` / `slug`, and introduced collision-only conflict strategies instead.
+
 ## Goal
 
 Define a new `rename cleanup` command family that can normalize messy existing filenames by targeting known pattern fragments such as dates, timestamps, and serial-like counters, while deciding how much of that flow should be deterministic versus analyzer-assisted.

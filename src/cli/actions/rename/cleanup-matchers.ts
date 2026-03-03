@@ -19,7 +19,6 @@ interface CleanupDateMatch {
 
 interface CleanupSerialMatch {
   prefix: string;
-  normalizedSerial: string;
 }
 
 interface CleanupUidMatch {
@@ -104,15 +103,7 @@ export function matchCleanupTimestamp(stem: string): CleanupTimestampMatch | und
   return {
     prefix: trimCleanupFragmentEdges(stem.slice(0, match.index)),
     suffix: trimCleanupFragmentEdges(stem.slice(match.index + match[0].length)),
-    normalizedTimestamp: formatCleanupTimestamp(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      meridiem,
-    ),
+    normalizedTimestamp: formatCleanupTimestamp(year, month, day, hour, minute, second, meridiem),
   };
 }
 
@@ -130,7 +121,9 @@ export function matchCleanupDate(stem: string): CleanupDateMatch | undefined {
 
     const start = match.index;
     const end = start + fullText.length;
-    const overlapsTimestamp = timestampRanges.some((range) => start >= range.start && end <= range.end);
+    const overlapsTimestamp = timestampRanges.some(
+      (range) => start >= range.start && end <= range.end,
+    );
     if (overlapsTimestamp) {
       continue;
     }
@@ -151,7 +144,7 @@ export function matchCleanupSerial(stem: string): CleanupSerialMatch | undefined
     const [, rawPrefix, serial] = parenthesizedMatch;
     const prefix = trimCleanupFragmentEdges(rawPrefix ?? "");
     if (serial && prefix) {
-      return { prefix, normalizedSerial: serial };
+      return { prefix };
     }
   }
 
@@ -174,7 +167,7 @@ export function matchCleanupSerial(stem: string): CleanupSerialMatch | undefined
     return undefined;
   }
 
-  return { prefix, normalizedSerial: serial };
+  return { prefix };
 }
 
 export function matchCleanupUid(stem: string): CleanupUidMatch | undefined {
@@ -236,10 +229,7 @@ function buildSerialCleanupStem(
   }
 
   return {
-    nextStem: buildTextStyleStem(
-      [match.prefix, match.normalizedSerial].filter((part) => part.length > 0).join(" "),
-      style,
-    ),
+    nextStem: buildTextStyleStem(match.prefix, style),
   };
 }
 

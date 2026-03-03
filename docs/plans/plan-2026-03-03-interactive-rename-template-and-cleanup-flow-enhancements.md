@@ -2,17 +2,18 @@
 title: "Interactive rename template and cleanup flow enhancements"
 created-date: 2026-03-03
 modified-date: 2026-03-03
-status: active
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Improve interactive rename UX in three focused areas without reopening a full cleanup-command redesign:
+Improve interactive rename UX and cleanup command clarity in four focused areas without reopening a full cleanup-command redesign:
 
 - reduce the custom-template hint surface so it shows only the main placeholder direction plus a very short advanced note
 - add the missing interactive `rename cleanup` entry and flow so interactive mode matches the current CLI feature surface
 - keep `rename cleanup` path-first with automatic file/directory detection while making file-candidate filtering clearer and planning the future Codex-assisted cleanup direction
+- clarify the cleanup option surface so styling, fragment matching, and conflict handling do not blur together
 
 ## Why This Plan
 
@@ -26,7 +27,7 @@ These should be handled together because they both live in the interactive renam
 
 - copy/hint simplification for the current custom-template entry
 - interactive command-surface completion for `rename cleanup`
-- follow-up UX/design work for auto-detect clarity and analyzer-assisted cleanup suggestion
+- follow-up UX/design work for auto-detect clarity, conflict handling, and analyzer-assisted cleanup suggestion
 
 ## Current State
 
@@ -36,7 +37,7 @@ These should be handled together because they both live in the interactive renam
 - The current message includes the full placeholder family, including Route A explicit timestamp variants.
 - The circled example in the current UX is static message text, not a real inline placeholder or ghost hint.
 - `{uid}` is not part of the current rename template placeholder contract for `rename file` / `rename batch`.
-- Current UID naming belongs only to `rename cleanup` through its `uid` hint family and `--style uid` output behavior.
+- Current UID cleanup belongs only to `rename cleanup` through its `uid` hint family.
 
 ### Rename cleanup interactive availability
 
@@ -44,9 +45,16 @@ These should be handled together because they both live in the interactive renam
 - `src/cli/actions/rename/cleanup.ts` already implements the cleanup action.
 - cleanup mode is already auto-detected from the resolved target path rather than chosen up front.
 - the action resolves file vs directory from the path itself.
-- interactive mode currently uses a separate path-kind detection helper instead of sharing the action-side resolver.
+- interactive mode now shares the action-side path-kind resolver.
 - directory-scope filter prompts are really file-candidate filters, but the current wording can make them sound like a mode toggle.
 - Codex-assisted cleanup pattern analysis is still intentionally absent from v1.
+- cleanup fragment-removal semantics are now implemented for `serial` and `uid`:
+  - `serial` removes only the matched serial fragment
+  - `uid` removes only the matched `uid-<token>` fragment while preserving surrounding text
+  - cleanup output styling is now limited to `preserve` and `slug`
+- directory cleanup conflicts currently stay on the strict-skip path with reason `target conflict`
+- there is no explicit cleanup conflict policy option yet
+- `--style` is now much narrower in practice, but the docs should state that boundary more directly
 
 ## Scope
 
@@ -56,7 +64,12 @@ These should be handled together because they both live in the interactive renam
 - implement a new interactive cleanup question flow that maps cleanly onto `actionRenameCleanup(...)`
 - refine auto-detect messaging so cleanup stays path-first without asking the user to choose file vs batch mode
 - clarify that cleanup filters are file-selection controls, not mode-selection controls
+- clarify that cleanup `--style` formats surviving text only and does not own conflict handling
+- define the next cleanup conflict-policy surface before implementation starts
+- implement `--conflict-strategy` for cleanup without overloading `--style`
+- re-check cleanup doc status, wording, and scope markers after the option-surface changes
 - plan the future Codex analyzer-assisted cleanup direction without mixing it into the deterministic v1 behavior
+- revise cleanup semantics so hint-driven cleanup removes only the matched fragment and does not rewrite unrelated basename parts
 - add focused tests for interactive menu wiring and any extracted prompt helpers
 - document implementation work with job records only after behavior is settled
 
@@ -69,7 +82,35 @@ These should be handled together because they both live in the interactive renam
 - reopening cleanup hint-family rules or Route A timestamp placeholder design
 - broad docs refresh before the interactive behavior is finalized
 
+## New Cleanup Semantics Direction
+
+The cleanup semantics direction now follows one principle:
+
+- a cleanup hint removes only the matched cleanup fragment and does not rewrite unrelated basename text
+
+Concrete direction:
+
+- `serial` hint should remove only the matched serial fragment
+- `serial` cleanup should not preserve or re-emit the matched serial in normalized form
+- `uid` handling should remove only the matched `uid-<token>` fragment
+- `uid` cleanup should not remove surrounding prefix or suffix text
+- whole-basename `uid-<token>` replacement should remain out of scope unless it returns later as a separately named behavior
+- hot-fix scope should update matcher logic, planner outcomes, tests, and user-facing docs together so the new semantics are documented as one coherent contract
+
 ## Proposed Design Direction
+
+### Cleanup option axes
+
+Cleanup should keep its option surface explicit and non-overlapping:
+
+- `--hint` selects which fragment families are detected and cleaned
+- `--style` formats only the surviving basename text after cleanup matching
+- `--timestamp-action` modifies timestamp cleanup behavior only when timestamp cleanup is active
+- `--conflict-strategy` should become the explicit collision-policy axis when added, and it should apply only to collided targets
+
+Contract rule:
+
+- do not overload `--style` with conflict handling or whole-basename replacement behavior
 
 ### Track A: Custom template hint simplification
 
@@ -145,8 +186,63 @@ Recommended direction:
 
 Implementation note:
 
-- current auto-detect logic exists in both the cleanup action and interactive mode
-- a follow-up pass should decide whether to centralize that resolver or keep the duplication intentionally narrow
+- path-kind resolution is now shared between the cleanup action and interactive mode
+- later UX work can build on the shared resolver without adding a mode picker
+
+### Track B.2: Cleanup fragment-removal semantics
+
+Cleanup should behave as fragment cleanup, not broad basename rewriting.
+
+Recommended direction:
+
+- `serial` removes the matched trailing serial fragment and keeps the remaining basename text
+- `uid` removes the matched `uid-<token>` fragment and keeps both surviving prefix and suffix text
+- cleanup output styling remains `preserve` or `slug` over the surviving text after fragment removal
+- `preserve` and `slug` remain the relevant styles for surviving text after fragment removal
+- conflict handling stays in the planner layer after fragment removal
+
+Examples:
+
+- `app-00001.log` with hint `serial` should become `app.log`
+- `report uid-7k3m9q2x4t final.txt` with hint `uid` should become `report final.txt`
+
+Non-goals:
+
+- do not silently invent new replacement tokens when the chosen hint is meant to remove a fragment
+- do not collapse cleanup into a whole-basename replacement unless that is a separate explicitly named style later
+
+### Track B.3: Cleanup conflict strategy
+
+Cleanup conflict handling should become an explicit option surface instead of staying implicit inside planner behavior.
+
+Current behavior:
+
+- directory cleanup skips conflicting targets with reason `target conflict`
+- this includes same-run collisions, unchanged-target collisions, and existing-path collisions
+
+Recommended direction:
+
+- keep strict skip as the default behavior
+- introduce a separate `--conflict-strategy` option instead of expanding `--style`
+- apply conflict strategy only when the preferred cleaned target actually collides
+- keep the first non-conflicting winner on the clean unsuffixed basename
+- treat suffix-based collision resolution as explicit opt-in behavior
+
+First-pass shape:
+
+- `--conflict-strategy skip` preserves current behavior
+- `--conflict-strategy number` appends increasing numeric suffixes such as `-1`, `-2`, `-3`
+- `--conflict-strategy uid-suffix` appends `-uid-<token>` only for collided targets
+
+Naming rule:
+
+- do not use bare `uid` as a conflict-strategy name, because `uid` already names a cleanup hint family
+
+Non-goals:
+
+- do not silently resolve directory cleanup collisions behind the user’s back
+- do not make `slug` imply collision suffixing
+- do not mix conflict-strategy work with the Codex-assisted cleanup feature
 
 ### Track C: Codex analyzer-assisted cleanup suggestion
 
@@ -265,6 +361,36 @@ Reason:
 - filters operate on candidate files
 - they do not define the cleanup mode itself
 
+### Cleanup fragment semantics
+
+Resolved direction:
+
+- remove only the matched fragment for `serial` and `uid`
+- keep unrelated prefix/suffix text intact
+- continue applying `preserve` / `slug` only to the surviving text, not to a freshly synthesized basename
+
+Reason:
+
+- this better matches the mental model of "cleanup"
+- it avoids surprising whole-name replacement behavior on ordinary logs and mixed filenames
+
+### Cleanup conflict strategy naming
+
+Need to decide the first public cleanup conflict-policy contract.
+
+Recommended default:
+
+- add `--conflict-strategy` as a collision-only axis
+- use `skip` as the default
+- plan for `number` and `uid-suffix` as the first real additional options
+
+Reason:
+
+- current `target conflict` skipping is already safe and deterministic
+- a one-option selector is awkward in interactive mode
+- the option is easier to understand once it has real choices
+- it keeps collision policy separate from cleanup matching and text styling
+
 ### Codex analyzer-assisted trigger surface
 
 Need to decide where analyzer-assisted cleanup belongs in interactive mode.
@@ -348,30 +474,77 @@ Possible extraction boundary:
 
 ### Phase 2.1: Auto-detect cleanup follow-up
 
-- [ ] audit the current path-kind auto-detect logic across:
-  - [ ] `src/cli/actions/rename/cleanup.ts`
-  - [ ] `src/cli/interactive/rename.ts`
-- [ ] decide whether to centralize path-kind resolution or keep a narrow interactive mirror
-- [ ] keep cleanup path-first with no explicit mode-selection prompt
-- [ ] revise interactive wording so filters are clearly file-candidate filters
-- [ ] omit file-filter prompts entirely for single-file cleanup targets
-- [ ] consider adding a light detected-kind confirmation only if later prompt flow still feels ambiguous
+- [x] audit the current path-kind auto-detect logic across:
+  - [x] `src/cli/actions/rename/cleanup.ts`
+  - [x] `src/cli/interactive/rename.ts`
+- [x] decide whether to centralize path-kind resolution or keep a narrow interactive mirror
+- [x] keep cleanup path-first with no explicit mode-selection prompt
+- [x] revise interactive wording so filters are clearly file-candidate filters
+- [x] omit file-filter prompts entirely for single-file cleanup targets
+- [x] confirm after implementation/manual checks that no extra detected-kind confirmation is needed right now
+
+### Phase 2.1b: Cleanup semantics follow-up
+
+- [x] revise `serial` cleanup so it removes only the matched serial fragment
+- [x] revise `uid` cleanup so it removes only the matched `uid-<token>` fragment and preserves surrounding text
+- [x] remove the current whole-basename cleanup `uid` style behavior from the cleanup flow
+- [x] keep `preserve` / `slug` as styling over the surviving basename text rather than as whole-name replacement for these hints
+- [x] add focused regression coverage for log-style names such as `app-00001.log`
+- [x] add focused regression coverage for mixed-prefix/suffix UID names such as `report uid-7k3m9q2x4t final.txt`
+- [x] update cleanup docs and examples so they no longer describe `uid-<token>` whole-basename output as current behavior
+
+### Phase 2.1c: Cleanup option-surface and conflict-policy contract
+
+- [x] document that cleanup `--style` formats only surviving text after fragment cleanup
+- [x] document current directory cleanup collision behavior as strict skip with `target conflict`
+- [x] define `--conflict-strategy` as a collision-only option surface rather than a whole-output rewrite surface
+- [x] define `skip`, `number`, and `uid-suffix` as the intended real strategy set
+- [x] decide that conflict strategy should apply only to collided targets and leave the first winner on the clean basename
+- [x] update interactive wording and prompt planning so conflict handling is treated as a separate axis from style
+- [x] update user-facing docs before implementation so the cleanup path is explicit
+
+### Phase 2.1d: Cleanup conflict-strategy implementation
+
+- [x] add `--conflict-strategy <value>` to `src/command.ts`
+- [x] parse and validate cleanup conflict-strategy values in the CLI layer
+- [x] extend `RenameCleanupOptions` and related action types to carry conflict strategy explicitly
+- [x] implement `skip` as the current default cleanup conflict strategy without changing current behavior
+- [x] expand CLI parsing and validation to the real strategy set: `skip`, `number`, `uid-suffix`
+- [x] implement deterministic `number` planning for directory cleanup conflicts
+- [x] implement deterministic `uid-suffix` planning for directory cleanup conflicts
+- [x] define that `number` and `uid-suffix` also apply to single-file existing-target conflicts in the same pass
+- [x] update help text so it lists the real strategy set: `skip`, `number`, `uid-suffix`
+- [x] keep single-file cleanup behavior coherent with the chosen conflict-strategy contract
+- [x] revise interactive cleanup flow so conflict strategy is surfaced only once there are real choices
+- [x] confirm existing dry-run preview and skipped-summary wording remains valid while `skip` preserves current planner outcomes
+- [x] add focused tests for CLI parsing, planner behavior, and interactive answer mapping around conflict strategy
+- [x] add manual smoke checks for conflict-heavy cleanup fixtures such as `examples/playground/huge-logs`
+
+### Phase 2.1e: Cleanup docs wording and status audit
+
+- [x] re-check cleanup-related plan, research, guide, and README status fields after the latest scope changes
+- [x] confirm research docs that still inform active work remain `draft` or `in-progress` rather than `completed`
+- [x] confirm completed job records describe implemented behavior only and do not overstate deferred work
+- [x] audit cleanup wording for outdated `uid`-as-style phrasing
+- [x] audit cleanup wording for outdated collision behavior or missing `--conflict-strategy` notes
+- [x] audit interactive cleanup wording so prompt labels match the documented option roles
+- [x] update docs where necessary so current behavior, planned behavior, and deferred behavior are clearly separated
 
 ### Phase 2.2: Codex analyzer-assisted cleanup planning
 
-- [ ] define the minimum analyzer-assisted cleanup goal:
-  - [ ] suggest hints
-  - [ ] suggest cleanup pattern families
-  - [ ] or suggest a whole cleanup command draft
-- [ ] decide where analyzer-assisted cleanup should appear in interactive mode
-- [ ] define the fallback when Codex is unavailable or unsupported
-- [ ] define how analyzer output is reviewed and confirmed before any cleanup run
-- [ ] define the first-pass analyzer input boundary:
-  - [ ] filename list only
-  - [ ] bounded sample / grouping strategy
-  - [ ] no file-content reading in the initial design
-- [ ] define the structured Codex suggestion response shape
-- [ ] decide whether this should remain a plan-only follow-up or expand into a separate dedicated plan
+- [x] define the minimum analyzer-assisted cleanup goal:
+  - [x] suggest hints
+  - [x] suggest cleanup pattern families
+  - [x] decide not to suggest a whole cleanup command draft in the first pass
+- [x] decide where analyzer-assisted cleanup should appear in interactive mode
+- [x] define the fallback when Codex is unavailable or unsupported
+- [x] define how analyzer output is reviewed and confirmed before any cleanup run
+- [x] define the first-pass analyzer input boundary:
+  - [x] filename list only
+  - [x] bounded sample / grouping strategy
+  - [x] no file-content reading in the initial design
+- [x] define the structured Codex suggestion response shape
+- [x] expand this into a separate dedicated plan
 
 ### Phase 3: Custom-template hint simplification
 
@@ -382,24 +555,24 @@ Possible extraction boundary:
 
 ### Phase 4: Optional ghost-placeholder enhancement
 
-- [ ] evaluate whether the custom-template prompt should move to a TUI/custom-input primitive
-- [ ] if yes, implement a narrow reusable prompt helper with dimmed placeholder/ghost behavior
-- [ ] preserve simple fallback behavior if terminal capabilities are limited
-- [ ] avoid changing unrelated interactive prompts in the same pass
+- [x] evaluate whether the custom-template prompt should move to a TUI/custom-input primitive
+- [x] implement a narrow reusable prompt helper with dimmed placeholder/ghost behavior
+- [x] preserve simple fallback behavior if terminal capabilities are limited
+- [x] avoid changing unrelated interactive prompts in the same pass
 
 ### Phase 5: Tests and verification
 
 - [x] add or update tests for interactive menu wiring
 - [x] add focused tests for cleanup interactive dispatch and answer mapping
-- [ ] add prompt-helper tests if extraction occurs
-- [ ] run verification:
+- [x] add prompt-helper tests if extraction occurs
+- [x] run verification:
   - [x] `bunx tsc --noEmit`
   - [x] targeted `bun test ...`
-  - [ ] manual interactive smoke checks for:
-    - [ ] rename batch custom-template prompt readability
-    - [ ] rename file custom-template prompt readability
-    - [ ] rename cleanup file flow
-    - [ ] rename cleanup directory dry-run flow
+  - [x] manual interactive smoke checks for:
+    - [x] rename batch custom-template prompt readability
+    - [x] rename file custom-template prompt readability
+    - [x] rename cleanup file flow
+    - [x] rename cleanup directory dry-run flow
 
 ## Completion Criteria
 
@@ -410,11 +583,16 @@ Possible extraction boundary:
 - cleanup stays path-first with auto-detect rather than adding a new mode-selection layer
 - cleanup filtering language makes clear that include/exclude rules are file-based candidate filters
 - single-file cleanup does not show file-filter prompts that only make sense for directory candidate sets
+- cleanup fragment-removal semantics match the current contract for `serial` and `uid` without broad basename replacement
+- cleanup option roles are explicit enough that `--style` is no longer overloaded with replacement or collision semantics
+- cleanup conflict handling is either still explicitly documented as strict skip or upgraded behind a named `--conflict-strategy` contract
+- the active cleanup conflict-strategy behavior is reflected consistently across CLI help, interactive flow, tests, and docs
 - any real ghost-placeholder upgrade is either implemented narrowly and stably, or explicitly deferred without blocking the rest of the work
 - any analyzer-assisted cleanup direction is explicitly planned rather than half-hidden inside deterministic cleanup
 
 ## Related Plans
 
+- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 - `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
 - `docs/plans/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
@@ -423,5 +601,7 @@ Possible extraction boundary:
 ## Related Research
 
 - `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/research-2026-03-03-rename-cleanup-option-surface-and-conflict-strategy.md`
+- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/researches/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
 - `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

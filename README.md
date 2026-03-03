@@ -134,7 +134,7 @@ Template and serial notes:
 - `--prefix` is optional; omit it for no prefix.
 - `--codex` is the common smart-routing flag for CLI mode.
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides.
-- `{uid}` is not a supported `--pattern` placeholder today. UID-style naming is currently available only through `rename cleanup --style uid`.
+- `{uid}` is not a supported `--pattern` placeholder today.
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.
@@ -188,14 +188,31 @@ Cleanup notes:
 - `rename cleanup <path>` accepts either a single file or a directory.
 - `--hint` is the canonical flag; `--hints` is accepted as an alias.
 - Supported v1 cleanup hint families are `date`, `timestamp`, `serial`, and `uid`.
-- `uid` in cleanup is a cleanup-only hint/style concept for now, not a general rename template placeholder.
+- `uid` in cleanup is a cleanup-only hint family for now, not a general rename template placeholder.
 - When multiple hint families are selected, cleanup applies them sequentially in v1 order: `timestamp`, then `date`, then `serial`, then `uid`.
-- `--style` defaults to `preserve`; other supported values are `slug` and `uid`.
-- `uid` output uses lowercase `uid-<token>` values, and cleanup detection accepts existing uid fragments case-insensitively for compatibility.
+- `--style` defaults to `preserve`; the current supported values are `preserve` and `slug`.
+- `--style` only formats the surviving basename text after cleanup matching. It does not resolve collisions or synthesize fallback names.
+- `serial` cleanup removes only the matched serial fragment and keeps the rest of the basename intact.
+- `uid` cleanup removes only the matched `uid-<token>` fragment and keeps surrounding prefix/suffix text intact.
+- cleanup detects existing uid fragments case-insensitively for compatibility.
 - `timestamp` and `date` are intentionally disjoint: full date-plus-time fragments match `timestamp`, while date-only fragments match `date`.
 - `--timestamp-action keep|remove` applies only when `--hint timestamp` is active.
+- `--conflict-strategy` currently supports `skip`, `number`, and `uid-suffix`.
+- conflict strategy applies only when the cleaned target collides. The first non-conflicting winner keeps the clean basename.
 - Directory cleanup is flat by default; use `--recursive` to descend into subdirectories. Directories themselves are not rename targets in v1.
+- `skip` keeps the current safe behavior and leaves collided rows as `target conflict`.
+- `number` appends `-1`, `-2`, `-3` only for collided targets.
+- `uid-suffix` appends `-uid-<token>` only for collided targets.
 - Generated `rename-plan-*.csv` dry-run artifacts are ignored as cleanup inputs during directory scans.
+
+Cleanup option comparison:
+
+| Surface | Current role | Current values / scope |
+| ------- | ------------ | ---------------------- |
+| `--hint` | choose fragment families to clean | `date`, `timestamp`, `serial`, `uid` |
+| `--style` | format surviving text after cleanup | `preserve`, `slug` |
+| `--timestamp-action` | keep or remove matched timestamp text | `keep`, `remove` with `--hint timestamp` |
+| `--conflict-strategy` | resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix` |
 
 ## Video Guides
 

@@ -19,6 +19,7 @@ Rename support and Codex semantic support are separate layers:
 
 - `rename` can process broad file sets.
 - `rename cleanup` is deterministic only in v1 and does not use Codex analyzers.
+- cleanup conflict handling is also deterministic today; `skip`, `number`, and `uid-suffix` are planner-side strategies, not analyzer behavior.
 - Codex analyzers only run for eligible file types.
 - Unsupported or weak semantic cases safely fall back to deterministic rename.
 
@@ -57,7 +58,9 @@ Supported placeholders:
 Template boundary note:
 
 - `{uid}` is not part of the current `rename` template placeholder contract.
-- UID-style naming is currently exposed only by `rename cleanup`, via the `uid` hint family and `--style uid`.
+- `rename cleanup` supports `uid` as a cleanup hint family, not as a general rename template token.
+- `rename cleanup --style` currently formats surviving text only (`preserve` / `slug`); it is not a conflict-policy or whole-basename replacement axis.
+- `rename cleanup --conflict-strategy` currently owns cleanup collision handling (`skip`, `number`, `uid-suffix`).
 
 Timestamp notes:
 

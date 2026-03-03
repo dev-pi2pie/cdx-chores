@@ -6,6 +6,11 @@ status: completed
 agent: codex
 ---
 
+## Historical Note
+
+This plan records the original v1 cleanup direction.
+Later follow-up work narrowed cleanup `--style` to `preserve` / `slug`, made `uid` a cleanup hint family rather than a style, and moved generated UID naming into collision-only `--conflict-strategy uid-suffix`.
+
 ## Goal
 
 Implement a safe first version of `rename cleanup` that can normalize existing filenames by matching explicit hint families, previewing the result through the existing rename plan CSV flow, and applying the same safety posture across single-file and directory cleanup.

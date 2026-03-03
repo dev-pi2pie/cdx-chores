@@ -20,11 +20,15 @@ describe("cli action modules: rename cleanup", () => {
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain("Screenshot 2026-03-02 at 4.53.04 PM.png -> Screenshot 20260302-165304.png");
+      expect(stdout.text).toContain(
+        "Screenshot 2026-03-02 at 4.53.04 PM.png -> Screenshot 20260302-165304.png",
+      );
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
 
       const entries = await readdir(fixtureDir);
-      const planCsv = entries.find((entry) => /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/.test(entry));
+      const planCsv = entries.find((entry) =>
+        /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/.test(entry),
+      );
       expect(planCsv).toBeDefined();
 
       const csvText = await readFile(join(fixtureDir, planCsv!), "utf8");
@@ -92,7 +96,9 @@ describe("cli action modules: rename cleanup", () => {
       expect(stdout.text).toContain("Reason: no timestamp match");
 
       const entries = await readdir(fixtureDir);
-      const planCsv = entries.find((entry) => /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/.test(entry));
+      const planCsv = entries.find((entry) =>
+        /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/.test(entry),
+      );
       expect(planCsv).toBeDefined();
       const csvText = await readFile(join(fixtureDir, planCsv!), "utf8");
       expect(csvText).toContain(",skipped,no timestamp match,");
@@ -275,7 +281,7 @@ describe("cli action modules: rename cleanup", () => {
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain("scan (12).pdf -> scan 12.pdf");
+      expect(stdout.text).toContain("scan (12).pdf -> scan.pdf");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
     });
   });
@@ -295,8 +301,28 @@ describe("cli action modules: rename cleanup", () => {
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain(`${sourceName} -> scan-003.pdf`);
-      await expect(stat(targetPath)).resolves.toBeDefined();
+      expect(stdout.text).toContain(`${sourceName} -> scan.pdf`);
+      await expect(stat(join(fixtureDir, "scan.pdf"))).resolves.toBeDefined();
+      await expect(stat(sourcePath)).rejects.toBeDefined();
+    });
+  });
+
+  test("actionRenameCleanup applies serial removal to log-style names", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const sourceName = "app-00001.log";
+      const sourcePath = join(fixtureDir, sourceName);
+      await writeFile(sourcePath, "fake", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: sourceName,
+        hints: ["serial"],
+        style: "slug",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`${sourceName} -> app.log`);
+      await expect(stat(join(fixtureDir, "app.log"))).resolves.toBeDefined();
       await expect(stat(sourcePath)).rejects.toBeDefined();
     });
   });
@@ -437,7 +463,9 @@ describe("cli action modules: rename cleanup", () => {
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain("Screenshot 2026-03-02 at 4.53.04 PM.png -> Screenshot 20260302-165304.png");
+      expect(stdout.text).toContain(
+        "Screenshot 2026-03-02 at 4.53.04 PM.png -> Screenshot 20260302-165304.png",
+      );
     });
   });
 
@@ -504,32 +532,7 @@ describe("cli action modules: rename cleanup", () => {
     });
   });
 
-  test("actionRenameCleanup applies deterministic uid style for matched cleanup input", async () => {
-    await withTempFixtureDir("actions", async (fixtureDir) => {
-      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
-      const sourceName = "Meeting Notes 2026-03-02.txt";
-      const sourcePath = join(fixtureDir, sourceName);
-      await writeFile(sourcePath, "fake", "utf8");
-
-      await actionRenameCleanup(runtime, {
-        path: sourceName,
-        hints: ["date"],
-        style: "uid",
-      });
-
-      expectNoStderr();
-      expect(stdout.text).toContain(`${sourceName} -> uid-`);
-
-      const entries = await readdir(fixtureDir);
-      const uidEntry = entries.find((entry) => /^uid-[0-9a-hjkmnpqrstvwxyz]{10}\.txt$/.test(entry));
-      expect(uidEntry).toBeDefined();
-      expect(uidEntry).not.toBe(sourceName);
-      await expect(stat(join(fixtureDir, uidEntry!))).resolves.toBeDefined();
-      await expect(stat(sourcePath)).rejects.toBeDefined();
-    });
-  });
-
-  test("actionRenameCleanup applies deterministic uid style when matching an existing uid fragment", async () => {
+  test("actionRenameCleanup applies uid cleanup with slug style while preserving surrounding text", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
       const sourceName = "report uid-7k3m9q2x4t final.txt";
@@ -539,55 +542,32 @@ describe("cli action modules: rename cleanup", () => {
       await actionRenameCleanup(runtime, {
         path: sourceName,
         hints: ["uid"],
-        style: "uid",
+        style: "slug",
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain(`${sourceName} -> uid-`);
-
-      const entries = await readdir(fixtureDir);
-      const uidEntries = entries.filter((entry) => /^uid-[0-9a-hjkmnpqrstvwxyz]{10}\.txt$/.test(entry));
-      expect(uidEntries).toHaveLength(1);
-      expect(uidEntries[0]).not.toBe(sourceName);
-      await expect(stat(join(fixtureDir, uidEntries[0]!))).resolves.toBeDefined();
+      expect(stdout.text).toContain(`${sourceName} -> report-final.txt`);
+      await expect(stat(join(fixtureDir, "report-final.txt"))).resolves.toBeDefined();
       await expect(stat(sourcePath)).rejects.toBeDefined();
     });
   });
 
-  test("actionRenameCleanup leaves canonical uid targets unchanged on repeated uid cleanup runs", async () => {
+  test("actionRenameCleanup applies uid cleanup with preserve style when matching an existing uid fragment", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
-      const firstRun = createActionTestRuntime({ cwd: fixtureDir });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
       const sourceName = "report uid-7k3m9q2x4t final.txt";
       const sourcePath = join(fixtureDir, sourceName);
       await writeFile(sourcePath, "fake", "utf8");
 
-      await actionRenameCleanup(firstRun.runtime, {
+      await actionRenameCleanup(runtime, {
         path: sourceName,
         hints: ["uid"],
-        style: "uid",
+        style: "preserve",
       });
 
-      firstRun.expectNoStderr();
-      const entriesAfterFirstRun = await readdir(fixtureDir);
-      const uidEntry = entriesAfterFirstRun.find((entry) =>
-        /^uid-[0-9a-hjkmnpqrstvwxyz]{10}\.txt$/.test(entry),
-      );
-      expect(uidEntry).toBeDefined();
-      const uidEntryName = uidEntry!;
-
-      const secondRun = createActionTestRuntime({ cwd: fixtureDir });
-      await actionRenameCleanup(secondRun.runtime, {
-        path: uidEntryName,
-        hints: ["uid"],
-        style: "uid",
-      });
-
-      secondRun.expectNoStderr();
-      expect(secondRun.stdout.text).toContain(`- ${uidEntryName} (unchanged)`);
-
-      const entriesAfterSecondRun = await readdir(fixtureDir);
-      expect(entriesAfterSecondRun.filter((entry) => entry.endsWith(".txt"))).toEqual([uidEntryName]);
-      await expect(stat(join(fixtureDir, uidEntryName))).resolves.toBeDefined();
+      expectNoStderr();
+      expect(stdout.text).toContain(`${sourceName} -> report final.txt`);
+      await expect(stat(join(fixtureDir, "report final.txt"))).resolves.toBeDefined();
       await expect(stat(sourcePath)).rejects.toBeDefined();
     });
   });
@@ -624,6 +604,7 @@ describe("cli action modules: rename cleanup", () => {
         hints: ["timestamp"],
         style: "slug",
         timestampAction: "remove",
+        conflictStrategy: "skip",
         dryRun: true,
       });
 
@@ -634,6 +615,60 @@ describe("cli action modules: rename cleanup", () => {
       expect(stdout.text).toContain("screenshot.png");
       expect(stdout.text).toContain("Skipped summary:");
       expect(stdout.text).toContain("- 1 target conflict");
+    });
+  });
+
+  test("actionRenameCleanup resolves same-run directory conflicts with number strategy", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const dirPath = join(fixtureDir, "cleanup-dir");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "Screenshot 2026-03-02 at 4.53.04 PM.png"), "a", "utf8");
+      await writeFile(join(dirPath, "Screenshot 2026-03-02 at 4.53.05 PM.png"), "b", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: "cleanup-dir",
+        hints: ["timestamp"],
+        style: "slug",
+        timestampAction: "remove",
+        conflictStrategy: "number",
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Files found: 2");
+      expect(stdout.text).toContain("Files to rename: 2");
+      expect(stdout.text).not.toContain("target conflict");
+      expect(stdout.text).toContain("screenshot.png");
+      expect(stdout.text).toContain("screenshot-1.png");
+    });
+  });
+
+  test("actionRenameCleanup resolves same-run directory conflicts with uid-suffix strategy", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const dirPath = join(fixtureDir, "cleanup-dir");
+      await mkdir(dirPath, { recursive: true });
+
+      await writeFile(join(dirPath, "Screenshot 2026-03-02 at 4.53.04 PM.png"), "a", "utf8");
+      await writeFile(join(dirPath, "Screenshot 2026-03-02 at 4.53.05 PM.png"), "b", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: "cleanup-dir",
+        hints: ["timestamp"],
+        style: "slug",
+        timestampAction: "remove",
+        conflictStrategy: "uid-suffix",
+        dryRun: true,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Files found: 2");
+      expect(stdout.text).toContain("Files to rename: 2");
+      expect(stdout.text).not.toContain("target conflict");
+      expect(stdout.text).toContain("screenshot.png");
+      expect(stdout.text).toMatch(/screenshot-uid-[0-9a-hjkmnpqrstvwxyz]{10}\.png/);
     });
   });
 
@@ -668,6 +703,53 @@ describe("cli action modules: rename cleanup", () => {
     });
   });
 
+  test("actionRenameCleanup resolves single-file existing-target conflicts with number strategy", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const sourceName = "app-00001.log";
+      const sourcePath = join(fixtureDir, sourceName);
+      await writeFile(sourcePath, "fake", "utf8");
+      await writeFile(join(fixtureDir, "app.log"), "occupied", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: sourceName,
+        hints: ["serial"],
+        style: "slug",
+        conflictStrategy: "number",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`${sourceName} -> app-1.log`);
+      await expect(stat(join(fixtureDir, "app-1.log"))).resolves.toBeDefined();
+      await expect(stat(sourcePath)).rejects.toBeDefined();
+    });
+  });
+
+  test("actionRenameCleanup resolves single-file existing-target conflicts with uid-suffix strategy", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
+      const sourceName = "app-00001.log";
+      const sourcePath = join(fixtureDir, sourceName);
+      await writeFile(sourcePath, "fake", "utf8");
+      await writeFile(join(fixtureDir, "app.log"), "occupied", "utf8");
+
+      await actionRenameCleanup(runtime, {
+        path: sourceName,
+        hints: ["serial"],
+        style: "slug",
+        conflictStrategy: "uid-suffix",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toMatch(/app-00001\.log -> app-uid-[0-9a-hjkmnpqrstvwxyz]{10}\.log/);
+      const entries = await readdir(fixtureDir);
+      expect(entries.some((entry) => /^app-uid-[0-9a-hjkmnpqrstvwxyz]{10}\.log$/.test(entry))).toBe(
+        true,
+      );
+      await expect(stat(sourcePath)).rejects.toBeDefined();
+    });
+  });
+
   test("actionRenameCleanup ignores generated rename plan csv artifacts in directory scans", async () => {
     await withTempFixtureDir("actions", async (fixtureDir) => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ cwd: fixtureDir });
@@ -697,20 +779,62 @@ describe("cli command: rename cleanup", () => {
       const filePath = join(fixtureDir, "Screenshot 2026-03-02 at 4.53.04 PM.png");
       await writeFile(filePath, "fake", "utf8");
 
-      const result = runCli(
-        [
-          "rename",
-          "cleanup",
-          toRepoRelativePath(filePath),
-          "--hints",
-          "timestamp",
-          "--dry-run",
-        ],
-      );
+      const result = runCli([
+        "rename",
+        "cleanup",
+        toRepoRelativePath(filePath),
+        "--hints",
+        "timestamp",
+        "--dry-run",
+      ]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("Plan CSV:");
       expect(result.stdout).toContain("Screenshot 20260302-165304.png");
+    });
+  });
+
+  test("rename cleanup rejects removed uid style", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const filePath = join(fixtureDir, "report uid-7k3m9q2x4t final.txt");
+      await writeFile(filePath, "fake", "utf8");
+
+      const result = runCli([
+        "rename",
+        "cleanup",
+        toRepoRelativePath(filePath),
+        "--hint",
+        "uid",
+        "--style",
+        "uid",
+        "--dry-run",
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("--style must be one of: preserve, slug.");
+    });
+  });
+
+  test("rename cleanup rejects unsupported conflict strategy", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const filePath = join(fixtureDir, "Screenshot 2026-03-02 at 4.53.04 PM.png");
+      await writeFile(filePath, "fake", "utf8");
+
+      const result = runCli([
+        "rename",
+        "cleanup",
+        toRepoRelativePath(filePath),
+        "--hint",
+        "timestamp",
+        "--conflict-strategy",
+        "suffix",
+        "--dry-run",
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain(
+        "--conflict-strategy must be one of: skip, number, uid-suffix.",
+      );
     });
   });
 });

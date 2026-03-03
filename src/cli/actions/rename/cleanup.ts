@@ -1,9 +1,9 @@
-import { lstat, readdir } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 
 import { slugifyName } from "../../../utils/slug";
 import { createRenamePlanCsvRows, writeRenamePlanCsv } from "../../rename-plan-csv";
-import { applyPlannedRenames, resolveFromCwd } from "../../fs-utils";
+import { applyPlannedRenames } from "../../fs-utils";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "../../types";
 import { CliError } from "../../errors";
 import { assertNonEmpty, displayPath, printLine } from "../shared";
@@ -23,12 +23,15 @@ import {
   type CleanupHint,
   type CleanupTextStyle,
 } from "./cleanup-matchers";
+import { type RenameCleanupPathKind, resolveRenameCleanupTarget } from "./cleanup-target";
 
-export type RenameCleanupStyle = "preserve" | "slug" | "uid";
+export type RenameCleanupStyle = "preserve" | "slug";
 export type RenameCleanupTimestampAction = "keep" | "remove";
+export type RenameCleanupConflictStrategy = "skip" | "number" | "uid-suffix";
 
 const RENAME_CLEANUP_HINT_VALUES = CLEANUP_HINT_VALUES;
 type RenameCleanupHint = CleanupHint;
+const RENAME_CLEANUP_CONFLICT_STRATEGY_VALUES = ["skip", "number", "uid-suffix"] as const;
 const RENAME_PLAN_CSV_ARTIFACT_PATTERN = /^rename-plan-\d{8}T\d{6}Z-[a-f0-9]{8}\.csv$/;
 
 export interface RenameCleanupOptions {
@@ -36,6 +39,7 @@ export interface RenameCleanupOptions {
   hints: string[];
   style?: RenameCleanupStyle;
   timestampAction?: RenameCleanupTimestampAction;
+  conflictStrategy?: RenameCleanupConflictStrategy;
   dryRun?: boolean;
   previewSkips?: "summary" | "detailed";
   recursive?: boolean;
@@ -61,9 +65,6 @@ export type RenameCleanupResult =
       directoryPath: string;
       planCsvPath?: string;
     };
-
-type CleanupPathKind = "file" | "directory";
-type CleanupPathTarget = { kind: CleanupPathKind; path: string };
 
 interface CleanupCandidate {
   sourcePath: string;
@@ -120,8 +121,81 @@ function normalizeCleanupPreviewSkipsMode(
   });
 }
 
+function normalizeCleanupConflictStrategy(
+  strategy: RenameCleanupOptions["conflictStrategy"],
+): RenameCleanupConflictStrategy {
+  if (strategy === undefined) {
+    return "skip";
+  }
+
+  if (
+    (RENAME_CLEANUP_CONFLICT_STRATEGY_VALUES as readonly string[]).includes(strategy)
+  ) {
+    return strategy;
+  }
+
+  throw new CliError(
+    `Invalid --conflict-strategy value: ${strategy}. Expected one of: ${RENAME_CLEANUP_CONFLICT_STRATEGY_VALUES.join(", ")}.`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
+function buildCleanupNumberConflictBasename(preferredBaseName: string, index: number): string {
+  return index <= 0 ? preferredBaseName : `${preferredBaseName}-${index}`;
+}
+
+async function buildCleanupUidConflictBasenames(
+  sourcePath: string,
+  preferredBaseName: string,
+): Promise<string[]> {
+  const uidBasenames = await buildCleanupUidBasenames(sourcePath);
+  return uidBasenames.map((uidBasename) => `${preferredBaseName}-${uidBasename}`);
+}
+
+async function resolveCleanupConflictBasename(
+  options: {
+    sourcePath: string;
+    preferredBaseName: string;
+    conflictStrategy: RenameCleanupConflictStrategy;
+  },
+  isAvailable: (baseName: string) => boolean,
+): Promise<string | undefined> {
+  if (isAvailable(options.preferredBaseName)) {
+    return options.preferredBaseName;
+  }
+
+  if (options.conflictStrategy === "skip") {
+    return undefined;
+  }
+
+  if (options.conflictStrategy === "number") {
+    for (let index = 1; index <= 10000; index += 1) {
+      const nextBaseName = buildCleanupNumberConflictBasename(options.preferredBaseName, index);
+      if (isAvailable(nextBaseName)) {
+        return nextBaseName;
+      }
+    }
+    return undefined;
+  }
+
+  const uidConflictBasenames = await buildCleanupUidConflictBasenames(
+    options.sourcePath,
+    options.preferredBaseName,
+  );
+  for (const nextBaseName of uidConflictBasenames) {
+    if (isAvailable(nextBaseName)) {
+      return nextBaseName;
+    }
+  }
+
+  return undefined;
+}
+
 function assertDirectoryOnlyOptionAllowed(
-  pathKind: CleanupPathKind,
+  pathKind: RenameCleanupPathKind,
   enabled: boolean,
   flag: string,
 ): void {
@@ -134,7 +208,7 @@ function assertDirectoryOnlyOptionAllowed(
 }
 
 function validateCleanupModeOptions(
-  pathKind: CleanupPathKind,
+  pathKind: RenameCleanupPathKind,
   options: RenameCleanupOptions & { hints: RenameCleanupHint[] },
 ): void {
   if (options.timestampAction !== undefined && !options.hints.includes("timestamp")) {
@@ -171,42 +245,6 @@ function validateCleanupModeOptions(
   }
 }
 
-async function resolveCleanupTarget(
-  runtime: CliRuntime,
-  inputPath: string,
-): Promise<CleanupPathTarget> {
-  const resolvedPath = resolveFromCwd(runtime, inputPath);
-
-  let pathStats;
-  try {
-    pathStats = await lstat(resolvedPath);
-  } catch {
-    throw new CliError(`Cleanup path not found: ${resolvedPath}`, {
-      code: "FILE_NOT_FOUND",
-      exitCode: 2,
-    });
-  }
-
-  if (pathStats.isSymbolicLink()) {
-    throw new CliError(`Symlink inputs are not supported for rename cleanup: ${resolvedPath}`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-
-  if (pathStats.isFile()) {
-    return { kind: "file", path: resolvedPath };
-  }
-  if (pathStats.isDirectory()) {
-    return { kind: "directory", path: resolvedPath };
-  }
-
-  throw new CliError(`Cleanup path must be a file or directory: ${resolvedPath}`, {
-    code: "INVALID_INPUT",
-    exitCode: 2,
-  });
-}
-
 async function buildCleanupBasenameCandidates(
   sourcePath: string,
   stem: string,
@@ -214,16 +252,9 @@ async function buildCleanupBasenameCandidates(
   style: RenameCleanupStyle,
   timestampAction: RenameCleanupTimestampAction,
 ): Promise<{ baseNames: string[]; reason?: string }> {
-  const textStyle: CleanupTextStyle = style === "uid" ? "preserve" : style;
-  const result = buildTemporalCleanupStem(stem, hints, textStyle, timestampAction);
+  const result = buildTemporalCleanupStem(stem, hints, style, timestampAction);
   if (result.reason) {
     return { baseNames: [stem], reason: result.reason };
-  }
-
-  if (style === "uid") {
-    return {
-      baseNames: await buildCleanupUidBasenames(sourcePath),
-    };
   }
 
   return { baseNames: [result.nextStem] };
@@ -346,6 +377,7 @@ async function buildDirectoryCleanupPlans(
     hints: RenameCleanupHint[];
     style: RenameCleanupStyle;
     timestampAction: RenameCleanupTimestampAction;
+    conflictStrategy: RenameCleanupConflictStrategy;
   },
 ): Promise<{ plans: PlannedRename[]; skipped: SkippedRenameItem[] }> {
   const plans: PlannedRename[] = [];
@@ -372,18 +404,25 @@ async function buildDirectoryCleanupPlans(
       continue;
     }
 
-    let resolvedTargetPath = "";
-    for (const baseName of result.baseNames) {
-      const candidatePath = join(candidate.directoryPath, `${baseName}${candidate.ext}`);
-      const hasPlannedConflict = (targetCounts.get(candidatePath) ?? 0) > 0;
-      const hasUnchangedConflict = unchangedTargetPaths.has(candidatePath);
-      const hasExistingConflict =
-        occupiedFilePaths.has(candidatePath) && !sourcePaths.has(candidatePath);
-      if (!hasPlannedConflict && !hasUnchangedConflict && !hasExistingConflict) {
-        resolvedTargetPath = candidatePath;
-        break;
-      }
-    }
+    const preferredBaseName = result.baseNames[0] ?? candidate.stem;
+    const resolvedBaseName = await resolveCleanupConflictBasename(
+      {
+        sourcePath: candidate.sourcePath,
+        preferredBaseName,
+        conflictStrategy: options.conflictStrategy,
+      },
+      (baseName) => {
+        const candidatePath = join(candidate.directoryPath, `${baseName}${candidate.ext}`);
+        const hasPlannedConflict = (targetCounts.get(candidatePath) ?? 0) > 0;
+        const hasUnchangedConflict = unchangedTargetPaths.has(candidatePath);
+        const hasExistingConflict =
+          occupiedFilePaths.has(candidatePath) && !sourcePaths.has(candidatePath);
+        return !hasPlannedConflict && !hasUnchangedConflict && !hasExistingConflict;
+      },
+    );
+    const resolvedTargetPath = resolvedBaseName
+      ? join(candidate.directoryPath, `${resolvedBaseName}${candidate.ext}`)
+      : "";
 
     if (!resolvedTargetPath) {
       tentativeBySourcePath.set(candidate.sourcePath, {
@@ -447,6 +486,7 @@ async function runSingleTemporalCleanup(
     hints: RenameCleanupHint[];
     style: RenameCleanupStyle;
     timestampAction: RenameCleanupTimestampAction;
+    conflictStrategy: RenameCleanupConflictStrategy;
     dryRun: boolean;
   },
 ): Promise<RenameCleanupResult> {
@@ -469,16 +509,21 @@ async function runSingleTemporalCleanup(
     const occupiedNames = new Set(
       entries.map((entry) => entry.name).filter((entryName) => entryName !== sourceName),
     );
+    const preferredBaseName = result.baseNames[0] ?? stem;
+    const resolvedBaseName = await resolveCleanupConflictBasename(
+      {
+        sourcePath,
+        preferredBaseName,
+        conflictStrategy: options.conflictStrategy,
+      },
+      (baseName) => !occupiedNames.has(`${baseName}${ext}`),
+    );
 
-    for (const baseName of result.baseNames) {
-      const candidatePath = join(directoryPath, `${baseName}${ext}`);
-      if (!occupiedNames.has(basename(candidatePath))) {
-        targetPath = candidatePath;
-        break;
-      }
+    if (resolvedBaseName) {
+      targetPath = join(directoryPath, `${resolvedBaseName}${ext}`);
     }
 
-    if (targetPath === sourcePath && !result.baseNames.includes(stem)) {
+    if (targetPath === sourcePath && preferredBaseName !== stem) {
       finalReason = "target conflict";
     }
   }
@@ -526,6 +571,7 @@ async function runDirectoryTemporalCleanup(
     hints: RenameCleanupHint[];
     style: RenameCleanupStyle;
     timestampAction: RenameCleanupTimestampAction;
+    conflictStrategy: RenameCleanupConflictStrategy;
   },
 ): Promise<RenameCleanupResult> {
   const previewSkips = normalizeCleanupPreviewSkipsMode(options.previewSkips);
@@ -537,6 +583,7 @@ async function runDirectoryTemporalCleanup(
       hints: options.hints,
       style: options.style,
       timestampAction: options.timestampAction,
+      conflictStrategy: options.conflictStrategy,
     },
   );
   const totalCount = collected.candidates.length;
@@ -588,15 +635,17 @@ export async function actionRenameCleanup(
   const inputPath = assertNonEmpty(options.path, "Cleanup path");
   const hints = normalizeCleanupHints(options.hints);
   const style = options.style ?? "preserve";
-  const target = await resolveCleanupTarget(runtime, inputPath);
+  const target = await resolveRenameCleanupTarget(runtime, inputPath);
   validateCleanupModeOptions(target.kind, { ...options, hints, style });
   const timestampAction = options.timestampAction ?? "keep";
+  const conflictStrategy = normalizeCleanupConflictStrategy(options.conflictStrategy);
 
   if (target.kind === "file") {
     return await runSingleTemporalCleanup(runtime, target.path, {
       hints,
       style,
       timestampAction,
+      conflictStrategy,
       dryRun: options.dryRun ?? false,
     });
   }
@@ -606,5 +655,6 @@ export async function actionRenameCleanup(
     hints,
     style,
     timestampAction,
+    conflictStrategy,
   });
 }

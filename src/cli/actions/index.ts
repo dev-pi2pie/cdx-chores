@@ -10,11 +10,15 @@ export {
   actionRenameBatch,
   actionRenameCleanup,
   actionRenameFile,
+  resolveRenameCleanupTarget,
 } from "./rename/index";
 export type {
   RenameApplyOptions,
   RenameBatchOptions,
+  RenameCleanupConflictStrategy,
   RenameCleanupOptions,
+  RenameCleanupPathKind,
+  RenameCleanupPathTarget,
   RenameCleanupResult,
   RenameCleanupStyle,
   RenameCleanupTimestampAction,

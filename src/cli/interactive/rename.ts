@@ -1,5 +1,3 @@
-import { lstat } from "node:fs/promises";
-
 import { confirm, input, select } from "@inquirer/prompts";
 
 import {
@@ -7,10 +5,10 @@ import {
   actionRenameBatch,
   actionRenameCleanup,
   actionRenameFile,
+  resolveRenameCleanupTarget,
 } from "../actions";
-import { CliError } from "../errors";
-import { resolveFromCwd } from "../fs-utils";
 import { promptRequiredPathWithConfig } from "../prompts/path";
+import { promptTextWithGhost } from "../prompts/text-inline";
 import {
   type RenameInteractiveCodexFlags as InteractiveCodexFlags,
   type RenameInteractiveCodexScope as InteractiveCodexScope,
@@ -36,7 +34,6 @@ import type { RenameInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
 type InteractiveCleanupHint = "date" | "timestamp" | "serial" | "uid";
-type InteractiveCleanupPathKind = "file" | "directory";
 
 const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
   name: string;
@@ -72,7 +69,10 @@ function validateIntegerInput(
   return true;
 }
 
-async function promptRenamePatternConfig(options: { includeSerialScope: boolean }): Promise<{
+async function promptRenamePatternConfig(options: {
+  includeSerialScope: boolean;
+  pathPromptContext: InteractivePathPromptContext;
+}): Promise<{
   pattern: string;
   usesPrefix: boolean;
   serialOrder?: RenameSerialOrder;
@@ -108,12 +108,16 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
 
   const customTemplate =
     preset === "custom"
-      ? await input({
+      ? await promptTextWithGhost({
           message: [
             "Custom filename template",
             "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {serial}",
             "Advanced: explicit timestamp variants and {serial...} params are also supported.",
           ].join("\n"),
+          ghostText: "{timestamp}-{stem}",
+          runtimeConfig: options.pathPromptContext.runtimeConfig,
+          stdin: options.pathPromptContext.stdin,
+          stdout: options.pathPromptContext.stdout,
           validate: (value) => (value.trim() ? true : "Required"),
         })
       : undefined;
@@ -220,34 +224,6 @@ async function promptRenamePatternConfig(options: { includeSerialScope: boolean 
   };
 }
 
-async function resolveInteractiveCleanupPathKind(
-  runtime: CliRuntime,
-  inputPath: string,
-): Promise<InteractiveCleanupPathKind> {
-  const resolvedPath = resolveFromCwd(runtime, inputPath);
-  let pathStats;
-  try {
-    pathStats = await lstat(resolvedPath);
-  } catch {
-    throw new CliError(`Cleanup path not found: ${resolvedPath}`, {
-      code: "FILE_NOT_FOUND",
-      exitCode: 2,
-    });
-  }
-
-  if (pathStats.isFile()) {
-    return "file";
-  }
-  if (pathStats.isDirectory()) {
-    return "directory";
-  }
-
-  throw new CliError(`Cleanup path must be a file or directory: ${resolvedPath}`, {
-    code: "INVALID_INPUT",
-    exitCode: 2,
-  });
-}
-
 function parseInteractiveCsvList(value: string): string[] | undefined {
   const items = value
     .split(",")
@@ -326,7 +302,10 @@ export async function handleRenameInteractiveAction(
       message: "Traverse subdirectories recursively?",
       default: false,
     });
-    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: recursive });
+    const patternConfig = await promptRenamePatternConfig({
+      includeSerialScope: recursive,
+      pathPromptContext,
+    });
     const prefix = patternConfig.usesPrefix
       ? await input({
           message: "Filename prefix (optional)",
@@ -426,9 +405,10 @@ export async function handleRenameInteractiveAction(
       kind: "path",
       ...pathPromptContext,
     });
-    const pathKind = await resolveInteractiveCleanupPathKind(runtime, path);
+    const target = await resolveRenameCleanupTarget(runtime, path);
+    const pathKind = target.kind;
     const hints = await promptInteractiveCleanupHints();
-    const style = await select<"preserve" | "slug" | "uid">({
+    const style = await select<"preserve" | "slug">({
       message: "Cleanup output style",
       choices: [
         {
@@ -440,11 +420,6 @@ export async function handleRenameInteractiveAction(
           name: "slug",
           value: "slug",
           description: "Convert the remaining text to kebab-case",
-        },
-        {
-          name: "uid",
-          value: "uid",
-          description: "Emit uid-<token> while preserving the file extension",
         },
       ],
       default: "preserve",
@@ -467,6 +442,27 @@ export async function handleRenameInteractiveAction(
           default: "keep",
         })
       : undefined;
+    const conflictStrategy = await select<"skip" | "number" | "uid-suffix">({
+      message: "Cleanup conflict strategy",
+      choices: [
+        {
+          name: "skip",
+          value: "skip",
+          description: "Keep the clean target when free and skip only the conflicted rows",
+        },
+        {
+          name: "number",
+          value: "number",
+          description: "Append -1, -2, -3 only when the cleaned target conflicts",
+        },
+        {
+          name: "uid-suffix",
+          value: "uid-suffix",
+          description: "Append -uid-<token> only when the cleaned target conflicts",
+        },
+      ],
+      default: "skip",
+    });
     const recursive =
       pathKind === "directory"
         ? await confirm({
@@ -481,7 +477,7 @@ export async function handleRenameInteractiveAction(
     const addDirectoryFilters =
       pathKind === "directory"
         ? await confirm({
-            message: "Add directory filters?",
+            message: "Filter files before cleanup?",
             default: false,
           })
         : false;
@@ -532,6 +528,7 @@ export async function handleRenameInteractiveAction(
       hints,
       style,
       timestampAction,
+      conflictStrategy,
       recursive: pathKind === "directory" ? recursive : undefined,
       maxDepth: maxDepthInput.trim() ? Number(maxDepthInput.trim()) : undefined,
       matchRegex: matchRegex.trim() ? matchRegex.trim() : undefined,
@@ -563,7 +560,10 @@ export async function handleRenameInteractiveAction(
       kind: "file",
       ...pathPromptContext,
     });
-    const patternConfig = await promptRenamePatternConfig({ includeSerialScope: false });
+    const patternConfig = await promptRenamePatternConfig({
+      includeSerialScope: false,
+      pathPromptContext,
+    });
     const prefix = patternConfig.usesPrefix
       ? await input({
           message: "Filename prefix (optional)",

@@ -30,9 +30,7 @@ describe("rename cleanup matcher internals", () => {
   });
 
   test("matchCleanupDate still detects standalone dates when a timestamp also exists elsewhere", () => {
-    expect(
-      matchCleanupDate("release 2026-03-01 Screenshot 2026-03-02 at 4.53.04 PM"),
-    ).toEqual({
+    expect(matchCleanupDate("release 2026-03-01 Screenshot 2026-03-02 at 4.53.04 PM")).toEqual({
       prefix: "release",
       suffix: "Screenshot 2026-03-02 at 4.53.04 PM",
       normalizedDate: "20260301",
@@ -42,12 +40,10 @@ describe("rename cleanup matcher internals", () => {
   test("matchCleanupSerial accepts the v1 trailing-counter shapes", () => {
     expect(matchCleanupSerial("scan (12)")).toEqual({
       prefix: "scan",
-      normalizedSerial: "12",
     });
 
     expect(matchCleanupSerial("scan_003")).toEqual({
       prefix: "scan",
-      normalizedSerial: "003",
     });
   });
 
@@ -82,12 +78,7 @@ describe("rename cleanup matcher internals", () => {
     });
 
     expect(
-      buildTemporalCleanupStem(
-        "plain-note",
-        ["date", "timestamp"],
-        "preserve",
-        "keep",
-      ),
+      buildTemporalCleanupStem("plain-note", ["date", "timestamp"], "preserve", "keep"),
     ).toEqual({
       nextStem: "plain-note",
       reason: "no date or timestamp match",
@@ -104,6 +95,18 @@ describe("rename cleanup matcher internals", () => {
       ),
     ).toEqual({
       nextStem: "report 20260302 final",
+    });
+  });
+
+  test("buildTemporalCleanupStem removes matched serial and uid fragments without rewriting surrounding text", () => {
+    expect(buildTemporalCleanupStem("app-00001", ["serial"], "slug", "keep")).toEqual({
+      nextStem: "app",
+    });
+
+    expect(
+      buildTemporalCleanupStem("report uid-7k3m9q2x4t final", ["uid"], "preserve", "keep"),
+    ).toEqual({
+      nextStem: "report final",
     });
   });
 });
