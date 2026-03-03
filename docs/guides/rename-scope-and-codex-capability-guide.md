@@ -54,6 +54,11 @@ Supported placeholders:
 - `{stem}`
 - `{serial...}`
 
+Template boundary note:
+
+- `{uid}` is not part of the current `rename` template placeholder contract.
+- UID-style naming is currently exposed only by `rename cleanup`, via the `uid` hint family and `--style uid`.
+
 Timestamp notes:
 
 - `{timestamp}` defaults to UTC for backward compatibility.

@@ -79,6 +79,7 @@ Notes:
 - `rename cleanup <path>` auto-detects file vs directory mode.
 - `--hint` is the documented flag. `--hints` is accepted as a compatibility alias.
 - Supported v1 hints are `date`, `timestamp`, `serial`, and `uid`.
+- `uid` in cleanup is a hint/style concept, not a general rename template placeholder. `{uid}` is not supported in `rename file` / `rename batch` `--pattern` templates today.
 - When multiple hints are supplied, cleanup applies them sequentially in this v1 order:
   - `timestamp`
   - `date`
@@ -135,6 +136,7 @@ Notes:
 
 - `--prefix` is optional in CLI mode; omit it for no prefix.
 - Empty `prefix` is allowed; separators are normalized.
+- `{uid}` is not a supported template placeholder in current rename patterns. UID-style naming is currently available only through `rename cleanup --style uid`.
 - `{serial...}` parameters are order-insensitive.
 - Use at most one `{serial...}` placeholder in a template. Multiple serial placeholders are rejected.
 - Supported serial order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`.
