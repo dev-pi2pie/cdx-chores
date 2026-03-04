@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-03-03
+modified-date: 2026-03-04
 status: completed
 agent: codex
 ---
@@ -82,7 +82,7 @@ Notes:
 - analyzer-assisted cleanup can now optionally write a grouped advisory CSV report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
 - `--hint` is the documented flag. `--hints` is accepted as a compatibility alias.
 - Supported v1 hints are `date`, `timestamp`, `serial`, and `uid`.
-- `uid` in cleanup is a hint family, not a general rename template placeholder. `{uid}` is not supported in `rename file` / `rename batch` `--pattern` templates today.
+- `rename cleanup`, `rename file`, and `rename batch` now share the same recognizable deterministic `uid-<token>` family.
 - When multiple hints are supplied, cleanup applies them sequentially in this v1 order:
   - `timestamp`
   - `date`
@@ -152,6 +152,24 @@ Notes:
 | remove timestamp text entirely | `--hint timestamp --timestamp-action remove` | `cdx-chores rename cleanup ./captures --hint timestamp --timestamp-action remove --dry-run` |
 | change how conflicts are resolved | `--conflict-strategy skip|number|uid-suffix` | `cdx-chores rename cleanup ./logs --hint serial --conflict-strategy number --dry-run` |
 
+### Advanced: Cleanup First, Then Mark the Clean Winner
+
+Use this two-step flow when you want cleanup to minimize change first, then explicitly add a UID marker to the one clean winner.
+
+Example with the collision-heavy playground:
+
+```bash
+cdx-chores rename cleanup ./examples/playground/huge-logs --hint serial --conflict-strategy uid-suffix --dry-run
+cdx-chores rename file ./examples/playground/huge-logs/app.log --pattern "{stem}-{uid}" --dry-run
+```
+
+Notes:
+
+- Step 1 keeps the first non-conflicting cleaned basename unchanged and applies `-uid-<token>` only to collided rows.
+- Step 2 is intentionally a targeted `rename file` call on that clean winner.
+- Do not use `rename batch --pattern "{stem}-{uid}"` for the second step unless you want to rename every cleaned file again.
+- This sequence is safer than adding `{uid}` first and trying to clean `serial` afterward, because current serial cleanup is intentionally biased toward trailing serial fragments.
+
 ## Pattern and Template Usage
 
 Preset options in interactive mode:
@@ -175,6 +193,7 @@ Supported placeholders:
 - `{date_local}`
 - `{date_utc}`
 - `{stem}`
+- `{uid}`
 - `{serial...}`
 
 Custom template examples:
@@ -182,6 +201,7 @@ Custom template examples:
 ```text
 {date}-{stem}-{serial}
 brand-{timestamp}-{stem}
+{uid}-{stem}
 {prefix}-{serial_###_start_1_order_mtime_asc}-{stem}
 {timestamp_utc_iso}-{stem}
 {timestamp_local_12h}-{stem}
@@ -191,7 +211,7 @@ Notes:
 
 - `--prefix` is optional in CLI mode; omit it for no prefix.
 - Empty `prefix` is allowed; separators are normalized.
-- `{uid}` is not a supported template placeholder in current rename patterns.
+- `{uid}` is accepted in general rename templates and renders a deterministic `uid-<token>` fragment.
 - `{serial...}` parameters are order-insensitive.
 - Use at most one `{serial...}` placeholder in a template. Multiple serial placeholders are rejected.
 - Supported serial order values: `path_asc`, `path_desc`, `mtime_asc`, `mtime_desc`.

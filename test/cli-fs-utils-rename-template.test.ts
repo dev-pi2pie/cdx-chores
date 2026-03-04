@@ -134,6 +134,54 @@ describe("rename planner template + serial behavior", () => {
     }
   });
 
+  test("{uid} is accepted and renders a deterministic uid basename prefix", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "uid-single");
+      await mkdir(dirPath, { recursive: true });
+      const path = join(dirPath, "entry.txt");
+      await writeFile(path, "x", "utf8");
+
+      const first = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{uid}-{stem}",
+      });
+      const second = await planSingleRename(runtime, toRepoRelativePath(path), {
+        pattern: "{uid}-{stem}",
+      });
+
+      expect(basename(first.plan.toPath)).toMatch(/^uid-[0-9a-hjkmnpqrstvwxyz]{10}-entry\.txt$/);
+      expect(basename(second.plan.toPath)).toBe(basename(first.plan.toPath));
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("{uid} renders distinct deterministic values for different batch files", async () => {
+    const fixtureDir = await createTempFixtureDir("rename-template");
+    try {
+      const { runtime } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "uid-batch");
+      await mkdir(dirPath, { recursive: true });
+      const aPath = join(dirPath, "alpha.txt");
+      const bPath = join(dirPath, "beta.txt");
+      await writeFile(aPath, "a", "utf8");
+      await writeFile(bPath, "b", "utf8");
+
+      const result = await planBatchRename(runtime, toRepoRelativePath(dirPath), {
+        pattern: "{uid}-{stem}",
+      });
+
+      const toNames = result.plans.map((plan) => basename(plan.toPath)).sort();
+      expect(toNames).toHaveLength(2);
+      expect(toNames[0]).toMatch(/^uid-[0-9a-hjkmnpqrstvwxyz]{10}-(alpha|beta)\.txt$/);
+      expect(toNames[1]).toMatch(/^uid-[0-9a-hjkmnpqrstvwxyz]{10}-(alpha|beta)\.txt$/);
+      expect(toNames[0]).not.toBe(toNames[1]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("rejects unknown placeholders and non-mtime alias order token", async () => {
     const fixtureDir = await createTempFixtureDir("rename-template");
     try {

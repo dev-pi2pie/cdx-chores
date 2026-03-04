@@ -1,8 +1,8 @@
 ---
 title: "Rename pattern, smart router, and docs UX v1 research"
 created-date: 2026-02-27
-modified-date: 2026-02-27
-status: draft
+modified-date: 2026-03-04
+status: completed
 agent: codex
 ---
 
@@ -45,6 +45,7 @@ Requested design needs include:
 - user static literals (brand/author/custom words)
 - serial placeholder support (for example `{serial}`)
 - simpler date output option (for example `{date}` as `YYYY-MM-DD`)
+- deterministic UID placeholder support so `rename file` / `rename batch` can reuse the same `uid-<token>` shape already established by `rename cleanup`
 
 ### 4. Profile scope and assistant routing should share one capability model
 
@@ -73,12 +74,20 @@ Template placeholders in v1:
 - `{date_local}` (always local date)
 - `{date_utc}` (always UTC date)
 - `{stem}`
+- `{uid}` (deterministic `uid-<token>` fragment)
 - `{serial}` (default counter behavior)
 
 `custom` should allow mixed static text plus placeholders, for example:
 
 - `brand-{date}-{stem}-{serial}`
+- `brand-{uid}-{stem}`
 - `{timestamp}-{stem}-{serial}`
+
+`{uid}` should reuse the same recognizable marker-based shape as cleanup:
+
+- render as `uid-<token>`, not a bare opaque token
+- keep deterministic generation so repeated dry runs for the same source stay stable
+- share the same cleanup-friendly fragment family instead of inventing a second UID format for constructive rename flows
 
 ### B. Serial token parameters and ordering (v1)
 
@@ -175,6 +184,16 @@ When `{prefix}` is empty, normalize separators to avoid malformed names:
    - prefer `cdx-chores ...`
    - link deeper details to guides instead of repeating long tables
 
+## Outcome
+
+This research has now been implemented through the related follow-up plans and jobs:
+
+- interactive rename routing was reduced to the intended single enable/scope flow
+- rename docs were compacted into README plus dedicated guides
+- general rename templates now support `{uid}` and share the deterministic `uid-<token>` family with `rename cleanup`
+
+The note remains useful as the design rationale, but it is no longer an open draft.
+
 ## Finalized v1 Decisions
 
 1. Serial scope:
@@ -194,6 +213,7 @@ When `{prefix}` is empty, normalize separators to avoid malformed names:
 
 - `docs/plans/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/plan-2026-03-04-rename-uid-pattern-placeholder.md`
 
 ## Related Research
 

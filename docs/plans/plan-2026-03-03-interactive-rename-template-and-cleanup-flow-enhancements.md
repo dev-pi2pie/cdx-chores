@@ -1,10 +1,16 @@
 ---
 title: "Interactive rename template and cleanup flow enhancements"
 created-date: 2026-03-03
-modified-date: 2026-03-03
+modified-date: 2026-03-04
 status: completed
 agent: codex
 ---
+
+## Historical Note
+
+This completed plan intentionally kept `{uid}` out of general rename templates while cleanup semantics were still being stabilized.
+
+Follow-up doc review now treats that as a temporary implementation gap rather than a preferred steady-state boundary, because `rename cleanup` already established a reusable deterministic `uid-<token>` shape.
 
 ## Goal
 
@@ -123,7 +129,7 @@ Preferred first-pass direction:
   - `{date}`
   - `{stem}`
   - `{serial}`
-- do not imply `{uid}` is available in rename templates yet
+- do not imply `{uid}` is available in rename templates in this phase; follow-up template work should add it once the shared UID contract is lifted out of cleanup-only behavior
 - add one very short note that advanced variants and serial parameters are supported
 - stop printing the full explicit placeholder inventory inside the prompt body
 

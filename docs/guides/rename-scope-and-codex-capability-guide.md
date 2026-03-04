@@ -54,12 +54,13 @@ Supported placeholders:
 - `{date_local}`
 - `{date_utc}`
 - `{stem}`
+- `{uid}`
 - `{serial...}`
 
 Template boundary note:
 
-- `{uid}` is not part of the current `rename` template placeholder contract.
-- `rename cleanup` supports `uid` as a cleanup hint family, not as a general rename template token.
+- `{uid}` is part of the current `rename` template placeholder contract.
+- `rename cleanup` uses the same deterministic `uid-<token>` family for cleanup matching and conflict suffixing.
 - `rename cleanup --style` currently formats surviving text only (`preserve` / `slug`); it is not a conflict-policy or whole-basename replacement axis.
 - `rename cleanup --conflict-strategy` currently owns cleanup collision handling (`skip`, `number`, `uid-suffix`).
 

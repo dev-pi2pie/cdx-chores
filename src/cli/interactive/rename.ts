@@ -75,7 +75,7 @@ async function promptRenamePatternConfig(options: {
       ? await promptTextWithGhost({
           message: [
             "Custom filename template",
-            "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {serial}",
+            "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {uid}, {serial}",
             "Advanced: explicit timestamp variants and {serial...} params are also supported.",
           ].join("\n"),
           ghostText: "{timestamp}-{stem}",
