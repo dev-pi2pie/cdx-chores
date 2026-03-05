@@ -38,12 +38,17 @@ Implement Phase 1 through Phase 3 of `docs/plans/plan-2026-03-05-partial-analyze
 - added interactive coverage for:
   - narrowed-evidence Codex handoff
   - no-matching-group fallback without issuing a Codex suggestion request
+- made deterministic cleanup confirmation explicit in analyzer-assisted flow:
+  - print `Deterministic cleanup settings (global)` before confirmation
+  - changed prompt to `Use these as deterministic cleanup settings?`
+- validated no regressions in existing cleanup hint semantics and conflict-strategy behavior with targeted cleanup suites
 
 ## Verification
 
 - `bunx tsc --noEmit`
 - `bun test test/cli-interactive-rename.test.ts`
 - `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-actions-rename-cleanup-codex.test.ts`
+- `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts test/cli-command-rename-cleanup.test.ts`
 
 ## Related Plans
 

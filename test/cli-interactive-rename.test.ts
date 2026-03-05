@@ -164,6 +164,7 @@ describe("interactive rename routing", () => {
     expect(result.stdout).toContain("Analyzer families selected: timestamp, date, serial, uid");
     expect(result.stdout).toContain("Grouped analyzer review:");
     expect(result.stdout).toContain("Codex cleanup suggestion:");
+    expect(result.stdout).toContain("Deterministic cleanup settings (global):");
     expect(result.stdout).toContain("- hints: serial");
     expect(result.promptCalls).toContainEqual({
       kind: "checkbox",
@@ -280,7 +281,7 @@ describe("interactive rename routing", () => {
     expect(result.stdout).toContain("Cleanup analysis report auto-cleaned: reports/cleanup-analysis.csv");
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
-      message: "Use these suggested cleanup settings?",
+      message: "Use these as deterministic cleanup settings?",
     });
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",

@@ -95,9 +95,9 @@ This plan converts those decisions into implementation phases and tracking check
 
 ### Phase 4: Deterministic cleanup handoff
 
-- [ ] keep one global cleanup hint/style/timestamp-action selection step
-- [ ] ensure selected analyzer scope does not bypass explicit deterministic settings confirmation
-- [ ] validate no regressions in existing hint semantics and conflict strategy behavior
+- [x] keep one global cleanup hint/style/timestamp-action selection step
+- [x] ensure selected analyzer scope does not bypass explicit deterministic settings confirmation
+- [x] validate no regressions in existing hint semantics and conflict strategy behavior
 
 ### Phase 5: Artifact retention flow
 

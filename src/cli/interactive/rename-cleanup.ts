@@ -289,6 +289,23 @@ function printCleanupCodexSuggestion(
   printLine(runtime.stdout);
 }
 
+function printDeterministicCleanupSettings(
+  runtime: CliRuntime,
+  options: {
+    hints: RenameCleanupHint[];
+    style: RenameCleanupStyle;
+    timestampAction?: RenameCleanupTimestampAction;
+  },
+): void {
+  printLine(runtime.stdout, "Deterministic cleanup settings (global):");
+  printLine(runtime.stdout, `- hints: ${options.hints.join(", ")}`);
+  printLine(runtime.stdout, `- style: ${options.style}`);
+  if (options.timestampAction) {
+    printLine(runtime.stdout, `- timestamp action: ${options.timestampAction}`);
+  }
+  printLine(runtime.stdout);
+}
+
 async function promptCleanupSettingsFromSuggestion(
   runtime: CliRuntime,
   options: {
@@ -359,6 +376,11 @@ async function promptCleanupSettingsFromSuggestion(
       confidence: result.suggestion.confidence,
       reasoningSummary: result.suggestion.reasoningSummary,
     });
+    printDeterministicCleanupSettings(runtime, {
+      hints: result.suggestion.recommendedHints,
+      style: result.suggestion.recommendedStyle,
+      timestampAction: result.suggestion.recommendedTimestampAction,
+    });
 
     const writeAnalysisReport = await confirm({
       message: "Write grouped cleanup analysis report CSV?",
@@ -378,7 +400,7 @@ async function promptCleanupSettingsFromSuggestion(
     }
 
     const useSuggestion = await confirm({
-      message: "Use these suggested cleanup settings?",
+      message: "Use these as deterministic cleanup settings?",
       default: true,
     });
     if (!useSuggestion) {
