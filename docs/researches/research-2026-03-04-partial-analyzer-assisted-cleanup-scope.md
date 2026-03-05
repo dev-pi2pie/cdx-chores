@@ -450,10 +450,39 @@ Rationale:
 
 - after the interactive family-selection flow is validated, is there enough scripting value to justify adding a later CLI include/exclude surface?
 - if separate exclude behavior becomes necessary later, should it be introduced as a second step in interactive mode or as a more advanced interaction within the same family picker?
-- what is the lowest-friction interactive retention UI when both plan CSV and analysis report CSV exist:
-  - two yes/no prompts
-  - one compact multi-select
-  - or a small preset menu such as keep-both / keep-plan-only / keep-report-only / clean-both?
+
+Recommended resolution path:
+
+### 1. Later CLI include/exclude surface
+
+Default decision:
+
+- do not add a CLI include/exclude surface until an explicit readiness gate is met
+
+Readiness gate:
+
+- interactive family-selection semantics are stable for at least one release cycle
+- no major contract churn in include/exclude defaults or selected-family meaning
+- clear scripting demand is observed from real usage
+
+If the gate is met, first CLI slice should stay narrow:
+
+- use `--codex-include-hint` / `--codex-exclude-hint`
+- keep value input aligned with `--hint`: repeatable or comma-separated
+- keep empty include/exclude as implicit full-scope analysis
+
+### 2. Future explicit exclude behavior
+
+Default decision:
+
+- keep one combined family picker in the first follow-up
+- do not split include/exclude into separate steps unless a concrete UX gap appears
+
+Escalation rule:
+
+- if users need explicit negative targeting beyond simple deselect behavior, add an advanced mode later
+- if both include and exclude controls exist, use explicit precedence:
+  - effective families = include set minus exclude set
 
 ## Related Plans
 

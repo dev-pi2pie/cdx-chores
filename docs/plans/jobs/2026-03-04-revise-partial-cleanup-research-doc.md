@@ -32,6 +32,10 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
 - added an ASCII workflow sketch for expected interactive retention handling and post-run artifact outcomes
 - added a recommendation to separate retention decisions for plan CSV and analysis report CSV in interactive mode
 - added concrete example prompt copy and a retention decision matrix for interactive dry-run/apply artifact handling
+- removed the now-resolved retention-UI item from residual open questions, leaving only truly unresolved follow-up questions
+- added a recommended resolution path for residual questions:
+  - readiness gate for any future CLI include/exclude surface
+  - phased rule for explicit exclude behavior with include-minus-exclude precedence if both controls are added later
 
 ## Verification
 
