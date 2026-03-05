@@ -16,6 +16,7 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerErrorMessage?: string;
   cleanupAnalysisReportPath?: string;
   captureCleanupSuggestInput?: boolean;
+  captureCleanupCollectInput?: boolean;
   renameApplyErrorMessage?: string;
 }
 
@@ -188,6 +189,23 @@ export function runInteractiveHarness(
         return { kind: "file", path: String(inputPath ?? "") };
       },
       collectRenameCleanupAnalyzerEvidence: async (_runtime, options) => {
+        if (scenario.captureCleanupCollectInput) {
+          actionCalls.push({
+            name: "rename:cleanup:collect-evidence",
+            options: {
+              path: options.path,
+              recursive: options.recursive,
+              maxDepth: options.maxDepth,
+              matchRegex: options.matchRegex,
+              skipRegex: options.skipRegex,
+              ext: options.ext,
+              skipExt: options.skipExt,
+              sampleLimit: options.sampleLimit,
+              groupLimit: options.groupLimit,
+              examplesPerGroup: options.examplesPerGroup,
+            },
+          });
+        }
         options.onProgress?.("sampling");
         if (scenario.cleanupAnalyzerEvidence) {
           options.onProgress?.("grouping");

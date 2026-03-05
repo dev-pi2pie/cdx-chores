@@ -364,10 +364,16 @@ async function promptCleanupSettingsFromSuggestion(
     printLine(runtime.stdout, `Analyzer families selected: ${options.analyzerFamilies.join(", ")}`);
     printLine(runtime.stdout);
 
+    const analyzerSampleLimit = RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.sampleLimit;
+
     status.start("Sampling filenames for cleanup analysis...");
     const collectedEvidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
       path: options.path,
       ...options.scope,
+      sampleLimit: analyzerSampleLimit,
+      // Keep all sample-derived groups available for family narrowing, then let
+      // grouped review/prompt rendering apply their own tighter presentation caps.
+      groupLimit: analyzerSampleLimit,
       onProgress: (phase) => {
         if (phase === "grouping") {
           status.update("Grouping filename patterns for cleanup analysis...");
