@@ -486,6 +486,7 @@ Escalation rule:
 
 ## Related Plans
 
+- `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
 - `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 

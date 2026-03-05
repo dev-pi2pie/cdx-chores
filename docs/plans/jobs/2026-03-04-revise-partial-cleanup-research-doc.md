@@ -36,6 +36,8 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
 - added a recommended resolution path for residual questions:
   - readiness gate for any future CLI include/exclude surface
   - phased rule for explicit exclude behavior with include-minus-exclude precedence if both controls are added later
+- added a new implementation plan document with phased checklist tracking and an anti-bloat job-record strategy section:
+  - `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
 
 ## Verification
 
@@ -44,3 +46,7 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
 ## Related Research
 
 - `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
+
+## Related Plans
+
+- `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
