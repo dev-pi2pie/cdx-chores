@@ -420,6 +420,109 @@ describe("interactive rename routing", () => {
     ]);
   });
 
+  test("treats empty analyzer-family selection as full-scope analyzer review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [[]],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, false, true, true, true, true],
+      captureCleanupSuggestInput: true,
+      cleanupAnalyzerEvidence: {
+        targetKind: "directory",
+        targetPath: "docs",
+        totalCandidateCount: 4,
+        sampledCount: 4,
+        sampleNames: [
+          "report uid-7k3m9q2x4t final.txt",
+          "report 2026-03-02 final.txt",
+          "nested/report uid-9m4k2q7x1v final.txt",
+          "nested/report 2026-03-03 final.txt",
+        ],
+        groupedPatterns: [
+          {
+            pattern: "report-{uid}-final.txt",
+            count: 2,
+            examples: [
+              "report uid-7k3m9q2x4t final.txt",
+              "nested/report uid-9m4k2q7x1v final.txt",
+            ],
+          },
+          {
+            pattern: "report-{date}-final.txt",
+            count: 2,
+            examples: [
+              "report 2026-03-02 final.txt",
+              "nested/report 2026-03-03 final.txt",
+            ],
+          },
+        ],
+      },
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["uid"],
+        recommendedStyle: "preserve",
+        confidence: 0.9,
+        reasoningSummary: "Selected groups are dominated by uid fragments.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:codex-suggest",
+        options: {
+          targetKind: "directory",
+          totalCandidateCount: 4,
+          sampledCount: 4,
+          sampleNames: [
+            "report uid-7k3m9q2x4t final.txt",
+            "report 2026-03-02 final.txt",
+            "nested/report uid-9m4k2q7x1v final.txt",
+            "nested/report 2026-03-03 final.txt",
+          ],
+          groupedPatterns: [
+            {
+              pattern: "report-{uid}-final.txt",
+              count: 2,
+              examples: [
+                "report uid-7k3m9q2x4t final.txt",
+                "nested/report uid-9m4k2q7x1v final.txt",
+              ],
+            },
+            {
+              pattern: "report-{date}-final.txt",
+              count: 2,
+              examples: [
+                "report 2026-03-02 final.txt",
+                "nested/report 2026-03-03 final.txt",
+              ],
+            },
+          ],
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["uid"],
+          style: "preserve",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: false,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain("Analyzer families selected: timestamp, date, serial, uid");
+  });
+
   test("supports plan-only retention choice in dry-run no-apply flow", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -539,6 +642,58 @@ describe("interactive rename routing", () => {
       kind: "confirm",
       message: "Keep applied plan CSV?",
     });
+  });
+
+  test("supports removing analysis report while keeping applied plan csv", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, true, true, true, true, false],
+      cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["serial"],
+        recommendedStyle: "slug",
+        confidence: 0.86,
+        reasoningSummary: "Most sampled names differ only by trailing counters.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:analysis-report",
+        options: {
+          csvPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["serial"],
+          style: "slug",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: false,
+        },
+      },
+    ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep cleanup analysis report CSV?",
+    });
+    expect(result.stdout).toContain("Cleanup analysis report removed: reports/cleanup-analysis.csv");
+    expect(result.stdout).not.toContain("Cleanup plan CSV removed:");
   });
 
   test("falls back to manual settings when selected analyzer families match no grouped patterns", () => {
