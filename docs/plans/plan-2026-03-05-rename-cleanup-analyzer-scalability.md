@@ -1,7 +1,8 @@
 ---
 title: "Rename cleanup analyzer scalability and bounded preview"
 created-date: 2026-03-05
-status: draft
+modified-date: 2026-03-05
+status: completed
 agent: codex
 ---
 
@@ -46,49 +47,49 @@ The `Grouped analyzer review` output is already bounded by group and examples li
 
 ### Phase 1: Contract and limits
 
-- [ ] define explicit analyzer limits as named constants with rationale:
-  - [ ] sample count cap
-  - [ ] grouped pattern cap
-  - [ ] examples-per-group cap
-  - [ ] grouped preview line/character cap
-- [ ] document desired behavior for large scope scans (for example `examples/playground/huge-logs`)
+- [x] define explicit analyzer limits as named constants with rationale:
+  - [x] sample count cap
+  - [x] grouped pattern cap
+  - [x] examples-per-group cap
+  - [x] grouped preview line/character cap
+- [x] document desired behavior for large scope scans (for example `examples/playground/huge-logs`)
 
 ### Phase 2: Streaming analyzer evidence collector
 
-- [ ] implement analyzer-directory traversal that:
-  - [ ] counts all eligible candidates
-  - [ ] only stores first `sampleLimit` sampled relative names
-  - [ ] avoids constructing a full `candidates[]` array for analyzer-only evidence collection
-- [ ] keep existing filter semantics (`matchRegex`, `skipRegex`, `ext`, `skipExt`, recursion, maxDepth)
-- [ ] preserve deterministic ordering of sampled names
+- [x] implement analyzer-directory traversal that:
+  - [x] counts all eligible candidates
+  - [x] only stores first `sampleLimit` sampled relative names
+  - [x] avoids constructing a full `candidates[]` array for analyzer-only evidence collection
+- [x] keep existing filter semantics (`matchRegex`, `skipRegex`, `ext`, `skipExt`, recursion, maxDepth)
+- [x] preserve deterministic ordering of sampled names
 
 ### Phase 3: Grouped review output guardrails
 
-- [ ] add bounded grouped preview rendering:
-  - [ ] clamp printed groups to configured max
-  - [ ] clamp per-line example text length with ellipsis
-  - [ ] print summary line for truncated groups/examples when truncation occurs
-- [ ] ensure fallback/no-group messaging remains clear
+- [x] add bounded grouped preview rendering:
+  - [x] clamp printed groups to configured max
+  - [x] clamp per-line example text length with ellipsis
+  - [x] print summary line for truncated groups/examples when truncation occurs
+- [x] ensure fallback/no-group messaging remains clear
 
 ### Phase 4: Codex prompt payload guardrails
 
-- [ ] verify prompt builder uses bounded evidence only
-- [ ] add a max prompt text safety cap for grouped example text expansion
-- [ ] keep suggestion quality stable for mixed-family datasets
+- [x] verify prompt builder uses bounded evidence only
+- [x] add a max prompt text safety cap for grouped example text expansion
+- [x] keep suggestion quality stable for mixed-family datasets
 
 ### Phase 5: Tests
 
-- [ ] add analyzer evidence tests for large input count with bounded sampled output
-- [ ] add interactive output tests for grouped preview truncation indicators
-- [ ] keep existing analyzer-assisted and cleanup suites green
+- [x] add analyzer evidence tests for large input count with bounded sampled output
+- [x] add interactive output tests for grouped preview truncation indicators
+- [x] keep existing analyzer-assisted and cleanup suites green
 
 ### Phase 6: Docs and verification
 
-- [ ] update cleanup guide with analyzer scalability notes
-- [ ] run verification:
-  - [ ] `bunx tsc --noEmit`
-  - [ ] `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-interactive-rename.test.ts`
-  - [ ] targeted manual smoke on `examples/playground/huge-logs`
+- [x] update cleanup guide with analyzer scalability notes
+- [x] run verification:
+  - [x] `bunx tsc --noEmit`
+  - [x] `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-interactive-rename.test.ts`
+  - [x] targeted manual smoke on `examples/playground/huge-logs`
 
 ## Success Criteria
 
@@ -96,6 +97,75 @@ The `Grouped analyzer review` output is already bounded by group and examples li
 - interactive grouped review remains readable and bounded under large directory scopes
 - Codex suggestion payload remains bounded and deterministic
 - no regression in existing cleanup behavior and tests
+
+## Phase 1 Decisions
+
+- analyzer evidence limits are now codified through one constant contract in `src/cli/actions/rename/cleanup-analyzer.ts`:
+  - `sampleLimit`: `40`
+  - `groupLimit`: `12`
+  - `examplesPerGroup`: `3`
+- grouped review interactive rendering now has explicit preview limits in `src/cli/interactive/rename-cleanup.ts`:
+  - `maxGroupsToPrint`: `12`
+  - `maxExamplesLineChars`: `220`
+- desired behavior for large scopes (for example `examples/playground/huge-logs` with ~1000 files):
+  - analyzer reports full `totalCandidateCount` for operator awareness
+  - analyzer sampling remains bounded to first `40` eligible names for grouping/prompting
+  - grouped review remains bounded to `12` groups and truncated example lines for terminal readability
+
+## Phase 2 Decisions
+
+- analyzer evidence collection now uses an analyzer-specific one-pass directory walker in `src/cli/actions/rename/cleanup-analyzer.ts`:
+  - counts all eligible files as `totalCandidateCount`
+  - stores only the first `sampleLimit` relative names in deterministic traversal order
+  - does not materialize full cleanup candidate arrays for analyzer-only evidence
+- traversal/filter contract mirrors existing cleanup candidate semantics:
+  - honors `recursive`, `maxDepth`, `matchRegex`, `skipRegex`, `ext`, `skipExt`
+  - skips generated `rename-plan-*.csv` artifacts
+  - uses per-directory lexicographic ordering for deterministic sampled previews
+
+## Phase 3 Decisions
+
+- grouped analyzer review now emits explicit truncation indicators in `src/cli/interactive/rename-cleanup.ts`:
+  - `- ... <N> additional grouped pattern(s) not shown` when group output is capped
+  - `- ... examples truncated for <N> grouped pattern(s)` when examples lines exceed character cap
+- example line truncation uses ellipsis to keep terminal output readable while preserving the start of representative examples
+- no-group fallback messaging is unchanged and still explicit:
+  - `- no grouped pattern evidence`
+
+## Phase 4 Decisions
+
+- Codex prompt construction in `src/cli/actions/rename/cleanup-codex.ts` now enforces explicit payload guardrails:
+  - sample list hard-capped to analyzer sample limit (`40`)
+  - grouped-pattern list hard-capped to analyzer group limit (`12`)
+  - per-sample-name and grouped-examples line truncation with ellipsis
+  - grouped section character budget (`maxGroupedSectionChars`) to prevent prompt bloat
+- prompt now emits explicit omission context to preserve interpretability:
+  - `additional sample name(s) omitted for prompt safety`
+  - `grouped pattern(s) omitted for prompt safety`
+- prompt headers now state visible/total counts for sampled names and grouped patterns.
+
+## Phase 5 Verification Notes
+
+- analyzer scalability and preview truncation tests:
+  - `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-interactive-rename.test.ts`
+- Codex prompt guardrail tests:
+  - `bun test test/cli-actions-rename-cleanup-codex.test.ts`
+- typecheck:
+  - `bunx tsc --noEmit`
+
+## Phase 6 Verification Notes
+
+- guide update:
+  - `docs/guides/rename-common-usage.md` now documents analyzer evidence bounds, grouped-review truncation indicators, and Codex prompt omission guards
+- verification rerun:
+  - `bunx tsc --noEmit`
+  - `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-interactive-rename.test.ts`
+- targeted manual smoke on `examples/playground/huge-logs`:
+  - `bun src/bin.ts rename cleanup ./examples/playground/huge-logs --hint serial --dry-run --preview-skips summary`
+  - `bun -e 'import { collectRenameCleanupAnalyzerEvidence } from "./src/cli/actions/rename/cleanup-analyzer"; ...'`
+- observed heavy-scope behavior:
+  - deterministic cleanup dry-run remains readable for 1000-file fixture (`Files to rename: 1`, `Entries skipped: 999`)
+  - analyzer evidence remains bounded (`totalCandidateCount: 1000`, `sampledCount: 40`, grouped patterns bounded)
 
 ## Related Research
 

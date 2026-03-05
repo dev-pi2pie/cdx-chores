@@ -86,6 +86,14 @@ Notes:
 - analyzer-assisted cleanup can now optionally write a grouped advisory CSV report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
 - analyzer-assisted cleanup shows grouped analyzer review before Codex suggestion and then asks for explicit deterministic confirmation:
   - `Use these as deterministic cleanup settings?`
+- analyzer evidence collection for interactive suggestions is now bounded for scalability:
+  - counts all eligible files in scope
+  - samples only the first `40` names for grouped analysis and Codex suggestion context
+  - groups up to `12` patterns with up to `3` representative examples per group
+- grouped analyzer review output is now explicitly bounded and annotates truncation when needed:
+  - `- ... <N> additional grouped pattern(s) not shown`
+  - `- ... examples truncated for <N> grouped pattern(s)`
+- Codex prompt payload for cleanup suggestion is now bounded and annotates omitted evidence for prompt safety.
 - interactive dry-run/apply retention is now split by artifact type:
   - `Keep dry-run plan CSV for later \`rename apply\`?`
   - `Keep applied plan CSV?`

@@ -140,4 +140,33 @@ describe("cli action modules: rename cleanup analyzer evidence", () => {
       ]);
     });
   });
+
+  test("keeps deterministic sample order while counting all eligible candidates beyond sample limit", async () => {
+    await withTempFixtureDir("actions", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      const dirPath = join(fixtureDir, "cleanup-dir");
+      const aNestedPath = join(dirPath, "a-nested");
+      const bNestedPath = join(dirPath, "b-nested");
+      await mkdir(aNestedPath, { recursive: true });
+      await mkdir(bNestedPath, { recursive: true });
+
+      await writeFile(join(dirPath, "z.log"), "z", "utf8");
+      await writeFile(join(dirPath, "rename-plan-20260303T070111Z-07e91641.csv"), "plan", "utf8");
+      await writeFile(join(aNestedPath, "a-1.log"), "a1", "utf8");
+      await writeFile(join(aNestedPath, "a-2.log"), "a2", "utf8");
+      await writeFile(join(bNestedPath, "b-1.log"), "b1", "utf8");
+      await writeFile(join(bNestedPath, "b-2.log"), "b2", "utf8");
+
+      const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
+        path: "cleanup-dir",
+        recursive: true,
+        sampleLimit: 3,
+      });
+
+      expectNoOutput();
+      expect(evidence.totalCandidateCount).toBe(5);
+      expect(evidence.sampledCount).toBe(3);
+      expect(evidence.sampleNames).toEqual(["a-nested/a-1.log", "a-nested/a-2.log", "b-nested/b-1.log"]);
+    });
+  });
 });

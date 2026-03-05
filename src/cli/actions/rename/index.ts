@@ -11,7 +11,10 @@ export type {
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "./cleanup";
-export { collectRenameCleanupAnalyzerEvidence } from "./cleanup-analyzer";
+export {
+  collectRenameCleanupAnalyzerEvidence,
+  RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS,
+} from "./cleanup-analyzer";
 export type {
   RenameCleanupAnalyzerEvidence,
   RenameCleanupAnalyzerEvidenceOptions,

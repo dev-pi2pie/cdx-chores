@@ -115,6 +115,11 @@ export function runInteractiveHarness(
     }));
 
     mock.module(${JSON.stringify(actionsModuleUrl)}, () => ({
+      RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS: {
+        sampleLimit: 40,
+        groupLimit: 12,
+        examplesPerGroup: 3,
+      },
       actionDoctor: async (_runtime, options) => {
         actionCalls.push({ name: "doctor", options });
       },

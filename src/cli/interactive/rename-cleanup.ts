@@ -6,6 +6,7 @@ import {
   actionRenameApply,
   actionRenameCleanup,
   collectRenameCleanupAnalyzerEvidence,
+  RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS,
   type RenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
   suggestRenameCleanupWithCodex,
@@ -42,6 +43,11 @@ const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
 const ANALYZER_FAMILY_VALUES = INTERACTIVE_CLEANUP_HINT_CHOICES.map(
   (choice) => choice.value,
 ) as RenameCleanupHint[];
+const CLEANUP_GROUPED_REVIEW_LIMITS = {
+  // Keep grouped preview bounded in interactive terminals.
+  maxGroupsToPrint: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.groupLimit,
+  maxExamplesLineChars: 220,
+} as const;
 
 function parseInteractiveCsvList(value: string): string[] | undefined {
   const items = value
@@ -141,6 +147,15 @@ function narrowCleanupAnalyzerEvidence(
 }
 
 function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: RenameCleanupAnalyzerEvidence): void {
+  const truncate = (value: string, maxChars: number): { value: string; truncated: boolean } => {
+    if (value.length <= maxChars) {
+      return { value, truncated: false };
+    }
+    if (maxChars <= 3) {
+      return { value: value.slice(0, maxChars), truncated: true };
+    }
+    return { value: `${value.slice(0, maxChars - 3)}...`, truncated: true };
+  };
   printLine(runtime.stdout, "Grouped analyzer review:");
   if (evidence.groupedPatterns.length === 0) {
     printLine(runtime.stdout, "- no grouped pattern evidence");
@@ -148,10 +163,28 @@ function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: Rename
     return;
   }
 
-  for (const group of evidence.groupedPatterns) {
-    const examples = group.examples.join(" | ");
+  const groupedPatterns = evidence.groupedPatterns.slice(0, CLEANUP_GROUPED_REVIEW_LIMITS.maxGroupsToPrint);
+  const hiddenGroupCount = Math.max(0, evidence.groupedPatterns.length - groupedPatterns.length);
+  let truncatedExamplesGroupCount = 0;
+  for (const group of groupedPatterns) {
+    const truncatedExamples = truncate(
+      group.examples.join(" | "),
+      CLEANUP_GROUPED_REVIEW_LIMITS.maxExamplesLineChars,
+    );
+    if (truncatedExamples.truncated) {
+      truncatedExamplesGroupCount += 1;
+    }
     printLine(runtime.stdout, `- ${group.pattern} (${group.count})`);
-    printLine(runtime.stdout, `  examples: ${examples}`);
+    printLine(runtime.stdout, `  examples: ${truncatedExamples.value}`);
+  }
+  if (hiddenGroupCount > 0) {
+    printLine(runtime.stdout, `- ... ${hiddenGroupCount} additional grouped pattern(s) not shown`);
+  }
+  if (truncatedExamplesGroupCount > 0) {
+    printLine(
+      runtime.stdout,
+      `- ... examples truncated for ${truncatedExamplesGroupCount} grouped pattern(s)`,
+    );
   }
   printLine(runtime.stdout);
 }
