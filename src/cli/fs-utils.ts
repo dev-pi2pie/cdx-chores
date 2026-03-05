@@ -19,6 +19,7 @@ import {
 } from "../utils/datetime";
 import { defaultOutputPath } from "../utils/paths";
 import { slugifyName, withNumericSuffix } from "../utils/slug";
+import { buildRenameUidBasename } from "./rename-uid";
 
 export { defaultOutputPath } from "../utils/paths";
 
@@ -37,6 +38,7 @@ const RENAME_TEMPLATE_SIMPLE_TOKENS = new Set([
   "date_local",
   "date_utc",
   "stem",
+  "uid",
 ]);
 
 interface RenamePatternOptions {
@@ -50,6 +52,7 @@ interface RenamePatternOptions {
 
 interface PreparedRenamePattern {
   template: string;
+  usesUid: boolean;
   serial?: {
     order: RenameSerialOrder;
     start: number;
@@ -229,7 +232,7 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
       continue;
     }
     throw new CliError(
-      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {serial...}.`,
+      `Invalid --pattern placeholder: {${token}}. Allowed placeholders: {prefix}, {timestamp}, {timestamp_local}, {timestamp_utc}, {timestamp_local_iso}, {timestamp_utc_iso}, {timestamp_local_12h}, {timestamp_utc_12h}, {date}, {date_local}, {date_utc}, {stem}, {uid}, {serial...}.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -237,7 +240,11 @@ function getPreparedRenamePattern(options: RenamePatternOptions): PreparedRename
     );
   }
 
-  return { template: normalizedTemplate, serial };
+  return {
+    template: normalizedTemplate,
+    usesUid: normalizedTokens.includes("uid"),
+    serial,
+  };
 }
 
 function normalizeRenderedBaseName(value: string, fallback = "file"): string {
@@ -326,6 +333,7 @@ function renderBaseNameFromTemplate(options: {
   stem: string;
   mtimeDate: Date;
   serialText?: string;
+  uidText?: string;
 }): string {
   const timestampUtc = formatUtcFileDateTime(options.mtimeDate);
   const timestampLocal = formatLocalFileDateTime(options.mtimeDate);
@@ -363,6 +371,8 @@ function renderBaseNameFromTemplate(options: {
           return dateUtc;
         case "stem":
           return options.stem;
+        case "uid":
+          return options.uidText ?? "";
         default:
           if (token === "serial" || token.startsWith("serial_")) {
             return options.serialText ?? "";
@@ -540,6 +550,18 @@ export async function planBatchRename(
         recursive,
       })
     : undefined;
+  const uidByPath = preparedPattern.usesUid
+    ? new Map<string, string>(
+        await Promise.all(
+          entries.map(
+            async (entry): Promise<[string, string]> => [
+              entry.sourcePath,
+              await buildRenameUidBasename(entry.sourcePath),
+            ],
+          ),
+        ),
+      )
+    : undefined;
 
   for (const entry of entries) {
     const baseName = renderBaseNameFromTemplate({
@@ -548,6 +570,7 @@ export async function planBatchRename(
       stem: entry.stemSlug,
       mtimeDate: entry.mtimeDate,
       serialText: serialByPath?.get(entry.sourcePath),
+      uidText: uidByPath?.get(entry.sourcePath),
     });
 
     let counter = 0;
@@ -645,12 +668,14 @@ export async function planSingleRename(
         "0",
       )
     : undefined;
+  const uidText = preparedPattern.usesUid ? await buildRenameUidBasename(sourcePath) : undefined;
   const baseName = renderBaseNameFromTemplate({
     template: preparedPattern.template,
     prefix,
     stem: slug,
     mtimeDate,
     serialText,
+    uidText,
   });
   while (true) {
     nextName = `${withNumericSuffix(baseName, counter)}${ext}`;

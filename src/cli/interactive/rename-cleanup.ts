@@ -1,11 +1,13 @@
 import { rm } from "node:fs/promises";
 
-import { confirm, input, select } from "@inquirer/prompts";
+import { checkbox, confirm, input, select } from "@inquirer/prompts";
 
 import {
   actionRenameApply,
   actionRenameCleanup,
   collectRenameCleanupAnalyzerEvidence,
+  RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS,
+  type RenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
   suggestRenameCleanupWithCodex,
   writeRenameCleanupAnalysisCsv,
@@ -38,6 +40,14 @@ const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
   { name: "serial", value: "serial", description: "Trailing counters such as (2), -01, or _003" },
   { name: "uid", value: "uid", description: "Existing uid-<token> fragments" },
 ];
+const ANALYZER_FAMILY_VALUES = INTERACTIVE_CLEANUP_HINT_CHOICES.map(
+  (choice) => choice.value,
+) as RenameCleanupHint[];
+const CLEANUP_GROUPED_REVIEW_LIMITS = {
+  // Keep grouped preview bounded in interactive terminals.
+  maxGroupsToPrint: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.groupLimit,
+  maxExamplesLineChars: 220,
+} as const;
 
 function parseInteractiveCsvList(value: string): string[] | undefined {
   const items = value
@@ -76,6 +86,107 @@ async function promptInteractiveCleanupHints(): Promise<RenameCleanupHint[]> {
 
     selected.push(choice);
   }
+}
+
+async function promptCleanupAnalyzerFamilies(): Promise<RenameCleanupHint[]> {
+  const selected = await checkbox<RenameCleanupHint>({
+    message: "Analyzer families to focus on (all selected by default)",
+    choices: INTERACTIVE_CLEANUP_HINT_CHOICES.map((choice) => ({
+      ...choice,
+      checked: true,
+    })),
+    required: false,
+  });
+
+  // Empty selection keeps the null/default full-scope behavior.
+  return selected.length > 0 ? [...new Set(selected)] : [...ANALYZER_FAMILY_VALUES];
+}
+
+function isAnalyzerFamilyInPattern(pattern: string, family: RenameCleanupHint): boolean {
+  if (family === "timestamp") {
+    return pattern.includes("{timestamp}");
+  }
+  if (family === "date") {
+    return pattern.includes("{date}");
+  }
+  if (family === "serial") {
+    return pattern.includes("{serial}");
+  }
+  return pattern.includes("{uid}");
+}
+
+function narrowCleanupAnalyzerEvidence(
+  evidence: RenameCleanupAnalyzerEvidence,
+  selectedFamilies: RenameCleanupHint[],
+): RenameCleanupAnalyzerEvidence {
+  if (selectedFamilies.length === ANALYZER_FAMILY_VALUES.length) {
+    return evidence;
+  }
+
+  const narrowedGroups = evidence.groupedPatterns.filter((group) =>
+    selectedFamilies.some((family) => isAnalyzerFamilyInPattern(group.pattern, family)),
+  );
+  const sampleNames: string[] = [];
+  const sampleNameSet = new Set<string>();
+  for (const group of narrowedGroups) {
+    for (const example of group.examples) {
+      if (sampleNameSet.has(example)) {
+        continue;
+      }
+      sampleNameSet.add(example);
+      sampleNames.push(example);
+    }
+  }
+
+  return {
+    ...evidence,
+    sampledCount: sampleNames.length,
+    sampleNames,
+    groupedPatterns: narrowedGroups,
+  };
+}
+
+function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: RenameCleanupAnalyzerEvidence): void {
+  const truncate = (value: string, maxChars: number): { value: string; truncated: boolean } => {
+    if (value.length <= maxChars) {
+      return { value, truncated: false };
+    }
+    if (maxChars <= 3) {
+      return { value: value.slice(0, maxChars), truncated: true };
+    }
+    return { value: `${value.slice(0, maxChars - 3)}...`, truncated: true };
+  };
+  printLine(runtime.stdout, "Grouped analyzer review:");
+  if (evidence.groupedPatterns.length === 0) {
+    printLine(runtime.stdout, "- no grouped pattern evidence");
+    printLine(runtime.stdout);
+    return;
+  }
+
+  const groupedPatterns = evidence.groupedPatterns.slice(0, CLEANUP_GROUPED_REVIEW_LIMITS.maxGroupsToPrint);
+  const hiddenGroupCount = Math.max(0, evidence.groupedPatterns.length - groupedPatterns.length);
+  let truncatedExamplesGroupCount = 0;
+  for (const group of groupedPatterns) {
+    const truncatedExamples = truncate(
+      group.examples.join(" | "),
+      CLEANUP_GROUPED_REVIEW_LIMITS.maxExamplesLineChars,
+    );
+    if (truncatedExamples.truncated) {
+      truncatedExamplesGroupCount += 1;
+    }
+    printLine(runtime.stdout, `- ${group.pattern} (${group.count})`);
+    printLine(runtime.stdout, `  examples: ${truncatedExamples.value}`);
+  }
+  if (hiddenGroupCount > 0) {
+    printLine(runtime.stdout, `- ... ${hiddenGroupCount} additional grouped pattern(s) not shown`);
+  }
+  if (truncatedExamplesGroupCount > 0) {
+    printLine(
+      runtime.stdout,
+      `- ... examples truncated for ${truncatedExamplesGroupCount} grouped pattern(s)`,
+    );
+  }
+  printLine(runtime.stdout);
 }
 
 async function promptCleanupStyle(): Promise<RenameCleanupStyle> {
@@ -211,10 +322,28 @@ function printCleanupCodexSuggestion(
   printLine(runtime.stdout);
 }
 
+function printDeterministicCleanupSettings(
+  runtime: CliRuntime,
+  options: {
+    hints: RenameCleanupHint[];
+    style: RenameCleanupStyle;
+    timestampAction?: RenameCleanupTimestampAction;
+  },
+): void {
+  printLine(runtime.stdout, "Deterministic cleanup settings (global):");
+  printLine(runtime.stdout, `- hints: ${options.hints.join(", ")}`);
+  printLine(runtime.stdout, `- style: ${options.style}`);
+  if (options.timestampAction) {
+    printLine(runtime.stdout, `- timestamp action: ${options.timestampAction}`);
+  }
+  printLine(runtime.stdout);
+}
+
 async function promptCleanupSettingsFromSuggestion(
   runtime: CliRuntime,
   options: {
     path: string;
+    analyzerFamilies: RenameCleanupHint[];
     scope: Pick<
       RenameCleanupOptions,
       "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
@@ -232,16 +361,37 @@ async function promptCleanupSettingsFromSuggestion(
 }> {
   const status = createInteractiveAnalyzerStatus(runtime.stdout);
   try {
+    printLine(runtime.stdout, `Analyzer families selected: ${options.analyzerFamilies.join(", ")}`);
+    printLine(runtime.stdout);
+
+    const analyzerSampleLimit = RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.sampleLimit;
+
     status.start("Sampling filenames for cleanup analysis...");
-    const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
+    const collectedEvidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
       path: options.path,
       ...options.scope,
+      sampleLimit: analyzerSampleLimit,
+      // Keep all sample-derived groups available for family narrowing, then let
+      // grouped review/prompt rendering apply their own tighter presentation caps.
+      groupLimit: analyzerSampleLimit,
       onProgress: (phase) => {
         if (phase === "grouping") {
           status.update("Grouping filename patterns for cleanup analysis...");
         }
       },
     });
+    const evidence = narrowCleanupAnalyzerEvidence(collectedEvidence, options.analyzerFamilies);
+    status.stop();
+    printCleanupAnalyzerGroupedReview(runtime, evidence);
+    if (evidence.groupedPatterns.length === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex cleanup suggestion unavailable: No grouped analyzer patterns matched selected families.",
+      );
+      printLine(runtime.stdout, "Falling back to manual cleanup settings.");
+      printLine(runtime.stdout);
+      return {};
+    }
     status.wait("Waiting for Codex cleanup suggestions...");
     const result = await suggestRenameCleanupWithCodex({
       evidence,
@@ -265,6 +415,11 @@ async function promptCleanupSettingsFromSuggestion(
       confidence: result.suggestion.confidence,
       reasoningSummary: result.suggestion.reasoningSummary,
     });
+    printDeterministicCleanupSettings(runtime, {
+      hints: result.suggestion.recommendedHints,
+      style: result.suggestion.recommendedStyle,
+      timestampAction: result.suggestion.recommendedTimestampAction,
+    });
 
     const writeAnalysisReport = await confirm({
       message: "Write grouped cleanup analysis report CSV?",
@@ -284,7 +439,7 @@ async function promptCleanupSettingsFromSuggestion(
     }
 
     const useSuggestion = await confirm({
-      message: "Use these suggested cleanup settings?",
+      message: "Use these as deterministic cleanup settings?",
       default: true,
     });
     if (!useSuggestion) {
@@ -348,8 +503,15 @@ export async function runInteractiveRenameCleanup(
     message: "Suggest cleanup hints with Codex?",
     default: false,
   });
+  const analyzerFamilies = suggestWithCodex
+    ? await promptCleanupAnalyzerFamilies()
+    : undefined;
   const suggestionResult = suggestWithCodex
-    ? await promptCleanupSettingsFromSuggestion(runtime, { path, scope })
+    ? await promptCleanupSettingsFromSuggestion(runtime, {
+        path,
+        analyzerFamilies: analyzerFamilies ?? ANALYZER_FAMILY_VALUES,
+        scope,
+      })
     : undefined;
   const cleanupSettings = suggestionResult?.settings ?? (await promptManualCleanupSettings());
   const cleanupActionSettings = {
@@ -396,20 +558,53 @@ export async function runInteractiveRenameCleanup(
   }
 
   const applyNow = await confirm({ message: "Apply these renames now?", default: false });
-  if (applyNow) {
-    const autoClean = await confirm({
-      message: analysisReportPath
-        ? "Auto-clean plan/report CSV after apply?"
-        : "Auto-clean plan CSV after apply?",
+  if (!applyNow) {
+    const keepDryRunPlanCsv = await confirm({
+      message: "Keep dry-run plan CSV for later `rename apply`?",
       default: true,
     });
-    await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean });
-    if (autoClean && analysisReportPath) {
+    const keepAnalysisReportCsv = analysisReportPath
+      ? await confirm({
+          message: "Keep cleanup analysis report CSV?",
+          default: true,
+        })
+      : true;
+
+    if (!keepDryRunPlanCsv) {
+      await rm(result.planCsvPath, { force: true });
+      printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+    }
+    if (analysisReportPath && !keepAnalysisReportCsv) {
       await rm(analysisReportPath, { force: true });
       printLine(
         runtime.stdout,
-        `Cleanup analysis report auto-cleaned: ${displayPath(runtime, analysisReportPath)}`,
+        `Cleanup analysis report removed: ${displayPath(runtime, analysisReportPath)}`,
       );
     }
+    return;
+  }
+
+  await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean: false });
+  const keepAppliedPlanCsv = await confirm({
+    message: "Keep applied plan CSV?",
+    default: false,
+  });
+  const keepAnalysisReportCsv = analysisReportPath
+    ? await confirm({
+        message: "Keep cleanup analysis report CSV?",
+        default: true,
+      })
+    : true;
+
+  if (!keepAppliedPlanCsv) {
+    await rm(result.planCsvPath, { force: true });
+    printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+  }
+  if (analysisReportPath && !keepAnalysisReportCsv) {
+    await rm(analysisReportPath, { force: true });
+    printLine(
+      runtime.stdout,
+      `Cleanup analysis report removed: ${displayPath(runtime, analysisReportPath)}`,
+    );
   }
 }

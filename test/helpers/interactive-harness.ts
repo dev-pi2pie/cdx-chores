@@ -6,6 +6,7 @@ import { REPO_ROOT } from "./cli-test-utils";
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
+  checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
@@ -14,10 +15,13 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
   cleanupAnalysisReportPath?: string;
+  captureCleanupSuggestInput?: boolean;
+  captureCleanupCollectInput?: boolean;
+  renameApplyErrorMessage?: string;
 }
 
 export interface InteractiveHarnessResult {
-  promptCalls: Array<{ kind: "select" | "confirm" | "input"; message: string }>;
+  promptCalls: Array<{ kind: "select" | "checkbox" | "confirm" | "input"; message: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
     message?: string;
@@ -81,6 +85,10 @@ export function runInteractiveHarness(
         promptCalls.push({ kind: "select", message: options.message });
         return shiftQueueValue(scenario.selectQueue ?? [], \`select:\${options.message}\`);
       },
+      checkbox: async (options) => {
+        promptCalls.push({ kind: "checkbox", message: options.message });
+        return shiftQueueValue(scenario.checkboxQueue ?? [], \`checkbox:\${options.message}\`);
+      },
       confirm: async (options) => {
         promptCalls.push({ kind: "confirm", message: options.message });
         return shiftQueueValue(scenario.confirmQueue ?? [], \`confirm:\${options.message}\`);
@@ -100,7 +108,19 @@ export function runInteractiveHarness(
       },
     }));
 
+    mock.module("node:fs/promises", () => ({
+      rm: async (path, options) => {
+        actionCalls.push({ name: "fs:rm", options: { path: String(path), options } });
+        return undefined;
+      },
+    }));
+
     mock.module(${JSON.stringify(actionsModuleUrl)}, () => ({
+      RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS: {
+        sampleLimit: 40,
+        groupLimit: 12,
+        examplesPerGroup: 3,
+      },
       actionDoctor: async (_runtime, options) => {
         actionCalls.push({ name: "doctor", options });
       },
@@ -134,6 +154,9 @@ export function runInteractiveHarness(
       },
       actionRenameApply: async (_runtime, options) => {
         actionCalls.push({ name: "rename:apply", options });
+        if (scenario.renameApplyErrorMessage) {
+          throw new Error(scenario.renameApplyErrorMessage);
+        }
         return {
           csvPath: String(options.csv ?? ""),
           appliedCount: 1,
@@ -166,6 +189,23 @@ export function runInteractiveHarness(
         return { kind: "file", path: String(inputPath ?? "") };
       },
       collectRenameCleanupAnalyzerEvidence: async (_runtime, options) => {
+        if (scenario.captureCleanupCollectInput) {
+          actionCalls.push({
+            name: "rename:cleanup:collect-evidence",
+            options: {
+              path: options.path,
+              recursive: options.recursive,
+              maxDepth: options.maxDepth,
+              matchRegex: options.matchRegex,
+              skipRegex: options.skipRegex,
+              ext: options.ext,
+              skipExt: options.skipExt,
+              sampleLimit: options.sampleLimit,
+              groupLimit: options.groupLimit,
+              examplesPerGroup: options.examplesPerGroup,
+            },
+          });
+        }
         options.onProgress?.("sampling");
         if (scenario.cleanupAnalyzerEvidence) {
           options.onProgress?.("grouping");
@@ -205,7 +245,25 @@ export function runInteractiveHarness(
           ],
         };
       },
-      suggestRenameCleanupWithCodex: async () => {
+      suggestRenameCleanupWithCodex: async (options) => {
+        if (scenario.captureCleanupSuggestInput) {
+          actionCalls.push({
+            name: "rename:cleanup:codex-suggest",
+            options: {
+              targetKind: options.evidence?.targetKind,
+              totalCandidateCount: options.evidence?.totalCandidateCount,
+              sampledCount: options.evidence?.sampledCount,
+              sampleNames: options.evidence?.sampleNames,
+              groupedPatterns: Array.isArray(options.evidence?.groupedPatterns)
+                ? options.evidence.groupedPatterns.map((group) => ({
+                    pattern: group.pattern,
+                    count: group.count,
+                    examples: group.examples,
+                  }))
+                : [],
+            },
+          });
+        }
         if (scenario.cleanupAnalyzerErrorMessage) {
           return { errorMessage: scenario.cleanupAnalyzerErrorMessage };
         }

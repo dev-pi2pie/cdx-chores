@@ -33,9 +33,13 @@ function normalizeAnalyzerStatusMessage(message: string): string {
   return message;
 }
 
-function renderStatusLine(stream: NodeJS.WritableStream, message: string): void {
+function renderStatusLine(
+  stream: NodeJS.WritableStream,
+  message: string,
+): void {
   const normalizedMessage = normalizeAnalyzerStatusMessage(message);
-  stream.write(`\r\x1b[2K${pc.dim("Codex")} ${pc.white("Thinking...")} ${pc.dim(normalizedMessage)}`);
+  const content = ` ${pc.dim("Codex")} ${pc.white("Thinking...")} ${pc.dim(normalizedMessage)} `;
+  stream.write(`\r\x1b[2K${pc.bgBlack(content)}`);
 }
 
 function renderWaitingStatusLine(
@@ -44,10 +48,10 @@ function renderWaitingStatusLine(
   tick: number,
 ): void {
   const normalizedMessage = normalizeAnalyzerStatusMessage(message);
-  const dots = ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
-  stream.write(
-    `\r\x1b[2K${pc.dim("Codex")} ${pc.white("Thinking")} ${pc.dim(normalizedMessage)} ${pc.gray(dots)}`,
-  );
+  const dots =
+    ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
+  const content = ` ${pc.dim("Codex")} ${pc.white("Thinking")} ${pc.dim(normalizedMessage)} ${pc.gray(dots)} `;
+  stream.write(`\r\x1b[2K${pc.bgBlack(content)}`);
 }
 
 export function createInteractiveAnalyzerStatus(

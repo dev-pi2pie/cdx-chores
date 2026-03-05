@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.0.7-canary.6",
+  "version": "0.0.7-canary.7",
   "license": "MIT",
   "bin": {
     "cdx-chores": "dist/esm/bin.mjs"
@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
-    "@openai/codex-sdk": "^0.107.0",
+    "@openai/codex-sdk": "^0.110.0",
     "commander": "^14.0.3",
     "mammoth": "^1.11.0",
     "papaparse": "^5.5.3",

@@ -123,10 +123,16 @@ Recursive image rename with depth limit:
 cdx-chores rename batch ./photos --recursive --max-depth 1 --ext jpg,png,webp --dry-run
 ```
 
-Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, `{timestamp_utc_iso}`, `{timestamp_local_12h}`, `{timestamp_utc_12h}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{serial...}`):
+Custom filename template (placeholders: `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, `{timestamp_utc_iso}`, `{timestamp_local_12h}`, `{timestamp_utc_12h}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{uid}`, `{serial...}`):
 
 ```bash
 cdx-chores rename batch ./images --prefix trip --pattern "{date}-{stem}-{serial}" --dry-run
+```
+
+UID-backed template example:
+
+```bash
+cdx-chores rename file ./images/IMG_1024.JPG --pattern "{uid}-{stem}" --dry-run
 ```
 
 Template and serial notes:
@@ -134,7 +140,7 @@ Template and serial notes:
 - `--prefix` is optional; omit it for no prefix.
 - `--codex` is the common smart-routing flag for CLI mode.
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides.
-- `{uid}` is not a supported `--pattern` placeholder today.
+- `{uid}` is supported in `rename file` / `rename batch` templates and renders a deterministic `uid-<token>` fragment.
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.
@@ -188,7 +194,7 @@ Cleanup notes:
 - `rename cleanup <path>` accepts either a single file or a directory.
 - `--hint` is the canonical flag; `--hints` is accepted as an alias.
 - Supported v1 cleanup hint families are `date`, `timestamp`, `serial`, and `uid`.
-- `uid` in cleanup is a cleanup-only hint family for now, not a general rename template placeholder.
+- `rename cleanup` and general rename templates now share the same deterministic `uid-<token>` family.
 - When multiple hint families are selected, cleanup applies them sequentially in v1 order: `timestamp`, then `date`, then `serial`, then `uid`.
 - `--style` defaults to `preserve`; the current supported values are `preserve` and `slug`.
 - `--style` only formats the surviving basename text after cleanup matching. It does not resolve collisions or synthesize fallback names.

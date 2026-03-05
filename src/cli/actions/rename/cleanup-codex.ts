@@ -1,10 +1,20 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
 import type { RenameCleanupHint, RenameCleanupStyle, RenameCleanupTimestampAction } from "./cleanup-contract";
-import type { RenameCleanupAnalyzerEvidence } from "./cleanup-analyzer";
+import {
+  RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS,
+  type RenameCleanupAnalyzerEvidence,
+} from "./cleanup-analyzer";
 
 const CLEANUP_HINT_VALUES = ["date", "timestamp", "serial", "uid"] as const satisfies readonly RenameCleanupHint[];
 const CLEANUP_STYLE_VALUES = ["preserve", "slug"] as const satisfies readonly RenameCleanupStyle[];
 const CLEANUP_TIMESTAMP_ACTION_VALUES = ["keep", "remove"] as const satisfies readonly RenameCleanupTimestampAction[];
+const RENAME_CLEANUP_CODEX_PROMPT_LIMITS = {
+  maxSampleLines: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.sampleLimit,
+  maxGroupedLines: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.groupLimit,
+  maxSampleNameChars: 180,
+  maxGroupedExamplesChars: 260,
+  maxGroupedSectionChars: 3_000,
+} as const;
 
 const CLEANUP_SUGGESTION_OUTPUT_SCHEMA = {
   type: "object",
@@ -137,20 +147,66 @@ function parseRenameCleanupSuggestion(finalResponse: string): RenameCleanupCodex
   };
 }
 
+function truncateForPrompt(value: string, maxChars: number): { value: string; truncated: boolean } {
+  if (value.length <= maxChars) {
+    return { value, truncated: false };
+  }
+  if (maxChars <= 3) {
+    return { value: value.slice(0, maxChars), truncated: true };
+  }
+  return {
+    value: `${value.slice(0, maxChars - 3)}...`,
+    truncated: true,
+  };
+}
+
 function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): string {
-  const sampleList =
-    evidence.sampleNames.length > 0
-      ? evidence.sampleNames.map((name, index) => `${index + 1}. ${name}`).join("\n")
-      : "(no sampled names)";
-  const groupedPatternList =
-    evidence.groupedPatterns.length > 0
-      ? evidence.groupedPatterns
-          .map(
-            (group, index) =>
-              `${index + 1}. pattern=${group.pattern}; count=${group.count}; examples=${group.examples.join(" | ")}`,
-          )
-          .join("\n")
-      : "(no grouped patterns)";
+  const promptSampleNames = evidence.sampleNames.slice(0, RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleLines);
+  const sampleLines =
+    promptSampleNames.length > 0
+      ? promptSampleNames.map((name, index) => {
+          const truncated = truncateForPrompt(name, RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleNameChars);
+          return `${index + 1}. ${truncated.value}`;
+        })
+      : ["(no sampled names)"];
+  if (evidence.sampleNames.length > promptSampleNames.length) {
+    sampleLines.push(
+      `... ${evidence.sampleNames.length - promptSampleNames.length} additional sample name(s) omitted for prompt safety.`,
+    );
+  }
+  const sampleList = sampleLines.join("\n");
+
+  const promptGroupedPatterns = evidence.groupedPatterns.slice(
+    0,
+    RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxGroupedLines,
+  );
+  const groupedLines: string[] = [];
+  let emittedGroupedPatternCount = 0;
+  let groupedSectionChars = 0;
+  for (const [index, group] of promptGroupedPatterns.entries()) {
+    const truncatedExamples = truncateForPrompt(
+      group.examples.join(" | "),
+      RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxGroupedExamplesChars,
+    );
+    const nextLine = `${index + 1}. pattern=${group.pattern}; count=${group.count}; examples=${truncatedExamples.value}`;
+    const projectedChars = groupedSectionChars + (groupedLines.length > 0 ? 1 : 0) + nextLine.length;
+    if (projectedChars > RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxGroupedSectionChars) {
+      break;
+    }
+    groupedLines.push(nextLine);
+    emittedGroupedPatternCount += 1;
+    groupedSectionChars = projectedChars;
+  }
+  if (groupedLines.length === 0) {
+    groupedLines.push("(no grouped patterns)");
+  }
+  const omittedByLineLimit = Math.max(0, evidence.groupedPatterns.length - promptGroupedPatterns.length);
+  const omittedBySectionCap = Math.max(0, promptGroupedPatterns.length - groupedLines.length);
+  const omittedGroupedCount = omittedByLineLimit + omittedBySectionCap;
+  if (omittedGroupedCount > 0) {
+    groupedLines.push(`... ${omittedGroupedCount} grouped pattern(s) omitted for prompt safety.`);
+  }
+  const groupedPatternList = groupedLines.join("\n");
 
   return [
     "Analyze these filename cleanup candidates and recommend rename-cleanup settings.",
@@ -171,10 +227,10 @@ function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): st
     `Total candidate count: ${evidence.totalCandidateCount}`,
     `Sampled count: ${evidence.sampledCount}`,
     "",
-    "Sample filenames:",
+    `Sample filenames (showing ${promptSampleNames.length} of ${evidence.sampleNames.length}):`,
     sampleList,
     "",
-    "Grouped filename patterns:",
+    `Grouped filename patterns (showing ${emittedGroupedPatternCount} of ${evidence.groupedPatterns.length}):`,
     groupedPatternList,
   ].join("\n");
 }
