@@ -2,13 +2,13 @@
 title: "Partial analyzer scope implementation"
 created-date: 2026-03-05
 modified-date: 2026-03-05
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Implement Phase 1 through Phase 6 of `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
+Implement Phase 1 through Phase 8 of `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
 
 ## Phase Slice
 
@@ -18,6 +18,8 @@ Implement Phase 1 through Phase 6 of `docs/plans/plan-2026-03-05-partial-analyze
 - Phase 4: Deterministic cleanup handoff
 - Phase 5: Artifact retention flow
 - Phase 6: Tests
+- Phase 7: Docs and manual verification
+- Phase 8: Completion and follow-up capture
 
 ## What Changed
 
@@ -58,6 +60,17 @@ Implement Phase 1 through Phase 6 of `docs/plans/plan-2026-03-05-partial-analyze
   - only plan CSV exists
   - both plan and analysis CSV exist with independent keep/remove decisions
   - apply failure after plan generation
+- updated `docs/guides/rename-common-usage.md` to document:
+  - analyzer-family multi-select defaults and empty-selection fallback
+  - grouped review plus explicit deterministic confirmation
+  - split plan/report CSV retention prompts
+- executed manual smoke checks for TTY and non-TTY dry-run/apply behavior:
+  - mixed-family dry-run with analyzer-driven hints
+  - serial-family apply flow on temporary playground copies
+- closed deferred-trigger evaluation from research:
+  - CLI include/exclude surface trigger not met
+  - explicit exclude-behavior trigger not met
+  - no additional follow-up implementation plan opened in this pass
 
 ## Verification
 
@@ -65,6 +78,9 @@ Implement Phase 1 through Phase 6 of `docs/plans/plan-2026-03-05-partial-analyze
 - `bun test test/cli-interactive-rename.test.ts`
 - `bun test test/cli-actions-rename-cleanup-analyzer.test.ts test/cli-actions-rename-cleanup-codex.test.ts`
 - `bun test test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts test/cli-actions-rename-cleanup-validation.test.ts test/cli-command-rename-cleanup.test.ts`
+- `bun src/bin.ts rename cleanup ./examples/playground/cleanup-analyzer/mixed-family --hint date,uid --recursive --max-depth 1 --dry-run` (TTY and non-TTY)
+- `bun src/bin.ts rename cleanup ./examples/playground/.tmp-tests/phase7-phase8-smoke/serial-family-apply-nontty --hint serial --conflict-strategy number` (non-TTY)
+- `bun src/bin.ts rename cleanup ./examples/playground/.tmp-tests/phase7-phase8-smoke/serial-family-apply-tty --hint serial --conflict-strategy number` (TTY)
 
 ## Related Plans
 

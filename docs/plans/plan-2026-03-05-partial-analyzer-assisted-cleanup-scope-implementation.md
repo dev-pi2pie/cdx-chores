@@ -2,7 +2,7 @@
 title: "Partial analyzer-assisted cleanup scope implementation"
 created-date: 2026-03-05
 modified-date: 2026-03-05
-status: active
+status: completed
 agent: codex
 ---
 
@@ -123,19 +123,19 @@ This plan converts those decisions into implementation phases and tracking check
 
 ### Phase 7: Docs and manual verification
 
-- [ ] update user-facing cleanup guidance for partial analyzer scope behavior
-- [ ] document artifact-retention behavior with plan/report split
-- [ ] run manual smoke checks in `examples/playground/cleanup-analyzer/`
-- [ ] verify dry-run/apply messaging clarity in TTY and non-TTY output
+- [x] update user-facing cleanup guidance for partial analyzer scope behavior
+- [x] document artifact-retention behavior with plan/report split
+- [x] run manual smoke checks in `examples/playground/cleanup-analyzer/`
+- [x] verify dry-run/apply messaging clarity in TTY and non-TTY output
 
 ### Phase 8: Completion and follow-up capture
 
-- [ ] mark research decisions implemented or explicitly deferred
-- [ ] evaluate deferred-decision revisit triggers from research and record outcome:
-  - [ ] CLI include/exclude surface trigger met or not met
-  - [ ] explicit exclude-behavior trigger met or not met
-- [ ] if a revisit trigger is met, open a separate future plan with narrow scope
-- [ ] close implementation plan with verification notes
+- [x] mark research decisions implemented or explicitly deferred
+- [x] evaluate deferred-decision revisit triggers from research and record outcome:
+  - [x] CLI include/exclude surface trigger met or not met
+  - [x] explicit exclude-behavior trigger met or not met
+- [x] if a revisit trigger is met, open a separate future plan with narrow scope
+- [x] close implementation plan with verification notes
 
 ## Job Record Strategy (Anti-Bloat)
 
@@ -177,6 +177,24 @@ Otherwise:
   - dry-run no-apply retention prompts
   - apply-success retention prompts
   - apply-failure artifact retention behavior
+
+Manual smoke commands executed on 2026-03-05:
+
+- `bun src/bin.ts rename cleanup ./examples/playground/cleanup-analyzer/mixed-family --hint date,uid --recursive --max-depth 1 --dry-run` (non-TTY)
+- `bun src/bin.ts rename cleanup ./examples/playground/cleanup-analyzer/mixed-family --hint date,uid --recursive --max-depth 1 --dry-run` (TTY)
+- `bun src/bin.ts rename cleanup ./examples/playground/.tmp-tests/phase7-phase8-smoke/serial-family-apply-nontty --hint serial --conflict-strategy number` (non-TTY)
+- `bun src/bin.ts rename cleanup ./examples/playground/.tmp-tests/phase7-phase8-smoke/serial-family-apply-tty --hint serial --conflict-strategy number` (TTY)
+
+## Completion Notes
+
+- research decisions implemented in this plan:
+  - interactive-only partial analyzer-family selection
+  - one global deterministic cleanup settings confirmation after analyzer scope selection
+  - split artifact-retention prompts for plan CSV and analysis report CSV
+- deferred decision trigger outcomes:
+  - CLI include/exclude surface trigger: not met
+  - explicit exclude-behavior trigger: not met
+- because no deferred trigger was met, no additional follow-up implementation plan was opened in this close-out pass
 
 ## Related Research
 

@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-03-04
+modified-date: 2026-03-05
 status: completed
 agent: codex
 ---
@@ -79,7 +79,17 @@ Notes:
 - `rename cleanup <path>` auto-detects file vs directory mode.
 - interactive `rename cleanup` now has an optional `Suggest cleanup hints with Codex?` step.
 - analyzer-assisted cleanup is currently interactive-only; direct CLI `rename cleanup` remains deterministic.
+- analyzer-assisted cleanup now asks for analyzer-family scope with one combined multi-select:
+  - all families are selected by default
+  - deselect families to narrow analyzer focus
+  - empty selection falls back to full-scope analyzer review
 - analyzer-assisted cleanup can now optionally write a grouped advisory CSV report named `rename-cleanup-analysis-<utc-timestamp>Z-<uid>.csv`.
+- analyzer-assisted cleanup shows grouped analyzer review before Codex suggestion and then asks for explicit deterministic confirmation:
+  - `Use these as deterministic cleanup settings?`
+- interactive dry-run/apply retention is now split by artifact type:
+  - `Keep dry-run plan CSV for later \`rename apply\`?`
+  - `Keep applied plan CSV?`
+  - `Keep cleanup analysis report CSV?` (when present)
 - `--hint` is the documented flag. `--hints` is accepted as a compatibility alias.
 - Supported v1 hints are `date`, `timestamp`, `serial`, and `uid`.
 - `rename cleanup`, `rename file`, and `rename batch` now share the same recognizable deterministic `uid-<token>` family.
