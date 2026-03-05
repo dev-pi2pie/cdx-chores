@@ -6,6 +6,7 @@ import { REPO_ROOT } from "./cli-test-utils";
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
+  checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
@@ -14,10 +15,11 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
   cleanupAnalysisReportPath?: string;
+  captureCleanupSuggestInput?: boolean;
 }
 
 export interface InteractiveHarnessResult {
-  promptCalls: Array<{ kind: "select" | "confirm" | "input"; message: string }>;
+  promptCalls: Array<{ kind: "select" | "checkbox" | "confirm" | "input"; message: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
     message?: string;
@@ -80,6 +82,10 @@ export function runInteractiveHarness(
       select: async (options) => {
         promptCalls.push({ kind: "select", message: options.message });
         return shiftQueueValue(scenario.selectQueue ?? [], \`select:\${options.message}\`);
+      },
+      checkbox: async (options) => {
+        promptCalls.push({ kind: "checkbox", message: options.message });
+        return shiftQueueValue(scenario.checkboxQueue ?? [], \`checkbox:\${options.message}\`);
       },
       confirm: async (options) => {
         promptCalls.push({ kind: "confirm", message: options.message });
@@ -205,7 +211,25 @@ export function runInteractiveHarness(
           ],
         };
       },
-      suggestRenameCleanupWithCodex: async () => {
+      suggestRenameCleanupWithCodex: async (options) => {
+        if (scenario.captureCleanupSuggestInput) {
+          actionCalls.push({
+            name: "rename:cleanup:codex-suggest",
+            options: {
+              targetKind: options.evidence?.targetKind,
+              totalCandidateCount: options.evidence?.totalCandidateCount,
+              sampledCount: options.evidence?.sampledCount,
+              sampleNames: options.evidence?.sampleNames,
+              groupedPatterns: Array.isArray(options.evidence?.groupedPatterns)
+                ? options.evidence.groupedPatterns.map((group) => ({
+                    pattern: group.pattern,
+                    count: group.count,
+                    examples: group.examples,
+                  }))
+                : [],
+            },
+          });
+        }
         if (scenario.cleanupAnalyzerErrorMessage) {
           return { errorMessage: scenario.cleanupAnalyzerErrorMessage };
         }

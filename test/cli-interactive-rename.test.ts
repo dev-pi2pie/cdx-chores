@@ -125,6 +125,7 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
       confirmQueue: [true, false, true, false, true, true, true, true],
@@ -160,8 +161,14 @@ describe("interactive rename routing", () => {
     expect(result.stdout).toContain("Sampling filenames for cleanup analysis...");
     expect(result.stdout).toContain("Grouping filename patterns for cleanup analysis...");
     expect(result.stdout).toContain("Waiting for Codex cleanup suggestions...");
+    expect(result.stdout).toContain("Analyzer families selected: timestamp, date, serial, uid");
+    expect(result.stdout).toContain("Grouped analyzer review:");
     expect(result.stdout).toContain("Codex cleanup suggestion:");
     expect(result.stdout).toContain("- hints: serial");
+    expect(result.promptCalls).toContainEqual({
+      kind: "checkbox",
+      message: "Analyzer families to focus on (all selected by default)",
+    });
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
       message: "Write grouped cleanup analysis report CSV?",
@@ -176,6 +183,7 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
       confirmQueue: [true, false, true, true, true, true, true, true],
@@ -228,6 +236,7 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "number", "detailed"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
       confirmQueue: [true, false, true, true, false, true, true, true, true],
@@ -283,6 +292,7 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["README.md"],
       confirmQueue: [true, true],
       cleanupAnalyzerErrorMessage: "mocked analyzer failure",
@@ -308,5 +318,132 @@ describe("interactive rename routing", () => {
       kind: "select",
       message: "Cleanup output style",
     });
+  });
+
+  test("narrows analyzer evidence by selected families before requesting Codex suggestion", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [["uid"]],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, false, true, true, true, true],
+      captureCleanupSuggestInput: true,
+      cleanupAnalyzerEvidence: {
+        targetKind: "directory",
+        targetPath: "docs",
+        totalCandidateCount: 4,
+        sampledCount: 4,
+        sampleNames: [
+          "report uid-7k3m9q2x4t final.txt",
+          "report 2026-03-02 final.txt",
+          "nested/report uid-9m4k2q7x1v final.txt",
+          "nested/report 2026-03-03 final.txt",
+        ],
+        groupedPatterns: [
+          {
+            pattern: "report-{uid}-final.txt",
+            count: 2,
+            examples: [
+              "report uid-7k3m9q2x4t final.txt",
+              "nested/report uid-9m4k2q7x1v final.txt",
+            ],
+          },
+          {
+            pattern: "report-{date}-final.txt",
+            count: 2,
+            examples: [
+              "report 2026-03-02 final.txt",
+              "nested/report 2026-03-03 final.txt",
+            ],
+          },
+        ],
+      },
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["uid"],
+        recommendedStyle: "preserve",
+        confidence: 0.9,
+        reasoningSummary: "Selected groups are dominated by uid fragments.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:codex-suggest",
+        options: {
+          targetKind: "directory",
+          totalCandidateCount: 4,
+          sampledCount: 2,
+          sampleNames: [
+            "report uid-7k3m9q2x4t final.txt",
+            "nested/report uid-9m4k2q7x1v final.txt",
+          ],
+          groupedPatterns: [
+            {
+              pattern: "report-{uid}-final.txt",
+              count: 2,
+              examples: [
+                "report uid-7k3m9q2x4t final.txt",
+                "nested/report uid-9m4k2q7x1v final.txt",
+              ],
+            },
+          ],
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["uid"],
+          style: "preserve",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: true,
+        },
+      },
+    ]);
+  });
+
+  test("falls back to manual settings when selected analyzer families match no grouped patterns", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
+      checkboxQueue: [["uid"]],
+      requiredPathQueue: ["README.md"],
+      confirmQueue: [true, true],
+      captureCleanupSuggestInput: true,
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "README.md",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "skip",
+          dryRun: true,
+        },
+      },
+    ]);
+    expect(result.stdout).toContain(
+      "Codex cleanup suggestion unavailable: No grouped analyzer patterns matched selected families.",
+    );
+    expect(result.stdout).toContain("Falling back to manual cleanup settings.");
+    expect(result.promptCalls).toContainEqual({
+      kind: "select",
+      message: "Cleanup output style",
+    });
+    expect(
+      result.actionCalls.some((actionCall) => actionCall.name === "rename:cleanup:codex-suggest"),
+    ).toBe(false);
   });
 });

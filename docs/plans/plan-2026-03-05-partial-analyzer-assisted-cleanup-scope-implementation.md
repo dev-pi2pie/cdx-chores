@@ -1,6 +1,7 @@
 ---
 title: "Partial analyzer-assisted cleanup scope implementation"
 created-date: 2026-03-05
+modified-date: 2026-03-05
 status: active
 agent: codex
 ---
@@ -66,31 +67,31 @@ This plan converts those decisions into implementation phases and tracking check
 
 ### Phase 1: Freeze implementation contract from research
 
-- [ ] codify interactive-only boundary for partial analyzer scope selection
-- [ ] codify family value set for scope selection:
-  - [ ] `date`
-  - [ ] `timestamp`
-  - [ ] `serial`
-  - [ ] `uid`
-- [ ] codify null/default behavior:
-  - [ ] no include/exclude narrowing means scan all eligible families
-- [ ] codify one global deterministic cleanup settings step after family selection
-- [ ] codify artifact retention as two distinct decisions (plan CSV vs analysis CSV)
+- [x] codify interactive-only boundary for partial analyzer scope selection
+- [x] codify family value set for scope selection:
+  - [x] `date`
+  - [x] `timestamp`
+  - [x] `serial`
+  - [x] `uid`
+- [x] codify null/default behavior:
+  - [x] no include/exclude narrowing means scan all eligible families
+- [x] codify one global deterministic cleanup settings step after family selection
+- [x] codify artifact retention as two distinct decisions (plan CSV vs analysis CSV)
 
 ### Phase 2: Analyzer-family selection UI
 
-- [ ] add one combined multi-select interaction for analyzer families
-- [ ] default all families selected
-- [ ] support deselect-to-narrow behavior
-- [ ] keep grouped analyzer review visible after selection
-- [ ] ensure selected family set is shown clearly before deterministic settings
+- [x] add one combined multi-select interaction for analyzer families
+- [x] default all families selected
+- [x] support deselect-to-narrow behavior
+- [x] keep grouped analyzer review visible after selection
+- [x] ensure selected family set is shown clearly before deterministic settings
 
 ### Phase 3: Analyzer evidence and suggestion flow integration
 
-- [ ] apply family selection to analyzer-side grouped review scope
-- [ ] keep Codex suggestion contract unchanged for first pass
-- [ ] keep fallback to manual settings intact when suggestion is unavailable
-- [ ] ensure no silent auto-apply of cleanup settings from selected groups
+- [x] apply family selection to analyzer-side grouped review scope
+- [x] keep Codex suggestion contract unchanged for first pass
+- [x] keep fallback to manual settings intact when suggestion is unavailable
+- [x] ensure no silent auto-apply of cleanup settings from selected groups
 
 ### Phase 4: Deterministic cleanup handoff
 
@@ -186,3 +187,7 @@ Otherwise:
 ## Related Plans
 
 - `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+
+## Related Job Record
+
+- `docs/plans/jobs/2026-03-05-partial-analyzer-scope-implementation.md`

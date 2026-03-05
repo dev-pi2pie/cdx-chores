@@ -1,11 +1,12 @@
 import { rm } from "node:fs/promises";
 
-import { confirm, input, select } from "@inquirer/prompts";
+import { checkbox, confirm, input, select } from "@inquirer/prompts";
 
 import {
   actionRenameApply,
   actionRenameCleanup,
   collectRenameCleanupAnalyzerEvidence,
+  type RenameCleanupAnalyzerEvidence,
   resolveRenameCleanupTarget,
   suggestRenameCleanupWithCodex,
   writeRenameCleanupAnalysisCsv,
@@ -38,6 +39,9 @@ const INTERACTIVE_CLEANUP_HINT_CHOICES: Array<{
   { name: "serial", value: "serial", description: "Trailing counters such as (2), -01, or _003" },
   { name: "uid", value: "uid", description: "Existing uid-<token> fragments" },
 ];
+const ANALYZER_FAMILY_VALUES = INTERACTIVE_CLEANUP_HINT_CHOICES.map(
+  (choice) => choice.value,
+) as RenameCleanupHint[];
 
 function parseInteractiveCsvList(value: string): string[] | undefined {
   const items = value
@@ -76,6 +80,80 @@ async function promptInteractiveCleanupHints(): Promise<RenameCleanupHint[]> {
 
     selected.push(choice);
   }
+}
+
+async function promptCleanupAnalyzerFamilies(): Promise<RenameCleanupHint[]> {
+  const selected = await checkbox<RenameCleanupHint>({
+    message: "Analyzer families to focus on (all selected by default)",
+    choices: INTERACTIVE_CLEANUP_HINT_CHOICES.map((choice) => ({
+      ...choice,
+      checked: true,
+    })),
+    required: false,
+  });
+
+  // Empty selection keeps the null/default full-scope behavior.
+  return selected.length > 0 ? [...new Set(selected)] : [...ANALYZER_FAMILY_VALUES];
+}
+
+function isAnalyzerFamilyInPattern(pattern: string, family: RenameCleanupHint): boolean {
+  if (family === "timestamp") {
+    return pattern.includes("{timestamp}");
+  }
+  if (family === "date") {
+    return pattern.includes("{date}");
+  }
+  if (family === "serial") {
+    return pattern.includes("{serial}");
+  }
+  return pattern.includes("{uid}");
+}
+
+function narrowCleanupAnalyzerEvidence(
+  evidence: RenameCleanupAnalyzerEvidence,
+  selectedFamilies: RenameCleanupHint[],
+): RenameCleanupAnalyzerEvidence {
+  if (selectedFamilies.length === ANALYZER_FAMILY_VALUES.length) {
+    return evidence;
+  }
+
+  const narrowedGroups = evidence.groupedPatterns.filter((group) =>
+    selectedFamilies.some((family) => isAnalyzerFamilyInPattern(group.pattern, family)),
+  );
+  const sampleNames: string[] = [];
+  const sampleNameSet = new Set<string>();
+  for (const group of narrowedGroups) {
+    for (const example of group.examples) {
+      if (sampleNameSet.has(example)) {
+        continue;
+      }
+      sampleNameSet.add(example);
+      sampleNames.push(example);
+    }
+  }
+
+  return {
+    ...evidence,
+    sampledCount: sampleNames.length,
+    sampleNames,
+    groupedPatterns: narrowedGroups,
+  };
+}
+
+function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: RenameCleanupAnalyzerEvidence): void {
+  printLine(runtime.stdout, "Grouped analyzer review:");
+  if (evidence.groupedPatterns.length === 0) {
+    printLine(runtime.stdout, "- no grouped pattern evidence");
+    printLine(runtime.stdout);
+    return;
+  }
+
+  for (const group of evidence.groupedPatterns) {
+    const examples = group.examples.join(" | ");
+    printLine(runtime.stdout, `- ${group.pattern} (${group.count})`);
+    printLine(runtime.stdout, `  examples: ${examples}`);
+  }
+  printLine(runtime.stdout);
 }
 
 async function promptCleanupStyle(): Promise<RenameCleanupStyle> {
@@ -215,6 +293,7 @@ async function promptCleanupSettingsFromSuggestion(
   runtime: CliRuntime,
   options: {
     path: string;
+    analyzerFamilies: RenameCleanupHint[];
     scope: Pick<
       RenameCleanupOptions,
       "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
@@ -232,8 +311,11 @@ async function promptCleanupSettingsFromSuggestion(
 }> {
   const status = createInteractiveAnalyzerStatus(runtime.stdout);
   try {
+    printLine(runtime.stdout, `Analyzer families selected: ${options.analyzerFamilies.join(", ")}`);
+    printLine(runtime.stdout);
+
     status.start("Sampling filenames for cleanup analysis...");
-    const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
+    const collectedEvidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
       path: options.path,
       ...options.scope,
       onProgress: (phase) => {
@@ -242,6 +324,18 @@ async function promptCleanupSettingsFromSuggestion(
         }
       },
     });
+    const evidence = narrowCleanupAnalyzerEvidence(collectedEvidence, options.analyzerFamilies);
+    status.stop();
+    printCleanupAnalyzerGroupedReview(runtime, evidence);
+    if (evidence.groupedPatterns.length === 0) {
+      printLine(
+        runtime.stdout,
+        "Codex cleanup suggestion unavailable: No grouped analyzer patterns matched selected families.",
+      );
+      printLine(runtime.stdout, "Falling back to manual cleanup settings.");
+      printLine(runtime.stdout);
+      return {};
+    }
     status.wait("Waiting for Codex cleanup suggestions...");
     const result = await suggestRenameCleanupWithCodex({
       evidence,
@@ -348,8 +442,15 @@ export async function runInteractiveRenameCleanup(
     message: "Suggest cleanup hints with Codex?",
     default: false,
   });
+  const analyzerFamilies = suggestWithCodex
+    ? await promptCleanupAnalyzerFamilies()
+    : undefined;
   const suggestionResult = suggestWithCodex
-    ? await promptCleanupSettingsFromSuggestion(runtime, { path, scope })
+    ? await promptCleanupSettingsFromSuggestion(runtime, {
+        path,
+        analyzerFamilies: analyzerFamilies ?? ANALYZER_FAMILY_VALUES,
+        scope,
+      })
     : undefined;
   const cleanupSettings = suggestionResult?.settings ?? (await promptManualCleanupSettings());
   const cleanupActionSettings = {
