@@ -28,6 +28,10 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
   - delay any CLI include/exclude surface until the interactive contract is validated
   - treat null/empty CLI selection as implicit full-scope analysis if a later CLI surface is added
   - start interactive analyzer-family selection with one combined multi-select and all families selected by default
+- added a new artifact-lifecycle discussion covering dry-run plan CSV versus analyzer report CSV retention behavior
+- added an ASCII workflow sketch for expected interactive retention handling and post-run artifact outcomes
+- added a recommendation to separate retention decisions for plan CSV and analysis report CSV in interactive mode
+- added concrete example prompt copy and a retention decision matrix for interactive dry-run/apply artifact handling
 
 ## Verification
 

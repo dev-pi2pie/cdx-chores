@@ -222,6 +222,144 @@ Implication:
 
 - this research should treat partial analyzer-assisted cleanup as a standalone UX problem, not as a workaround for missing template capability
 
+### 9. Artifact lifecycle needs a clearer contract between dry-run plan CSV and analyzer report CSV
+
+Current interactive analyzer-assisted cleanup behavior now has two distinct CSV artifacts:
+
+- dry-run plan CSV from deterministic `rename cleanup` planning
+- optional grouped analyzer report CSV from Codex-assisted analysis
+
+Observed workflow risk:
+
+- artifact retention can feel coupled because apply-time auto-clean messaging can govern both artifact types
+- the user intent to keep plan artifacts versus keep analyzer evidence is not always expressed as two explicit decisions
+- this can make it harder to preserve grouped analyzer evidence for post-run review while still cleaning temporary execution artifacts
+
+Expected contract direction:
+
+- keep dry-run plan CSV and analyzer report CSV as separate artifact classes
+- make retention decisions explicit per artifact class
+- avoid silently deleting analyzer report artifacts unless the user explicitly opts into cleaning them
+
+ASCII workflow sketch (target direction):
+
+```text
+[Start interactive cleanup]
+          |
+          v
+[Optional Codex analysis]
+          |
+          +--> write analysis report CSV? ----no----> (no analysis CSV)
+          |                |
+          |               yes
+          |                v
+          |       [analysis CSV created]
+          v
+[Choose cleanup settings]
+          |
+          v
+[Run deterministic cleanup dry-run]
+          |
+          v
+[plan CSV created if changes]
+          |
+          v
+Apply now?
+  | no
+  |--> [retention step]
+  |      - keep/remove plan CSV?
+  |      - keep/remove analysis CSV? (if present)
+  |
+  | yes
+  v
+[Apply from plan CSV]
+          |
+          v
+[post-apply retention step]
+  - keep/remove plan CSV?
+  - keep/remove analysis CSV? (if present)
+```
+
+Implication:
+
+- artifact-retention prompts should model two files with different intent, not one generic cleanup switch
+- grouped analyzer evidence should remain accessible by default when users intend to inspect analysis outcomes after the run
+
+### 10. Example prompt copy and retention decision matrix
+
+Proposed prompt copy:
+
+```text
+Apply these renames now?
+```
+
+Default:
+
+- No
+
+If the user chooses No and a dry-run plan CSV exists:
+
+```text
+Keep dry-run plan CSV for later `rename apply`?
+```
+
+Default:
+
+- Yes
+
+If an analyzer report CSV exists:
+
+```text
+Keep cleanup analysis report CSV?
+```
+
+Default:
+
+- Yes
+
+If the user chooses Yes to apply, run apply first.
+If apply succeeds:
+
+```text
+Keep applied plan CSV?
+```
+
+Default:
+
+- No
+
+If an analyzer report CSV exists:
+
+```text
+Keep cleanup analysis report CSV?
+```
+
+Default:
+
+- Yes
+
+Failure rule:
+
+- if apply fails, skip deletion prompts and keep all existing CSV artifacts
+
+Decision matrix:
+
+| Scenario | Analysis CSV exists | Keep plan CSV? | Keep analysis CSV? | Final result |
+| --- | --- | --- | --- | --- |
+| Dry-run only (no apply) | No | Yes | N/A | Keep plan CSV |
+| Dry-run only (no apply) | No | No | N/A | Delete plan CSV |
+| Dry-run only (no apply) | Yes | Yes | Yes | Keep both |
+| Dry-run only (no apply) | Yes | Yes | No | Keep plan, delete analysis |
+| Dry-run only (no apply) | Yes | No | Yes | Delete plan, keep analysis |
+| Dry-run only (no apply) | Yes | No | No | Delete both |
+| Apply now (success) | No | Yes | N/A | Keep applied plan CSV |
+| Apply now (success) | No | No | N/A | Delete applied plan CSV |
+| Apply now (success) | Yes | Yes | Yes | Keep both |
+| Apply now (success) | Yes | Yes | No | Keep plan, delete analysis |
+| Apply now (success) | Yes | No | Yes | Delete plan, keep analysis |
+| Apply now (success) | Yes | No | No | Delete both |
+| Apply now (failed) | Any | N/A | N/A | Keep all existing CSV artifacts |
+
 ## Implications or Recommendations
 
 Recommended first follow-up direction:
@@ -238,6 +376,7 @@ Recommended first follow-up direction:
 - apply one global deterministic cleanup hint/style selection to the selected groups rather than introducing per-group cleanup settings in the first follow-up
 - prefer interactive multi-select choices for include/exclude family selection
 - keep deterministic cleanup planning and conflict handling unchanged after scope selection
+- define explicit artifact-lifecycle prompts for plan CSV and analysis report CSV as separate retention decisions
 
 Recommended first-pass non-goals:
 
@@ -293,10 +432,28 @@ Rationale:
 - separate include and exclude steps would introduce overlap and conflict rules too early
 - the simpler interaction is more likely to keep grouped review understandable
 
+### 4. Separate artifact-retention decisions for plan CSV and analysis report CSV
+
+Recommended decision:
+
+- treat plan CSV and analysis report CSV as separate retention decisions in interactive mode
+- do not let a single generic auto-clean decision implicitly delete analyzer report artifacts
+- when both files exist, present retention choices that can keep one and remove the other
+
+Rationale:
+
+- the plan CSV is an execution/replay artifact, while the analysis report CSV is evidence/review output
+- users may want opposite retention outcomes for these two artifact types in the same run
+- separating retention controls makes dry-run and apply-time behavior easier to reason about
+
 ## Residual Open Questions
 
 - after the interactive family-selection flow is validated, is there enough scripting value to justify adding a later CLI include/exclude surface?
 - if separate exclude behavior becomes necessary later, should it be introduced as a second step in interactive mode or as a more advanced interaction within the same family picker?
+- what is the lowest-friction interactive retention UI when both plan CSV and analysis report CSV exist:
+  - two yes/no prompts
+  - one compact multi-select
+  - or a small preset menu such as keep-both / keep-plan-only / keep-report-only / clean-both?
 
 ## Related Plans
 
