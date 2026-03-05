@@ -38,6 +38,14 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
   - phased rule for explicit exclude behavior with include-minus-exclude precedence if both controls are added later
 - added a new implementation plan document with phased checklist tracking and an anti-bloat job-record strategy section:
   - `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
+- addressed follow-up doc review findings:
+  - set research status to `in-progress` now that it is an active implementation baseline
+  - renamed `Residual Open Questions` to `Deferred Questions` and kept a `Planned resolution path`
+  - added an explicit `Verification` section with concrete commands and manual checks to the implementation plan
+- converted deferred research questions to decision-form with explicit revisit triggers, and aligned the implementation plan:
+  - research now uses `Deferred Decisions and Revisit Triggers`
+  - plan non-goals now explicitly keep include/exclude split flows out of scope for this pass
+  - plan completion phase now records trigger evaluation outcomes before opening any follow-up plan
 
 ## Verification
 

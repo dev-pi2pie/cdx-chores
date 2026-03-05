@@ -2,7 +2,7 @@
 title: "Partial analyzer-assisted cleanup scope"
 created-date: 2026-03-04
 modified-date: 2026-03-05
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -446,26 +446,22 @@ Rationale:
 - users may want opposite retention outcomes for these two artifact types in the same run
 - separating retention controls makes dry-run and apply-time behavior easier to reason about
 
-## Residual Open Questions
-
-- after the interactive family-selection flow is validated, is there enough scripting value to justify adding a later CLI include/exclude surface?
-- if separate exclude behavior becomes necessary later, should it be introduced as a second step in interactive mode or as a more advanced interaction within the same family picker?
-
-Recommended resolution path:
+## Deferred Decisions and Revisit Triggers
 
 ### 1. Later CLI include/exclude surface
 
-Default decision:
+Decision for this implementation milestone:
 
-- do not add a CLI include/exclude surface until an explicit readiness gate is met
+- do not add a CLI include/exclude surface
+- keep partial scope selection interactive-only
 
-Readiness gate:
+Revisit trigger:
 
 - interactive family-selection semantics are stable for at least one release cycle
 - no major contract churn in include/exclude defaults or selected-family meaning
 - clear scripting demand is observed from real usage
 
-If the gate is met, first CLI slice should stay narrow:
+If revisit trigger is met, first CLI slice should stay narrow:
 
 - use `--codex-include-hint` / `--codex-exclude-hint`
 - keep value input aligned with `--hint`: repeatable or comma-separated
@@ -473,14 +469,19 @@ If the gate is met, first CLI slice should stay narrow:
 
 ### 2. Future explicit exclude behavior
 
-Default decision:
+Decision for this implementation milestone:
 
 - keep one combined family picker in the first follow-up
-- do not split include/exclude into separate steps unless a concrete UX gap appears
+- keep all families selected by default, and narrow via deselect behavior
+- do not split include/exclude into separate steps
 
-Escalation rule:
+Revisit trigger:
 
 - if users need explicit negative targeting beyond simple deselect behavior, add an advanced mode later
+
+If revisit trigger is met:
+
+- prefer an advanced interaction within the same family picker before adding a separate include/exclude step flow
 - if both include and exclude controls exist, use explicit precedence:
   - effective families = include set minus exclude set
 

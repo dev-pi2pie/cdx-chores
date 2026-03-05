@@ -47,6 +47,7 @@ This plan converts those decisions into implementation phases and tracking check
 
 - adding CLI `--codex-include-hint` / `--codex-exclude-hint` in this pass
 - adding analyzer-specific taxonomy such as `screenshot` labels
+- splitting analyzer family selection into separate include/exclude step flows in this pass
 - per-group deterministic cleanup settings
 - regex include/exclude analyzer scope logic
 - changing replay semantics of `rename apply`
@@ -129,7 +130,10 @@ This plan converts those decisions into implementation phases and tracking check
 ### Phase 8: Completion and follow-up capture
 
 - [ ] mark research decisions implemented or explicitly deferred
-- [ ] capture any deferred CLI-surface follow-up as a separate future plan candidate
+- [ ] evaluate deferred-decision revisit triggers from research and record outcome:
+  - [ ] CLI include/exclude surface trigger met or not met
+  - [ ] explicit exclude-behavior trigger met or not met
+- [ ] if a revisit trigger is met, open a separate future plan with narrow scope
 - [ ] close implementation plan with verification notes
 
 ## Job Record Strategy (Anti-Bloat)
@@ -160,6 +164,18 @@ Otherwise:
 - deterministic cleanup settings remain explicit and global for selected scope
 - plan CSV and analysis CSV retention are decided independently in interactive flow
 - tests cover selection behavior and artifact retention outcomes without regression
+
+## Verification
+
+- `bunx tsc --noEmit`
+- `bun test test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-directory.test.ts`
+- `bun test` (full suite before closing the plan)
+- manual interactive smoke checks in `examples/playground/cleanup-analyzer/`:
+  - combined family multi-select default/all-selected path
+  - narrowed family selection path
+  - dry-run no-apply retention prompts
+  - apply-success retention prompts
+  - apply-failure artifact retention behavior
 
 ## Related Research
 
