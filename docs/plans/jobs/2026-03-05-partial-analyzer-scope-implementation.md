@@ -8,13 +8,16 @@ agent: codex
 
 ## Goal
 
-Implement Phase 1 through Phase 3 of `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
+Implement Phase 1 through Phase 6 of `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
 
 ## Phase Slice
 
 - Phase 1: Freeze implementation contract from research
 - Phase 2: Analyzer-family selection UI
 - Phase 3: Analyzer evidence and suggestion flow integration
+- Phase 4: Deterministic cleanup handoff
+- Phase 5: Artifact retention flow
+- Phase 6: Tests
 
 ## What Changed
 
@@ -42,6 +45,19 @@ Implement Phase 1 through Phase 3 of `docs/plans/plan-2026-03-05-partial-analyze
   - print `Deterministic cleanup settings (global)` before confirmation
   - changed prompt to `Use these as deterministic cleanup settings?`
 - validated no regressions in existing cleanup hint semantics and conflict-strategy behavior with targeted cleanup suites
+- implemented split artifact retention flow for dry-run cleanup:
+  - no-apply path prompts:
+    - `Keep dry-run plan CSV for later \`rename apply\`?`
+    - `Keep cleanup analysis report CSV?` (when present)
+  - apply-success path prompts:
+    - `Keep applied plan CSV?`
+    - `Keep cleanup analysis report CSV?` (when present)
+- removed interactive auto-clean coupling for plan/report artifacts after apply by applying with `autoClean: false` and handling retention explicitly
+- ensured apply failure skips retention deletion prompts and leaves existing artifacts untouched
+- added interactive coverage for artifact-retention outcomes:
+  - only plan CSV exists
+  - both plan and analysis CSV exist with independent keep/remove decisions
+  - apply failure after plan generation
 
 ## Verification
 

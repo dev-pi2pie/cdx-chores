@@ -101,25 +101,25 @@ This plan converts those decisions into implementation phases and tracking check
 
 ### Phase 5: Artifact retention flow
 
-- [ ] implement prompt sequence from research decision matrix:
-  - [ ] apply-now prompt
-  - [ ] plan CSV keep/remove prompt
-  - [ ] analysis CSV keep/remove prompt (when present)
-- [ ] ensure apply failure keeps all existing CSV artifacts
-- [ ] ensure plan and analysis retention choices can diverge in one run
-- [ ] keep prompt defaults aligned with research:
-  - [ ] dry-run no-apply: keep plan `Yes`, keep report `Yes`
-  - [ ] apply success: keep plan `No`, keep report `Yes`
+- [x] implement prompt sequence from research decision matrix:
+  - [x] apply-now prompt
+  - [x] plan CSV keep/remove prompt
+  - [x] analysis CSV keep/remove prompt (when present)
+- [x] ensure apply failure keeps all existing CSV artifacts
+- [x] ensure plan and analysis retention choices can diverge in one run
+- [x] keep prompt defaults aligned with research:
+  - [x] dry-run no-apply: keep plan `Yes`, keep report `Yes`
+  - [x] apply success: keep plan `No`, keep report `Yes`
 
 ### Phase 6: Tests
 
-- [ ] add interactive flow coverage for combined family multi-select default/all-selected behavior
-- [ ] add coverage for narrowed family selection handoff into grouped review
-- [ ] add coverage for retention decisions when:
-  - [ ] only plan CSV exists
-  - [ ] both plan CSV and analysis CSV exist
-  - [ ] apply fails after plan exists
-- [ ] keep existing analyzer fallback tests green
+- [x] add interactive flow coverage for combined family multi-select default/all-selected behavior
+- [x] add coverage for narrowed family selection handoff into grouped review
+- [x] add coverage for retention decisions when:
+  - [x] only plan CSV exists
+  - [x] both plan CSV and analysis CSV exist
+  - [x] apply fails after plan exists
+- [x] keep existing analyzer fallback tests green
 
 ### Phase 7: Docs and manual verification
 

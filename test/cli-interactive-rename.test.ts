@@ -60,7 +60,7 @@ describe("interactive rename routing", () => {
       ],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
-      confirmQueue: [true, false, false, true, true, true],
+      confirmQueue: [true, false, false, true, true, true, true],
     });
 
     expect(result.actionCalls).toEqual([
@@ -81,7 +81,7 @@ describe("interactive rename routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/cleanup.csv",
-          autoClean: true,
+          autoClean: false,
         },
       },
     ]);
@@ -101,7 +101,7 @@ describe("interactive rename routing", () => {
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip", "summary"],
       requiredPathQueue: ["docs"],
       inputQueue: ["1.5", "1"],
-      confirmQueue: [true, false, false, true, false],
+      confirmQueue: [true, false, false, true, false, true],
     });
 
     expect(result.actionCalls).toEqual([
@@ -154,7 +154,7 @@ describe("interactive rename routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/cleanup.csv",
-          autoClean: true,
+          autoClean: false,
         },
       },
     ]);
@@ -187,7 +187,7 @@ describe("interactive rename routing", () => {
       checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
-      confirmQueue: [true, false, true, true, true, true, true, true],
+      confirmQueue: [true, false, true, true, true, true, true, true, true],
       cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
       cleanupAnalyzerSuggestion: {
         recommendedHints: ["serial"],
@@ -220,16 +220,19 @@ describe("interactive rename routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/cleanup.csv",
-          autoClean: true,
+          autoClean: false,
         },
       },
     ]);
     expect(result.stdout).toContain("Wrote cleanup analysis report: reports/cleanup-analysis.csv");
-    expect(result.stdout).toContain("Cleanup analysis report auto-cleaned: reports/cleanup-analysis.csv");
     expect(result.stdout).not.toContain(REPO_ROOT);
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
-      message: "Auto-clean plan/report CSV after apply?",
+      message: "Keep applied plan CSV?",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep cleanup analysis report CSV?",
     });
   });
 
@@ -240,7 +243,7 @@ describe("interactive rename routing", () => {
       checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
-      confirmQueue: [true, false, true, true, false, true, true, true, true],
+      confirmQueue: [true, false, true, true, false, true, true, false, true],
       cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
       cleanupAnalyzerSuggestion: {
         recommendedHints: ["serial"],
@@ -273,19 +276,23 @@ describe("interactive rename routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/cleanup.csv",
-          autoClean: true,
+          autoClean: false,
         },
       },
     ]);
     expect(result.stdout).toContain("Wrote cleanup analysis report: reports/cleanup-analysis.csv");
-    expect(result.stdout).toContain("Cleanup analysis report auto-cleaned: reports/cleanup-analysis.csv");
+    expect(result.stdout).toContain("Cleanup plan CSV removed: plans/cleanup.csv");
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
       message: "Use these as deterministic cleanup settings?",
     });
     expect(result.promptCalls).toContainEqual({
       kind: "confirm",
-      message: "Auto-clean plan/report CSV after apply?",
+      message: "Keep applied plan CSV?",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep cleanup analysis report CSV?",
     });
   });
 
@@ -407,10 +414,131 @@ describe("interactive rename routing", () => {
         name: "rename:apply",
         options: {
           csv: "plans/cleanup.csv",
-          autoClean: true,
+          autoClean: false,
         },
       },
     ]);
+  });
+
+  test("supports plan-only retention choice in dry-run no-apply flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip", "summary"],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, false, true, false, false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "skip",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "summary",
+        },
+      },
+    ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep dry-run plan CSV for later `rename apply`?",
+    });
+    expect(result.stdout).toContain("Cleanup plan CSV removed: plans/cleanup.csv");
+  });
+
+  test("supports independent plan/report retention choices in dry-run no-apply flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["rename", "rename:cleanup", "number", "detailed"],
+      checkboxQueue: [["timestamp", "date", "serial", "uid"]],
+      requiredPathQueue: ["docs"],
+      inputQueue: [""],
+      confirmQueue: [true, false, true, true, true, true, false, false, true],
+      cleanupAnalysisReportPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+      cleanupAnalyzerSuggestion: {
+        recommendedHints: ["serial"],
+        recommendedStyle: "slug",
+        confidence: 0.86,
+        reasoningSummary: "Most sampled names differ only by trailing counters.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:analysis-report",
+        options: {
+          csvPath: `${REPO_ROOT}/reports/cleanup-analysis.csv`,
+        },
+      },
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["serial"],
+          style: "slug",
+          conflictStrategy: "number",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "detailed",
+        },
+      },
+    ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep dry-run plan CSV for later `rename apply`?",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "confirm",
+      message: "Keep cleanup analysis report CSV?",
+    });
+    expect(result.stdout).toContain("Cleanup plan CSV removed: plans/cleanup.csv");
+  });
+
+  test("keeps artifacts on apply failure by skipping retention cleanup", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip", "summary"],
+        requiredPathQueue: ["docs"],
+        inputQueue: [""],
+        confirmQueue: [true, false, false, true, true],
+        renameApplyErrorMessage: "mocked apply failure",
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("mocked apply failure");
+    expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup",
+        options: {
+          path: "docs",
+          hints: ["date"],
+          style: "preserve",
+          conflictStrategy: "skip",
+          recursive: true,
+          dryRun: true,
+          previewSkips: "summary",
+        },
+      },
+      {
+        name: "rename:apply",
+        options: {
+          csv: "plans/cleanup.csv",
+          autoClean: false,
+        },
+      },
+    ]);
+    expect(result.stdout).not.toContain("Cleanup plan CSV removed:");
+    expect(result.stdout).not.toContain("Cleanup analysis report removed:");
+    expect(result.promptCalls).not.toContainEqual({
+      kind: "confirm",
+      message: "Keep applied plan CSV?",
+    });
   });
 
   test("falls back to manual settings when selected analyzer families match no grouped patterns", () => {

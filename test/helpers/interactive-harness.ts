@@ -16,6 +16,7 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerErrorMessage?: string;
   cleanupAnalysisReportPath?: string;
   captureCleanupSuggestInput?: boolean;
+  renameApplyErrorMessage?: string;
 }
 
 export interface InteractiveHarnessResult {
@@ -106,6 +107,13 @@ export function runInteractiveHarness(
       },
     }));
 
+    mock.module("node:fs/promises", () => ({
+      rm: async (path, options) => {
+        actionCalls.push({ name: "fs:rm", options: { path: String(path), options } });
+        return undefined;
+      },
+    }));
+
     mock.module(${JSON.stringify(actionsModuleUrl)}, () => ({
       actionDoctor: async (_runtime, options) => {
         actionCalls.push({ name: "doctor", options });
@@ -140,6 +148,9 @@ export function runInteractiveHarness(
       },
       actionRenameApply: async (_runtime, options) => {
         actionCalls.push({ name: "rename:apply", options });
+        if (scenario.renameApplyErrorMessage) {
+          throw new Error(scenario.renameApplyErrorMessage);
+        }
         return {
           csvPath: String(options.csv ?? ""),
           appliedCount: 1,

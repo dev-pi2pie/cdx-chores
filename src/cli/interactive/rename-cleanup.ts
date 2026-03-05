@@ -519,20 +519,53 @@ export async function runInteractiveRenameCleanup(
   }
 
   const applyNow = await confirm({ message: "Apply these renames now?", default: false });
-  if (applyNow) {
-    const autoClean = await confirm({
-      message: analysisReportPath
-        ? "Auto-clean plan/report CSV after apply?"
-        : "Auto-clean plan CSV after apply?",
+  if (!applyNow) {
+    const keepDryRunPlanCsv = await confirm({
+      message: "Keep dry-run plan CSV for later `rename apply`?",
       default: true,
     });
-    await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean });
-    if (autoClean && analysisReportPath) {
+    const keepAnalysisReportCsv = analysisReportPath
+      ? await confirm({
+          message: "Keep cleanup analysis report CSV?",
+          default: true,
+        })
+      : true;
+
+    if (!keepDryRunPlanCsv) {
+      await rm(result.planCsvPath, { force: true });
+      printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+    }
+    if (analysisReportPath && !keepAnalysisReportCsv) {
       await rm(analysisReportPath, { force: true });
       printLine(
         runtime.stdout,
-        `Cleanup analysis report auto-cleaned: ${displayPath(runtime, analysisReportPath)}`,
+        `Cleanup analysis report removed: ${displayPath(runtime, analysisReportPath)}`,
       );
     }
+    return;
+  }
+
+  await actionRenameApply(runtime, { csv: result.planCsvPath, autoClean: false });
+  const keepAppliedPlanCsv = await confirm({
+    message: "Keep applied plan CSV?",
+    default: false,
+  });
+  const keepAnalysisReportCsv = analysisReportPath
+    ? await confirm({
+        message: "Keep cleanup analysis report CSV?",
+        default: true,
+      })
+    : true;
+
+  if (!keepAppliedPlanCsv) {
+    await rm(result.planCsvPath, { force: true });
+    printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+  }
+  if (analysisReportPath && !keepAnalysisReportCsv) {
+    await rm(analysisReportPath, { force: true });
+    printLine(
+      runtime.stdout,
+      `Cleanup analysis report removed: ${displayPath(runtime, analysisReportPath)}`,
+    );
   }
 }
