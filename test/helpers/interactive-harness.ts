@@ -21,7 +21,11 @@ export interface InteractiveHarnessScenario {
 }
 
 export interface InteractiveHarnessResult {
-  promptCalls: Array<{ kind: "select" | "checkbox" | "confirm" | "input"; message: string }>;
+  promptCalls: Array<{
+    kind: "select" | "checkbox" | "confirm" | "input";
+    message: string;
+  }>;
+  selectChoicesByMessage: Record<string, Array<{ name: string; value: string; description?: string }>>;
   validationCalls: Array<{ kind: "input"; message: string; value: string; error: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
@@ -54,6 +58,7 @@ export function runInteractiveHarness(
 
     const scenario = ${JSON.stringify(scenario)};
     const promptCalls = [];
+    const selectChoicesByMessage = {};
     const validationCalls = [];
     const pathCalls = [];
     const actionCalls = [];
@@ -84,7 +89,16 @@ export function runInteractiveHarness(
 
     mock.module("@inquirer/prompts", () => ({
       select: async (options) => {
-        promptCalls.push({ kind: "select", message: options.message });
+        const choices = (options.choices ?? []).map((choice) => ({
+          name: String(choice.name ?? ""),
+          value: String(choice.value ?? ""),
+          description: choice.description ? String(choice.description) : undefined,
+        }));
+        promptCalls.push({
+          kind: "select",
+          message: options.message,
+        });
+        selectChoicesByMessage[String(options.message ?? "")] = choices;
         return shiftQueueValue(scenario.selectQueue ?? [], \`select:\${options.message}\`);
       },
       checkbox: async (options) => {
@@ -134,6 +148,9 @@ export function runInteractiveHarness(
       },
       actionDataPreview: async (_runtime, options) => {
         actionCalls.push({ name: "data:preview", options });
+      },
+      actionDataParquetPreview: async (_runtime, options) => {
+        actionCalls.push({ name: "data:parquet-preview", options });
       },
       loadDataPreviewSource: async (_runtime, input) => ({
         inputPath: String(input ?? ""),
@@ -372,11 +389,22 @@ export function runInteractiveHarness(
         );
       }
 
-      console.log(JSON.stringify({ promptCalls, validationCalls, pathCalls, actionCalls, stdout: stdout.text, stderr: stderr.text }));
+      console.log(
+        JSON.stringify({
+          promptCalls,
+          selectChoicesByMessage,
+          validationCalls,
+          pathCalls,
+          actionCalls,
+          stdout: stdout.text,
+          stderr: stderr.text,
+        }),
+      );
     } catch (error) {
       console.log(
         JSON.stringify({
           promptCalls,
+          selectChoicesByMessage,
           validationCalls,
           pathCalls,
           actionCalls,

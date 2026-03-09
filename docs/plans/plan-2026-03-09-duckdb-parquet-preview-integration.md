@@ -2,7 +2,7 @@
 title: "DuckDB Parquet preview and query action split"
 created-date: 2026-03-09
 modified-date: 2026-03-10
-status: draft
+status: active
 agent: codex
 ---
 
@@ -118,7 +118,7 @@ The first pass should avoid pretending that query UX is solved when only the bac
 
 - add a deterministic fixture generator for DuckDB smoke data instead of checking in hand-made Parquet binaries without a regeneration path
 - keep generated smoke assets under `examples/playground/`, consistent with the repository scratch-space convention
-- prefer extending `scripts/generate-tabular-preview-fixtures.mjs` if the scope stays small enough; otherwise add a clearly paired DuckDB/Parquet fixture script under `scripts/`
+- use a dedicated Parquet smoke generator under `scripts/` so the existing CSV/JSON fixture script stays scoped to lightweight preview
 
 First-pass Parquet fixture goals:
 
@@ -214,95 +214,95 @@ Design constraints:
 
 ### Phase 1: Freeze the command split
 
-- [ ] define `data preview` as CSV/JSON-only and explicitly keep `.parquet` out of that action
-- [ ] define first-pass Parquet support as `data parquet preview <file.parquet>`
-- [ ] choose the internal Parquet integration boundary:
-  - [ ] introduce a parallel DuckDB preview source contract
-  - [ ] do not widen the current lightweight `DataPreviewSource` as the first move
-- [ ] freeze the renderer reuse boundary:
-  - [ ] reuse the existing bounded renderer through a renderer-facing tabular adapter
-  - [ ] do not route Parquet directly through the current lightweight `DataPreviewSource` type
-  - [ ] decide where Parquet `format` / summary labeling is translated before rendering
-- [ ] confirm which bounded preview flags must work for Parquet:
-  - [ ] `--rows`
-  - [ ] `--offset`
-  - [ ] `--columns`
-- [ ] freeze `data query <input>` as doc-only in this plan
-- [ ] freeze first-pass interactive scope:
-  - [ ] keep `data -> preview` mapped to CSV/JSON only
-  - [ ] add `data -> parquet preview` as a separate route
-  - [ ] keep `data query` out of interactive mode for now
-- [ ] freeze top-level `data` wording updates:
-  - [ ] revise CLI `data` group description so it covers preview plus conversion workflows
-  - [ ] revise interactive root-menu `data` description so it no longer says JSON/CSV conversions only
-- [ ] freeze the Parquet smoke-fixture strategy:
-  - [ ] reuse or extend the existing tabular fixture generator when practical
-  - [ ] define the minimum Parquet fixture set for basic, wide, and large-window smoke checks
-  - [ ] freeze scripted Parquet generation as manual-smoke preparation rather than a required CI step
-  - [ ] freeze automated tests to use stable fixtures rather than generating Parquet during normal test runs
-- [ ] define clear first-pass behavior for `--contains` on DuckDB-backed actions
-- [ ] define clear failure behavior when DuckDB initialization or Parquet loading fails
-- [ ] decide whether doctor should advertise Parquet capability in this pass
+- [x] define `data preview` as CSV/JSON-only and explicitly keep `.parquet` out of that action
+- [x] define first-pass Parquet support as `data parquet preview <file.parquet>`
+- [x] choose the internal Parquet integration boundary:
+  - [x] introduce a parallel DuckDB preview source contract
+  - [x] do not widen the current lightweight `DataPreviewSource` as the first move
+- [x] freeze the renderer reuse boundary:
+  - [x] reuse the existing bounded renderer through a renderer-facing tabular adapter
+  - [x] do not route Parquet directly through the current lightweight `DataPreviewSource` type
+  - [x] decide where Parquet `format` / summary labeling is translated before rendering
+- [x] confirm which bounded preview flags must work for Parquet:
+  - [x] `--rows`
+  - [x] `--offset`
+  - [x] `--columns`
+- [x] freeze `data query <input>` as doc-only in this plan
+- [x] freeze first-pass interactive scope:
+  - [x] keep `data -> preview` mapped to CSV/JSON only
+  - [x] add `data -> parquet preview` as a separate route
+  - [x] keep `data query` out of interactive mode for now
+- [x] freeze top-level `data` wording updates:
+  - [x] revise CLI `data` group description so it covers preview plus conversion workflows
+  - [x] revise interactive root-menu `data` description so it no longer says JSON/CSV conversions only
+- [x] freeze the Parquet smoke-fixture strategy:
+  - [x] add a dedicated Parquet fixture generator that stays separate from the CSV/JSON fixture script
+  - [x] define the minimum Parquet fixture set for basic, wide, and large-window smoke checks
+  - [x] freeze scripted Parquet generation as manual-smoke preparation rather than a required CI step
+  - [x] freeze automated tests to use stable fixtures rather than generating Parquet during normal test runs
+- [x] define clear first-pass behavior for `--contains` on DuckDB-backed actions
+- [x] define clear failure behavior when DuckDB initialization or Parquet loading fails
+- [x] decide whether doctor should advertise Parquet capability in this pass
 
 ### Phase 2: DuckDB adapter and preview integration
 
-- [ ] add DuckDB-backed Parquet loading that works from file paths instead of the text-only preview loader
-- [ ] map Parquet results into a renderer-facing tabular model without widening the lightweight source contract
-- [ ] adapt Parquet preview metadata so the bounded renderer can render summary lines without assuming `csv | json`-only source formats
-- [ ] preserve deterministic column ordering and row slicing behavior
-- [ ] keep JSON/CSV preview sources unchanged in this phase
-- [ ] keep the DuckDB helper boundary isolated enough that a later `data query` track can build on it without changing lightweight preview types
+- [x] add DuckDB-backed Parquet loading that works from file paths instead of the text-only preview loader
+- [x] map Parquet results into a renderer-facing tabular model without widening the lightweight source contract
+- [x] adapt Parquet preview metadata so the bounded renderer can render summary lines without assuming `csv | json`-only source formats
+- [x] preserve deterministic column ordering and row slicing behavior
+- [x] keep JSON/CSV preview sources unchanged in this phase
+- [x] keep the DuckDB helper boundary isolated enough that a later `data query` track can build on it without changing lightweight preview types
 
 ### Phase 3: CLI/runtime wiring
 
-- [ ] add `data parquet preview` command wiring
-- [ ] keep `data preview` help and parsing scoped to CSV/JSON inputs
-- [ ] add a separate interactive `data -> parquet preview` route
-- [ ] keep interactive `data -> preview` scoped to CSV/JSON inputs
-- [ ] update interactive prompt copy so lightweight preview and Parquet preview are not conflated
-- [ ] update top-level CLI and interactive `data` descriptions so they match the broadened command surface
-- [ ] keep `data query` out of CLI help and interactive mode in this phase
-- [ ] add or extend a deterministic fixture-generation script for Parquet smoke data
-- [ ] surface clear runtime errors for unsupported or failed DuckDB activation
+- [x] add `data parquet preview` command wiring
+- [x] keep `data preview` help and parsing scoped to CSV/JSON inputs
+- [x] add a separate interactive `data -> parquet preview` route
+- [x] keep interactive `data -> preview` scoped to CSV/JSON inputs
+- [x] update interactive prompt copy so lightweight preview and Parquet preview are not conflated
+- [x] update top-level CLI and interactive `data` descriptions so they match the broadened command surface
+- [x] keep `data query` out of CLI help and interactive mode in this phase
+- [x] add or extend a deterministic fixture-generation script for Parquet smoke data
+- [x] surface clear runtime errors for unsupported or failed DuckDB activation
 - [ ] optionally extend doctor output if the capability decision is in scope
 
 ### Phase 4: Tests
 
-- [ ] add focused coverage for:
-  - [ ] Parquet happy-path preview
-  - [ ] `--columns` with Parquet
-  - [ ] `--rows` / `--offset` with Parquet
-  - [ ] `data preview` still rejects `.parquet`
-  - [ ] `data parquet preview` rejects unsupported first-pass flags if any remain deferred
+- [x] add focused coverage for:
+  - [x] Parquet happy-path preview
+  - [x] `--columns` with Parquet
+  - [x] `--rows` / `--offset` with Parquet
+  - [x] `data preview` still rejects `.parquet`
+  - [x] `data parquet preview` rejects unsupported first-pass flags if any remain deferred
   - [ ] DuckDB initialization failure
-  - [ ] unsupported Parquet-load path failures
-- [ ] add CLI/help/interactive coverage for the new command split
-- [ ] add interactive coverage for the first-pass DuckDB menu contract:
-  - [ ] `data -> parquet preview` prompt flow
-  - [ ] `data -> preview` still excludes Parquet framing
-  - [ ] `data query` is absent in this milestone
-- [ ] add coverage for updated top-level `data` labeling in CLI help and interactive menu copy
-- [ ] add smoke-fixture coverage or verification for the Parquet generator path:
-  - [ ] manual verification that generated files land under `examples/playground/`
-  - [ ] manual verification that repeated generation stays deterministic
-  - [ ] automated tests consume stable Parquet fixtures without requiring runtime generation
+  - [x] unsupported Parquet-load path failures
+- [x] add CLI/help/interactive coverage for the new command split
+- [x] add interactive coverage for the first-pass DuckDB menu contract:
+  - [x] `data -> parquet preview` prompt flow
+  - [x] `data -> preview` still excludes Parquet framing
+  - [x] `data query` is absent in this milestone
+- [x] add coverage for updated top-level `data` labeling in CLI help and interactive menu copy
+- [x] add smoke-fixture coverage or verification for the Parquet generator path:
+  - [x] manual verification that generated files land under `examples/playground/`
+  - [x] manual verification that repeated generation stays deterministic
+  - [x] automated tests consume stable Parquet fixtures without requiring runtime generation
 - [ ] add doctor coverage only if doctor capability reporting is updated in this pass
 
 ### Phase 5: Docs and verification
 
-- [ ] update `docs/guides/data-preview-usage.md` to keep `data preview` clearly CSV/JSON-only
-- [ ] add DuckDB-oriented docs for `data parquet preview`
-- [ ] document the first DuckDB milestone boundary:
-  - [ ] Parquet preview is separate from lightweight preview
-  - [ ] no SQL inside `data parquet preview`
-  - [ ] `data query` is a later query lane with its own research/plan track
-  - [ ] JSON/CSV remain on the existing in-memory path
-- [ ] document that the `data` command group now includes preview-oriented workflows in addition to conversions
-- [ ] document the interactive split between `data -> preview` and `data -> parquet preview`
-- [ ] document the Parquet fixture generator usage for manual smoke checks
-- [ ] add or generate stable Parquet fixtures for automated tests without requiring runtime generation during normal test runs
-- [ ] add or generate Parquet smoke fixtures through the scripted generator path for manual checks
-- [ ] run manual smoke checks for both lightweight preview and Parquet preview
+- [x] update `docs/guides/data-preview-usage.md` to keep `data preview` clearly CSV/JSON-only
+- [x] add DuckDB-oriented docs for `data parquet preview`
+- [x] document the first DuckDB milestone boundary:
+  - [x] Parquet preview is separate from lightweight preview
+  - [x] no SQL inside `data parquet preview`
+  - [x] `data query` is a later query lane with its own research/plan track
+  - [x] JSON/CSV remain on the existing in-memory path
+- [x] document that the `data` command group now includes preview-oriented workflows in addition to conversions
+- [x] document the interactive split between `data -> preview` and `data -> parquet preview`
+- [x] document the Parquet fixture generator usage for manual smoke checks
+- [x] add or generate stable Parquet fixtures for automated tests without requiring runtime generation during normal test runs
+- [x] add or generate Parquet smoke fixtures through the scripted generator path for manual checks
+- [x] run manual smoke checks for both lightweight preview and Parquet preview
 
 ## Success Criteria
 

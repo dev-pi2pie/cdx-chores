@@ -1,6 +1,12 @@
 import { confirm, input } from "@inquirer/prompts";
 
-import { actionCsvToJson, actionDataPreview, actionJsonToCsv, loadDataPreviewSource } from "../actions";
+import {
+  actionCsvToJson,
+  actionDataParquetPreview,
+  actionDataPreview,
+  actionJsonToCsv,
+  loadDataPreviewSource,
+} from "../actions";
 import {
   assertContainsFilterColumns,
   parseContainsFilterValue,
@@ -121,6 +127,53 @@ export async function handleDataInteractiveAction(
     await actionDataPreview(runtime, {
       columns: columns.length > 0 ? columns : undefined,
       contains,
+      input: inputPath,
+      offset: offsetInput.trim() ? Number(offsetInput) : undefined,
+      rows: rowsInput.trim() ? Number(rowsInput) : undefined,
+    });
+    return;
+  }
+
+  if (action === "data:parquet-preview") {
+    const inputPath = await promptRequiredPathWithConfig("Input Parquet file", {
+      kind: "file",
+      ...pathPromptContext,
+    });
+    const rowsInput = await input({
+      message: "Rows to show (optional)",
+      default: "",
+      validate: (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return true;
+        }
+        const parsed = Number(trimmed);
+        return Number.isInteger(parsed) && parsed > 0 ? true : "Enter a positive integer.";
+      },
+    });
+    const offsetInput = await input({
+      message: "Row offset (optional)",
+      default: "",
+      validate: (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return true;
+        }
+        const parsed = Number(trimmed);
+        return Number.isInteger(parsed) && parsed >= 0 ? true : "Enter a non-negative integer.";
+      },
+    });
+    const columnsInput = await input({
+      message: "Columns to show (comma-separated, optional)",
+      default: "",
+    });
+    const columns = columnsInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+    await actionDataParquetPreview(runtime, {
+      columns: columns.length > 0 ? columns : undefined,
       input: inputPath,
       offset: offsetInput.trim() ? Number(offsetInput) : undefined,
       rows: rowsInput.trim() ? Number(rowsInput) : undefined,

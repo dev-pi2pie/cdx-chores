@@ -101,6 +101,51 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--contains <column:keyword>");
   });
 
+  test("data parquet preview renders relative input paths by default", () => {
+    const result = runCli(["data", "parquet", "preview", "test/fixtures/parquet-preview/basic.parquet"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Input: test/fixtures/parquet-preview/basic.parquet");
+    expect(result.stdout).toContain("Format: parquet");
+    expect(result.stdout).toContain("name");
+  });
+
+  test("data help reflects preview plus conversion workflows", () => {
+    const result = runCli(["data", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Data preview and conversion utilities");
+    expect(result.stdout).toContain("preview");
+    expect(result.stdout).toContain("parquet");
+  });
+
+  test("data parquet preview help documents supported bounded-preview options only", () => {
+    const result = runCli(["data", "parquet", "preview", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--rows <value>");
+    expect(result.stdout).toContain("--offset <value>");
+    expect(result.stdout).toContain("--columns <names>");
+    expect(result.stdout).not.toContain("--contains");
+  });
+
+  test("data parquet preview rejects unsupported contains filtering at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "parquet",
+      "preview",
+      "test/fixtures/parquet-preview/basic.parquet",
+      "--contains",
+      "status:active",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("unknown option '--contains'");
+  });
+
   test("data preview rejects invalid row counts at CLI parsing time", async () => {
     const fixtureDir = await createTempFixtureDir("cli-ux");
     try {

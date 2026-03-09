@@ -7,7 +7,7 @@ import {
   parseContainsFilterValues,
   type DataPreviewSource,
 } from "../data-preview/source";
-import { renderDataPreview } from "../data-preview/render";
+import { renderInMemoryDataPreview } from "../data-preview/render";
 import { CliError } from "../errors";
 
 export interface DataPreviewOptions {
@@ -45,7 +45,7 @@ export async function actionDataPreview(runtime: CliRuntime, options: DataPrevie
   const offset = options.offset ?? 0;
 
   try {
-    const result = renderDataPreview(runtime, source, {
+    const result = renderInMemoryDataPreview(runtime, source, {
       columns: options.columns,
       containsFilters,
       inputPath,

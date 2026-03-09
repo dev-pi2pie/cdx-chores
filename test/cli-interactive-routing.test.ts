@@ -19,6 +19,28 @@ describe("interactive mode routing", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
+  test("shows the broadened data menu copy and keeps data query absent", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
+      name: "data",
+      value: "data",
+      description: "Preview and convert tabular data",
+    });
+    expect(result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value)).toEqual([
+      "data:preview",
+      "data:parquet-preview",
+      "data:json-to-csv",
+      "data:csv-to-json",
+      "back",
+      "cancel",
+    ]);
+  });
+
   test("routes a data flow and passes shared path prompt context", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -84,6 +106,35 @@ describe("interactive mode routing", () => {
       "input:Row offset (optional)",
       "input:Columns to show (comma-separated, optional)",
       "input:Contains filter (column:keyword, optional)",
+    ]);
+    expect(result.validationCalls).toEqual([]);
+  });
+
+  test("routes parquet preview through its separate interactive prompts", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:parquet-preview"],
+      requiredPathQueue: ["fixtures/table.parquet"],
+      inputQueue: ["25", "5", "id,status"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:parquet-preview",
+        options: {
+          input: "fixtures/table.parquet",
+          rows: 25,
+          offset: 5,
+          columns: ["id", "status"],
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "input:Rows to show (optional)",
+      "input:Row offset (optional)",
+      "input:Columns to show (comma-separated, optional)",
     ]);
     expect(result.validationCalls).toEqual([]);
   });

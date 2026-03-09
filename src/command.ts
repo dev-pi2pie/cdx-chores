@@ -1,6 +1,7 @@
 import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
+  actionDataParquetPreview,
   actionDataPreview,
   actionDeferred,
   actionDoctor,
@@ -264,7 +265,7 @@ export async function runCli(
       await actionDoctor(cliRuntime, { json: options.json });
     });
 
-  const dataCommand = program.command("data").description("Data conversion utilities");
+  const dataCommand = program.command("data").description("Data preview and conversion utilities");
 
   applyCommonFileOptions(
     dataCommand
@@ -322,6 +323,35 @@ export async function runCli(
         await actionDataPreview(cliRuntime, {
           columns: options.columns,
           contains: options.contains,
+          input,
+          offset: options.offset,
+          rows: options.rows,
+        });
+      },
+    );
+
+  const parquetCommand = dataCommand.command("parquet").description("DuckDB-backed Parquet preview utilities");
+
+  parquetCommand
+    .command("preview")
+    .description("Preview Parquet data as a bounded terminal table")
+    .argument("<input>", "Input Parquet file")
+    .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
+    .option("--offset <value>", "Row offset to start from", (value: string) =>
+      parseNonNegativeIntegerOption(value, "--offset"),
+    )
+    .option("--columns <names>", "Columns to show (comma-separated)", collectCsvListOption, [])
+    .action(
+      async (
+        input: string,
+        options: {
+          columns?: string[];
+          offset?: number;
+          rows?: number;
+        },
+      ) => {
+        await actionDataParquetPreview(cliRuntime, {
+          columns: options.columns,
           input,
           offset: options.offset,
           rows: options.rows,

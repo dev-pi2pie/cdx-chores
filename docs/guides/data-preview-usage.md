@@ -8,7 +8,12 @@ Current v1 boundary:
 - output: terminal table only
 - interaction model: non-interactive
 - DuckDB is not used in this v1 path
-- SQL, Parquet, and NDJSON are out of scope for this pass
+- SQL, Parquet, and NDJSON are out of scope for this path
+
+The `data` command group now has two preview lanes:
+
+- `data preview` for lightweight `.csv` and `.json`
+- `data parquet preview` for DuckDB-backed `.parquet`
 
 Follow-up improvements now available:
 
@@ -128,9 +133,21 @@ Use the playground fixture generator for manual smoke checks:
 node scripts/generate-tabular-preview-fixtures.mjs seed
 node scripts/generate-tabular-preview-fixtures.mjs clean
 node scripts/generate-tabular-preview-fixtures.mjs reset
+node scripts/generate-parquet-preview-fixtures.mjs seed
+node scripts/generate-parquet-preview-fixtures.mjs clean
+node scripts/generate-parquet-preview-fixtures.mjs reset
 ```
 
-Generated files live under `examples/playground/tabular-preview/`.
+Generated files live under:
+
+- `examples/playground/tabular-preview/` for CSV/JSON
+- `examples/playground/parquet-preview/` for Parquet
+
+The fixture sets stay aligned across both destinations:
+
+- `basic`
+- `wide`
+- `large`
 
 ### Color control
 
@@ -146,5 +163,60 @@ NO_COLOR=1 cdx-chores data preview ./examples/playground/tabular-preview/basic.c
 ### Follow-up notes
 
 - machine-readable `--format json` output is deferred for now
-- DuckDB-backed preview remains a separate follow-up plan
-- the most concrete future reason to activate DuckDB is Parquet preview support
+- `data parquet preview` is the first DuckDB-backed preview action
+- no SQL is supported inside `data parquet preview`
+- `data query <input>` remains a later DuckDB query lane with separate research and planning
+
+## `data parquet preview`
+
+`data parquet preview` is the bounded DuckDB-backed inspection path for `.parquet` files.
+
+Current first-pass boundary:
+
+- input format: `.parquet`
+- output: terminal table only
+- backend: DuckDB via `@duckdb/node-api`
+- supported bounded-preview flags:
+  - `--rows`
+  - `--offset`
+  - `--columns`
+- `--contains` is intentionally not supported in this first pass
+- SQL is out of scope for this action
+
+Command shape:
+
+```bash
+cdx-chores data parquet preview <input> [--rows <n>] [--offset <n>] [--columns <name,name,...>]
+```
+
+Examples:
+
+```bash
+cdx-chores data parquet preview ./examples/playground/parquet-preview/basic.parquet
+cdx-chores data parquet preview ./examples/playground/parquet-preview/wide.parquet --columns id,status,message
+cdx-chores data parquet preview ./examples/playground/parquet-preview/large.parquet --rows 20 --offset 120
+```
+
+Interactive mode:
+
+```bash
+cdx-chores interactive
+```
+
+Then choose:
+
+- `data`
+- `parquet preview`
+
+The interactive Parquet preview flow prompts for:
+
+- input path
+- optional row count
+- optional offset
+- optional comma-separated columns
+
+Blank optional answers map to the CLI defaults:
+
+- blank rows => default row window
+- blank offset => `0`
+- blank columns => no filter

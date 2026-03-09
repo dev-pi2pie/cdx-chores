@@ -1,5 +1,6 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -11,17 +12,21 @@ import {
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const outputDir = join(repoRoot, "examples", "playground", "tabular-preview");
+const outputDir = join(repoRoot, "examples", "playground", "parquet-preview");
+
+function escapeSqlString(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
 
 function printUsage() {
   console.log(
     [
-      "Create deterministic tabular preview fixtures for manual smoke tests.",
+      "Create deterministic Parquet preview fixtures for manual smoke tests.",
       "",
       "Usage:",
-      "  node scripts/generate-tabular-preview-fixtures.mjs seed [--large-rows <n>]",
-      "  node scripts/generate-tabular-preview-fixtures.mjs clean",
-      "  node scripts/generate-tabular-preview-fixtures.mjs reset [--large-rows <n>]",
+      "  node scripts/generate-parquet-preview-fixtures.mjs seed [--large-rows <n>]",
+      "  node scripts/generate-parquet-preview-fixtures.mjs clean",
+      "  node scripts/generate-parquet-preview-fixtures.mjs reset [--large-rows <n>]",
       "",
       `Default large row count: ${DEFAULT_LARGE_ROW_COUNT}`,
       `Output directory: ${outputDir}`,
@@ -58,40 +63,6 @@ function parseArgs(argv) {
   return { command, largeRows };
 }
 
-function escapeCsvCell(value) {
-  const text = String(value ?? "");
-  if (!/[",\n]/.test(text)) {
-    return text;
-  }
-  return `"${text.replaceAll('"', '""')}"`;
-}
-
-function rowsToCsv(rows) {
-  if (rows.length === 0) {
-    return "";
-  }
-
-  const columns = [];
-  const seen = new Set();
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (seen.has(key)) {
-        continue;
-      }
-      seen.add(key);
-      columns.push(key);
-    }
-  }
-
-  const lines = [
-    columns.map((column) => escapeCsvCell(column)).join(","),
-    ...rows.map((row) =>
-      columns.map((column) => escapeCsvCell(row[column] ?? "")).join(","),
-    ),
-  ];
-  return `${lines.join("\n")}\n`;
-}
-
 async function ensureOutputDir() {
   await mkdir(outputDir, { recursive: true });
 }
@@ -100,24 +71,39 @@ async function cleanOutputDir() {
   await rm(outputDir, { recursive: true, force: true });
 }
 
-async function writeFixture(name, content) {
-  await writeFile(join(outputDir, name), content, "utf8");
+async function writeJsonFixture(tempDir, name, rows) {
+  const path = join(tempDir, `${name}.json`);
+  await writeFile(path, `${JSON.stringify(rows, null, 2)}\n`, "utf8");
+  return path;
+}
+
+async function writeParquetFixture(connection, jsonPath, parquetPath) {
+  await connection.run(
+    `copy (select * from read_json_auto(${escapeSqlString(jsonPath)})) to ${escapeSqlString(parquetPath)} (format parquet)`,
+  );
 }
 
 async function seedFixtures(largeRows) {
   await ensureOutputDir();
 
-  const basicRows = createBasicRows();
-  const wideRows = createWideRows();
-  const largeData = createLargeRows(largeRows);
+  const duckdb = await import("@duckdb/node-api");
+  const connection = await duckdb.DuckDBConnection.create();
+  const tempDir = await mkdtemp(join(tmpdir(), "cdx-parquet-preview-"));
+  try {
+    const fixtures = [
+      ["basic", createBasicRows()],
+      ["wide", createWideRows()],
+      ["large", createLargeRows(largeRows)],
+    ];
 
-  await writeFixture("basic.json", `${JSON.stringify(basicRows, null, 2)}\n`);
-  await writeFixture("basic.csv", rowsToCsv(basicRows));
-  await writeFixture("wide.json", `${JSON.stringify(wideRows, null, 2)}\n`);
-  await writeFixture("wide.csv", rowsToCsv(wideRows));
-  await writeFixture("scalar-array.json", `${JSON.stringify(["Ada", 36, true, { nested: "value" }], null, 2)}\n`);
-  await writeFixture("large.json", `${JSON.stringify(largeData, null, 2)}\n`);
-  await writeFixture("large.csv", rowsToCsv(largeData));
+    for (const [name, rows] of fixtures) {
+      const jsonPath = await writeJsonFixture(tempDir, name, rows);
+      await writeParquetFixture(connection, jsonPath, join(outputDir, `${name}.parquet`));
+    }
+  } finally {
+    connection.closeSync();
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }
 
 async function main() {
@@ -146,12 +132,12 @@ async function main() {
   if (parsed.command === "reset") {
     await cleanOutputDir();
     await seedFixtures(parsed.largeRows);
-    console.log(`Reset ${outputDir} with deterministic tabular fixtures`);
+    console.log(`Reset ${outputDir} with deterministic Parquet preview fixtures`);
     return;
   }
 
   await seedFixtures(parsed.largeRows);
-  console.log(`Seeded deterministic tabular fixtures in ${outputDir}`);
+  console.log(`Seeded deterministic Parquet preview fixtures in ${outputDir}`);
 }
 
 await main();

@@ -15,6 +15,13 @@ export interface RenderDataPreviewResult {
   lines: string[];
 }
 
+export interface RenderDataPreviewSource {
+  columns: string[];
+  format: string;
+  totalRows: number;
+  getWindow(offset: number, rowCount: number): DataPreviewRow[];
+}
+
 interface VisibleColumn {
   name: string;
   width: number;
@@ -72,7 +79,7 @@ function dedupeRequestedColumns(columns: readonly string[] | undefined): string[
 }
 
 function resolveRequestedColumns(
-  source: DataPreviewSource,
+  source: RenderDataPreviewSource,
   requestedColumns: readonly string[] | undefined,
 ): string[] {
   const deduped = dedupeRequestedColumns(requestedColumns);
@@ -225,7 +232,7 @@ function renderTable(
 
 export function renderDataPreview(
   runtime: CliRuntime,
-  source: DataPreviewSource,
+  source: RenderDataPreviewSource,
   options: RenderDataPreviewOptions,
 ): RenderDataPreviewResult {
   const pc = getCliColors(runtime);
@@ -249,4 +256,12 @@ export function renderDataPreview(
   ];
 
   return { lines };
+}
+
+export function renderInMemoryDataPreview(
+  runtime: CliRuntime,
+  source: DataPreviewSource,
+  options: RenderDataPreviewOptions,
+): RenderDataPreviewResult {
+  return renderDataPreview(runtime, source, options);
 }
