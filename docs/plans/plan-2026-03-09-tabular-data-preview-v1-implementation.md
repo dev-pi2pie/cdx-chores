@@ -69,6 +69,17 @@ The plan therefore locks a smaller v1:
 - keep the renderer separate from file parsing logic
 - keep DuckDB out of the execution path for v1, but avoid hard-wiring the renderer to one parser shape
 
+## Implementation Guardrails
+
+- keep the implementation modular rather than concentrating preview behavior into one large file
+- prefer small focused modules when responsibilities are meaningfully different, for example:
+  - source loading
+  - row normalization
+  - table rendering
+  - CLI flag parsing and action wiring
+- allow a dedicated subdirectory when that keeps related preview files easier to navigate and test
+- avoid premature fragmentation when a helper is still tiny, but split files once a module starts carrying multiple distinct responsibilities
+
 ## Non-Goals
 
 - SQL execution
