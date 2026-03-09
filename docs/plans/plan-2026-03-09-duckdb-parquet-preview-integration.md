@@ -65,6 +65,72 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
 - should remain separate from both lightweight preview and Parquet-only preview
 - may be reserved in this plan before its full execution contract is implemented
 
+## Interactive Mode Design
+
+### First-pass menu shape
+
+- keep the existing `interactive -> data -> preview` flow mapped to lightweight CSV/JSON preview only
+- add a separate `interactive -> data -> parquet preview` entry instead of broadening the existing preview route
+- do not add `data query` to interactive mode in the first DuckDB milestone
+
+This keeps the interactive menu aligned with the command split:
+
+- preview is lightweight and non-DuckDB
+- parquet preview is DuckDB-backed but still read-only and bounded
+- query remains a later explicit workflow with its own input UX
+
+### `interactive -> data -> parquet preview`
+
+Prompt sequence for the first pass:
+
+- input Parquet file
+- optional row count
+- optional offset
+- optional comma-separated column selection
+
+Defaults should mirror the direct CLI behavior:
+
+- blank row count => CLI default row window
+- blank offset => `0`
+- blank columns => no column filter
+
+Interaction rules:
+
+- keep the flow stdout-only with no output-path prompt
+- do not ask for `--contains` because Parquet preview does not inherit that contract in the first pass
+- reuse the same bounded preview renderer as the direct action path
+- show DuckDB load/init failures inline as normal interactive action errors rather than silently routing back to lightweight preview
+
+### `interactive -> data -> query`
+
+- keep this out of the first DuckDB milestone
+- do not add a placeholder prompt sequence unless the CLI command contract for SQL input is already frozen
+- only add it later when the SQL entry UX is decided explicitly, for example:
+  - single prompt for `--sql`
+  - editor-backed SQL entry
+  - saved-query selection
+
+The first pass should avoid pretending that query UX is solved when only the backend idea is defined.
+
+## Fixture Generation Design
+
+- add a deterministic fixture generator for DuckDB smoke data instead of checking in hand-made Parquet binaries without a regeneration path
+- keep generated smoke assets under `examples/playground/`, consistent with the repository scratch-space convention
+- prefer extending `scripts/generate-tabular-preview-fixtures.mjs` if the scope stays small enough; otherwise add a clearly paired DuckDB/Parquet fixture script under `scripts/`
+
+First-pass Parquet fixture goals:
+
+- generate at least one small happy-path Parquet file for basic preview checks
+- generate at least one wider Parquet file for column-selection and hidden-column behavior
+- generate at least one larger Parquet file for `--rows` / `--offset` smoke checks
+- keep the row content deterministic so preview output can be compared across runs
+
+Design constraints:
+
+- the generator should produce Parquet from a stable source dataset rather than require a manually curated binary blob
+- fixture shape should stay comparable to the existing CSV/JSON preview fixtures where that helps CLI and renderer parity checks
+- the plan should treat fixture generation as part of the DuckDB milestone, not as optional follow-up polish
+
 ## Scope
 
 ### Backend scope
@@ -83,6 +149,8 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
   - `--columns`
 - keep `data preview` documented and implemented as CSV/JSON-only
 - define `data query <input>` as the separate DuckDB query lane instead of adding SQL to preview commands
+- add a separate interactive `data -> parquet preview` route instead of expanding the current preview prompts
+- define a repeatable local fixture-generation path for Parquet smoke files
 
 ### Runtime behavior
 
@@ -109,6 +177,7 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
 - new `data parquet preview` action wiring under `src/cli/actions/`
 - `src/cli/actions/doctor.ts`
 - `src/cli/interactive/data.ts`
+- `scripts/generate-tabular-preview-fixtures.mjs` or a paired Parquet fixture generator under `scripts/`
 - focused preview/doctor tests under `test/`
 - `docs/guides/data-preview-usage.md`
 - DuckDB-oriented command docs if this plan lands implementation in the same milestone
@@ -124,6 +193,13 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
   - [ ] `--offset`
   - [ ] `--columns`
 - [ ] define whether `data query <input>` is a documented future contract only or a deferred CLI stub in this phase
+- [ ] freeze first-pass interactive scope:
+  - [ ] keep `data -> preview` mapped to CSV/JSON only
+  - [ ] add `data -> parquet preview` as a separate route
+  - [ ] keep `data query` out of interactive mode for now
+- [ ] freeze the Parquet smoke-fixture strategy:
+  - [ ] reuse or extend the existing tabular fixture generator when practical
+  - [ ] define the minimum Parquet fixture set for basic, wide, and large-window smoke checks
 - [ ] define clear first-pass behavior for `--contains` on DuckDB-backed actions
 - [ ] define clear failure behavior when DuckDB initialization or Parquet loading fails
 - [ ] decide whether doctor should advertise Parquet capability in this pass
@@ -140,8 +216,12 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
 
 - [ ] add `data parquet preview` command wiring
 - [ ] keep `data preview` help and parsing scoped to CSV/JSON inputs
+- [ ] add a separate interactive `data -> parquet preview` route
+- [ ] keep interactive `data -> preview` scoped to CSV/JSON inputs
 - [ ] update interactive prompt copy so lightweight preview and Parquet preview are not conflated
+- [ ] keep `data query` out of interactive mode unless its SQL input UX is explicitly added in a later plan
 - [ ] decide whether to add a deferred/stub `data query` command in this phase
+- [ ] add or extend a deterministic fixture-generation script for Parquet smoke data
 - [ ] surface clear runtime errors for unsupported or failed DuckDB activation
 - [ ] optionally extend doctor output if the capability decision is in scope
 
@@ -156,6 +236,13 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
   - [ ] DuckDB initialization failure
   - [ ] unsupported Parquet-load path failures
 - [ ] add CLI/help/interactive coverage for the new command split
+- [ ] add interactive coverage for the first-pass DuckDB menu contract:
+  - [ ] `data -> parquet preview` prompt flow
+  - [ ] `data -> preview` still excludes Parquet framing
+  - [ ] `data query` is absent or deferred, depending on the chosen CLI contract
+- [ ] add smoke-fixture coverage or verification for the Parquet generator path:
+  - [ ] generated files land under `examples/playground/`
+  - [ ] repeated generation stays deterministic
 - [ ] add doctor coverage only if doctor capability reporting is updated in this pass
 
 ### Phase 5: Docs and verification
@@ -167,7 +254,9 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
   - [ ] no SQL inside `data parquet preview`
   - [ ] `data query` is the later query lane
   - [ ] JSON/CSV remain on the existing in-memory path
-- [ ] add or generate stable Parquet smoke fixtures
+- [ ] document the interactive split between `data -> preview` and `data -> parquet preview`
+- [ ] document the Parquet fixture generator usage for manual smoke checks
+- [ ] add or generate stable Parquet smoke fixtures through the scripted generator path
 - [ ] run manual smoke checks for both lightweight preview and Parquet preview
 
 ## Success Criteria
