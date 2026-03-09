@@ -6,6 +6,9 @@ import { actionDataPreview } from "../src/cli/actions";
 import { createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 
+const ANSI_PATTERN = /\u001B\[[0-9;]*m/g;
+const stripAnsi = (value: string) => value.replace(ANSI_PATTERN, "");
+
 function enableTty(runtime: { stdout: NodeJS.WritableStream }, columns: number): void {
   const stream = runtime.stdout as NodeJS.WritableStream & { columns?: number; isTTY?: boolean };
   stream.isTTY = true;
@@ -168,9 +171,50 @@ describe("cli action modules: data preview", () => {
       });
 
       expectNoStderr();
-      expect(stdout.text).toContain("Visible columns: id, status, message (+2 hidden)");
-      expect(stdout.text).toContain("id  | status | me...");
-      expect(stdout.text).not.toContain("owner");
+      const plain = stripAnsi(stdout.text);
+      expect(plain).toContain("Visible columns: id, status, message (+2 hidden)");
+      expect(plain).toContain("id  | status | me...");
+      expect(plain).not.toContain("owner");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview styles summary labels and header cells in TTY mode", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      enableTty(runtime, 80);
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toMatch(ANSI_PATTERN);
+      expect(stripAnsi(stdout.text)).toContain("Input");
+      expect(stripAnsi(stdout.text)).toContain("name");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview omits ANSI styling in TTY mode when color is disabled", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+      enableTty(runtime, 80);
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).not.toMatch(ANSI_PATTERN);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

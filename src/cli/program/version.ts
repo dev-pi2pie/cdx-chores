@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
-import pc from "picocolors";
+import { getProcessColors } from "../colors";
 import { EMBEDDED_PACKAGE_VERSION } from "./version-embedded";
 
 function* candidateSearchRoots(): Generator<string> {
@@ -86,8 +86,9 @@ export function resolvePackageVersion(options: ResolvePackageVersionOptions = {}
   return "0.0.0";
 }
 
-export function getFormattedVersionLabel(): string {
+export function getFormattedVersionLabel(colorEnabled = true): string {
   const version = resolvePackageVersion();
+  const pc = getProcessColors(colorEnabled);
 
   return pc.bgBlack(pc.bold(pc.italic(` cdx-chores ${pc.cyanBright(`ver.${version}`)} `)));
 }

@@ -57,6 +57,34 @@ describe("interactive mode routing", () => {
     });
   });
 
+  test("routes data preview through optional interactive prompts", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.csv"],
+      inputQueue: ["15", "", "id,status"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: 15,
+          offset: undefined,
+          columns: ["id", "status"],
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "input:Rows to show (optional)",
+      "input:Row offset (optional)",
+      "input:Columns to show (comma-separated, optional)",
+    ]);
+  });
+
   test("routes a markdown flow through file output options", () => {
     const result = runInteractiveHarness({
       mode: "run",

@@ -1,5 +1,6 @@
 import { formatPathForDisplay } from "../fs-utils";
 import type { CliRuntime } from "../types";
+import { getCliColors } from "../colors";
 import type { DataPreviewRow, DataPreviewSource } from "./source";
 
 export interface RenderDataPreviewOptions {
@@ -154,6 +155,7 @@ function formatWindowLabel(offset: number, rowCount: number, totalRows: number):
 }
 
 function renderTable(
+  runtime: CliRuntime,
   visibleColumns: readonly VisibleColumn[],
   rows: readonly DataPreviewRow[],
 ): string[] {
@@ -161,9 +163,10 @@ function renderTable(
     return ["(no columns to display)"];
   }
 
+  const pc = getCliColors(runtime);
   const widths = visibleColumns.map((column) => column.width);
   const header = visibleColumns
-    .map((column) => truncateCell(column.name, column.width).padEnd(column.width, " "))
+    .map((column) => pc.bold(pc.cyan(truncateCell(column.name, column.width).padEnd(column.width, " "))))
     .join(COLUMN_SEPARATOR);
   const separator = createSeparator(widths);
   const body = rows.map((row) =>
@@ -184,19 +187,20 @@ export function renderDataPreview(
   source: DataPreviewSource,
   options: RenderDataPreviewOptions,
 ): RenderDataPreviewResult {
+  const pc = getCliColors(runtime);
   const widthBudget = resolveRenderWidth(runtime);
   const selectedColumns = resolveRequestedColumns(source, options.columns);
   const rows = source.getWindow(options.offset, options.rowCount);
   const visibleColumns = resolveVisibleColumns(selectedColumns, rows, widthBudget);
 
   const lines = [
-    `Input: ${formatPathForDisplay(runtime, options.inputPath)}`,
-    `Format: ${source.format}`,
-    `Rows: ${source.totalRows}`,
-    `Window: ${formatWindowLabel(options.offset, rows.length, source.totalRows)}`,
-    `Visible columns: ${formatColumnSummary(selectedColumns, visibleColumns)}`,
+    `${pc.bold(pc.cyan("Input"))}: ${formatPathForDisplay(runtime, options.inputPath)}`,
+    `${pc.bold(pc.cyan("Format"))}: ${source.format}`,
+    `${pc.bold(pc.cyan("Rows"))}: ${source.totalRows}`,
+    `${pc.bold(pc.cyan("Window"))}: ${formatWindowLabel(options.offset, rows.length, source.totalRows)}`,
+    `${pc.bold(pc.cyan("Visible columns"))}: ${formatColumnSummary(selectedColumns, visibleColumns)}`,
     "",
-    ...renderTable(visibleColumns, rows),
+    ...renderTable(runtime, visibleColumns, rows),
   ];
 
   return { lines };

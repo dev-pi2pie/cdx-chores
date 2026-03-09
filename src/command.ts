@@ -17,6 +17,7 @@ import {
 } from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
+import { resolveCliColorEnabled } from "./cli/colors";
 import {
   DEFAULT_RENAME_SERIAL_ORDER,
   DEFAULT_RENAME_SERIAL_START,
@@ -37,12 +38,14 @@ import type { CliRuntime, RunCliOptions } from "./cli/types";
 
 interface NormalizedCliArgv {
   argv: string[];
+  colorEnabled: boolean;
   displayPathStyle: CliRuntime["displayPathStyle"];
 }
 
 function createRuntime(options: RunCliOptions): CliRuntime {
   return {
     cwd: options.cwd ?? process.cwd(),
+    colorEnabled: options.colorEnabled ?? true,
     now: options.now ?? (() => new Date()),
     platform: options.platform ?? process.platform,
     stdout: options.stdout ?? process.stdout,
@@ -176,10 +179,16 @@ function applyRenameTemplateOptions(command: Command): void {
 function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
   const normalized = argv.slice(0, 2);
   let displayPathStyle: CliRuntime["displayPathStyle"] = "relative";
+  let noColorFlag = false;
 
   for (const arg of argv.slice(2)) {
     if (arg === "--absolute" || arg === "--abs") {
       displayPathStyle = "absolute";
+      continue;
+    }
+
+    if (arg === "--no-color") {
+      noColorFlag = true;
       continue;
     }
 
@@ -191,7 +200,11 @@ function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
     normalized.push(arg);
   }
 
-  return { argv: normalized, displayPathStyle };
+  return {
+    argv: normalized,
+    colorEnabled: resolveCliColorEnabled({ noColorFlag }),
+    displayPathStyle,
+  };
 }
 
 export async function runCli(
@@ -200,6 +213,7 @@ export async function runCli(
 ): Promise<void> {
   const normalized = normalizeCliArgv(argv);
   const cliRuntime = createRuntime(runtime);
+  cliRuntime.colorEnabled = normalized.colorEnabled && (runtime.colorEnabled ?? true);
   cliRuntime.displayPathStyle = runtime.displayPathStyle ?? normalized.displayPathStyle;
   const args = normalized.argv.slice(2);
 
@@ -228,7 +242,8 @@ export async function runCli(
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
-    .version(getFormattedVersionLabel(), "-v, --version", "Show version information");
+    .option("--no-color", "Disable ANSI colors", false)
+    .version(getFormattedVersionLabel(cliRuntime.colorEnabled), "-v, --version", "Show version information");
 
   program
     .command("interactive")

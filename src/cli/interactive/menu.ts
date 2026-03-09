@@ -2,6 +2,7 @@ import { select } from "@inquirer/prompts";
 
 export type InteractiveActionKey =
   | "doctor"
+  | "data:preview"
   | "data:json-to-csv"
   | "data:csv-to-json"
   | "md:to-docx"
@@ -47,6 +48,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   data: {
     message: "Choose a data command",
     choices: [
+      { name: "preview", value: "data:preview" },
       { name: "json-to-csv", value: "data:json-to-csv" },
       { name: "csv-to-json", value: "data:csv-to-json" },
     ],

@@ -10,6 +10,14 @@ Current v1 boundary:
 - DuckDB is not used in this v1 path
 - SQL, Parquet, and NDJSON are out of scope for this pass
 
+Follow-up improvements now available:
+
+- `data preview` is available in interactive mode
+- summary labels and table headers use restrained color in TTY output
+- global color disabling is supported through:
+  - `--no-color`
+  - `NO_COLOR`
+
 ### Command shape
 
 ```bash
@@ -25,6 +33,30 @@ cdx-chores data preview ./examples/playground/tabular-preview/wide.csv --columns
 cdx-chores data preview ./examples/playground/tabular-preview/large.json --rows 20 --offset 120
 ```
 
+Interactive mode:
+
+```bash
+cdx-chores interactive
+```
+
+Then choose:
+
+- `data`
+- `preview`
+
+The interactive preview flow prompts for:
+
+- input path
+- optional row count
+- optional offset
+- optional comma-separated columns
+
+Blank optional answers map to the CLI defaults:
+
+- blank rows => default row window
+- blank offset => `0`
+- blank columns => no filter
+
 ### Rendering behavior
 
 The v1 renderer is intentionally conservative:
@@ -33,6 +65,7 @@ The v1 renderer is intentionally conservative:
 - truncates long cells instead of wrapping aggressively
 - shows a bounded visible subset of columns when the full set cannot fit cleanly
 - keeps redirected non-TTY output deterministic and line-oriented
+- applies restrained color only to summary labels and table headers in TTY mode
 
 ### JSON normalization rules
 
@@ -61,6 +94,17 @@ node scripts/generate-tabular-preview-fixtures.mjs reset
 ```
 
 Generated files live under `examples/playground/tabular-preview/`.
+
+### Color control
+
+Color control is global for the CLI, not `data preview`-only.
+
+Examples:
+
+```bash
+cdx-chores --no-color data preview ./examples/playground/tabular-preview/basic.csv
+NO_COLOR=1 cdx-chores data preview ./examples/playground/tabular-preview/basic.csv
+```
 
 ### Follow-up notes
 

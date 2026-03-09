@@ -124,6 +124,9 @@ export function runInteractiveHarness(
       actionDoctor: async (_runtime, options) => {
         actionCalls.push({ name: "doctor", options });
       },
+      actionDataPreview: async (_runtime, options) => {
+        actionCalls.push({ name: "data:preview", options });
+      },
       actionJsonToCsv: async (_runtime, options) => {
         actionCalls.push({ name: "data:json-to-csv", options });
       },
@@ -325,6 +328,7 @@ export function runInteractiveHarness(
     const stderr = new CaptureStream();
     const runtime = {
       cwd: process.cwd(),
+      colorEnabled: true,
       now: () => new Date("2026-02-25T00:00:00.000Z"),
       platform: process.platform,
       stdout,

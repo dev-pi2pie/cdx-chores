@@ -1,7 +1,8 @@
 ---
 title: "Data preview interactive mode and color polish"
 created-date: 2026-03-09
-status: draft
+modified-date: 2026-03-09
+status: completed
 agent: codex
 ---
 
@@ -92,57 +93,57 @@ These are real user-facing improvements, but they are separate from the complete
 
 ### Phase 1: Interactive route and prompt contract
 
-- [ ] add `data:preview` to the interactive action key set
-- [ ] add the submenu entry under `data`
-- [ ] define the prompt sequence for:
-  - [ ] input path
-  - [ ] optional row count
-  - [ ] optional offset
-  - [ ] optional comma-separated column list
-- [ ] keep prompt defaults aligned with the v1 CLI defaults
-- [ ] keep interactive preview stdout-only with no output-path prompt
+- [x] add `data:preview` to the interactive action key set
+- [x] add the submenu entry under `data`
+- [x] define the prompt sequence for:
+  - [x] input path
+  - [x] optional row count
+  - [x] optional offset
+  - [x] optional comma-separated column list
+- [x] keep prompt defaults aligned with the v1 CLI defaults
+- [x] keep interactive preview stdout-only with no output-path prompt
 
 ### Phase 2: Interactive action wiring
 
-- [ ] route `data:preview` through `src/cli/interactive/index.ts`
-- [ ] implement the new branch in `src/cli/interactive/data.ts`
-- [ ] call `actionDataPreview` instead of duplicating preview logic
-- [ ] ensure empty optional prompts map cleanly to action defaults
+- [x] route `data:preview` through `src/cli/interactive/index.ts`
+- [x] implement the new branch in `src/cli/interactive/data.ts`
+- [x] call `actionDataPreview` instead of duplicating preview logic
+- [x] ensure empty optional prompts map cleanly to action defaults
 
 ### Phase 3: Color styling pass
 
-- [ ] define color-control precedence for preview output:
-  - [ ] `--no-color`
-  - [ ] `NO_COLOR`
-- [ ] define the global runtime scope for `--no-color` so preview styling follows the same CLI-wide color contract as other commands
-- [ ] add restrained `picocolors` styling to preview summary labels
-- [ ] add restrained styling to table headers only if it stays readable
-- [ ] keep cell contents uncolored
-- [ ] keep narrow-width TTY rendering legible after styling
-- [ ] ensure color usage degrades safely in non-color environments
-- [ ] keep redirected output free of unintended ANSI escape sequences
+- [x] define color-control precedence for preview output:
+  - [x] `--no-color`
+  - [x] `NO_COLOR`
+- [x] define the global runtime scope for `--no-color` so preview styling follows the same CLI-wide color contract as other commands
+- [x] add restrained `picocolors` styling to preview summary labels
+- [x] add restrained styling to table headers only if it stays readable
+- [x] keep cell contents uncolored
+- [x] keep narrow-width TTY rendering legible after styling
+- [x] ensure color usage degrades safely in non-color environments
+- [x] keep redirected output free of unintended ANSI escape sequences
 
 ### Phase 4: Tests
 
-- [ ] add interactive routing coverage for `data:preview`
-- [ ] add interactive prompt flow coverage for optional values
-- [ ] add focused output coverage for styled summary/header rendering
-- [ ] verify non-TTY output remains deterministic enough for assertions
-- [ ] verify `NO_COLOR=1` disables preview styling
-- [ ] verify `--no-color` disables preview styling
-- [ ] verify redirected output does not leak ANSI sequences
+- [x] add interactive routing coverage for `data:preview`
+- [x] add interactive prompt flow coverage for optional values
+- [x] add focused output coverage for styled summary/header rendering
+- [x] verify non-TTY output remains deterministic enough for assertions
+- [x] verify `NO_COLOR=1` disables preview styling
+- [x] verify `--no-color` disables preview styling
+- [x] verify redirected output does not leak ANSI sequences
 
 ### Phase 5: Docs and verification
 
-- [ ] update `docs/guides/data-preview-usage.md` with interactive usage
-- [ ] document the color-styling boundary
-- [ ] run manual checks for:
-  - [ ] direct CLI preview
-  - [ ] interactive preview flow
-  - [ ] TTY rendering with color
-  - [ ] TTY rendering with `NO_COLOR=1`
-  - [ ] TTY rendering with `--no-color`
-  - [ ] non-TTY redirected preview output
+- [x] update `docs/guides/data-preview-usage.md` with interactive usage
+- [x] document the color-styling boundary
+- [x] run manual checks for:
+  - [x] direct CLI preview
+  - [x] interactive preview flow
+  - [x] TTY rendering with color
+  - [x] TTY rendering with `NO_COLOR=1`
+  - [x] TTY rendering with `--no-color`
+  - [x] non-TTY redirected preview output
 
 ## Success Criteria
 

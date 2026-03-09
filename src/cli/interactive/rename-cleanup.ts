@@ -359,7 +359,7 @@ async function promptCleanupSettingsFromSuggestion(
     | undefined;
   analysisReportPath?: string;
 }> {
-  const status = createInteractiveAnalyzerStatus(runtime.stdout);
+  const status = createInteractiveAnalyzerStatus(runtime.stdout, runtime.colorEnabled);
   try {
     printLine(runtime.stdout, `Analyzer families selected: ${options.analyzerFamilies.join(", ")}`);
     printLine(runtime.stdout);

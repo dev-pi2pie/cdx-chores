@@ -1,5 +1,6 @@
 export interface CliRuntime {
   cwd: string;
+  colorEnabled: boolean;
   now: () => Date;
   platform: NodeJS.Platform;
   stdout: NodeJS.WritableStream;
@@ -10,6 +11,7 @@ export interface CliRuntime {
 
 export interface RunCliOptions {
   cwd?: string;
+  colorEnabled?: boolean;
   now?: () => Date;
   platform?: NodeJS.Platform;
   stdout?: NodeJS.WritableStream;
