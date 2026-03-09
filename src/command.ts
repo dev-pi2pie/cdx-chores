@@ -69,6 +69,10 @@ function collectCsvListOption(value: string, previous: string[] = []): string[] 
   return [...previous, ...next];
 }
 
+function collectRepeatedOption(value: string, previous: string[] = []): string[] {
+  return [...previous, value];
+}
+
 function parseNonNegativeIntegerOption(value: string, label: string): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -299,17 +303,25 @@ export async function runCli(
       parseNonNegativeIntegerOption(value, "--offset"),
     )
     .option("--columns <names>", "Columns to show (comma-separated)", collectCsvListOption, [])
+    .option(
+      "--contains <column:keyword>",
+      "Filter rows by case-insensitive substring match on a named column (repeatable; escape ':' as \\: and '\\' as \\\\)",
+      collectRepeatedOption,
+      [],
+    )
     .action(
       async (
         input: string,
         options: {
           columns?: string[];
+          contains?: string[];
           offset?: number;
           rows?: number;
         },
       ) => {
         await actionDataPreview(cliRuntime, {
           columns: options.columns,
+          contains: options.contains,
           input,
           offset: options.offset,
           rows: options.rows,

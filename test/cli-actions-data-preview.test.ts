@@ -158,6 +158,105 @@ describe("cli action modules: data preview", () => {
     }
   });
 
+  test("actionDataPreview filters rows with case-insensitive contains matching", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "contains.csv");
+      await writeFile(inputPath, "name,status\nAda,Active\nBob,paused\nCyd,REACTIVE\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        contains: ["status:act"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Rows: 2");
+      expect(stdout.text).toContain("Window: 1-2 of 2");
+      expect(stdout.text).toContain("Ada");
+      expect(stdout.text).toContain("Cyd");
+      expect(stdout.text).not.toContain("Bob");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview applies contains filters before offset and row slicing", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "contains-window.json");
+      await writeFile(
+        inputPath,
+        '[{"id":1,"status":"active","region":"tw"},{"id":2,"status":"paused","region":"tw"},{"id":3,"status":"active","region":"jp"},{"id":4,"status":"ACTIVE","region":"tw"}]\n',
+        "utf8",
+      );
+
+      await actionDataPreview(runtime, {
+        contains: ["status:active", "region:tw"],
+        input: toRepoRelativePath(inputPath),
+        offset: 1,
+        rows: 1,
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Rows: 2");
+      expect(stdout.text).toContain("Window: 2-2 of 2");
+      expect(stdout.text).toContain("4   | ACTIVE | tw");
+      expect(stdout.text).not.toContain("1   | active | tw");
+      expect(stdout.text).not.toContain("2   | paused | tw");
+      expect(stdout.text).not.toContain("3   | active | jp");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview supports escaped colons in contains columns and keywords", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "escaped-colon.json");
+      await writeFile(
+        inputPath,
+        '[{"meta:key":"api:v1","name":"Ada"},{"meta:key":"api:v2","name":"Bob"}]\n',
+        "utf8",
+      );
+
+      await actionDataPreview(runtime, {
+        contains: ["meta\\:key:api\\:v1"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Rows: 1");
+      expect(stdout.text).toContain("Ada");
+      expect(stdout.text).not.toContain("Bob");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview supports escaped backslashes in contains keywords", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "escaped-backslash.csv");
+      await writeFile(inputPath, "path,label\nC:\\logs\\app,Ada\nC:\\tmp\\else,Bob\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        contains: ["path:C:\\\\logs\\\\app"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Rows: 1");
+      expect(stdout.text).toContain("C:\\logs\\app");
+      expect(stdout.text).not.toContain("C:\\tmp\\else");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionDataPreview bounds visible columns in narrow TTY mode", async () => {
     const fixtureDir = await createTempFixtureDir("data-preview");
     try {
@@ -250,6 +349,86 @@ describe("cli action modules: data preview failure modes", () => {
       await expectCliError(
         () => actionDataPreview(runtime, { input: toRepoRelativePath(inputPath), columns: ["status"] }),
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Unknown columns: status" },
+      );
+
+      expectNoOutput();
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview rejects unknown contains columns", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: ["status:active"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Unknown columns: status" },
+      );
+
+      expectNoOutput();
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview rejects malformed contains filters without a separator", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: ["status"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "missing ':' separator" },
+      );
+
+      expectNoOutput();
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview rejects blank contains columns and keywords", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: [":value"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "column name cannot be blank" },
+      );
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: ["name:"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "keyword cannot be blank" },
+      );
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview rejects malformed contains escape sequences", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: ["name:\\q"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "invalid escape sequence \\q" },
+      );
+
+      await expectCliError(
+        () => actionDataPreview(runtime, { contains: ["name:value\\"], input: toRepoRelativePath(inputPath) }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "trailing escape sequence" },
       );
 
       expectNoOutput();

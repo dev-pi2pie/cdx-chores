@@ -21,7 +21,7 @@ Follow-up improvements now available:
 ### Command shape
 
 ```bash
-cdx-chores data preview <input> [--rows <n>] [--offset <n>] [--columns <name,name,...>]
+cdx-chores data preview <input> [--rows <n>] [--offset <n>] [--columns <name,name,...>] [--contains <column:keyword>]
 ```
 
 Examples:
@@ -31,6 +31,8 @@ cdx-chores data preview ./examples/playground/tabular-preview/basic.csv
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json
 cdx-chores data preview ./examples/playground/tabular-preview/wide.csv --columns id,status,message
 cdx-chores data preview ./examples/playground/tabular-preview/large.json --rows 20 --offset 120
+cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contains status:active
+cdx-chores data preview ./examples/playground/tabular-preview/basic.json --contains name:ada --contains city:tai
 ```
 
 Interactive mode:
@@ -56,6 +58,39 @@ Blank optional answers map to the CLI defaults:
 - blank rows => default row window
 - blank offset => `0`
 - blank columns => no filter
+
+Interactive note:
+
+- `--contains` is currently CLI-only
+- interactive preview does not yet prompt for row filters
+
+### Contains filtering
+
+`--contains` adds a bounded row filter without introducing SQL:
+
+- repeatable: pass `--contains` more than once
+- named-column only: each filter must target one explicit column
+- combination rule: multiple filters are combined as logical `AND`
+- match mode: case-insensitive literal substring match
+- match target: the same display-safe string value already used in the preview table
+- filter order: filtering happens before `--offset` and `--rows` slicing
+- summary behavior: `Rows` and `Window` report against the filtered row set
+
+Escaping rules:
+
+- split on the first unescaped `:`
+- escape a literal `:` as `\:`
+- escape a literal `\` as `\\`
+- any later unescaped `:` characters belong to the keyword segment
+
+Examples:
+
+```bash
+cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contains status:active
+cdx-chores data preview ./examples/playground/tabular-preview/basic.json --contains name:ada --contains city:tai
+cdx-chores data preview ./examples/playground/tabular-preview/basic.json --contains meta\:key:api\:v1
+cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contains path:C:\\logs\\app
+```
 
 ### Rendering behavior
 

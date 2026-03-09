@@ -2,7 +2,7 @@
 title: "Data preview contains filter"
 created-date: 2026-03-09
 modified-date: 2026-03-09
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -86,57 +86,57 @@ A bounded field-search step is useful before DuckDB because it:
 
 ### Phase 1: Freeze filter contract
 
-- [ ] define `--contains <column>:<keyword>` parsing rules
-- [ ] define escaping and split rules for literal `:` and `\\` characters
-- [ ] define malformed-input behavior for:
-  - [ ] missing `:`
-  - [ ] blank column
-  - [ ] blank keyword
-  - [ ] unknown column
-- [ ] define behavior for malformed escape sequences
-- [ ] define multi-filter semantics as logical `AND`
-- [ ] document that interactive filter entry is deferred from this plan
+- [x] define `--contains <column>:<keyword>` parsing rules
+- [x] define escaping and split rules for literal `:` and `\\` characters
+- [x] define malformed-input behavior for:
+  - [x] missing `:`
+  - [x] blank column
+  - [x] blank keyword
+  - [x] unknown column
+- [x] define behavior for malformed escape sequences
+- [x] define multi-filter semantics as logical `AND`
+- [x] document that interactive filter entry is deferred from this plan
 
 ### Phase 2: Source/controller filtering
 
-- [ ] add parsed contains-filter handling to the preview action path
-- [ ] filter rows before offset/window slicing
-- [ ] keep filtering on the existing string-display values
-- [ ] preserve deterministic row ordering after filtering
-- [ ] make `Rows` and `Window` summary output report filtered totals consistently
+- [x] add parsed contains-filter handling to the preview action path
+- [x] filter rows before offset/window slicing
+- [x] keep filtering on the existing string-display values
+- [x] preserve deterministic row ordering after filtering
+- [x] make `Rows` and `Window` summary output report filtered totals consistently
 
 ### Phase 3: CLI wiring and validation
 
-- [ ] add repeatable `--contains` to `data preview`
-- [ ] wire validation errors through the existing `CliError` contract
-- [ ] keep interactive preview prompts unchanged in this pass
+- [x] add repeatable `--contains` to `data preview`
+- [x] wire validation errors through the existing `CliError` contract
+- [x] keep interactive preview prompts unchanged in this pass
 
 ### Phase 4: Tests
 
-- [ ] add focused coverage for:
-  - [ ] single contains filter
-  - [ ] multiple contains filters combined as `AND`
-  - [ ] case-insensitive matching
-  - [ ] filtering before offset/window slicing
-  - [ ] filtered `Rows` and `Window` summary semantics
-  - [ ] escaped `:` handling in filter parsing
-  - [ ] escaped `\\` handling in filter parsing
-  - [ ] malformed filter input
-  - [ ] malformed escape input
-  - [ ] unknown column validation
-- [ ] add CLI UX coverage for the new option help/output
+- [x] add focused coverage for:
+  - [x] single contains filter
+  - [x] multiple contains filters combined as `AND`
+  - [x] case-insensitive matching
+  - [x] filtering before offset/window slicing
+  - [x] filtered `Rows` and `Window` summary semantics
+  - [x] escaped `:` handling in filter parsing
+  - [x] escaped `\\` handling in filter parsing
+  - [x] malformed filter input
+  - [x] malformed escape input
+  - [x] unknown column validation
+- [x] add CLI UX coverage for the new option help/output
 
 ### Phase 5: Docs and verification
 
-- [ ] update `docs/guides/data-preview-usage.md`
-- [ ] document the bounded scope:
-  - [ ] named-column only
-  - [ ] literal substring match
-  - [ ] `AND` combination only
-  - [ ] escape rules for literal `:` and `\\`
-  - [ ] filtered summaries report filtered totals
-  - [ ] interactive filter entry remains deferred
-- [ ] run manual smoke checks against `examples/playground/tabular-preview/`
+- [x] update `docs/guides/data-preview-usage.md`
+- [x] document the bounded scope:
+  - [x] named-column only
+  - [x] literal substring match
+  - [x] `AND` combination only
+  - [x] escape rules for literal `:` and `\\`
+  - [x] filtered summaries report filtered totals
+  - [x] interactive filter entry remains deferred
+- [x] run manual smoke checks against `examples/playground/tabular-preview/`
 
 ## Success Criteria
 

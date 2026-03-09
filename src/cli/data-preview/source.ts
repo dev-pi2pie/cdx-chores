@@ -11,6 +11,11 @@ import {
 
 export type DataPreviewFormat = "csv" | "json";
 
+export interface DataPreviewContainsFilter {
+  column: string;
+  keyword: string;
+}
+
 export interface DataPreviewRow {
   values: Record<string, string>;
 }
@@ -30,6 +35,13 @@ interface InMemoryDataPreviewSourceOptions {
 
 const EMPTY_CELL = "";
 
+function createContainsFilterError(value: string, detail: string): CliError {
+  return new CliError(`Invalid --contains value ${JSON.stringify(value)}: ${detail}`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
 class InMemoryDataPreviewSource implements DataPreviewSource {
   public readonly columns: string[];
   public readonly format: DataPreviewFormat;
@@ -45,6 +57,39 @@ class InMemoryDataPreviewSource implements DataPreviewSource {
 
   getWindow(offset: number, rowCount: number): DataPreviewRow[] {
     return this.rows.slice(offset, offset + rowCount);
+  }
+
+  filterContains(filters: readonly DataPreviewContainsFilter[]): InMemoryDataPreviewSource {
+    if (filters.length === 0) {
+      return this;
+    }
+
+    const available = new Set(this.columns);
+    const missing = filters
+      .map((filter) => filter.column)
+      .filter((column, index, values) => !available.has(column) && values.indexOf(column) === index);
+    if (missing.length > 0) {
+      throw new CliError(`Unknown columns: ${missing.join(", ")}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const normalizedFilters = filters.map((filter) => ({
+      ...filter,
+      keyword: filter.keyword.toLowerCase(),
+    }));
+    const rows = this.rows.filter((row) =>
+      normalizedFilters.every((filter) =>
+        (row.values[filter.column] ?? "").toLowerCase().includes(filter.keyword),
+      ),
+    );
+
+    return new InMemoryDataPreviewSource({
+      columns: [...this.columns],
+      format: this.format,
+      rows,
+    });
   }
 }
 
@@ -130,6 +175,87 @@ function createJsonPreviewSource(text: string): DataPreviewSource {
     format: "json",
     rows: buildJsonRows(normalizedRows, columns),
   });
+}
+
+export function parseContainsFilterValue(value: string): DataPreviewContainsFilter {
+  let column = "";
+  let keyword = "";
+  let escaped = false;
+  let seenSeparator = false;
+
+  for (const character of value) {
+    if (escaped) {
+      if (character !== ":" && character !== "\\") {
+        throw createContainsFilterError(value, `invalid escape sequence \\${character}. Use \\: for ':' or \\\\ for '\\'.`);
+      }
+
+      if (seenSeparator) {
+        keyword += character;
+      } else {
+        column += character;
+      }
+      escaped = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (!seenSeparator && character === ":") {
+      seenSeparator = true;
+      continue;
+    }
+
+    if (seenSeparator) {
+      keyword += character;
+    } else {
+      column += character;
+    }
+  }
+
+  if (escaped) {
+    throw createContainsFilterError(value, "trailing escape sequence. Use \\: for ':' or \\\\ for '\\'.");
+  }
+
+  if (!seenSeparator) {
+    throw createContainsFilterError(value, "missing ':' separator.");
+  }
+
+  const normalizedColumn = column.trim();
+  const normalizedKeyword = keyword.trim();
+
+  if (normalizedColumn.length === 0) {
+    throw createContainsFilterError(value, "column name cannot be blank.");
+  }
+
+  if (normalizedKeyword.length === 0) {
+    throw createContainsFilterError(value, "keyword cannot be blank.");
+  }
+
+  return {
+    column: normalizedColumn,
+    keyword: normalizedKeyword,
+  };
+}
+
+export function applyContainsFilters(
+  source: DataPreviewSource,
+  filters: readonly DataPreviewContainsFilter[],
+): DataPreviewSource {
+  if (filters.length === 0) {
+    return source;
+  }
+
+  if (!(source instanceof InMemoryDataPreviewSource)) {
+    throw new CliError("Contains filtering is only supported for in-memory preview sources.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return source.filterContains(filters);
 }
 
 export function createDataPreviewSource(inputPath: string, text: string): DataPreviewSource {
