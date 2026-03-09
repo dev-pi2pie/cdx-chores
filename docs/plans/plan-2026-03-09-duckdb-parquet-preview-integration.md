@@ -133,3 +133,4 @@ The strongest first reason to activate DuckDB is Parquet support because:
 
 - `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 - `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
