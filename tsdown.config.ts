@@ -12,7 +12,9 @@ export default defineConfig([
     platform: "node",
     target: "node20",
     fixedExtension: true,
-    inlineOnly: ["picocolors"],
+    deps: {
+      onlyAllowBundle: ["picocolors"],
+    },
   },
   {
     entry: {
@@ -27,7 +29,9 @@ export default defineConfig([
     target: "node20",
     hash: false,
     fixedExtension: true,
-    inlineOnly: ["picocolors"],
+    deps: {
+      onlyAllowBundle: ["picocolors"],
+    },
     banner: "#!/usr/bin/env node\n",
   },
   {
@@ -41,6 +45,8 @@ export default defineConfig([
     platform: "node",
     target: "node20",
     fixedExtension: true,
-    inlineOnly: ["picocolors"],
+    deps: {
+      onlyAllowBundle: ["picocolors"],
+    },
   },
 ]);
