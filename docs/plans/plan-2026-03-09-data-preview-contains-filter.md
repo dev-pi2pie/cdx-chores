@@ -1,6 +1,7 @@
 ---
 title: "Data preview contains filter"
 created-date: 2026-03-09
+modified-date: 2026-03-09
 status: draft
 agent: codex
 ---
@@ -28,6 +29,7 @@ A bounded field-search step is useful before DuckDB because it:
   - `--columns`
 - preview sources already normalize JSON and CSV rows into a shared string-display shape
 - preview rendering already supports bounded windows, column filtering, interactive mode, and global color control
+- the current preview summary derives `Rows` and `Window` from the unfiltered source row count
 - there is no row-filtering flag yet
 
 ## Scope
@@ -38,6 +40,9 @@ A bounded field-search step is useful before DuckDB because it:
 - allow multiple `--contains` flags in one command
 - combine multiple `--contains` filters as logical `AND`
 - require a named column in the first implementation
+- parse each flag by splitting on the first unescaped `:`
+- allow literal `:` and `\\` inside either segment through `\:` and `\\\\` escapes
+- treat any additional unescaped `:` characters after the split as part of the keyword
 - reject malformed filter values and unknown columns with clear validation errors
 
 ### Matching behavior
@@ -46,12 +51,17 @@ A bounded field-search step is useful before DuckDB because it:
 - use case-insensitive substring matching
 - keep matching literal, not regex-based
 - apply filtering before offset/window slicing
+- make preview summaries reflect the filtered row set:
+  - `Rows` reports the filtered total
+  - `Window` reports the filtered slice position over that filtered total
+- keep the first implementation single-surface and do not add a second unfiltered-count summary line
 - preserve the existing preview rendering contract after filtering
 
 ### Interactive mode
 
-- add optional interactive prompt support for one or more `--contains` values only if the prompt flow stays simple
-- if interactive filter entry is added in this plan, use a single comma-separated or repeat-entry prompt rather than a mini query builder
+- defer interactive `--contains` entry in this plan
+- keep the existing interactive preview flow unchanged for now
+- revisit interactive filter prompts only in a separate follow-up after the direct CLI contract is implemented and tested
 
 ## Non-Goals
 
@@ -59,6 +69,7 @@ A bounded field-search step is useful before DuckDB because it:
 - regex search
 - global any-column search in the first pass
 - `OR` logic between filter terms
+- interactive filter prompts in this pass
 - Parquet support
 - DuckDB-backed execution
 
@@ -67,7 +78,7 @@ A bounded field-search step is useful before DuckDB because it:
 - `src/command.ts`
 - `src/cli/actions/data-preview.ts`
 - `src/cli/data-preview/source.ts`
-- `src/cli/interactive/data.ts`
+- `src/cli/data-preview/render.ts`
 - focused preview tests under `test/`
 - `docs/guides/data-preview-usage.md`
 
@@ -76,13 +87,15 @@ A bounded field-search step is useful before DuckDB because it:
 ### Phase 1: Freeze filter contract
 
 - [ ] define `--contains <column>:<keyword>` parsing rules
+- [ ] define escaping and split rules for literal `:` and `\\` characters
 - [ ] define malformed-input behavior for:
   - [ ] missing `:`
   - [ ] blank column
   - [ ] blank keyword
   - [ ] unknown column
+- [ ] define behavior for malformed escape sequences
 - [ ] define multi-filter semantics as logical `AND`
-- [ ] define whether interactive mode support is in scope now or deferred
+- [ ] document that interactive filter entry is deferred from this plan
 
 ### Phase 2: Source/controller filtering
 
@@ -90,12 +103,13 @@ A bounded field-search step is useful before DuckDB because it:
 - [ ] filter rows before offset/window slicing
 - [ ] keep filtering on the existing string-display values
 - [ ] preserve deterministic row ordering after filtering
+- [ ] make `Rows` and `Window` summary output report filtered totals consistently
 
-### Phase 3: CLI and interactive wiring
+### Phase 3: CLI wiring and validation
 
 - [ ] add repeatable `--contains` to `data preview`
 - [ ] wire validation errors through the existing `CliError` contract
-- [ ] if included in scope, add a simple interactive filter prompt
+- [ ] keep interactive preview prompts unchanged in this pass
 
 ### Phase 4: Tests
 
@@ -104,10 +118,13 @@ A bounded field-search step is useful before DuckDB because it:
   - [ ] multiple contains filters combined as `AND`
   - [ ] case-insensitive matching
   - [ ] filtering before offset/window slicing
+  - [ ] filtered `Rows` and `Window` summary semantics
+  - [ ] escaped `:` handling in filter parsing
+  - [ ] escaped `\\` handling in filter parsing
   - [ ] malformed filter input
+  - [ ] malformed escape input
   - [ ] unknown column validation
 - [ ] add CLI UX coverage for the new option help/output
-- [ ] add interactive coverage only if interactive filter entry is implemented in this pass
 
 ### Phase 5: Docs and verification
 
@@ -116,12 +133,16 @@ A bounded field-search step is useful before DuckDB because it:
   - [ ] named-column only
   - [ ] literal substring match
   - [ ] `AND` combination only
+  - [ ] escape rules for literal `:` and `\\`
+  - [ ] filtered summaries report filtered totals
+  - [ ] interactive filter entry remains deferred
 - [ ] run manual smoke checks against `examples/playground/tabular-preview/`
 
 ## Success Criteria
 
 - users can narrow preview rows with simple field-scoped keyword matching
 - filtering stays small and deterministic instead of becoming an ad hoc query language
+- preview summaries stay internally consistent with the filtered result set
 - the later DuckDB plan remains free to define a richer query surface
 
 ## Verification
