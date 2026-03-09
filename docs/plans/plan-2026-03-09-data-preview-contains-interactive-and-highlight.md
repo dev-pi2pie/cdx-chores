@@ -1,6 +1,7 @@
 ---
 title: "Data preview contains interactive flow and TTY highlighting"
 created-date: 2026-03-09
+modified-date: 2026-03-09
 status: draft
 agent: codex
 ---
@@ -40,6 +41,10 @@ These are both follow-up UX improvements on top of the completed filter contract
 - add optional interactive collection for one or more contains filters
 - map interactive answers to the same internal `contains?: string[]` action shape used by the direct CLI path
 - treat blank interactive contains input as no contains filter
+- validate each non-blank interactive contains entry before final preview execution
+- reuse the existing contains parser rules so interactive syntax matches the direct CLI contract exactly
+- reject malformed interactive contains input in-prompt and re-prompt instead of surfacing a post-submit `CliError`
+- validate unknown interactive contains columns against the selected preview source before final render and re-prompt with a local validation message
 - avoid comma-separated contains parsing in interactive mode because the current escape rules only cover `:` and `\\`
 - use a simple repeat-entry flow:
   - prompt for one optional `column:keyword` value
@@ -53,6 +58,8 @@ These are both follow-up UX improvements on top of the completed filter contract
 - keep `--no-color` and `NO_COLOR` behavior unchanged
 - highlight whole matching cells rather than substring spans in the first pass
 - apply highlighting only to cells that satisfy at least one contains filter
+- do not force hidden filter columns visible just to show highlighting
+- when an active contains filter targets a column that is hidden by `--columns` or width budgeting, add a short summary note that matching columns are hidden from the rendered table
 - keep header styling and summary styling readable after highlight is added
 - preserve table layout, truncation behavior, and visible-column budgeting
 
@@ -81,8 +88,11 @@ These are both follow-up UX improvements on top of the completed filter contract
 - [ ] define the interactive contains prompt sequence
 - [ ] define blank-input behavior as no contains filter
 - [ ] define how repeated interactive entries map to `contains?: string[]`
+- [ ] define prompt-time validation behavior for malformed contains syntax
+- [ ] define prompt-time validation behavior for unknown columns
 - [ ] define TTY-only highlight boundaries and color-control behavior
 - [ ] define whether multiple matching filters on one cell share the same highlight treatment
+- [ ] define summary behavior when matching columns are hidden from the rendered table
 
 ### Phase 2: Interactive wiring
 
@@ -90,12 +100,14 @@ These are both follow-up UX improvements on top of the completed filter contract
 - [ ] keep the existing prompt order readable and low-friction
 - [ ] pass collected contains values through `actionDataPreview`
 - [ ] preserve the current behavior when the user leaves contains blank
+- [ ] keep malformed syntax and unknown-column errors inside the prompt loop instead of failing after submission
 
 ### Phase 3: TTY-only highlighting
 
 - [ ] surface contains-match metadata needed by the renderer without changing filter semantics
 - [ ] highlight matching cells only in TTY output with color enabled
 - [ ] keep non-matching cells plain text
+- [ ] add a compact summary note when matching columns are hidden from the rendered table
 - [ ] keep truncated cells and narrow-width tables readable
 - [ ] ensure highlighted cells do not break width calculations or snapshot determinism after ANSI stripping
 
@@ -105,11 +117,14 @@ These are both follow-up UX improvements on top of the completed filter contract
   - [ ] blank contains input
   - [ ] single contains entry
   - [ ] repeated contains entries
+  - [ ] malformed syntax re-prompts locally
+  - [ ] unknown columns re-prompt locally
 - [ ] add renderer/action coverage for:
   - [ ] TTY-only matching-cell highlighting
   - [ ] no highlight in non-TTY mode
   - [ ] no highlight when color is disabled
   - [ ] multi-filter highlighting on matching cells
+  - [ ] hidden matching-column summary note
   - [ ] stable output after ANSI stripping
 
 ### Phase 5: Docs and verification
@@ -117,11 +132,15 @@ These are both follow-up UX improvements on top of the completed filter contract
 - [ ] update `docs/guides/data-preview-usage.md`
 - [ ] document that interactive preview now supports contains filters
 - [ ] document that highlighting is TTY-only and cell-level
+- [ ] document that hidden matching columns produce a summary note rather than forced column visibility
 - [ ] run manual checks for:
   - [ ] direct CLI preview with contains filters in TTY mode
   - [ ] interactive preview with one contains filter
   - [ ] interactive preview with multiple contains filters
+  - [ ] interactive malformed contains re-prompt behavior
+  - [ ] interactive unknown-column re-prompt behavior
   - [ ] `--no-color` behavior
+  - [ ] contains filters whose matching columns are hidden by column selection or width limits
   - [ ] non-TTY redirected output
 
 ## Success Criteria
@@ -129,6 +148,7 @@ These are both follow-up UX improvements on top of the completed filter contract
 - interactive users can apply the existing contains-filter contract without leaving the interactive flow
 - blank interactive contains input remains equivalent to no filter
 - TTY output makes matched cells easier to scan without changing non-TTY output behavior
+- hidden matching columns are explained in the summary instead of silently losing visible highlight cues
 - the completed contains-filter plan remains the authoritative record for the base filter contract
 
 ## Verification
