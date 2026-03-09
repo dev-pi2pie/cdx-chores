@@ -272,7 +272,7 @@ This keeps the future open for:
 
 without making them blockers for v1.
 
-### Recommendation D. Treat DuckDB-backed preview and SQL as a later product decision, with Parquet as the clearest first trigger
+### Recommendation D. Treat DuckDB-backed preview and query as a later product decision, with separate actions
 
 The right time to activate `@duckdb/node-api` in the command flow is when at least one of these becomes important enough to justify the extra dependency and complexity:
 
@@ -284,12 +284,13 @@ The right time to activate `@duckdb/node-api` in the command flow is when at lea
 
 Recommended first DuckDB-backed milestone:
 
-- Parquet preview support
+- command: `data parquet preview <file.parquet>`
+- scope: read-only bounded Parquet inspection without changing the lightweight `data preview` contract
 
 Recommended later DuckDB-backed milestones:
 
-- broader file-format support
-- SQL mode
+- command: `data query <input>`
+- scope: explicit DuckDB-backed query workflows such as SQL, richer filtering, ordering, and broader file-format support
 - richer filtering, ordering, and summaries
 
 If none of those are required yet, DuckDB should remain installed-but-unused or be removed before release packaging is finalized.
@@ -334,8 +335,8 @@ cdx-chores data preview ./rows.json --contains status:active --contains owner:te
 Possible phase-2 DuckDB-backed options:
 
 ```bash
-cdx-chores data preview ./events.parquet --limit 100
-cdx-chores data preview ./table.csv --sql "select name, count(*) from file group by 1"
+cdx-chores data parquet preview ./events.parquet --rows 100
+cdx-chores data query ./table.csv --sql "select name, count(*) from file group by 1"
 ```
 
 ## Preferred Direction
@@ -345,7 +346,7 @@ Current preferred direction:
 - keep the current JSON/CSV preview baseline as the foundation
 - add lightweight field search next through `--contains <column>:<keyword>`
 - keep that filtering step in the in-memory preview path rather than treating it as SQL-lite
-- activate DuckDB later for Parquet first, then broader query capability
+- activate DuckDB later through separate `data parquet preview` and `data query` actions
 - keep DuckDB out of lightweight preview filtering even though the package is already present
 - if the DuckDB milestone does not materialize, consider removing the dormant dependency before a stable release
 
