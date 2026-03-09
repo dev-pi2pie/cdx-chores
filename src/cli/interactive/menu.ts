@@ -2,6 +2,8 @@ import { select } from "@inquirer/prompts";
 
 export type InteractiveActionKey =
   | "doctor"
+  | "data:preview"
+  | "data:parquet-preview"
   | "data:json-to-csv"
   | "data:csv-to-json"
   | "md:to-docx"
@@ -36,7 +38,7 @@ type InteractiveSubmenuConfig = {
 
 const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
   { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
-  { name: "data", value: "data", description: "JSON/CSV conversions" },
+  { name: "data", value: "data", description: "Preview and convert tabular data" },
   { name: "md", value: "md", description: "Markdown utilities" },
   { name: "rename", value: "rename", description: "File/batch rename workflows" },
   { name: "video", value: "video", description: "Video conversion tools" },
@@ -47,6 +49,8 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   data: {
     message: "Choose a data command",
     choices: [
+      { name: "preview", value: "data:preview" },
+      { name: "parquet preview", value: "data:parquet-preview" },
       { name: "json-to-csv", value: "data:json-to-csv" },
       { name: "csv-to-json", value: "data:csv-to-json" },
     ],

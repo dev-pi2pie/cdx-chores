@@ -1,5 +1,4 @@
-import pc from "picocolors";
-
+import { getCliColors } from "../colors";
 import { inspectCommand } from "../deps";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
@@ -9,6 +8,7 @@ export interface DoctorOptions {
 }
 
 export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions = {}): Promise<void> {
+  const pc = getCliColors(runtime);
   const [pandoc, ffmpeg] = await Promise.all([
     inspectCommand("pandoc", runtime.platform),
     inspectCommand("ffmpeg", runtime.platform),
@@ -60,4 +60,3 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     );
   }
 }
-

@@ -31,6 +31,8 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
   }
 
   switch (action) {
+    case "data:preview":
+    case "data:parquet-preview":
     case "data:json-to-csv":
     case "data:csv-to-json":
       await handleDataInteractiveAction(runtime, pathPromptContext, action);

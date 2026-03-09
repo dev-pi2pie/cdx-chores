@@ -17,11 +17,13 @@ export function toRepoRelativePath(absolutePath: string): string {
 export function runCli(
   args: string[],
   cwd = REPO_ROOT,
+  env?: NodeJS.ProcessEnv,
 ): { exitCode: number; stdout: string; stderr: string } {
   const renamePlanCsvSnapshot = captureRenamePlanCsvSnapshotSync();
   const proc = Bun.spawnSync({
     cmd: [process.execPath, "src/bin.ts", ...args],
     cwd,
+    env: env ? { ...process.env, ...env } : undefined,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -59,6 +61,7 @@ export class CaptureStream {
 
 export function createCapturedRuntime(
   options: {
+    colorEnabled?: boolean;
     cwd?: string;
     now?: () => Date;
     displayPathStyle?: CliRuntime["displayPathStyle"];
@@ -69,6 +72,7 @@ export function createCapturedRuntime(
   return {
     runtime: {
       cwd: options.cwd ?? REPO_ROOT,
+      colorEnabled: options.colorEnabled ?? true,
       now: options.now ?? (() => new Date("2026-02-25T00:00:00.000Z")),
       platform: process.platform,
       stdout: stdout as unknown as NodeJS.WritableStream,

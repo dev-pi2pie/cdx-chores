@@ -1,6 +1,8 @@
 import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
+  actionDataParquetPreview,
+  actionDataPreview,
   actionDeferred,
   actionDoctor,
   actionJsonToCsv,
@@ -16,6 +18,7 @@ import {
 } from "./cli/actions";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
+import { resolveCliColorEnabled } from "./cli/colors";
 import {
   DEFAULT_RENAME_SERIAL_ORDER,
   DEFAULT_RENAME_SERIAL_START,
@@ -36,12 +39,14 @@ import type { CliRuntime, RunCliOptions } from "./cli/types";
 
 interface NormalizedCliArgv {
   argv: string[];
+  colorEnabled: boolean;
   displayPathStyle: CliRuntime["displayPathStyle"];
 }
 
 function createRuntime(options: RunCliOptions): CliRuntime {
   return {
     cwd: options.cwd ?? process.cwd(),
+    colorEnabled: options.colorEnabled ?? true,
     now: options.now ?? (() => new Date()),
     platform: options.platform ?? process.platform,
     stdout: options.stdout ?? process.stdout,
@@ -63,6 +68,10 @@ function collectCsvListOption(value: string, previous: string[] = []): string[] 
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
   return [...previous, ...next];
+}
+
+function collectRepeatedOption(value: string, previous: string[] = []): string[] {
+  return [...previous, value];
 }
 
 function parseNonNegativeIntegerOption(value: string, label: string): number {
@@ -175,10 +184,16 @@ function applyRenameTemplateOptions(command: Command): void {
 function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
   const normalized = argv.slice(0, 2);
   let displayPathStyle: CliRuntime["displayPathStyle"] = "relative";
+  let noColorFlag = false;
 
   for (const arg of argv.slice(2)) {
     if (arg === "--absolute" || arg === "--abs") {
       displayPathStyle = "absolute";
+      continue;
+    }
+
+    if (arg === "--no-color") {
+      noColorFlag = true;
       continue;
     }
 
@@ -190,7 +205,11 @@ function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
     normalized.push(arg);
   }
 
-  return { argv: normalized, displayPathStyle };
+  return {
+    argv: normalized,
+    colorEnabled: resolveCliColorEnabled({ noColorFlag }),
+    displayPathStyle,
+  };
 }
 
 export async function runCli(
@@ -199,6 +218,7 @@ export async function runCli(
 ): Promise<void> {
   const normalized = normalizeCliArgv(argv);
   const cliRuntime = createRuntime(runtime);
+  cliRuntime.colorEnabled = normalized.colorEnabled && (runtime.colorEnabled ?? true);
   cliRuntime.displayPathStyle = runtime.displayPathStyle ?? normalized.displayPathStyle;
   const args = normalized.argv.slice(2);
 
@@ -227,7 +247,8 @@ export async function runCli(
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
-    .version(getFormattedVersionLabel(), "-v, --version", "Show version information");
+    .option("--no-color", "Disable ANSI colors", false)
+    .version(getFormattedVersionLabel(cliRuntime.colorEnabled), "-v, --version", "Show version information");
 
   program
     .command("interactive")
@@ -244,7 +265,7 @@ export async function runCli(
       await actionDoctor(cliRuntime, { json: options.json });
     });
 
-  const dataCommand = program.command("data").description("Data conversion utilities");
+  const dataCommand = program.command("data").description("Data preview and conversion utilities");
 
   applyCommonFileOptions(
     dataCommand
@@ -271,6 +292,70 @@ export async function runCli(
         pretty?: boolean;
       }) => {
         await actionCsvToJson(cliRuntime, options);
+      },
+    );
+
+  dataCommand
+    .command("preview")
+    .description("Preview CSV or JSON data as a bounded terminal table")
+    .argument("<input>", "Input CSV or JSON file")
+    .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
+    .option("--offset <value>", "Row offset to start from", (value: string) =>
+      parseNonNegativeIntegerOption(value, "--offset"),
+    )
+    .option("--columns <names>", "Columns to show (comma-separated)", collectCsvListOption, [])
+    .option(
+      "--contains <column:keyword>",
+      "Filter rows by case-insensitive substring match on a named column (repeatable; escape ':' as \\: and '\\' as \\\\)",
+      collectRepeatedOption,
+      [],
+    )
+    .action(
+      async (
+        input: string,
+        options: {
+          columns?: string[];
+          contains?: string[];
+          offset?: number;
+          rows?: number;
+        },
+      ) => {
+        await actionDataPreview(cliRuntime, {
+          columns: options.columns,
+          contains: options.contains,
+          input,
+          offset: options.offset,
+          rows: options.rows,
+        });
+      },
+    );
+
+  const parquetCommand = dataCommand.command("parquet").description("DuckDB-backed Parquet preview utilities");
+
+  parquetCommand
+    .command("preview")
+    .description("Preview Parquet data as a bounded terminal table")
+    .argument("<input>", "Input Parquet file")
+    .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
+    .option("--offset <value>", "Row offset to start from", (value: string) =>
+      parseNonNegativeIntegerOption(value, "--offset"),
+    )
+    .option("--columns <names>", "Columns to show (comma-separated)", collectCsvListOption, [])
+    .action(
+      async (
+        input: string,
+        options: {
+          columns?: string[];
+          offset?: number;
+          rows?: number;
+        },
+      ) => {
+        await actionDataParquetPreview(cliRuntime, {
+          columns: options.columns,
+          input,
+          offset: options.offset,
+          rows: options.rows,
+        });
       },
     );
 

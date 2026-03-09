@@ -1,6 +1,10 @@
 export { actionDeferred } from "./deferred";
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
+export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
+export type { DataPreviewOptions } from "./data-preview";
+export { actionDataParquetPreview } from "./data-parquet-preview";
+export type { DataParquetPreviewOptions } from "./data-parquet-preview";
 export { actionCsvToJson, actionJsonToCsv } from "./data";
 export type { CsvToJsonOptions, JsonToCsvOptions } from "./data";
 export { actionMdFrontmatterToJson, actionMdToDocx } from "./markdown";

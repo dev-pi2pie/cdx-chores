@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.0.7-canary.7",
+  "version": "0.0.7-canary.8",
   "license": "MIT",
   "bin": {
     "cdx-chores": "dist/esm/bin.mjs"
@@ -31,8 +31,9 @@
     "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.3",
     "@inquirer/prompts": "^8.3.0",
-    "@openai/codex-sdk": "^0.110.0",
+    "@openai/codex-sdk": "^0.112.0",
     "commander": "^14.0.3",
     "mammoth": "^1.11.0",
     "papaparse": "^5.5.3",
@@ -41,11 +42,11 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "oxfmt": "^0.36.0",
     "oxlint": "^1.51.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.20.3",
+    "tsdown": "^0.21.0",
     "typescript": "^5.9.3"
   }
 }

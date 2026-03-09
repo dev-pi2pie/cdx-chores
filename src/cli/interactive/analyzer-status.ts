@@ -1,5 +1,4 @@
-import pc from "picocolors";
-
+import { createColors } from "picocolors";
 import { printLine } from "../actions/shared";
 
 const ANALYZER_WAITING_FRAMES = [".  ", ".. ", "...", ".. ", ".  "] as const;
@@ -36,7 +35,9 @@ function normalizeAnalyzerStatusMessage(message: string): string {
 function renderStatusLine(
   stream: NodeJS.WritableStream,
   message: string,
+  colorEnabled: boolean,
 ): void {
+  const pc = createColors(colorEnabled);
   const normalizedMessage = normalizeAnalyzerStatusMessage(message);
   const content = ` ${pc.dim("Codex")} ${pc.white("Thinking...")} ${pc.dim(normalizedMessage)} `;
   stream.write(`\r\x1b[2K${pc.bgBlack(content)}`);
@@ -46,7 +47,9 @@ function renderWaitingStatusLine(
   stream: NodeJS.WritableStream,
   message: string,
   tick: number,
+  colorEnabled: boolean,
 ): void {
+  const pc = createColors(colorEnabled);
   const normalizedMessage = normalizeAnalyzerStatusMessage(message);
   const dots =
     ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
@@ -56,6 +59,7 @@ function renderWaitingStatusLine(
 
 export function createInteractiveAnalyzerStatus(
   stream: NodeJS.WritableStream,
+  colorEnabled = true,
 ): InteractiveAnalyzerStatus {
   const ttyStream = stream as TtyWritableStream;
 
@@ -87,26 +91,26 @@ export function createInteractiveAnalyzerStatus(
   };
 
   return {
-    start(message) {
-      stopTimer();
-      currentMessage = message;
-      renderStatusLine(stream, currentMessage);
-    },
-    update(message) {
-      stopTimer();
-      currentMessage = message;
-      renderStatusLine(stream, currentMessage);
-    },
-    wait(message) {
-      stopTimer();
-      currentMessage = message;
-      tick = 0;
-      renderWaitingStatusLine(stream, currentMessage, tick);
-      timer = setInterval(() => {
-        tick += 1;
-        renderWaitingStatusLine(stream, currentMessage, tick);
-      }, ANALYZER_WAITING_INTERVAL_MS);
-    },
+      start(message) {
+        stopTimer();
+        currentMessage = message;
+        renderStatusLine(stream, currentMessage, colorEnabled);
+      },
+      update(message) {
+        stopTimer();
+        currentMessage = message;
+        renderStatusLine(stream, currentMessage, colorEnabled);
+      },
+      wait(message) {
+        stopTimer();
+        currentMessage = message;
+        tick = 0;
+        renderWaitingStatusLine(stream, currentMessage, tick, colorEnabled);
+        timer = setInterval(() => {
+          tick += 1;
+          renderWaitingStatusLine(stream, currentMessage, tick, colorEnabled);
+        }, ANALYZER_WAITING_INTERVAL_MS);
+      },
     stop() {
       stopTimer();
       clearStatusLine(stream);

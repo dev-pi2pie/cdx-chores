@@ -21,7 +21,12 @@ export interface InteractiveHarnessScenario {
 }
 
 export interface InteractiveHarnessResult {
-  promptCalls: Array<{ kind: "select" | "checkbox" | "confirm" | "input"; message: string }>;
+  promptCalls: Array<{
+    kind: "select" | "checkbox" | "confirm" | "input";
+    message: string;
+  }>;
+  selectChoicesByMessage: Record<string, Array<{ name: string; value: string; description?: string }>>;
+  validationCalls: Array<{ kind: "input"; message: string; value: string; error: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
     message?: string;
@@ -53,6 +58,8 @@ export function runInteractiveHarness(
 
     const scenario = ${JSON.stringify(scenario)};
     const promptCalls = [];
+    const selectChoicesByMessage = {};
+    const validationCalls = [];
     const pathCalls = [];
     const actionCalls = [];
     const mockedPathPromptRuntimeConfig = {
@@ -82,7 +89,16 @@ export function runInteractiveHarness(
 
     mock.module("@inquirer/prompts", () => ({
       select: async (options) => {
-        promptCalls.push({ kind: "select", message: options.message });
+        const choices = (options.choices ?? []).map((choice) => ({
+          name: String(choice.name ?? ""),
+          value: String(choice.value ?? ""),
+          description: choice.description ? String(choice.description) : undefined,
+        }));
+        promptCalls.push({
+          kind: "select",
+          message: options.message,
+        });
+        selectChoicesByMessage[String(options.message ?? "")] = choices;
         return shiftQueueValue(scenario.selectQueue ?? [], \`select:\${options.message}\`);
       },
       checkbox: async (options) => {
@@ -104,6 +120,12 @@ export function runInteractiveHarness(
           if (validation === true) {
             return nextValue;
           }
+          validationCalls.push({
+            kind: "input",
+            message: options.message,
+            value: String(nextValue ?? ""),
+            error: String(validation),
+          });
         }
       },
     }));
@@ -124,6 +146,21 @@ export function runInteractiveHarness(
       actionDoctor: async (_runtime, options) => {
         actionCalls.push({ name: "doctor", options });
       },
+      actionDataPreview: async (_runtime, options) => {
+        actionCalls.push({ name: "data:preview", options });
+      },
+      actionDataParquetPreview: async (_runtime, options) => {
+        actionCalls.push({ name: "data:parquet-preview", options });
+      },
+      loadDataPreviewSource: async (_runtime, input) => ({
+        inputPath: String(input ?? ""),
+        source: {
+          columns: ["id", "name", "status", "region", "meta:key", "path"],
+          format: String(input ?? "").endsWith(".json") ? "json" : "csv",
+          totalRows: 3,
+          getWindow: () => [],
+        },
+      }),
       actionJsonToCsv: async (_runtime, options) => {
         actionCalls.push({ name: "data:json-to-csv", options });
       },
@@ -325,6 +362,7 @@ export function runInteractiveHarness(
     const stderr = new CaptureStream();
     const runtime = {
       cwd: process.cwd(),
+      colorEnabled: true,
       now: () => new Date("2026-02-25T00:00:00.000Z"),
       platform: process.platform,
       stdout,
@@ -351,11 +389,23 @@ export function runInteractiveHarness(
         );
       }
 
-      console.log(JSON.stringify({ promptCalls, pathCalls, actionCalls, stdout: stdout.text, stderr: stderr.text }));
+      console.log(
+        JSON.stringify({
+          promptCalls,
+          selectChoicesByMessage,
+          validationCalls,
+          pathCalls,
+          actionCalls,
+          stdout: stdout.text,
+          stderr: stderr.text,
+        }),
+      );
     } catch (error) {
       console.log(
         JSON.stringify({
           promptCalls,
+          selectChoicesByMessage,
+          validationCalls,
           pathCalls,
           actionCalls,
           stdout: stdout.text,
