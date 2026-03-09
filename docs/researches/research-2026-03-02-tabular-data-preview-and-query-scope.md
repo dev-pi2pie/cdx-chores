@@ -8,7 +8,11 @@ agent: codex
 
 ## Goal
 
-Define the next research baseline for tabular-data inspection in `cdx-chores`, including a likely `data preview` command, SQL-backed workflows, and future Parquet support, and decide whether `@duckdb/node-api` should be part of the first implementation scope.
+Define the next research baseline for tabular-data inspection in `cdx-chores`, including:
+
+- the now-landed `data preview` baseline
+- lightweight pre-DuckDB row filtering for preview workflows
+- DuckDB-backed query and Parquet follow-up scope
 
 ## Milestone Goal
 
@@ -18,6 +22,7 @@ Choose a practical first scope for tabular preview and query support that:
 - reuses as much of the existing `data` command surface as possible
 - leaves room for larger-file and SQL-backed workflows later
 - does not collapse rename-preview work and generic data inspection into one feature track
+- keeps lightweight preview filtering distinct from later DuckDB-backed querying
 
 ## Key Findings
 
@@ -112,7 +117,34 @@ Implication:
 - adopting DuckDB is not just "make preview faster"
 - it changes the command family from file preview to tabular query/inspection tooling
 
-### 5. DuckDB is now present in dependencies, but enabling it still changes product scope
+### 5. A lightweight preview-filter step exists before DuckDB
+
+Now that `data preview` itself exists, there is a meaningful middle step between:
+
+- passive preview only
+- full DuckDB-backed query support
+
+That middle step is lightweight row filtering on the existing in-memory JSON/CSV path.
+
+A practical first version is:
+
+- `--contains <column>:<keyword>`
+
+Recommended semantics for that first pass:
+
+- works only on previewed JSON/CSV data
+- matches against one named column
+- uses case-insensitive substring matching on the display-safe string value for that cell
+- may be repeated, with multiple `--contains` filters combined as logical `AND`
+- rejects unknown columns as input validation errors
+- does not introduce SQL syntax, regex syntax, or aggregation semantics
+
+Implication:
+
+- useful field search does not need to wait for DuckDB
+- it should be framed as bounded preview filtering, not as a partial query language
+
+### 6. DuckDB is now present in dependencies, but enabling it still changes product scope
 
 This project currently has a lightweight internal TypeScript implementation for `data` conversions and targets Node.js runtime compatibility, with Bun used for development.
 
@@ -140,7 +172,7 @@ Implication:
 - the first question is not only "would DuckDB be useful?"
 - the first question is "do we want `data preview` to become a database-backed feature track right now?"
 
-### 6. A clean adapter boundary would let the project defer that decision
+### 7. A clean adapter boundary would let the project defer that decision
 
 The safest design is to keep the preview command split into:
 
@@ -157,10 +189,11 @@ Suggested internal boundary:
 With that structure:
 
 - v1 can use an internal JSON/CSV row source
+- lightweight `--contains` filtering can stay in the preview controller / in-memory source path
 - v2 can add a DuckDB-backed row source
 - SQL support can remain opt-in instead of leaking into the baseline command
 
-### 7. SQL should be treated as a follow-up mode, not a hidden side effect of preview
+### 8. SQL should be treated as a follow-up mode, not a hidden side effect of preview
 
 If DuckDB is added, users will reasonably expect more than a passive viewer.
 They will expect things like:
@@ -199,7 +232,27 @@ Why:
 - reduces packaging and CI complexity
 - lets the team validate the terminal UX before committing to a query engine
 
-### Recommendation B. Design the command so DuckDB can be added later as an optional backend
+### Recommendation B. Add lightweight preview filtering before DuckDB
+
+Recommended next-step scope after baseline preview:
+
+- add repeatable `--contains <column>:<keyword>`
+
+Recommended behavior:
+
+- filter rows before rendering
+- keep the existing preview summary and windowing model
+- treat multiple filters as logical `AND`
+- keep matching case-insensitive and substring-based for the first pass
+- keep filtering limited to named columns only in the initial version
+
+Why:
+
+- solves a real inspection need without activating DuckDB
+- keeps implementation small and consistent with the current in-memory preview architecture
+- gives users a practical "search inside this field" workflow without introducing SQL expectations
+
+### Recommendation C. Design the command so DuckDB can be added later as an optional backend
 
 Recommended architecture rule:
 
@@ -219,18 +272,29 @@ This keeps the future open for:
 
 without making them blockers for v1.
 
-### Recommendation C. Treat DuckDB-backed preview and SQL as a phase-2 product decision
+### Recommendation D. Treat DuckDB-backed preview and SQL as a later product decision, with Parquet as the clearest first trigger
 
 The right time to activate `@duckdb/node-api` in the command flow is when at least one of these becomes important enough to justify the extra dependency and complexity:
 
+- supporting Parquet preview as a first-class input
 - previewing files too large for the in-memory TypeScript path
 - supporting Parquet or more file formats
 - exposing SQL as a first-class workflow
 - wanting filter/projection pushdown and richer type inference
 
+Recommended first DuckDB-backed milestone:
+
+- Parquet preview support
+
+Recommended later DuckDB-backed milestones:
+
+- broader file-format support
+- SQL mode
+- richer filtering, ordering, and summaries
+
 If none of those are required yet, DuckDB should remain installed-but-unused or be removed before release packaging is finalized.
 
-### Recommendation D. Keep `data preview` separate from rename-preview implementation scope
+### Recommendation E. Keep `data preview` separate from rename-preview implementation scope
 
 The previous rename-preview research is still correct:
 
@@ -260,30 +324,36 @@ cdx-chores data preview ./rows.json --columns name,created_at,status
 cdx-chores data preview ./rows.json --format json
 ```
 
+Possible pre-DuckDB filtering options:
+
+```bash
+cdx-chores data preview ./table.csv --contains name:ada
+cdx-chores data preview ./rows.json --contains status:active --contains owner:team-a
+```
+
 Possible phase-2 DuckDB-backed options:
 
 ```bash
-cdx-chores data preview ./table.csv --sql "select name, count(*) from file group by 1"
 cdx-chores data preview ./events.parquet --limit 100
+cdx-chores data preview ./table.csv --sql "select name, count(*) from file group by 1"
 ```
 
 ## Preferred Direction
 
 Current preferred direction:
 
-- add `data preview` as a new `data` subcommand
-- make JSON and CSV the required first formats
-- build the renderer and row-source boundary first
-- keep v1 non-interactive and flag-driven instead of adding keyboard scrolling immediately
-- keep DuckDB out of the first implementation path even though the package is already present
-- revisit `@duckdb/node-api` only when SQL or broader file-format support becomes a concrete milestone
-- if that milestone does not materialize, consider removing the dormant dependency before a stable release
+- keep the current JSON/CSV preview baseline as the foundation
+- add lightweight field search next through `--contains <column>:<keyword>`
+- keep that filtering step in the in-memory preview path rather than treating it as SQL-lite
+- activate DuckDB later for Parquet first, then broader query capability
+- keep DuckDB out of lightweight preview filtering even though the package is already present
+- if the DuckDB milestone does not materialize, consider removing the dormant dependency before a stable release
 
 ## Open Questions
 
-1. Should v1 expose machine-readable output as `--format json`, or keep JSON summaries for a follow-up after the table contract is stable?
-2. Should horizontal overflow in v1 be handled by truncation-only, or by a follow-up column paging mode?
-3. Should JSON Lines / NDJSON be included in v1, or deferred until the command contract is stable?
+1. Should `--contains` remain column-scoped only in its first implementation, or also allow a later global any-column variant such as `--contains ada`?
+2. Should multiple `--contains` flags remain logical `AND` only, or should `OR`-style behavior ever be added later?
+3. Should machine-readable output be added before row filtering grows, or can that stay deferred until the preview contract is otherwise stable?
 4. If DuckDB-backed execution is later enabled, should the package stay as a standard dependency or move behind an optional install/runtime gate?
 
 ## Related Research
@@ -295,6 +365,7 @@ Current preferred direction:
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
 
 ## References
 
