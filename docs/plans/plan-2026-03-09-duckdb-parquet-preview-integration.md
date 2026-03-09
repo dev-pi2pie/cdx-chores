@@ -51,6 +51,7 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
 
 - becomes the first DuckDB-backed action
 - is read-only and bounded like the current preview renderer
+- uses a parallel DuckDB preview source contract rather than widening the lightweight in-memory preview source
 - first-pass flags should mirror the non-query preview window where practical:
   - `--rows`
   - `--offset`
@@ -63,7 +64,8 @@ DuckDB is already present in dependencies, but enabling it should be reflected i
 - should treat `<input>` as one logical table for SQL-oriented operations
 - is where SQL and broader DuckDB-oriented semantics should land
 - should remain separate from both lightweight preview and Parquet-only preview
-- may be reserved in this plan before its full execution contract is implemented
+- is frozen as a doc-only future direction in this plan
+- should get its own research and implementation plan before any CLI or interactive surface is added
 
 ## Interactive Mode Design
 
@@ -137,8 +139,9 @@ Design constraints:
 
 - add a DuckDB-backed Parquet preview path behind `data parquet preview`
 - avoid coupling Parquet loading to the current text-only `data preview` loader
+- introduce a parallel DuckDB preview source contract instead of extending the current lightweight preview source as the first move
 - keep `.csv` and `.json` on the current in-memory preview path
-- shape DuckDB helpers so they can later support `data query`
+- keep any later `data query` work out of this milestone beyond naming and related-doc traceability
 
 ### User-facing scope
 
@@ -148,7 +151,7 @@ Design constraints:
   - `--offset`
   - `--columns`
 - keep `data preview` documented and implemented as CSV/JSON-only
-- define `data query <input>` as the separate DuckDB query lane instead of adding SQL to preview commands
+- define `data query <input>` as the separate future DuckDB query lane instead of adding SQL to preview commands
 - add a separate interactive `data -> parquet preview` route instead of expanding the current preview prompts
 - define a repeatable local fixture-generation path for Parquet smoke files
 
@@ -162,6 +165,7 @@ Design constraints:
 
 - `.parquet` support through `data preview`
 - SQL mode inside `data parquet preview`
+- any `data query` CLI stub, help entry, or interactive route in this plan
 - full `data query` execution semantics in this plan
 - CSV/JSON migration to DuckDB in the first pass
 - `--contains` support for `data parquet preview` in the first pass
@@ -173,10 +177,12 @@ Design constraints:
 
 - `src/command.ts`
 - `src/cli/actions/data-preview.ts`
-- new DuckDB preview/query helpers under `src/cli/`
+- new DuckDB parquet-preview helpers under `src/cli/`
 - new `data parquet preview` action wiring under `src/cli/actions/`
 - `src/cli/actions/doctor.ts`
 - `src/cli/interactive/data.ts`
+- `src/cli/interactive/menu.ts`
+- `src/cli/interactive/index.ts`
 - `scripts/generate-tabular-preview-fixtures.mjs` or a paired Parquet fixture generator under `scripts/`
 - focused preview/doctor tests under `test/`
 - `docs/guides/data-preview-usage.md`
@@ -188,11 +194,14 @@ Design constraints:
 
 - [ ] define `data preview` as CSV/JSON-only and explicitly keep `.parquet` out of that action
 - [ ] define first-pass Parquet support as `data parquet preview <file.parquet>`
+- [ ] choose the internal Parquet integration boundary:
+  - [ ] introduce a parallel DuckDB preview source contract
+  - [ ] do not widen the current lightweight `DataPreviewSource` as the first move
 - [ ] confirm which bounded preview flags must work for Parquet:
   - [ ] `--rows`
   - [ ] `--offset`
   - [ ] `--columns`
-- [ ] define whether `data query <input>` is a documented future contract only or a deferred CLI stub in this phase
+- [ ] freeze `data query <input>` as doc-only in this plan
 - [ ] freeze first-pass interactive scope:
   - [ ] keep `data -> preview` mapped to CSV/JSON only
   - [ ] add `data -> parquet preview` as a separate route
@@ -207,10 +216,10 @@ Design constraints:
 ### Phase 2: DuckDB adapter and preview integration
 
 - [ ] add DuckDB-backed Parquet loading that works from file paths instead of the text-only preview loader
-- [ ] map Parquet results into the existing preview row contract
+- [ ] map Parquet results into a renderer-facing tabular model without widening the lightweight source contract
 - [ ] preserve deterministic column ordering and row slicing behavior
 - [ ] keep JSON/CSV preview sources unchanged in this phase
-- [ ] keep the DuckDB helper boundary reusable for later `data query` work
+- [ ] keep the DuckDB helper boundary isolated enough that a later `data query` track can build on it without changing lightweight preview types
 
 ### Phase 3: CLI/runtime wiring
 
@@ -219,8 +228,7 @@ Design constraints:
 - [ ] add a separate interactive `data -> parquet preview` route
 - [ ] keep interactive `data -> preview` scoped to CSV/JSON inputs
 - [ ] update interactive prompt copy so lightweight preview and Parquet preview are not conflated
-- [ ] keep `data query` out of interactive mode unless its SQL input UX is explicitly added in a later plan
-- [ ] decide whether to add a deferred/stub `data query` command in this phase
+- [ ] keep `data query` out of CLI help and interactive mode in this phase
 - [ ] add or extend a deterministic fixture-generation script for Parquet smoke data
 - [ ] surface clear runtime errors for unsupported or failed DuckDB activation
 - [ ] optionally extend doctor output if the capability decision is in scope
@@ -239,7 +247,7 @@ Design constraints:
 - [ ] add interactive coverage for the first-pass DuckDB menu contract:
   - [ ] `data -> parquet preview` prompt flow
   - [ ] `data -> preview` still excludes Parquet framing
-  - [ ] `data query` is absent or deferred, depending on the chosen CLI contract
+  - [ ] `data query` is absent in this milestone
 - [ ] add smoke-fixture coverage or verification for the Parquet generator path:
   - [ ] generated files land under `examples/playground/`
   - [ ] repeated generation stays deterministic
@@ -252,7 +260,7 @@ Design constraints:
 - [ ] document the first DuckDB milestone boundary:
   - [ ] Parquet preview is separate from lightweight preview
   - [ ] no SQL inside `data parquet preview`
-  - [ ] `data query` is the later query lane
+  - [ ] `data query` is a later query lane with its own research/plan track
   - [ ] JSON/CSV remain on the existing in-memory path
 - [ ] document the interactive split between `data -> preview` and `data -> parquet preview`
 - [ ] document the Parquet fixture generator usage for manual smoke checks
@@ -274,6 +282,7 @@ Design constraints:
 ## Related Research
 
 - `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 
