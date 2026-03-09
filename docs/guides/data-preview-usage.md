@@ -13,7 +13,9 @@ Current v1 boundary:
 Follow-up improvements now available:
 
 - `data preview` is available in interactive mode
+- interactive preview can now collect `contains` filters
 - summary labels and table headers use restrained color in TTY output
+- active contains filters now highlight matching cells in TTY output
 - global color disabling is supported through:
   - `--no-color`
   - `NO_COLOR`
@@ -52,17 +54,15 @@ The interactive preview flow prompts for:
 - optional row count
 - optional offset
 - optional comma-separated columns
+- optional first contains filter in `column:keyword` form
+- optional repeated contains filters through an add-another prompt
 
 Blank optional answers map to the CLI defaults:
 
 - blank rows => default row window
 - blank offset => `0`
 - blank columns => no filter
-
-Interactive note:
-
-- `--contains` is currently CLI-only
-- interactive preview does not yet prompt for row filters
+- blank first contains filter => no contains filter
 
 ### Contains filtering
 
@@ -101,6 +101,8 @@ The v1 renderer is intentionally conservative:
 - shows a bounded visible subset of columns when the full set cannot fit cleanly
 - keeps redirected non-TTY output deterministic and line-oriented
 - applies restrained color only to summary labels and table headers in TTY mode
+- when contains filters are active, highlights matching cells only in TTY output with color enabled
+- when a matching filter column is hidden by `--columns` or width limits, adds a summary note instead of forcing that column visible
 
 ### JSON normalization rules
 

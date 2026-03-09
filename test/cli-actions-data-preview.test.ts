@@ -257,6 +257,72 @@ describe("cli action modules: data preview", () => {
     }
   });
 
+  test("actionDataPreview highlights matching cells in TTY mode when contains filters are visible", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      enableTty(runtime, 80);
+      const inputPath = join(fixtureDir, "highlight.csv");
+      await writeFile(inputPath, "name,status,region\nAda,active,tw\nBob,paused,tw\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        contains: ["status:active"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toMatch(ANSI_PATTERN);
+      expect(stdout.text).toMatch(/\u001B\[[0-9;]*mactive\s*\u001B\[[0-9;]*m/);
+      expect(stripAnsi(stdout.text)).toContain("Ada  | active | tw");
+      expect(stripAnsi(stdout.text)).not.toContain("Contains highlight:");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview does not add match highlighting in non-TTY mode", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "highlight.csv");
+      await writeFile(inputPath, "name,status\nAda,active\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        contains: ["status:active"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).not.toMatch(ANSI_PATTERN);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview notes hidden matching columns instead of forcing them visible", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      enableTty(runtime, 80);
+      const inputPath = join(fixtureDir, "hidden-highlight.csv");
+      await writeFile(inputPath, "id,name,status,region\n1,Ada,active,tw\n2,Bob,active,jp\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        columns: ["id", "name"],
+        contains: ["status:active"],
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      const plain = stripAnsi(stdout.text);
+      expect(plain).toContain("Visible columns: id, name");
+      expect(plain).toContain("Contains highlight: hidden matching columns: status");
+      expect(plain).not.toContain("status |");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("actionDataPreview bounds visible columns in narrow TTY mode", async () => {
     const fixtureDir = await createTempFixtureDir("data-preview");
     try {
@@ -309,6 +375,26 @@ describe("cli action modules: data preview", () => {
       await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
 
       await actionDataPreview(runtime, {
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).not.toMatch(ANSI_PATTERN);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionDataPreview omits match highlighting in TTY mode when color is disabled", async () => {
+    const fixtureDir = await createTempFixtureDir("data-preview");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+      enableTty(runtime, 80);
+      const inputPath = join(fixtureDir, "rows.csv");
+      await writeFile(inputPath, "name,status\nAda,active\n", "utf8");
+
+      await actionDataPreview(runtime, {
+        contains: ["status:active"],
         input: toRepoRelativePath(inputPath),
       });
 

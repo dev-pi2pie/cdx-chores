@@ -1,7 +1,7 @@
 export { actionDeferred } from "./deferred";
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
-export { actionDataPreview } from "./data-preview";
+export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
 export type { DataPreviewOptions } from "./data-preview";
 export { actionCsvToJson, actionJsonToCsv } from "./data";
 export type { CsvToJsonOptions, JsonToCsvOptions } from "./data";

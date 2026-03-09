@@ -2,7 +2,7 @@
 title: "Data preview contains interactive flow and TTY highlighting"
 created-date: 2026-03-09
 modified-date: 2026-03-09
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -85,63 +85,63 @@ These are both follow-up UX improvements on top of the completed filter contract
 
 ### Phase 1: Freeze interactive and highlight contract
 
-- [ ] define the interactive contains prompt sequence
-- [ ] define blank-input behavior as no contains filter
-- [ ] define how repeated interactive entries map to `contains?: string[]`
-- [ ] define prompt-time validation behavior for malformed contains syntax
-- [ ] define prompt-time validation behavior for unknown columns
-- [ ] define TTY-only highlight boundaries and color-control behavior
-- [ ] define whether multiple matching filters on one cell share the same highlight treatment
-- [ ] define summary behavior when matching columns are hidden from the rendered table
+- [x] define the interactive contains prompt sequence
+- [x] define blank-input behavior as no contains filter
+- [x] define how repeated interactive entries map to `contains?: string[]`
+- [x] define prompt-time validation behavior for malformed contains syntax
+- [x] define prompt-time validation behavior for unknown columns
+- [x] define TTY-only highlight boundaries and color-control behavior
+- [x] define whether multiple matching filters on one cell share the same highlight treatment
+- [x] define summary behavior when matching columns are hidden from the rendered table
 
 ### Phase 2: Interactive wiring
 
-- [ ] add optional contains collection to the interactive preview flow
-- [ ] keep the existing prompt order readable and low-friction
-- [ ] pass collected contains values through `actionDataPreview`
-- [ ] preserve the current behavior when the user leaves contains blank
-- [ ] keep malformed syntax and unknown-column errors inside the prompt loop instead of failing after submission
+- [x] add optional contains collection to the interactive preview flow
+- [x] keep the existing prompt order readable and low-friction
+- [x] pass collected contains values through `actionDataPreview`
+- [x] preserve the current behavior when the user leaves contains blank
+- [x] keep malformed syntax and unknown-column errors inside the prompt loop instead of failing after submission
 
 ### Phase 3: TTY-only highlighting
 
-- [ ] surface contains-match metadata needed by the renderer without changing filter semantics
-- [ ] highlight matching cells only in TTY output with color enabled
-- [ ] keep non-matching cells plain text
-- [ ] add a compact summary note when matching columns are hidden from the rendered table
-- [ ] keep truncated cells and narrow-width tables readable
-- [ ] ensure highlighted cells do not break width calculations or snapshot determinism after ANSI stripping
+- [x] surface contains-match metadata needed by the renderer without changing filter semantics
+- [x] highlight matching cells only in TTY output with color enabled
+- [x] keep non-matching cells plain text
+- [x] add a compact summary note when matching columns are hidden from the rendered table
+- [x] keep truncated cells and narrow-width tables readable
+- [x] ensure highlighted cells do not break width calculations or snapshot determinism after ANSI stripping
 
 ### Phase 4: Tests
 
-- [ ] add interactive coverage for:
-  - [ ] blank contains input
-  - [ ] single contains entry
-  - [ ] repeated contains entries
-  - [ ] malformed syntax re-prompts locally
-  - [ ] unknown columns re-prompt locally
-- [ ] add renderer/action coverage for:
-  - [ ] TTY-only matching-cell highlighting
-  - [ ] no highlight in non-TTY mode
-  - [ ] no highlight when color is disabled
-  - [ ] multi-filter highlighting on matching cells
-  - [ ] hidden matching-column summary note
-  - [ ] stable output after ANSI stripping
+- [x] add interactive coverage for:
+  - [x] blank contains input
+  - [x] single contains entry
+  - [x] repeated contains entries
+  - [x] malformed syntax re-prompts locally
+  - [x] unknown columns re-prompt locally
+- [x] add renderer/action coverage for:
+  - [x] TTY-only matching-cell highlighting
+  - [x] no highlight in non-TTY mode
+  - [x] no highlight when color is disabled
+  - [x] multi-filter highlighting on matching cells
+  - [x] hidden matching-column summary note
+  - [x] stable output after ANSI stripping
 
 ### Phase 5: Docs and verification
 
-- [ ] update `docs/guides/data-preview-usage.md`
-- [ ] document that interactive preview now supports contains filters
-- [ ] document that highlighting is TTY-only and cell-level
-- [ ] document that hidden matching columns produce a summary note rather than forced column visibility
-- [ ] run manual checks for:
-  - [ ] direct CLI preview with contains filters in TTY mode
-  - [ ] interactive preview with one contains filter
-  - [ ] interactive preview with multiple contains filters
-  - [ ] interactive malformed contains re-prompt behavior
-  - [ ] interactive unknown-column re-prompt behavior
-  - [ ] `--no-color` behavior
-  - [ ] contains filters whose matching columns are hidden by column selection or width limits
-  - [ ] non-TTY redirected output
+- [x] update `docs/guides/data-preview-usage.md`
+- [x] document that interactive preview now supports contains filters
+- [x] document that highlighting is TTY-only and cell-level
+- [x] document that hidden matching columns produce a summary note rather than forced column visibility
+- [x] run manual checks for:
+  - [x] direct CLI preview with contains filters in TTY mode
+  - [x] interactive preview with one contains filter
+  - [x] interactive preview with multiple contains filters
+  - [x] interactive malformed contains re-prompt behavior
+  - [x] interactive unknown-column re-prompt behavior
+  - [x] `--no-color` behavior
+  - [x] contains filters whose matching columns are hidden by column selection or width limits
+  - [x] non-TTY redirected output
 
 ## Success Criteria
 

@@ -42,6 +42,16 @@ function createContainsFilterError(value: string, detail: string): CliError {
   });
 }
 
+function resolveMissingContainsColumns(
+  source: Pick<DataPreviewSource, "columns">,
+  filters: readonly DataPreviewContainsFilter[],
+): string[] {
+  const available = new Set(source.columns);
+  return filters
+    .map((filter) => filter.column)
+    .filter((column, index, values) => !available.has(column) && values.indexOf(column) === index);
+}
+
 class InMemoryDataPreviewSource implements DataPreviewSource {
   public readonly columns: string[];
   public readonly format: DataPreviewFormat;
@@ -64,16 +74,7 @@ class InMemoryDataPreviewSource implements DataPreviewSource {
       return this;
     }
 
-    const available = new Set(this.columns);
-    const missing = filters
-      .map((filter) => filter.column)
-      .filter((column, index, values) => !available.has(column) && values.indexOf(column) === index);
-    if (missing.length > 0) {
-      throw new CliError(`Unknown columns: ${missing.join(", ")}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
+    assertContainsFilterColumns(this, filters);
 
     const normalizedFilters = filters.map((filter) => ({
       ...filter,
@@ -240,6 +241,26 @@ export function parseContainsFilterValue(value: string): DataPreviewContainsFilt
   };
 }
 
+export function parseContainsFilterValues(values: readonly string[] | undefined): DataPreviewContainsFilter[] {
+  if (!values || values.length === 0) {
+    return [];
+  }
+  return values.map((value) => parseContainsFilterValue(value));
+}
+
+export function assertContainsFilterColumns(
+  source: Pick<DataPreviewSource, "columns">,
+  filters: readonly DataPreviewContainsFilter[],
+): void {
+  const missing = resolveMissingContainsColumns(source, filters);
+  if (missing.length > 0) {
+    throw new CliError(`Unknown columns: ${missing.join(", ")}`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+}
+
 export function applyContainsFilters(
   source: DataPreviewSource,
   filters: readonly DataPreviewContainsFilter[],
@@ -255,6 +276,7 @@ export function applyContainsFilters(
     });
   }
 
+  assertContainsFilterColumns(source, filters);
   return source.filterContains(filters);
 }
 

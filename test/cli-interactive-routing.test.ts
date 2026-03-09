@@ -62,7 +62,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:preview"],
       requiredPathQueue: ["fixtures/table.csv"],
-      inputQueue: ["15", "", "id,status"],
+      inputQueue: ["15", "", "id,status", ""],
     });
 
     expect(result.actionCalls).toEqual([
@@ -73,6 +73,7 @@ describe("interactive mode routing", () => {
           rows: 15,
           offset: undefined,
           columns: ["id", "status"],
+          contains: undefined,
         },
       },
     ]);
@@ -82,7 +83,135 @@ describe("interactive mode routing", () => {
       "input:Rows to show (optional)",
       "input:Row offset (optional)",
       "input:Columns to show (comma-separated, optional)",
+      "input:Contains filter (column:keyword, optional)",
     ]);
+    expect(result.validationCalls).toEqual([]);
+  });
+
+  test("routes data preview with a single contains filter from interactive mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.csv"],
+      inputQueue: ["", "", "", "status:active"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: ["status:active"],
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "input:Rows to show (optional)",
+      "input:Row offset (optional)",
+      "input:Columns to show (comma-separated, optional)",
+      "input:Contains filter (column:keyword, optional)",
+      "confirm:Add another contains filter?",
+    ]);
+    expect(result.validationCalls).toEqual([]);
+  });
+
+  test("routes data preview with repeated contains filters from interactive mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.json"],
+      inputQueue: ["", "", "", "status:active", "region:tw"],
+      confirmQueue: [true, false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.json",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: ["status:active", "region:tw"],
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "input:Rows to show (optional)",
+      "input:Row offset (optional)",
+      "input:Columns to show (comma-separated, optional)",
+      "input:Contains filter (column:keyword, optional)",
+      "confirm:Add another contains filter?",
+      "input:Another contains filter (column:keyword)",
+      "confirm:Add another contains filter?",
+    ]);
+    expect(result.validationCalls).toEqual([]);
+  });
+
+  test("re-prompts malformed contains syntax locally before running data preview", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.csv"],
+      inputQueue: ["", "", "", "status", "status:active"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: ["status:active"],
+        },
+      },
+    ]);
+    expect(result.validationCalls).toContainEqual({
+      kind: "input",
+      message: "Contains filter (column:keyword, optional)",
+      value: "status",
+      error: 'Invalid --contains value "status": missing \':\' separator.',
+    });
+  });
+
+  test("re-prompts unknown contains columns locally before running data preview", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.csv"],
+      inputQueue: ["", "", "", "owner:ada", "status:active"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: ["status:active"],
+        },
+      },
+    ]);
+    expect(result.validationCalls).toContainEqual({
+      kind: "input",
+      message: "Contains filter (column:keyword, optional)",
+      value: "owner:ada",
+      error: "Unknown columns: owner",
+    });
   });
 
   test("routes a markdown flow through file output options", () => {

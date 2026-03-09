@@ -22,6 +22,7 @@ export interface InteractiveHarnessScenario {
 
 export interface InteractiveHarnessResult {
   promptCalls: Array<{ kind: "select" | "checkbox" | "confirm" | "input"; message: string }>;
+  validationCalls: Array<{ kind: "input"; message: string; value: string; error: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";
     message?: string;
@@ -53,6 +54,7 @@ export function runInteractiveHarness(
 
     const scenario = ${JSON.stringify(scenario)};
     const promptCalls = [];
+    const validationCalls = [];
     const pathCalls = [];
     const actionCalls = [];
     const mockedPathPromptRuntimeConfig = {
@@ -104,6 +106,12 @@ export function runInteractiveHarness(
           if (validation === true) {
             return nextValue;
           }
+          validationCalls.push({
+            kind: "input",
+            message: options.message,
+            value: String(nextValue ?? ""),
+            error: String(validation),
+          });
         }
       },
     }));
@@ -127,6 +135,15 @@ export function runInteractiveHarness(
       actionDataPreview: async (_runtime, options) => {
         actionCalls.push({ name: "data:preview", options });
       },
+      loadDataPreviewSource: async (_runtime, input) => ({
+        inputPath: String(input ?? ""),
+        source: {
+          columns: ["id", "name", "status", "region", "meta:key", "path"],
+          format: String(input ?? "").endsWith(".json") ? "json" : "csv",
+          totalRows: 3,
+          getWindow: () => [],
+        },
+      }),
       actionJsonToCsv: async (_runtime, options) => {
         actionCalls.push({ name: "data:json-to-csv", options });
       },
@@ -355,11 +372,12 @@ export function runInteractiveHarness(
         );
       }
 
-      console.log(JSON.stringify({ promptCalls, pathCalls, actionCalls, stdout: stdout.text, stderr: stderr.text }));
+      console.log(JSON.stringify({ promptCalls, validationCalls, pathCalls, actionCalls, stdout: stdout.text, stderr: stderr.text }));
     } catch (error) {
       console.log(
         JSON.stringify({
           promptCalls,
+          validationCalls,
           pathCalls,
           actionCalls,
           stdout: stdout.text,

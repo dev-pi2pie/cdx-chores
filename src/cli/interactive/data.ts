@@ -1,6 +1,12 @@
 import { confirm, input } from "@inquirer/prompts";
 
-import { actionCsvToJson, actionDataPreview, actionJsonToCsv } from "../actions";
+import { actionCsvToJson, actionDataPreview, actionJsonToCsv, loadDataPreviewSource } from "../actions";
+import {
+  assertContainsFilterColumns,
+  parseContainsFilterValue,
+  type DataPreviewContainsFilter,
+  type DataPreviewSource,
+} from "../data-preview/source";
 import {
   formatDefaultOutputPathHint,
   promptOptionalOutputPathChoice,
@@ -9,6 +15,64 @@ import {
 import type { CliRuntime } from "../types";
 import type { DataInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
+
+function toContainsValidationMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function promptContainsFilters(
+  runtime: CliRuntime,
+  inputPath: string,
+): Promise<string[] | undefined> {
+  let sourcePromise: Promise<DataPreviewSource> | undefined;
+  const getSource = async (): Promise<DataPreviewSource> => {
+    sourcePromise ??= loadDataPreviewSource(runtime, inputPath).then((loaded) => loaded.source);
+    return await sourcePromise;
+  };
+
+  const validateContains = async (
+    value: string,
+    options: { allowBlank: boolean },
+  ): Promise<true | string> => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return options.allowBlank ? true : "Enter a contains filter in column:keyword format.";
+    }
+
+    let parsedFilter: DataPreviewContainsFilter;
+    try {
+      parsedFilter = parseContainsFilterValue(trimmed);
+    } catch (error) {
+      return toContainsValidationMessage(error);
+    }
+
+    try {
+      assertContainsFilterColumns(await getSource(), [parsedFilter]);
+    } catch (error) {
+      return toContainsValidationMessage(error);
+    }
+
+    return true;
+  };
+
+  const firstContainsInput = await input({
+    message: "Contains filter (column:keyword, optional)",
+    default: "",
+    validate: async (value) => await validateContains(value, { allowBlank: true }),
+  });
+
+  const contains = firstContainsInput.trim() ? [firstContainsInput.trim()] : [];
+  while (contains.length > 0 && await confirm({ message: "Add another contains filter?", default: false })) {
+    const nextContainsInput = await input({
+      message: "Another contains filter (column:keyword)",
+      default: "",
+      validate: async (value) => await validateContains(value, { allowBlank: false }),
+    });
+    contains.push(nextContainsInput.trim());
+  }
+
+  return contains.length > 0 ? contains : undefined;
+}
 
 export async function handleDataInteractiveAction(
   runtime: CliRuntime,
@@ -52,9 +116,11 @@ export async function handleDataInteractiveAction(
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
+    const contains = await promptContainsFilters(runtime, inputPath);
 
     await actionDataPreview(runtime, {
       columns: columns.length > 0 ? columns : undefined,
+      contains,
       input: inputPath,
       offset: offsetInput.trim() ? Number(offsetInput) : undefined,
       rows: rowsInput.trim() ? Number(rowsInput) : undefined,

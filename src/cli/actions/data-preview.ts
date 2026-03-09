@@ -4,7 +4,8 @@ import { printLine, assertNonEmpty, ensureFileExists } from "./shared";
 import {
   applyContainsFilters,
   createDataPreviewSource,
-  parseContainsFilterValue,
+  parseContainsFilterValues,
+  type DataPreviewSource,
 } from "../data-preview/source";
 import { renderDataPreview } from "../data-preview/render";
 import { CliError } from "../errors";
@@ -19,14 +20,26 @@ export interface DataPreviewOptions {
 
 const DEFAULT_DATA_PREVIEW_ROWS = 20;
 
-export async function actionDataPreview(runtime: CliRuntime, options: DataPreviewOptions): Promise<void> {
-  const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
+export async function loadDataPreviewSource(
+  runtime: CliRuntime,
+  input: string,
+): Promise<{ inputPath: string; source: DataPreviewSource }> {
+  const inputPath = resolveFromCwd(runtime, assertNonEmpty(input, "Input path"));
   await ensureFileExists(inputPath, "Input");
 
   const raw = await readTextFileRequired(inputPath);
-  let source = createDataPreviewSource(inputPath, raw);
-  if (options.contains && options.contains.length > 0) {
-    source = applyContainsFilters(source, options.contains.map((value) => parseContainsFilterValue(value)));
+  return {
+    inputPath,
+    source: createDataPreviewSource(inputPath, raw),
+  };
+}
+
+export async function actionDataPreview(runtime: CliRuntime, options: DataPreviewOptions): Promise<void> {
+  const { inputPath, source: loadedSource } = await loadDataPreviewSource(runtime, options.input);
+  const containsFilters = parseContainsFilterValues(options.contains);
+  let source = loadedSource;
+  if (containsFilters.length > 0) {
+    source = applyContainsFilters(source, containsFilters);
   }
   const rowCount = options.rows ?? DEFAULT_DATA_PREVIEW_ROWS;
   const offset = options.offset ?? 0;
@@ -34,6 +47,7 @@ export async function actionDataPreview(runtime: CliRuntime, options: DataPrevie
   try {
     const result = renderDataPreview(runtime, source, {
       columns: options.columns,
+      containsFilters,
       inputPath,
       offset,
       rowCount,

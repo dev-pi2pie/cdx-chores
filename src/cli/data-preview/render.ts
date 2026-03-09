@@ -1,10 +1,11 @@
 import { formatPathForDisplay } from "../fs-utils";
 import type { CliRuntime } from "../types";
 import { getCliColors } from "../colors";
-import type { DataPreviewRow, DataPreviewSource } from "./source";
+import type { DataPreviewContainsFilter, DataPreviewRow, DataPreviewSource } from "./source";
 
 export interface RenderDataPreviewOptions {
   columns?: string[];
+  containsFilters?: readonly DataPreviewContainsFilter[];
   inputPath: string;
   offset: number;
   rowCount: number;
@@ -154,10 +155,43 @@ function formatWindowLabel(offset: number, rowCount: number, totalRows: number):
   return `${start}-${end} of ${totalRows}`;
 }
 
+function resolveContainsFilterColumns(filters: readonly DataPreviewContainsFilter[] | undefined): string[] {
+  if (!filters || filters.length === 0) {
+    return [];
+  }
+
+  const columns: string[] = [];
+  const seen = new Set<string>();
+  for (const filter of filters) {
+    if (seen.has(filter.column)) {
+      continue;
+    }
+    seen.add(filter.column);
+    columns.push(filter.column);
+  }
+  return columns;
+}
+
+function resolveHiddenContainsColumns(
+  filters: readonly DataPreviewContainsFilter[] | undefined,
+  visibleColumns: readonly VisibleColumn[],
+): string[] {
+  const visibleNames = new Set(visibleColumns.map((column) => column.name));
+  return resolveContainsFilterColumns(filters).filter((column) => !visibleNames.has(column));
+}
+
+function formatHiddenContainsNote(hiddenColumns: readonly string[]): string {
+  if (hiddenColumns.length === 0) {
+    return "";
+  }
+  return `hidden matching columns: ${hiddenColumns.join(", ")}`;
+}
+
 function renderTable(
   runtime: CliRuntime,
   visibleColumns: readonly VisibleColumn[],
   rows: readonly DataPreviewRow[],
+  options: { containsFilters?: readonly DataPreviewContainsFilter[] } = {},
 ): string[] {
   if (visibleColumns.length === 0) {
     return ["(no columns to display)"];
@@ -165,13 +199,20 @@ function renderTable(
 
   const pc = getCliColors(runtime);
   const widths = visibleColumns.map((column) => column.width);
+  const highlightedColumns = new Set(resolveContainsFilterColumns(options.containsFilters));
   const header = visibleColumns
     .map((column) => pc.bold(pc.cyan(truncateCell(column.name, column.width).padEnd(column.width, " "))))
     .join(COLUMN_SEPARATOR);
   const separator = createSeparator(widths);
   const body = rows.map((row) =>
     visibleColumns
-      .map((column) => truncateCell(row.values[column.name] ?? "", column.width))
+      .map((column) => {
+        const cell = truncateCell(row.values[column.name] ?? "", column.width);
+        if (!highlightedColumns.has(column.name)) {
+          return cell;
+        }
+        return pc.bold(pc.yellow(cell));
+      })
       .join(COLUMN_SEPARATOR),
   );
 
@@ -192,6 +233,7 @@ export function renderDataPreview(
   const selectedColumns = resolveRequestedColumns(source, options.columns);
   const rows = source.getWindow(options.offset, options.rowCount);
   const visibleColumns = resolveVisibleColumns(selectedColumns, rows, widthBudget);
+  const hiddenContainsColumns = resolveHiddenContainsColumns(options.containsFilters, visibleColumns);
 
   const lines = [
     `${pc.bold(pc.cyan("Input"))}: ${formatPathForDisplay(runtime, options.inputPath)}`,
@@ -199,8 +241,11 @@ export function renderDataPreview(
     `${pc.bold(pc.cyan("Rows"))}: ${source.totalRows}`,
     `${pc.bold(pc.cyan("Window"))}: ${formatWindowLabel(options.offset, rows.length, source.totalRows)}`,
     `${pc.bold(pc.cyan("Visible columns"))}: ${formatColumnSummary(selectedColumns, visibleColumns)}`,
+    ...(hiddenContainsColumns.length > 0
+      ? [`${pc.bold(pc.cyan("Contains highlight"))}: ${formatHiddenContainsNote(hiddenContainsColumns)}`]
+      : []),
     "",
-    ...renderTable(runtime, visibleColumns, rows),
+    ...renderTable(runtime, visibleColumns, rows, { containsFilters: options.containsFilters }),
   ];
 
   return { lines };
