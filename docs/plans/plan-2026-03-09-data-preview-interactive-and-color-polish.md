@@ -27,7 +27,14 @@ These are real user-facing improvements, but they are separate from the complete
   - `data:json-to-csv`
   - `data:csv-to-json`
 - `picocolors` is already used in other CLI surfaces, but `data preview` output is currently plain text
+- there is not yet an explicit preview-level color control contract for `NO_COLOR` or `--no-color`
 - the preview renderer already has deterministic TTY and non-TTY behavior that should be preserved
+
+## Color Scope Note
+
+- `--no-color` should be designed as a global CLI flag, not a `data preview`-only flag
+- `NO_COLOR` and `--no-color` should disable ANSI styling across the whole command execution
+- `data preview` should consume that shared runtime color setting rather than inventing command-local color semantics
 
 ## Scope
 
@@ -40,11 +47,17 @@ These are real user-facing improvements, but they are separate from the complete
   - optional row count
   - optional offset
   - optional column selection text
+- lock interactive defaults to the existing CLI behavior:
+  - blank row count => CLI default row window
+  - blank offset => `0`
+  - blank columns => no column filter
+- keep interactive preview as stdout-only; it should not ask for an output path
 - keep the actual preview execution path inside the existing `actionDataPreview` action
 
 ### Color styling
 
 - use `picocolors` sparingly
+- keep the core preview content contract plain-text-first and apply ANSI styling in a thin presentation layer
 - allow emphasis for:
   - summary labels such as `Input`, `Format`, `Rows`, `Window`
   - table header labels
@@ -52,6 +65,10 @@ These are real user-facing improvements, but they are separate from the complete
 - keep cell values plain text
 - keep non-TTY output readable and deterministic
 - avoid color making snapshots or redirected output harder to inspect
+- support both:
+  - `NO_COLOR`
+  - `--no-color`
+- treat `--no-color` as a global CLI runtime flag, even though this follow-up plan only applies new styling work to `data preview`
 
 ## Non-Goals
 
@@ -83,6 +100,7 @@ These are real user-facing improvements, but they are separate from the complete
   - [ ] optional offset
   - [ ] optional comma-separated column list
 - [ ] keep prompt defaults aligned with the v1 CLI defaults
+- [ ] keep interactive preview stdout-only with no output-path prompt
 
 ### Phase 2: Interactive action wiring
 
@@ -93,11 +111,16 @@ These are real user-facing improvements, but they are separate from the complete
 
 ### Phase 3: Color styling pass
 
+- [ ] define color-control precedence for preview output:
+  - [ ] `--no-color`
+  - [ ] `NO_COLOR`
+- [ ] define the global runtime scope for `--no-color` so preview styling follows the same CLI-wide color contract as other commands
 - [ ] add restrained `picocolors` styling to preview summary labels
 - [ ] add restrained styling to table headers only if it stays readable
 - [ ] keep cell contents uncolored
 - [ ] keep narrow-width TTY rendering legible after styling
 - [ ] ensure color usage degrades safely in non-color environments
+- [ ] keep redirected output free of unintended ANSI escape sequences
 
 ### Phase 4: Tests
 
@@ -105,6 +128,9 @@ These are real user-facing improvements, but they are separate from the complete
 - [ ] add interactive prompt flow coverage for optional values
 - [ ] add focused output coverage for styled summary/header rendering
 - [ ] verify non-TTY output remains deterministic enough for assertions
+- [ ] verify `NO_COLOR=1` disables preview styling
+- [ ] verify `--no-color` disables preview styling
+- [ ] verify redirected output does not leak ANSI sequences
 
 ### Phase 5: Docs and verification
 
@@ -114,6 +140,8 @@ These are real user-facing improvements, but they are separate from the complete
   - [ ] direct CLI preview
   - [ ] interactive preview flow
   - [ ] TTY rendering with color
+  - [ ] TTY rendering with `NO_COLOR=1`
+  - [ ] TTY rendering with `--no-color`
   - [ ] non-TTY redirected preview output
 
 ## Success Criteria
