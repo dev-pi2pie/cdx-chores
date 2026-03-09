@@ -132,6 +132,8 @@ Design constraints:
 - the generator should produce Parquet from a stable source dataset rather than require a manually curated binary blob
 - fixture shape should stay comparable to the existing CSV/JSON preview fixtures where that helps CLI and renderer parity checks
 - the plan should treat fixture generation as part of the DuckDB milestone, not as optional follow-up polish
+- generated Parquet playground assets are for manual smoke preparation, not a required dependency of routine automated test runs
+- automated tests should rely on stable checked-in or generated-once Parquet fixtures rather than runtime fixture generation
 
 ## Scope
 
@@ -209,6 +211,8 @@ Design constraints:
 - [ ] freeze the Parquet smoke-fixture strategy:
   - [ ] reuse or extend the existing tabular fixture generator when practical
   - [ ] define the minimum Parquet fixture set for basic, wide, and large-window smoke checks
+  - [ ] freeze scripted Parquet generation as manual-smoke preparation rather than a required CI step
+  - [ ] freeze automated tests to use stable fixtures rather than generating Parquet during normal test runs
 - [ ] define clear first-pass behavior for `--contains` on DuckDB-backed actions
 - [ ] define clear failure behavior when DuckDB initialization or Parquet loading fails
 - [ ] decide whether doctor should advertise Parquet capability in this pass
@@ -249,8 +253,9 @@ Design constraints:
   - [ ] `data -> preview` still excludes Parquet framing
   - [ ] `data query` is absent in this milestone
 - [ ] add smoke-fixture coverage or verification for the Parquet generator path:
-  - [ ] generated files land under `examples/playground/`
-  - [ ] repeated generation stays deterministic
+  - [ ] manual verification that generated files land under `examples/playground/`
+  - [ ] manual verification that repeated generation stays deterministic
+  - [ ] automated tests consume stable Parquet fixtures without requiring runtime generation
 - [ ] add doctor coverage only if doctor capability reporting is updated in this pass
 
 ### Phase 5: Docs and verification
@@ -264,7 +269,8 @@ Design constraints:
   - [ ] JSON/CSV remain on the existing in-memory path
 - [ ] document the interactive split between `data -> preview` and `data -> parquet preview`
 - [ ] document the Parquet fixture generator usage for manual smoke checks
-- [ ] add or generate stable Parquet smoke fixtures through the scripted generator path
+- [ ] add or generate stable Parquet fixtures for automated tests without requiring runtime generation during normal test runs
+- [ ] add or generate Parquet smoke fixtures through the scripted generator path for manual checks
 - [ ] run manual smoke checks for both lightweight preview and Parquet preview
 
 ## Success Criteria
