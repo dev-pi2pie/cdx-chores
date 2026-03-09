@@ -1,4 +1,5 @@
 import { csvRowsToObjects, parseCsv, stringifyCsv } from "../../utils/csv";
+import { normalizeRowsFromJson } from "../data-preview/normalize";
 import { CliError } from "../errors";
 import {
   defaultOutputPath,
@@ -8,24 +9,6 @@ import {
 } from "../fs-utils";
 import type { CliRuntime } from "../types";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
-
-function normalizeRowsFromJson(input: unknown): Array<Record<string, unknown>> {
-  if (Array.isArray(input)) {
-    if (input.length === 0) {
-      return [];
-    }
-    if (input.every((item) => item !== null && typeof item === "object" && !Array.isArray(item))) {
-      return input as Array<Record<string, unknown>>;
-    }
-    return input.map((item) => ({ value: item }));
-  }
-
-  if (input !== null && typeof input === "object") {
-    return [input as Record<string, unknown>];
-  }
-
-  return [{ value: input }];
-}
 
 export interface JsonToCsvOptions {
   input: string;
@@ -76,4 +59,3 @@ export async function actionCsvToJson(runtime: CliRuntime, options: CsvToJsonOpt
   printLine(runtime.stdout, `Wrote JSON: ${displayPath(runtime, outputPath)}`);
   printLine(runtime.stdout, `Rows: ${records.length}`);
 }
-

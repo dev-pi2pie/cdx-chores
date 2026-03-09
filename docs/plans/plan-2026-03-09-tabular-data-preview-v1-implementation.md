@@ -1,7 +1,8 @@
 ---
 title: "Tabular data preview v1 implementation"
 created-date: 2026-03-09
-status: active
+modified-date: 2026-03-09
+status: completed
 agent: codex
 ---
 
@@ -109,108 +110,108 @@ The plan therefore locks a smaller v1:
 
 ### Phase 1: Freeze v1 command contract
 
-- [ ] finalize `data preview <input>` argument and baseline flags:
-  - [ ] `--rows`
-  - [ ] `--offset`
-  - [ ] `--columns`
-- [ ] define deterministic column-order rules for:
-  - [ ] heterogeneous JSON object rows
-  - [ ] CSV header-derived columns
-- [ ] define invalid-input behavior for:
-  - [ ] unsupported extensions
-  - [ ] malformed JSON
-  - [ ] malformed CSV
-  - [ ] negative or non-numeric window flags
-- [ ] define CSV edge-case behavior for:
-  - [ ] empty CSV input
-  - [ ] blank header cells
-  - [ ] data rows wider than the header row
-- [ ] decide whether machine-readable output is in scope now or deferred
+- [x] finalize `data preview <input>` argument and baseline flags:
+  - [x] `--rows`
+  - [x] `--offset`
+  - [x] `--columns`
+- [x] define deterministic column-order rules for:
+  - [x] heterogeneous JSON object rows
+  - [x] CSV header-derived columns
+- [x] define invalid-input behavior for:
+  - [x] unsupported extensions
+  - [x] malformed JSON
+  - [x] malformed CSV
+  - [x] negative or non-numeric window flags
+- [x] define CSV edge-case behavior for:
+  - [x] empty CSV input
+  - [x] blank header cells
+  - [x] data rows wider than the header row
+- [x] decide whether machine-readable output is in scope now or deferred
 
 ### Phase 2: Add preview source normalization
 
-- [ ] extract or add shared normalization helpers for JSON preview rows
-- [ ] add a preview source contract that returns:
-  - [ ] columns
-  - [ ] row count
-  - [ ] sliced rows
-  - [ ] display-safe cell values
-- [ ] implement internal CSV preview source
-- [ ] implement internal JSON preview source
-- [ ] preserve deterministic column ordering across runs using the Phase 1 rule
+- [x] extract or add shared normalization helpers for JSON preview rows
+- [x] add a preview source contract that returns:
+  - [x] columns
+  - [x] row count
+  - [x] sliced rows
+  - [x] display-safe cell values
+- [x] implement internal CSV preview source
+- [x] implement internal JSON preview source
+- [x] preserve deterministic column ordering across runs using the Phase 1 rule
 
 ### Phase 3: Add terminal table rendering
 
-- [ ] render a compact header summary:
-  - [ ] input path
-  - [ ] detected format
-  - [ ] total rows
-  - [ ] visible row window
-  - [ ] shown columns
-- [ ] render a bounded table body with:
-  - [ ] column width budgeting
-  - [ ] cell truncation
-  - [ ] empty-value handling
-- [ ] define bounded-column fallback when selected or available columns exceed terminal width
-- [ ] render partial-window messaging when `offset` or `rows` limits the output
-- [ ] keep non-TTY output predictable and line-oriented
+- [x] render a compact header summary:
+  - [x] input path
+  - [x] detected format
+  - [x] total rows
+  - [x] visible row window
+  - [x] shown columns
+- [x] render a bounded table body with:
+  - [x] column width budgeting
+  - [x] cell truncation
+  - [x] empty-value handling
+- [x] define bounded-column fallback when selected or available columns exceed terminal width
+- [x] render partial-window messaging when `offset` or `rows` limits the output
+- [x] keep non-TTY output predictable and line-oriented
 
 ### Phase 4: Wire the command surface
 
-- [ ] add `data preview` to `src/command.ts`
-- [ ] add the preview action export path
-- [ ] reuse existing file/path display helpers
-- [ ] ensure errors stay within the existing `CliError` contract
+- [x] add `data preview` to `src/command.ts`
+- [x] add the preview action export path
+- [x] reuse existing file/path display helpers
+- [x] ensure errors stay within the existing `CliError` contract
 
 ### Phase 5: Tests
 
-- [ ] extend conversion tests only where shared helpers changed
-- [ ] add focused preview action coverage for:
-  - [ ] CSV happy path
-  - [ ] empty CSV behavior
-  - [ ] blank-header CSV behavior
-  - [ ] wider-than-header CSV row behavior
-  - [ ] JSON object-array happy path
-  - [ ] heterogeneous JSON key-union ordering
-  - [ ] JSON top-level object fallback
-  - [ ] scalar-array fallback
-  - [ ] column filtering
-  - [ ] offset/window slicing
-  - [ ] unsupported extension error
-  - [ ] invalid window flag error
-  - [ ] malformed input errors
-- [ ] add focused renderer coverage for truncation and visible-window notices
+- [x] extend conversion tests only where shared helpers changed
+- [x] add focused preview action coverage for:
+  - [x] CSV happy path
+  - [x] empty CSV behavior
+  - [x] blank-header CSV behavior
+  - [x] wider-than-header CSV row behavior
+  - [x] JSON object-array happy path
+  - [x] heterogeneous JSON key-union ordering
+  - [x] JSON top-level object fallback
+  - [x] scalar-array fallback
+  - [x] column filtering
+  - [x] offset/window slicing
+  - [x] unsupported extension error
+  - [x] invalid window flag error
+  - [x] malformed input errors
+- [x] add focused renderer coverage for truncation and visible-window notices
 
 ### Phase 6: Smoke-test fixture tooling
 
-- [ ] add `scripts/generate-tabular-preview-fixtures.mjs`
-- [ ] support:
-  - [ ] `seed`
-  - [ ] `clean`
-  - [ ] `reset`
-- [ ] generate fixtures under `examples/playground/tabular-preview/`
-- [ ] include at least:
-  - [ ] `basic.csv`
-  - [ ] `basic.json`
-  - [ ] `wide.csv`
-  - [ ] `wide.json`
-  - [ ] `scalar-array.json`
-  - [ ] `large.csv`
-  - [ ] `large.json`
-- [ ] make large fixtures deterministic so smoke output is reproducible
+- [x] add `scripts/generate-tabular-preview-fixtures.mjs`
+- [x] support:
+  - [x] `seed`
+  - [x] `clean`
+  - [x] `reset`
+- [x] generate fixtures under `examples/playground/tabular-preview/`
+- [x] include at least:
+  - [x] `basic.csv`
+  - [x] `basic.json`
+  - [x] `wide.csv`
+  - [x] `wide.json`
+  - [x] `scalar-array.json`
+  - [x] `large.csv`
+  - [x] `large.json`
+- [x] make large fixtures deterministic so smoke output is reproducible
 
 ### Phase 7: Docs and manual verification
 
-- [ ] add a short guide for `data preview`
-- [ ] document the v1 boundary:
-  - [ ] CSV and JSON only
-  - [ ] non-interactive preview
-  - [ ] DuckDB not used in v1
-- [ ] run manual smoke checks against playground fixtures in:
-  - [ ] regular TTY
-  - [ ] narrow-width TTY
-  - [ ] non-TTY
-- [ ] record whether `--format json` should be added next or deferred
+- [x] add a short guide for `data preview`
+- [x] document the v1 boundary:
+  - [x] CSV and JSON only
+  - [x] non-interactive preview
+  - [x] DuckDB not used in v1
+- [x] run manual smoke checks against playground fixtures in:
+  - [x] regular TTY
+  - [x] narrow-width TTY
+  - [x] non-TTY
+- [x] record whether `--format json` should be added next or deferred
 
 ## Smoke-Test Strategy
 

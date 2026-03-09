@@ -71,6 +71,50 @@ describe("CLI UX flags and path output", () => {
     }
   });
 
+  test("data preview renders relative input paths by default", async () => {
+    const fixtureDir = await createTempFixtureDir("cli-ux");
+    try {
+      const inputPath = join(fixtureDir, "sample.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      const relativeInputPath = toRepoRelativePath(inputPath);
+      const result = runCli(["data", "preview", relativeInputPath]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain(`Input: ${relativeInputPath}`);
+      expect(result.stdout).toContain("Format: csv");
+      expect(result.stdout).toContain("name | age");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("data preview help documents window and column options", () => {
+    const result = runCli(["data", "preview", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--rows <value>");
+    expect(result.stdout).toContain("--offset <value>");
+    expect(result.stdout).toContain("--columns <names>");
+  });
+
+  test("data preview rejects invalid row counts at CLI parsing time", async () => {
+    const fixtureDir = await createTempFixtureDir("cli-ux");
+    try {
+      const inputPath = join(fixtureDir, "sample.csv");
+      await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
+
+      const result = runCli(["data", "preview", toRepoRelativePath(inputPath), "--rows", "0"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("--rows must be a positive integer.");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("rename help includes template and serial controls", () => {
     const result = runCli(["rename", "batch", "--help"]);
 

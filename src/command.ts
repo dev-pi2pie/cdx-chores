@@ -1,6 +1,7 @@
 import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
+  actionDataPreview,
   actionDeferred,
   actionDoctor,
   actionJsonToCsv,
@@ -271,6 +272,33 @@ export async function runCli(
         pretty?: boolean;
       }) => {
         await actionCsvToJson(cliRuntime, options);
+      },
+    );
+
+  dataCommand
+    .command("preview")
+    .description("Preview CSV or JSON data as a bounded terminal table")
+    .argument("<input>", "Input CSV or JSON file")
+    .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
+    .option("--offset <value>", "Row offset to start from", (value: string) =>
+      parseNonNegativeIntegerOption(value, "--offset"),
+    )
+    .option("--columns <names>", "Columns to show (comma-separated)", collectCsvListOption, [])
+    .action(
+      async (
+        input: string,
+        options: {
+          columns?: string[];
+          offset?: number;
+          rows?: number;
+        },
+      ) => {
+        await actionDataPreview(cliRuntime, {
+          columns: options.columns,
+          input,
+          offset: options.offset,
+          rows: options.rows,
+        });
       },
     );
 
