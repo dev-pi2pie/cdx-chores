@@ -1,8 +1,8 @@
 ---
 title: "Tabular preview, SQL, and Parquet scope"
 created-date: 2026-03-02
-modified-date: 2026-03-02
-status: draft
+modified-date: 2026-03-09
+status: in-progress
 agent: codex
 ---
 
@@ -112,11 +112,20 @@ Implication:
 - adopting DuckDB is not just "make preview faster"
 - it changes the command family from file preview to tabular query/inspection tooling
 
-### 5. DuckDB also introduces dependency and packaging tradeoffs that are non-trivial for this repo
+### 5. DuckDB is now present in dependencies, but enabling it still changes product scope
 
 This project currently has a lightweight internal TypeScript implementation for `data` conversions and targets Node.js runtime compatibility, with Bun used for development.
 
-Adding `@duckdb/node-api` would introduce new considerations:
+`@duckdb/node-api` is now listed in `package.json`, but there is still no `src/` integration that uses it.
+That changes the practical question from:
+
+- "should we add DuckDB?"
+
+to:
+
+- "should `data preview` v1 depend on the already-added DuckDB package, or should it remain dormant until a later milestone?"
+
+Even with the dependency already present, enabling DuckDB-backed behavior still introduces non-trivial considerations:
 
 - native bindings / packaged binaries across supported platforms
 - install-size and release-distribution cost
@@ -171,17 +180,17 @@ Implication:
 
 ## Implications or Recommendations
 
-### Recommendation A. Ship `data preview` v1 without DuckDB
+### Recommendation A. Ship `data preview` v1 without DuckDB-backed behavior
 
 Recommended v1 scope:
 
 - command: `data preview`
 - inputs: `.csv`, `.json`
 - output: terminal preview only
-- renderer: bounded table window with vertical scrolling or paged navigation
+- renderer: bounded non-interactive table window with explicit `--rows` / `--offset`
 - summary: file path, detected format, row count, column list, truncated-view notice
 - no SQL in v1
-- no new binary/native dependency in v1
+- no DuckDB runtime coupling in v1 despite the package already being installed
 
 Why:
 
@@ -210,16 +219,16 @@ This keeps the future open for:
 
 without making them blockers for v1.
 
-### Recommendation C. Treat DuckDB as a phase-2 product decision
+### Recommendation C. Treat DuckDB-backed preview and SQL as a phase-2 product decision
 
-The right time to add `@duckdb/node-api` is when at least one of these becomes important enough to justify the extra dependency and complexity:
+The right time to activate `@duckdb/node-api` in the command flow is when at least one of these becomes important enough to justify the extra dependency and complexity:
 
 - previewing files too large for the in-memory TypeScript path
 - supporting Parquet or more file formats
 - exposing SQL as a first-class workflow
 - wanting filter/projection pushdown and richer type inference
 
-If none of those are required yet, DuckDB is likely premature for the first release of `data preview`.
+If none of those are required yet, DuckDB should remain installed-but-unused or be removed before release packaging is finalized.
 
 ### Recommendation D. Keep `data preview` separate from rename-preview implementation scope
 
@@ -248,6 +257,7 @@ Possible v1 options:
 cdx-chores data preview ./table.csv --rows 30
 cdx-chores data preview ./rows.json --offset 100
 cdx-chores data preview ./rows.json --columns name,created_at,status
+cdx-chores data preview ./rows.json --format json
 ```
 
 Possible phase-2 DuckDB-backed options:
@@ -264,15 +274,17 @@ Current preferred direction:
 - add `data preview` as a new `data` subcommand
 - make JSON and CSV the required first formats
 - build the renderer and row-source boundary first
-- keep DuckDB out of the first implementation
+- keep v1 non-interactive and flag-driven instead of adding keyboard scrolling immediately
+- keep DuckDB out of the first implementation path even though the package is already present
 - revisit `@duckdb/node-api` only when SQL or broader file-format support becomes a concrete milestone
+- if that milestone does not materialize, consider removing the dormant dependency before a stable release
 
 ## Open Questions
 
-1. Should v1 preview support only terminal rendering, or also an `--output json` summary mode for automation?
-2. Should the first interactive table support horizontal scrolling, or only column truncation with a column selector?
+1. Should v1 expose machine-readable output as `--format json`, or keep JSON summaries for a follow-up after the table contract is stable?
+2. Should horizontal overflow in v1 be handled by truncation-only, or by a follow-up column paging mode?
 3. Should JSON Lines / NDJSON be included in v1, or deferred until the command contract is stable?
-4. If DuckDB is later added, should it be optional at runtime or a standard dependency?
+4. If DuckDB-backed execution is later enabled, should the package stay as a standard dependency or move behind an optional install/runtime gate?
 
 ## Related Research
 
@@ -280,11 +292,15 @@ Current preferred direction:
 - `docs/researches/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
+## Related Plans
+
+- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+
 ## References
 
 - `src/command.ts`
 - `src/cli/actions/data.ts`
-- `src/cli/interactive.ts`
+- `src/cli/interactive/index.ts`
 - `src/utils/csv.ts`
 - [^duckdb-node-neo]
 - [^duckdb-npm]
