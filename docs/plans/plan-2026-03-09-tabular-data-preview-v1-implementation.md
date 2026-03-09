@@ -49,6 +49,7 @@ The plan therefore locks a smaller v1:
 
 - CSV:
   - parse first row as header using the existing parser contract
+  - handle empty input and header edge cases explicitly
 - JSON:
   - array of objects => one row per object
   - top-level object => one-row table
@@ -56,8 +57,11 @@ The plan therefore locks a smaller v1:
   - scalar top-level value => one-row single `value` column
 - infer stable column order from the normalized row set
 - support offset/window slicing before rendering
+- adapt column widths to current terminal width when `stdout.isTTY`
 - truncate wide cells for terminal display instead of attempting horizontal scrolling in v1
+- show only selected columns or a bounded visible subset when the full set cannot fit cleanly
 - show visible-window context when the preview is partial
+- keep non-TTY output deterministic and line-oriented
 
 ### Architecture
 
@@ -109,11 +113,18 @@ The plan therefore locks a smaller v1:
   - [ ] `--rows`
   - [ ] `--offset`
   - [ ] `--columns`
+- [ ] define deterministic column-order rules for:
+  - [ ] heterogeneous JSON object rows
+  - [ ] CSV header-derived columns
 - [ ] define invalid-input behavior for:
   - [ ] unsupported extensions
   - [ ] malformed JSON
   - [ ] malformed CSV
   - [ ] negative or non-numeric window flags
+- [ ] define CSV edge-case behavior for:
+  - [ ] empty CSV input
+  - [ ] blank header cells
+  - [ ] data rows wider than the header row
 - [ ] decide whether machine-readable output is in scope now or deferred
 
 ### Phase 2: Add preview source normalization
@@ -126,7 +137,7 @@ The plan therefore locks a smaller v1:
   - [ ] display-safe cell values
 - [ ] implement internal CSV preview source
 - [ ] implement internal JSON preview source
-- [ ] preserve deterministic column ordering across runs
+- [ ] preserve deterministic column ordering across runs using the Phase 1 rule
 
 ### Phase 3: Add terminal table rendering
 
@@ -140,6 +151,7 @@ The plan therefore locks a smaller v1:
   - [ ] column width budgeting
   - [ ] cell truncation
   - [ ] empty-value handling
+- [ ] define bounded-column fallback when selected or available columns exceed terminal width
 - [ ] render partial-window messaging when `offset` or `rows` limits the output
 - [ ] keep non-TTY output predictable and line-oriented
 
@@ -155,7 +167,11 @@ The plan therefore locks a smaller v1:
 - [ ] extend conversion tests only where shared helpers changed
 - [ ] add focused preview action coverage for:
   - [ ] CSV happy path
+  - [ ] empty CSV behavior
+  - [ ] blank-header CSV behavior
+  - [ ] wider-than-header CSV row behavior
   - [ ] JSON object-array happy path
+  - [ ] heterogeneous JSON key-union ordering
   - [ ] JSON top-level object fallback
   - [ ] scalar-array fallback
   - [ ] column filtering
@@ -190,7 +206,10 @@ The plan therefore locks a smaller v1:
   - [ ] CSV and JSON only
   - [ ] non-interactive preview
   - [ ] DuckDB not used in v1
-- [ ] run manual smoke checks against playground fixtures in TTY and non-TTY contexts
+- [ ] run manual smoke checks against playground fixtures in:
+  - [ ] regular TTY
+  - [ ] narrow-width TTY
+  - [ ] non-TTY
 - [ ] record whether `--format json` should be added next or deferred
 
 ## Smoke-Test Strategy
@@ -219,6 +238,12 @@ bun src/bin.ts data preview examples/playground/tabular-preview/wide.csv --colum
 bun src/bin.ts data preview examples/playground/tabular-preview/large.json --rows 20 --offset 120
 bun src/bin.ts data preview examples/playground/tabular-preview/large.csv --rows 15 > examples/playground/.tmp-tests/tabular-preview-large.txt
 ```
+
+Recommended additional manual smoke focus:
+
+- regular-width TTY rendering
+- narrow-width TTY rendering to verify width adaptation and bounded visible columns
+- non-TTY redirected output to verify deterministic line-oriented output
 
 ## Success Criteria
 
