@@ -40,7 +40,7 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - this plan should follow the direct CLI query implementation plan
 - this plan should follow the CLI `data query codex` drafting plan
 - interactive query should reuse the CLI/backend query contract rather than define a second execution contract
-- interactive `Codex Assistant` should align with the CLI `data query codex` drafting contract rather than invent a conflicting Codex contract
+- interactive `Codex Assistant` should reuse the shared drafting guardrails and prompt/context contract defined in the CLI `data query codex` plan rather than invent a conflicting Codex contract
 
 ## Design Contract
 
@@ -122,8 +122,8 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 
 Alignment note:
 
-- this mode defines the advisory guardrails that any later `data query codex` CLI drafting lane should reuse
-- interactive `Codex Assistant` and future CLI `data query codex` should not diverge on introspection prerequisites or SQL review requirements
+- this mode should reuse the advisory guardrails already defined for the CLI `data query codex` lane
+- interactive `Codex Assistant` and CLI `data query codex` should not diverge on introspection prerequisites, prompt/context shape, or SQL review requirements
 
 ### Output prompts and execution
 
@@ -208,7 +208,7 @@ Alignment note:
 
 ### Phase 5: `Codex Assistant` mode
 
-- [ ] define the exact prompt/context bundle passed to Codex
+- [ ] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
 - [ ] define revise/regenerate flow after rejection or SQL error

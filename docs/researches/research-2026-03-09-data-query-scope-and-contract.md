@@ -485,6 +485,20 @@ Why:
 - allowing it for JSON file output keeps the JSON contract consistent across stdout and file targets
 - rejecting it for table and CSV output keeps the flag surface explicit and testable
 
+### Draft decision 4D. `--json` and `--output` should be mutually exclusive
+
+Recommended draft contract:
+
+- `--json` selects JSON result payload on stdout
+- `--output <path>` selects file-result payload delivery
+- `--json` and `--output` should not be accepted together in v1
+
+Why:
+
+- both flags try to control the same result-payload lane
+- `--output <path>` already chooses serialization format from the target extension
+- rejecting the combination avoids ambiguous dual-output behavior and keeps shell/file workflows predictable
+
 ### Draft decision 5. `--output <path>` should be part of v1, with format inferred from the output path
 
 Recommended draft contract:
@@ -492,6 +506,7 @@ Recommended draft contract:
 - `--output <path>` writes result data to a file in v1
 - `.json` and `.csv` are chosen from the output-path extension
 - unsupported output extensions should fail clearly
+- `--output <path>` is mutually exclusive with `--json`
 
 Implication:
 
@@ -606,6 +621,7 @@ Best current starting point:
 - default stdout rendering: bounded table
 - machine-readable stdout mode: `--json` with optional `--pretty`
 - file output: `--output <path>` with `.json` / `.csv` inferred from the output path
+- `--json` and `--output <path>` are mutually exclusive
 - interactive mode: implementation deferred, design contract fixed
 
 This is a baseline for evaluation, not a final implementation decision.

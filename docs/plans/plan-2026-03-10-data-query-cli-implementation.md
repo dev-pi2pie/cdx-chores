@@ -73,6 +73,7 @@ It should also own its own smoke-fixture generation path instead of reusing prev
 - `--pretty` only affects JSON serialization
 - `--output <path>` writes full query results to a file
 - output format is inferred from `.json` or `.csv`
+- `--json` and `--output <path>` are mutually exclusive
 - when `--output <path>` is used, the result payload is written only to the target file
 - when `--output <path>` is used, normal table or JSON result payload should not also be emitted to stdout
 - logs and status messaging must stay separate from result payloads
@@ -148,6 +149,7 @@ First-pass fixture goals:
 - add `--pretty`
 - add `--output <path>`
 - keep `--pretty` valid only for JSON serialization on `--json` stdout and `.json` file output
+- reject `--json` together with `--output <path>`
 
 ### Backend behavior
 
@@ -246,7 +248,7 @@ First-pass fixture goals:
 - [ ] define validation behavior for missing `--source` on multi-object formats
 - [ ] define validation behavior for unsupported output extensions
 - [ ] define validation behavior for `--pretty` without a JSON payload target
-- [ ] define validation behavior for conflicting stdout-vs-file output flags
+- [ ] reject `--json` together with `--output <path>`
 
 ### Phase 2: Input detection and source binding
 

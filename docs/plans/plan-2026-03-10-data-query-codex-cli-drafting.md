@@ -32,6 +32,7 @@ This keeps the command family clearer:
 
 - this plan should follow direct CLI `data query` implementation
 - this plan should land before interactive `data query` implementation
+- this plan owns the shared Codex drafting contract that interactive `Codex Assistant` should reuse
 - the resulting implementation order is:
   1. direct CLI `data query`
   2. CLI `data query codex`
