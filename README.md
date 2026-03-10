@@ -214,12 +214,12 @@ Cleanup notes:
 
 Cleanup option comparison:
 
-| Surface | Current role | Current values / scope |
-| ------- | ------------ | ---------------------- |
-| `--hint` | choose fragment families to clean | `date`, `timestamp`, `serial`, `uid` |
-| `--style` | format surviving text after cleanup | `preserve`, `slug` |
-| `--timestamp-action` | keep or remove matched timestamp text | `keep`, `remove` with `--hint timestamp` |
-| `--conflict-strategy` | resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix` |
+| Surface               | Current role                                              | Current values / scope                   |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------- |
+| `--hint`              | choose fragment families to clean                         | `date`, `timestamp`, `serial`, `uid`     |
+| `--style`             | format surviving text after cleanup                       | `preserve`, `slug`                       |
+| `--timestamp-action`  | keep or remove matched timestamp text                     | `keep`, `remove` with `--hint timestamp` |
+| `--conflict-strategy` | resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix`           |
 
 ## Video Guides
 
@@ -234,3 +234,7 @@ Cleanup option comparison:
   - `ffmpeg` for `video` commands
 
 Use `cdx-chores doctor` to check what is available on your machine.
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](https://github.com/dev-pi2pie/cdx-chores/blob/main/LICENSE) file for details.
