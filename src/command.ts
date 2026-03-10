@@ -4,6 +4,7 @@ import {
   actionDataParquetPreview,
   actionDataPreview,
   actionDataQuery,
+  actionDataQueryCodex,
   actionDeferred,
   actionDoctor,
   actionJsonToCsv,
@@ -374,11 +375,11 @@ export async function runCli(
       },
     );
 
-  dataCommand
+  const queryCommand = dataCommand
     .command("query")
     .description("Run a DuckDB-backed SQL query against one input file")
     .argument("<input>", "Input data file")
-    .requiredOption("--sql <query>", "SQL query to execute against logical table `file`")
+    .option("--sql <query>", "SQL query to execute against logical table `file`")
     .option(
       "--input-format <format>",
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
@@ -416,6 +417,43 @@ export async function runCli(
           rows: options.rows,
           source: options.source,
           sql: options.sql,
+        });
+      },
+    );
+
+  queryCommand
+    .command("codex")
+    .description("Draft SQL from natural-language intent using bounded introspection")
+    .argument("<input>", "Input data file")
+    .requiredOption("--intent <text>", "Natural-language query intent for Codex drafting")
+    .option(
+      "--input-format <format>",
+      `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
+      parseDataQueryInputFormatOption,
+    )
+    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option("--print-sql", "Write drafted SQL only to stdout", false)
+    .action(
+      async (
+        input: string,
+        options: {
+          inputFormat?: DataQueryInputFormat;
+          intent: string;
+          printSql?: boolean;
+          source?: string;
+        },
+        command: Command,
+      ) => {
+        const parentOptions = command.parent?.opts<{
+          inputFormat?: DataQueryInputFormat;
+          source?: string;
+        }>();
+        await actionDataQueryCodex(cliRuntime, {
+          input,
+          inputFormat: options.inputFormat ?? parentOptions?.inputFormat,
+          intent: options.intent,
+          printSql: options.printSql,
+          source: options.source ?? parentOptions?.source,
         });
       },
     );

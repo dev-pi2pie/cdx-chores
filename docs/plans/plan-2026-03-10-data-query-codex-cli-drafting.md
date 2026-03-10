@@ -2,7 +2,7 @@
 title: "Data query Codex CLI drafting"
 created-date: 2026-03-10
 modified-date: 2026-03-10
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -43,9 +43,10 @@ This keeps the command family clearer:
 - the research contract now reserves `data query codex <input> --intent "..."` as a separate future lane
 - the direct CLI query plan exists separately
 - the interactive query plan exists separately
-- there is no `data query codex` command yet
-- there is no CLI introspection-first drafting lane yet
-- there is no SQL-only print mode for Codex-assisted query drafting yet
+- `data query codex <input> --intent "..."` now exists as a separate CLI drafting lane
+- bounded schema/sample introspection now feeds Codex drafting before SQL output
+- SQL-only output is now available through `--print-sql`
+- doctor now exposes `data query codex` preflight state separately from DuckDB format capability
 
 ## Design Contract
 
@@ -76,6 +77,14 @@ Output-channel rules:
 
 - default human-readable assistant output is written to stdout
 - `--print-sql` writes SQL only to stdout
+- the revealed SQL should be rendered on its own line in default output
+- `--print-sql` should keep SQL as one copyable line for shell reuse
+- while drafting is running, the CLI should surface progress before revealing the final result
+- the progress surface should show an explicit introspection step first
+- the Codex drafting wait state should use a mutable `Thinking` status treatment in TTY contexts
+- when final output is ready, any mutable running-status line should be cleared before the result is rendered
+- the human-readable default output should use the CLI color layer for scan-friendly styling in TTY contexts
+- the `SQL` label and the revealed SQL text should use different colors in TTY contexts
 - diagnostics and failures are written to stderr
 
 ### Additional flags
@@ -173,62 +182,67 @@ Output-channel rules:
 
 ### Phase 1: Freeze CLI drafting contract
 
-- [ ] add `data query codex <input> --intent "..."`
-- [ ] add `--input-format <format>`
-- [ ] add `--source <name>`
-- [ ] add `--print-sql`
-- [ ] define validation behavior for missing `--intent`
-- [ ] define validation behavior for ambiguous source selection
-- [ ] define validation behavior for incompatible flag combinations
+- [x] add `data query codex <input> --intent "..."`
+- [x] add `--input-format <format>`
+- [x] add `--source <name>`
+- [x] add `--print-sql`
+- [x] define validation behavior for missing `--intent`
+- [x] define validation behavior for ambiguous source selection
+- [x] define validation behavior for incompatible flag combinations
 
 ### Phase 2: Introspection foundation
 
-- [ ] reuse or build bounded introspection for supported formats
-- [ ] support deterministic source selection for SQLite and Excel
-- [ ] freeze sample-size behavior for CLI Codex drafting
-- [ ] render a concise schema/sample summary for default output mode
+- [x] reuse or build bounded introspection for supported formats
+- [x] support deterministic source selection for SQLite and Excel
+- [x] freeze sample-size behavior for CLI Codex drafting
+- [x] render a concise schema/sample summary for default output mode
 
 ### Phase 3: Codex integration
 
-- [ ] define the exact prompt/context bundle passed to Codex
-- [ ] draft SQL from natural-language intent
-- [ ] keep Codex advisory-only
-- [ ] define targeted failure messages for unavailable or failed Codex drafting
+- [x] define the exact prompt/context bundle passed to Codex
+- [x] draft SQL from natural-language intent
+- [x] keep Codex advisory-only
+- [x] define targeted failure messages for unavailable or failed Codex drafting
 
 ### Phase 4: Output behavior
 
-- [ ] implement default human-readable assistant output
-- [ ] implement SQL-only output for `--print-sql`
-- [ ] keep default assistant output on stdout
-- [ ] keep diagnostics and failures on stderr
-- [ ] keep SQL-only output stable enough for shell workflows
-- [ ] keep assistant summaries and SQL output deterministic enough for testing
+- [x] implement default human-readable assistant output
+- [x] implement SQL-only output for `--print-sql`
+- [x] render revealed SQL on its own line in default output while keeping `--print-sql` one-line
+- [x] surface progress feedback for introspection and Codex drafting before final output
+- [x] clear mutable TTY status output before rendering the final result
+- [x] add color styling for human-readable Codex drafting output
+- [x] style the `SQL` label and revealed SQL text with different colors
+- [x] keep default assistant output on stdout
+- [x] keep diagnostics and failures on stderr
+- [x] keep SQL-only output stable enough for shell workflows
+- [x] keep assistant summaries and SQL output deterministic enough for testing
 
 ### Phase 5: Doctor and preflight support
 
-- [ ] add doctor reporting for `data query codex` availability
-- [ ] distinguish configured support, authentication or session availability, and ready-to-draft availability
-- [ ] define doctor behavior when Codex drafting is unavailable in the current environment
+- [x] add doctor reporting for `data query codex` availability
+- [x] distinguish configured support, authentication or session availability, and ready-to-draft availability
+- [x] define doctor behavior when Codex drafting is unavailable in the current environment
 
 ### Phase 6: Tests
 
-- [ ] add CLI coverage for basic drafting flow
-- [ ] add coverage for `--print-sql`
-- [ ] add coverage for `--input-format`
-- [ ] add coverage for `--source`
-- [ ] add coverage for ambiguous-source failures
-- [ ] add coverage for Codex configuration/unavailable failures
-- [ ] add coverage for stdout/stderr separation in default and SQL-only modes
-- [ ] add coverage for output-shape expectations in default and SQL-only modes
+- [x] add CLI coverage for basic drafting flow
+- [x] add coverage for `--print-sql`
+- [x] add coverage for `--input-format`
+- [x] add coverage for `--source`
+- [x] add coverage for ambiguous-source failures
+- [x] add coverage for Codex configuration/unavailable failures
+- [x] add coverage for stdout/stderr separation in default and SQL-only modes
+- [x] add coverage for output-shape expectations in default and SQL-only modes
 
 ### Phase 7: Docs and verification
 
-- [ ] add a dedicated `data query codex` usage guide
-- [ ] document the split between execution and drafting lanes
-- [ ] document `--print-sql`
-- [ ] document the first-pass non-goal that `--execute` is not yet implemented
-- [ ] document doctor and preflight expectations for Codex drafting availability
-- [ ] run manual smoke checks across representative formats
+- [x] add a dedicated `data query codex` usage guide
+- [x] document the split between execution and drafting lanes
+- [x] document `--print-sql`
+- [x] document the first-pass non-goal that `--execute` is not yet implemented
+- [x] document doctor and preflight expectations for Codex drafting availability
+- [x] run manual smoke checks across representative formats
 
 ## Success Criteria
 
@@ -243,8 +257,12 @@ Output-channel rules:
 ## Verification
 
 - `bunx tsc --noEmit`
-- focused `bun test` Codex drafting suites
-- manual smoke checks across representative formats
+- `bun test test/cli-actions-data-query.test.ts test/cli-actions-data-query-codex.test.ts test/cli-command-data-query.test.ts test/cli-command-data-query-codex.test.ts test/data-query-fixture-generator.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts`
+- manual smoke checks across representative formats using a deterministic Codex stub:
+  - `CDX_CHORES_CODEX_PATH=examples/playground/.tmp-tests/data-query-codex-smoke-stub.mjs bun src/bin.ts data query codex examples/playground/data-query/basic.csv --intent "show id and name ordered by id"`
+  - `CDX_CHORES_CODEX_PATH=examples/playground/.tmp-tests/data-query-codex-smoke-stub.mjs bun src/bin.ts data query codex examples/playground/data-query/basic.csv --intent "count rows" --print-sql`
+  - `CDX_CHORES_CODEX_PATH=examples/playground/.tmp-tests/data-query-codex-smoke-stub.mjs bun src/bin.ts data query codex examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"`
+  - `bun src/bin.ts doctor --json`
 
 ## Related Research
 

@@ -31,11 +31,16 @@ describe("cli action modules: doctor", () => {
     expect(Object.hasOwn(payload.capabilities, "md.to-docx")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "video.gif")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.csv")).toBe(true);
+    expect(Object.hasOwn(payload.capabilities, "data.query.codex")).toBe(true);
     expect(payload.query).toBeDefined();
     expect(typeof payload.query.available).toBe("boolean");
     expect(payload.query.formats).toHaveProperty("csv");
     expect(payload.query.formats).toHaveProperty("sqlite");
     expect(typeof payload.query.formats.csv.loadability).toBe("boolean");
+    expect(payload.queryCodex).toBeDefined();
+    expect(typeof payload.queryCodex.configuredSupport).toBe("boolean");
+    expect(typeof payload.queryCodex.authSessionAvailable).toBe("boolean");
+    expect(typeof payload.queryCodex.readyToDraft).toBe("boolean");
   });
 
   test("actionDoctor emits human-readable text report", async () => {
@@ -51,8 +56,10 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("md.to-docx");
     expect(stdout.text).toContain("video.gif");
     expect(stdout.text).toContain("Data query formats:");
+    expect(stdout.text).toContain("Data query Codex:");
     expect(stdout.text).toContain("csv");
     expect(stdout.text).toContain("sqlite");
+    expect(stdout.text).toContain("ready-to-draft=");
   });
 });
 

@@ -21,6 +21,18 @@ export interface DataQueryResultSet {
   rows: Array<Record<string, unknown>>;
 }
 
+export interface DataQueryIntrospectionColumn {
+  name: string;
+  type: string;
+}
+
+export interface DataQuerySourceIntrospection {
+  columns: DataQueryIntrospectionColumn[];
+  sampleRows: Array<Record<string, string>>;
+  selectedSource?: string;
+  truncated: boolean;
+}
+
 export interface DuckDbExtensionProbe {
   detail?: string;
   installed: boolean;
@@ -412,6 +424,48 @@ export async function executeDataQueryForAllRows(
     }
     throw new CliError(`Failed to execute query: ${toErrorMessage(error)}`, {
       code: "DATA_QUERY_FAILED",
+      exitCode: 2,
+    });
+  }
+}
+
+export async function collectDataQuerySourceIntrospection(
+  connection: DuckDBConnection,
+  inputPath: string,
+  format: DataQueryInputFormat,
+  source: string | undefined,
+  sampleRowLimit: number,
+): Promise<DataQuerySourceIntrospection> {
+  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source);
+
+  try {
+    const reader = await connection.streamAndReadUntil("select * from file", sampleRowLimit + 1);
+    assertResultSet(reader);
+
+    const columnNames = reader.deduplicatedColumnNames();
+    const columnTypes = reader.columnTypes();
+    const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
+    const visibleRows = allRows.slice(0, sampleRowLimit).map((row) =>
+      Object.fromEntries(
+        columnNames.map((column) => [column, stringifyPreviewValue(row[column])]),
+      ),
+    );
+
+    return {
+      columns: columnNames.map((name, index) => ({
+        name,
+        type: columnTypes[index]?.toString() ?? "UNKNOWN",
+      })),
+      sampleRows: visibleRows,
+      selectedSource: preparedSource.selectedSource,
+      truncated: allRows.length > sampleRowLimit || !reader.done,
+    };
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
+    throw new CliError(`Failed to inspect ${format} query input: ${toErrorMessage(error)}`, {
+      code: "DATA_QUERY_SOURCE_FAILED",
       exitCode: 2,
     });
   }

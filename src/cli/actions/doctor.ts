@@ -1,3 +1,4 @@
+import { inspectCodexEnvironment } from "../../adapters/codex/shared";
 import { getCliColors } from "../colors";
 import { inspectCommand } from "../deps";
 import { inspectDataQueryExtensions } from "../duckdb/query";
@@ -10,10 +11,11 @@ export interface DoctorOptions {
 
 export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions = {}): Promise<void> {
   const pc = getCliColors(runtime);
-  const [pandoc, ffmpeg, queryExtensions] = await Promise.all([
+  const [pandoc, ffmpeg, queryExtensions, codexEnvironment] = await Promise.all([
     inspectCommand("pandoc", runtime.platform),
     inspectCommand("ffmpeg", runtime.platform),
     inspectDataQueryExtensions(),
+    inspectCodexEnvironment(),
   ]);
 
   const queryFormats = {
@@ -46,6 +48,18 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     },
   };
 
+  const queryCodex = {
+    configuredSupport: codexEnvironment.configuredSupport,
+    authSessionAvailable: codexEnvironment.authSessionAvailable,
+    readyToDraft:
+      codexEnvironment.configuredSupport &&
+      codexEnvironment.authSessionAvailable &&
+      queryExtensions.available,
+    detail:
+      codexEnvironment.detail ??
+      (queryExtensions.available ? undefined : queryExtensions.detail),
+  };
+
   const capabilities = {
     "md.to-docx": pandoc.available,
     "video.convert": ffmpeg.available,
@@ -56,6 +70,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     "data.query.parquet": queryFormats.parquet.loadability,
     "data.query.sqlite": queryFormats.sqlite.loadability,
     "data.query.excel": queryFormats.excel.loadability,
+    "data.query.codex": queryCodex.readyToDraft,
   };
 
   if (options.json) {
@@ -69,6 +84,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
         detail: queryExtensions.detail,
         formats: queryFormats,
       },
+      queryCodex,
       capabilities,
     };
     printLine(runtime.stdout, JSON.stringify(payload, null, 2));
@@ -126,5 +142,15 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     if ("detail" in state && state.detail) {
       printLine(runtime.stdout, `  ${pc.dim(state.detail)}`);
     }
+  }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Data query Codex:")));
+  printLine(
+    runtime.stdout,
+    `- ${pc.bold("codex")}: configured support=${queryCodex.configuredSupport ? "yes" : "no"}, auth/session=${queryCodex.authSessionAvailable ? "yes" : "no"}, ready-to-draft=${queryCodex.readyToDraft ? "yes" : "no"}`,
+  );
+  if (queryCodex.detail) {
+    printLine(runtime.stdout, `  ${pc.dim(queryCodex.detail)}`);
   }
 }

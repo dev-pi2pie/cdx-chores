@@ -2,6 +2,8 @@
 
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file through the logical table name `file`.
 
+For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
+
 Current boundary:
 
 - one input file per invocation
