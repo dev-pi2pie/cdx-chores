@@ -22,6 +22,7 @@ Draft the follow-up implementation plans for `data query` now that the research 
 - updated the research doc so its related-plan section points to all three implementation plans
 - clarified in the research and plans that any later Codex-assisted CLI drafting should live in a separate `data query codex` lane rather than inside base `data query`
 - tightened the draft plans to remove remaining implementation guesswork around `--pretty`, interactive manual SQL entry, Codex stdout/stderr behavior, and Codex doctor/preflight expectations
+- clarified the direct CLI plan so `data query` owns an independent smoke-fixture generator suite under `scripts/` rather than relying on preview fixture generation
 
 ## Files
 

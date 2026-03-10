@@ -23,6 +23,8 @@ The direct CLI path should land before interactive query because it:
 
 This plan intentionally keeps SQL execution separate from later Codex-assisted SQL drafting.
 
+It should also own its own smoke-fixture generation path instead of reusing preview fixture scripts opportunistically.
+
 ## Current State
 
 - `data preview` exists for lightweight CSV/JSON inspection
@@ -58,7 +60,8 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 
 - `--input-format <format>` overrides automatic input detection
 - `--source <name>` selects the source object for formats with multiple logical objects
-- `--source` is required for SQLite tables/views and Excel sheets unless a deterministic default is explicitly frozen during implementation
+- `--source` is required for SQLite tables/views and Excel sheets in direct CLI mode
+- direct CLI does not auto-select a default source object for multi-object formats
 - the selected source object is exposed in SQL as logical table `file`
 
 ### Output contract
@@ -70,7 +73,10 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - `--pretty` only affects JSON serialization
 - `--output <path>` writes full query results to a file
 - output format is inferred from `.json` or `.csv`
+- when `--output <path>` is used, the result payload is written only to the target file
+- when `--output <path>` is used, normal table or JSON result payload should not also be emitted to stdout
 - logs and status messaging must stay separate from result payloads
+- diagnostics and status output should use stderr when a file payload is being written
 
 ### Error contract
 
@@ -89,6 +95,40 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
   - detected support
   - loadability
   - installability
+
+### Smoke-fixture generation contract
+
+- add a dedicated `data query` smoke-fixture generator under `scripts/`
+- keep it separate from `scripts/generate-tabular-preview-fixtures.mjs` and `scripts/generate-parquet-preview-fixtures.mjs`
+- generate playground smoke assets under `examples/playground/data-query/`
+- support deterministic regeneration through a reset-style command
+- cover representative inputs for:
+  - CSV
+  - TSV
+  - Parquet
+  - SQLite
+  - Excel
+- keep this generator for manual smoke preparation and contract verification, not as a required runtime dependency of routine automated tests
+- keep the generator local-only and deterministic
+- do not require network downloads during smoke-fixture generation
+- do not depend on runtime extension installation during smoke-fixture generation
+- prefer stable local generation dependencies or checked-in generation tooling over ad hoc environment assumptions
+
+Recommended first-pass script shape:
+
+- `scripts/generate-data-query-fixtures.mjs`
+- commands:
+  - `seed`
+  - `clean`
+  - `reset`
+
+First-pass fixture goals:
+
+- one small happy-path fixture per supported input family
+- one SQLite fixture with multiple tables or views to exercise `--source`
+- one Excel fixture with multiple sheets to exercise `--source`
+- one wider fixture to exercise column selection and JSON or CSV export checks
+- one larger fixture to exercise bounded table rendering and full-result export separation
 
 ### Follow-up command-family note
 
@@ -132,6 +172,13 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - distinguish built-in query-capable formats from extension-backed formats
 - expose detected support, loadability, and installability for extension-backed formats
 
+### Smoke-fixture generation
+
+- add a dedicated generator for `data query` smoke fixtures
+- keep query smoke generation independent from preview smoke generation
+- land generated playground smoke assets under `examples/playground/data-query/`
+- keep automated tests on stable test fixtures or generated-once fixtures rather than runtime smoke generation
+
 ## Non-Goals
 
 - interactive `data query`
@@ -159,6 +206,9 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - Risk: CSV and TSV support may drift into format-specific parser behavior that is not explicit in the plan.
   Mitigation: freeze CSV-family delimited text as part of the first-class surface and test both `.csv` and `.tsv`.
 
+- Risk: manual smoke coverage may become ad hoc and drift away from the supported command contract.
+  Mitigation: add an independent `data query` smoke-fixture generator so representative inputs can be regenerated consistently across formats.
+
 ## Implementation Touchpoints
 
 - `src/command.ts`
@@ -168,9 +218,20 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - output rendering or serializer helpers under `src/cli/`
 - `src/cli/actions/doctor.ts`
 - focused query tests under `test/`
+- new smoke-fixture generator under `scripts/`
+- generated smoke assets under `examples/playground/data-query/`
 - new usage guide docs under `docs/guides/`
 
 ## Phase Checklist
+
+### Phase 0: Smoke-fixture generation suite
+
+- [ ] add `scripts/generate-data-query-fixtures.mjs`
+- [ ] support `seed`, `clean`, and `reset`
+- [ ] generate deterministic smoke fixtures under `examples/playground/data-query/`
+- [ ] cover representative CSV, TSV, Parquet, SQLite, and Excel inputs
+- [ ] include multi-object SQLite and Excel fixtures for `--source` coverage
+- [ ] keep smoke generation independent from preview fixture generators
 
 ### Phase 1: Freeze CLI command and validation contract
 
@@ -184,6 +245,8 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - [ ] define validation behavior for incompatible flag combinations
 - [ ] define validation behavior for missing `--source` on multi-object formats
 - [ ] define validation behavior for unsupported output extensions
+- [ ] define validation behavior for `--pretty` without a JSON payload target
+- [ ] define validation behavior for conflicting stdout-vs-file output flags
 
 ### Phase 2: Input detection and source binding
 
@@ -224,13 +287,19 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - [ ] add coverage for `--input-format`
 - [ ] add coverage for `--source`
 - [ ] add coverage for missing-source validation
+- [ ] add coverage for no implicit default source selection on multi-object formats
 - [ ] add coverage for bounded table output with default and explicit `--rows`
 - [ ] add coverage for `--json`
 - [ ] add coverage for `--pretty`
 - [ ] add coverage for `--output` with `.json`
 - [ ] add coverage for `--output` with `.csv`
+- [ ] add coverage for `--output` suppressing stdout result payloads
+- [ ] add coverage for invalid `--pretty` usage without a JSON payload target
+- [ ] add coverage for conflicting output-mode flag combinations
+- [ ] add coverage for unsupported output extensions
 - [ ] add coverage for extension load failure and install-unavailable guidance
 - [ ] add doctor coverage for detected support, loadability, and installability
+- [ ] confirm the smoke-fixture generator produces stable representative inputs for manual verification
 
 ### Phase 7: Docs and verification
 
@@ -239,6 +308,7 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - [ ] document `--source` for SQLite and Excel
 - [ ] document output-mode behavior clearly
 - [ ] document doctor capability semantics
+- [ ] document the dedicated smoke-fixture generator and its reset command
 - [ ] run manual smoke checks across built-in and extension-backed formats
 
 ## Success Criteria
@@ -251,9 +321,10 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 
 ## Verification
 
+- `node scripts/generate-data-query-fixtures.mjs reset`
 - `bunx tsc --noEmit`
 - focused `bun test` query and doctor suites
-- manual smoke checks on representative CSV, TSV, Parquet, SQLite, and Excel inputs
+- manual smoke checks on representative CSV, TSV, Parquet, SQLite, and Excel inputs generated under `examples/playground/data-query/`
 
 ## Related Research
 
