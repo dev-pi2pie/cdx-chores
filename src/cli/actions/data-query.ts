@@ -93,7 +93,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
   let connection;
   try {
     connection = await createDuckDbConnection();
-    await prepareDataQuerySource(connection, inputPath, format, source);
+    const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source);
 
     if (options.json) {
       const result = await executeDataQueryForAllRows(connection, sql);
@@ -125,7 +125,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       format,
       inputPath,
       rows: table.rows,
-      source,
+      source: preparedSource.selectedSource,
       truncated: table.truncated,
     });
 

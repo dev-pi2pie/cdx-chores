@@ -3,12 +3,20 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionDataQuery } from "../src/cli/actions";
+import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function parquetFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "parquet-preview", name);
 }
+
+function dataQueryFixturePath(name: string): string {
+  return join(REPO_ROOT, "test", "fixtures", "data-query", name);
+}
+
+const queryExtensions = await inspectDataQueryExtensions();
+const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
 describe("cli action modules: data query", () => {
   test("actionDataQuery renders bounded table output for CSV input", async () => {
@@ -180,22 +188,21 @@ describe("cli action modules: data query failure modes", () => {
   });
 
   test("actionDataQuery requires source for SQLite inputs", async () => {
-    await withTempFixtureDir("data-query", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "sample.sqlite");
-      await writeFile(inputPath, "", "utf8");
-      const { runtime, expectNoOutput } = createActionTestRuntime();
+    if (!sqliteReady) {
+      return;
+    }
 
-      await expectCliError(
-        () =>
-          actionDataQuery(runtime, {
-            input: toRepoRelativePath(inputPath),
-            sql: "select * from file",
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is required for SQLite" },
-      );
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: toRepoRelativePath(dataQueryFixturePath("multi.sqlite")),
+          sql: "select * from file",
+        }),
+      { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is required for SQLite" },
+    );
 
-      expectNoOutput();
-    });
+    expectNoOutput();
   });
 
   test("actionDataQuery rejects source for single-object inputs", async () => {

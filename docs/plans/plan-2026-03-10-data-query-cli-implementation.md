@@ -2,7 +2,7 @@
 title: "Data query CLI implementation"
 created-date: 2026-03-10
 modified-date: 2026-03-10
-status: active
+status: completed
 agent: codex
 ---
 
@@ -34,6 +34,7 @@ It should also own its own smoke-fixture generation path instead of reusing prev
 - an initial `data query` CLI command now exists for SQL-first direct querying
 - the direct CLI path now supports CSV/TSV and Parquet end to end, with guidance-first extension handling for SQLite and Excel
 - doctor now exposes query capability by format
+- dedicated deterministic smoke fixtures now exist for playground and test coverage
 - there is no separate `data query codex` drafting lane yet
 
 ## Design Contract
@@ -228,12 +229,12 @@ First-pass fixture goals:
 
 ### Phase 0: Smoke-fixture generation suite
 
-- [ ] add `scripts/generate-data-query-fixtures.mjs`
-- [ ] support `seed`, `clean`, and `reset`
-- [ ] generate deterministic smoke fixtures under `examples/playground/data-query/`
-- [ ] cover representative CSV, TSV, Parquet, SQLite, and Excel inputs
-- [ ] include multi-object SQLite and Excel fixtures for `--source` coverage
-- [ ] keep smoke generation independent from preview fixture generators
+- [x] add `scripts/generate-data-query-fixtures.mjs`
+- [x] support `seed`, `clean`, and `reset`
+- [x] generate deterministic smoke fixtures under `examples/playground/data-query/`
+- [x] cover representative CSV, TSV, Parquet, SQLite, and Excel inputs
+- [x] include multi-object SQLite and Excel fixtures for `--source` coverage
+- [x] keep smoke generation independent from preview fixture generators
 
 ### Phase 1: Freeze CLI command and validation contract
 
@@ -254,7 +255,7 @@ First-pass fixture goals:
 
 - [x] implement extension-based input detection
 - [x] implement `--input-format` override behavior
-- [ ] add source-object selection logic for SQLite and Excel
+- [x] add source-object selection logic for SQLite and Excel
 - [x] bind the chosen source object to logical table `file`
 - [x] keep direct CLI deterministic when source selection is ambiguous
 
@@ -285,12 +286,12 @@ First-pass fixture goals:
 
 ### Phase 6: Tests
 
-- [ ] add direct CLI coverage for each supported input family
+- [x] add direct CLI coverage for each supported input family
 - [x] add coverage for `--input-format`
 - [x] add coverage for `--source`
 - [x] add coverage for missing-source validation
 - [x] add coverage for no implicit default source selection on multi-object formats
-- [ ] add coverage for bounded table output with default and explicit `--rows`
+- [x] add coverage for bounded table output with default and explicit `--rows`
 - [x] add coverage for `--json`
 - [x] add coverage for `--pretty`
 - [x] add coverage for `--output` with `.json`
@@ -299,9 +300,9 @@ First-pass fixture goals:
 - [x] add coverage for invalid `--pretty` usage without a JSON payload target
 - [x] add coverage for conflicting output-mode flag combinations
 - [x] add coverage for unsupported output extensions
-- [ ] add coverage for extension load failure and install-unavailable guidance
+- [x] add coverage for extension load failure and install-unavailable guidance
 - [x] add doctor coverage for detected support, loadability, and installability
-- [ ] confirm the smoke-fixture generator produces stable representative inputs for manual verification
+- [x] confirm the smoke-fixture generator produces stable representative inputs for manual verification
 
 ### Phase 7: Docs and verification
 
@@ -310,8 +311,8 @@ First-pass fixture goals:
 - [x] document `--source` for SQLite and Excel
 - [x] document output-mode behavior clearly
 - [x] document doctor capability semantics
-- [ ] document the dedicated smoke-fixture generator and its reset command
-- [ ] run manual smoke checks across built-in and extension-backed formats
+- [x] document the dedicated smoke-fixture generator and its reset command
+- [x] run manual smoke checks across built-in and extension-backed formats
 
 ## Success Criteria
 
@@ -324,8 +325,9 @@ First-pass fixture goals:
 ## Verification
 
 - `node scripts/generate-data-query-fixtures.mjs reset`
+- `node scripts/generate-data-query-fixtures.mjs reset --output-dir test/fixtures/data-query`
 - `bunx tsc --noEmit`
-- focused `bun test` query and doctor suites
+- `bun test test/cli-actions-data-query.test.ts test/cli-command-data-query.test.ts test/data-query-fixture-generator.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts`
 - manual smoke checks on representative CSV, TSV, Parquet, SQLite, and Excel inputs generated under `examples/playground/data-query/`
 
 ## Related Research

@@ -29,10 +29,10 @@ Supported `--input-format` values:
 Examples:
 
 ```bash
-cdx-chores data query ./examples/playground/data-query/orders.csv --sql "select * from file order by id"
-cdx-chores data query ./examples/playground/data-query/orders.tsv --sql "select team, sum(hours) as hours from file group by team order by hours desc" --rows 10
-cdx-chores data query ./examples/playground/parquet-preview/basic.parquet --sql "select id, name from file order by id" --json
-cdx-chores data query ./examples/playground/data-query/metrics.csv --sql "select * from file" --output ./examples/playground/data-query/metrics.json --pretty --overwrite
+cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select id, name from file order by id"
+cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
+cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
+cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 ```
 
 ### Source selection
@@ -45,8 +45,8 @@ cdx-chores data query ./examples/playground/data-query/metrics.csv --sql "select
 Examples:
 
 ```bash
-cdx-chores data query ./examples/playground/data-query/app.sqlite --source users --sql "select * from file limit 20"
-cdx-chores data query ./examples/playground/data-query/report.xlsx --source Summary --sql "select * from file"
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
 ```
 
 Single-object inputs reject `--source`.
@@ -70,3 +70,21 @@ The report distinguishes:
 - built-in formats that are queryable when DuckDB is available
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
+
+### Smoke fixtures
+
+The repo includes a dedicated deterministic fixture generator for `data query`.
+
+Reset the manual smoke fixtures under `examples/playground/data-query/`:
+
+```bash
+node scripts/generate-data-query-fixtures.mjs reset
+```
+
+Reset the checked-in test fixtures under `test/fixtures/data-query/`:
+
+```bash
+node scripts/generate-data-query-fixtures.mjs reset --output-dir test/fixtures/data-query
+```
+
+The generator is independent from the preview fixture scripts and covers representative CSV, TSV, Parquet, SQLite, and Excel inputs, including multi-object SQLite and Excel fixtures for `--source`.

@@ -10,6 +10,9 @@
     "LICENSE*",
     "README.md"
   ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.mjs",

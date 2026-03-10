@@ -4,6 +4,7 @@ import { extname } from "node:path";
 import { stringifyPreviewValue } from "../data-preview/normalize";
 import type { DataPreviewRow } from "../data-preview/source";
 import { CliError } from "../errors";
+import { listXlsxSheetNames } from "./xlsx-sources";
 
 export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
 
@@ -26,6 +27,10 @@ export interface DuckDbExtensionProbe {
   installable: boolean | null;
   loadable: boolean;
   loaded: boolean;
+}
+
+interface PreparedDataQuerySource {
+  selectedSource?: string;
 }
 
 interface DuckDbExtensionCatalogEntry {
@@ -145,7 +150,11 @@ function inferInstallability(installed: boolean, detail: string | undefined): bo
     /operation not permitted/i.test(detail) ||
     /permission denied/i.test(detail) ||
     /failed to create directory/i.test(detail) ||
-    /read-only/i.test(detail)
+    /read-only/i.test(detail) ||
+    /failed to download extension/i.test(detail) ||
+    /could not establish connection/i.test(detail) ||
+    /name or service not known/i.test(detail) ||
+    /temporary failure in name resolution/i.test(detail)
   ) {
     return false;
   }
@@ -237,18 +246,8 @@ function buildRelationSql(inputPath: string, format: DataQueryInputFormat, sourc
   }
 }
 
-function assertSourceContract(format: DataQueryInputFormat, source?: string): void {
+function assertSingleObjectSourceContract(format: DataQueryInputFormat, source?: string): void {
   const normalized = source?.trim();
-  if (format === "sqlite" || format === "excel") {
-    if (!normalized) {
-      throw new CliError(`--source is required for ${format === "sqlite" ? "SQLite" : "Excel"} query inputs.`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    return;
-  }
-
   if (normalized) {
     throw new CliError(`--source is not valid for ${format.toUpperCase()} query inputs.`, {
       code: "INVALID_INPUT",
@@ -257,23 +256,86 @@ function assertSourceContract(format: DataQueryInputFormat, source?: string): vo
   }
 }
 
+function formatAvailableSources(sources: readonly string[]): string {
+  return sources.join(", ");
+}
+
+async function listSQLiteSources(connection: DuckDBConnection, inputPath: string): Promise<string[]> {
+  const reader = await connection.runAndReadAll(
+    `select name from sqlite_scan(${escapeSqlString(inputPath)}, 'sqlite_master') where type in ('table', 'view') and name not like 'sqlite_%' order by name`,
+  );
+  const rows = reader.getRowObjectsJson() as Array<{ name?: string }>;
+  return rows
+    .map((row) => (typeof row.name === "string" ? row.name : ""))
+    .filter((name) => name.length > 0);
+}
+
+async function resolveMultiObjectSource(
+  connection: DuckDBConnection,
+  inputPath: string,
+  format: "sqlite" | "excel",
+  source?: string,
+): Promise<string> {
+  const sources =
+    format === "sqlite"
+      ? await listSQLiteSources(connection, inputPath)
+      : await listXlsxSheetNames(inputPath);
+
+  if (sources.length === 0) {
+    throw new CliError(`No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const normalizedSource = source?.trim();
+  if (!normalizedSource) {
+    throw new CliError(
+      `--source is required for ${format === "sqlite" ? "SQLite" : "Excel"} query inputs. Available sources: ${formatAvailableSources(sources)}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  if (!sources.includes(normalizedSource)) {
+    throw new CliError(
+      `Unknown ${format === "sqlite" ? "SQLite" : "Excel"} source: ${normalizedSource}. Available sources: ${formatAvailableSources(sources)}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return normalizedSource;
+}
+
 export async function prepareDataQuerySource(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
   source?: string,
-): Promise<void> {
-  assertSourceContract(format, source);
+): Promise<PreparedDataQuerySource> {
+  let selectedSource = source?.trim();
 
   if (format === "sqlite") {
     await ensureDuckDbExtensionLoaded(connection, "SQLite", SQLITE_LOAD_NAME, SQLITE_STATUS_NAME);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", source);
   }
   if (format === "excel") {
     await ensureDuckDbExtensionLoaded(connection, "Excel", EXCEL_LOAD_NAME, EXCEL_STATUS_NAME);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", source);
+  }
+
+  if (format === "csv" || format === "tsv" || format === "parquet") {
+    assertSingleObjectSourceContract(format, source);
   }
 
   try {
-    await connection.run(`create or replace temp view file as ${buildRelationSql(inputPath, format, source?.trim())}`);
+    await connection.run(`create or replace temp view file as ${buildRelationSql(inputPath, format, selectedSource)}`);
+    return { selectedSource };
   } catch (error) {
     throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
       code: "DATA_QUERY_SOURCE_FAILED",
