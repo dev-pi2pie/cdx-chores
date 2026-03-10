@@ -164,6 +164,130 @@ Implication:
 
 - interactive query mode should remain out of scope until a specific SQL-entry UX is selected
 
+## Decision Updates
+
+### Draft decision 1. v1 should include CSV, Parquet, SQLite, and Excel
+
+The current draft should no longer frame SQLite and Excel as optional expansion beyond the first useful query milestone.
+
+Recommended draft contract:
+
+- built-in first-class inputs: CSV and Parquet
+- extension-backed first-class inputs: SQLite and Excel
+- JSON remains deferred until query-shape normalization is explicit
+
+Why:
+
+- SQLite and Excel are strong practical formats for local CLI workflows
+- both are materially narrower than heavier remote-database targets such as PostgreSQL or MySQL
+- extension-backed support still fits the single-input, single-table-first boundary if activation behavior is explicit
+
+### Draft decision 2. v1 should require `--sql`, and non-SQL query modes should stay out
+
+Recommended draft contract:
+
+- every invocation requires explicit SQL in v1
+- non-SQL query helpers should stay out of the first implementation plan
+
+Potential non-SQL query modes would mean opinionated shortcuts such as:
+
+- `data query sales.csv --select "region,total" --where "total > 1000"`
+- `data query users.parquet --count`
+- `data query metrics.xlsx --group-by team --sum hours`
+- `data query app.sqlite --schema`
+
+These are all effectively alternate mini-languages layered on top of SQL.
+
+Why defer them:
+
+- they expand the product surface without adding new backend capability
+- they create a second query grammar that users must learn
+- they reopen design questions around quoting, expressions, aggregates, aliases, ordering, and function support
+
+Implication:
+
+- v1 should stay on one clear contract: `data query <input> --sql "<query>"`
+
+### Draft decision 3. Support explicit input-format override with `--input-format`
+
+Recommended draft contract:
+
+- detect input format automatically by default
+- allow users to override detection with `--input-format <format>`
+
+Why:
+
+- `--format` is too easily confused with output formatting
+- `--input-format` is explicit about which contract it affects
+
+### Draft decision 4. Default output should be a bounded terminal table, with opt-in JSON output
+
+Recommended draft contract:
+
+- default terminal behavior renders a bounded table
+- `--json` emits machine-readable JSON to stdout instead of the table
+- `--pretty` only affects machine-readable JSON rendering when `--json` is selected
+
+Implication:
+
+- the command should separate human-facing terminal rendering from data-export behavior
+
+### Draft decision 5. `--output <path>` should be part of v1, with format inferred from the output path
+
+Recommended draft contract:
+
+- `--output <path>` writes result data to a file in v1
+- `.json` and `.csv` are chosen from the output-path extension
+- unsupported output extensions should fail clearly
+
+Implication:
+
+- logs and status messaging must stay separate from the file payload and should continue going to stderr or other non-payload channels when needed
+
+### Draft decision 6. Do not add a hidden SQL result limit by default
+
+The result-limit question should be separated into three different concerns:
+
+- SQL execution size
+- terminal display size
+- file/stdout serialization size
+
+Recommended draft contract:
+
+- do not rewrite the user query with an implicit SQL `LIMIT`
+- keep default terminal table rendering bounded
+- when writing to `--output`, serialize the full query result unless the user query itself limits rows
+- when using `--json` to stdout, prefer full query semantics over a hidden row cap, while keeping large-output safeguards as an implementation concern
+
+Implication:
+
+- v1 should bound presentation by default, not silently change query semantics
+
+### Draft decision 7. Missing SQLite or Excel extensions should fail with guidance in v1
+
+Recommended draft contract:
+
+- explicit extension loading is allowed
+- automatic extension installation from the command path is not part of v1
+- missing or unloadable extensions should fail with targeted guidance
+
+Guidance should cover:
+
+- which extension was required
+- whether the problem was missing install, blocked download, blocked cache directory, or load failure
+- what the user can do next
+
+### Draft decision 8. Doctor should advertise query capability by format, including extension-backed formats
+
+Recommended draft contract:
+
+- doctor should not collapse DuckDB capability into one generic yes/no signal
+- doctor should advertise built-in query-capable formats separately from extension-backed formats
+
+Implication:
+
+- the capability model should be format-aware enough to explain why Parquet may work while SQLite or Excel may still be unavailable
+
 ## Implications or Recommendations
 
 ### Recommendation A. Keep `data query` doc-only until this research is completed
@@ -186,9 +310,13 @@ Best current starting point:
 - command: `data query <input> --sql "<query>"`
 - input scope: one file per invocation
 - logical table name: `file`
-- supported first-class candidates: Parquet and CSV
-- extension-backed near-term candidates: SQLite and Excel
+- supported built-in first-class inputs: Parquet and CSV
+- supported extension-backed first-class inputs: SQLite and Excel
+- input-format override flag: `--input-format`
 - JSON support: conditional on explicit normalization rules
+- default stdout rendering: bounded table
+- machine-readable stdout mode: `--json` with optional `--pretty`
+- file output: `--output <path>` with `.json` / `.csv` inferred from the output path
 - interactive mode: deferred
 
 This is a baseline for evaluation, not a final implementation decision.
@@ -213,18 +341,21 @@ Recommended near-term rule:
 
 This preserves predictable CLI behavior across local, CI, offline, and sandboxed environments.
 
-### Recommendation E. Treat output contract as a first-class research topic
+### Recommendation E. Treat output safeguards as a first-class implementation-plan topic
 
-Questions to settle:
+The high-level output contract is now narrow enough to draft:
 
-- whether terminal display remains the default human-facing output
-- whether `--output <path>` should write result data in v1
-- whether `.json` / `.csv` output is inferred from the output path or selected separately
-- whether status/log messaging must be separated from result data, especially in interactive mode
-- bounded table by default or full query output by default
-- whether an output-format override is needed in v1
-- whether result limits are required or inferred
-- what large-result safeguards are applied
+- bounded table by default for terminal display
+- `--json` for machine-readable stdout
+- `--output <path>` for file export
+- `.json` / `.csv` inferred from the output-path extension
+
+The remaining work is to define operational safeguards such as:
+
+- default terminal row-count boundary
+- large-stdout protection rules
+- CSV serialization details
+- whether schema/type metadata is exportable separately
 
 ### Recommendation F. Create a dedicated implementation plan only after the contract is frozen
 
@@ -243,14 +374,9 @@ That follow-up plan should only start once the research resolves:
 
 ## Open Questions
 
-1. Should `data query` v1 support CSV and Parquet only, or also include SQLite and Excel once extension policy is frozen?
-2. Should `--sql` be required in every invocation, or is there any non-SQL query mode worth supporting?
-3. Should the command support an explicit input-format override, and if so, what flag name should carry that contract?
-4. Should output default to a bounded table, machine-readable JSON, or a dual-mode contract?
-5. Should `--output <path>` be part of v1, with `.json` / `.csv` chosen by file extension or by a separate output-format flag?
-6. Should v1 enforce a result limit by default?
-7. Should missing SQLite/Excel extensions fail with guidance only, or should installation ever be allowed from the command path?
-8. Should doctor advertise query capability separately from Parquet preview capability, including extension-backed formats?
+1. What should the default terminal row-count boundary be for bounded table rendering?
+2. Should `--json` to stdout ever require an explicit large-output acknowledgement, or should it stream full results by default?
+3. What exact capability fields should doctor expose for extension-backed formats: detected support, loadability, installability, or all three?
 
 ## Related Plans
 
