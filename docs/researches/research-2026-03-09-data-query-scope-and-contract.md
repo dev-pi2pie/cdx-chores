@@ -57,6 +57,7 @@ A conservative first query milestone should likely support:
 
 - one input file per invocation
 - one logical table name, such as `file`
+- one selected source object per invocation when the format exposes multiple logical objects
 - explicit SQL through a required `--sql` flag
 
 This avoids immediately expanding into:
@@ -69,6 +70,21 @@ This avoids immediately expanding into:
 Implication:
 
 - keep the first research boundary intentionally narrow
+
+### 3A. Multi-object formats need an explicit source-selection contract
+
+SQLite databases and Excel workbooks do not naturally behave like a single-table file.
+
+Recommended draft contract:
+
+- direct CLI query should support `--source <name>` for formats that expose multiple logical source objects
+- the selected source object should be bound to the logical table name `file`
+- interactive query should choose the source object during introspection before SQL authoring
+- direct CLI should fail clearly when `--source` is required but missing
+
+Implication:
+
+- SQLite and Excel can fit the single-file boundary without requiring multi-table SQL attachment semantics in the first implementation
 
 ### 4. File-shape rules need explicit v1 decisions
 
@@ -225,7 +241,7 @@ The current draft should no longer frame SQLite and Excel as optional expansion 
 
 Recommended draft contract:
 
-- built-in first-class inputs: CSV and Parquet
+- built-in first-class inputs: Parquet plus CSV-family delimited text (`.csv`, `.tsv`)
 - extension-backed first-class inputs: SQLite and Excel
 - JSON remains deferred until query-shape normalization is explicit
 
@@ -368,6 +384,19 @@ Why:
 - `--format` is too easily confused with output formatting
 - `--input-format` is explicit about which contract it affects
 
+### Draft decision 3A. Support explicit source-object override with `--source`
+
+Recommended draft contract:
+
+- formats with multiple logical source objects should accept `--source <name>`
+- the selected object should be exposed in SQL as the logical table `file`
+- formats with one implicit source object should not require `--source`
+
+Why:
+
+- it gives direct CLI a deterministic contract for SQLite tables/views and Excel sheets
+- it preserves the single-logical-table query contract without introducing attachment aliases in v1
+
 ### Draft decision 4. Default output should be a bounded terminal table, with opt-in JSON output
 
 Recommended draft contract:
@@ -502,9 +531,10 @@ Best current starting point:
 - command: `data query <input> --sql "<query>"`
 - input scope: one file per invocation
 - logical table name: `file`
-- supported built-in first-class inputs: Parquet and CSV
+- supported built-in first-class inputs: Parquet and CSV-family delimited text (`.csv`, `.tsv`)
 - supported extension-backed first-class inputs: SQLite and Excel
 - input-format override flag: `--input-format`
+- source-object override flag for multi-object formats: `--source`
 - bounded table-display flag: `--rows`
 - JSON support: conditional on explicit normalization rules
 - default stdout rendering: bounded table
@@ -549,9 +579,9 @@ The remaining work is to define operational safeguards such as:
 - CSV serialization details
 - whether schema/type metadata is exportable separately
 
-### Recommendation F. Create a dedicated implementation plan only after the contract is frozen
+### Recommendation F. Create the dedicated implementation plan now that the contract is frozen
 
-That follow-up plan should only start once the research resolves:
+That follow-up plan should implement the now-fixed contract across:
 
 - command syntax
 - supported input formats

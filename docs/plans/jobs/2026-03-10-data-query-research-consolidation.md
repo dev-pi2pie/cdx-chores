@@ -1,6 +1,7 @@
 ---
 title: "Consolidate March 10 data query research updates"
 created-date: 2026-03-10
+modified-date: 2026-03-10
 status: completed
 agent: codex
 ---
@@ -21,10 +22,13 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - froze `--json` to stdout as full-result streaming by default
 - clarified that query presentation limits must not rewrite SQL semantics and should stay application-controlled rather than DuckDB- or OS-derived
 - recorded the extension guardrail that SQLite and Excel should use explicit extension-aware handling and fail with targeted guidance rather than silent automatic installation
+- added an explicit `--source <name>` contract for direct CLI query against multi-object formats such as SQLite and Excel, with the selected object bound to logical table name `file`
+- clarified that TSV is part of the built-in CSV-family delimited-text surface instead of leaving it only implied by detection rules
 - froze doctor capability reporting for extension-backed formats as a three-part model: detected support, loadability, and installability
 - froze the interactive query design contract as an introspection-first `choose mode` workflow with `manual`, `formal-guide`, and `Codex Assistant`
 - froze the shared interactive guardrail that candidate SQL must always be shown back to the user and explicitly confirmed before execution
 - froze the minimum `formal-guide` prompt set and the default bounded introspection payload so those topics no longer remain vague future design placeholders
+- reworded the final recommendation so the dedicated implementation plan can proceed from the frozen contract instead of implying unresolved contract-level ambiguity
 
 ## Files
 
@@ -40,6 +44,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - reviewed the current interactive data flow in `src/cli/interactive/data.ts`
 - reviewed the current interactive dispatcher in `src/cli/interactive/index.ts`
 - reviewed the current research open-question section after resolving the remaining contract-level items
+- reviewed the research for direct-CLI multi-object source-selection gaps and recommendation consistency
 
 ## Related Plans
 
