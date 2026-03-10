@@ -149,20 +149,73 @@ Implication:
 
 - the CLI should separate `input supported`, `extension required`, `extension load failed`, and `extension install unavailable` as different failure classes
 
-### 8. Interactive mode should stay out until SQL-entry UX is real
+### 8. Interactive query needs a fixed contract even if implementation remains deferred
 
 Unlike preview prompts, query mode needs an actual SQL input workflow.
 
-Possible options include:
+The contract should now be fixed as a mode selector rather than one undifferentiated SQL prompt.
 
-- a single inline prompt for `--sql`
-- an editor-backed SQL entry flow
-- loading a saved query
-- choosing whether results stay in the terminal or are written to a file
+Preferred interactive mode choices:
+
+- `manual`
+- `formal-guide`
+- `Codex Assistant`
+
+Intended meanings:
+
+- `manual`: the user writes SQL directly
+- `formal-guide`: the CLI gathers structured query intent through guided prompts and builds SQL from those answers
+- `Codex Assistant`: the user describes intent in natural language and Codex proposes SQL for review
+
+Expected common flow:
+
+- choose input
+- detect input format or accept an explicit override
+- perform lightweight read-only introspection
+- choose source object when required
+- choose mode
+- gather or generate candidate SQL
+- show the final SQL back to the user
+- require explicit confirmation before execution
+- choose whether results stay in the terminal or are written to a file
 
 Implication:
 
-- interactive query mode should remain out of scope until a specific SQL-entry UX is selected
+- interactive query should be designed now as a `choose mode` workflow rather than a raw SQL-only prompt
+- implementation can remain deferred until a dedicated plan picks up that contract
+
+### 9. Interactive query should be introspection-first
+
+Interactive query authoring should not start from a blank prompt.
+
+Before SQL is written, guided, or generated, the CLI should gather a lightweight read-only metadata bundle for the selected input.
+
+Recommended first-pass interactive introspection payload:
+
+- detected input format
+- logical source name
+- available source objects when relevant
+- selected source object
+- column names
+- inferred column types
+- a small bounded sample window
+
+Format-specific notes:
+
+- CSV / Parquet: introspect the single logical table directly
+- SQLite: introspect available tables or views before query authoring
+- Excel: introspect available sheets before query authoring
+
+Why:
+
+- `manual` mode benefits from visible schema and sample context
+- `formal-guide` mode needs a stable source object and field inventory
+- `Codex Assistant` produces better SQL when grounded in actual columns, types, and samples
+
+Implication:
+
+- interactive query should include a schema-and-sample discovery step before mode-driven SQL authoring
+- this introspection step should stay read-only and separate from executing the final user query
 
 ## Decision Updates
 
@@ -182,12 +235,13 @@ Why:
 - both are materially narrower than heavier remote-database targets such as PostgreSQL or MySQL
 - extension-backed support still fits the single-input, single-table-first boundary if activation behavior is explicit
 
-### Draft decision 2. v1 should require `--sql`, and non-SQL query modes should stay out
+### Draft decision 2. v1 should require `--sql`, while non-SQL query modes remain a planned follow-up feature
 
 Recommended draft contract:
 
 - every invocation requires explicit SQL in v1
 - non-SQL query helpers should stay out of the first implementation plan
+- non-SQL query helpers should remain explicitly visible in research as a later feature track that deserves its own plan and usage guide
 
 Potential non-SQL query modes would mean opinionated shortcuts such as:
 
@@ -207,6 +261,100 @@ Why defer them:
 Implication:
 
 - v1 should stay on one clear contract: `data query <input> --sql "<query>"`
+- a later follow-up plan can define which non-SQL helpers are worth adding without weakening the first SQL-based contract
+- that later plan can align non-SQL helpers with the interactive `formal-guide` mode so both surfaces share the same structured-query contract
+
+### Draft decision 2A. Interactive query should use `choose mode`
+
+Recommended contract:
+
+- interactive `data query` should begin with lightweight input introspection
+- interactive `data query` should open with a `choose mode` step
+- first-pass mode names should be `manual`, `formal-guide`, and `Codex Assistant`
+- all modes should converge on an explicit SQL review-and-confirm step before execution
+
+Why:
+
+- introspection gives all three modes the schema context they need
+- `manual` preserves direct control for users who already know SQL
+- `formal-guide` gives a lower-typo structured path without requiring a full SQL editor
+- `Codex Assistant` can help infer intent, but should remain advisory rather than implicitly authoritative
+
+Implication:
+
+- interactive query should be planned as an introspection-first guided multi-step workflow, not a single freeform prompt
+
+### Draft decision 2B. Freeze the interactive query flow now
+
+Recommended interactive contract:
+
+1. Prompt for input path.
+2. Detect format, with optional override if detection is missing or ambiguous.
+3. Load required DuckDB extension capability for introspection when needed.
+4. Gather a bounded introspection payload.
+5. If the format exposes multiple logical objects, prompt for source selection.
+6. Prompt `choose mode`: `manual`, `formal-guide`, or `Codex Assistant`.
+7. Produce candidate SQL from that mode.
+8. Show final SQL back to the user.
+9. Require explicit confirmation before execution.
+10. Prompt for output mode and output-specific options.
+
+Output-specific prompt rules:
+
+- table mode: ask `Rows to show (optional)` and reuse the `--rows` contract
+- JSON stdout mode: ask whether to pretty-print
+- file-output mode: ask for output path, infer `.json` or `.csv`, and ask for overwrite confirmation when needed
+
+### Draft decision 2C. Freeze the minimum `formal-guide` prompt set now
+
+Recommended minimum `formal-guide` prompt set:
+
+- selected source object
+- columns to select, or `all columns`
+- zero or more filters using simple column/operator/value rules
+- optional grouping and aggregate summary intent
+- optional ordering
+- optional output mode choice
+
+Why this boundary:
+
+- it is enough to cover common exploratory queries
+- it avoids pretending to support arbitrary SQL through an underpowered form
+- it still leaves advanced joins, expressions, and complex subqueries to `manual` or `Codex Assistant`
+
+### Draft decision 2D. Freeze the bounded introspection payload now
+
+Recommended default introspection payload:
+
+- schema plus a small sample window
+
+Practical contents:
+
+- detected format
+- selected source object
+- column names
+- inferred column types
+- up to a small fixed number of sample rows
+
+Why:
+
+- schema alone is often insufficient for naming intent, filter drafting, or AI-assisted SQL generation
+- a bounded sample is enough to guide users without turning introspection into full query execution
+
+### Draft decision 2E. Freeze the `Codex Assistant` guardrails now
+
+Recommended `Codex Assistant` contract:
+
+- it receives the user’s intent plus the bounded introspection payload
+- it drafts SQL but does not execute automatically
+- the generated SQL must be shown back to the user
+- execution requires explicit user confirmation
+- SQL errors should return the user to revise or regenerate rather than silently retrying
+
+Why:
+
+- this keeps Codex in an advisory role
+- this reduces the risk of hidden intent drift between user request and executed SQL
 
 ### Draft decision 3. Support explicit input-format override with `--input-format`
 
@@ -256,12 +404,16 @@ Recommended draft contract:
 
 - do not rewrite the user query with an implicit SQL `LIMIT`
 - keep default terminal table rendering bounded
+- reuse `--rows` as the renderer-facing row-bound flag for query-mode table display
+- implement bounded table rendering as an application display concern rather than a DuckDB- or OS-derived hard limit
+- table rendering should be able to read `display_limit + 1` rows so it can report truncation without promising a full total-row count
 - when writing to `--output`, serialize the full query result unless the user query itself limits rows
 - when using `--json` to stdout, prefer full query semantics over a hidden row cap, while keeping large-output safeguards as an implementation concern
 
 Implication:
 
 - v1 should bound presentation by default, not silently change query semantics
+- reserving `--limit` outside the SQL-first contract leaves room for later non-SQL helper semantics without overloading the table-display flag
 
 ### Draft decision 7. Missing SQLite or Excel extensions should fail with guidance in v1
 
@@ -296,7 +448,7 @@ Recommended near-term rule:
 
 - do not add a `data query` CLI stub
 - do not add `data query` to help text
-- do not add `data query` to interactive mode
+- do not add interactive `data query` implementation until a dedicated plan picks up the now-fixed contract
 
 Why:
 
@@ -313,11 +465,12 @@ Best current starting point:
 - supported built-in first-class inputs: Parquet and CSV
 - supported extension-backed first-class inputs: SQLite and Excel
 - input-format override flag: `--input-format`
+- bounded table-display flag: `--rows`
 - JSON support: conditional on explicit normalization rules
 - default stdout rendering: bounded table
 - machine-readable stdout mode: `--json` with optional `--pretty`
 - file output: `--output <path>` with `.json` / `.csv` inferred from the output path
-- interactive mode: deferred
+- interactive mode: implementation deferred, design contract fixed
 
 This is a baseline for evaluation, not a final implementation decision.
 
@@ -371,6 +524,7 @@ That follow-up plan should only start once the research resolves:
 - output file behavior and log/result channel separation
 - error handling model
 - doctor/help/interactive exposure
+- interactive query implementation sequence and verification strategy
 
 ## Open Questions
 
