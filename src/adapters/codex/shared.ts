@@ -1,6 +1,44 @@
+import { accessSync, constants, existsSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { Codex } from "@openai/codex-sdk";
 
 import { sleep } from "../../utils/sleep";
+
+export interface CodexEnvironmentInspection {
+  authSessionAvailable: boolean;
+  configuredSupport: boolean;
+  detail?: string;
+}
+
+const CODEX_PATH_OVERRIDE_ENV = "CDX_CHORES_CODEX_PATH";
+
+function resolveCodexHome(): string {
+  const override = process.env.CODEX_HOME?.trim();
+  if (override) {
+    return override;
+  }
+  return join(homedir(), ".codex");
+}
+
+export function getCodexPathOverrideFromEnv(): string | undefined {
+  const value = process.env[CODEX_PATH_OVERRIDE_ENV]?.trim();
+  return value ? value : undefined;
+}
+
+function inspectCodexPathOverride(codexPathOverride: string): string | undefined {
+  try {
+    const stats = statSync(codexPathOverride);
+    if (!stats.isFile()) {
+      return `Codex override path is not a file: ${codexPathOverride}`;
+    }
+    accessSync(codexPathOverride, constants.X_OK);
+    return undefined;
+  } catch (error) {
+    return `Codex override path is not executable: ${codexPathOverride} (${error instanceof Error ? error.message : String(error)})`;
+  }
+}
 
 export interface CodexFilenameTitleSuggestionResult<TSuggestion> {
   suggestions: TSuggestion[];
@@ -27,8 +65,12 @@ export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export function startCodexReadOnlyThread(workingDirectory: string) {
-  const codex = new Codex();
+export function startCodexReadOnlyThread(
+  workingDirectory: string,
+  options: { codexPathOverride?: string } = {},
+) {
+  const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
+  const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
   return codex.startThread({
     workingDirectory,
     sandboxMode: "read-only",
@@ -126,4 +168,46 @@ export function summarizeBatchErrors(batchErrors: string[], hasSuggestions: bool
   }
   const uniqueErrors = [...new Set(batchErrors)];
   return `${hasSuggestions ? "Partial Codex suggestions." : "Codex title generation failed."} ${uniqueErrors[0]}${uniqueErrors.length > 1 ? ` (+${uniqueErrors.length - 1} more error variant(s))` : ""}`;
+}
+
+export async function inspectCodexEnvironment(): Promise<CodexEnvironmentInspection> {
+  try {
+    await import("@openai/codex-sdk");
+  } catch (error) {
+    return {
+      authSessionAvailable: false,
+      configuredSupport: false,
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  const codexPathOverride = getCodexPathOverrideFromEnv();
+  const hasAuthSignal =
+    Boolean(process.env.CODEX_API_KEY?.trim()) ||
+    Boolean(process.env.OPENAI_API_KEY?.trim()) ||
+    existsSync(join(resolveCodexHome(), "auth.json"));
+
+  if (codexPathOverride) {
+    const overrideProblem = inspectCodexPathOverride(codexPathOverride);
+    if (overrideProblem) {
+      return {
+        authSessionAvailable: hasAuthSignal,
+        configuredSupport: false,
+        detail: overrideProblem,
+      };
+    }
+  }
+
+  if (!hasAuthSignal) {
+    return {
+      authSessionAvailable: false,
+      configuredSupport: true,
+      detail: "No Codex auth/session signal found. Sign in to Codex or provide CODEX_API_KEY.",
+    };
+  }
+
+  return {
+    authSessionAvailable: true,
+    configuredSupport: true,
+  };
 }

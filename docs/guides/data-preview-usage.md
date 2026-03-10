@@ -165,7 +165,7 @@ NO_COLOR=1 cdx-chores data preview ./examples/playground/tabular-preview/basic.c
 - machine-readable `--format json` output is deferred for now
 - `data parquet preview` is the first DuckDB-backed preview action
 - no SQL is supported inside `data parquet preview`
-- `data query <input>` remains a later DuckDB query lane with separate research and planning
+- `data query <input>` is now the separate DuckDB-backed SQL lane; see `docs/guides/data-query-usage.md`
 
 ## `data parquet preview`
 

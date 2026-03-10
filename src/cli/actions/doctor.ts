@@ -1,5 +1,7 @@
+import { inspectCodexEnvironment } from "../../adapters/codex/shared";
 import { getCliColors } from "../colors";
 import { inspectCommand } from "../deps";
+import { inspectDataQueryExtensions } from "../duckdb/query";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
 
@@ -9,16 +11,65 @@ export interface DoctorOptions {
 
 export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions = {}): Promise<void> {
   const pc = getCliColors(runtime);
-  const [pandoc, ffmpeg] = await Promise.all([
+  const [pandoc, ffmpeg, queryExtensions, codexEnvironment] = await Promise.all([
     inspectCommand("pandoc", runtime.platform),
     inspectCommand("ffmpeg", runtime.platform),
+    inspectDataQueryExtensions(),
+    inspectCodexEnvironment(),
   ]);
+
+  const queryFormats = {
+    csv: {
+      kind: "core" as const,
+      detectedSupport: queryExtensions.available,
+    },
+    tsv: {
+      kind: "core" as const,
+      detectedSupport: queryExtensions.available,
+    },
+    parquet: {
+      kind: "core" as const,
+      detectedSupport: queryExtensions.available,
+    },
+    sqlite: {
+      kind: "extension" as const,
+      detectedSupport: queryExtensions.available,
+      loadability: queryExtensions.sqlite?.loadable ?? false,
+      installability: queryExtensions.sqlite?.installable ?? null,
+      detail: queryExtensions.sqlite?.detail,
+    },
+    excel: {
+      kind: "extension" as const,
+      detectedSupport: queryExtensions.available,
+      loadability: queryExtensions.excel?.loadable ?? false,
+      installability: queryExtensions.excel?.installable ?? null,
+      detail: queryExtensions.excel?.detail,
+    },
+  };
+
+  const queryCodex = {
+    configuredSupport: codexEnvironment.configuredSupport,
+    authSessionAvailable: codexEnvironment.authSessionAvailable,
+    readyToDraft:
+      codexEnvironment.configuredSupport &&
+      codexEnvironment.authSessionAvailable &&
+      queryExtensions.available,
+    detail:
+      codexEnvironment.detail ??
+      (queryExtensions.available ? undefined : queryExtensions.detail),
+  };
 
   const capabilities = {
     "md.to-docx": pandoc.available,
     "video.convert": ffmpeg.available,
     "video.resize": ffmpeg.available,
     "video.gif": ffmpeg.available,
+    "data.query.csv": queryFormats.csv.detectedSupport,
+    "data.query.tsv": queryFormats.tsv.detectedSupport,
+    "data.query.parquet": queryFormats.parquet.detectedSupport,
+    "data.query.sqlite": queryFormats.sqlite.loadability,
+    "data.query.excel": queryFormats.excel.loadability,
+    "data.query.codex": queryCodex.readyToDraft,
   };
 
   if (options.json) {
@@ -27,6 +78,12 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
       platform: runtime.platform,
       nodeVersion: process.version,
       tools: { pandoc, ffmpeg },
+      query: {
+        available: queryExtensions.available,
+        detail: queryExtensions.detail,
+        formats: queryFormats,
+      },
+      queryCodex,
       capabilities,
     };
     printLine(runtime.stdout, JSON.stringify(payload, null, 2));
@@ -58,5 +115,49 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
       runtime.stdout,
       `- ${pc.bold(capability)}: ${available ? pc.green("available") : pc.red("unavailable")}`,
     );
+  }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Data query formats:")));
+  if (!queryExtensions.available) {
+    printLine(
+      runtime.stdout,
+      `- ${pc.bold("duckdb")}: ${pc.red("unavailable")} ${queryExtensions.detail ? `(${queryExtensions.detail})` : ""}`.trim(),
+    );
+    return;
+  }
+
+  for (const [format, state] of Object.entries(queryFormats)) {
+    if (state.kind === "core") {
+      printLine(
+        runtime.stdout,
+        `- ${pc.bold(format)}: built-in DuckDB support=${state.detectedSupport ? "yes" : "no"}`,
+      );
+      continue;
+    }
+
+    const installability =
+      state.installability === null
+        ? "unknown"
+        : state.installability
+          ? "yes"
+          : "no";
+    printLine(
+      runtime.stdout,
+      `- ${pc.bold(format)}: detected support=${state.detectedSupport ? "yes" : "no"}, loadability=${state.loadability ? "yes" : "no"}, installability=${installability}`,
+    );
+    if (state.detail) {
+      printLine(runtime.stdout, `  ${pc.dim(state.detail)}`);
+    }
+  }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Data query Codex:")));
+  printLine(
+    runtime.stdout,
+    `- ${pc.bold("codex")}: configured support=${queryCodex.configuredSupport ? "yes" : "no"}, auth/session=${queryCodex.authSessionAvailable ? "yes" : "no"}, ready-to-draft=${queryCodex.readyToDraft ? "yes" : "no"}`,
+  );
+  if (queryCodex.detail) {
+    printLine(runtime.stdout, `  ${pc.dim(queryCodex.detail)}`);
   }
 }
