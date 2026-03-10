@@ -37,10 +37,6 @@ export type DataQueryCodexRunner = (options: {
   timeoutMs?: number;
 }) => Promise<string>;
 
-function normalizeDraftSql(sql: string): string {
-  return sql.replace(/\s+/g, " ").trim();
-}
-
 function truncateForPrompt(value: string, maxChars: number): string {
   if (value.length <= maxChars) {
     return value;
@@ -117,7 +113,7 @@ function parseDataQueryCodexDraft(finalResponse: string): DataQueryCodexDraft {
 
   return {
     reasoningSummary,
-    sql: normalizeDraftSql(sql),
+    sql,
   };
 }
 

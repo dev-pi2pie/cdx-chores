@@ -115,26 +115,36 @@ export async function listXlsxSheetNames(inputPath: string): Promise<string[]> {
     });
   }
 
-  const entries = readCentralDirectoryEntries(buffer);
-  const workbookEntry = entries.find((entry) => entry.fileName === "xl/workbook.xml");
-  if (!workbookEntry) {
-    throw new CliError("Invalid .xlsx file: missing xl/workbook.xml.", {
+  try {
+    const entries = readCentralDirectoryEntries(buffer);
+    const workbookEntry = entries.find((entry) => entry.fileName === "xl/workbook.xml");
+    if (!workbookEntry) {
+      throw new CliError("Invalid .xlsx file: missing xl/workbook.xml.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const workbookXml = extractZipEntry(buffer, workbookEntry).toString("utf8");
+    const sheets = [...workbookXml.matchAll(/<sheet\b[^>]*\bname="([^"]+)"/g)].map((match) =>
+      decodeXmlEntities(match[1] ?? ""),
+    );
+
+    if (sheets.length === 0) {
+      throw new CliError("No worksheet sources found in the .xlsx workbook.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    return sheets;
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
+    throw new CliError(`Invalid .xlsx file: failed to read workbook metadata (${toErrorMessage(error)}).`, {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
   }
-
-  const workbookXml = extractZipEntry(buffer, workbookEntry).toString("utf8");
-  const sheets = [...workbookXml.matchAll(/<sheet\b[^>]*\bname="([^"]+)"/g)].map((match) =>
-    decodeXmlEntities(match[1] ?? ""),
-  );
-
-  if (sheets.length === 0) {
-    throw new CliError("No worksheet sources found in the .xlsx workbook.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-
-  return sheets;
 }

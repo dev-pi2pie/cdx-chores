@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -25,6 +25,19 @@ function resolveCodexHome(): string {
 export function getCodexPathOverrideFromEnv(): string | undefined {
   const value = process.env[CODEX_PATH_OVERRIDE_ENV]?.trim();
   return value ? value : undefined;
+}
+
+function inspectCodexPathOverride(codexPathOverride: string): string | undefined {
+  try {
+    const stats = statSync(codexPathOverride);
+    if (!stats.isFile()) {
+      return `Codex override path is not a file: ${codexPathOverride}`;
+    }
+    accessSync(codexPathOverride, constants.X_OK);
+    return undefined;
+  } catch (error) {
+    return `Codex override path is not executable: ${codexPathOverride} (${error instanceof Error ? error.message : String(error)})`;
+  }
 }
 
 export interface CodexFilenameTitleSuggestionResult<TSuggestion> {
@@ -168,10 +181,22 @@ export async function inspectCodexEnvironment(): Promise<CodexEnvironmentInspect
     };
   }
 
+  const codexPathOverride = getCodexPathOverrideFromEnv();
   const hasAuthSignal =
     Boolean(process.env.CODEX_API_KEY?.trim()) ||
     Boolean(process.env.OPENAI_API_KEY?.trim()) ||
     existsSync(join(resolveCodexHome(), "auth.json"));
+
+  if (codexPathOverride) {
+    const overrideProblem = inspectCodexPathOverride(codexPathOverride);
+    if (overrideProblem) {
+      return {
+        authSessionAvailable: hasAuthSignal,
+        configuredSupport: false,
+        detail: overrideProblem,
+      };
+    }
+  }
 
   if (!hasAuthSignal) {
     return {

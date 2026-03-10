@@ -36,7 +36,11 @@ describe("cli action modules: doctor", () => {
     expect(typeof payload.query.available).toBe("boolean");
     expect(payload.query.formats).toHaveProperty("csv");
     expect(payload.query.formats).toHaveProperty("sqlite");
-    expect(typeof payload.query.formats.csv.loadability).toBe("boolean");
+    expect(payload.query.formats.csv.kind).toBe("core");
+    expect(typeof payload.query.formats.csv.detectedSupport).toBe("boolean");
+    expect(Object.hasOwn(payload.query.formats.csv, "loadability")).toBe(false);
+    expect(payload.query.formats.sqlite.kind).toBe("extension");
+    expect(typeof payload.query.formats.sqlite.loadability).toBe("boolean");
     expect(payload.queryCodex).toBeDefined();
     expect(typeof payload.queryCodex.configuredSupport).toBe("boolean");
     expect(typeof payload.queryCodex.authSessionAvailable).toBe("boolean");
@@ -57,9 +61,47 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("video.gif");
     expect(stdout.text).toContain("Data query formats:");
     expect(stdout.text).toContain("Data query Codex:");
-    expect(stdout.text).toContain("csv");
-    expect(stdout.text).toContain("sqlite");
+    expect(stdout.text).toContain("csv: built-in DuckDB support=");
+    expect(stdout.text).toContain("sqlite: detected support=");
     expect(stdout.text).toContain("ready-to-draft=");
+    expect(stdout.text).not.toContain("csv: detected support=");
+    expect(stdout.text).not.toContain("csv: detected support=yes, loadability=yes, installability=unknown");
+  });
+
+  test("actionDoctor reports an invalid codex override as unavailable", async () => {
+    await withTempFixtureDir("doctor-codex-override", async (fixtureDir) => {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const originalOverride = process.env.CDX_CHORES_CODEX_PATH;
+      const originalCodexApiKey = process.env.CODEX_API_KEY;
+      const invalidOverride = join(fixtureDir, "missing-codex");
+
+      process.env.CDX_CHORES_CODEX_PATH = invalidOverride;
+      process.env.CODEX_API_KEY = "test-key";
+
+      try {
+        await actionDoctor(runtime, { json: true });
+      } finally {
+        if (originalOverride === undefined) {
+          delete process.env.CDX_CHORES_CODEX_PATH;
+        } else {
+          process.env.CDX_CHORES_CODEX_PATH = originalOverride;
+        }
+        if (originalCodexApiKey === undefined) {
+          delete process.env.CODEX_API_KEY;
+        } else {
+          process.env.CODEX_API_KEY = originalCodexApiKey;
+        }
+      }
+
+      expectNoStderr();
+      const payload = JSON.parse(stdout.text);
+      expect(payload.queryCodex.configuredSupport).toBe(false);
+      expect(payload.queryCodex.readyToDraft).toBe(false);
+      expect(payload.queryCodex.authSessionAvailable).toBe(true);
+      expect(payload.queryCodex.detail).toContain("Codex override path is not executable");
+      expect(payload.queryCodex.detail).toContain(invalidOverride);
+      expect(payload.capabilities["data.query.codex"]).toBe(false);
+    });
   });
 });
 

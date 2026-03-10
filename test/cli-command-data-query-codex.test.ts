@@ -121,7 +121,7 @@ describe("CLI data query codex command", () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe("");
-      expect(result.stdout.trim()).toBe("select count(*) as total from file");
+      expect(result.stdout.trim()).toBe("select\n  count(*) as total\nfrom file");
     });
   });
 

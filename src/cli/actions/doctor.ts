@@ -20,27 +20,26 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
 
   const queryFormats = {
     csv: {
+      kind: "core" as const,
       detectedSupport: queryExtensions.available,
-      loadability: queryExtensions.available,
-      installability: null,
     },
     tsv: {
+      kind: "core" as const,
       detectedSupport: queryExtensions.available,
-      loadability: queryExtensions.available,
-      installability: null,
     },
     parquet: {
+      kind: "core" as const,
       detectedSupport: queryExtensions.available,
-      loadability: queryExtensions.available,
-      installability: null,
     },
     sqlite: {
+      kind: "extension" as const,
       detectedSupport: queryExtensions.available,
       loadability: queryExtensions.sqlite?.loadable ?? false,
       installability: queryExtensions.sqlite?.installable ?? null,
       detail: queryExtensions.sqlite?.detail,
     },
     excel: {
+      kind: "extension" as const,
       detectedSupport: queryExtensions.available,
       loadability: queryExtensions.excel?.loadable ?? false,
       installability: queryExtensions.excel?.installable ?? null,
@@ -65,9 +64,9 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     "video.convert": ffmpeg.available,
     "video.resize": ffmpeg.available,
     "video.gif": ffmpeg.available,
-    "data.query.csv": queryFormats.csv.loadability,
-    "data.query.tsv": queryFormats.tsv.loadability,
-    "data.query.parquet": queryFormats.parquet.loadability,
+    "data.query.csv": queryFormats.csv.detectedSupport,
+    "data.query.tsv": queryFormats.tsv.detectedSupport,
+    "data.query.parquet": queryFormats.parquet.detectedSupport,
     "data.query.sqlite": queryFormats.sqlite.loadability,
     "data.query.excel": queryFormats.excel.loadability,
     "data.query.codex": queryCodex.readyToDraft,
@@ -129,6 +128,14 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
   }
 
   for (const [format, state] of Object.entries(queryFormats)) {
+    if (state.kind === "core") {
+      printLine(
+        runtime.stdout,
+        `- ${pc.bold(format)}: built-in DuckDB support=${state.detectedSupport ? "yes" : "no"}`,
+      );
+      continue;
+    }
+
     const installability =
       state.installability === null
         ? "unknown"
@@ -139,7 +146,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
       runtime.stdout,
       `- ${pc.bold(format)}: detected support=${state.detectedSupport ? "yes" : "no"}, loadability=${state.loadability ? "yes" : "no"}, installability=${installability}`,
     );
-    if ("detail" in state && state.detail) {
+    if (state.detail) {
       printLine(runtime.stdout, `  ${pc.dim(state.detail)}`);
     }
   }

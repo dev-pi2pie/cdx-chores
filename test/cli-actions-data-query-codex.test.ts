@@ -52,14 +52,14 @@ describe("cli action modules: data query codex", () => {
       printSql: true,
       runner: async () =>
         JSON.stringify({
-          sql: "select\n  *\nfrom file\norder by id",
-          reasoning_summary: "Returns the full file table in id order.",
+          sql: "select\n  *\nfrom file\nwhere note = 'A  B'\norder by id",
+          reasoning_summary: "Returns the full file table in id order while preserving literal spacing.",
         }),
     });
 
     expectNoStderr();
     expect(stderr.text).toBe("");
-    expect(stdout.text.trim()).toBe("select * from file order by id");
+    expect(stdout.text.trim()).toBe("select\n  *\nfrom file\nwhere note = 'A  B'\norder by id");
   });
 
   test("actionDataQueryCodex shows transient tty progress and clears it before final output", async () => {
