@@ -1,6 +1,7 @@
 ---
 title: "Data query CLI implementation"
 created-date: 2026-03-10
+modified-date: 2026-03-10
 status: draft
 agent: codex
 ---
@@ -66,7 +67,7 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - `--rows <n>` controls bounded table display
 - default bounded table rendering shows 20 rows
 - `--json` streams full query results to stdout
-- `--pretty` only affects JSON stdout rendering
+- `--pretty` only affects JSON serialization
 - `--output <path>` writes full query results to a file
 - output format is inferred from `.json` or `.csv`
 - logs and status messaging must stay separate from result payloads
@@ -106,7 +107,7 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - add `--json`
 - add `--pretty`
 - add `--output <path>`
-- decide whether `--pretty` is valid only with `--json` or also with JSON file output
+- keep `--pretty` valid only for JSON serialization on `--json` stdout and `.json` file output
 
 ### Backend behavior
 
@@ -122,6 +123,7 @@ This plan intentionally keeps SQL execution separate from later Codex-assisted S
 - render bounded table output through the terminal path
 - serialize full JSON results to stdout with optional pretty-printing
 - serialize full JSON or CSV results to files based on output-path extension
+- reject `--pretty` for bounded table output and `.csv` file output
 - keep table rendering bounded without affecting JSON/file-export query semantics
 
 ### Doctor surface

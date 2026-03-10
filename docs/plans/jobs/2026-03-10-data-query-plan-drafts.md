@@ -1,6 +1,7 @@
 ---
 title: "Draft data query CLI and interactive implementation plans"
 created-date: 2026-03-10
+modified-date: 2026-03-10
 status: completed
 agent: codex
 ---
@@ -20,6 +21,7 @@ Draft the follow-up implementation plans for `data query` now that the research 
   - interactive `data query`
 - updated the research doc so its related-plan section points to all three implementation plans
 - clarified in the research and plans that any later Codex-assisted CLI drafting should live in a separate `data query codex` lane rather than inside base `data query`
+- tightened the draft plans to remove remaining implementation guesswork around `--pretty`, interactive manual SQL entry, Codex stdout/stderr behavior, and Codex doctor/preflight expectations
 
 ## Files
 

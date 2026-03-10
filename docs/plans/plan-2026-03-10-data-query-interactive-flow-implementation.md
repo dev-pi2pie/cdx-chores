@@ -1,6 +1,7 @@
 ---
 title: "Data query interactive flow implementation"
 created-date: 2026-03-10
+modified-date: 2026-03-10
 status: draft
 agent: codex
 ---
@@ -75,7 +76,7 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 
 - table mode: ask `Rows to show (optional)` and reuse `--rows`
 - JSON stdout mode: ask whether to pretty-print
-- file-output mode: ask for output path and overwrite confirmation when needed
+- file-output mode: ask for output path, ask whether to pretty-print when the output path is `.json`, and ask for overwrite confirmation when needed
 
 ## Scope
 
@@ -97,7 +98,8 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 ### `manual` mode
 
 - gather SQL directly from the user
-- keep the first implementation bounded to practical prompt-based SQL entry
+- keep the first implementation bounded to a single-line SQL prompt
+- keep editor-backed or multiline SQL entry out of the first pass
 - show final SQL and require confirmation before execution
 
 ### `formal-guide` mode
@@ -216,7 +218,7 @@ Alignment note:
 
 - [ ] add table output prompt flow with optional `rows`
 - [ ] add JSON stdout prompt flow with optional pretty-print
-- [ ] add file-output prompt flow with path and overwrite handling
+- [ ] add file-output prompt flow with path, optional JSON pretty-printing, and overwrite handling
 - [ ] reuse shared execution/output helpers from the direct CLI query plan
 
 ### Phase 7: Tests

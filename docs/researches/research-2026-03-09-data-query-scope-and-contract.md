@@ -348,7 +348,12 @@ Output-specific prompt rules:
 
 - table mode: ask `Rows to show (optional)` and reuse the `--rows` contract
 - JSON stdout mode: ask whether to pretty-print
-- file-output mode: ask for output path, infer `.json` or `.csv`, and ask for overwrite confirmation when needed
+- file-output mode: ask for output path, infer `.json` or `.csv`, ask whether to pretty-print when the output path is `.json`, and ask for overwrite confirmation when needed
+
+`manual` mode SQL-entry rule:
+
+- the first implementation should use a single-line SQL prompt
+- editor-backed or multiline SQL entry should remain a later follow-up rather than part of the first interactive implementation
 
 ### Draft decision 2C. Freeze the minimum `formal-guide` prompt set now
 
@@ -433,7 +438,7 @@ Recommended draft contract:
 
 - default terminal behavior renders a bounded table
 - `--json` emits machine-readable JSON to stdout instead of the table
-- `--pretty` only affects machine-readable JSON rendering when `--json` is selected
+- `--pretty` only affects machine-readable JSON rendering
 
 Implication:
 
@@ -464,6 +469,21 @@ Recommended draft contract:
 - `--json` should stream full query results to stdout by default
 - no extra acknowledgement should be required just because the result is large
 - large-output safeguards, if added later, should be designed carefully so they do not silently change result semantics
+
+### Draft decision 4C. `--pretty` should apply to JSON serialization only
+
+Recommended draft contract:
+
+- `--pretty` should be valid only when the result payload is JSON
+- `--pretty` should apply to both `--json` stdout output and `.json` file output through `--output <path>`
+- `--pretty` should not apply to bounded table rendering
+- `--pretty` should not apply to `.csv` file output
+
+Why:
+
+- the flag describes JSON serialization shape rather than terminal presentation
+- allowing it for JSON file output keeps the JSON contract consistent across stdout and file targets
+- rejecting it for table and CSV output keeps the flag surface explicit and testable
 
 ### Draft decision 5. `--output <path>` should be part of v1, with format inferred from the output path
 
@@ -539,6 +559,22 @@ Why:
 - collapsing them into one value hides the actual remediation path
 - the user needs to know the difference between `supported in principle`, `ready now`, and `blocked by environment`
 
+### Draft decision 8B. Doctor should expose Codex drafting availability separately
+
+Recommended draft contract:
+
+- doctor should expose `data query codex` availability separately from DuckDB format capability
+- Codex drafting capability should include:
+  - configured support
+  - authentication or session availability
+  - ready-to-draft availability for the current environment
+
+Why:
+
+- `data query codex` is a separate command lane with a different failure surface from direct DuckDB query execution
+- users need a predictable preflight signal before relying on natural-language SQL drafting
+- separating Codex drafting availability keeps DuckDB capability checks from implying that Codex assistance is also ready
+
 ## Implications or Recommendations
 
 ### Recommendation A. Keep `data query` doc-only until this research is completed
@@ -579,6 +615,9 @@ Separate future authoring lane:
 - command: `data query codex <input> --intent "..."`
 - default output: human-readable assistant summary plus generated SQL
 - SQL-only mode: `--print-sql`
+- default output channel: stdout
+- SQL-only output channel: stdout
+- diagnostics and failures: stderr
 - possible later explicit execution guardrail: `--execute`
 
 ### Recommendation C. Split input detection from backend capability resolution

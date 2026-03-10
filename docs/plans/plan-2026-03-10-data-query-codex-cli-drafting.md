@@ -1,6 +1,7 @@
 ---
 title: "Data query Codex CLI drafting"
 created-date: 2026-03-10
+modified-date: 2026-03-10
 status: draft
 agent: codex
 ---
@@ -70,6 +71,12 @@ Default output is human-readable assistant output containing:
 - brief schema/sample summary
 - generated SQL
 
+Output-channel rules:
+
+- default human-readable assistant output is written to stdout
+- `--print-sql` writes SQL only to stdout
+- diagnostics and failures are written to stderr
+
 ### Additional flags
 
 - `--print-sql` prints SQL only
@@ -119,6 +126,14 @@ Default output is human-readable assistant output containing:
 - surface source ambiguity clearly
 - surface SQL-generation failures clearly
 - do not silently execute or silently fall back to another mode
+
+### Doctor and preflight behavior
+
+- doctor should expose `data query codex` capability separately from DuckDB format capability
+- Codex drafting capability should report:
+  - configured support
+  - authentication or session availability
+  - ready-to-draft availability
 
 ## Non-Goals
 
@@ -183,10 +198,18 @@ Default output is human-readable assistant output containing:
 
 - [ ] implement default human-readable assistant output
 - [ ] implement SQL-only output for `--print-sql`
+- [ ] keep default assistant output on stdout
+- [ ] keep diagnostics and failures on stderr
 - [ ] keep SQL-only output stable enough for shell workflows
 - [ ] keep assistant summaries and SQL output deterministic enough for testing
 
-### Phase 5: Tests
+### Phase 5: Doctor and preflight support
+
+- [ ] add doctor reporting for `data query codex` availability
+- [ ] distinguish configured support, authentication or session availability, and ready-to-draft availability
+- [ ] define doctor behavior when Codex drafting is unavailable in the current environment
+
+### Phase 6: Tests
 
 - [ ] add CLI coverage for basic drafting flow
 - [ ] add coverage for `--print-sql`
@@ -194,14 +217,16 @@ Default output is human-readable assistant output containing:
 - [ ] add coverage for `--source`
 - [ ] add coverage for ambiguous-source failures
 - [ ] add coverage for Codex configuration/unavailable failures
+- [ ] add coverage for stdout/stderr separation in default and SQL-only modes
 - [ ] add coverage for output-shape expectations in default and SQL-only modes
 
-### Phase 6: Docs and verification
+### Phase 7: Docs and verification
 
 - [ ] add a dedicated `data query codex` usage guide
 - [ ] document the split between execution and drafting lanes
 - [ ] document `--print-sql`
 - [ ] document the first-pass non-goal that `--execute` is not yet implemented
+- [ ] document doctor and preflight expectations for Codex drafting availability
 - [ ] run manual smoke checks across representative formats
 
 ## Success Criteria
@@ -210,6 +235,8 @@ Default output is human-readable assistant output containing:
 - multi-object formats behave deterministically through `--source`
 - default output is readable and useful for humans
 - `--print-sql` is stable and useful for shell workflows
+- stdout and stderr behavior is deterministic enough for piping and tests
+- users can tell ahead of time whether Codex drafting is available through doctor or equivalent preflight checks
 - Codex failures remain isolated to the drafting lane and do not affect direct query execution
 
 ## Verification
