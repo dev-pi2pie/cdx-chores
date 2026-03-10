@@ -5,6 +5,8 @@ export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
 export type { DataPreviewOptions } from "./data-preview";
 export { actionDataParquetPreview } from "./data-parquet-preview";
 export type { DataParquetPreviewOptions } from "./data-parquet-preview";
+export { actionDataQuery } from "./data-query";
+export type { DataQueryOptions } from "./data-query";
 export { actionCsvToJson, actionJsonToCsv } from "./data";
 export type { CsvToJsonOptions, JsonToCsvOptions } from "./data";
 export { actionMdFrontmatterToJson, actionMdToDocx } from "./markdown";

@@ -3,6 +3,7 @@ import {
   actionCsvToJson,
   actionDataParquetPreview,
   actionDataPreview,
+  actionDataQuery,
   actionDeferred,
   actionDoctor,
   actionJsonToCsv,
@@ -29,6 +30,10 @@ import {
   type TimestampTimezone,
   TIMESTAMP_TIMEZONE_VALUES,
 } from "./cli/rename-template";
+import {
+  DATA_QUERY_INPUT_FORMAT_VALUES,
+  type DataQueryInputFormat,
+} from "./cli/duckdb/query";
 import type {
   RenameCleanupConflictStrategy,
   RenameCleanupStyle,
@@ -123,6 +128,16 @@ function parseTimestampTimezoneOption(value: string): TimestampTimezone {
   }
   throw new InvalidArgumentError(
     `--timestamp-timezone must be one of: ${TIMESTAMP_TIMEZONE_VALUES.join(", ")}.`,
+  );
+}
+
+function parseDataQueryInputFormatOption(value: string): DataQueryInputFormat {
+  const normalized = value.trim().toLowerCase();
+  if ((DATA_QUERY_INPUT_FORMAT_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as DataQueryInputFormat;
+  }
+  throw new InvalidArgumentError(
+    `--input-format must be one of: ${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")}.`,
   );
 }
 
@@ -265,7 +280,7 @@ export async function runCli(
       await actionDoctor(cliRuntime, { json: options.json });
     });
 
-  const dataCommand = program.command("data").description("Data preview and conversion utilities");
+  const dataCommand = program.command("data").description("Data preview, query, and conversion utilities");
 
   applyCommonFileOptions(
     dataCommand
@@ -355,6 +370,52 @@ export async function runCli(
           input,
           offset: options.offset,
           rows: options.rows,
+        });
+      },
+    );
+
+  dataCommand
+    .command("query")
+    .description("Run a DuckDB-backed SQL query against one input file")
+    .argument("<input>", "Input data file")
+    .requiredOption("--sql <query>", "SQL query to execute against logical table `file`")
+    .option(
+      "--input-format <format>",
+      `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
+      parseDataQueryInputFormatOption,
+    )
+    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option("--rows <value>", "Number of rows to show in bounded table output", (value: string) =>
+      parsePositiveIntegerOption(value, "--rows"),
+    )
+    .option("--json", "Write full query results as JSON to stdout", false)
+    .option("--pretty", "Pretty-print JSON stdout or .json file output", false)
+    .option("-o, --output <path>", "Write full query results to a .json or .csv file")
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .action(
+      async (
+        input: string,
+        options: {
+          inputFormat?: DataQueryInputFormat;
+          json?: boolean;
+          output?: string;
+          overwrite?: boolean;
+          pretty?: boolean;
+          rows?: number;
+          source?: string;
+          sql: string;
+        },
+      ) => {
+        await actionDataQuery(cliRuntime, {
+          input,
+          inputFormat: options.inputFormat,
+          json: options.json,
+          output: options.output,
+          overwrite: options.overwrite,
+          pretty: options.pretty,
+          rows: options.rows,
+          source: options.source,
+          sql: options.sql,
         });
       },
     );

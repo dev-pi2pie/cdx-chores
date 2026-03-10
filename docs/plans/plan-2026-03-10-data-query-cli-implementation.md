@@ -2,7 +2,7 @@
 title: "Data query CLI implementation"
 created-date: 2026-03-10
 modified-date: 2026-03-10
-status: draft
+status: active
 agent: codex
 ---
 
@@ -31,9 +31,9 @@ It should also own its own smoke-fixture generation path instead of reusing prev
 - `data parquet preview` exists as the first DuckDB-backed bounded preview path
 - `@duckdb/node-api` is already installed and used for Parquet preview
 - the `data query` research contract is now frozen
-- there is no `data query` CLI command yet
-- there is no DuckDB query adapter layer for CSV/TSV, SQLite, or Excel in the direct CLI path
-- doctor does not yet expose query capability by format
+- an initial `data query` CLI command now exists for SQL-first direct querying
+- the direct CLI path now supports CSV/TSV and Parquet end to end, with guidance-first extension handling for SQLite and Excel
+- doctor now exposes query capability by format
 - there is no separate `data query codex` drafting lane yet
 
 ## Design Contract
@@ -237,79 +237,79 @@ First-pass fixture goals:
 
 ### Phase 1: Freeze CLI command and validation contract
 
-- [ ] add `data query <input> --sql "<query>"` to the CLI surface
-- [ ] add `--input-format <format>`
-- [ ] add `--source <name>`
-- [ ] add `--rows <n>`
-- [ ] add `--json`
-- [ ] add `--pretty`
-- [ ] add `--output <path>`
-- [ ] define validation behavior for incompatible flag combinations
-- [ ] define validation behavior for missing `--source` on multi-object formats
-- [ ] define validation behavior for unsupported output extensions
-- [ ] define validation behavior for `--pretty` without a JSON payload target
-- [ ] reject `--json` together with `--output <path>`
+- [x] add `data query <input> --sql "<query>"` to the CLI surface
+- [x] add `--input-format <format>`
+- [x] add `--source <name>`
+- [x] add `--rows <n>`
+- [x] add `--json`
+- [x] add `--pretty`
+- [x] add `--output <path>`
+- [x] define validation behavior for incompatible flag combinations
+- [x] define validation behavior for missing `--source` on multi-object formats
+- [x] define validation behavior for unsupported output extensions
+- [x] define validation behavior for `--pretty` without a JSON payload target
+- [x] reject `--json` together with `--output <path>`
 
 ### Phase 2: Input detection and source binding
 
-- [ ] implement extension-based input detection
-- [ ] implement `--input-format` override behavior
+- [x] implement extension-based input detection
+- [x] implement `--input-format` override behavior
 - [ ] add source-object selection logic for SQLite and Excel
-- [ ] bind the chosen source object to logical table `file`
-- [ ] keep direct CLI deterministic when source selection is ambiguous
+- [x] bind the chosen source object to logical table `file`
+- [x] keep direct CLI deterministic when source selection is ambiguous
 
 ### Phase 3: DuckDB query adapter layer
 
-- [ ] implement direct query setup for Parquet
-- [ ] implement direct query setup for CSV/TSV
-- [ ] implement direct query setup for SQLite with explicit extension loading
-- [ ] implement direct query setup for Excel with explicit extension loading
-- [ ] surface targeted runtime failures for extension-backed formats
+- [x] implement direct query setup for Parquet
+- [x] implement direct query setup for CSV/TSV
+- [x] implement direct query setup for SQLite with explicit extension loading
+- [x] implement direct query setup for Excel with explicit extension loading
+- [x] surface targeted runtime failures for extension-backed formats
 
 ### Phase 4: Output rendering and serialization
 
-- [ ] render bounded table output with the 20-row default
-- [ ] honor `--rows` without changing SQL semantics
-- [ ] implement JSON stdout serialization for `--json`
-- [ ] implement `--pretty` JSON formatting behavior
-- [ ] implement file output for `.json`
-- [ ] implement file output for `.csv`
-- [ ] keep stdout payloads and status/log output separated
+- [x] render bounded table output with the 20-row default
+- [x] honor `--rows` without changing SQL semantics
+- [x] implement JSON stdout serialization for `--json`
+- [x] implement `--pretty` JSON formatting behavior
+- [x] implement file output for `.json`
+- [x] implement file output for `.csv`
+- [x] keep stdout payloads and status/log output separated
 
 ### Phase 5: Doctor support
 
-- [ ] add format-aware query capability reporting
-- [ ] expose built-in format support separately from extension-backed format support
-- [ ] expose detected support, loadability, and installability for extension-backed formats
-- [ ] define doctor behavior when the environment blocks install checks
+- [x] add format-aware query capability reporting
+- [x] expose built-in format support separately from extension-backed format support
+- [x] expose detected support, loadability, and installability for extension-backed formats
+- [x] define doctor behavior when the environment blocks install checks
 
 ### Phase 6: Tests
 
 - [ ] add direct CLI coverage for each supported input family
-- [ ] add coverage for `--input-format`
-- [ ] add coverage for `--source`
-- [ ] add coverage for missing-source validation
-- [ ] add coverage for no implicit default source selection on multi-object formats
+- [x] add coverage for `--input-format`
+- [x] add coverage for `--source`
+- [x] add coverage for missing-source validation
+- [x] add coverage for no implicit default source selection on multi-object formats
 - [ ] add coverage for bounded table output with default and explicit `--rows`
-- [ ] add coverage for `--json`
-- [ ] add coverage for `--pretty`
-- [ ] add coverage for `--output` with `.json`
-- [ ] add coverage for `--output` with `.csv`
-- [ ] add coverage for `--output` suppressing stdout result payloads
-- [ ] add coverage for invalid `--pretty` usage without a JSON payload target
-- [ ] add coverage for conflicting output-mode flag combinations
-- [ ] add coverage for unsupported output extensions
+- [x] add coverage for `--json`
+- [x] add coverage for `--pretty`
+- [x] add coverage for `--output` with `.json`
+- [x] add coverage for `--output` with `.csv`
+- [x] add coverage for `--output` suppressing stdout result payloads
+- [x] add coverage for invalid `--pretty` usage without a JSON payload target
+- [x] add coverage for conflicting output-mode flag combinations
+- [x] add coverage for unsupported output extensions
 - [ ] add coverage for extension load failure and install-unavailable guidance
-- [ ] add doctor coverage for detected support, loadability, and installability
+- [x] add doctor coverage for detected support, loadability, and installability
 - [ ] confirm the smoke-fixture generator produces stable representative inputs for manual verification
 
 ### Phase 7: Docs and verification
 
-- [ ] add a dedicated `data query` CLI usage guide
-- [ ] document the SQL-first contract
-- [ ] document `--source` for SQLite and Excel
-- [ ] document output-mode behavior clearly
-- [ ] document doctor capability semantics
+- [x] add a dedicated `data query` CLI usage guide
+- [x] document the SQL-first contract
+- [x] document `--source` for SQLite and Excel
+- [x] document output-mode behavior clearly
+- [x] document doctor capability semantics
 - [ ] document the dedicated smoke-fixture generator and its reset command
 - [ ] run manual smoke checks across built-in and extension-backed formats
 
