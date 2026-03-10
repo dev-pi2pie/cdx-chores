@@ -280,6 +280,35 @@ Implication:
 - a later follow-up plan can define which non-SQL helpers are worth adding without weakening the first SQL-based contract
 - that later plan can align non-SQL helpers with the interactive `formal-guide` mode so both surfaces share the same structured-query contract
 
+### Draft decision 2F. CLI Codex assistance should be a separate command lane
+
+Recommended draft contract:
+
+- base execution stays under `data query <input> --sql "<query>"`
+- Codex-assisted SQL drafting should live under `data query codex <input> --intent "..."`
+- `data query codex` should be introspection-first rather than draft-from-blind-intent
+- `data query codex` should not silently execute generated SQL by default
+
+Default `data query codex` output should be human-readable assistant output containing:
+
+- detected format
+- selected source
+- brief schema/sample summary
+- generated SQL
+
+Additional flag contract:
+
+- `--print-sql` prints SQL only
+- a later `--execute` flag may exist as an explicit second guardrail
+- `--execute`, if ever added, should remain a later follow-up rather than part of the first Codex drafting contract
+
+Why:
+
+- this keeps query execution and query authoring assistance as separate user-facing surfaces
+- this keeps the base CLI path deterministic and scriptable
+- this gives Codex-assisted drafting room to evolve without destabilizing the execution command
+- this preserves introspection as a first-class prerequisite for assisted SQL generation
+
 ### Draft decision 2A. Interactive query should use `choose mode`
 
 Recommended contract:
@@ -371,6 +400,7 @@ Why:
 
 - this keeps Codex in an advisory role
 - this reduces the risk of hidden intent drift between user request and executed SQL
+- the same advisory-only guardrails should also apply to any later `data query codex` CLI lane
 
 ### Draft decision 3. Support explicit input-format override with `--input-format`
 
@@ -544,6 +574,13 @@ Best current starting point:
 
 This is a baseline for evaluation, not a final implementation decision.
 
+Separate future authoring lane:
+
+- command: `data query codex <input> --intent "..."`
+- default output: human-readable assistant summary plus generated SQL
+- SQL-only mode: `--print-sql`
+- possible later explicit execution guardrail: `--execute`
+
 ### Recommendation C. Split input detection from backend capability resolution
 
 Recommended near-term rule:
@@ -594,6 +631,7 @@ That follow-up plan should implement the now-fixed contract across:
 - error handling model
 - doctor/help/interactive exposure
 - interactive query implementation sequence and verification strategy
+- later `data query codex` authoring-lane design and rollout sequencing
 
 ## Open Questions
 
@@ -602,6 +640,9 @@ No remaining contract-level open questions.
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 
 ## Related Research
 

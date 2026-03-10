@@ -15,6 +15,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - expanded the research contract to cover input-detection semantics alongside SQL, file-shape, output, and error behavior
 - promoted CSV, Parquet, SQLite, and Excel into the draft format set, with SQLite and Excel explicitly framed as extension-backed inputs
 - recorded the SQL-first contract for direct CLI usage and kept non-SQL query helpers visible as a later feature track rather than part of the first implementation
+- split direct CLI execution from future Codex-assisted SQL drafting by reserving a separate `data query codex` command lane instead of mixing assistance into base `data query`
 - froze `--input-format` as the explicit input-type override and `--rows` as the bounded table-display flag
 - froze the output contract as bounded table by default, `--json` with optional `--pretty` for machine-readable stdout, and `--output <path>` with `.json` / `.csv` inferred from the output path
 - froze the bounded terminal table default at 20 rows and kept `--rows` as the explicit override instead of introducing adaptive defaults or baseline pagination
@@ -27,6 +28,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - froze doctor capability reporting for extension-backed formats as a three-part model: detected support, loadability, and installability
 - froze the interactive query design contract as an introspection-first `choose mode` workflow with `manual`, `formal-guide`, and `Codex Assistant`
 - froze the shared interactive guardrail that candidate SQL must always be shown back to the user and explicitly confirmed before execution
+- aligned future CLI Codex drafting with the same introspection-first and advisory-only guardrails used by interactive `Codex Assistant`
 - froze the minimum `formal-guide` prompt set and the default bounded introspection payload so those topics no longer remain vague future design placeholders
 - reworded the final recommendation so the dedicated implementation plan can proceed from the frozen contract instead of implying unresolved contract-level ambiguity
 
