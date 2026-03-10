@@ -16,8 +16,12 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - recorded the SQL-first contract for direct CLI usage and kept non-SQL query helpers visible as a later feature track rather than part of the first implementation
 - froze `--input-format` as the explicit input-type override and `--rows` as the bounded table-display flag
 - froze the output contract as bounded table by default, `--json` with optional `--pretty` for machine-readable stdout, and `--output <path>` with `.json` / `.csv` inferred from the output path
+- froze the bounded terminal table default at 20 rows and kept `--rows` as the explicit override instead of introducing adaptive defaults or baseline pagination
+- explicitly removed pagination from the current research and implementation contract rather than leaving it as an open question
+- froze `--json` to stdout as full-result streaming by default
 - clarified that query presentation limits must not rewrite SQL semantics and should stay application-controlled rather than DuckDB- or OS-derived
 - recorded the extension guardrail that SQLite and Excel should use explicit extension-aware handling and fail with targeted guidance rather than silent automatic installation
+- froze doctor capability reporting for extension-backed formats as a three-part model: detected support, loadability, and installability
 - froze the interactive query design contract as an introspection-first `choose mode` workflow with `manual`, `formal-guide`, and `Codex Assistant`
 - froze the shared interactive guardrail that candidate SQL must always be shown back to the user and explicitly confirmed before execution
 - froze the minimum `formal-guide` prompt set and the default bounded introspection payload so those topics no longer remain vague future design placeholders
@@ -35,6 +39,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 - reviewed the current DuckDB preview loader in `src/cli/duckdb/parquet-preview.ts`
 - reviewed the current interactive data flow in `src/cli/interactive/data.ts`
 - reviewed the current interactive dispatcher in `src/cli/interactive/index.ts`
+- reviewed the current research open-question section after resolving the remaining contract-level items
 
 ## Related Plans
 

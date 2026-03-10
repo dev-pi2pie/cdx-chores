@@ -380,6 +380,32 @@ Implication:
 
 - the command should separate human-facing terminal rendering from data-export behavior
 
+### Draft decision 4A. Default bounded table rendering should use a fixed 20-row default
+
+Recommended draft contract:
+
+- default bounded table rendering should show 20 rows
+- `--rows` should remain the explicit override for a different display bound
+- the default should not adapt to terminal height
+- pagination should stay out of the baseline contract
+- pagination should be treated as out of scope for the current research and implementation contract
+
+Why:
+
+- a fixed default matches the current preview precedent
+- a fixed default is easier to document and test
+- adaptive height-based defaults create inconsistent behavior across TTY and non-TTY environments
+- pagination is a separate interaction model rather than a small variation on bounded rendering
+- deferring pagination keeps the first implementation focused on stateless bounded rendering
+
+### Draft decision 4B. `--json` should stream full results to stdout by default
+
+Recommended draft contract:
+
+- `--json` should stream full query results to stdout by default
+- no extra acknowledgement should be required just because the result is large
+- large-output safeguards, if added later, should be designed carefully so they do not silently change result semantics
+
 ### Draft decision 5. `--output <path>` should be part of v1, with format inferred from the output path
 
 Recommended draft contract:
@@ -439,6 +465,20 @@ Recommended draft contract:
 Implication:
 
 - the capability model should be format-aware enough to explain why Parquet may work while SQLite or Excel may still be unavailable
+
+### Draft decision 8A. Doctor should expose detected support, loadability, and installability
+
+Recommended draft contract for extension-backed formats:
+
+- `detected support`: whether the format is part of the declared capability surface
+- `loadability`: whether the required DuckDB extension can currently be loaded
+- `installability`: whether the environment appears able to install the missing extension if needed
+
+Why:
+
+- these are different failure and support states
+- collapsing them into one value hides the actual remediation path
+- the user needs to know the difference between `supported in principle`, `ready now`, and `blocked by environment`
 
 ## Implications or Recommendations
 
@@ -505,7 +545,6 @@ The high-level output contract is now narrow enough to draft:
 
 The remaining work is to define operational safeguards such as:
 
-- default terminal row-count boundary
 - large-stdout protection rules
 - CSV serialization details
 - whether schema/type metadata is exportable separately
@@ -528,9 +567,7 @@ That follow-up plan should only start once the research resolves:
 
 ## Open Questions
 
-1. What should the default terminal row-count boundary be for bounded table rendering?
-2. Should `--json` to stdout ever require an explicit large-output acknowledgement, or should it stream full results by default?
-3. What exact capability fields should doctor expose for extension-backed formats: detected support, loadability, installability, or all three?
+No remaining contract-level open questions.
 
 ## Related Plans
 
