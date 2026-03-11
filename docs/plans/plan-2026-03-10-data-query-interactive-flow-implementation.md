@@ -1,7 +1,7 @@
 ---
 title: "Data query interactive flow implementation"
 created-date: 2026-03-10
-modified-date: 2026-03-10
+modified-date: 2026-03-11
 status: draft
 agent: codex
 ---
@@ -50,6 +50,7 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - format detection runs before mode selection
 - lightweight read-only introspection runs before SQL authoring
 - source selection happens before SQL authoring for multi-object formats
+- once a source object is selected, it is bound to the logical SQL table name `file` before mode selection
 
 ### Mode selector
 
@@ -62,7 +63,13 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - every mode produces candidate SQL
 - final SQL is always shown back to the user
 - execution always requires explicit confirmation
-- SQL errors should return the user to revise or regenerate rather than silently retrying
+- SQL errors should return the user to a mode-appropriate revise or regenerate step rather than silently retrying
+
+### Source-binding contract
+
+- the interactive flow always exposes the selected input through the logical SQL table name `file`
+- for SQLite and Excel, the chosen source object is metadata used to bind `file`, not a second SQL table name users must target directly
+- `manual`, `formal-guide`, and `Codex Assistant` should all author SQL against `file` so interactive semantics match direct CLI query semantics
 
 ### Introspection contract
 
@@ -77,6 +84,16 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - table mode: ask `Rows to show (optional)` and reuse `--rows`
 - JSON stdout mode: ask whether to pretty-print
 - file-output mode: ask for output path, ask whether to pretty-print when the output path is `.json`, and ask for overwrite confirmation when needed
+
+### Intent prompt boundary
+
+- the first-pass `Codex Assistant` intent prompt should support multiline entry
+- `Shift+Enter` should insert a newline when the terminal exposes it distinctly
+- because `Shift+Enter` is not portable across all terminal environments, multiline intent entry must also expose guaranteed fallback submit keys
+- the first-pass fallback submit keys should be `Ctrl+D` and `Meta+Enter`
+- plain `Enter` should insert a newline in the multiline intent prompt rather than submit immediately
+- `Ctrl+C` and `Escape` retain their existing cancel or abort roles
+- multiline intent entry should be implemented through a dedicated prompt primitive rather than by stretching the existing single-line text prompt
 
 ## Scope
 
@@ -101,20 +118,22 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - keep the first implementation bounded to a single-line SQL prompt
 - keep editor-backed or multiline SQL entry out of the first pass
 - show final SQL and require confirmation before execution
+- after SQL errors, return to manual SQL revision without rerunning introspection
 
 ### `formal-guide` mode
 
-- prompt for selected source object when relevant
 - prompt for selected columns or `all columns`
 - prompt for simple filters
 - prompt for optional grouping/aggregate summary intent
 - prompt for optional ordering
 - build candidate SQL from those answers
 - show final SQL and require confirmation before execution
+- after SQL errors, return to revise the structured answers or rebuild SQL from them
 
 ### `Codex Assistant` mode
 
 - gather the user’s intent in natural language
+- gather that intent through a multiline prompt surface
 - provide Codex with the bounded introspection payload plus the user’s intent
 - receive candidate SQL
 - show final SQL and require confirmation before execution
@@ -136,6 +155,7 @@ Alignment note:
 - redefining the direct CLI query contract
 - non-SQL direct CLI flags such as `--select` or `--limit`
 - editor-backed SQL entry in the first pass
+- editor-backed intent entry in the first pass
 - pagination
 - keyboard-driven table navigation
 - multi-file queries
@@ -156,6 +176,12 @@ Alignment note:
 
 - Risk: introspection may become expensive on large SQLite or Excel sources.
   Mitigation: keep introspection bounded, read-only, and sample-sized rather than count- or scan-heavy.
+
+- Risk: `Shift+Enter` may not be distinguishable from plain `Enter` in some terminal environments.
+  Mitigation: treat `Shift+Enter` as a best-effort newline key and define `Ctrl+D` plus `Meta+Enter` as guaranteed submit fallbacks for the multiline prompt.
+
+- Risk: multiline intent entry may be forced into the current single-line prompt primitive and create brittle rendering behavior.
+  Mitigation: add a dedicated multiline text prompt module with explicit multi-row rendering, cursor movement, newline insertion, and submit-key handling.
 
 ## Implementation Touchpoints
 
@@ -181,12 +207,15 @@ Alignment note:
   - [ ] `choose mode`
   - [ ] output mode
   - [ ] execution confirmation
+  - [ ] freeze the logical `file` table-binding rule after source selection
+  - [ ] freeze first-pass `Codex Assistant` intent entry as multiline with `Shift+Enter` newline support plus `Ctrl+D` and `Meta+Enter` submit fallbacks
 
 ### Phase 2: Introspection-first foundation
 
 - [ ] implement bounded read-only introspection for each supported format
 - [ ] implement source-object discovery for SQLite
 - [ ] implement source-object discovery for Excel
+- [ ] bind the selected source object to the logical SQL table `file` before any mode-specific prompts
 - [ ] present schema/sample context consistently across modes
 - [ ] keep introspection failures distinct from execution failures
 
@@ -195,6 +224,7 @@ Alignment note:
 - [ ] implement manual SQL prompt flow
 - [ ] define blank-input and retry behavior
 - [ ] show final SQL for explicit confirmation
+- [ ] define SQL-error recovery that returns to manual SQL revision without rerunning introspection
 - [ ] route execution through shared query helpers
 
 ### Phase 4: `formal-guide` mode
@@ -205,10 +235,15 @@ Alignment note:
 - [ ] implement prompts for optional ordering
 - [ ] build SQL deterministically from structured answers
 - [ ] show final SQL for explicit confirmation
+- [ ] define SQL-error recovery that returns to structured-answer revision without rerunning introspection
 
 ### Phase 5: `Codex Assistant` mode
 
 - [ ] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
+- [ ] add a dedicated multiline text prompt primitive for natural-language intent capture
+- [ ] implement multiline natural-language intent capture for the first pass
+- [ ] support newline insertion through `Shift+Enter` when the terminal exposes it distinctly
+- [ ] support guaranteed multiline submit fallbacks through `Ctrl+D` and `Meta+Enter`
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
 - [ ] define revise/regenerate flow after rejection or SQL error
@@ -231,6 +266,9 @@ Alignment note:
 - [ ] add coverage for `Codex Assistant` review/confirmation guardrails
 - [ ] add coverage for output-mode prompts and execution routing
 - [ ] add coverage for error recovery and cancel paths
+- [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
+- [ ] add coverage for multiline `Codex Assistant` intent entry including `Shift+Enter` best-effort newline handling
+- [ ] add coverage for `Ctrl+D` and `Meta+Enter` submit behavior in the multiline prompt
 
 ### Phase 8: Docs and verification
 
