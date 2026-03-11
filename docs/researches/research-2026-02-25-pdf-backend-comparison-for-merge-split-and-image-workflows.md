@@ -1,160 +1,241 @@
 ---
 title: "PDF backend comparison for merge/split and image workflows"
 created-date: 2026-02-25
+modified-date: 2026-03-11
 status: draft
 agent: codex
 ---
 
 ## Goal
 
-Compare candidate backends for PDF merge/split and PDF-image conversion workflows, and recommend a launch-phase direction for `cdx-chores` without assuming all tools are installed locally.
+Compare candidate backends for PDF merge/split, PDF-image workflows, and PDF-to-markdown extraction, then freeze a launch-phase recommendation for `cdx-chores` without baking machine-specific environment state into the research record.
 
 ## Key Findings
 
-### 1. No single tool cleanly covers every PDF workflow requirement
+### 1. `pdfcpu` is the best launch-phase anchor backend for the PDF command group
 
-The requested PDF workflows span different categories:
+The pdfcpu usage docs describe it as a broad PDF processor with merge, split, image extraction, and image import commands.[^pdfcpu-usage]
 
-- structural PDF operations (merge/split)
-- rasterization/rendering (PDF -> images)
-- image packaging (images -> PDF)
-- content extraction (PDF -> markdown/text/images)
-
-These are served by different tools with different tradeoffs. A mixed-backend strategy is likely the most practical direction.
-
-### 2. `qpdf` is strong for structural PDF operations, not image conversion
-
-qpdf CLI docs show page-selection operations (including splitting, merging, and collating) through `--pages` and `--split-pages`.[^qpdf-cli]
-
-This makes qpdf a strong candidate for:
+That makes `pdfcpu` the strongest default candidate for the first PDF workflow set:
 
 - `pdf merge`
 - `pdf split`
-
-But qpdf is not a renderer and does not cover PDF -> image or image -> PDF workflows directly.
-
-### 3. `pdfcpu` is a broad PDF CLI with merge/split and image-related commands
-
-The pdfcpu usage docs describe it as a PDF processor written in Go and list commands for merge, split, extract, image listing/extraction, and image import/convert to PDF.[^pdfcpu-usage]
-
-This makes `pdfcpu` a potentially high-value single dependency for:
-
-- `pdf merge`
-- `pdf split`
-- `pdf to-images` (via image extraction commands, depending on source content and desired behavior)
+- `pdf to-images` when the intended behavior is embedded-image extraction
 - `pdf from-images`
 
-It still needs local install and real-world validation on your target platforms.
+This does not mean one tool solves every future PDF case, but it is the cleanest first default for the current scope.
 
-### 4. `pdftoppm` (Poppler utils) is specialized and strong for PDF rasterization
+### 2. `qpdf` remains valuable, but should stay outside the current launch assumption
 
-`pdftoppm` is purpose-built to convert PDF pages into image files and supports page-range selection, DPI control, scaling, and PNG/JPEG/TIFF outputs.[^pdftoppm-man]
+qpdf CLI docs show strong page-selection operations through `--pages` and `--split-pages`.[^qpdf-cli]
 
-This is a strong candidate for:
+That still makes qpdf a strong structural PDF tool, but the current launch decision is narrower:
 
-- `pdf to-images`
+- default merge/split backend: `pdfcpu`
+- `qpdf` is a later optional fallback, not a current dependency target
 
-It is not a general PDF merge/split tool by itself.
+This keeps qpdf documented as a viable structural fallback without treating it as part of the immediate implementation baseline.
 
-### 5. ImageMagick (`magick`) is flexible for image pipelines, but PDF support depends on delegates/policy
+### 3. `pdf to-images` should mean embedded-image extraction first, not page rasterization
 
-ImageMagick docs position `magick` as a general image conversion/manipulation tool, and the formats list shows PDF read/write support with Ghostscript required for reading PDF.[^imagemagick-magick][^imagemagick-formats]
+The current product choice is to prioritize extraction of original embedded images when possible.
 
-This makes `magick` useful for:
+`pdfcpu` supports direct embedded-image extraction through `pdfcpu images extract` and `pdfcpu extract -mode image`.[^pdfcpu-usage]
 
-- images sequence normalization (resize/format conversion)
-- images -> PDF
-- some PDF -> image cases
+Implication:
 
-But behavior can vary by platform/package build because format support may depend on delegates or external programs.[^imagemagick-formats]
+- launch default for `pdf to-images`: `pdfcpu`
+- preferred optional backend ahead of `magick`: `mutool`
+- `pdftoppm` is no longer the preferred launch path for this command
 
-### 6. `pymupdf4llm` is a strong fit for PDF-to-markdown extraction workflows, not merge/split
+`pdftoppm` remains useful for full-page rasterization workflows, but that is now treated as a different contract from launch `pdf to-images`.[^pdftoppm-man]
+
+This is an important contract change: launch `pdf to-images` should not implicitly promise one rasterized output per PDF page.
+
+### 4. `mutool` is the right secondary backend for PDF image extraction/rendering cases
+
+MuPDF tool docs list `mutool` subcommands such as `draw`, `convert`, `extract`, `info`, and `merge`.[^mupdf-tools][^mutool-docs]
+
+For launch planning, `mutool` should be treated as:
+
+- the preferred optional backend after `pdfcpu` for image-oriented PDF workflows
+- higher priority than `magick`
+- a future-ready path if embedded-image extraction alone proves too narrow for some PDFs
+
+`magick` still has value for general image conversion pipelines, but its PDF behavior can vary by delegates and policy, which is why it should stay behind `mutool` in this launch design.[^imagemagick-magick][^imagemagick-formats]
+
+This keeps `mutool` in the design as the first optional expansion path without making it the primary default.
+
+### 5. `pdf from-images` should stay simple in the first release
+
+The first release does not need advanced layout controls.
+
+`pdfcpu import` already aligns well with the intended first-pass behavior because it turns image files into a PDF page sequence, one image per page, while allowing later layout tuning if needed.[^pdfcpu-usage]
+
+Implication:
+
+- preserve image order
+- package images into a straightforward PDF page sequence
+- defer page-size/layout customization as a later follow-up
+
+### 6. `pymupdf4llm` still fits `pdf to-markdown`, and this should now be treated as an exposed PDF workflow
 
 PyPI documentation for `pymupdf4llm` shows:
 
 - PDF -> Markdown conversion
-- optional JSON/plain-text output (with layout mode)
-- image/vector graphics extraction or embedding options in generated markdown
-- page-chunked output for structured downstream processing[^pymupdf4llm-pypi]
+- optional JSON/plain-text output
+- image/vector extraction or embedding options
+- page-chunked output for downstream processing[^pymupdf4llm-pypi]
 
-This aligns well with your stated use case for extracting images into a folder and appending references in markdown.
+This remains a strong fit for a `pdf to-markdown` command.
 
-It is not a direct replacement for qpdf/pdfcpu/pdftoppm for merge/split/rasterization workflows.
+The product requirements are now clearer:
 
-### 7. `mutool` (MuPDF) is a strong optional backend for rendering, extraction, and merge workflows
+- keep progress feedback visible
+- allow users to choose whether markdown writes a separate images folder for external assets
 
-MuPDF tool docs list `mutool` subcommands including `draw`, `convert`, `extract`, `info`, and `merge`, with `draw` highlighted for rendering documents to image files.[^mupdf-tools][^mutool-docs]
+This is no longer just a speculative later idea. It is a valid PDF command candidate, subject to normal implementation planning.
 
-This makes `mutool` a strong candidate for:
+### 7. Research docs should describe runtime capability design, not snapshot a specific machine state
 
-- `pdf to-images` (rendering/rasterization workflows)
-- embedded resource extraction workflows (`mutool extract`)
-- `pdf merge` (usable, though not necessarily the first choice over `pdfcpu`/`qpdf` yet)
+The earlier draft captured a user-reported environment inventory.
 
-It is less obvious as a first-choice split backend compared with tools that expose explicit split workflows (for example `qpdf --split-pages` or `pdfcpu split`).
+That should not live in this research doc. The durable design point is:
 
-### 8. Current local availability (user-reported) favors staged rollout
-
-Current environment status (user-reported):
-
-- available: `pandoc`, `pymupdf4llm`
-- not installed: `soffice`, `qpdf`, `pdfcpu`, `pdftoppm`, `magick`
-
-Implication: launch-phase implementation should not assume these PDF tools exist yet. `doctor` and feature gating remain essential.
+- `doctor` should detect capabilities at runtime
+- documentation should describe backend contracts and fallback strategy
+- research should avoid embedding ephemeral local install state unless the environment itself is the subject of the research
 
 ## Comparison Table
 
 | Tool | Primary Role | Merge/Split | PDF -> Images | Images -> PDF | PDF -> Markdown/Text | Notes / Risks | Launch-Phase Fit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `qpdf` | Structural PDF manipulation | Strong | No | No | Inspection/JSON only | Great for page selection/splitting/merging; not a renderer | High for `pdf merge/split` after install |
-| `pdfcpu` | Broad PDF processor (Go CLI) | Strong | Partial/depends on exact mode (extract vs render expectations) | Yes (`import`) | No markdown focus | Rich feature surface; needs evaluation on your platforms | High-value candidate if adopted |
-| `pdftoppm` | PDF rasterization to images | No | Strong | No | No | Excellent for per-page raster output with DPI/format controls | High for `pdf to-images` |
-| `mutool` (MuPDF) | PDF rendering/conversion/extraction toolkit | Merge strong, split less explicit | Strong (`draw`/`convert`) | Limited/indirect (not primary path) | Text/content extraction possible, but not markdown-focused | Great renderer/extractor toolkit; split ergonomics need validation | High as optional renderer/extractor backend |
-| `magick` | General image conversion/manipulation | No (not preferred for PDF structure ops) | Possible | Strong | No | PDF support depends on delegates/policy; can be build-specific | Medium (image pipelines), validate carefully |
-| `pymupdf4llm` | PDF content extraction for LLM/RAG workflows | No | Image/vector export within markdown extraction flow (not generic page raster pipeline) | No | Strong | Great for markdown + extracted assets; different problem class | High for experimental `pdf -> markdown` workflows |
-| `pandoc` | Document format conversion | No | No | No | Converts document formats, not PDF structure ops | Useful elsewhere (`md/docx`), not a PDF backend for merge/split | Not a fit for this backend set |
+| `pdfcpu` | Broad PDF processor (Go CLI) | Strong | Strong for embedded-image extraction | Strong (`import`) | No markdown focus | Best launch anchor across the current PDF workflow set; still needs workflow validation | Default for `pdf merge`, `pdf split`, `pdf to-images`, and likely `pdf from-images` |
+| `qpdf` | Structural PDF manipulation | Strong | No | No | Inspection/JSON only | Strong structural alternative; keep as a later optional fallback rather than a current launch assumption | Deferred optional fallback |
+| `mutool` (MuPDF) | PDF rendering/conversion/extraction toolkit | Merge usable | Strong (`extract`, `draw`, `convert`) | Limited/indirect | Text/content extraction possible, but not markdown-focused | Better optional image-oriented backend than `magick` for this scope | Preferred optional backend after `pdfcpu` |
+| `magick` | General image conversion/manipulation | No (not preferred for structure ops) | Possible | Strong | No | PDF behavior can vary by delegates/policy; keep out of primary launch path | Deferred or backup-only |
+| `pdftoppm` | PDF rasterization to images | No | Strong for page rasterization | No | No | Useful for a different contract: per-page rendering rather than embedded-image extraction | Deferred from current launch choice |
+| `pymupdf4llm` | PDF content extraction for LLM/RAG workflows | No | Image/vector export within markdown extraction flow | No | Strong | Strong fit for markdown plus extracted assets; separate problem class from merge/split | High for `pdf to-markdown` |
+| `pandoc` | Document format conversion | No | No | No | Converts document formats, not PDF structure ops | Useful elsewhere, not a PDF backend for these workflows | Not a fit for this backend set |
 
 ## Implications or Recommendations
 
-### A. Split the PDF work into backend-specific command paths
+### A. Freeze the launch backend mapping
 
-Recommended mapping (initial direction):
+Recommended launch mapping:
 
-- `pdf merge`, `pdf split`: keep `pdfcpu` as a strong option; compare against `qpdf` before finalizing default
-- `pdf to-images`: prefer `pdftoppm` (rasterization), with `mutool` and/or `magick` as optional backends depending on output and install footprint
-- `pdf from-images`: prefer `magick` or `pdfcpu import` (comparison/testing needed)
-- future/experimental `pdf to-markdown`: `pymupdf4llm`
+- `pdf merge`: default `pdfcpu`
+- `pdf split`: default `pdfcpu`
+- `pdf to-images`: default `pdfcpu` embedded-image extraction, optional `mutool` path
+- `pdf from-images`: simple ordered packaging, with `pdfcpu import` as the first validation target
+- `pdf to-markdown`: `pymupdf4llm`
 
-### B. Add a PDF capability matrix to `doctor`
+### B. Clarify the command contracts before implementation
 
-`doctor` should report capabilities, not just commands:
+The command names need explicit behavior contracts:
 
-- `pdf.merge`: unavailable (missing `qpdf`/`pdfcpu`)
-- `pdf.to-images`: unavailable (missing `pdftoppm`/`mutool`/`magick`)
-- `pdf.from-images`: unavailable (missing `magick`/`pdfcpu`)
-- `pdf.to-markdown`: available (`pymupdf4llm`)
+- `pdf to-images` should mean embedded-image extraction in the first release, not automatic rasterization of every page
+- if a later per-page render mode is needed, it should be added as a separate mode or explicit flag rather than silently changing the command meaning
+- `pdf from-images` should explicitly stay in simple packaging mode for v1
+- `pdf to-markdown` should include progress feedback and an explicit asset-output choice
 
-This matches the orchestrator design of `cdx-chores`.
+### C. Keep capability reporting dynamic
 
-### C. Create a focused validation job before implementation
+`doctor` should report detected PDF capabilities at runtime rather than relying on a documented snapshot of one machine.
 
-Before implementing PDF commands, run a small validation matrix on sample files:
+Recommended capability framing:
 
-- encrypted PDF
-- scanned PDF
-- vector-heavy PDF
-- multi-page mixed text/image PDF
-- image sequences (JPG/PNG mix)
+- `pdf.merge.default`: `pdfcpu`
+- `pdf.split.default`: `pdfcpu`
+- `pdf.to-images.default`: `pdfcpu`
+- `pdf.to-images.optional`: `mutool`
+- `pdf.image-tools.optional`: `magick`
+- `pdf.from-images.default`: `pdfcpu`
+- `pdf.to-markdown`: `pymupdf4llm`
+- `pdf.merge.optional-fallback`: `qpdf` if installed later
+- `pdf.split.optional-fallback`: `qpdf` if installed later
 
-Success criteria should include output correctness, speed, error behavior, and install friction.
+The actual availability of those capabilities should always come from runtime checks.
 
-## Open Questions
+### D. Validate the chosen defaults against representative file classes
 
-1. Between `pdfcpu` and `qpdf`, which should be the default `pdf merge/split` backend after validation (keeping the other as fallback)?
-2. For `pdf to-images`, do you want rasterization of every page (`pdftoppm`) or original embedded-image extraction when possible (`pdfcpu images extract`)?
-3. Should `mutool` be prioritized over `magick` as the optional `pdf to-images` backend when `pdftoppm` is unavailable?
-4. For `pdf from-images`, is preserving image order + simple packaging enough, or do you need page size/layout controls in the first release?
-5. Should `pymupdf4llm` be exposed under `pdf` (for example `pdf to-markdown`) in the launch phase, or kept as a later/experimental command?
+Before implementation, validation should focus on:
+
+- merge/split correctness on normal, encrypted, and mixed-page PDFs
+- embedded-image extraction behavior on image-rich, scanned, and vector-heavy PDFs
+- `mutool` fallback behavior when `pdfcpu` extraction is insufficient
+- whether installed `magick` adds enough practical value to justify any later image-normalization bridge in PDF flows
+- image-order preservation and page sizing behavior for `pdfcpu import`
+- markdown progress behavior and external-image-folder output ergonomics for `pymupdf4llm`
+
+## Decision Updates
+
+### Draft decision 1. `pdfcpu` should be the default merge/split backend
+
+Decision for this milestone:
+
+- use `pdfcpu` as the default backend for `pdf merge` and `pdf split`
+- do not require `qpdf` for the current launch path
+- keep `qpdf` only as a documented later fallback option if it is installed in a future phase
+
+### Draft decision 2. `pdf to-images` should prioritize embedded-image extraction
+
+Decision for this milestone:
+
+- define launch `pdf to-images` around embedded-image extraction when possible
+- prefer `pdfcpu` first
+- prefer `mutool` over `magick` as the next optional backend
+- do not prioritize `pdftoppm` in the current launch path
+
+### Draft decision 3. `pdf from-images` should stay intentionally simple
+
+Decision for this milestone:
+
+- preserve input order
+- package images into pages with minimal layout expectations
+- defer advanced page-size/layout controls
+
+### Draft decision 4. `pdf to-markdown` should be exposed under `pdf`
+
+Decision for this milestone:
+
+- treat `pymupdf4llm` as an in-scope PDF workflow rather than a distant experiment
+- keep progress feedback visible
+- support a mode where markdown can write a separate images folder for external image references
+
+## Deferred Decisions and Revisit Triggers
+
+### 1. Separate page-rasterization mode
+
+Decision for this milestone:
+
+- do not make full-page rasterization the default meaning of `pdf to-images`
+
+Revisit trigger:
+
+- real workflows require one output image per page for scanned or vector-only PDFs
+- embedded-image extraction proves too narrow as the only first-pass behavior
+
+If revisit trigger is met:
+
+- add an explicit render mode or separate command path
+- evaluate `mutool` first for that expansion
+
+### 2. `magick` as a first-class PDF backend
+
+Decision for this milestone:
+
+- keep `magick` out of the primary launch backend set even if installed
+- treat it as a lower-priority optional image tool behind `mutool`
+
+Revisit trigger:
+
+- `pdfcpu import` or `mutool` leave material gaps for images -> PDF or image normalization workflows
+- the additional dependency complexity is justified by a concrete use case
+
+## Related Plans
+
+- `docs/plans/plan-2026-02-25-initial-launch-lightweight-implementation.md`
 
 ## Related Research
 
