@@ -47,6 +47,7 @@ Implication:
 - launch default for `pdf to-images --mode extract`: `pdfcpu`
 - preferred optional backend ahead of `magick`: `mutool`
 - page rendering should be an explicit `--mode render` contract, not an implied fallback
+- `mutool draw` is the first concrete render path to evaluate for v1 page rasterization
 - `pdftoppm` is no longer the preferred launch path for this command
 
 `pdftoppm` remains useful for full-page rasterization workflows, but that is now treated as one possible backend choice for explicit render mode rather than the default meaning of `pdf to-images`.[^pdftoppm-man]
@@ -95,6 +96,7 @@ The product requirements are now clearer:
 - keep progress feedback visible
 - allow users to choose whether markdown writes a separate images folder for external assets
 - default external image export to an `images/` folder unless users provide an explicit override
+- resolve the default `images/` folder relative to the markdown output file so link generation stays predictable
 
 This is no longer just a speculative later idea. It is a valid PDF command candidate, subject to normal implementation planning.
 
@@ -160,10 +162,12 @@ The command names need explicit behavior contracts:
 - `pdf to-images` should expose explicit modes such as `extract` and `render`
 - `extract` should be the default first-release mode and should mean embedded-image extraction, not automatic rasterization of every page
 - `render` should be explicit and should never be reached by silent fallback from `extract`
+- `render` should use `mutool draw` as the first concrete backend path, emitting one PNG per rendered page
+- `--pages` should use 1-based comma-and-range syntax such as `1,3-5` and should be supported only for `render` in v1
 - CLI help and interactive copy should explain the selected mode clearly
 - `pdf from-images` should explicitly stay in simple packaging mode for v1
 - `pdf to-markdown` should include progress feedback and an explicit asset-output choice
-- `pdf to-markdown` should default to `--images external` with `images/` as the default asset directory
+- `pdf to-markdown` should default to `--images external` with `images/` as the default asset directory, resolved relative to the markdown output path
 
 ### C. Keep capability reporting dynamic
 
@@ -174,7 +178,7 @@ Recommended capability framing:
 - `pdf.merge.default`: `pdfcpu`
 - `pdf.split.default`: `pdfcpu`
 - `pdf.to-images.extract.default`: `pdfcpu`
-- `pdf.to-images.render.optional`: `mutool` if license-approved
+- `pdf.to-images.render.optional`: `mutool draw` if license-approved
 - `pdf.image-tools.optional`: `magick`
 - `pdf.from-images.default`: `pdfcpu`
 - `pdf.to-markdown`: `pymupdf4llm` if license-approved
@@ -199,7 +203,7 @@ Before implementation, validation should focus on:
 
 - merge/split correctness on normal, encrypted, and mixed-page PDFs
 - embedded-image extraction behavior on image-rich, scanned, and vector-heavy PDFs
-- explicit render-mode behavior on scanned and vector-heavy PDFs
+- explicit render-mode behavior on scanned and vector-heavy PDFs, including page-selection parsing and PNG output naming
 - `mutool` render or extraction behavior when `pdfcpu` is insufficient, only if license review approves its use
 - whether installed `magick` adds enough practical value to justify any later image-normalization bridge in PDF flows
 - image-order preservation and page sizing behavior for `pdfcpu import`
@@ -223,6 +227,7 @@ Decision for this milestone:
 - default to `--mode extract`
 - use `pdfcpu` first for `extract`
 - treat `render` as a separate explicit path rather than a silent fallback
+- use `mutool draw` as the first concrete render backend path
 - treat `mutool` as a license-sensitive optional backend rather than a default-adjacent fallback
 - prefer permissive tools in the shipped default path
 - do not prioritize `pdftoppm` in the current launch path
@@ -242,7 +247,7 @@ Decision for this milestone:
 
 - keep `pdf to-markdown` as a planned workflow, but gate any shipped `pymupdf4llm` implementation on license review or commercial licensing approval
 - keep progress feedback visible
-- default to external image references in an `images/` folder, while still supporting other image modes
+- default to external image references in an `images/` folder relative to the markdown output path, while still supporting other image modes
 - if exposed in product UX later, guide docs and command help should identify it clearly as a license-sensitive user-provided backend
 
 ## Deferred Decisions and Revisit Triggers
@@ -261,7 +266,7 @@ Revisit trigger:
 
 If revisit trigger is met:
 
-- complete the explicit render mode path
+- expand the explicit render mode path beyond the initial `mutool draw` baseline
 - evaluate `mutool` first for that expansion
 
 ### 2. `magick` as a first-class PDF backend

@@ -134,7 +134,7 @@ First-pass flags:
 
 - `--output-dir <path>` required
 - `--mode <extract|render>` optional, default `extract`
-- `--pages <selection>` optional
+- `--pages <selection>` optional for `render`, unsupported for `extract` in v1
 - `--overwrite` optional
 
 V1 behavior:
@@ -144,14 +144,18 @@ V1 behavior:
   - `render`: page rasterization
 - default to `extract`
 - use `pdfcpu` first for `extract`
-- use page selection only where the selected mode and backend support it
+- use `mutool draw` as the first supported backend path for `render`, treated as a license-sensitive user-provided backend
+- in `render`, emit one rasterized image per selected page with deterministic page-based naming
+- in `render`, default output format to PNG
+- in `render`, fail clearly with targeted dependency guidance when the required render backend is unavailable
+- support `--pages` only for `render` in v1, using 1-based comma-and-range syntax such as `1,3-5`
+- reject `--pages` with `--mode extract` in v1 rather than silently ignoring it
 - fail clearly when `extract` finds no embedded images instead of silently switching to `render`
 - if a later `mutool` path is enabled, treat it as a documented user-provided license-sensitive backend rather than part of the default path
 - CLI help for this command must explicitly describe the selected mode and explain that rendering is mode-driven rather than implicit
 
 Deferred:
 
-- the concrete backend implementation for `render`
 - DPI and render-format controls for `render`
 - user-visible backend override flag
 
@@ -189,7 +193,7 @@ First-pass flags:
 
 - `--output <path>` required
 - `--images <external|embed|skip>` optional, default `external`
-- `--image-dir <path>` optional, default `images` when `--images external`
+- `--image-dir <path>` optional, default `images` resolved relative to the markdown output file's parent when `--images external`
 - `--overwrite` optional
 
 V1 behavior:
@@ -201,6 +205,7 @@ V1 behavior:
   - embedded/inline image mode when supported by the backend flow
   - no exported images when `--images skip` is chosen
 - use `images/` as the default external asset directory unless `--image-dir` is provided
+- resolve the default `images/` directory as a sibling of the markdown output file and write markdown image links relative to the markdown file location
 - if the backend path is supported, help and guides must identify it as a license-sensitive user-provided backend
 
 Deferred:
@@ -215,7 +220,7 @@ Deferred:
 - `--overwrite` remains opt-in
 - commands fail clearly on missing dependencies, invalid paths, and unreadable inputs
 - `pdf to-images` must not silently switch from `extract` mode to `render` mode
-- `pdf to-markdown --images external` must validate image-folder behavior clearly, including the default `images/` directory
+- `pdf to-markdown --images external` must validate image-folder behavior clearly, including the default `images/` directory relative to the markdown output path
 - supported license-sensitive backends must be clearly marked in help and guide docs
 - help and guide docs must explain when a supported backend is license-sensitive and user-provided
 
@@ -273,7 +278,7 @@ Recommended prompt flow:
    - extract embedded images
    - render pages as images
 3. Prompt for output directory.
-4. Optionally prompt for page selection when that path is supported by the selected mode.
+4. If `render` is selected, optionally prompt for page selection using 1-based comma-and-range syntax such as `1,3-5`.
 5. Prompt overwrite behavior if relevant.
 6. Run the selected mode with progress/status feedback.
 7. If `extract` finds no embedded images, return a clear result and do not silently switch modes.
@@ -299,7 +304,7 @@ Recommended prompt flow:
    - external images folder
    - embedded images
    - no images
-4. If external images are chosen, prompt for the image directory with `images` as the default.
+4. If external images are chosen, prompt for the image directory with `images` as the default, resolved relative to the markdown output file.
 5. Show a concise summary of output choices.
 6. If this flow uses a license-sensitive user-provided backend, show a short note that the backend is not bundled by `cdx-chores` and that users or operators remain responsible for license compliance.
 7. Run conversion with visible progress feedback.
@@ -329,6 +334,9 @@ Recommended prompt flow:
 
 - Risk: users may not understand the difference between extracting embedded images and rendering pages.
   Mitigation: make mode selection explicit in help text and interactive prompts, and never silently switch from `extract` to `render`.
+
+- Risk: `pdf to-markdown` may generate broken asset links if the default image directory base path is ambiguous.
+  Mitigation: define the default `images/` directory as relative to the markdown output path and require relative link generation from that location.
 
 - Risk: `pdf from-images` may attract layout and sizing requests immediately.
   Mitigation: keep v1 intentionally simple and document layout controls as deferred.
@@ -370,12 +378,20 @@ Recommended prompt flow:
   - [ ] `extract`
   - [ ] `render`
   - [ ] default mode is `extract`
+- [ ] freeze `pdf to-images --mode render` minimum behavior:
+  - [ ] backend is `mutool draw`
+  - [ ] output format is PNG
+  - [ ] one output image per rendered page
+- [ ] freeze `pdf to-images --pages` syntax and scope:
+  - [ ] 1-based comma-and-range syntax
+  - [ ] supported only for `render` in v1
 - [ ] freeze `pdf from-images` as simple ordered packaging
 - [ ] freeze `pdf to-markdown` image handling choices:
   - [ ] `external` default
   - [ ] `embed`
   - [ ] `skip`
   - [ ] default image directory is `images`
+  - [ ] default image directory is relative to the markdown output path
 - [ ] freeze capability-key naming for `doctor`
 - [ ] freeze which backends are permissive-default versus license-sensitive
 - [ ] freeze guide wording for license-sensitive user-provided backends
@@ -396,7 +412,7 @@ Recommended prompt flow:
   - [ ] `to-images` extract mode
   - [ ] images-to-PDF packaging
 - [ ] implement `pymupdf4llm` adapter for markdown conversion
-- [ ] define the first supported backend path for `to-images` render mode
+- [ ] implement `mutool draw` adapter for `to-images` render mode
 - [ ] add optional `mutool` fallback path only as a documented license-sensitive backend path
 - [ ] keep `magick` outside the primary routing path
 - [ ] keep `qpdf` outside the required launch path
@@ -433,6 +449,8 @@ Recommended prompt flow:
 - [ ] add interactive coverage for the PDF family prompt flows
 - [ ] add representative playground smoke fixtures under `examples/playground/`
 - [ ] validate no silent switch from `extract` mode to `render` mode
+- [ ] validate `--pages` parsing and rejection for unsupported `extract` usage
+- [ ] validate default `images/` output relative to markdown output path
 - [ ] add coverage for clear messaging around license-sensitive user-provided backend paths
 
 ### Phase 7: Guides and close-out
@@ -452,6 +470,7 @@ Recommended prompt flow:
 - `doctor` reports PDF workflow capability clearly
 - `pdf to-images` behaves according to the selected mode and does not silently switch from extraction to rendering
 - `pdf to-markdown` supports progress feedback and explicit image-output choices, with `external` and `images/` as the default path
+- `pdf to-markdown` writes default external assets to an `images/` sibling directory of the markdown output and links them correctly
 - the default shipped path avoids license ambiguity for proprietary or commercial distribution
 
 ## Verification
@@ -463,7 +482,7 @@ Recommended prompt flow:
   - merge
   - split
   - `to-images` extract mode
-  - `to-images` render mode, if implemented in the current phase
+  - `to-images` render mode
   - images-to-PDF packaging
   - markdown with external images in the default `images/` directory, only if that backend path is implemented
   - markdown without exported images, only if that backend path is implemented
