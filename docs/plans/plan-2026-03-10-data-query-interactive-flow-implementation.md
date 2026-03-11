@@ -84,6 +84,9 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - table mode: ask `Rows to show (optional)` and reuse `--rows`
 - JSON stdout mode: ask whether to pretty-print
 - file-output mode: ask for output path, ask whether to pretty-print when the output path is `.json`, and ask for overwrite confirmation when needed
+- interactive output selection must map to exactly one direct-query output contract: table, `--json`, or `--output <path>`
+- interactive output selection must not allow mixed result-delivery choices that the direct CLI query contract rejects
+- when file output is chosen, the interactive layer should preserve the direct CLI stdout or stderr split by keeping payloads in the file and status lines outside stdout
 
 ### Intent prompt boundary
 
@@ -94,6 +97,8 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - plain `Enter` should insert a newline in the multiline intent prompt rather than submit immediately
 - `Ctrl+C` and `Escape` retain their existing cancel or abort roles
 - multiline intent entry should be implemented through a dedicated prompt primitive rather than by stretching the existing single-line text prompt
+- when the runtime falls back to the existing simple or non-raw prompt path, `Codex Assistant` intent capture should downgrade to a single-line prompt with an explicit warning before drafting continues
+- multiline interactive intent should be normalized into the same shared prompt or context text shape used by the CLI `data query codex` lane before Codex drafting is invoked
 
 ## Scope
 
@@ -148,6 +153,8 @@ Alignment note:
 
 - choose output mode after candidate SQL is accepted
 - reuse the direct CLI/backend query contract for actual execution
+- map interactive output choices to exactly one of table, `--json`, or `--output <path>`
+- reject output-choice combinations that would conflict with the direct CLI query contract
 - keep status/log output distinct from result payloads
 
 ## Non-Goals
@@ -183,6 +190,12 @@ Alignment note:
 - Risk: multiline intent entry may be forced into the current single-line prompt primitive and create brittle rendering behavior.
   Mitigation: add a dedicated multiline text prompt module with explicit multi-row rendering, cursor movement, newline insertion, and submit-key handling.
 
+- Risk: multiline intent capture may not be available in simple or non-raw environments even though the rest of interactive mode still works.
+  Mitigation: downgrade `Codex Assistant` intent capture to a single-line prompt with an explicit warning rather than failing the whole interactive path.
+
+- Risk: interactive multiline intent may diverge from the shared CLI `data query codex` drafting contract.
+  Mitigation: normalize multiline intent into the same shared prompt or context text shape before passing it into the reused Codex drafting bundle.
+
 ## Implementation Touchpoints
 
 - `src/cli/interactive/menu.ts`
@@ -209,6 +222,8 @@ Alignment note:
   - [ ] execution confirmation
   - [ ] freeze the logical `file` table-binding rule after source selection
   - [ ] freeze first-pass `Codex Assistant` intent entry as multiline with `Shift+Enter` newline support plus `Ctrl+D` submit fallback
+  - [ ] freeze simple or non-raw fallback behavior as single-line intent entry with a visible warning
+  - [ ] freeze output-mode mapping so interactive choices stay one-to-one with table, `--json`, or `--output <path>`
 
 ### Phase 2: Introspection-first foundation
 
@@ -244,6 +259,8 @@ Alignment note:
 - [ ] implement multiline natural-language intent capture for the first pass
 - [ ] support newline insertion through `Shift+Enter` when the terminal exposes it distinctly
 - [ ] support guaranteed multiline submit fallback through `Ctrl+D`
+- [ ] downgrade to a single-line intent prompt with warning when the multiline raw prompt cannot run
+- [ ] normalize interactive intent into the shared CLI `data query codex` prompt/context text shape before drafting
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
 - [ ] define revise/regenerate flow after rejection or SQL error
@@ -254,6 +271,8 @@ Alignment note:
 - [ ] add table output prompt flow with optional `rows`
 - [ ] add JSON stdout prompt flow with optional pretty-print
 - [ ] add file-output prompt flow with path, optional JSON pretty-printing, and overwrite handling
+- [ ] keep JSON stdout and file output mutually exclusive in the interactive flow
+- [ ] keep file-output payload delivery off stdout so direct CLI stdout or stderr expectations remain intact
 - [ ] reuse shared execution/output helpers from the direct CLI query plan
 
 ### Phase 7: Tests
@@ -269,6 +288,9 @@ Alignment note:
 - [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
 - [ ] add coverage for multiline `Codex Assistant` intent entry including `Shift+Enter` best-effort newline handling
 - [ ] add coverage for `Ctrl+D` submit behavior in the multiline prompt
+- [ ] add coverage for simple or non-raw downgrade to single-line intent prompt with warning
+- [ ] add coverage that interactive multiline intent normalization reuses the shared CLI `data query codex` drafting contract
+- [ ] add coverage that interactive output selection preserves the direct CLI mutually exclusive output contract
 
 ### Phase 8: Docs and verification
 
