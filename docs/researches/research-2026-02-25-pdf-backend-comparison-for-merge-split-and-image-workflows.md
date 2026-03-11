@@ -106,29 +106,51 @@ That should not live in this research doc. The durable design point is:
 - documentation should describe backend contracts and fallback strategy
 - research should avoid embedding ephemeral local install state unless the environment itself is the subject of the research
 
+### 8. License posture narrows the safe default path
+
+License fit matters alongside technical fit.
+
+Primary-source licensing direction:
+
+- `pdfcpu`: Apache-2.0[^pdfcpu-license]
+- `qpdf`: Apache-2.0[^qpdf-license]
+- `ImageMagick`: commercial use is allowed under the ImageMagick license, subject to normal compliance obligations[^imagemagick-license]
+- `MuPDF`: AGPL or commercial licensing from Artifex[^mupdf-license][^artifex-licensing]
+- `PyMuPDF` and the surrounding Artifex stack: AGPL or commercial licensing from Artifex[^artifex-pymupdf][^pymupdf-license]
+
+Implication:
+
+- the safest default shipped path is built around permissive tools such as `pdfcpu`
+- `mutool` and `pymupdf4llm` should be treated as license-sensitive backends
+- for proprietary or commercial distribution, Artifex-backed tools should not be assumed safe defaults unless AGPL obligations are intentionally accepted or a commercial license is obtained
+- if these backends are referenced in product UX or docs, they should be described as user-provided third-party tools and the docs should state clearly that users or operators remain responsible for checking the applicable license terms
+
 ## Comparison Table
 
 | Tool | Primary Role | Merge/Split | PDF -> Images | Images -> PDF | PDF -> Markdown/Text | Notes / Risks | Launch-Phase Fit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `pdfcpu` | Broad PDF processor (Go CLI) | Strong | Strong for embedded-image extraction | Strong (`import`) | No markdown focus | Best launch anchor across the current PDF workflow set; still needs workflow validation | Default for `pdf merge`, `pdf split`, `pdf to-images`, and likely `pdf from-images` |
-| `qpdf` | Structural PDF manipulation | Strong | No | No | Inspection/JSON only | Strong structural alternative; keep as a later optional fallback rather than a current launch assumption | Deferred optional fallback |
-| `mutool` (MuPDF) | PDF rendering/conversion/extraction toolkit | Merge usable | Strong (`extract`, `draw`, `convert`) | Limited/indirect | Text/content extraction possible, but not markdown-focused | Better optional image-oriented backend than `magick` for this scope | Preferred optional backend after `pdfcpu` |
-| `magick` | General image conversion/manipulation | No (not preferred for structure ops) | Possible | Strong | No | PDF behavior can vary by delegates/policy; keep out of primary launch path | Deferred or backup-only |
+| `pdfcpu` | Broad PDF processor (Go CLI) | Strong | Strong for embedded-image extraction | Strong (`import`) | No markdown focus | Best launch anchor across the current PDF workflow set; permissive license posture is favorable | Default for `pdf merge`, `pdf split`, `pdf to-images`, and likely `pdf from-images` |
+| `qpdf` | Structural PDF manipulation | Strong | No | No | Inspection/JSON only | Strong structural alternative with permissive licensing; keep as a later optional fallback rather than a current launch assumption | Deferred optional fallback |
+| `mutool` (MuPDF) | PDF rendering/conversion/extraction toolkit | Merge usable | Strong (`extract`, `draw`, `convert`) | Limited/indirect | Text/content extraction possible, but not markdown-focused | Technically strong, but AGPL or commercial licensing means it should stay behind a license-review gate for proprietary or commercial distribution | License-sensitive optional backend |
+| `magick` | General image conversion/manipulation | No (not preferred for structure ops) | Possible | Strong | No | PDF behavior can vary by delegates/policy; license posture is more permissive than Artifex-backed options | Deferred or backup-only |
 | `pdftoppm` | PDF rasterization to images | No | Strong for page rasterization | No | No | Useful for a different contract: per-page rendering rather than embedded-image extraction | Deferred from current launch choice |
-| `pymupdf4llm` | PDF content extraction for LLM/RAG workflows | No | Image/vector export within markdown extraction flow | No | Strong | Strong fit for markdown plus extracted assets; separate problem class from merge/split | High for `pdf to-markdown` |
+| `pymupdf4llm` | PDF content extraction for LLM/RAG workflows | No | Image/vector export within markdown extraction flow | No | Strong | Strong fit for markdown plus extracted assets, but should be treated as license-sensitive because of the Artifex licensing model around PyMuPDF | License-sensitive candidate for `pdf to-markdown` |
 | `pandoc` | Document format conversion | No | No | No | Converts document formats, not PDF structure ops | Useful elsewhere, not a PDF backend for these workflows | Not a fit for this backend set |
 
 ## Implications or Recommendations
 
-### A. Freeze the launch backend mapping
+### A. Freeze a permissive-first launch backend mapping
 
 Recommended launch mapping:
 
 - `pdf merge`: default `pdfcpu`
 - `pdf split`: default `pdfcpu`
-- `pdf to-images`: default `pdfcpu` embedded-image extraction, optional `mutool` path
+- `pdf to-images`: default `pdfcpu` embedded-image extraction
 - `pdf from-images`: simple ordered packaging, with `pdfcpu import` as the first validation target
-- `pdf to-markdown`: `pymupdf4llm`
+- optional structural fallback later: `qpdf`
+- optional image-tool fallback later: `ImageMagick`
+- `mutool`: license-review-required optional backend
+- `pymupdf4llm`: license-review-required markdown backend
 
 ### B. Clarify the command contracts before implementation
 
@@ -136,6 +158,7 @@ The command names need explicit behavior contracts:
 
 - `pdf to-images` should mean embedded-image extraction in the first release, not automatic rasterization of every page
 - if a later per-page render mode is needed, it should be added as a separate mode or explicit flag rather than silently changing the command meaning
+- because the command name is broader than the first-release behavior, CLI help and interactive copy should say explicitly that v1 extracts embedded images and does not render pages
 - `pdf from-images` should explicitly stay in simple packaging mode for v1
 - `pdf to-markdown` should include progress feedback and an explicit asset-output choice
 
@@ -148,25 +171,37 @@ Recommended capability framing:
 - `pdf.merge.default`: `pdfcpu`
 - `pdf.split.default`: `pdfcpu`
 - `pdf.to-images.default`: `pdfcpu`
-- `pdf.to-images.optional`: `mutool`
+- `pdf.to-images.optional`: `mutool` if license-approved
 - `pdf.image-tools.optional`: `magick`
 - `pdf.from-images.default`: `pdfcpu`
-- `pdf.to-markdown`: `pymupdf4llm`
+- `pdf.to-markdown`: `pymupdf4llm` if license-approved
 - `pdf.merge.optional-fallback`: `qpdf` if installed later
 - `pdf.split.optional-fallback`: `qpdf` if installed later
 
 The actual availability of those capabilities should always come from runtime checks.
 
-### D. Validate the chosen defaults against representative file classes
+### D. Add explicit documentation guidance before shipping optional PDF backends
+
+Before enabling optional backends in a shipped product or commercial workflow:
+
+- confirm whether the distribution model is proprietary, internal-only, open-source, or network-served
+- review whether AGPL obligations are acceptable for that use case
+- if AGPL obligations are not acceptable, do not ship or depend on Artifex-backed tools without a commercial license
+- keep permissive defaults available so the base `pdf` command group can ship without license ambiguity
+- do not assume that a user-installed third-party tool automatically removes license obligations
+- guide docs should explain that `cdx-chores` may detect or use user-provided third-party backends without bundling or installing them
+- guide docs should identify license-sensitive backends explicitly and state that users or operators remain responsible for checking and complying with the applicable license terms
+
+### E. Validate the chosen defaults against representative file classes
 
 Before implementation, validation should focus on:
 
 - merge/split correctness on normal, encrypted, and mixed-page PDFs
 - embedded-image extraction behavior on image-rich, scanned, and vector-heavy PDFs
-- `mutool` fallback behavior when `pdfcpu` extraction is insufficient
+- `mutool` fallback behavior when `pdfcpu` extraction is insufficient, only if license review approves its use
 - whether installed `magick` adds enough practical value to justify any later image-normalization bridge in PDF flows
 - image-order preservation and page sizing behavior for `pdfcpu import`
-- markdown progress behavior and external-image-folder output ergonomics for `pymupdf4llm`
+- markdown progress behavior and external-image-folder output ergonomics for `pymupdf4llm`, only if license review approves its use
 
 ## Decision Updates
 
@@ -184,8 +219,10 @@ Decision for this milestone:
 
 - define launch `pdf to-images` around embedded-image extraction when possible
 - prefer `pdfcpu` first
-- prefer `mutool` over `magick` as the next optional backend
+- treat `mutool` as a license-sensitive optional backend rather than a default-adjacent fallback
+- prefer permissive tools in the shipped default path
 - do not prioritize `pdftoppm` in the current launch path
+- if a later `mutool` fallback is enabled, document clearly that it is a user-provided license-sensitive backend
 
 ### Draft decision 3. `pdf from-images` should stay intentionally simple
 
@@ -195,13 +232,14 @@ Decision for this milestone:
 - package images into pages with minimal layout expectations
 - defer advanced page-size/layout controls
 
-### Draft decision 4. `pdf to-markdown` should be exposed under `pdf`
+### Draft decision 4. `pdf to-markdown` should remain planned, but license-gated
 
 Decision for this milestone:
 
-- treat `pymupdf4llm` as an in-scope PDF workflow rather than a distant experiment
+- keep `pdf to-markdown` as a planned workflow, but gate any shipped `pymupdf4llm` implementation on license review or commercial licensing approval
 - keep progress feedback visible
 - support a mode where markdown can write a separate images folder for external image references
+- if exposed in product UX later, guide docs and command help should identify it clearly as a license-sensitive user-provided backend
 
 ## Deferred Decisions and Revisit Triggers
 
@@ -233,6 +271,19 @@ Revisit trigger:
 - `pdfcpu import` or `mutool` leave material gaps for images -> PDF or image normalization workflows
 - the additional dependency complexity is justified by a concrete use case
 
+### 3. Shipping Artifex-backed tools in a proprietary or commercial product
+
+Decision for this milestone:
+
+- do not assume `mutool` or `pymupdf4llm` are safe to ship by default in a proprietary or commercial product
+- require an explicit license review before enabling those paths outside AGPL-compliant usage
+- if those paths are exposed, document them clearly as license-sensitive user-provided backends
+
+Revisit trigger:
+
+- the project intentionally adopts AGPL-compliant distribution for the relevant workflow, or
+- a commercial license is obtained from Artifex
+
 ## Related Plans
 
 - `docs/plans/plan-2026-02-25-initial-launch-lightweight-implementation.md`
@@ -249,6 +300,13 @@ Revisit trigger:
 [^pdftoppm-man]: [pdftoppm Debian manpage (poppler-utils)](https://manpages.debian.org/testing/poppler-utils/pdftoppm.1.en.html)
 [^imagemagick-magick]: [ImageMagick `magick` command docs](https://imagemagick.org/script/magick.php)
 [^imagemagick-formats]: [ImageMagick formats list (PDF/Ghostscript notes)](https://imagemagick.org/script/formats.php)
+[^imagemagick-license]: [ImageMagick license](https://imagemagick.org/license/)
 [^pymupdf4llm-pypi]: [pymupdf4llm on PyPI](https://pypi.org/project/pymupdf4llm/)
 [^mupdf-tools]: [MuPDF tools index](https://mupdf.readthedocs.io/en/latest/tools/index.html)
 [^mutool-docs]: [MuPDF `mutool` docs](https://mupdf.readthedocs.io/en/1.26.2/tools/mutool.html)
+[^mupdf-license]: [MuPDF license](https://mupdf.readthedocs.io/en/latest/license.html)
+[^artifex-licensing]: [Artifex licensing](https://artifex.com/licensing)
+[^artifex-pymupdf]: [Artifex on PyMuPDF licensing](https://artifex.com/blog/pymupdf-acquired-by-artifex)
+[^pymupdf-license]: [PyMuPDF project site](https://pymupdf.io/)
+[^pdfcpu-license]: [pdfcpu GitHub](https://github.com/pdfcpu/pdfcpu)
+[^qpdf-license]: [qpdf license docs](https://qpdf.readthedocs.io/en/12.0/license.html)
