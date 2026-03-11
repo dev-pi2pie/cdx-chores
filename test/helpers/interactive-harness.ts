@@ -14,6 +14,8 @@ export interface InteractiveHarnessScenario {
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
   dataQueryActionErrorMessage?: string;
+  dataQueryActionStderr?: string;
+  dataQueryActionStdout?: string;
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
   dataQueryCodexErrorMessage?: string;
   dataQueryDetectedFormat?: string;
@@ -207,6 +209,12 @@ export function runInteractiveHarness(
       },
       actionDataQuery: async (_runtime, options) => {
         actionCalls.push({ name: "data:query", options });
+        if (typeof scenario.dataQueryActionStdout === "string") {
+          _runtime.stdout.write(scenario.dataQueryActionStdout);
+        }
+        if (typeof scenario.dataQueryActionStderr === "string") {
+          _runtime.stderr.write(scenario.dataQueryActionStderr);
+        }
         const existingPaths = new Set((scenario.existingPaths ?? []).map((item) => resolveHarnessPath(item)));
         const outputPath =
           typeof options.output === "string" && options.output.length > 0

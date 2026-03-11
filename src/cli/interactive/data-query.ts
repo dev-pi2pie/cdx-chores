@@ -211,21 +211,21 @@ function renderIntrospectionSummary(
   ];
 
   for (const line of lines) {
-    printLine(runtime.stdout, line);
+    printLine(runtime.stderr, line);
   }
 }
 
 function renderCandidateSql(runtime: CliRuntime, sql: string): void {
   const pc = getCliColors(runtime);
-  printLine(runtime.stdout, "");
-  printLine(runtime.stdout, `${pc.bold(pc.green("SQL"))}:`);
-  printLine(runtime.stdout, pc.yellow(sql));
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, `${pc.bold(pc.green("SQL"))}:`);
+  printLine(runtime.stderr, pc.yellow(sql));
 }
 
 function renderCodexIntentPreview(runtime: CliRuntime, intent: string): void {
   const pc = getCliColors(runtime);
-  printLine(runtime.stdout, "");
-  printLine(runtime.stdout, `${pc.bold(pc.cyan("Intent"))}: ${pc.white(intent)}`);
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, `${pc.bold(pc.cyan("Intent"))}: ${pc.white(intent)}`);
 }
 
 async function promptInteractiveInputFormat(

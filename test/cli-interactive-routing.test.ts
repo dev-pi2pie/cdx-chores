@@ -237,6 +237,30 @@ describe("interactive mode routing", () => {
     );
   });
 
+  test("keeps interactive query metadata off stdout for json output", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, true, false],
+      dataQueryActionStdout: '[{"id":1}]\n',
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [{ name: "id", type: "BIGINT" }],
+        sampleRows: [{ id: "1" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.stdout).toBe('[{"id":1}]\n');
+    expect(result.stderr).toContain("Input:");
+    expect(result.stderr).toContain("Schema:");
+    expect(result.stderr).toContain("Sample Rows:");
+    expect(result.stderr).toContain("SQL:");
+    expect(result.stderr).toContain("select id from file");
+  });
+
   test("routes Codex Assistant through the multiline editor when requested", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -292,7 +316,30 @@ describe("interactive mode routing", () => {
     expect(editorPrompt?.defaultValue).toContain("# Schema:");
     expect(editorPrompt?.defaultValue).toContain("# Sample rows:");
     expect(editorPrompt?.defaultValue).toContain("# Write plain intent below. Comment lines starting with # are ignored.");
-    expect(result.stdout).toContain("Intent: count rows by status");
+    expect(result.stderr).toContain("Intent: count rows by status");
+  });
+
+  test("keeps Codex intent preview off stdout before json output", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, true, true, true, false],
+      editorQueue: [
+        "# Query context for Codex drafting.\n# Logical table: file\ncount rows\nby status",
+      ],
+      dataQueryActionStdout: '[{"status":"active","row_count":1}]\n',
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(result.stdout).toBe('[{"status":"active","row_count":1}]\n');
+    expect(result.stderr).toContain("Intent: count rows by status");
+    expect(result.stderr).toContain("SQL:");
+    expect(result.stderr).toContain('select "status", count(*) as row_count from file group by "status"');
   });
 
   test("reopens the multiline editor until the cleaned intent is confirmed", () => {
