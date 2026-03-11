@@ -45,7 +45,7 @@ Land the interactive `data query` flow and the next `Codex Assistant` editor-bac
 ## Verification
 
 - `bunx tsc --noEmit`
-- `bun test test/cli-text-multiline.test.ts test/cli-text-inline.test.ts test/cli-interactive-routing.test.ts test/cli-actions-data-query-codex.test.ts`
+- `bun test test/cli-text-inline.test.ts test/cli-interactive-routing.test.ts test/cli-actions-data-query-codex.test.ts`
 
 ## Related Plans
 

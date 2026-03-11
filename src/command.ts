@@ -45,7 +45,6 @@ import type { CliRuntime, RunCliOptions } from "./cli/types";
 
 interface NormalizedCliArgv {
   argv: string[];
-  debug: boolean;
   colorEnabled: boolean;
   displayPathStyle: CliRuntime["displayPathStyle"];
 }
@@ -53,7 +52,6 @@ interface NormalizedCliArgv {
 function createRuntime(options: RunCliOptions): CliRuntime {
   return {
     cwd: options.cwd ?? process.cwd(),
-    debug: options.debug ?? false,
     colorEnabled: options.colorEnabled ?? true,
     now: options.now ?? (() => new Date()),
     platform: options.platform ?? process.platform,
@@ -202,15 +200,9 @@ function applyRenameTemplateOptions(command: Command): void {
 function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
   const normalized = argv.slice(0, 2);
   let displayPathStyle: CliRuntime["displayPathStyle"] = "relative";
-  let debug = false;
   let noColorFlag = false;
 
   for (const arg of argv.slice(2)) {
-    if (arg === "--debug") {
-      debug = true;
-      continue;
-    }
-
     if (arg === "--absolute" || arg === "--abs") {
       displayPathStyle = "absolute";
       continue;
@@ -231,7 +223,6 @@ function normalizeCliArgv(argv: string[]): NormalizedCliArgv {
 
   return {
     argv: normalized,
-    debug,
     colorEnabled: resolveCliColorEnabled({ noColorFlag }),
     displayPathStyle,
   };
@@ -243,7 +234,6 @@ export async function runCli(
 ): Promise<void> {
   const normalized = normalizeCliArgv(argv);
   const cliRuntime = createRuntime(runtime);
-  cliRuntime.debug = runtime.debug ?? normalized.debug;
   cliRuntime.colorEnabled = normalized.colorEnabled && (runtime.colorEnabled ?? true);
   cliRuntime.displayPathStyle = runtime.displayPathStyle ?? normalized.displayPathStyle;
   const args = normalized.argv.slice(2);
@@ -272,7 +262,6 @@ export async function runCli(
     .name("cdx-chores")
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
-    .option("--debug", "Enable debug logging", false)
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
     .option("--no-color", "Disable ANSI colors", false)
     .version(getFormattedVersionLabel(cliRuntime.colorEnabled), "-v, --version", "Show version information");
