@@ -1,6 +1,6 @@
 # cdx-chores
 
-A CLI tool for daily chores automation and file-processing workflows.
+A CLI tool for daily chores automation, file-processing workflows, and Codex-assisted tasks.
 
 Current launch-phase focus:
 
@@ -12,6 +12,26 @@ Current launch-phase focus:
 - ffmpeg-backed video command wrappers
 
 ## Quick Start
+
+Install globally from npm:
+
+```bash
+npm install -g cdx-chores
+```
+
+Check the command:
+
+```bash
+cdx-chores --help
+```
+
+Start interactive mode (default when no args):
+
+```bash
+cdx-chores
+```
+
+## Local Development
 
 Install dependencies:
 
@@ -29,18 +49,6 @@ Link the CLI locally so `cdx-chores` is available on your PATH:
 
 ```bash
 npm link
-```
-
-Check the command:
-
-```bash
-cdx-chores --help
-```
-
-Start interactive mode (default when no args):
-
-```bash
-cdx-chores
 ```
 
 ## Examples
@@ -227,7 +235,7 @@ Cleanup option comparison:
 
 ## Dependencies
 
-- Required for all commands: Node.js `>= 20` runtime
+- Required for all commands: Node.js `>= 22.5.0` runtime
 - Development tooling: Bun
 - Optional command dependencies:
   - `pandoc` for `md to-docx`
