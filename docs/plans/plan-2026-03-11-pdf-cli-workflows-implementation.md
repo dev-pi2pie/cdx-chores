@@ -20,7 +20,7 @@ The PDF research is now specific enough to freeze:
 - `mutool` as a technically strong but license-sensitive optional backend
 - `magick` as a lower-priority optional image tool
 - `pymupdf4llm` as the planned `pdf to-markdown` backend, but only behind license review or commercial licensing approval
-- a deliberate choice not to rely on `qpdf` for the immediate launch path
+- a deliberate choice not to rely on `qpdf` in the current implementation path
 
 This plan converts that research into a concrete command surface and implementation sequence without reopening the backend decision.
 
@@ -35,6 +35,7 @@ This plan converts that research into a concrete command surface and implementat
 - interactive root flow does not yet expose a `pdf` command family
 - `doctor` does not yet report the PDF capability matrix described in the research
 - the repo does not yet document PDF license-sensitive backend guidance in the command family itself
+- the documented `pdf to-images` contract is now mode-based, but the implementation is still deferred
 - the research doc is still `draft`, which is correct until implementation begins
 
 ## Design Contract
@@ -55,7 +56,7 @@ This plan covers the first direct and interactive release for:
   - `pdfcpu` for `pdf merge`
   - `pdfcpu` for `pdf split`
 - default extraction and packaging backend:
-  - `pdfcpu` for `pdf to-images`
+  - `pdfcpu` for `pdf to-images --mode extract`
   - `pdfcpu` for `pdf from-images`
 - planned markdown backend candidate:
   - `pymupdf4llm` for `pdf to-markdown`, only if the project later decides to support that license-sensitive backend
@@ -63,8 +64,6 @@ This plan covers the first direct and interactive release for:
   - `mutool` as a documented license-sensitive optional backend
 - lower-priority optional image tool:
   - `magick`
-- later optional structural fallback only:
-  - `qpdf`
 - license-sensitive markdown backend:
   - `pymupdf4llm` as a documented optional backend if the project later supports it
 
@@ -129,28 +128,31 @@ Deferred:
 
 Recommended first-pass shape:
 
-- `pdf to-images <input> --output-dir <path>`
+- `pdf to-images <input> --output-dir <path> --mode <extract|render>`
 
 First-pass flags:
 
 - `--output-dir <path>` required
+- `--mode <extract|render>` optional, default `extract`
 - `--pages <selection>` optional
 - `--overwrite` optional
 
 V1 behavior:
 
-- treat the command as embedded-image extraction, not page rasterization
-- use `pdfcpu` first
-- use page selection only where the backend supports narrowing extraction scope
-- fail clearly when no embedded images are found instead of silently rasterizing every page
-- if a later `mutool` fallback path is enabled, treat it as a documented user-provided license-sensitive backend rather than part of the default path
-- CLI help for this command must explicitly say `Extract embedded images from PDF (does not render pages in v1)` or equivalent
+- expose an explicit mode contract:
+  - `extract`: embedded-image extraction
+  - `render`: page rasterization
+- default to `extract`
+- use `pdfcpu` first for `extract`
+- use page selection only where the selected mode and backend support it
+- fail clearly when `extract` finds no embedded images instead of silently switching to `render`
+- if a later `mutool` path is enabled, treat it as a documented user-provided license-sensitive backend rather than part of the default path
+- CLI help for this command must explicitly describe the selected mode and explain that rendering is mode-driven rather than implicit
 
 Deferred:
 
-- `--mode render`
-- page rasterization output
-- DPI and render-format controls
+- the concrete backend implementation for `render`
+- DPI and render-format controls for `render`
 - user-visible backend override flag
 
 #### `pdf from-images`
@@ -186,8 +188,8 @@ Recommended first-pass shape:
 First-pass flags:
 
 - `--output <path>` required
-- `--images <external|embed|skip>` optional
-- `--image-dir <path>` optional, required when `--images external` needs an explicit location
+- `--images <external|embed|skip>` optional, default `external`
+- `--image-dir <path>` optional, default `images` when `--images external`
 - `--overwrite` optional
 
 V1 behavior:
@@ -195,9 +197,10 @@ V1 behavior:
 - use `pymupdf4llm` only if the project later decides to support that license-sensitive backend
 - keep progress feedback visible
 - support markdown with:
-  - external image assets in a separate folder
+  - external image assets in a separate folder by default
   - embedded/inline image mode when supported by the backend flow
   - no exported images when `--images skip` is chosen
+- use `images/` as the default external asset directory unless `--image-dir` is provided
 - if the backend path is supported, help and guides must identify it as a license-sensitive user-provided backend
 
 Deferred:
@@ -211,8 +214,8 @@ Deferred:
 - output path flags must be explicit for all PDF write operations
 - `--overwrite` remains opt-in
 - commands fail clearly on missing dependencies, invalid paths, and unreadable inputs
-- `pdf to-images` must not silently switch to rasterization mode
-- `pdf to-markdown --images external` must validate image-folder behavior clearly
+- `pdf to-images` must not silently switch from `extract` mode to `render` mode
+- `pdf to-markdown --images external` must validate image-folder behavior clearly, including the default `images/` directory
 - supported license-sensitive backends must be clearly marked in help and guide docs
 - help and guide docs must explain when a supported backend is license-sensitive and user-provided
 
@@ -224,13 +227,11 @@ Recommended first-pass capability keys:
 
 - `pdf.merge.default`
 - `pdf.split.default`
-- `pdf.to-images.default`
-- `pdf.to-images.optional`
+- `pdf.to-images.extract.default`
+- `pdf.to-images.render.optional`
 - `pdf.image-tools.optional`
 - `pdf.from-images.default`
 - `pdf.to-markdown`
-- `pdf.merge.optional-fallback`
-- `pdf.split.optional-fallback`
 - `pdf.license-sensitive`
 
 ### Interactive mode design
@@ -268,12 +269,14 @@ Recommended prompt flow:
 Recommended prompt flow:
 
 1. Prompt for one input PDF path.
-2. Explain that v1 extracts embedded images rather than rendering pages.
+2. Prompt for mode selection:
+   - extract embedded images
+   - render pages as images
 3. Prompt for output directory.
-4. Optionally prompt for page selection when that path is supported.
+4. Optionally prompt for page selection when that path is supported by the selected mode.
 5. Prompt overwrite behavior if relevant.
-6. Run extraction with progress/status feedback.
-7. If no embedded images are found, return a clear result and do not silently switch modes.
+6. Run the selected mode with progress/status feedback.
+7. If `extract` finds no embedded images, return a clear result and do not silently switch modes.
 
 #### Interactive `pdf from-images`
 
@@ -292,11 +295,11 @@ Recommended prompt flow:
 
 1. Prompt for one input PDF path.
 2. Prompt for markdown output path.
-3. Prompt for image handling mode:
+3. Prompt for image handling mode, defaulting to external images:
    - external images folder
    - embedded images
    - no images
-4. If external images are chosen, prompt for the image directory.
+4. If external images are chosen, prompt for the image directory with `images` as the default.
 5. Show a concise summary of output choices.
 6. If this flow uses a license-sensitive user-provided backend, show a short note that the backend is not bundled by `cdx-chores` and that users or operators remain responsible for license compliance.
 7. Run conversion with visible progress feedback.
@@ -314,7 +317,6 @@ Recommended prompt flow:
 ## Non-Goals
 
 - `qpdf` installation or required support in the first implementation pass
-- page-rasterization mode for `pdf to-images`
 - advanced page layout controls for `pdf from-images`
 - backend override flags such as `--backend pdfcpu`
 - OCR
@@ -325,8 +327,8 @@ Recommended prompt flow:
 
 ## Risks and Mitigations
 
-- Risk: users may interpret `pdf to-images` as one image per page.
-  Mitigation: freeze the command contract around embedded-image extraction and state that explicitly in help text and interactive prompts.
+- Risk: users may not understand the difference between extracting embedded images and rendering pages.
+  Mitigation: make mode selection explicit in help text and interactive prompts, and never silently switch from `extract` to `render`.
 
 - Risk: `pdf from-images` may attract layout and sizing requests immediately.
   Mitigation: keep v1 intentionally simple and document layout controls as deferred.
@@ -364,12 +366,16 @@ Recommended prompt flow:
   - [ ] `pdf to-images`
   - [ ] `pdf from-images`
   - [ ] `pdf to-markdown`
-- [ ] freeze `pdf to-images` as embedded-image extraction, not page rendering
+- [ ] freeze `pdf to-images` mode names and defaults:
+  - [ ] `extract`
+  - [ ] `render`
+  - [ ] default mode is `extract`
 - [ ] freeze `pdf from-images` as simple ordered packaging
 - [ ] freeze `pdf to-markdown` image handling choices:
-  - [ ] `external`
+  - [ ] `external` default
   - [ ] `embed`
   - [ ] `skip`
+  - [ ] default image directory is `images`
 - [ ] freeze capability-key naming for `doctor`
 - [ ] freeze which backends are permissive-default versus license-sensitive
 - [ ] freeze guide wording for license-sensitive user-provided backends
@@ -387,9 +393,10 @@ Recommended prompt flow:
 - [ ] implement `pdfcpu` command adapters for:
   - [ ] merge
   - [ ] split
-  - [ ] embedded-image extraction
+  - [ ] `to-images` extract mode
   - [ ] images-to-PDF packaging
 - [ ] implement `pymupdf4llm` adapter for markdown conversion
+- [ ] define the first supported backend path for `to-images` render mode
 - [ ] add optional `mutool` fallback path only as a documented license-sensitive backend path
 - [ ] keep `magick` outside the primary routing path
 - [ ] keep `qpdf` outside the required launch path
@@ -415,7 +422,7 @@ Recommended prompt flow:
   - [ ] to-images
   - [ ] from-images
   - [ ] to-markdown
-- [ ] ensure interactive prompts explain the embedded-image extraction contract for `pdf to-images`
+- [ ] ensure interactive prompts explain the `extract` versus `render` contract for `pdf to-images`
 - [ ] ensure interactive prompts preserve progress feedback for `pdf to-markdown`
 - [ ] ensure interactive prompts explain the user-provided license-sensitive backend note consistently
 
@@ -425,7 +432,7 @@ Recommended prompt flow:
 - [ ] add failure-mode coverage for missing dependencies and invalid paths
 - [ ] add interactive coverage for the PDF family prompt flows
 - [ ] add representative playground smoke fixtures under `examples/playground/`
-- [ ] validate no silent switch from extraction mode to render mode
+- [ ] validate no silent switch from `extract` mode to `render` mode
 - [ ] add coverage for clear messaging around license-sensitive user-provided backend paths
 
 ### Phase 7: Guides and close-out
@@ -436,15 +443,15 @@ Recommended prompt flow:
 - [ ] add a dedicated guide describing user-provided PDF backends and license-sensitive tooling
 - [ ] update the research doc status from `draft` to `in-progress` once implementation begins
 - [ ] record any contract drift back into the research and this plan
-- [ ] capture follow-up plans if render mode or advanced layout controls become necessary
+- [ ] capture follow-up plans if render mode backend selection or advanced layout controls need refinement
 
 ## Success Criteria
 
 - the `pdf` command group is no longer deferred for the first release workflows
 - direct CLI and interactive mode share one consistent command contract
 - `doctor` reports PDF workflow capability clearly
-- `pdf to-images` behaves as embedded-image extraction and does not silently rasterize pages
-- `pdf to-markdown` supports progress feedback and explicit image-output choices
+- `pdf to-images` behaves according to the selected mode and does not silently switch from extraction to rendering
+- `pdf to-markdown` supports progress feedback and explicit image-output choices, with `external` and `images/` as the default path
 - the default shipped path avoids license ambiguity for proprietary or commercial distribution
 
 ## Verification
@@ -455,9 +462,10 @@ Recommended prompt flow:
 - manual smoke checks in `examples/playground/` for:
   - merge
   - split
-  - embedded-image extraction
+  - `to-images` extract mode
+  - `to-images` render mode, if implemented in the current phase
   - images-to-PDF packaging
-  - markdown with external images, only if that backend path is implemented
+  - markdown with external images in the default `images/` directory, only if that backend path is implemented
   - markdown without exported images, only if that backend path is implemented
 
 
