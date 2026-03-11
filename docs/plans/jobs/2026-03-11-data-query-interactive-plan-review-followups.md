@@ -15,7 +15,7 @@ Address the review findings on the interactive `data query` plan by removing con
 - removed the duplicated `formal-guide` source-selection prompt so source selection stays in the shared introspection-first flow
 - added explicit SQL-error recovery expectations for `manual`, `formal-guide`, and `Codex Assistant`
 - revised the `Codex Assistant` intent-entry contract to use a dedicated multiline prompt with `Shift+Enter` newline support where available
-- added guaranteed multiline submit fallbacks through `Ctrl+D` and `Meta+Enter`
+- kept `Ctrl+D` as the guaranteed multiline submit fallback and dropped `Meta+Enter` because of terminal-app conflict risk
 - added checklist items and risk language so the implementation plan now covers those constraints directly
 
 ## Verification
@@ -23,7 +23,7 @@ Address the review findings on the interactive `data query` plan by removing con
 - reviewed the interactive plan sections for consistency between design contract, scope, risks, and phase checklist
 - searched the repository for an existing multiline interactive prompt rule and did not find one for `data query` intent entry
 - confirmed the current interactive prompt stack is built on single-line `@inquirer/prompts` input flows
-- confirmed the current prompt handlers do not already bind `Ctrl+D` or `Meta+Enter`, while `Ctrl+C` remains reserved for prompt abort
+- confirmed the current prompt handlers do not already bind `Ctrl+D`, while `Ctrl+C` remains reserved for prompt abort
 
 ## Related Plans
 

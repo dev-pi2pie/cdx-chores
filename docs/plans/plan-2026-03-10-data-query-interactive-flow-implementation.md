@@ -90,7 +90,7 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - the first-pass `Codex Assistant` intent prompt should support multiline entry
 - `Shift+Enter` should insert a newline when the terminal exposes it distinctly
 - because `Shift+Enter` is not portable across all terminal environments, multiline intent entry must also expose guaranteed fallback submit keys
-- the first-pass fallback submit keys should be `Ctrl+D` and `Meta+Enter`
+- the first-pass guaranteed fallback submit key should be `Ctrl+D`
 - plain `Enter` should insert a newline in the multiline intent prompt rather than submit immediately
 - `Ctrl+C` and `Escape` retain their existing cancel or abort roles
 - multiline intent entry should be implemented through a dedicated prompt primitive rather than by stretching the existing single-line text prompt
@@ -178,7 +178,7 @@ Alignment note:
   Mitigation: keep introspection bounded, read-only, and sample-sized rather than count- or scan-heavy.
 
 - Risk: `Shift+Enter` may not be distinguishable from plain `Enter` in some terminal environments.
-  Mitigation: treat `Shift+Enter` as a best-effort newline key and define `Ctrl+D` plus `Meta+Enter` as guaranteed submit fallbacks for the multiline prompt.
+  Mitigation: treat `Shift+Enter` as a best-effort newline key and define `Ctrl+D` as the guaranteed submit fallback for the multiline prompt.
 
 - Risk: multiline intent entry may be forced into the current single-line prompt primitive and create brittle rendering behavior.
   Mitigation: add a dedicated multiline text prompt module with explicit multi-row rendering, cursor movement, newline insertion, and submit-key handling.
@@ -208,7 +208,7 @@ Alignment note:
   - [ ] output mode
   - [ ] execution confirmation
   - [ ] freeze the logical `file` table-binding rule after source selection
-  - [ ] freeze first-pass `Codex Assistant` intent entry as multiline with `Shift+Enter` newline support plus `Ctrl+D` and `Meta+Enter` submit fallbacks
+  - [ ] freeze first-pass `Codex Assistant` intent entry as multiline with `Shift+Enter` newline support plus `Ctrl+D` submit fallback
 
 ### Phase 2: Introspection-first foundation
 
@@ -243,7 +243,7 @@ Alignment note:
 - [ ] add a dedicated multiline text prompt primitive for natural-language intent capture
 - [ ] implement multiline natural-language intent capture for the first pass
 - [ ] support newline insertion through `Shift+Enter` when the terminal exposes it distinctly
-- [ ] support guaranteed multiline submit fallbacks through `Ctrl+D` and `Meta+Enter`
+- [ ] support guaranteed multiline submit fallback through `Ctrl+D`
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
 - [ ] define revise/regenerate flow after rejection or SQL error
@@ -268,7 +268,7 @@ Alignment note:
 - [ ] add coverage for error recovery and cancel paths
 - [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
 - [ ] add coverage for multiline `Codex Assistant` intent entry including `Shift+Enter` best-effort newline handling
-- [ ] add coverage for `Ctrl+D` and `Meta+Enter` submit behavior in the multiline prompt
+- [ ] add coverage for `Ctrl+D` submit behavior in the multiline prompt
 
 ### Phase 8: Docs and verification
 
