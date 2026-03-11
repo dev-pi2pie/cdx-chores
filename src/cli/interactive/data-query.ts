@@ -66,6 +66,15 @@ function isDataQuerySqlExecutionError(error: unknown): boolean {
   );
 }
 
+function isOutputExistsError(error: unknown): boolean {
+  return (
+    error instanceof CliError ||
+    (typeof error === "object" && error !== null && "code" in error)
+  )
+    ? (error as { code?: unknown }).code === "OUTPUT_EXISTS"
+    : false;
+}
+
 function escapeSqlString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
@@ -113,6 +122,18 @@ function parseOrderBySpecs(value: string, allowedColumns: readonly string[]): Or
   }
 
   return specs;
+}
+
+function getFormalGuideOrderableColumns(
+  knownColumns: readonly string[],
+  answers: Pick<FormalGuideAnswers, "aggregateKind" | "groupByColumns">,
+): string[] {
+  if (answers.aggregateKind === "none") {
+    return [...knownColumns];
+  }
+
+  const aggregateAlias = answers.aggregateKind === "count" ? "row_count" : "summary_value";
+  return [...new Set([...answers.groupByColumns, aggregateAlias])];
 }
 
 function buildFormalGuideSql(answers: FormalGuideAnswers): string {
@@ -316,6 +337,7 @@ async function promptOutputSelection(
   }
 
   let outputPath = "";
+  let overwrite = false;
   while (true) {
     const nextPath = await promptRequiredPathWithConfig("Output file path", {
       kind: "file",
@@ -324,18 +346,21 @@ async function promptOutputSelection(
     const extension = extname(nextPath).toLowerCase();
     if (extension === ".json" || extension === ".csv") {
       outputPath = nextPath;
-      break;
+      const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
+      try {
+        await stat(normalizedOutputPath);
+        overwrite = await confirm({ message: "Overwrite if exists?", default: false });
+        if (overwrite) {
+          break;
+        }
+        printLine(runtime.stdout, "Choose a different output file path.");
+        continue;
+      } catch {
+        overwrite = false;
+        break;
+      }
     }
     printLine(runtime.stdout, "Output file must end with .json or .csv.");
-  }
-
-  const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
-  let overwrite = false;
-  try {
-    await stat(normalizedOutputPath);
-    overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-  } catch {
-    overwrite = false;
   }
 
   const pretty = extname(outputPath).toLowerCase() === ".json"
@@ -365,26 +390,32 @@ async function executeInteractiveCandidate(
     return "revise";
   }
 
-  const outputOptions = await promptOutputSelection(runtime, pathPromptContext);
-  try {
-    await actionDataQuery(runtime, {
-      input: options.input,
-      inputFormat: options.format,
-      json: outputOptions.json,
-      output: outputOptions.output,
-      overwrite: outputOptions.overwrite,
-      pretty: outputOptions.pretty,
-      rows: outputOptions.rows,
-      source: options.selectedSource,
-      sql: options.sql,
-    });
-    return "executed";
-  } catch (error) {
-    if (!isDataQuerySqlExecutionError(error)) {
-      throw error;
+  while (true) {
+    const outputOptions = await promptOutputSelection(runtime, pathPromptContext);
+    try {
+      await actionDataQuery(runtime, {
+        input: options.input,
+        inputFormat: options.format,
+        json: outputOptions.json,
+        output: outputOptions.output,
+        overwrite: outputOptions.overwrite,
+        pretty: outputOptions.pretty,
+        rows: outputOptions.rows,
+        source: options.selectedSource,
+        sql: options.sql,
+      });
+      return "executed";
+    } catch (error) {
+      if (isOutputExistsError(error)) {
+        runtime.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+        continue;
+      }
+      if (!isDataQuerySqlExecutionError(error)) {
+        throw error;
+      }
+      runtime.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+      return "revise";
     }
-    runtime.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    return "revise";
   }
 }
 
@@ -498,6 +529,11 @@ async function promptFormalGuideAnswers(
     groupByColumns = parseCommaSeparatedColumns(groupByInput);
   }
 
+  const allowedOrderByColumns = getFormalGuideOrderableColumns(knownColumns, {
+    aggregateKind,
+    groupByColumns,
+  });
+
   const orderByInput = await input({
     message: "Order by (column[:asc|desc], comma-separated, optional)",
     default: "",
@@ -507,7 +543,7 @@ async function promptFormalGuideAnswers(
         return true;
       }
       try {
-        parseOrderBySpecs(trimmed, knownColumns);
+        parseOrderBySpecs(trimmed, allowedOrderByColumns);
         return true;
       } catch (error) {
         return error instanceof Error ? error.message : String(error);
@@ -521,7 +557,8 @@ async function promptFormalGuideAnswers(
     aggregateKind,
     filters,
     groupByColumns,
-    orderBySpecs: orderByInput.trim().length > 0 ? parseOrderBySpecs(orderByInput, knownColumns) : [],
+    orderBySpecs:
+      orderByInput.trim().length > 0 ? parseOrderBySpecs(orderByInput, allowedOrderByColumns) : [],
     selectedColumns,
     selectAllColumns:
       selectedColumnsInput.trim().length === 0 || selectedColumnsInput.trim().toLowerCase() === "all",

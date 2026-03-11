@@ -24,6 +24,20 @@ describe("cli tui keys", () => {
     } satisfies ParsedKeypressEvent);
   });
 
+  test("preserves typed characters after an unmatched escape prefix", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("\x1b", { name: "escape" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("a", { name: "a", sequence: "a" })).toEqual({
+      kind: "keypress",
+      str: "a",
+      key: {
+        name: "a",
+        sequence: "\x1ba",
+      },
+    } satisfies ParsedKeypressEvent);
+  });
+
   test("normalizes chunked Shift+Enter CSI sequences into shifted return", () => {
     const parser = createKeypressParser();
 

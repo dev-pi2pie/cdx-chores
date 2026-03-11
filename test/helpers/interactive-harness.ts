@@ -9,6 +9,7 @@ export interface InteractiveHarnessScenario {
   checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
   editorQueue?: string[];
+  existingPaths?: string[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
@@ -177,6 +178,16 @@ export function runInteractiveHarness(
         actionCalls.push({ name: "fs:rm", options: { path: String(path), options } });
         return undefined;
       },
+      stat: async (path) => {
+        const existingPaths = new Set((scenario.existingPaths ?? []).map((item) => resolveHarnessPath(item)));
+        const normalizedPath = resolveHarnessPath(String(path ?? ""));
+        if (existingPaths.has(normalizedPath)) {
+          return {
+            isFile: () => true,
+          };
+        }
+        throw new Error("ENOENT");
+      },
     }));
 
     mock.module(${JSON.stringify(actionsModuleUrl)}, () => ({
@@ -196,6 +207,16 @@ export function runInteractiveHarness(
       },
       actionDataQuery: async (_runtime, options) => {
         actionCalls.push({ name: "data:query", options });
+        const existingPaths = new Set((scenario.existingPaths ?? []).map((item) => resolveHarnessPath(item)));
+        const outputPath =
+          typeof options.output === "string" && options.output.length > 0
+            ? resolveHarnessPath(options.output)
+            : undefined;
+        if (outputPath && existingPaths.has(outputPath) && !options.overwrite) {
+          const error = new Error(\`Output file already exists: \${outputPath}. Use --overwrite to replace it.\`);
+          error.code = "OUTPUT_EXISTS";
+          throw error;
+        }
         if (scenario.dataQueryActionErrorMessage) {
           const error = new Error(scenario.dataQueryActionErrorMessage);
           error.code = "DATA_QUERY_FAILED";

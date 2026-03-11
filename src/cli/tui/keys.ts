@@ -120,7 +120,7 @@ export function createKeypressParser(options: CreateKeypressParserOptions = {}):
         escapeSequenceBuffer = "";
         return {
           kind: "keypress",
-          str: "",
+          str: chunk,
           key: {
             ...key,
             sequence: completedSequence,

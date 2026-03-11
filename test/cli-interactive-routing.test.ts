@@ -157,6 +157,40 @@ describe("interactive mode routing", () => {
     ]);
   });
 
+  test("rejects aggregate formal-guide order-by columns outside the result set", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "", "status:asc", "row_count:desc", "5"],
+      confirmQueue: [true, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.validationCalls).toContainEqual({
+      kind: "input",
+      message: "Order by (column[:asc|desc], comma-separated, optional)",
+      value: "status:asc",
+      error: "Unknown order-by column: status.",
+    });
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 5,
+          source: undefined,
+          sql: 'select count(*) as row_count\nfrom file\norder by "row_count" desc',
+        },
+      },
+    ]);
+  });
+
   test("routes Codex Assistant through the default single-line intent prompt", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -293,6 +327,46 @@ describe("interactive mode routing", () => {
       (call) => call.kind === "editor" && call.message === "Describe the query intent",
     );
     expect(editorPrompts[1]?.defaultValue).toContain("count rows by status");
+  });
+
+  test("re-prompts file output when overwrite is declined", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "file", "file"],
+      requiredPathQueue: ["fixtures/query.csv", "reports/existing.json", "reports/fresh.json"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, true, false, false],
+      existingPaths: ["reports/existing.json"],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(
+      result.pathCalls.filter((call) => call.kind === "required" && call.message === "Output file path"),
+    ).toHaveLength(2);
+    expect(result.stderr).toContain("Output file already exists:");
+    expect(result.actionCalls).toHaveLength(2);
+    expect(result.actionCalls[0]).toMatchObject({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        output: "reports/existing.json",
+        overwrite: false,
+        pretty: false,
+        sql: "select id from file",
+      },
+    });
+    expect(result.actionCalls[1]).toMatchObject({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        output: "reports/fresh.json",
+        overwrite: false,
+        pretty: false,
+        sql: "select id from file",
+      },
+    });
   });
 
   test("routes data preview through optional interactive prompts", () => {
