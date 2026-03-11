@@ -63,6 +63,7 @@ export function createCapturedRuntime(
   options: {
     colorEnabled?: boolean;
     cwd?: string;
+    debug?: boolean;
     now?: () => Date;
     displayPathStyle?: CliRuntime["displayPathStyle"];
   } = {},
@@ -72,6 +73,7 @@ export function createCapturedRuntime(
   return {
     runtime: {
       cwd: options.cwd ?? REPO_ROOT,
+      debug: options.debug ?? false,
       colorEnabled: options.colorEnabled ?? true,
       now: options.now ?? (() => new Date("2026-02-25T00:00:00.000Z")),
       platform: process.platform,

@@ -2,7 +2,7 @@
 title: "Data query interactive flow implementation"
 created-date: 2026-03-10
 modified-date: 2026-03-11
-status: draft
+status: active
 agent: codex
 ---
 
@@ -28,12 +28,13 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 ## Current State
 
 - the interactive query design contract is frozen in research
-- the direct CLI query implementation is planned separately
-- interactive mode already supports staged prompt flows for preview and conversion commands
-- there is no interactive `data query` route yet
-- there is no introspection-first schema/sample flow yet
-- there is no `formal-guide` query builder yet
-- there is no `Codex Assistant` query-drafting integration for `data query`
+- the direct CLI query implementation and CLI `data query codex` drafting lane already exist
+- interactive mode now routes `data:query` through an introspection-first flow
+- `manual`, `formal-guide`, and `Codex Assistant` authoring modes are implemented
+- the current follow-up focus is the editor-backed `Codex Assistant` intent UX:
+  - seed the editor with compact query context
+  - ignore template comment lines on submit
+  - show the cleaned intent back before drafting
 
 ## Dependency Note
 
@@ -90,15 +91,16 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 
 ### Intent prompt boundary
 
-- the first-pass `Codex Assistant` intent prompt should support multiline entry
-- `Shift+Enter` should insert a newline when the terminal exposes it distinctly
-- because `Shift+Enter` is not portable across all terminal environments, multiline intent entry must also expose guaranteed fallback submit keys
-- the first-pass guaranteed fallback submit key should be `Ctrl+D`
-- plain `Enter` should insert a newline in the multiline intent prompt rather than submit immediately
-- `Ctrl+C` and `Escape` retain their existing cancel or abort roles
-- multiline intent entry should be implemented through a dedicated prompt primitive rather than by stretching the existing single-line text prompt
-- when the runtime falls back to the existing simple or non-raw prompt path, `Codex Assistant` intent capture should downgrade to a single-line prompt with an explicit warning before drafting continues
-- multiline interactive intent should be normalized into the same shared prompt or context text shape used by the CLI `data query codex` lane before Codex drafting is invoked
+- `Codex Assistant` should first ask `Use multiline editor?`
+- when the answer is `No`, intent capture should stay on the normal single-line prompt
+- when the answer is `Yes`, intent capture should use the editor prompt with a seeded template
+- the seeded template should include compact query context as comment lines:
+  - logical table name `file`
+  - detected format and selected source when relevant
+  - schema summary
+  - small sample rows summary
+- comment or template lines should be stripped before the remaining text is normalized into the shared CLI `data query codex` intent shape
+- after the editor closes, the cleaned intent should be shown back to the user and require explicit confirmation before drafting continues
 
 ## Scope
 
@@ -138,7 +140,9 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 ### `Codex Assistant` mode
 
 - gather the user’s intent in natural language
-- gather that intent through a multiline prompt surface
+- gather that intent through either:
+  - the normal single-line prompt
+  - an editor-backed multiline prompt with seeded query context comments
 - provide Codex with the bounded introspection payload plus the user’s intent
 - receive candidate SQL
 - show final SQL and require confirmation before execution
@@ -162,7 +166,6 @@ Alignment note:
 - redefining the direct CLI query contract
 - non-SQL direct CLI flags such as `--select` or `--limit`
 - editor-backed SQL entry in the first pass
-- editor-backed intent entry in the first pass
 - pagination
 - keyboard-driven table navigation
 - multi-file queries
@@ -184,17 +187,14 @@ Alignment note:
 - Risk: introspection may become expensive on large SQLite or Excel sources.
   Mitigation: keep introspection bounded, read-only, and sample-sized rather than count- or scan-heavy.
 
-- Risk: `Shift+Enter` may not be distinguishable from plain `Enter` in some terminal environments.
-  Mitigation: treat `Shift+Enter` as a best-effort newline key and define `Ctrl+D` as the guaranteed submit fallback for the multiline prompt.
+- Risk: the seeded editor template may become noisy enough to obscure the actual intent area.
+  Mitigation: keep the seed compact and comment-prefixed, with only the logical table, relevant source, schema summary, and a small sample summary.
 
-- Risk: multiline intent entry may be forced into the current single-line prompt primitive and create brittle rendering behavior.
-  Mitigation: add a dedicated multiline text prompt module with explicit multi-row rendering, cursor movement, newline insertion, and submit-key handling.
+- Risk: template comments may leak into Codex drafting and distort the normalized intent.
+  Mitigation: strip comment lines before handing the remaining text to the shared CLI `data query codex` normalization path.
 
-- Risk: multiline intent capture may not be available in simple or non-raw environments even though the rest of interactive mode still works.
-  Mitigation: downgrade `Codex Assistant` intent capture to a single-line prompt with an explicit warning rather than failing the whole interactive path.
-
-- Risk: interactive multiline intent may diverge from the shared CLI `data query codex` drafting contract.
-  Mitigation: normalize multiline intent into the same shared prompt or context text shape before passing it into the reused Codex drafting bundle.
+- Risk: users may leave the editor with unintended wording after the template is removed.
+  Mitigation: render the cleaned intent back and require explicit confirmation before Codex drafting starts.
 
 ## Implementation Touchpoints
 
@@ -221,8 +221,8 @@ Alignment note:
   - [ ] output mode
   - [ ] execution confirmation
   - [ ] freeze the logical `file` table-binding rule after source selection
-  - [ ] freeze first-pass `Codex Assistant` intent entry as multiline with `Shift+Enter` newline support plus `Ctrl+D` submit fallback
-  - [ ] freeze simple or non-raw fallback behavior as single-line intent entry with a visible warning
+  - [ ] freeze first-pass `Codex Assistant` intent entry as explicit editor-backed multiline authoring with single-line fallback
+  - [ ] freeze seeded editor template content and post-editor confirmation behavior
   - [ ] freeze output-mode mapping so interactive choices stay one-to-one with table, `--json`, or `--output <path>`
 
 ### Phase 2: Introspection-first foundation
@@ -255,11 +255,11 @@ Alignment note:
 ### Phase 5: `Codex Assistant` mode
 
 - [ ] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
-- [ ] add a dedicated multiline text prompt primitive for natural-language intent capture
-- [ ] implement multiline natural-language intent capture for the first pass
-- [ ] support newline insertion through `Shift+Enter` when the terminal exposes it distinctly
-- [ ] support guaranteed multiline submit fallback through `Ctrl+D`
-- [ ] downgrade to a single-line intent prompt with warning when the multiline raw prompt cannot run
+- [ ] implement explicit editor-backed intent capture behind `Use multiline editor?`
+- [ ] seed the editor with compact comment-prefixed query context
+- [ ] strip comment lines before shared intent normalization
+- [ ] show the cleaned intent back and require confirmation before drafting
+- [ ] keep the normal single-line prompt path available when the editor is not used
 - [ ] normalize interactive intent into the shared CLI `data query codex` prompt/context text shape before drafting
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
@@ -286,9 +286,9 @@ Alignment note:
 - [ ] add coverage for output-mode prompts and execution routing
 - [ ] add coverage for error recovery and cancel paths
 - [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
-- [ ] add coverage for multiline `Codex Assistant` intent entry including `Shift+Enter` best-effort newline handling
-- [ ] add coverage for `Ctrl+D` submit behavior in the multiline prompt
-- [ ] add coverage for simple or non-raw downgrade to single-line intent prompt with warning
+- [ ] add coverage for seeded editor context in `Codex Assistant`
+- [ ] add coverage for comment stripping and cleaned-intent confirmation before drafting
+- [ ] add coverage for the single-line and editor-backed intent branches
 - [ ] add coverage that interactive multiline intent normalization reuses the shared CLI `data query codex` drafting contract
 - [ ] add coverage that interactive output selection preserves the direct CLI mutually exclusive output contract
 

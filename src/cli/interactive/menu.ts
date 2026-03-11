@@ -3,6 +3,7 @@ import { select } from "@inquirer/prompts";
 export type InteractiveActionKey =
   | "doctor"
   | "data:preview"
+  | "data:query"
   | "data:parquet-preview"
   | "data:json-to-csv"
   | "data:csv-to-json"
@@ -50,6 +51,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
     message: "Choose a data command",
     choices: [
       { name: "preview", value: "data:preview" },
+      { name: "query", value: "data:query" },
       { name: "parquet preview", value: "data:parquet-preview" },
       { name: "json-to-csv", value: "data:json-to-csv" },
       { name: "csv-to-json", value: "data:csv-to-json" },

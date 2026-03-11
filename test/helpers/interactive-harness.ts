@@ -8,9 +8,16 @@ export interface InteractiveHarnessScenario {
   selectQueue?: unknown[];
   checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
+  editorQueue?: string[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
+  dataQueryActionErrorMessage?: string;
+  dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
+  dataQueryCodexErrorMessage?: string;
+  dataQueryDetectedFormat?: string;
+  dataQueryIntrospection?: Record<string, unknown>;
+  dataQuerySources?: string[];
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
@@ -22,8 +29,10 @@ export interface InteractiveHarnessScenario {
 
 export interface InteractiveHarnessResult {
   promptCalls: Array<{
-    kind: "select" | "checkbox" | "confirm" | "input";
+    kind: "select" | "checkbox" | "confirm" | "input" | "editor";
     message: string;
+    defaultValue?: string;
+    postfix?: string;
   }>;
   selectChoicesByMessage: Record<string, Array<{ name: string; value: string; description?: string }>>;
   validationCalls: Array<{ kind: "input"; message: string; value: string; error: string }>;
@@ -47,6 +56,8 @@ const pathConfigModuleUrl = pathToFileURL(
 ).href;
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
+const dataQueryCodexModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/data-query/codex.ts")).href;
+const duckdbQueryModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/duckdb/query.ts")).href;
 
 export function runInteractiveHarness(
   scenario: InteractiveHarnessScenario,
@@ -106,13 +117,44 @@ export function runInteractiveHarness(
         return shiftQueueValue(scenario.checkboxQueue ?? [], \`checkbox:\${options.message}\`);
       },
       confirm: async (options) => {
-        promptCalls.push({ kind: "confirm", message: options.message });
+        promptCalls.push({
+          kind: "confirm",
+          message: options.message,
+        });
         return shiftQueueValue(scenario.confirmQueue ?? [], \`confirm:\${options.message}\`);
       },
       input: async (options) => {
-        promptCalls.push({ kind: "input", message: options.message });
+        promptCalls.push({
+          kind: "input",
+          message: options.message,
+          defaultValue: typeof options.default === "string" ? options.default : undefined,
+        });
         while (true) {
           const nextValue = shiftQueueValue(scenario.inputQueue ?? [], \`input:\${options.message}\`);
+          if (!options.validate) {
+            return nextValue;
+          }
+          const validation = await options.validate(nextValue);
+          if (validation === true) {
+            return nextValue;
+          }
+          validationCalls.push({
+            kind: "input",
+            message: options.message,
+            value: String(nextValue ?? ""),
+            error: String(validation),
+          });
+        }
+      },
+      editor: async (options) => {
+        promptCalls.push({
+          kind: "editor",
+          message: options.message,
+          defaultValue: typeof options.default === "string" ? options.default : undefined,
+          postfix: typeof options.postfix === "string" ? options.postfix : undefined,
+        });
+        while (true) {
+          const nextValue = shiftQueueValue(scenario.editorQueue ?? [], \`editor:\${options.message}\`);
           if (!options.validate) {
             return nextValue;
           }
@@ -151,6 +193,14 @@ export function runInteractiveHarness(
       },
       actionDataParquetPreview: async (_runtime, options) => {
         actionCalls.push({ name: "data:parquet-preview", options });
+      },
+      actionDataQuery: async (_runtime, options) => {
+        actionCalls.push({ name: "data:query", options });
+        if (scenario.dataQueryActionErrorMessage) {
+          const error = new Error(scenario.dataQueryActionErrorMessage);
+          error.code = "DATA_QUERY_FAILED";
+          throw error;
+        }
       },
       loadDataPreviewSource: async (_runtime, input) => ({
         inputPath: String(input ?? ""),
@@ -345,6 +395,95 @@ export function runInteractiveHarness(
       },
     }));
 
+    mock.module(${JSON.stringify(duckdbQueryModuleUrl)}, () => ({
+      DATA_QUERY_INPUT_FORMAT_VALUES: ["csv", "tsv", "parquet", "sqlite", "excel"],
+      quoteSqlIdentifier: (value) => \`"\${String(value).replaceAll('"', '""')}"\`,
+      createDuckDbConnection: async () => ({
+        closeSync() {},
+      }),
+      detectDataQueryInputFormat: () => scenario.dataQueryDetectedFormat ?? "csv",
+      listDataQuerySources: async () => scenario.dataQuerySources,
+      collectDataQuerySourceIntrospection: async (_connection, _input, _format, source) =>
+        scenario.dataQueryIntrospection ?? {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+            { name: "status", type: "VARCHAR" },
+          ],
+          sampleRows: [
+            { id: "1", name: "Ada", status: "active" },
+            { id: "2", name: "Bob", status: "inactive" },
+          ],
+          selectedSource: source,
+          truncated: false,
+        },
+    }));
+
+    mock.module(${JSON.stringify(dataQueryCodexModuleUrl)}, () => ({
+      normalizeDataQueryCodexIntent: (value) =>
+        String(value ?? "")
+          .split(/\\r?\\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .join(" ")
+          .trim(),
+      normalizeDataQueryCodexEditorIntent: (value) =>
+        String(value ?? "")
+          .split(/\\r?\\n/)
+          .filter((line) => !line.trimStart().startsWith("#"))
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .join(" ")
+          .trim(),
+      buildDataQueryCodexIntentEditorTemplate: (options) => {
+        const schema = Array.isArray(options.introspection?.columns) && options.introspection.columns.length > 0
+          ? options.introspection.columns
+              .slice(0, 8)
+              .map((column) => \`\${column.name} (\${column.type})\`)
+              .join(", ")
+          : "(no columns available)";
+        const sampleRows = Array.isArray(options.introspection?.sampleRows)
+          ? options.introspection.sampleRows.slice(0, 3)
+          : [];
+
+        return [
+          "# Query context for Codex drafting.",
+          "# Logical table: file",
+          \`# Format: \${options.format}\`,
+          ...(options.introspection?.selectedSource ? [\`# Source: \${options.introspection.selectedSource}\`] : []),
+          \`# Schema: \${schema}\`,
+          "# Sample rows:",
+          ...(sampleRows.length > 0
+            ? sampleRows.map((row, index) => \`# \${index + 1}. \${JSON.stringify(row)}\`)
+            : ["# (no sample rows available)"]),
+          "#",
+          "# Write plain intent below. Comment lines starting with # are ignored.",
+          "",
+          String(options.intent ?? "").trim(),
+        ].join("\\n");
+      },
+      draftDataQueryWithCodex: async (options) => {
+        actionCalls.push({
+          name: "data:query:codex-draft",
+          options: {
+            format: options.format,
+            intent: options.intent,
+            selectedSource: options.introspection?.selectedSource,
+          },
+        });
+        if (scenario.dataQueryCodexErrorMessage) {
+          return { errorMessage: scenario.dataQueryCodexErrorMessage };
+        }
+        return {
+          draft:
+            scenario.dataQueryCodexDraft ?? {
+              sql: "select count(*) as total from file",
+              reasoningSummary: "Counts rows from the selected source.",
+            },
+        };
+      },
+    }));
+
     mock.module(${JSON.stringify(pathConfigModuleUrl)}, () => ({
       resolvePathPromptRuntimeConfig: () => mockedPathPromptRuntimeConfig,
     }));
@@ -362,6 +501,7 @@ export function runInteractiveHarness(
     const stderr = new CaptureStream();
     const runtime = {
       cwd: process.cwd(),
+      debug: false,
       colorEnabled: true,
       now: () => new Date("2026-02-25T00:00:00.000Z"),
       platform: process.platform,

@@ -7,7 +7,12 @@ import {
   detectDataQueryInputFormat,
   type DataQueryInputFormat,
 } from "../duckdb/query";
-import { draftDataQueryWithCodex, renderDataQueryCodexDraft, type DataQueryCodexRunner } from "../data-query/codex";
+import {
+  draftDataQueryWithCodex,
+  normalizeDataQueryCodexIntent,
+  renderDataQueryCodexDraft,
+  type DataQueryCodexRunner,
+} from "../data-query/codex";
 import { CliError } from "../errors";
 import { assertNonEmpty, ensureFileExists, printLine } from "./shared";
 
@@ -53,7 +58,7 @@ export async function actionDataQueryCodex(
   const inputPath = resolveFromCwd(runtime, input);
   await ensureFileExists(inputPath, "Input");
 
-  const intent = assertNonEmpty(options.intent, "Intent");
+  const intent = normalizeDataQueryCodexIntent(assertNonEmpty(options.intent, "Intent"));
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const source = options.source?.trim() || undefined;
   const statusStream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean };

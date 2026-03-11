@@ -24,6 +24,24 @@ describe("cli tui keys", () => {
     } satisfies ParsedKeypressEvent);
   });
 
+  test("normalizes chunked Shift+Enter CSI sequences into shifted return", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("\x1b", { name: "escape" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle(undefined, { sequence: "[27;2;" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("1", { name: "1", sequence: "1" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("3", { name: "3", sequence: "3" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("~", { sequence: "~" })).toEqual({
+      kind: "keypress",
+      str: "",
+      key: {
+        name: "return",
+        sequence: "\x1b[27;2;13~",
+        shift: true,
+      },
+    } satisfies ParsedKeypressEvent);
+  });
+
   test("normalizes direct arrow key names without requiring escape-buffer state", () => {
     const parser = createKeypressParser();
 

@@ -19,7 +19,7 @@ describe("interactive mode routing", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
-  test("shows the broadened data menu copy and keeps data query absent", () => {
+  test("shows the broadened data menu copy and includes data query", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "cancel"],
@@ -33,6 +33,7 @@ describe("interactive mode routing", () => {
     });
     expect(result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value)).toEqual([
       "data:preview",
+      "data:query",
       "data:parquet-preview",
       "data:json-to-csv",
       "data:csv-to-json",
@@ -77,6 +78,221 @@ describe("interactive mode routing", () => {
         cwd: REPO_ROOT,
       },
     });
+  });
+
+  test("routes interactive data query manual mode through shared query execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "users", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.sqlite"],
+      inputQueue: ["select id, name from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "sqlite",
+      dataQuerySources: ["users", "active_users"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        selectedSource: "users",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.sqlite",
+          inputFormat: "sqlite",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: "users",
+          sql: "select id, name from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "confirm:Use detected input format: sqlite?",
+      "select:Choose a SQLite source",
+      "select:Choose mode",
+      "input:SQL query",
+      "confirm:Execute this SQL?",
+      "select:Output mode",
+      "input:Rows to show (optional)",
+    ]);
+  });
+
+  test("routes interactive data query formal-guide mode and builds deterministic SQL", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "status", "status:asc", "5"],
+      confirmQueue: [true, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 5,
+          source: undefined,
+          sql: 'select "status", count(*) as row_count\nfrom file\ngroup by "status"\norder by "status" asc',
+        },
+      },
+    ]);
+  });
+
+  test("routes Codex Assistant through the default single-line intent prompt", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, true, false],
+      inputQueue: ["count rows by status"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query:codex-draft",
+        options: {
+          format: "csv",
+          intent: "count rows by status",
+          selectedSource: undefined,
+        },
+      },
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: true,
+          output: undefined,
+          overwrite: undefined,
+          pretty: false,
+          rows: undefined,
+          source: undefined,
+          sql: 'select "status", count(*) as row_count from file group by "status"',
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Use multiline editor?",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Describe the query intent",
+    );
+  });
+
+  test("routes Codex Assistant through the multiline editor when requested", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, true, true, true, false],
+      editorQueue: [
+        "# Query context for Codex drafting.\n# Logical table: file\n# Write plain intent below.\ncount rows\nby status",
+      ],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query:codex-draft",
+        options: {
+          format: "csv",
+          intent: "count rows by status",
+          selectedSource: undefined,
+        },
+      },
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: true,
+          output: undefined,
+          overwrite: undefined,
+          pretty: false,
+          rows: undefined,
+          source: undefined,
+          sql: 'select "status", count(*) as row_count from file group by "status"',
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "editor:Describe the query intent",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Send this intent to Codex drafting?",
+    );
+    const editorPrompt = result.promptCalls.find(
+      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+    );
+    expect(editorPrompt?.postfix).toBe(".md");
+    expect(editorPrompt?.defaultValue).toContain("# Logical table: file");
+    expect(editorPrompt?.defaultValue).toContain("# Format: csv");
+    expect(editorPrompt?.defaultValue).toContain("# Schema:");
+    expect(editorPrompt?.defaultValue).toContain("# Sample rows:");
+    expect(editorPrompt?.defaultValue).toContain("# Write plain intent below. Comment lines starting with # are ignored.");
+    expect(result.stdout).toContain("Intent: count rows by status");
+  });
+
+  test("reopens the multiline editor until the cleaned intent is confirmed", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, true, false, true, true, true, false],
+      editorQueue: [
+        "# Query context for Codex drafting.\ncount rows\nby status",
+        "# Query context for Codex drafting.\ncount active rows\nby status",
+      ],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file where "status" = \'active\' group by "status"',
+        reasoningSummary: "Counts active rows by status.",
+      },
+    });
+
+    expect(
+      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent"),
+    ).toHaveLength(2);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query:codex-draft",
+      options: {
+        format: "csv",
+        intent: "count active rows by status",
+        selectedSource: undefined,
+      },
+    });
+    const editorPrompts = result.promptCalls.filter(
+      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+    );
+    expect(editorPrompts[1]?.defaultValue).toContain("count rows by status");
   });
 
   test("routes data preview through optional interactive prompts", () => {

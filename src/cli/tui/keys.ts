@@ -11,11 +11,54 @@ export interface CreateKeypressParserOptions {
 }
 
 export interface KeypressParser {
-  handle(str: string, key?: RawSessionKeypressInfo): ParsedKeypressEvent;
+  handle(str: string | undefined, key?: RawSessionKeypressInfo): ParsedKeypressEvent;
   dispose(): void;
 }
 
 const DEFAULT_ESCAPE_ABORT_DELAY_MS = 120;
+
+function normalizeKeypressChunk(str: string | undefined, key: RawSessionKeypressInfo): string {
+  if (typeof str === "string") {
+    return str;
+  }
+  if (typeof key.sequence === "string") {
+    return key.sequence;
+  }
+  return "";
+}
+
+function isPotentialEscapeSequenceBuffer(value: string): boolean {
+  return /^\x1b(?:\[[0-9;?]*|O[0-9;?]*)$/.test(value);
+}
+
+function parseSpecialEscapeSequence(
+  value: string,
+): ParsedKeypressEvent | undefined {
+  if (value === "\x1b[C") {
+    return { kind: "arrow", direction: "right" };
+  }
+  if (value === "\x1b[D") {
+    return { kind: "arrow", direction: "left" };
+  }
+  if (value === "\x1b[A") {
+    return { kind: "arrow", direction: "up" };
+  }
+  if (value === "\x1b[B") {
+    return { kind: "arrow", direction: "down" };
+  }
+  if (value === "\x1b[27;2;13~" || value === "\x1b[13;2u") {
+    return {
+      kind: "keypress",
+      str: "",
+      key: {
+        name: "return",
+        sequence: value,
+        shift: true,
+      },
+    };
+  }
+  return undefined;
+}
 
 export function createKeypressParser(options: CreateKeypressParserOptions = {}): KeypressParser {
   let escapeSequenceBuffer = "";
@@ -46,43 +89,43 @@ export function createKeypressParser(options: CreateKeypressParserOptions = {}):
 
   return {
     handle(str, key = {}): ParsedKeypressEvent {
+      const chunk = normalizeKeypressChunk(str, key);
+
       if (key.name !== "escape") {
         clearPendingEscapeAbort();
       }
 
       if (escapeSequenceBuffer.length > 0 && key.name !== "escape") {
-        escapeSequenceBuffer += str;
+        escapeSequenceBuffer += chunk;
 
-        if (key.name === "right" || escapeSequenceBuffer === "\x1b[C") {
+        if (key.name === "right" || key.name === "left" || key.name === "up" || key.name === "down") {
           resetEscapeState();
-          return { kind: "arrow", direction: "right" };
+          return {
+            kind: "arrow",
+            direction: key.name,
+          };
         }
 
-        if (key.name === "left" || escapeSequenceBuffer === "\x1b[D") {
+        const parsedEscape = parseSpecialEscapeSequence(escapeSequenceBuffer);
+        if (parsedEscape) {
           resetEscapeState();
-          return { kind: "arrow", direction: "left" };
+          return parsedEscape;
         }
 
-        if (key.name === "up" || escapeSequenceBuffer === "\x1b[A") {
-          resetEscapeState();
-          return { kind: "arrow", direction: "up" };
-        }
-
-        if (key.name === "down" || escapeSequenceBuffer === "\x1b[B") {
-          resetEscapeState();
-          return { kind: "arrow", direction: "down" };
-        }
-
-        if (
-          escapeSequenceBuffer === "\x1b[" ||
-          escapeSequenceBuffer === "\x1bO" ||
-          escapeSequenceBuffer === "\x1b[1;" ||
-          escapeSequenceBuffer === "\x1b[1;2"
-        ) {
+        if (isPotentialEscapeSequenceBuffer(escapeSequenceBuffer)) {
           return { kind: "incomplete" };
         }
 
+        const completedSequence = escapeSequenceBuffer;
         escapeSequenceBuffer = "";
+        return {
+          kind: "keypress",
+          str: "",
+          key: {
+            ...key,
+            sequence: completedSequence,
+          },
+        };
       }
 
       if (key.name === "escape") {
@@ -109,7 +152,7 @@ export function createKeypressParser(options: CreateKeypressParserOptions = {}):
 
       return {
         kind: "keypress",
-        str,
+        str: chunk,
         key,
       };
     },
