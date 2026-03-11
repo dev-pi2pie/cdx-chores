@@ -1,8 +1,8 @@
 ---
 title: "Data query interactive flow implementation"
 created-date: 2026-03-10
-modified-date: 2026-03-10
-status: draft
+modified-date: 2026-03-11
+status: active
 agent: codex
 ---
 
@@ -28,12 +28,13 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 ## Current State
 
 - the interactive query design contract is frozen in research
-- the direct CLI query implementation is planned separately
-- interactive mode already supports staged prompt flows for preview and conversion commands
-- there is no interactive `data query` route yet
-- there is no introspection-first schema/sample flow yet
-- there is no `formal-guide` query builder yet
-- there is no `Codex Assistant` query-drafting integration for `data query`
+- the direct CLI query implementation and CLI `data query codex` drafting lane already exist
+- interactive mode now routes `data:query` through an introspection-first flow
+- `manual`, `formal-guide`, and `Codex Assistant` authoring modes are implemented
+- the current follow-up focus is the editor-backed `Codex Assistant` intent UX:
+  - seed the editor with compact query context
+  - ignore template comment lines on submit
+  - show the cleaned intent back before drafting
 
 ## Dependency Note
 
@@ -50,6 +51,7 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - format detection runs before mode selection
 - lightweight read-only introspection runs before SQL authoring
 - source selection happens before SQL authoring for multi-object formats
+- once a source object is selected, it is bound to the logical SQL table name `file` before mode selection
 
 ### Mode selector
 
@@ -62,7 +64,13 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - every mode produces candidate SQL
 - final SQL is always shown back to the user
 - execution always requires explicit confirmation
-- SQL errors should return the user to revise or regenerate rather than silently retrying
+- SQL errors should return the user to a mode-appropriate revise or regenerate step rather than silently retrying
+
+### Source-binding contract
+
+- the interactive flow always exposes the selected input through the logical SQL table name `file`
+- for SQLite and Excel, the chosen source object is metadata used to bind `file`, not a second SQL table name users must target directly
+- `manual`, `formal-guide`, and `Codex Assistant` should all author SQL against `file` so interactive semantics match direct CLI query semantics
 
 ### Introspection contract
 
@@ -77,6 +85,22 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - table mode: ask `Rows to show (optional)` and reuse `--rows`
 - JSON stdout mode: ask whether to pretty-print
 - file-output mode: ask for output path, ask whether to pretty-print when the output path is `.json`, and ask for overwrite confirmation when needed
+- interactive output selection must map to exactly one direct-query output contract: table, `--json`, or `--output <path>`
+- interactive output selection must not allow mixed result-delivery choices that the direct CLI query contract rejects
+- when file output is chosen, the interactive layer should preserve the direct CLI stdout or stderr split by keeping payloads in the file and status lines outside stdout
+
+### Intent prompt boundary
+
+- `Codex Assistant` should first ask `Use multiline editor?`
+- when the answer is `No`, intent capture should stay on the normal single-line prompt
+- when the answer is `Yes`, intent capture should use the editor prompt with a seeded template
+- the seeded template should include compact query context as comment lines:
+  - logical table name `file`
+  - detected format and selected source when relevant
+  - schema summary
+  - small sample rows summary
+- comment or template lines should be stripped before the remaining text is normalized into the shared CLI `data query codex` intent shape
+- after the editor closes, the cleaned intent should be shown back to the user and require explicit confirmation before drafting continues
 
 ## Scope
 
@@ -101,20 +125,24 @@ That makes it a better follow-up plan than an appendix inside the CLI implementa
 - keep the first implementation bounded to a single-line SQL prompt
 - keep editor-backed or multiline SQL entry out of the first pass
 - show final SQL and require confirmation before execution
+- after SQL errors, return to manual SQL revision without rerunning introspection
 
 ### `formal-guide` mode
 
-- prompt for selected source object when relevant
 - prompt for selected columns or `all columns`
 - prompt for simple filters
 - prompt for optional grouping/aggregate summary intent
 - prompt for optional ordering
 - build candidate SQL from those answers
 - show final SQL and require confirmation before execution
+- after SQL errors, return to revise the structured answers or rebuild SQL from them
 
 ### `Codex Assistant` mode
 
 - gather the user’s intent in natural language
+- gather that intent through either:
+  - the normal single-line prompt
+  - an editor-backed multiline prompt with seeded query context comments
 - provide Codex with the bounded introspection payload plus the user’s intent
 - receive candidate SQL
 - show final SQL and require confirmation before execution
@@ -129,6 +157,8 @@ Alignment note:
 
 - choose output mode after candidate SQL is accepted
 - reuse the direct CLI/backend query contract for actual execution
+- map interactive output choices to exactly one of table, `--json`, or `--output <path>`
+- reject output-choice combinations that would conflict with the direct CLI query contract
 - keep status/log output distinct from result payloads
 
 ## Non-Goals
@@ -157,6 +187,15 @@ Alignment note:
 - Risk: introspection may become expensive on large SQLite or Excel sources.
   Mitigation: keep introspection bounded, read-only, and sample-sized rather than count- or scan-heavy.
 
+- Risk: the seeded editor template may become noisy enough to obscure the actual intent area.
+  Mitigation: keep the seed compact and comment-prefixed, with only the logical table, relevant source, schema summary, and a small sample summary.
+
+- Risk: template comments may leak into Codex drafting and distort the normalized intent.
+  Mitigation: strip comment lines before handing the remaining text to the shared CLI `data query codex` normalization path.
+
+- Risk: users may leave the editor with unintended wording after the template is removed.
+  Mitigation: render the cleaned intent back and require explicit confirmation before Codex drafting starts.
+
 ## Implementation Touchpoints
 
 - `src/cli/interactive/menu.ts`
@@ -181,12 +220,17 @@ Alignment note:
   - [ ] `choose mode`
   - [ ] output mode
   - [ ] execution confirmation
+  - [ ] freeze the logical `file` table-binding rule after source selection
+  - [ ] freeze first-pass `Codex Assistant` intent entry as explicit editor-backed multiline authoring with single-line fallback
+  - [ ] freeze seeded editor template content and post-editor confirmation behavior
+  - [ ] freeze output-mode mapping so interactive choices stay one-to-one with table, `--json`, or `--output <path>`
 
 ### Phase 2: Introspection-first foundation
 
 - [ ] implement bounded read-only introspection for each supported format
 - [ ] implement source-object discovery for SQLite
 - [ ] implement source-object discovery for Excel
+- [ ] bind the selected source object to the logical SQL table `file` before any mode-specific prompts
 - [ ] present schema/sample context consistently across modes
 - [ ] keep introspection failures distinct from execution failures
 
@@ -195,6 +239,7 @@ Alignment note:
 - [ ] implement manual SQL prompt flow
 - [ ] define blank-input and retry behavior
 - [ ] show final SQL for explicit confirmation
+- [ ] define SQL-error recovery that returns to manual SQL revision without rerunning introspection
 - [ ] route execution through shared query helpers
 
 ### Phase 4: `formal-guide` mode
@@ -205,10 +250,17 @@ Alignment note:
 - [ ] implement prompts for optional ordering
 - [ ] build SQL deterministically from structured answers
 - [ ] show final SQL for explicit confirmation
+- [ ] define SQL-error recovery that returns to structured-answer revision without rerunning introspection
 
 ### Phase 5: `Codex Assistant` mode
 
 - [ ] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
+- [ ] implement explicit editor-backed intent capture behind `Use multiline editor?`
+- [ ] seed the editor with compact comment-prefixed query context
+- [ ] strip comment lines before shared intent normalization
+- [ ] show the cleaned intent back and require confirmation before drafting
+- [ ] keep the normal single-line prompt path available when the editor is not used
+- [ ] normalize interactive intent into the shared CLI `data query codex` prompt/context text shape before drafting
 - [ ] implement candidate SQL generation from natural-language intent
 - [ ] show generated SQL for explicit confirmation
 - [ ] define revise/regenerate flow after rejection or SQL error
@@ -219,6 +271,8 @@ Alignment note:
 - [ ] add table output prompt flow with optional `rows`
 - [ ] add JSON stdout prompt flow with optional pretty-print
 - [ ] add file-output prompt flow with path, optional JSON pretty-printing, and overwrite handling
+- [ ] keep JSON stdout and file output mutually exclusive in the interactive flow
+- [ ] keep file-output payload delivery off stdout so direct CLI stdout or stderr expectations remain intact
 - [ ] reuse shared execution/output helpers from the direct CLI query plan
 
 ### Phase 7: Tests
@@ -231,6 +285,12 @@ Alignment note:
 - [ ] add coverage for `Codex Assistant` review/confirmation guardrails
 - [ ] add coverage for output-mode prompts and execution routing
 - [ ] add coverage for error recovery and cancel paths
+- [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
+- [ ] add coverage for seeded editor context in `Codex Assistant`
+- [ ] add coverage for comment stripping and cleaned-intent confirmation before drafting
+- [ ] add coverage for the single-line and editor-backed intent branches
+- [ ] add coverage that interactive multiline intent normalization reuses the shared CLI `data query codex` drafting contract
+- [ ] add coverage that interactive output selection preserves the direct CLI mutually exclusive output contract
 
 ### Phase 8: Docs and verification
 

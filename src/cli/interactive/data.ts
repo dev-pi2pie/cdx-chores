@@ -19,6 +19,7 @@ import {
   promptRequiredPathWithConfig,
 } from "../prompts/path";
 import type { CliRuntime } from "../types";
+import { runInteractiveDataQuery } from "./data-query";
 import type { DataInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
@@ -85,6 +86,11 @@ export async function handleDataInteractiveAction(
   pathPromptContext: InteractivePathPromptContext,
   action: DataInteractiveActionKey,
 ): Promise<void> {
+  if (action === "data:query") {
+    await runInteractiveDataQuery(runtime, pathPromptContext);
+    return;
+  }
+
   if (action === "data:preview") {
     const inputPath = await promptRequiredPathWithConfig("Input CSV or JSON file", {
       kind: "file",

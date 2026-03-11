@@ -20,6 +20,8 @@ const DATA_QUERY_CODEX_OUTPUT_SCHEMA = {
 
 const DATA_QUERY_CODEX_TIMEOUT_MS = 30_000;
 const DATA_QUERY_CODEX_MAX_SAMPLE_VALUE_CHARS = 120;
+const DATA_QUERY_CODEX_EDITOR_SCHEMA_COLUMNS = 8;
+const DATA_QUERY_CODEX_EDITOR_SAMPLE_ROWS = 3;
 
 export interface DataQueryCodexDraft {
   reasoningSummary: string;
@@ -58,6 +60,74 @@ function normalizePromptSampleRows(rows: readonly Record<string, string>[]): str
     );
     return `${index + 1}. ${JSON.stringify(safeRow)}`;
   });
+}
+
+function summarizeEditorSchema(introspection: DataQuerySourceIntrospection): string {
+  if (introspection.columns.length === 0) {
+    return "(no columns available)";
+  }
+
+  const visibleColumns = introspection.columns
+    .slice(0, DATA_QUERY_CODEX_EDITOR_SCHEMA_COLUMNS)
+    .map((column) => `${column.name} (${column.type})`);
+  const remainingColumns = introspection.columns.length - visibleColumns.length;
+  return remainingColumns > 0
+    ? `${visibleColumns.join(", ")}, +${remainingColumns} more`
+    : visibleColumns.join(", ");
+}
+
+export function normalizeDataQueryCodexIntent(intent: string): string {
+  return intent
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join(" ")
+    .trim();
+}
+
+export function stripDataQueryCodexIntentCommentLines(intent: string): string {
+  return intent
+    .split(/\r?\n/)
+    .filter((line) => !line.trimStart().startsWith("#"))
+    .join("\n");
+}
+
+export function normalizeDataQueryCodexEditorIntent(intent: string): string {
+  return normalizeDataQueryCodexIntent(stripDataQueryCodexIntentCommentLines(intent));
+}
+
+export function buildDataQueryCodexIntentEditorTemplate(options: {
+  format: DataQueryInputFormat;
+  intent?: string;
+  introspection: DataQuerySourceIntrospection;
+}): string {
+  const sampleLines = normalizePromptSampleRows(
+    options.introspection.sampleRows.slice(0, DATA_QUERY_CODEX_EDITOR_SAMPLE_ROWS),
+  );
+  const remainingSampleRows = options.introspection.sampleRows.length - sampleLines.length;
+  const sampleOverflowLine =
+    remainingSampleRows > 0
+      ? `# ... +${remainingSampleRows} more sampled rows`
+      : options.introspection.truncated
+        ? "# ... additional sampled rows omitted"
+        : undefined;
+
+  return [
+    "# Query context for Codex drafting.",
+    "# Logical table: file",
+    `# Format: ${options.format}`,
+    ...(options.introspection.selectedSource
+      ? [`# Source: ${options.introspection.selectedSource}`]
+      : []),
+    `# Schema: ${summarizeEditorSchema(options.introspection)}`,
+    "# Sample rows:",
+    ...sampleLines.map((line) => `# ${line}`),
+    ...(sampleOverflowLine ? [sampleOverflowLine] : []),
+    "#",
+    "# Write plain intent below. Comment lines starting with # are ignored.",
+    "",
+    options.intent?.trim() ?? "",
+  ].join("\n");
 }
 
 export function buildDataQueryCodexPrompt(options: {
@@ -140,10 +210,11 @@ export async function draftDataQueryWithCodex(options: {
 }): Promise<DataQueryCodexDraftResult> {
   try {
     const runner = options.runner ?? runDataQueryCodexPrompt;
+    const normalizedIntent = normalizeDataQueryCodexIntent(options.intent);
     const finalResponse = await runner({
       prompt: buildDataQueryCodexPrompt({
         format: options.format,
-        intent: options.intent,
+        intent: normalizedIntent,
         introspection: options.introspection,
       }),
       workingDirectory: options.workingDirectory,

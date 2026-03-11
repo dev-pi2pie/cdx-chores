@@ -13,6 +13,7 @@ Current boundary:
 - default output: bounded terminal table
 - machine-readable stdout: `--json`
 - file output: `--output <path>` with `.json` or `.csv`
+- interactive mode is available through `cdx-chores interactive`; see `docs/guides/data-query-interactive-usage.md`
 
 ### Command shape
 

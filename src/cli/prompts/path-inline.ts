@@ -74,7 +74,10 @@ function buildPromptLine(options: {
   };
 }
 
-function isPrintableInput(str: string, key: KeypressInfo): boolean {
+function isPrintableInput(str: string | undefined, key: KeypressInfo): boolean {
+  if (typeof str !== "string") {
+    return false;
+  }
   if (str.length === 0) {
     return false;
   }

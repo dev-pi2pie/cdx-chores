@@ -282,16 +282,37 @@ async function listSQLiteSources(connection: DuckDBConnection, inputPath: string
     .filter((name) => name.length > 0);
 }
 
+export async function listDataQuerySources(
+  connection: DuckDBConnection,
+  inputPath: string,
+  format: DataQueryInputFormat,
+): Promise<string[] | undefined> {
+  if (format === "sqlite") {
+    await ensureDuckDbExtensionLoaded(connection, "SQLite", SQLITE_LOAD_NAME, SQLITE_STATUS_NAME);
+    return await listSQLiteSources(connection, inputPath);
+  }
+
+  if (format === "excel") {
+    await ensureDuckDbExtensionLoaded(connection, "Excel", EXCEL_LOAD_NAME, EXCEL_STATUS_NAME);
+    return await listXlsxSheetNames(inputPath);
+  }
+
+  return undefined;
+}
+
 async function resolveMultiObjectSource(
   connection: DuckDBConnection,
   inputPath: string,
   format: "sqlite" | "excel",
   source?: string,
 ): Promise<string> {
-  const sources =
-    format === "sqlite"
-      ? await listSQLiteSources(connection, inputPath)
-      : await listXlsxSheetNames(inputPath);
+  const sources = await listDataQuerySources(connection, inputPath, format);
+  if (!sources) {
+    throw new CliError(`No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
 
   if (sources.length === 0) {
     throw new CliError(`No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`, {
