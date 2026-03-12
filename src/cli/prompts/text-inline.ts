@@ -17,6 +17,8 @@ type ValidationFn = (value: string) => true | string | Promise<true | string>;
 
 export interface InlineTextPromptOptions {
   message: string;
+  helpLines?: string[];
+  ghostHintLabel?: string;
   ghostText: string;
   runtimeConfig?: PathPromptRuntimeConfig;
   stdin?: NodeJS.ReadStream;
@@ -97,6 +99,8 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
       const advancedInline = options.promptImpls?.advancedInline ?? promptTextInlineGhost;
       return await advancedInline({
         message: options.message,
+        helpLines: options.helpLines,
+        ghostHintLabel: options.ghostHintLabel,
         ghostText: options.ghostText,
         stdin: options.stdin!,
         stdout: options.stdout!,
@@ -110,6 +114,12 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
   }
 
   const simpleInput = options.promptImpls?.simpleInput ?? input;
+  if (options.helpLines && options.helpLines.length > 0 && options.stdout) {
+    options.stdout.write(`${options.helpLines.join("\n")}\n`);
+  }
+  if (options.ghostHintLabel && options.ghostText.length > 0 && options.stdout) {
+    options.stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
+  }
   return await simpleInput({
     message: options.message,
     validate: options.validate,
@@ -118,6 +128,8 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
 
 export async function promptTextInlineGhost(options: {
   message: string;
+  helpLines?: string[];
+  ghostHintLabel?: string;
   ghostText: string;
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
@@ -156,6 +168,13 @@ export async function promptTextInlineGhost(options: {
       render();
     });
   };
+
+  if (options.helpLines && options.helpLines.length > 0) {
+    stdout.write(`${options.helpLines.join("\n")}\n`);
+  }
+  if (options.ghostHintLabel && options.ghostText.length > 0) {
+    stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
+  }
 
   scheduleRender();
 

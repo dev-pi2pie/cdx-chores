@@ -73,11 +73,13 @@ async function promptRenamePatternConfig(options: {
   const customTemplate =
     preset === "custom"
       ? await promptTextWithGhost({
-          message: [
+          message: "Template",
+          helpLines: [
             "Custom filename template",
             "Main placeholders: {prefix}, {timestamp}, {date}, {stem}, {uid}, {serial}",
             "Advanced: explicit timestamp variants and {serial...} params are also supported.",
-          ].join("\n"),
+          ],
+          ghostHintLabel: "Template suggestion (Right arrow to accept)",
           ghostText: "{timestamp}-{stem}",
           runtimeConfig: options.pathPromptContext.runtimeConfig,
           stdin: options.pathPromptContext.stdin,
