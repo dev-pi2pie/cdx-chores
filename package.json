@@ -1,6 +1,18 @@
 {
   "name": "cdx-chores",
-  "version": "0.0.7-canary.11",
+  "version": "0.0.7",
+  "keywords": [
+    "automation",
+    "cli",
+    "codex",
+    "data-conversion",
+    "duckdb",
+    "ffmpeg",
+    "file-processing",
+    "file-rename",
+    "markdown",
+    "video"
+  ],
   "license": "MIT",
   "bin": {
     "cdx-chores": "dist/esm/bin.mjs"
