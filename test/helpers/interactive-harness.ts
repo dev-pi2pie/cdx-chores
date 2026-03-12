@@ -14,6 +14,7 @@ export interface InteractiveHarnessScenario {
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
   dataQueryActionErrorMessage?: string;
+  dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;
   dataQueryActionStdout?: string;
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
@@ -227,7 +228,7 @@ export function runInteractiveHarness(
         }
         if (scenario.dataQueryActionErrorMessage) {
           const error = new Error(scenario.dataQueryActionErrorMessage);
-          error.code = "DATA_QUERY_FAILED";
+          error.code = scenario.dataQueryActionErrorCode ?? "DATA_QUERY_FAILED";
           throw error;
         }
       },

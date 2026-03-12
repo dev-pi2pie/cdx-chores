@@ -1,6 +1,8 @@
 import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
+  actionDataDuckDbDoctor,
+  actionDataDuckDbExtensionInstall,
   actionDataParquetPreview,
   actionDataPreview,
   actionDataQuery,
@@ -35,6 +37,10 @@ import {
   DATA_QUERY_INPUT_FORMAT_VALUES,
   type DataQueryInputFormat,
 } from "./cli/duckdb/query";
+import {
+  DUCKDB_MANAGED_EXTENSION_NAMES,
+  type DuckDbManagedExtensionName,
+} from "./cli/duckdb/extensions";
 import type {
   RenameCleanupConflictStrategy,
   RenameCleanupStyle,
@@ -139,6 +145,16 @@ function parseDataQueryInputFormatOption(value: string): DataQueryInputFormat {
   }
   throw new InvalidArgumentError(
     `--input-format must be one of: ${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")}.`,
+  );
+}
+
+function parseDuckDbManagedExtensionOption(value: string): DuckDbManagedExtensionName {
+  const normalized = value.trim().toLowerCase();
+  if ((DUCKDB_MANAGED_EXTENSION_NAMES as readonly string[]).includes(normalized)) {
+    return normalized as DuckDbManagedExtensionName;
+  }
+  throw new InvalidArgumentError(
+    `Extension name must be one of: ${DUCKDB_MANAGED_EXTENSION_NAMES.join(", ")}.`,
   );
 }
 
@@ -348,6 +364,37 @@ export async function runCli(
 
   const parquetCommand = dataCommand.command("parquet").description("DuckDB-backed Parquet preview utilities");
 
+  const duckdbCommand = dataCommand.command("duckdb").description("DuckDB extension inspection and setup utilities");
+
+  duckdbCommand
+    .command("doctor")
+    .description("Inspect DuckDB-managed extension state for data query")
+    .option("--json", "Output machine-readable JSON", false)
+    .action(async (options: { json?: boolean }) => {
+      await actionDataDuckDbDoctor(cliRuntime, { json: options.json });
+    });
+
+  const duckdbExtensionCommand = duckdbCommand
+    .command("extension")
+    .description("Manage DuckDB extensions used by data query");
+
+  duckdbExtensionCommand
+    .command("install")
+    .description("Install a managed DuckDB extension for the current runtime")
+    .argument("[name]", `Extension name (${DUCKDB_MANAGED_EXTENSION_NAMES.join(", ")})`, parseDuckDbManagedExtensionOption)
+    .option("--all-supported", "Install all managed DuckDB extensions", false)
+    .action(
+      async (
+        extensionName: DuckDbManagedExtensionName | undefined,
+        options: { allSupported?: boolean },
+      ) => {
+        await actionDataDuckDbExtensionInstall(cliRuntime, {
+          allSupported: options.allSupported,
+          extensionName,
+        });
+      },
+    );
+
   parquetCommand
     .command("preview")
     .description("Preview Parquet data as a bounded terminal table")
@@ -386,6 +433,11 @@ export async function runCli(
       parseDataQueryInputFormatOption,
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--install-missing-extension",
+      "Attempt one DuckDB extension install-and-retry for sqlite/excel inputs",
+      false,
+    )
     .option("--rows <value>", "Number of rows to show in bounded table output", (value: string) =>
       parsePositiveIntegerOption(value, "--rows"),
     )
@@ -398,6 +450,7 @@ export async function runCli(
         input: string,
         options: {
           inputFormat?: DataQueryInputFormat;
+          installMissingExtension?: boolean;
           json?: boolean;
           output?: string;
           overwrite?: boolean;
@@ -410,6 +463,7 @@ export async function runCli(
         await actionDataQuery(cliRuntime, {
           input,
           inputFormat: options.inputFormat,
+          installMissingExtension: options.installMissingExtension,
           json: options.json,
           output: options.output,
           overwrite: options.overwrite,

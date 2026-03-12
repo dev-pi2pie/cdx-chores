@@ -261,6 +261,35 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain("select id from file");
   });
 
+  test("prints DuckDB install remediation command for interactive query extension failures", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:query", "Summary", "manual", "table"],
+        requiredPathQueue: ["fixtures/query.xlsx"],
+        inputQueue: ["select id from file", "10"],
+        confirmQueue: [true, true],
+        dataQueryActionErrorCode: "DUCKDB_EXTENSION_UNAVAILABLE",
+        dataQueryActionErrorMessage:
+          'Excel query requires the DuckDB excel extension, and it is not installed in the current environment. Install it explicitly in DuckDB, then retry.',
+        dataQueryDetectedFormat: "excel",
+        dataQuerySources: ["Summary"],
+        dataQueryIntrospection: {
+          columns: [{ name: "id", type: "BIGINT" }],
+          sampleRows: [{ id: "1" }],
+          selectedSource: "Summary",
+          truncated: false,
+        },
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("requires the DuckDB excel extension");
+    expect(result.stderr).toContain(
+      "Install the missing DuckDB extension with: cdx-chores data duckdb extension install excel",
+    );
+  });
+
   test("routes Codex Assistant through the multiline editor when requested", () => {
     const result = runInteractiveHarness({
       mode: "run",

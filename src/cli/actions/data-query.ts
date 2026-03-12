@@ -16,6 +16,7 @@ import {
 } from "../duckdb/query";
 
 export interface DataQueryOptions {
+  installMissingExtension?: boolean;
   input: string;
   inputFormat?: DataQueryInputFormat;
   json?: boolean;
@@ -57,6 +58,10 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
   }
 }
 
+function isDuckDbBuiltInQueryFormat(format: DataQueryInputFormat): boolean {
+  return format === "csv" || format === "tsv" || format === "parquet";
+}
+
 function normalizeSql(sql: string): string {
   const value = assertNonEmpty(sql, "SQL");
   return value.endsWith(";") ? value : value;
@@ -87,13 +92,25 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
   const sql = normalizeSql(options.sql);
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
+    throw new CliError(
+      "--install-missing-extension is only valid for extension-backed query formats (sqlite, excel).",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
   const source = options.source?.trim() || undefined;
   const rowCount = options.rows ?? DEFAULT_QUERY_ROWS;
 
   let connection;
   try {
     connection = await createDuckDbConnection();
-    const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source);
+    const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source, {
+      installMissingExtension: options.installMissingExtension,
+      statusStream: runtime.stderr,
+    });
 
     if (options.json) {
       const result = await executeDataQueryForAllRows(connection, sql);

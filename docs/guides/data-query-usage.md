@@ -74,6 +74,64 @@ The report distinguishes:
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
 
+For extension-backed formats, `detected support=yes` does not mean the format is queryable right now. The capability line turns green only when the required DuckDB extension is currently loadable.
+
+### DuckDB extension troubleshooting
+
+If `sqlite` or `excel` shows `detected support=yes, loadability=no, installability=yes`, the usual cause is that the required DuckDB extension is missing for the current DuckDB runtime version.
+
+Recommended first steps:
+
+```bash
+cdx-chores data duckdb doctor
+cdx-chores data duckdb extension install sqlite
+cdx-chores data duckdb extension install excel
+```
+
+If you want the query command itself to attempt one install-and-retry pass for an extension-backed input, use:
+
+```bash
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --install-missing-extension --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --install-missing-extension --sql "select * from file"
+```
+
+`data duckdb doctor` is the backend-oriented inspection view. It shows the current DuckDB runtime version and the managed extension state for `sqlite` and `excel`.
+
+For the dedicated DuckDB lifecycle command surface, see `docs/guides/data-duckdb-usage.md`.
+
+DuckDB still caches extensions by version under a path like:
+
+```text
+$HOME/.duckdb/extensions/<duckdb-version>/
+```
+
+Common failure pattern:
+
+- an older cache directory exists for a previous DuckDB version
+- the current runtime has upgraded
+- one extension was reinstalled for the new version, but another was not
+
+Example:
+
+- `sqlite` is green because `sqlite_scanner` exists under the current DuckDB version directory
+- `excel` is red because `excel.duckdb_extension` exists only under an older version directory
+
+Advanced fallback only:
+
+If the explicit CLI install path still does not resolve a stale-cache problem, inspect the versioned cache and prefer removing only stale version directories instead of wiping all of `$HOME/.duckdb`:
+
+```bash
+rm -rf "$HOME/.duckdb/extensions/<old-duckdb-version>"
+```
+
+After install or cleanup, rerun:
+
+```bash
+cdx-chores doctor
+```
+
+If `loadability` is still `no` and `installability` flips to `no`, the current environment likely cannot download or cache the extension and the remediation path is different from a normal reinstall.
+
 ### Smoke fixtures
 
 The repo includes a dedicated deterministic fixture generator for `data query`.

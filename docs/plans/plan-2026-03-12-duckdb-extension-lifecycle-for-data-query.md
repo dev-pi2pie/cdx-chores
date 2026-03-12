@@ -2,7 +2,7 @@
 title: "DuckDB extension lifecycle for data query"
 created-date: 2026-03-12
 modified-date: 2026-03-12
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -298,45 +298,45 @@ Instead:
 
 ### Phase 1: Freeze lifecycle contract
 
-- [ ] confirm that default query execution remains guidance-first and non-installing
-- [ ] freeze the exact semantics of `--install-missing-extension`
-- [ ] freeze stderr-only status messaging for install attempts so stdout payload contracts remain stable
-- [ ] freeze rejection behavior for `--install-missing-extension` on built-in formats
-- [ ] freeze `$HOME`-sanitized path display for user-facing DuckDB cache messages
-- [ ] defer `data query codex` install side effects out of the first implementation
-- [ ] defer uninstall out of the first implementation
-- [ ] freeze the first-pass `data duckdb ...` command names
-- [ ] freeze first-pass interactive behavior as remediation guidance only, not a dedicated extension-management entry
+- [x] confirm that default query execution remains guidance-first and non-installing
+- [x] freeze the exact semantics of `--install-missing-extension`
+- [x] freeze stderr-only status messaging for install attempts so stdout payload contracts remain stable
+- [x] freeze rejection behavior for `--install-missing-extension` on built-in formats
+- [x] freeze `$HOME`-sanitized path display for user-facing DuckDB cache messages
+- [x] defer `data query codex` install side effects out of the first implementation
+- [x] defer uninstall out of the first implementation
+- [x] freeze the first-pass `data duckdb ...` command names
+- [x] freeze first-pass interactive behavior as remediation guidance only, not a dedicated extension-management entry
 
 ### Phase 2: Shared inspection and install helpers
 
-- [ ] extract shared DuckDB extension lifecycle helpers so doctor and command execution do not duplicate logic
-- [ ] add explicit install helper(s) for supported DuckDB extensions
-- [ ] add retry-after-install behavior for opt-in execution paths
-- [ ] preserve detailed error classification for install and load failures
+- [x] extract shared DuckDB extension lifecycle helpers so doctor and command execution do not duplicate logic
+- [x] add explicit install helper(s) for supported DuckDB extensions
+- [x] add retry-after-install behavior for opt-in execution paths
+- [x] preserve detailed error classification for install and load failures
 
 ### Phase 3: CLI wiring
 
-- [ ] add `--install-missing-extension` to direct `data query`
-- [ ] add `data duckdb doctor`
-- [ ] add `data duckdb extension install <name>`
-- [ ] add `data duckdb extension install --all-supported`
+- [x] add `--install-missing-extension` to direct `data query`
+- [x] add `data duckdb doctor`
+- [x] add `data duckdb extension install <name>`
+- [x] add `data duckdb extension install --all-supported`
 
 ### Phase 4: Doctor and UX refinement
 
-- [ ] refine `doctor` messaging to point users toward the explicit remediation surface when applicable
-- [ ] expose any newly needed DuckDB runtime metadata in JSON output
-- [ ] keep human-readable output concise while preserving exact detail in machine-readable output
-- [ ] in interactive flows, print the exact CLI remediation command when a missing extension appears installable
+- [x] refine `doctor` messaging to point users toward the explicit remediation surface when applicable
+- [x] expose any newly needed DuckDB runtime metadata in JSON output
+- [x] keep human-readable output concise while preserving exact detail in machine-readable output
+- [x] in interactive flows, print the exact CLI remediation command when a missing extension appears installable
 
 ### Phase 5: Tests and docs
 
-- [ ] add tests for already-installed extension paths
-- [ ] add tests for install-and-retry success
-- [ ] add tests for install-blocked environments
-- [ ] add tests for stale-version-cache-style failures where one extension is present and another is missing
-- [ ] update `docs/guides/data-query-usage.md`
-- [ ] add a dedicated guide for DuckDB extension lifecycle commands if a separate command family lands
+- [x] add tests for already-installed extension paths
+- [x] add tests for install-and-retry success
+- [x] add tests for install-blocked environments
+- [x] add tests for stale-version-cache-style failures where one extension is present and another is missing
+- [x] update `docs/guides/data-query-usage.md`
+- [x] add a dedicated guide for DuckDB extension lifecycle commands if a separate command family lands
 
 ## Recommendation for Immediate Next Step
 
