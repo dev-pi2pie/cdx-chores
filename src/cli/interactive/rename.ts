@@ -81,6 +81,7 @@ async function promptRenamePatternConfig(options: {
           ],
           ghostHintLabel: "Template suggestion (Right arrow to accept)",
           ghostText: "{timestamp}-{stem}",
+          completionKind: "rename-template",
           runtimeConfig: options.pathPromptContext.runtimeConfig,
           stdin: options.pathPromptContext.stdin,
           stdout: options.pathPromptContext.stdout,

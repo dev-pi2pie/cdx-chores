@@ -1,7 +1,8 @@
 ---
 title: "Interactive rename template inline completion"
 created-date: 2026-03-12
-status: draft
+modified-date: 2026-03-12
+status: completed
 agent: codex
 ---
 
@@ -186,61 +187,61 @@ Alternative acceptable shape:
 
 ### Task Items
 
-- [ ] identify the active token fragment from the current input value
-- [ ] define root-level template candidates
-- [ ] define timestamp-family candidate narrowing rules
-- [ ] define date-family candidate narrowing rules
-- [ ] define how broad prefixes widen or narrow candidate scope
-- [ ] add deterministic tests for token-fragment parsing and candidate selection
+- [x] identify the active token fragment from the current input value
+- [x] define root-level template candidates
+- [x] define timestamp-family candidate narrowing rules
+- [x] define date-family candidate narrowing rules
+- [x] define how broad prefixes widen or narrow candidate scope
+- [x] add deterministic tests for token-fragment parsing and candidate selection
 
 ### Phase Deliverable
 
-- [ ] a stable template candidate resolver exists without any UI-side key handling yet
+- [x] a stable template candidate resolver exists without any UI-side key handling yet
 
 ## Phase 2: Add token-local ghost rendering and accept semantics
 
 ### Task Items
 
-- [ ] render the current token candidate as a ghost suffix without disturbing literal text outside the active token
-- [ ] make right arrow replace the active trailing token fragment in place
-- [ ] make `Tab` match right-arrow accept behavior
-- [ ] preserve existing append/backspace-only inline text behavior when no template candidate is active
-- [ ] add focused tests for accept behavior at the beginning, middle, and end of a template string
+- [x] render the current token candidate as a ghost suffix without disturbing literal text outside the active token
+- [x] make right arrow replace the active trailing token fragment in place
+- [x] make `Tab` match right-arrow accept behavior
+- [x] preserve existing append/backspace-only inline text behavior when no template candidate is active
+- [x] add focused tests for accept behavior at the beginning, middle, and end of a template string
 
 ### Phase Deliverable
 
-- [ ] token-local accept behavior works for the custom-template prompt
+- [x] token-local accept behavior works for the custom-template prompt
 
 ## Phase 3: Add sibling-style candidate navigation
 
 ### Task Items
 
-- [ ] add up/down cycling across sibling candidates in the current scope
-- [ ] keep root-level and timestamp-family scopes distinct
-- [ ] widen scope again when the user edits back to a broader token prefix
-- [ ] avoid noisy jumps across unrelated token families while narrowed
-- [ ] add regression coverage for sibling-style navigation
+- [x] add up/down cycling across sibling candidates in the current scope
+- [x] keep root-level and timestamp-family scopes distinct
+- [x] widen scope again when the user edits back to a broader token prefix
+- [x] avoid noisy jumps across unrelated token families while narrowed
+- [x] add regression coverage for sibling-style navigation
 
 ### Phase Deliverable
 
-- [ ] up/down candidate browsing behaves like sibling path searching for template tokens
+- [x] up/down candidate browsing behaves like sibling path searching for template tokens
 
 ## Phase 4: Wire into interactive rename and verify UX
 
 ### Task Items
 
-- [ ] update `src/cli/interactive/rename.ts` to use the new template-aware inline completion path
-- [ ] keep the existing static help lines and helper text concise
-- [ ] confirm timestamp-family narrowing is discoverable without flooding the default candidate list
-- [ ] confirm date-family narrowing is discoverable without flooding the default candidate list
-- [ ] ensure fallback simple prompt behavior still works when the advanced prompt cannot run
-- [ ] update relevant guides and README sections if the final prompt behavior introduces new documented key controls or interactive examples
-- [ ] update status and modified-date fields only for this plan, its implementation job record, and directly supporting feature research docs after implementation lands
-- [ ] record final behavior in a job document
+- [x] update `src/cli/interactive/rename.ts` to use the new template-aware inline completion path
+- [x] keep the existing static help lines and helper text concise
+- [x] confirm timestamp-family narrowing is discoverable without flooding the default candidate list
+- [x] confirm date-family narrowing is discoverable without flooding the default candidate list
+- [x] ensure fallback simple prompt behavior still works when the advanced prompt cannot run
+- [x] update relevant guides and README sections if the final prompt behavior introduces new documented key controls or interactive examples
+- [x] update status and modified-date fields only for this plan, its implementation job record, and directly supporting feature research docs after implementation lands
+- [x] record final behavior in a job document
 
 ### Phase Deliverable
 
-- [ ] interactive rename custom-template entry supports template-aware inline completion with safe fallback behavior
+- [x] interactive rename custom-template entry supports template-aware inline completion with safe fallback behavior
 
 ## Test Plan
 

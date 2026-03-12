@@ -41,6 +41,146 @@ async function nextRenderTick(): Promise<void> {
 }
 
 describe("text inline prompt controller", () => {
+  test("template completion starts only after an opening brace is typed", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}",
+      completionKind: "rename-template",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    expect(stdout.text).toContain("Template ");
+    expect(stdout.text).not.toContain("\x1b[2m{timestamp}-{stem}\x1b[22m");
+
+    stdin.emit("keypress", "t", { name: "t" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("Template t");
+    expect(stdout.text).not.toContain("\x1b[2mimestamp");
+
+    stdin.emit("keypress", "{", { name: "{" });
+    stdin.emit("keypress", "t", { name: "t" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("Template t{t");
+    expect(stdout.text).toContain("\x1b[2mimestamp}\x1b[22m");
+
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("t{t");
+  });
+
+  test("template completion accepts the current trailing token with right arrow and tab", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}",
+      completionKind: "rename-template",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    for (const [str, name] of [
+      ["{", "{"],
+      ["t", "t"],
+      ["i", "i"],
+      ["m", "m"],
+    ] as const) {
+      stdin.emit("keypress", str, { name });
+    }
+    await nextRenderTick();
+    stdin.emit("keypress", "", { name: "right" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("Template {timestamp}");
+
+    stdin.emit("keypress", "-", { name: "-" });
+    stdin.emit("keypress", "{", { name: "{" });
+    stdin.emit("keypress", "s", { name: "s" });
+    stdin.emit("keypress", "t", { name: "t" });
+    await nextRenderTick();
+    stdin.emit("keypress", "\t", { name: "tab" });
+    stdin.emit("keypress", "\r", { name: "return" });
+
+    await expect(prompt).resolves.toBe("{timestamp}-{stem}");
+  });
+
+  test("template completion cycles sibling candidates within narrowed families", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}",
+      completionKind: "rename-template",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    for (const [str, name] of [
+      ["{", "{"],
+      ["t", "t"],
+      ["i", "i"],
+      ["m", "m"],
+      ["e", "e"],
+      ["s", "s"],
+      ["t", "t"],
+      ["a", "a"],
+      ["m", "m"],
+      ["p", "p"],
+      ["_", "_"],
+    ] as const) {
+      stdin.emit("keypress", str, { name });
+    }
+    await nextRenderTick();
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    stdin.emit("keypress", "\t", { name: "tab" });
+    stdin.emit("keypress", "\r", { name: "return" });
+
+    await expect(prompt).resolves.toBe("{timestamp_utc}");
+    expect(stdout.text).toContain("Template {timestamp_");
+    expect(stdout.text).toContain("\x1b[2mutc}\x1b[22m");
+  });
+
+  test("template completion narrows into the date family after the prefix is typed", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}",
+      completionKind: "rename-template",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    for (const [str, name] of [
+      ["{", "{"],
+      ["d", "d"],
+      ["a", "a"],
+      ["t", "t"],
+      ["e", "e"],
+      ["_", "_"],
+    ] as const) {
+      stdin.emit("keypress", str, { name });
+    }
+    await nextRenderTick();
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    stdin.emit("keypress", "", { name: "right" });
+    stdin.emit("keypress", "\r", { name: "return" });
+
+    await expect(prompt).resolves.toBe("{date_utc}");
+    expect(stdout.text).toContain("\x1b[2mutc}\x1b[22m");
+  });
+
   test("promptTextInlineGhost prints help lines once while rerendering only the input line", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();

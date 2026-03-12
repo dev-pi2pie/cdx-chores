@@ -151,6 +151,11 @@ Template and serial notes:
 - `{uid}` is supported in `rename file` / `rename batch` templates and renders a deterministic `uid-<token>` fragment.
 - `{serial...}` in the template enables serial controls.
 - Interactive mode asks serial settings only when the chosen template includes `{serial...}`.
+- Interactive custom-template entry now supports token-aware completion:
+  - suggestions begin after typing `{`
+  - `Tab` and `Right Arrow` accept the current trailing token suggestion
+  - `Up` / `Down` browse sibling token candidates within the current family
+  - explicit timestamp/date variants appear only after narrowing into the `timestamp` or `date` family
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`.
 
 Timestamp placeholders:

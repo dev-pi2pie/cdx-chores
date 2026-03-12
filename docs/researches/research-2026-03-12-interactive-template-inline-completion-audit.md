@@ -2,7 +2,7 @@
 title: "Interactive template inline completion audit"
 created-date: 2026-03-12
 modified-date: 2026-03-12
-status: draft
+status: completed
 agent: codex
 ---
 
