@@ -1,6 +1,7 @@
 ---
 title: "Interactive template inline completion audit"
 created-date: 2026-03-12
+modified-date: 2026-03-12
 status: draft
 agent: codex
 ---
@@ -126,10 +127,12 @@ Create a focused implementation plan for "interactive rename template inline com
 That plan should treat the following as first-class requirements:
 
 - typing part of a placeholder token should surface matching template candidates
-- `Tab` should complete or cycle matching placeholder candidates
+- `Tab` should behave like right arrow and accept only the current ghost segment once
 - right arrow should continue to accept the current ghost completion
 - the prompt must remain single-line and must not reintroduce multiline rerender artifacts
 - literals, separators, and mixed template text must stay editable without forcing placeholder-only mode
+- already accepted segments should remain stable while the prompt predicts only the next candidate token
+- up/down navigation should feel closer to sibling path searching than a separate menu
 
 ### Recommended implementation boundary
 
@@ -152,18 +155,83 @@ For a first feature pass, the candidate registry should likely include:
 - `{uid}`
 - `{serial}`
 
-Then evaluate whether explicit timestamp variants should:
+Explicit timestamp variants should stay behind a narrower prefix rather than appearing in the primary candidate list.
 
-- appear in the first-pass completion list
-- remain documented but not suggested by default
-- or show up only after typing a more specific prefix such as `{timestamp_`
+Recommended direction:
 
-## Open Questions
+- primary candidate list stays small and core-token-oriented
+- once the user narrows into the timestamp family, for example with `{timestamp` or `{timestamp_`, timestamp-family variants can be cycled like sibling path candidates
 
-- Should `Tab` insert the longest common completion when multiple placeholders share a prefix, or immediately cycle candidates?
-- Should explicit timestamp variants be exposed in the primary candidate list or only behind a narrower prefix?
-- Should template assistance operate only inside `{...}` token entry, or also suggest full starter snippets such as `{timestamp}-{stem}`?
-- Should up/down arrows cycle template snippets while left/right stay focused on inline acceptance and cursor semantics?
+Mock direction:
+
+```text
+Template {t
+ghost -> {timestamp}
+up/down cycles:
+  {timestamp}
+  {timestamp_local}
+  {timestamp_utc}
+  {timestamp_local_iso}
+  {timestamp_utc_iso}
+  ...
+tab/right accepts the current token once
+```
+
+```text
+Template {timestamp}-{
+ghost -> {stem}
+up/down cycles:
+  {stem}
+  {serial}
+  {uid}
+tab/right accepts only the current next token
+```
+
+### Recommended sibling-cycle scope
+
+Cycle within the current token family once the prefix is narrow enough.
+
+Recommended behavior:
+
+- `{t` can still resolve across root-level token matches such as `{timestamp}`
+- `{timestamp_` should cycle only within timestamp-family variants
+- editing back from `{timestamp_` to a broader prefix such as `{t` should widen the candidate scope again
+
+Reason:
+
+- this matches the sibling-path-searching mental model more closely
+- it avoids noisy jumps across unrelated token families once intent is already narrowed
+
+### Recommended token-start detection
+
+Begin suggestions only after `{` is typed.
+
+Recommended behavior:
+
+- plain text such as `tim` should not trigger template-token suggestions
+- token text such as `{tim` can suggest `{timestamp}`
+
+Reason:
+
+- it avoids hijacking normal literal text entry
+- it keeps the feature explicitly token-oriented
+- it reduces accidental completions for ordinary filename words
+
+### Recommended replacement boundary
+
+Accept should replace the current partial token fragment in place.
+
+Recommended behavior:
+
+- `{tim` + accept => `{timestamp}`
+- `{timestamp}-{st` + accept => `{timestamp}-{stem}`
+- the same rule should apply consistently after separators such as `-`, `_`, and `.`
+
+Replacement rule:
+
+- replace only from the active token start `{` through the current token fragment
+- never rewrite already accepted earlier segments
+- keep separators and literal text outside the active token untouched
 
 ## Related Plans
 
