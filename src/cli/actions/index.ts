@@ -1,4 +1,3 @@
-export { actionDeferred } from "./deferred";
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
 export { actionDataPreview, loadDataPreviewSource } from "./data-preview";

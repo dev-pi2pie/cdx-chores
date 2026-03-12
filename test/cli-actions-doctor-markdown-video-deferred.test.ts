@@ -3,7 +3,6 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
-  actionDeferred,
   actionDataDuckDbDoctor,
   actionDataDuckDbExtensionInstall,
   actionDoctor,
@@ -135,23 +134,6 @@ describe("cli action modules: doctor", () => {
       expect(payload.queryCodex.detail).toContain(invalidOverride);
       expect(payload.capabilities["data.query.codex"]).toBe(false);
     });
-  });
-});
-
-describe("cli action modules: deferred", () => {
-  test("actionDeferred throws a deferred feature error", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () => actionDeferred(runtime, "pdf merge"),
-      {
-        code: "DEFERRED_FEATURE",
-        exitCode: 2,
-        messageIncludes: "pdf merge is not implemented",
-      },
-    );
-
-    expectNoOutput();
   });
 });
 

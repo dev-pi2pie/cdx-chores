@@ -20,6 +20,15 @@ describe("CLI UX flags and path output", () => {
     expect(upper.stdout).toContain(`ver.${EMBEDDED_PACKAGE_VERSION}`);
   });
 
+  test("root help omits deferred docx and pdf command families", () => {
+    const result = runCli(["--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).not.toContain("docx");
+    expect(result.stdout).not.toContain("pdf");
+  });
+
   test("prints relative output paths by default", async () => {
     const fixtureDir = await createTempFixtureDir("cli-ux");
     try {

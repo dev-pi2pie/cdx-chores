@@ -7,7 +7,6 @@ import {
   actionDataPreview,
   actionDataQuery,
   actionDataQueryCodex,
-  actionDeferred,
   actionDoctor,
   actionJsonToCsv,
   actionMdFrontmatterToJson,
@@ -541,32 +540,6 @@ export async function runCli(
         await actionMdFrontmatterToJson(cliRuntime, options);
       },
     );
-
-  const docxCommand = program.command("docx").description("DOCX utilities");
-  docxCommand
-    .command("to-pdf")
-    .description("Convert DOCX to PDF (deferred)")
-    .action(async () => {
-      await actionDeferred(cliRuntime, "docx to-pdf");
-    });
-
-  const pdfCommand = program
-    .command("pdf")
-    .description("PDF utilities (deferred in initial phase)");
-  for (const [name, description] of [
-    ["to-images", "Convert PDF pages to images (deferred)"],
-    ["from-images", "Build PDF from image sequence (deferred)"],
-    ["merge", "Merge PDF files (deferred)"],
-    ["split", "Split PDF file (deferred)"],
-  ] as const) {
-    pdfCommand
-      .command(name)
-      .description(description)
-      .action(async () => {
-        await actionDeferred(cliRuntime, `pdf ${name}`);
-      });
-  }
-
   const renameCommand = program.command("rename").description("Rename helpers");
   const renameFileCommand = renameCommand
     .command("file")
