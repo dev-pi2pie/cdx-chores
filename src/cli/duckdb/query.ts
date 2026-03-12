@@ -4,6 +4,12 @@ import { extname } from "node:path";
 import { stringifyPreviewValue } from "../data-preview/normalize";
 import type { DataPreviewRow } from "../data-preview/source";
 import { CliError } from "../errors";
+import {
+  type DuckDbExtensionProbe,
+  type DuckDbManagedExtensionName,
+  ensureDuckDbManagedExtensionLoaded,
+  probeDuckDbManagedExtension,
+} from "./extensions";
 import { listXlsxSheetNames } from "./xlsx-sources";
 
 export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
@@ -33,22 +39,8 @@ export interface DataQuerySourceIntrospection {
   truncated: boolean;
 }
 
-export interface DuckDbExtensionProbe {
-  detail?: string;
-  installed: boolean;
-  installable: boolean | null;
-  loadable: boolean;
-  loaded: boolean;
-}
-
 interface PreparedDataQuerySource {
   selectedSource?: string;
-}
-
-interface DuckDbExtensionCatalogEntry {
-  extension_name?: string;
-  installed?: boolean;
-  loaded?: boolean;
 }
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
@@ -59,11 +51,6 @@ const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
   ".sqlite3": "sqlite",
   ".xlsx": "excel",
 };
-
-const SQLITE_LOAD_NAME = "sqlite";
-const SQLITE_STATUS_NAME = "sqlite_scanner";
-const EXCEL_LOAD_NAME = "excel";
-const EXCEL_STATUS_NAME = "excel";
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -128,118 +115,10 @@ export async function createDuckDbConnection(): Promise<DuckDBConnection> {
   }
 }
 
-async function readDuckDbExtensionCatalog(
-  connection: DuckDBConnection,
-): Promise<Record<string, DuckDbExtensionCatalogEntry>> {
-  const reader = await connection.runAndReadAll(
-    "select extension_name, installed, loaded from duckdb_extensions()",
-  );
-  const rows = reader.getRowObjectsJson() as DuckDbExtensionCatalogEntry[];
-  return Object.fromEntries(
-    rows
-      .map((row) => {
-        const name = typeof row.extension_name === "string" ? row.extension_name : undefined;
-        if (!name) {
-          return undefined;
-        }
-        return [name, row] as const;
-      })
-      .filter((entry): entry is readonly [string, DuckDbExtensionCatalogEntry] => Boolean(entry)),
-  );
-}
-
-function inferInstallability(installed: boolean, detail: string | undefined): boolean | null {
-  if (installed) {
-    return true;
-  }
-  if (!detail) {
-    return null;
-  }
-  if (/install it first/i.test(detail) || /not found/i.test(detail)) {
-    return true;
-  }
-  if (
-    /operation not permitted/i.test(detail) ||
-    /permission denied/i.test(detail) ||
-    /failed to create directory/i.test(detail) ||
-    /read-only/i.test(detail) ||
-    /failed to download extension/i.test(detail) ||
-    /could not establish connection/i.test(detail) ||
-    /name or service not known/i.test(detail) ||
-    /temporary failure in name resolution/i.test(detail)
-  ) {
-    return false;
-  }
-  return null;
-}
-
-async function probeDuckDbExtension(
-  connection: DuckDBConnection,
-  loadName: string,
-  statusName: string,
-): Promise<DuckDbExtensionProbe> {
-  const catalog = await readDuckDbExtensionCatalog(connection);
-  const initial = catalog[statusName];
-  if (initial?.loaded) {
-    return {
-      installed: Boolean(initial.installed),
-      installable: Boolean(initial.installed),
-      loadable: true,
-      loaded: true,
-    };
-  }
-
-  try {
-    await connection.run(`load ${loadName}`);
-    const refreshed = (await readDuckDbExtensionCatalog(connection))[statusName];
-    return {
-      installed: Boolean(refreshed?.installed ?? initial?.installed),
-      installable: true,
-      loadable: true,
-      loaded: true,
-    };
-  } catch (error) {
-    const detail = toErrorMessage(error);
-    return {
-      detail,
-      installed: Boolean(initial?.installed),
-      installable: inferInstallability(Boolean(initial?.installed), detail),
-      loadable: false,
-      loaded: false,
-    };
-  }
-}
-
-function createExtensionGuidanceMessage(
-  label: string,
-  loadName: string,
-  probe: DuckDbExtensionProbe,
-): string {
-  const detail = probe.detail ? ` Detail: ${probe.detail}` : "";
-  if (probe.installed) {
-    return `${label} query requires the DuckDB ${loadName} extension, but it could not be loaded.${detail}`;
-  }
-  if (probe.installable === false) {
-    return `${label} query requires the DuckDB ${loadName} extension, but the current environment cannot install or cache it.${detail}`;
-  }
-  return `${label} query requires the DuckDB ${loadName} extension, and it is not installed in the current environment. Install it explicitly in DuckDB, then retry.${detail}`;
-}
-
-async function ensureDuckDbExtensionLoaded(
-  connection: DuckDBConnection,
-  label: string,
-  loadName: string,
-  statusName: string,
-): Promise<void> {
-  const probe = await probeDuckDbExtension(connection, loadName, statusName);
-  if (probe.loadable) {
-    return;
-  }
-
-  throw new CliError(createExtensionGuidanceMessage(label, loadName, probe), {
-    code: "DUCKDB_EXTENSION_UNAVAILABLE",
-    exitCode: 2,
-  });
+function getDuckDbManagedExtensionNameForFormat(
+  format: "sqlite" | "excel",
+): DuckDbManagedExtensionName {
+  return format;
 }
 
 function buildRelationSql(inputPath: string, format: DataQueryInputFormat, source?: string): string {
@@ -288,12 +167,18 @@ export async function listDataQuerySources(
   format: DataQueryInputFormat,
 ): Promise<string[] | undefined> {
   if (format === "sqlite") {
-    await ensureDuckDbExtensionLoaded(connection, "SQLite", SQLITE_LOAD_NAME, SQLITE_STATUS_NAME);
+    await ensureDuckDbManagedExtensionLoaded(
+      connection,
+      getDuckDbManagedExtensionNameForFormat("sqlite"),
+    );
     return await listSQLiteSources(connection, inputPath);
   }
 
   if (format === "excel") {
-    await ensureDuckDbExtensionLoaded(connection, "Excel", EXCEL_LOAD_NAME, EXCEL_STATUS_NAME);
+    await ensureDuckDbManagedExtensionLoaded(
+      connection,
+      getDuckDbManagedExtensionNameForFormat("excel"),
+    );
     return await listXlsxSheetNames(inputPath);
   }
 
@@ -350,15 +235,33 @@ export async function prepareDataQuerySource(
   inputPath: string,
   format: DataQueryInputFormat,
   source?: string,
+  options: {
+    installMissingExtension?: boolean;
+    statusStream?: NodeJS.WritableStream;
+  } = {},
 ): Promise<PreparedDataQuerySource> {
   let selectedSource = source?.trim();
 
   if (format === "sqlite") {
-    await ensureDuckDbExtensionLoaded(connection, "SQLite", SQLITE_LOAD_NAME, SQLITE_STATUS_NAME);
+    await ensureDuckDbManagedExtensionLoaded(
+      connection,
+      getDuckDbManagedExtensionNameForFormat("sqlite"),
+      {
+        installIfMissing: options.installMissingExtension,
+        statusStream: options.statusStream,
+      },
+    );
     selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", source);
   }
   if (format === "excel") {
-    await ensureDuckDbExtensionLoaded(connection, "Excel", EXCEL_LOAD_NAME, EXCEL_STATUS_NAME);
+    await ensureDuckDbManagedExtensionLoaded(
+      connection,
+      getDuckDbManagedExtensionNameForFormat("excel"),
+      {
+        installIfMissing: options.installMissingExtension,
+        statusStream: options.statusStream,
+      },
+    );
     selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", source);
   }
 
@@ -495,16 +398,20 @@ export async function collectDataQuerySourceIntrospection(
 export async function inspectDataQueryExtensions(): Promise<{
   available: boolean;
   detail?: string;
+  runtimeVersion?: string;
   excel?: DuckDbExtensionProbe;
   sqlite?: DuckDbExtensionProbe;
 }> {
   let connection: DuckDBConnection | undefined;
   try {
     connection = await createDuckDbConnection();
+    const excel = await probeDuckDbManagedExtension(connection, "excel");
+    const sqlite = await probeDuckDbManagedExtension(connection, "sqlite");
     return {
       available: true,
-      excel: await probeDuckDbExtension(connection, EXCEL_LOAD_NAME, EXCEL_STATUS_NAME),
-      sqlite: await probeDuckDbExtension(connection, SQLITE_LOAD_NAME, SQLITE_STATUS_NAME),
+      excel,
+      runtimeVersion: excel.runtimeVersion,
+      sqlite,
     };
   } catch (error) {
     return {

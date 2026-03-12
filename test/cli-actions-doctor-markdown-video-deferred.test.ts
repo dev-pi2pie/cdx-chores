@@ -3,7 +3,8 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
-  actionDeferred,
+  actionDataDuckDbDoctor,
+  actionDataDuckDbExtensionInstall,
   actionDoctor,
   actionMdToDocx,
   actionVideoConvert,
@@ -34,6 +35,9 @@ describe("cli action modules: doctor", () => {
     expect(Object.hasOwn(payload.capabilities, "data.query.codex")).toBe(true);
     expect(payload.query).toBeDefined();
     expect(typeof payload.query.available).toBe("boolean");
+    if (payload.query.available) {
+      expect(typeof payload.query.runtimeVersion).toBe("string");
+    }
     expect(payload.query.formats).toHaveProperty("csv");
     expect(payload.query.formats).toHaveProperty("sqlite");
     expect(payload.query.formats.csv.kind).toBe("core");
@@ -66,6 +70,34 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("ready-to-draft=");
     expect(stdout.text).not.toContain("csv: detected support=");
     expect(stdout.text).not.toContain("csv: detected support=yes, loadability=yes, installability=unknown");
+  });
+
+  test("actionDataDuckDbDoctor emits human-readable DuckDB extension report", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+    await actionDataDuckDbDoctor(runtime);
+
+    expectNoStderr();
+    expect(stdout.text).toContain("cdx-chores data duckdb doctor");
+    expect(stdout.text).toContain("DuckDB runtime:");
+    expect(stdout.text).toContain("Managed extensions:");
+    expect(stdout.text).toContain("sqlite:");
+    expect(stdout.text).toContain("excel:");
+  });
+
+  test("actionDataDuckDbExtensionInstall requires an extension name unless --all-supported is used", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () => actionDataDuckDbExtensionInstall(runtime, {}),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Extension name is required unless --all-supported is used",
+      },
+    );
+
+    expectNoOutput();
   });
 
   test("actionDoctor reports an invalid codex override as unavailable", async () => {
@@ -102,23 +134,6 @@ describe("cli action modules: doctor", () => {
       expect(payload.queryCodex.detail).toContain(invalidOverride);
       expect(payload.capabilities["data.query.codex"]).toBe(false);
     });
-  });
-});
-
-describe("cli action modules: deferred", () => {
-  test("actionDeferred throws a deferred feature error", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () => actionDeferred(runtime, "pdf merge"),
-      {
-        code: "DEFERRED_FEATURE",
-        exitCode: 2,
-        messageIncludes: "pdf merge is not implemented",
-      },
-    );
-
-    expectNoOutput();
   });
 });
 

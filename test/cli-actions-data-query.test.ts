@@ -187,6 +187,30 @@ describe("cli action modules: data query failure modes", () => {
     });
   });
 
+  test("actionDataQuery rejects --install-missing-extension for built-in formats", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            installMissingExtension: true,
+            sql: "select * from file",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--install-missing-extension is only valid for extension-backed query formats",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+
   test("actionDataQuery requires source for SQLite inputs", async () => {
     if (!sqliteReady) {
       return;

@@ -1,10 +1,14 @@
-export { actionDeferred } from "./deferred";
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
 export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
 export type { DataPreviewOptions } from "./data-preview";
 export { actionDataParquetPreview } from "./data-parquet-preview";
 export type { DataParquetPreviewOptions } from "./data-parquet-preview";
+export { actionDataDuckDbDoctor, actionDataDuckDbExtensionInstall } from "./data-duckdb";
+export type {
+  DataDuckDbDoctorOptions,
+  DataDuckDbExtensionInstallOptions,
+} from "./data-duckdb";
 export { actionDataQuery } from "./data-query";
 export type { DataQueryOptions } from "./data-query";
 export { actionDataQueryCodex } from "./data-query-codex";

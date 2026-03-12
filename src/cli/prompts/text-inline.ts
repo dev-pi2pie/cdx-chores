@@ -12,12 +12,20 @@ import {
   type RawSessionKeypressInfo,
 } from "../tui";
 import type { PathPromptRuntimeConfig } from "./path-config";
+import {
+  deriveTemplateGhostSuffix,
+  resolveTemplateCompletionMatch,
+  type TemplateCompletionMatch,
+} from "./text-template-candidates";
 
 type ValidationFn = (value: string) => true | string | Promise<true | string>;
 
 export interface InlineTextPromptOptions {
   message: string;
+  helpLines?: string[];
+  ghostHintLabel?: string;
   ghostText: string;
+  completionKind?: "none" | "rename-template";
   runtimeConfig?: PathPromptRuntimeConfig;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
@@ -41,7 +49,7 @@ function buildPromptLine(options: {
   value: string;
   ghostText: string;
 }): { line: string; cursorBackCount: number } {
-  const showGhost = options.value.length === 0 && options.ghostText.length > 0;
+  const showGhost = options.ghostText.length > 0;
   const renderedGhost = showGhost ? dim(options.ghostText) : "";
   const line = `${options.message} ${options.value}${renderedGhost}`;
   return {
@@ -97,7 +105,10 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
       const advancedInline = options.promptImpls?.advancedInline ?? promptTextInlineGhost;
       return await advancedInline({
         message: options.message,
+        helpLines: options.helpLines,
+        ghostHintLabel: options.ghostHintLabel,
         ghostText: options.ghostText,
+        completionKind: options.completionKind,
         stdin: options.stdin!,
         stdout: options.stdout!,
         validate: options.validate,
@@ -110,6 +121,12 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
   }
 
   const simpleInput = options.promptImpls?.simpleInput ?? input;
+  if (options.helpLines && options.helpLines.length > 0 && options.stdout) {
+    options.stdout.write(`${options.helpLines.join("\n")}\n`);
+  }
+  if (options.ghostHintLabel && options.ghostText.length > 0 && options.stdout) {
+    options.stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
+  }
   return await simpleInput({
     message: options.message,
     validate: options.validate,
@@ -118,7 +135,10 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
 
 export async function promptTextInlineGhost(options: {
   message: string;
+  helpLines?: string[];
+  ghostHintLabel?: string;
   ghostText: string;
+  completionKind?: "none" | "rename-template";
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
   validate: ValidationFn;
@@ -129,8 +149,42 @@ export async function promptTextInlineGhost(options: {
 
   const stdout = options.stdout;
   let value = "";
+  let ghostText = "";
   let closed = false;
   let renderScheduled = false;
+  let templateCompletion: TemplateCompletionMatch | undefined;
+  let templateCycleState:
+    | {
+        index: number;
+        scopeKey: string;
+      }
+    | undefined;
+
+  const refreshGhostText = (): void => {
+    templateCompletion = undefined;
+    if (options.completionKind === "rename-template") {
+      templateCompletion = resolveTemplateCompletionMatch(value);
+      if (!templateCompletion) {
+        ghostText = "";
+        templateCycleState = undefined;
+        return;
+      }
+
+      if (templateCycleState?.scopeKey !== templateCompletion.scopeKey) {
+        templateCycleState = undefined;
+      }
+
+      const candidateIndex = templateCycleState?.index ?? 0;
+      const candidate = templateCompletion.candidates[candidateIndex];
+      ghostText =
+        typeof candidate === "string"
+          ? deriveTemplateGhostSuffix(templateCompletion.fragment, candidate)
+          : "";
+      return;
+    }
+
+    ghostText = value.length === 0 ? options.ghostText : "";
+  };
 
   const render = (): void => {
     if (closed) {
@@ -140,7 +194,7 @@ export async function promptTextInlineGhost(options: {
     const { line, cursorBackCount } = buildPromptLine({
       message: options.message,
       value,
-      ghostText: options.ghostText,
+      ghostText,
     });
     stdout.write(line);
     moveCursorLeft(stdout, cursorBackCount);
@@ -157,6 +211,14 @@ export async function promptTextInlineGhost(options: {
     });
   };
 
+  if (options.helpLines && options.helpLines.length > 0) {
+    stdout.write(`${options.helpLines.join("\n")}\n`);
+  }
+  if (options.ghostHintLabel && options.ghostText.length > 0) {
+    stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
+  }
+
+  refreshGhostText();
   scheduleRender();
 
   return await new Promise<string>((resolve, reject) => {
@@ -204,10 +266,48 @@ export async function promptTextInlineGhost(options: {
           return;
         }
 
+        const acceptGhostText = (): boolean => {
+          if (ghostText.length === 0) {
+            return false;
+          }
+          value += ghostText;
+          templateCycleState = undefined;
+          refreshGhostText();
+          scheduleRender();
+          return true;
+        };
+
+        const cycleTemplateCandidates = (direction: "up" | "down"): boolean => {
+          if (options.completionKind !== "rename-template") {
+            return false;
+          }
+          const completion = resolveTemplateCompletionMatch(value);
+          if (!completion || completion.candidates.length <= 1) {
+            return false;
+          }
+
+          const currentIndex = templateCycleState?.scopeKey === completion.scopeKey
+            ? templateCycleState.index
+            : 0;
+          const delta = direction === "down" ? 1 : -1;
+          const nextIndex =
+            (currentIndex + delta + completion.candidates.length) % completion.candidates.length;
+          templateCycleState = {
+            scopeKey: completion.scopeKey,
+            index: nextIndex,
+          };
+          refreshGhostText();
+          scheduleRender();
+          return true;
+        };
+
         if (parsed.kind === "arrow") {
-          if (parsed.direction === "right" && value.length === 0 && options.ghostText.length > 0) {
-            value = options.ghostText;
-            scheduleRender();
+          if (parsed.direction === "right" && acceptGhostText()) {
+            return;
+          }
+
+          if ((parsed.direction === "up" || parsed.direction === "down") &&
+            cycleTemplateCandidates(parsed.direction)) {
             return;
           }
 
@@ -237,6 +337,17 @@ export async function promptTextInlineGhost(options: {
 
         if (nextKey.ctrl && nextKey.name === "u") {
           value = "";
+          templateCycleState = undefined;
+          refreshGhostText();
+          scheduleRender();
+          return;
+        }
+
+        if (nextKey.name === "tab") {
+          if (acceptGhostText()) {
+            return;
+          }
+          beep(stdout);
           scheduleRender();
           return;
         }
@@ -248,12 +359,16 @@ export async function promptTextInlineGhost(options: {
             return;
           }
           value = value.slice(0, -1);
+          templateCycleState = undefined;
+          refreshGhostText();
           scheduleRender();
           return;
         }
 
         if (isPrintableInput(nextStr, nextKey)) {
           value += nextStr;
+          templateCycleState = undefined;
+          refreshGhostText();
           scheduleRender();
           return;
         }

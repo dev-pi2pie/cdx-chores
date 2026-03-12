@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-03-05
+modified-date: 2026-03-12
 status: completed
 agent: codex
 ---
@@ -237,6 +237,12 @@ Notes:
 - Example: `--pattern '{stem}-{serial_start_3}'` starts at `3`, while `--pattern '{stem}-{serial_start_3}' --serial-start 10` starts at `10`.
 - If the template does not include `{serial...}`, `--serial-order`, `--serial-start`, `--serial-width`, and `--serial-scope` have no effect.
 - Interactive mode asks serial questions only when the selected template includes `{serial...}`.
+- Interactive custom-template entry now supports trailing-token completion:
+  - suggestions begin only after typing `{`
+  - `Tab` and `Right Arrow` accept the current trailing token suggestion
+  - `Up` / `Down` browse sibling candidates within the current token family
+  - timestamp/date variants appear only after narrowing into the `timestamp` or `date` family
+  - completion applies only to the trailing token fragment currently being typed
 - Interactive serial width expects a digit count such as `2` for `01`, not `##`.
 - Interactive prefix input is optional; leaving it blank means no prefix.
 

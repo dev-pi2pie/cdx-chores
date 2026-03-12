@@ -224,4 +224,43 @@ describe("CLI data query command", () => {
       expect(result.stderr).toContain("cannot install or cache it");
     });
   });
+
+  test("rejects --install-missing-extension for built-in query formats", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("basic.csv"),
+      "--install-missing-extension",
+      "--sql",
+      "select * from file",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain(
+      "--install-missing-extension is only valid for extension-backed query formats",
+    );
+  });
+});
+
+describe("CLI DuckDB lifecycle commands", () => {
+  test("reports managed DuckDB extension state", () => {
+    const result = runCli(["data", "duckdb", "doctor"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("cdx-chores data duckdb doctor");
+    expect(result.stdout).toContain("DuckDB runtime:");
+    expect(result.stdout).toContain("Managed extensions:");
+    expect(result.stdout).toContain("sqlite:");
+    expect(result.stdout).toContain("excel:");
+  });
+
+  test("requires an extension name unless --all-supported is used", () => {
+    const result = runCli(["data", "duckdb", "extension", "install"]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain(
+      "Extension name is required unless --all-supported is used",
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import { inspectCodexEnvironment } from "../../adapters/codex/shared";
 import { getCliColors } from "../colors";
 import { inspectCommand } from "../deps";
+import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 import { inspectDataQueryExtensions } from "../duckdb/query";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
@@ -82,6 +83,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
         available: queryExtensions.available,
         detail: queryExtensions.detail,
         formats: queryFormats,
+        runtimeVersion: queryExtensions.runtimeVersion,
       },
       queryCodex,
       capabilities,
@@ -127,6 +129,13 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     return;
   }
 
+  if (queryExtensions.runtimeVersion) {
+    printLine(
+      runtime.stdout,
+      `${pc.dim("DuckDB runtime:")} ${pc.white(queryExtensions.runtimeVersion)}`,
+    );
+  }
+
   for (const [format, state] of Object.entries(queryFormats)) {
     if (state.kind === "core") {
       printLine(
@@ -148,6 +157,12 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     );
     if (state.detail) {
       printLine(runtime.stdout, `  ${pc.dim(state.detail)}`);
+    }
+    if (!state.loadability && state.installability === true && (format === "sqlite" || format === "excel")) {
+      printLine(
+        runtime.stdout,
+        `  ${pc.yellow(`Try: ${createDuckDbExtensionInstallCommand(format)}`)}`,
+      );
     }
   }
 
