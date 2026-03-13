@@ -91,14 +91,23 @@ jobs:
                   TAG_NAME: ${{ steps.tag.outputs.tag }}
               run: |
                   PRERELEASE_LABEL=""
-                  if [[ "$TAG_NAME" == *-rc* ]]; then
-                    PRERELEASE_LABEL="rc"
-                  elif [[ "$TAG_NAME" == *-canary* ]]; then
-                    PRERELEASE_LABEL="canary"
-                  fi
-
-                  if [[ "$TAG_NAME" == *-alpha* || "$TAG_NAME" == *-beta* ]]; then
-                    echo "npm publishing only allows canary* and rc* prerelease tags; alpha* and beta* are reserved for GitHub Packages." >&2
+                  if [[ "$TAG_NAME" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+-([0-9A-Za-z.-]+)(\+[0-9A-Za-z.-]+)?$ ]]; then
+                    PRERELEASE_CHANNEL="${BASH_REMATCH[1]%%.*}"
+                    case "$PRERELEASE_CHANNEL" in
+                      rc|canary)
+                        PRERELEASE_LABEL="$PRERELEASE_CHANNEL"
+                        ;;
+                      alpha|beta)
+                        echo "npm publishing only allows canary* and rc* prerelease tags; alpha* and beta* are reserved for GitHub Packages." >&2
+                        exit 1
+                        ;;
+                      *)
+                        echo "Unsupported npm prerelease channel '$PRERELEASE_CHANNEL'. Only canary* and rc* are allowed." >&2
+                        exit 1
+                        ;;
+                    esac
+                  elif [[ ! "$TAG_NAME" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(\+[0-9A-Za-z.-]+)?$ ]]; then
+                    echo "Unsupported tag format '$TAG_NAME'. Expected semver tags like v1.2.3, v1.2.3-rc.1, or v1.2.3-canary.1." >&2
                     exit 1
                   fi
 
@@ -118,8 +127,25 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v6
               with:
-                  node-version: 22.5.0
+                  node-version: 22.14.0
                   registry-url: https://registry.npmjs.org
+
+            - name: Verify package metadata
+              env:
+                  TAG_NAME: ${{ steps.tag.outputs.tag }}
+              run: |
+                  TAG_VERSION="${TAG_NAME#v}"
+                  PKG_NAME=$(node -p "require('./package.json').name")
+                  PKG_VERSION=$(node -p "require('./package.json').version")
+
+                  echo "Publishing package: $PKG_NAME"
+                  echo "Package version: $PKG_VERSION"
+                  echo "Tag version: $TAG_VERSION"
+
+                  if [[ "$PKG_VERSION" != "$TAG_VERSION" ]]; then
+                    echo "Tag '$TAG_NAME' does not match package.json version '$PKG_VERSION'." >&2
+                    exit 1
+                  fi
 
             - name: Update npm to latest # Ensuring NPM Trusted Publishing is Work
               run: npm install -g npm@latest
@@ -136,13 +162,6 @@ jobs:
               run: |
                   if [[ "${{ steps.prerelease.outputs.IS_PRERELEASE }}" == "true" ]]; then
                     npm publish --registry https://registry.npmjs.org --access public --provenance --tag next
-                    PKG_NAME=$(node -p "require('./package.json').name")
-                    PKG_VERSION=$(node -p "require('./package.json').version")
-                    if [[ -n "${NODE_AUTH_TOKEN}" ]]; then
-                      npm dist-tag add "$PKG_NAME@$PKG_VERSION" "${{ steps.prerelease.outputs.PRERELEASE_LABEL }}" --registry https://registry.npmjs.org
-                    else
-                      echo "NODE_AUTH_TOKEN unset; skipping dist-tag add"
-                    fi
                   else
                     npm publish --registry https://registry.npmjs.org --access public --provenance
                   fi
