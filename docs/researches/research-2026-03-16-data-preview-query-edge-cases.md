@@ -1,13 +1,17 @@
 ---
 title: "Data preview and query edge cases from private issue scenarios"
 created-date: 2026-03-16
-status: completed
+modified-date: 2026-03-16
+status: draft
 agent: codex
 ---
 
 ## Goal
 
 Evaluate three private issue scenarios and determine whether the current `data preview` and `data query` contracts are failing because of bugs, intentionally narrow scope, or missing input-shaping options.
+
+This document is exploratory research only.
+It should not be treated as shipped behavior or guide-level usage documentation until a related plan is accepted and implementation lands.
 
 ## Key Findings
 
@@ -177,12 +181,82 @@ Why:
 - improves `formal-guide` and `Codex Assistant` at the same time
 - avoids teaching Codex to compensate for a broken source contract
 
+### Recommendation E. Treat source shaping, Codex shape assistance, and SQL drafting as separate LEGO layers
+
+Recommended model:
+
+- Layer 1: deterministic source shaping
+  - explicit flags such as `--no-header` and `--range`
+  - must work without Codex
+- Layer 2: optional Codex shape assistance
+  - suggest likely headers for headerless CSV
+  - suggest likely table ranges for messy sheets
+  - suggestions stay advisory until confirmed
+- Layer 3: query authoring
+  - `manual`
+  - `formal-guide`
+  - `Codex Assistant` for SQL drafting
+
+Important seam:
+
+- schema and sample-row introspection must happen after the accepted shaping choices are applied
+
+That means introspection is not a separate user-facing layer, but it is a required internal boundary between shape resolution and SQL authoring.
+
+Why:
+
+- users can skip Codex and still shape sources explicitly
+- Codex can help with difficult files without becoming a hidden parser
+- SQL drafting gets clean schema context instead of raw-sheet noise
+
+### Recommendation F. Explain the future interactive flow with one stable diagram
+
+Suggested design sketch:
+
+```text
+raw input
+   |
+   v
+Layer 1: deterministic source shaping
+  - preview: --no-header
+  - query: --range
+   |
+   +------------------------------+
+   | accept as-is                 |
+   |                              v
+   |                      rebuild shaped source
+   |                              |
+   |                              v
+   |                      introspect schema + sample rows
+   |                              |
+   |                              v
+   |                      Layer 3: query authoring
+   |                        - manual
+   |                        - formal-guide
+   |                        - Codex SQL drafting
+   |
+   +-> Layer 2: optional Codex shape assistance
+         - suggest headers
+         - suggest ranges
+         - require confirmation
+                |
+                v
+         rebuild shaped source
+                |
+                v
+         introspect schema + sample rows
+                |
+                v
+         Layer 3: query authoring
+```
+
 ## Open Questions
 
 - Should headerless CSV support be added to `data query` at the same time for consistency, or can preview lead here?
 - Should Excel range support also be exposed in the interactive `data query` flow immediately, or should direct CLI land first?
 - After `--range` exists, do we want a follow-up `--header` override for Excel as a separate flag?
 - Should interactive mode show a short warning when the introspected schema looks suspiciously sparse or placeholder-heavy?
+- Should Codex shape assistance write back accepted shaping choices as concrete flags or only as transient interactive state?
 
 ## Documentation Note
 
