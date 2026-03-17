@@ -70,12 +70,67 @@ describe("codex document rename title extractor", () => {
     expect(result.evidence.detectedType).toBe("docx");
     expect(result.evidence.extension).toBe(".docx");
     expect(result.evidence.filename).toBe("metadata-rich.docx");
+    expect(result.evidence.titleCandidates[0]).toBe("Quarterly Operating Plan 2026");
+    expect(result.evidence.titleCandidates).not.toContain("Goal");
+    expect(result.evidence.authorCandidates).toEqual(["Fixture Generator"]);
+    expect(result.evidence.metadata?.title).toBe("Quarterly Operating Plan 2026");
+    expect(result.evidence.metadata?.extractor).toBe("mammoth+ooxml");
+    expect(result.evidence.warnings).toBeUndefined();
 
     const signalCount =
       result.evidence.titleCandidates.length +
       (result.evidence.headings?.length ?? 0) +
       (result.evidence.leadText ? 1 : 0);
     expect(signalCount > 0).toBe(true);
+  });
+
+  test("prefers meaningful lead text over a weak generic heading in docx fixtures", async () => {
+    const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "weak-heading.docx");
+
+    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+
+    expect(result.reason).toBeUndefined();
+    if (!result.evidence) {
+      throw new Error("Expected docx evidence");
+    }
+
+    expect(result.evidence.titleCandidates[0]).toBe("Customer Launch Checklist");
+    expect(result.evidence.titleCandidates[1]).toBe("Goal");
+    expect(result.evidence.warnings).toEqual(["docx_metadata_unavailable"]);
+  });
+
+  test("uses the first non-heading line when a docx fixture has no headings", async () => {
+    const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "no-heading.docx");
+
+    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+
+    expect(result.reason).toBeUndefined();
+    if (!result.evidence) {
+      throw new Error("Expected docx evidence");
+    }
+
+    expect(result.evidence.titleCandidates[0]).toBe("Q2 Hiring Plan");
+    expect(result.evidence.headings).toBeUndefined();
+    expect(result.evidence.warnings).toEqual(["docx_metadata_unavailable"]);
+  });
+
+  test("extracts usable signals from hyperlink-heavy and table-heavy docx fixtures", async () => {
+    const hyperlinkFixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "hyperlink-heavy.docx");
+    const tableFixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "table-heavy.docx");
+
+    const hyperlinkResult = await __testOnlyExtractDocumentTitleEvidenceForPath(hyperlinkFixturePath);
+    const tableResult = await __testOnlyExtractDocumentTitleEvidenceForPath(tableFixturePath);
+
+    expect(hyperlinkResult.reason).toBeUndefined();
+    expect(tableResult.reason).toBeUndefined();
+    if (!hyperlinkResult.evidence || !tableResult.evidence) {
+      throw new Error("Expected docx evidence");
+    }
+
+    expect(hyperlinkResult.evidence.titleCandidates[0]).toBe("Partner Reference Guide");
+    expect(hyperlinkResult.evidence.leadText).toContain("Collected links");
+    expect(tableResult.evidence.titleCandidates[0]).toBe("Roadmap Milestones");
+    expect(tableResult.evidence.leadText).toContain("Key delivery milestones");
   });
 
   test("builds unique prompt filenames for duplicate basenames", async () => {

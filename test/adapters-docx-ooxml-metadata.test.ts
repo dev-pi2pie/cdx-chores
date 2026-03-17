@@ -120,25 +120,29 @@ function buildStoredZip(entries: Array<[string, string | Buffer]>): Buffer {
 function buildDocxPackage(options: {
   appXml?: string;
   appXmlPath?: string;
+  appXmlRelationshipTarget?: string;
   coreXml?: string;
   coreXmlPath?: string;
+  coreXmlRelationshipTarget?: string;
   includeCoreRelationship?: boolean;
 }): Buffer {
   const entries: Array<[string, string | Buffer]> = [];
   const appXmlPath = options.appXmlPath ?? "docProps/app.xml";
   const coreXmlPath = options.coreXmlPath ?? "docProps/core.xml";
+  const appXmlRelationshipTarget = options.appXmlRelationshipTarget ?? appXmlPath;
+  const coreXmlRelationshipTarget = options.coreXmlRelationshipTarget ?? coreXmlPath;
   const relationships = [
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>',
   ];
 
   if (options.includeCoreRelationship !== false) {
     relationships.push(
-      `<Relationship Id="rId2" Type="unused-in-helper" Target="${coreXmlPath}"/>`,
+      `<Relationship Id="rId2" Type="unused-in-helper" Target="${coreXmlRelationshipTarget}"/>`,
     );
   }
   if (options.appXml) {
     relationships.push(
-      `<Relationship Id="rId3" Type="unused-in-helper" Target="${appXmlPath}"/>`,
+      `<Relationship Id="rId3" Type="unused-in-helper" Target="${appXmlRelationshipTarget}"/>`,
     );
   }
 
@@ -222,6 +226,37 @@ describe("docx OOXML metadata helper", () => {
           coreXml:
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Custom metadata path</dc:title><dc:creator>Fixture Generator</dc:creator></cp:coreProperties>',
           coreXmlPath: "metadata/core/custom-core.xml",
+        }),
+      );
+
+      const result = await readDocxCoreMetadata(docxPath);
+
+      expect("reason" in result).toBe(false);
+      if ("reason" in result) {
+        throw new Error("Expected metadata result");
+      }
+
+      expect(result.warnings).toEqual([]);
+      expect(result.metadata?.title).toBe("Custom metadata path");
+      expect(result.metadata?.creator).toBe("Fixture Generator");
+      expect(result.metadata?.application).toBe("LibreOffice Writer");
+    });
+  });
+
+  test("normalizes dot-segments in metadata relationship targets", async () => {
+    await withTempFixtureDir("docx-metadata", async (fixtureDir) => {
+      const docxPath = join(fixtureDir, "dot-segment-targets.docx");
+      await writeFile(
+        docxPath,
+        buildDocxPackage({
+          appXml:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>LibreOffice Writer</Application></Properties>',
+          appXmlPath: "metadata/extended/app-props.xml",
+          appXmlRelationshipTarget: "./metadata/extended/../extended/app-props.xml",
+          coreXml:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Custom metadata path</dc:title><dc:creator>Fixture Generator</dc:creator></cp:coreProperties>',
+          coreXmlPath: "metadata/core/custom-core.xml",
+          coreXmlRelationshipTarget: "./metadata/core/../core/custom-core.xml",
         }),
       );
 

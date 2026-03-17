@@ -6,6 +6,13 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const defaultOutputDir = join(repoRoot, "test", "fixtures", "docs");
 const FIXTURE_TIMESTAMP = new Date("2026-03-17T00:00:00.000Z");
+const GENERATED_DOCX_FIXTURE_NAMES = [
+  "hyperlink-heavy.docx",
+  "metadata-rich.docx",
+  "no-heading.docx",
+  "table-heavy.docx",
+  "weak-heading.docx",
+];
 
 function printUsage() {
   console.log(
@@ -168,31 +175,181 @@ function buildDocumentParagraphs(paragraphs) {
     .join("");
 }
 
-function buildMetadataRichDocxFiles() {
-  const title = "Quarterly Operating Plan 2026";
-  const creator = "Fixture Generator";
-  const subject = "DOCX metadata extraction fixture";
-  const description =
-    "Deterministic DOCX fixture with weak heading text and stronger metadata title.";
-  const created = "2026-03-17T00:00:00Z";
-  const modified = "2026-03-17T00:00:00Z";
+function buildStylesXml(styleIds = []) {
+  const uniqueStyleIds = [...new Set(styleIds)];
+  const styles = [
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>',
+  ];
 
-  const documentParagraphs = buildDocumentParagraphs([
-    { styleId: "Heading1", text: "Goal" },
-    { text: title },
-    {
-      text: "This fixture exists to validate OOXML core metadata extraction and rename title ranking.",
-    },
-    { text: "It intentionally combines a weak generic heading with a stronger metadata title." },
-  ]);
+  for (const styleId of uniqueStyleIds) {
+    if (styleId === "Heading1") {
+      styles.push(
+        '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/><w:pPr><w:outlineLvl w:val="0"/></w:pPr></w:style>',
+      );
+    } else if (styleId === "Heading2") {
+      styles.push(
+        '<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/><w:pPr><w:outlineLvl w:val="1"/></w:pPr></w:style>',
+      );
+    }
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${styles.join("")}</w:styles>`;
+}
+
+function buildCorePropertiesXml(metadata) {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const created = metadata.created ?? "2026-03-17T00:00:00Z";
+  const modified = metadata.modified ?? "2026-03-17T00:00:00Z";
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${metadata.title ? `<dc:title>${xmlEscape(metadata.title)}</dc:title>` : ""}${metadata.creator ? `<dc:creator>${xmlEscape(metadata.creator)}</dc:creator>` : ""}${metadata.subject ? `<dc:subject>${xmlEscape(metadata.subject)}</dc:subject>` : ""}${metadata.description ? `<dc:description>${xmlEscape(metadata.description)}</dc:description>` : ""}${metadata.lastModifiedBy ? `<cp:lastModifiedBy>${xmlEscape(metadata.lastModifiedBy)}</cp:lastModifiedBy>` : ""}<dcterms:created xsi:type="dcterms:W3CDTF">${created}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${modified}</dcterms:modified></cp:coreProperties>`;
+}
+
+function buildAppPropertiesXml(application = "Microsoft Office Word") {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>${xmlEscape(application)}</Application><AppVersion>16.0000</AppVersion></Properties>`;
+}
+
+function buildTableXml(rows) {
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/></w:tblPr>${rows
+    .map(
+      (row) =>
+        `<w:tr>${row
+          .map(
+            (cell) =>
+              `<w:tc><w:p><w:r><w:t xml:space="preserve">${xmlEscape(cell)}</w:t></w:r></w:p></w:tc>`,
+          )
+          .join("")}</w:tr>`,
+    )
+    .join("")}</w:tbl>`;
+}
+
+function buildHyperlinkParagraph(text, relationshipId) {
+  return `<w:p><w:hyperlink r:id="${xmlEscape(relationshipId)}"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r></w:hyperlink></w:p>`;
+}
+
+function buildDocxFiles(options) {
+  const coreXml = buildCorePropertiesXml(options.metadata);
+  const appXml = options.includeAppProperties === false ? undefined : buildAppPropertiesXml(options.application);
+  const paragraphStyles = options.paragraphs
+    .map((paragraph) => paragraph.styleId)
+    .filter(Boolean);
+  const relationshipEntries = [
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>',
+  ];
+  if (coreXml) {
+    relationshipEntries.push(
+      '<Relationship Id="rId2" Type="unused-in-runtime" Target="docProps/core.xml"/>',
+    );
+  }
+  if (appXml) {
+    relationshipEntries.push(
+      '<Relationship Id="rId3" Type="unused-in-runtime" Target="docProps/app.xml"/>',
+    );
+  }
+
+  const overrideEntries = [
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>',
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
+  ];
+  if (coreXml) {
+    overrideEntries.push(
+      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>',
+    );
+  }
+  if (appXml) {
+    overrideEntries.push(
+      '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>',
+    );
+  }
+  if (options.additionalOverrides) {
+    overrideEntries.push(...options.additionalOverrides);
+  }
 
   return {
-    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`,
-    "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`,
-    "docProps/app.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Microsoft Office Word</Application><AppVersion>16.0000</AppVersion></Properties>`,
-    "docProps/core.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlEscape(title)}</dc:title><dc:creator>${xmlEscape(creator)}</dc:creator><dc:subject>${xmlEscape(subject)}</dc:subject><dc:description>${xmlEscape(description)}</dc:description><cp:lastModifiedBy>${xmlEscape(creator)}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${created}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${modified}</dcterms:modified></cp:coreProperties>`,
-    "word/document.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${documentParagraphs}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`,
-    "word/styles.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/><w:pPr><w:outlineLvl w:val="0"/></w:pPr></w:style></w:styles>`,
+    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${overrideEntries.join("")}</Types>`,
+    "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relationshipEntries.join("")}</Relationships>`,
+    ...(appXml ? { "docProps/app.xml": appXml } : {}),
+    ...(coreXml ? { "docProps/core.xml": coreXml } : {}),
+    "word/document.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${buildDocumentParagraphs(options.paragraphs)}${options.extraBodyXml ?? ""}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`,
+    "word/styles.xml": buildStylesXml(paragraphStyles),
+    ...(options.additionalFiles ?? {}),
+  };
+}
+
+function buildMetadataRichDocxFiles() {
+  const title = "Quarterly Operating Plan 2026";
+  return buildDocxFiles({
+    metadata: {
+      title,
+      creator: "Fixture Generator",
+      subject: "DOCX metadata extraction fixture",
+      description: "Deterministic DOCX fixture with weak heading text and stronger metadata title.",
+      lastModifiedBy: "Fixture Generator",
+    },
+    paragraphs: [
+      { styleId: "Heading1", text: "Goal" },
+      { text: title },
+      { text: "This fixture exists to validate OOXML core metadata extraction and rename title ranking." },
+      { text: "It intentionally combines a weak generic heading with a stronger metadata title." },
+    ],
+  });
+}
+
+function buildWeakHeadingDocxFiles() {
+  return buildDocxFiles({
+    paragraphs: [
+      { styleId: "Heading1", text: "Goal" },
+      { text: "Customer Launch Checklist" },
+      { text: "Checklist for customer rollout, launch approvals, and communication handoff." },
+    ],
+  });
+}
+
+function buildNoHeadingDocxFiles() {
+  return buildDocxFiles({
+    paragraphs: [
+      { text: "Q2 Hiring Plan" },
+      { text: "Team staffing targets for engineering, design, and support over the next quarter." },
+    ],
+  });
+}
+
+function buildHyperlinkHeavyDocxFiles() {
+  return buildDocxFiles({
+    paragraphs: [
+      { styleId: "Heading1", text: "Partner Reference Guide" },
+      { text: "Collected links for pricing, onboarding, contracts, and support handoff." },
+    ],
+    extraBodyXml: `${buildHyperlinkParagraph("Pricing Portal", "rIdHyper1")}${buildHyperlinkParagraph("Onboarding Checklist", "rIdHyper2")}${buildHyperlinkParagraph("Support Escalation Guide", "rIdHyper3")}`,
+    additionalFiles: {
+      "word/_rels/document.xml.rels": '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdHyper1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/pricing" TargetMode="External"/><Relationship Id="rIdHyper2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/onboarding" TargetMode="External"/><Relationship Id="rIdHyper3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/support" TargetMode="External"/></Relationships>',
+    },
+  });
+}
+
+function buildTableHeavyDocxFiles() {
+  return buildDocxFiles({
+    paragraphs: [
+      { styleId: "Heading1", text: "Roadmap Milestones" },
+      { text: "Key delivery milestones grouped by stream and target month." },
+    ],
+    extraBodyXml: buildTableXml([
+      ["Workstream", "Milestone", "Target"],
+      ["Platform", "API stabilization", "April"],
+      ["Growth", "Lifecycle messaging", "May"],
+      ["Ops", "Runbook refresh", "June"],
+    ]),
+  });
+}
+
+function buildGeneratedDocxFixtures() {
+  return {
+    "hyperlink-heavy.docx": buildHyperlinkHeavyDocxFiles(),
+    "metadata-rich.docx": buildMetadataRichDocxFiles(),
+    "no-heading.docx": buildNoHeadingDocxFiles(),
+    "table-heavy.docx": buildTableHeavyDocxFiles(),
+    "weak-heading.docx": buildWeakHeadingDocxFiles(),
   };
 }
 
@@ -209,11 +366,16 @@ async function writeDocxFixture(outputDir, fileName, files) {
 
 async function seedFixtures(outputDir) {
   await ensureOutputDir(outputDir);
-  await writeDocxFixture(outputDir, "metadata-rich.docx", buildMetadataRichDocxFiles());
+  const fixtures = buildGeneratedDocxFixtures();
+  for (const [fileName, files] of Object.entries(fixtures)) {
+    await writeDocxFixture(outputDir, fileName, files);
+  }
 }
 
 async function cleanFixtures(outputDir) {
-  await rm(join(outputDir, "metadata-rich.docx"), { force: true });
+  for (const fileName of GENERATED_DOCX_FIXTURE_NAMES) {
+    await rm(join(outputDir, fileName), { force: true });
+  }
 }
 
 async function main() {

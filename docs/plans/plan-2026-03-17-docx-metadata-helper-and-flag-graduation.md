@@ -154,31 +154,46 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 ### Phase 4: DOCX ranking and evidence integration
 
-- [ ] Modularize `src/adapters/docx/ooxml-metadata.ts` into a small multi-file pattern that separates:
+- [x] Modularize `src/adapters/docx/ooxml-metadata.ts` into a small multi-file pattern that separates:
   - bounded OOXML package reading
   - package-part discovery
   - metadata parsing/public helper shaping
-- [ ] Keep the modularization narrow and local to `src/adapters/docx/`; do not introduce a broad OOXML framework
-- [ ] Merge metadata output into `src/adapters/codex/document-rename-titles.ts`
-- [ ] Rank metadata title above weak generic headings when appropriate
-- [ ] Add generic-heading down-rank / skip heuristics
-- [ ] Keep fallback-safe behavior for weak and broken files
-- [ ] Refine warnings so metadata-missing and lead-text-missing states are explicit
-- [ ] Add integration tests asserting ordered `titleCandidates` for representative DOCX fixtures
+- [x] Keep the modularization narrow and local to `src/adapters/docx/`; do not introduce a broad OOXML framework
+- [x] Merge metadata output into `src/adapters/codex/document-rename-titles.ts`
+- [x] Rank metadata title above weak generic headings when appropriate
+- [x] Add generic-heading down-rank / skip heuristics
+- [x] Keep fallback-safe behavior for weak and broken files
+- [x] Refine warnings so metadata-missing and lead-text-missing states are explicit
+- [x] Add integration tests asserting ordered `titleCandidates` for representative DOCX fixtures
 
 #### Phase deliverable
 
-- [ ] DOCX rename evidence quality is materially stronger than the current heading-plus-first-line heuristic, with the underlying DOCX metadata helper kept readable through a small modular split
+- [x] DOCX rename evidence quality is materially stronger than the current heading-plus-first-line heuristic, with the underlying DOCX metadata helper kept readable through a small modular split
 
 ### Phase 5: Fixture expansion and validation
 
-- [ ] Add weak-heading DOCX fixture
-- [ ] Add no-heading DOCX fixture
-- [ ] Add hyperlink-heavy DOCX fixture
-- [ ] Add table-heavy DOCX fixture
+- [x] Add weak-heading DOCX fixture
+- [x] Add no-heading DOCX fixture
+- [x] Add hyperlink-heavy DOCX fixture
+- [x] Add table-heavy DOCX fixture
+- [ ] If useful, add generated metadata variants that simulate alternate editor application labels, but do not count them as true alternate-editor exports
 - [ ] Add at least one alternate-editor exported DOCX fixture if licensing and reproducibility are acceptable
-- [ ] Document which fixtures are deterministic generator outputs versus externally authored validation samples
+- [ ] Verify the alternate-editor exported fixture is truly externally authored, not only generator-authored metadata
+- [x] Document which fixtures are deterministic generator outputs versus externally authored validation samples
+- [ ] Define a small real-world DOCX validation pack with named categories:
+  - Word-authored
+  - alternate-editor exported
+  - metadata-rich
+  - weak-heading
+  - hyperlink-heavy
+  - table-heavy
 - [ ] Run targeted manual validation against a small real-world sample pack outside the synthetic fixtures
+- [ ] Record manual validation outcomes per sample:
+  - top-ranked title candidate
+  - whether metadata or body evidence won
+  - warning set
+  - whether fallback behavior was still acceptable
+- [ ] Decide whether the current deterministic fixture set plus existing Word-authored sample is sufficient for pre-graduation confidence if alternate-editor coverage remains unavailable
 
 #### Phase deliverable
 
@@ -212,9 +227,9 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 ### Build and automated checks
 
-- [ ] `bun run build`
+- [x] `bun run build`
 - [ ] `bun test`
-- [ ] targeted DOCX extractor and rename tests for metadata-rich and weak-signal fixtures
+- [x] targeted DOCX extractor and rename tests for metadata-rich and weak-signal fixtures
 - [ ] confirm the DOCX metadata helper path uses no runtime schema fetch
 
 ### Manual checks
