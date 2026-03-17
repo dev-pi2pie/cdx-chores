@@ -2,7 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFile, rm, writeFile } from "node:fs/promises";
 
-import { actionCsvToJson, actionJsonToCsv } from "../src/cli/actions";
+import {
+  actionCsvToJson,
+  actionCsvToTsv,
+  actionJsonToCsv,
+  actionJsonToTsv,
+  actionTsvToCsv,
+  actionTsvToJson,
+} from "../src/cli/actions";
+import { parseDelimited } from "../src/utils/delimited";
 import { createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 
@@ -57,6 +65,109 @@ describe("cli action modules: data", () => {
         { name: "Ada", age: "36" },
         { name: "Bob", age: "28" },
       ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionJsonToTsv writes TSV and reports relative output path", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.json");
+      await writeFile(inputPath, '[{"name":"Ada","age":36}]\n', "utf8");
+
+      await actionJsonToTsv(runtime, {
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+      });
+
+      const outputPath = inputPath.replace(/\.json$/i, ".tsv");
+      const tsv = await readFile(outputPath, "utf8");
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Wrote TSV: ${toRepoRelativePath(outputPath)}`);
+      expect(stdout.text).toContain("Rows: 1");
+      expect(tsv).toBe("name\tage\nAda\t36\n");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionTsvToJson writes pretty JSON when requested", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.tsv");
+      const outputPath = join(fixtureDir, "custom.json");
+      await writeFile(inputPath, "name\tage\nAda\t36\nBob\t28\n", "utf8");
+
+      await actionTsvToJson(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        pretty: true,
+        overwrite: true,
+      });
+
+      const json = await readFile(outputPath, "utf8");
+      expectNoStderr();
+      expect(stdout.text).toContain(`Wrote JSON: ${toRepoRelativePath(outputPath)}`);
+      expect(stdout.text).toContain("Rows: 2");
+      expect(json).toContain("\n  {");
+      expect(JSON.parse(json)).toEqual([
+        { name: "Ada", age: "36" },
+        { name: "Bob", age: "28" },
+      ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionCsvToTsv preserves row shape for blank headers, duplicate headers, and wider rows", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.csv");
+      const rawCsv = 'name,,name\n"Ada","36","admin","extra"\n';
+      await writeFile(inputPath, rawCsv, "utf8");
+
+      await actionCsvToTsv(runtime, {
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+      });
+
+      const outputPath = inputPath.replace(/\.csv$/i, ".tsv");
+      const rawTsv = await readFile(outputPath, "utf8");
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Wrote TSV: ${toRepoRelativePath(outputPath)}`);
+      expect(stdout.text).toContain("Rows: 1");
+      expect(parseDelimited(rawTsv, "tsv")).toEqual(parseDelimited(rawCsv, "csv"));
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionTsvToCsv preserves quoted tabs and embedded newlines through the row-array path", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    try {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inputPath = join(fixtureDir, "rows.tsv");
+      const rawTsv = 'name\tnote\n"Ada"\t"line 1\nline 2\twith tab"\n';
+      await writeFile(inputPath, rawTsv, "utf8");
+
+      await actionTsvToCsv(runtime, {
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+      });
+
+      const outputPath = inputPath.replace(/\.tsv$/i, ".csv");
+      const rawCsv = await readFile(outputPath, "utf8");
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(stdout.text).toContain("Rows: 1");
+      expect(parseDelimited(rawCsv, "csv")).toEqual(parseDelimited(rawTsv, "tsv"));
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

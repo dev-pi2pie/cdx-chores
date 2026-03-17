@@ -1,7 +1,7 @@
 ---
 title: "Interactive Path Prompt UX Guide"
 created-date: 2026-02-25
-modified-date: 2026-03-02
+modified-date: 2026-03-18
 status: completed
 agent: codex
 ---
@@ -55,7 +55,7 @@ The path prompt is input-first (Fish-style), not list-first.
 
 ## Optional Output Path UX (Default vs Custom)
 
-For commands with derived output defaults (for example `data json-to-csv`, `data csv-to-json`, `md to-docx`, `video gif`), interactive mode now uses an explicit choice:
+For commands with derived output defaults (for example `data -> convert`, `md to-docx`, `video gif`), interactive mode now uses an explicit choice:
 
 - `Use default output`
 - `Custom output path`

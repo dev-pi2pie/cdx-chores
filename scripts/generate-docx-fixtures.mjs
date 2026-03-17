@@ -273,7 +273,7 @@ function buildDocxFiles(options) {
     ...(coreXml ? { "docProps/core.xml": coreXml } : {}),
     "word/document.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${buildDocumentParagraphs(options.paragraphs)}${options.extraBodyXml ?? ""}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`,
     "word/styles.xml": buildStylesXml(paragraphStyles),
-    ...(options.additionalFiles ?? {}),
+    ...options.additionalFiles,
   };
 }
 

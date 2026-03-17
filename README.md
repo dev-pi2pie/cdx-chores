@@ -46,7 +46,7 @@ Runtime requirement:
 | Command group | Important subcommands | Purpose | Capability notes |
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
-| `data` | `json-to-csv`, `csv-to-json`, `preview`, `parquet preview`, `query`, `query codex`, `duckdb doctor`, `duckdb extension install` | Data conversion, preview, DuckDB-backed SQL query, and Codex SQL drafting | `query` support depends on DuckDB runtime availability; `sqlite` and `excel` also depend on DuckDB extensions |
+| `data` | `json-to-csv`, `json-to-tsv`, `csv-to-json`, `csv-to-tsv`, `tsv-to-csv`, `tsv-to-json`, `preview`, `parquet preview`, `query`, `query codex`, `duckdb doctor`, `duckdb extension install` | Data conversion, preview, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `query` support depends on DuckDB runtime availability |
 | `md` | `to-docx`, `frontmatter-to-json` | Markdown conversion and metadata extraction | `to-docx` requires `pandoc` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
@@ -96,16 +96,47 @@ JSON to CSV:
 cdx-chores data json-to-csv -i ./input.json -o ./output.csv
 ```
 
+JSON to TSV:
+
+```bash
+cdx-chores data json-to-tsv -i ./input.json -o ./output.tsv
+```
+
 CSV to JSON:
 
 ```bash
 cdx-chores data csv-to-json -i ./input.csv -o ./output.json --pretty
 ```
 
-Preview CSV or JSON as a bounded table:
+CSV to TSV:
+
+```bash
+cdx-chores data csv-to-tsv -i ./input.csv -o ./output.tsv
+```
+
+TSV to CSV:
+
+```bash
+cdx-chores data tsv-to-csv -i ./input.tsv -o ./output.csv
+```
+
+TSV to JSON:
+
+```bash
+cdx-chores data tsv-to-json -i ./input.tsv -o ./output.json --pretty
+```
+
+Preview CSV, TSV, or JSON as a bounded table:
 
 ```bash
 cdx-chores data preview ./input.csv --rows 20
+cdx-chores data preview ./input.tsv --rows 20
+```
+
+Interactive lightweight conversion groups these formats under:
+
+```text
+data -> convert
 ```
 
 Preview Parquet through DuckDB:

@@ -13,8 +13,22 @@ export { actionDataQuery } from "./data-query";
 export type { DataQueryOptions } from "./data-query";
 export { actionDataQueryCodex } from "./data-query-codex";
 export type { DataQueryCodexOptions } from "./data-query-codex";
-export { actionCsvToJson, actionJsonToCsv } from "./data";
-export type { CsvToJsonOptions, JsonToCsvOptions } from "./data";
+export {
+  actionCsvToJson,
+  actionCsvToTsv,
+  actionJsonToCsv,
+  actionJsonToTsv,
+  actionTsvToCsv,
+  actionTsvToJson,
+} from "./data";
+export type {
+  CsvToJsonOptions,
+  CsvToTsvOptions,
+  JsonToCsvOptions,
+  JsonToTsvOptions,
+  TsvToCsvOptions,
+  TsvToJsonOptions,
+} from "./data";
 export { actionMdFrontmatterToJson, actionMdToDocx } from "./markdown";
 export type { MdFrontmatterToJsonOptions, MdToDocxOptions } from "./markdown";
 export {

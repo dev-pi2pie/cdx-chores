@@ -58,15 +58,15 @@ function parseArgs(argv) {
   return { command, largeRows };
 }
 
-function escapeCsvCell(value) {
+function escapeDelimitedCell(value, delimiter) {
   const text = String(value ?? "");
-  if (!/[",\n]/.test(text)) {
+  if (!(text.includes('"') || text.includes("\n") || text.includes(delimiter))) {
     return text;
   }
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function rowsToCsv(rows) {
+function rowsToDelimited(rows, delimiter) {
   if (rows.length === 0) {
     return "";
   }
@@ -84,12 +84,20 @@ function rowsToCsv(rows) {
   }
 
   const lines = [
-    columns.map((column) => escapeCsvCell(column)).join(","),
+    columns.map((column) => escapeDelimitedCell(column, delimiter)).join(delimiter),
     ...rows.map((row) =>
-      columns.map((column) => escapeCsvCell(row[column] ?? "")).join(","),
+      columns.map((column) => escapeDelimitedCell(row[column] ?? "", delimiter)).join(delimiter),
     ),
   ];
   return `${lines.join("\n")}\n`;
+}
+
+function rowsToCsv(rows) {
+  return rowsToDelimited(rows, ",");
+}
+
+function rowsToTsv(rows) {
+  return rowsToDelimited(rows, "\t");
 }
 
 async function ensureOutputDir() {
@@ -113,11 +121,14 @@ async function seedFixtures(largeRows) {
 
   await writeFixture("basic.json", `${JSON.stringify(basicRows, null, 2)}\n`);
   await writeFixture("basic.csv", rowsToCsv(basicRows));
+  await writeFixture("basic.tsv", rowsToTsv(basicRows));
   await writeFixture("wide.json", `${JSON.stringify(wideRows, null, 2)}\n`);
   await writeFixture("wide.csv", rowsToCsv(wideRows));
+  await writeFixture("wide.tsv", rowsToTsv(wideRows));
   await writeFixture("scalar-array.json", `${JSON.stringify(["Ada", 36, true, { nested: "value" }], null, 2)}\n`);
   await writeFixture("large.json", `${JSON.stringify(largeData, null, 2)}\n`);
   await writeFixture("large.csv", rowsToCsv(largeData));
+  await writeFixture("large.tsv", rowsToTsv(largeData));
 }
 
 async function main() {

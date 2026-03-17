@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { getDisplayWidth } from "../../src/cli/text-display-width";
 import { runDataPreview, withDataPreviewFixture } from "./helpers";
 
 describe("cli action modules: data preview", () => {
@@ -13,6 +14,25 @@ describe("cli action modules: data preview", () => {
         expectNoStderr();
         expect(stdout.text).toContain(`Input: ${context.input}`);
         expect(stdout.text).toContain("Format: csv");
+        expect(stdout.text).toContain("Rows: 2");
+        expect(stdout.text).toContain("Window: 1-2 of 2");
+        expect(stdout.text).toContain("Visible columns: name, age");
+        expect(stdout.text).toContain("name | age");
+        expect(stdout.text).toContain("Ada  | 36 ");
+      },
+    });
+  });
+
+  test("actionDataPreview renders TSV summary and table output", async () => {
+    await withDataPreviewFixture({
+      content: "name\tage\nAda\t36\nBob\t28\n",
+      fileName: "rows.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        expect(stdout.text).toContain(`Input: ${context.input}`);
+        expect(stdout.text).toContain("Format: tsv");
         expect(stdout.text).toContain("Rows: 2");
         expect(stdout.text).toContain("Window: 1-2 of 2");
         expect(stdout.text).toContain("Visible columns: name, age");
@@ -182,6 +202,39 @@ describe("cli action modules: data preview", () => {
         expect(stdout.text).toContain("Rows: 1");
         expect(stdout.text).toContain("C:\\logs\\app");
         expect(stdout.text).not.toContain("C:\\tmp\\else");
+      },
+    });
+  });
+
+  test("actionDataPreview keeps mixed English and CJK columns aligned by display width", async () => {
+    await withDataPreviewFixture({
+      content:
+        "Word\tMeaning (Chinese)\nstructure\t結構；架構\nhierarchy\t階層；等級制度\n",
+      fileName: "mixed-width.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        const tableLines = stdout.text
+          .split("\n")
+          .filter((line) => line.includes("|") || line.includes("+-"));
+        expect(tableLines).toHaveLength(4);
+        const widths = tableLines.map((line) => getDisplayWidth(line));
+        expect(new Set(widths).size).toBe(1);
+      },
+    });
+  });
+
+  test("actionDataPreview truncates emoji-heavy columns by display width", async () => {
+    await withDataPreviewFixture({
+      content: `name\temoji\nAda\t${"😀".repeat(20)}\n`,
+      fileName: "emoji-width.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        expect(stdout.text).toContain("...");
+        expect(stdout.text).not.toContain("😀".repeat(20));
       },
     });
   });

@@ -4,15 +4,15 @@
 
 Current v1 boundary:
 
-- input formats: `.csv`, `.json`
+- input formats: `.csv`, `.tsv`, `.json`
 - output: terminal table only
-- interaction model: non-interactive
+- parser path: lightweight in-memory `papaparse`-backed delimited parsing for `.csv` / `.tsv`
 - DuckDB is not used in this v1 path
 - SQL, Parquet, and NDJSON are out of scope for this path
 
 The `data` command group now has two preview lanes:
 
-- `data preview` for lightweight `.csv` and `.json`
+- `data preview` for lightweight `.csv`, `.tsv`, and `.json`
 - `data parquet preview` for DuckDB-backed `.parquet`
 
 Follow-up improvements now available:
@@ -35,6 +35,7 @@ Examples:
 
 ```bash
 cdx-chores data preview ./examples/playground/tabular-preview/basic.csv
+cdx-chores data preview ./examples/playground/tabular-preview/basic.tsv
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json
 cdx-chores data preview ./examples/playground/tabular-preview/wide.csv --columns id,status,message
 cdx-chores data preview ./examples/playground/tabular-preview/large.json --rows 20 --offset 120
@@ -117,9 +118,9 @@ The v1 renderer is intentionally conservative:
 - scalar top-level value => one-row `value` table
 - heterogeneous object keys are shown in first-seen order across the row set
 
-### CSV normalization rules
+### Delimited-text normalization rules
 
-- first row is treated as the header row
+- both `.csv` and `.tsv` treat the first row as the header row
 - blank header cells become generated names such as `column_2`
 - duplicate header names are deduplicated deterministically
 - rows wider than the header extend the column set with generated column names
@@ -140,7 +141,7 @@ node scripts/generate-parquet-preview-fixtures.mjs reset
 
 Generated files live under:
 
-- `examples/playground/tabular-preview/` for CSV/JSON
+- `examples/playground/tabular-preview/` for CSV/TSV/JSON
 - `examples/playground/parquet-preview/` for Parquet
 
 The fixture sets stay aligned across both destinations:
