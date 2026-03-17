@@ -27,6 +27,15 @@ Make DOCX support under `rename --codex-docs` reliable enough to enable by defau
   - warnings always include `docx_metadata_unavailable`
   - no OOXML core-properties parsing is present
   - no stronger ranking heuristic is present beyond simple candidate ordering
+- The OOXML relationship/schema strings are useful as historical/specification background, but they do not need to participate in runtime matching for the current DOCX helper scope:
+  - direct fetchability of `schemas.openxmlformats.org` endpoints is not dependable
+  - runtime logic should not require dereferencing those URLs over the network
+  - the current narrower implementation can avoid relationship-type URI matching entirely by using `[Content_Types].xml` plus root relationship targets from `/_rels/.rels`
+- The package-part locations used by DOCX metadata handling are ZIP-internal OPC part names, not network resources and not host filesystem paths:
+  - `/docProps/core.xml` means the package-root core-properties part inside the `.docx` ZIP container
+  - `/docProps/app.xml` means the package-root extended-properties part inside the `.docx` ZIP container
+  - `/_rels/.rels` is the package-root relationships part that can point to those metadata parts
+  - these leading-slash paths use OPC package-root notation and are resolved against the document package, not against the local machine or the web
 - Current tests prove the gate behavior and one heading-rich happy path, but they do not yet prove broad DOCX reliability across mixed real-world inputs.
 
 ## Implications or Recommendations
@@ -121,8 +130,11 @@ Make DOCX support under `rename --codex-docs` reliable enough to enable by defau
 
 #### ZIP/XML Implementation Notes
 
-- Prefer relationship resolution through `/_rels/.rels` rather than assuming `docProps/core.xml` is always the only valid location.
+- Prefer package-part discovery through `[Content_Types].xml`, with `/_rels/.rels` used as root-package guidance when selecting metadata targets.
 - Keep ZIP reading entry-based and bounded; do not inflate the full archive into memory unless needed.
+- Keep OOXML relationship-type URI strings out of runtime matching code for this helper scope where practical.
+- Do not add a schema download/cache/update path for this metadata helper scope.
+- Do not vendor broad OOXML schema bundles unless formal schema validation becomes a separate requirement later.
 - Treat malformed ZIP, missing metadata parts, and XML parse failures as non-fatal metadata misses when body extraction still works.
 - Reserve `docx_extract_error` for cases where the document cannot be meaningfully processed at all.
 
@@ -234,6 +246,23 @@ Reason:
 - it provides a reproducible baseline for OOXML metadata work
 - it does not replace the need for broader real-world validation coverage
 
+### 5. Keep OOXML identifier handling offline-safe and lightweight
+
+Recommendation:
+
+- keep OOXML relationship/schema URLs as research/spec background only, not as active runtime matching inputs for the current helper implementation
+- remove raw full unfetchable OOXML relationship-type URL literals from the runtime helper code path
+- discover metadata parts via `[Content_Types].xml` plus root relationship targets from `/_rels/.rels`
+- do not fetch those URLs at runtime
+- do not introduce a cache-refresh flow or vendored schema bundle for the current DOCX metadata helper scope
+- rely on bounded XML parsing plus fixture validation instead
+
+Reason:
+
+- the `schemas.openxmlformats.org` identifiers are not dependable as dereferenceable runtime resources
+- the current DOCX helper only needs targeted metadata-part discovery and metadata parsing, not formal XSD validation
+- adding cache/update flows or schema bundles now would expand scope and maintenance cost without improving the immediate rename-quality goal
+
 ## Next Step Recommendation
 
 - Create a dedicated implementation plan for DOCX metadata enrichment and flag graduation.
@@ -250,3 +279,11 @@ Reason:
 
 - `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/research-2026-03-17-package-upgrade-risk-inquirer-mammoth.md`
+
+## References
+
+[^opc-loc]: Library of Congress, "Open Packaging Conventions (Office Open XML), ISO 29500-2:2008-2012." Describes OPC as a ZIP-based container of parts and relationships, including `[Content_Types].xml` and the root `/_rels/.rels` relationship part. https://www.loc.gov/preservation/digital/formats/fdd/fdd000363.shtml
+
+[^msdn-docprops]: Microsoft Learn archive, "Managing Metadata with Document Information Panels." Shows that the root `.rels` file points standard document properties to `docProps/core.xml` and extended properties to `docProps/app.xml`. https://learn.microsoft.com/en-us/archive/msdn-magazine/2008/april/office-dev-managing-metadata-with-document-information-panels
+
+[^iso-opc]: ISO/IEC 29500-2 public materials for Open Packaging Conventions. Useful for the formal package-part and relationship model behind paths like `/docProps/core.xml`. https://standards.iso.org/ittf/PubliclyAvailableStandards/c061796_ISO_IEC_29500-2_2012.zip

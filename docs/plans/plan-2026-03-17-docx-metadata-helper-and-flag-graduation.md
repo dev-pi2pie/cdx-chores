@@ -46,6 +46,7 @@ Current implementation baseline:
 ### In scope
 
 - shared OOXML metadata helper for DOCX package inspection
+- offline-safe OOXML relationship/schema identifier handling
 - DOCX core metadata extraction from OOXML package parts
 - improved DOCX title ranking in rename evidence extraction
 - deterministic and real-world DOCX fixture expansion
@@ -60,6 +61,9 @@ Current implementation baseline:
 - OCR, scanned document support, or image-based text recovery
 - replacing `mammoth` as the primary DOCX body-content extractor
 - broad general-purpose OOXML document modeling outside the fields needed for rename title evidence
+- runtime fetching of OOXML schema/relationship URLs
+- schema cache-refresh flows for OOXML reference assets
+- vendoring broad ECMA-376 schema bundles for formal XSD validation
 
 ## Design Direction
 
@@ -75,12 +79,22 @@ Continue using `mammoth` to extract:
 Add a repository-local helper under `src/adapters/docx/` that:
 
 - opens the DOCX ZIP package
-- resolves package relationships from `/_rels/.rels`
+- parses package structure from `[Content_Types].xml`
+- uses `/_rels/.rels` as root-package guidance without depending on OOXML relationship-type URI matching
 - reads `/docProps/core.xml`
 - optionally reads `/docProps/app.xml` when useful
 - returns a small typed metadata payload and warnings
 
-### 3. Keep title ranking in the rename adapter
+### 3. Keep OOXML identifier handling local and offline-safe
+
+Keep DOCX metadata discovery free of OOXML relationship-type URI matching in runtime code:
+
+- use package content types plus root relationship targets instead
+- remove raw full OOXML relationship-type URI literals from runtime code
+- do not fetch them over the network at runtime
+- do not add schema cache/update behavior in the current scope
+
+### 4. Keep title ranking in the rename adapter
 
 The helper should expose metadata, not rename policy.
 
@@ -101,10 +115,11 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 ### Phase 2: OOXML metadata helper
 
-- [ ] Add a shared DOCX OOXML helper under `src/adapters/docx/`
-- [ ] Read and parse `/_rels/.rels` for core-properties relationship resolution
-- [ ] Read and parse `/docProps/core.xml`
-- [ ] Return typed metadata fields:
+- [x] Add a shared DOCX OOXML helper under `src/adapters/docx/`
+- [x] Read and parse `[Content_Types].xml` for metadata-part discovery
+- [x] Read and parse `/_rels/.rels` for root-package relationship guidance
+- [x] Read and parse `/docProps/core.xml`
+- [x] Return typed metadata fields:
   - `title`
   - `creator`
   - `subject`
@@ -112,8 +127,8 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
   - `lastModifiedBy`
   - `created`
   - `modified`
-- [ ] Decide whether `/docProps/app.xml` should be part of the first implementation or a follow-up
-- [ ] Add unit tests for:
+- [x] Decide whether `/docProps/app.xml` should be part of the first implementation or a follow-up
+- [x] Add unit tests for:
   - valid core properties
   - missing core properties
   - malformed XML
@@ -121,10 +136,29 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 #### Phase deliverable
 
-- [ ] DOCX metadata can be extracted independently from rename-specific logic
+- [x] DOCX metadata can be extracted independently from rename-specific logic
 
-### Phase 3: DOCX ranking and evidence integration
+### Phase 3: Offline-safe OOXML identifier handling
 
+- [x] Remove OOXML relationship-type URI matching from the runtime helper implementation
+- [x] Keep DOCX metadata discovery based on package content types plus root relationship targets instead
+- [x] Confirm the helper does not dereference `schemas.openxmlformats.org` URLs at runtime
+- [x] Remove raw full unfetchable OOXML relationship-type URL literals from `src/`
+- [x] Document that those identifier strings remain research-only/spec background, not active runtime matching inputs
+- [x] Add a regression test that fails if DOCX metadata reading attempts a runtime fetch for OOXML identifiers
+- [x] Keep schema bundle download/cache/update behavior out of the current DOCX metadata helper scope
+
+#### Phase deliverable
+
+- [x] DOCX metadata discovery is offline-safe and does not depend on remote schema availability
+
+### Phase 4: DOCX ranking and evidence integration
+
+- [ ] Modularize `src/adapters/docx/ooxml-metadata.ts` into a small multi-file pattern that separates:
+  - bounded OOXML package reading
+  - package-part discovery
+  - metadata parsing/public helper shaping
+- [ ] Keep the modularization narrow and local to `src/adapters/docx/`; do not introduce a broad OOXML framework
 - [ ] Merge metadata output into `src/adapters/codex/document-rename-titles.ts`
 - [ ] Rank metadata title above weak generic headings when appropriate
 - [ ] Add generic-heading down-rank / skip heuristics
@@ -134,9 +168,9 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 #### Phase deliverable
 
-- [ ] DOCX rename evidence quality is materially stronger than the current heading-plus-first-line heuristic
+- [ ] DOCX rename evidence quality is materially stronger than the current heading-plus-first-line heuristic, with the underlying DOCX metadata helper kept readable through a small modular split
 
-### Phase 4: Fixture expansion and validation
+### Phase 5: Fixture expansion and validation
 
 - [ ] Add weak-heading DOCX fixture
 - [ ] Add no-heading DOCX fixture
@@ -150,7 +184,7 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 - [ ] DOCX quality is validated against mixed document shapes rather than a single happy-path fixture
 
-### Phase 5: Default-on graduation and flag removal
+### Phase 6: Default-on graduation and flag removal
 
 - [ ] Remove the default-disabled gating path from `src/cli/actions/rename/codex.ts`
 - [ ] Remove `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` parsing and references
@@ -163,7 +197,7 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 - [ ] DOCX semantic rename support is enabled by default under `--codex-docs` and the old env gate is removed from active behavior
 
-### Phase 6: Documentation and cleanup closure
+### Phase 7: Documentation and cleanup closure
 
 - [ ] Remove obsolete gate-specific tests
 - [ ] Remove docs that still describe DOCX support as a current env-gated requirement
@@ -181,6 +215,7 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 - [ ] `bun run build`
 - [ ] `bun test`
 - [ ] targeted DOCX extractor and rename tests for metadata-rich and weak-signal fixtures
+- [ ] confirm the DOCX metadata helper path uses no runtime schema fetch
 
 ### Manual checks
 
@@ -194,9 +229,10 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 This plan is successful if:
 
 1. DOCX metadata is extracted through a narrow, reusable OOXML helper.
-2. DOCX title ranking is strong enough that default-on support improves rename quality rather than weakening it.
-3. DOCX support is validated on a broader fixture set and a small real-world sample pack.
-4. `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` is removed as part of DOCX graduation and the older `v0.0.7` usage is retained only as a deprecated guide note.
+2. DOCX metadata discovery remains offline-safe and does not depend on dereferenceable OOXML schema URLs.
+3. DOCX title ranking is strong enough that default-on support improves rename quality rather than weakening it.
+4. DOCX support is validated on a broader fixture set and a small real-world sample pack.
+5. `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` is removed as part of DOCX graduation and the older `v0.0.7` usage is retained only as a deprecated guide note.
 
 ## Related Research
 
