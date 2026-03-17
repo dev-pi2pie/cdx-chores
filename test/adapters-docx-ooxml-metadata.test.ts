@@ -292,6 +292,14 @@ describe("docx OOXML metadata helper", () => {
     });
   });
 
+  test("returns docx_metadata_unavailable for the alternate-editor textutil fixture", async () => {
+    const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "textutil-alt-editor.docx");
+
+    const result = await readDocxCoreMetadata(fixturePath);
+
+    expect(result).toEqual({ warnings: ["docx_metadata_unavailable"] });
+  });
+
   test("returns docx_metadata_unavailable when core properties XML is malformed", async () => {
     await withTempFixtureDir("docx-metadata", async (fixtureDir) => {
       const docxPath = join(fixtureDir, "malformed-core.docx");

@@ -133,6 +133,21 @@ describe("codex document rename title extractor", () => {
     expect(tableResult.evidence.leadText).toContain("Key delivery milestones");
   });
 
+  test("extracts a strong body-derived title from the alternate-editor textutil fixture", async () => {
+    const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "textutil-alt-editor.docx");
+
+    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+
+    expect(result.reason).toBeUndefined();
+    if (!result.evidence) {
+      throw new Error("Expected docx evidence");
+    }
+
+    expect(result.evidence.titleCandidates[0]).toBe("Partner Enablement Guide");
+    expect(result.evidence.metadata?.extractor).toBe("mammoth");
+    expect(result.evidence.warnings).toEqual(["docx_metadata_unavailable"]);
+  });
+
   test("builds unique prompt filenames for duplicate basenames", async () => {
     const fixtureDir = await createTempFixtureDir("doc-prompt");
     try {

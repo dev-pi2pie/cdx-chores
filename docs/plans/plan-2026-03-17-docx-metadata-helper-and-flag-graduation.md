@@ -176,28 +176,28 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 - [x] Add no-heading DOCX fixture
 - [x] Add hyperlink-heavy DOCX fixture
 - [x] Add table-heavy DOCX fixture
-- [ ] If useful, add generated metadata variants that simulate alternate editor application labels, but do not count them as true alternate-editor exports
-- [ ] Add at least one alternate-editor exported DOCX fixture if licensing and reproducibility are acceptable
-- [ ] Verify the alternate-editor exported fixture is truly externally authored, not only generator-authored metadata
+- [x] Decide not to add generated metadata-only editor-label variants because a true alternate-editor exported sample is available
+- [x] Add at least one alternate-editor exported DOCX fixture if licensing and reproducibility are acceptable
+- [x] Verify the alternate-editor exported fixture is truly externally authored, not only generator-authored metadata
 - [x] Document which fixtures are deterministic generator outputs versus externally authored validation samples
-- [ ] Define a small real-world DOCX validation pack with named categories:
+- [x] Define a small real-world DOCX validation pack with named categories:
   - Word-authored
   - alternate-editor exported
   - metadata-rich
   - weak-heading
   - hyperlink-heavy
   - table-heavy
-- [ ] Run targeted manual validation against a small real-world sample pack outside the synthetic fixtures
-- [ ] Record manual validation outcomes per sample:
+- [x] Run targeted manual validation against a small real-world sample pack outside the synthetic fixtures
+- [x] Record manual validation outcomes per sample:
   - top-ranked title candidate
   - whether metadata or body evidence won
   - warning set
   - whether fallback behavior was still acceptable
-- [ ] Decide whether the current deterministic fixture set plus existing Word-authored sample is sufficient for pre-graduation confidence if alternate-editor coverage remains unavailable
+- [x] Decide whether the current deterministic fixture set plus existing Word-authored sample is sufficient for pre-graduation confidence if alternate-editor coverage remains unavailable
 
 #### Phase deliverable
 
-- [ ] DOCX quality is validated against mixed document shapes rather than a single happy-path fixture
+- [x] DOCX quality is validated against mixed document shapes rather than a single happy-path fixture
 
 ### Phase 6: Default-on graduation and flag removal
 
