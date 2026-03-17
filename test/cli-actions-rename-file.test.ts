@@ -63,20 +63,6 @@ async function createRenameFileFixture(
   return { dirPath, filePath };
 }
 
-async function withDocxExperimentalEnabled(run: () => Promise<void>) {
-  const previousDocxGate = process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
-  process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = "1";
-  try {
-    await run();
-  } finally {
-    if (previousDocxGate === undefined) {
-      delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
-    } else {
-      process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
-    }
-  }
-}
-
 async function withRenameWorkspace(
   run: (fixtureDir: string, trackPlanCsv: (path: string | undefined) => void) => Promise<void>,
 ) {
@@ -308,12 +294,12 @@ describe("cli action modules: rename file", () => {
     });
   });
 
-  test("actionRenameFile codex-docs mode marks docx as experimental-disabled by default", async () => {
+  test("actionRenameFile codex-docs mode records docx extraction error for invalid docx input", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
       const { runtime, stdout, stderr } = createCapturedRuntime();
       const { filePath: docPath } = await createRenameFileFixture(
         fixtureDir,
-        "rename-file-codex-docx-disabled",
+        "rename-file-codex-docx-error",
         "draft.docx",
         {
           content: "not-a-real-docx",
@@ -330,83 +316,47 @@ describe("cli action modules: rename file", () => {
 
       expect(stderr.text).toBe("");
       expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
       expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
-      expect(stdout.text).toContain("DOCX semantic titles are experimental and currently disabled");
 
       const csvText = await readFile(result.planCsvPath!, "utf8");
-      expect(csvText).toContain("docx_experimental_disabled");
+      expect(csvText).toContain("docx_extract_error");
     });
   });
 
-  test("actionRenameFile codex-docs mode records docx extraction error when experimental gate is enabled", async () => {
+  test("actionRenameFile codex-docs mode can route a heading-rich docx fixture", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      await withDocxExperimentalEnabled(async () => {
-        const { runtime, stdout, stderr } = createCapturedRuntime();
-        const { filePath: docPath } = await createRenameFileFixture(
-          fixtureDir,
-          "rename-file-codex-docx-error",
-          "broken.docx",
-          {
-            content: "not-a-real-docx",
-          },
-        );
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const sourceFixture = join(REPO_ROOT, "test", "fixtures", "docs", "heading-rich.docx");
+      const { filePath: docPath } = await createRenameFileFixture(
+        fixtureDir,
+        "rename-file-codex-docx-heading",
+        "project-outline.docx",
+        { sourceFixture },
+      );
 
-        const result = await actionRenameFile(runtime, {
-          path: toRepoRelativePath(docPath),
-          prefix: "doc",
-          dryRun: true,
-          codexDocs: true,
-        });
-        trackPlanCsv(result.planCsvPath);
-
-        expect(stderr.text).toBe("");
-        expect(result.changed).toBe(true);
-        expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
-        expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
-        expect(stdout.text).not.toContain("experimental and currently disabled");
-
-        const csvText = await readFile(result.planCsvPath!, "utf8");
-        expect(csvText).toContain("docx_extract_error");
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        prefix: "doc",
+        dryRun: true,
+        codexDocs: true,
+        codexDocsTitleSuggester: async (options) => ({
+          suggestions: options.documentPaths.map((path) => ({
+            path,
+            title: "project goal outline",
+          })),
+        }),
       });
-    });
-  });
+      trackPlanCsv(result.planCsvPath);
 
-  test("actionRenameFile codex-docs mode can route a heading-rich docx fixture when experimental gate is enabled", async () => {
-    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      await withDocxExperimentalEnabled(async () => {
-        const { runtime, stdout, stderr } = createCapturedRuntime();
-        const sourceFixture = join(REPO_ROOT, "test", "fixtures", "docs", "heading-rich.docx");
-        const { filePath: docPath } = await createRenameFileFixture(
-          fixtureDir,
-          "rename-file-codex-docx-heading",
-          "project-outline.docx",
-          { sourceFixture },
-        );
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
+      expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
+      expect(stdout.text).toContain("project-goal-outline");
 
-        const result = await actionRenameFile(runtime, {
-          path: toRepoRelativePath(docPath),
-          prefix: "doc",
-          dryRun: true,
-          codexDocs: true,
-          codexDocsTitleSuggester: async (options) => ({
-            suggestions: options.documentPaths.map((path) => ({
-              path,
-              title: "project goal outline",
-            })),
-          }),
-        });
-        trackPlanCsv(result.planCsvPath);
-
-        expect(stderr.text).toBe("");
-        expect(result.changed).toBe(true);
-        expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
-        expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
-        expect(stdout.text).not.toContain("experimental and currently disabled");
-        expect(stdout.text).toContain("project-goal-outline");
-
-        const csvText = await readFile(result.planCsvPath!, "utf8");
-        expect(csvText).toContain("project goal outline");
-      });
+      const csvText = await readFile(result.planCsvPath!, "utf8");
+      expect(csvText).toContain("project goal outline");
     });
   });
 

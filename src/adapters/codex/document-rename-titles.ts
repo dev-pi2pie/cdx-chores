@@ -6,6 +6,7 @@ import * as mammoth from "mammoth";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { parseDocument as parseYamlDocument } from "yaml";
 
+import { readDocxCoreMetadata } from "../docx/ooxml-metadata";
 import { parseMarkdown } from "../../markdown";
 import { parseTomlFrontmatter } from "../../markdown/toml-simple";
 import {
@@ -73,7 +74,27 @@ const MAX_TITLE_CANDIDATES = 4;
 const MAX_HEADINGS = 8;
 const MAX_LEAD_TEXT_CHARS = 800;
 const MAX_KEY_SUMMARY = 12;
+const DOCX_WEAK_TITLE_CANDIDATES = new Set([
+  "agenda",
+  "draft",
+  "goal",
+  "goals",
+  "links",
+  "meeting notes",
+  "notes",
+  "outline",
+  "overview",
+  "references",
+  "summary",
+  "table of contents",
+  "untitled",
+]);
 let pdfStandardFontDataUrlPromise: Promise<string | undefined> | undefined;
+
+type DocxHeadingSignal = {
+  level: number;
+  text: string;
+};
 
 function toSingleLine(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -100,6 +121,31 @@ function firstParagraph(lines: string[]): string | undefined {
   }
 
   return toSingleLine(paragraphLines.join(" ")).slice(0, MAX_LEAD_TEXT_CHARS);
+}
+
+function normalizeDocxCandidateKey(value: string): string {
+  return toSingleLine(value)
+    .toLowerCase()
+    .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function isWeakDocxTitleCandidate(value: string): boolean {
+  return DOCX_WEAK_TITLE_CANDIDATES.has(normalizeDocxCandidateKey(value));
+}
+
+function pushUniqueTitleCandidate(candidates: string[], value: string | undefined): void {
+  if (!value) {
+    return;
+  }
+  const normalized = toSingleLine(value);
+  if (!normalized) {
+    return;
+  }
+  if (candidates.includes(normalized)) {
+    return;
+  }
+  candidates.push(normalized);
 }
 
 function getStringCandidate(data: Record<string, unknown> | null, keys: string[]): string | undefined {
@@ -497,7 +543,8 @@ async function extractPdfEvidence(path: string): Promise<DocumentTitleEvidence |
 async function extractDocxEvidence(path: string): Promise<DocumentTitleEvidence | { reason: string }> {
   try {
     const buffer = await readFile(path);
-    const [htmlResult, rawTextResult] = await Promise.all([
+    const [metadataResult, htmlResult, rawTextResult] = await Promise.all([
+      readDocxCoreMetadata(path),
       mammoth.convertToHtml({ buffer }),
       mammoth.extractRawText({ buffer }),
     ]);
@@ -506,18 +553,20 @@ async function extractDocxEvidence(path: string): Promise<DocumentTitleEvidence 
     const rawText = rawTextResult.value ?? "";
 
     const titleCandidates: string[] = [];
-    const headings: string[] = [];
-    const warnings: string[] = ["docx_metadata_unavailable"];
+    const headingSignals: DocxHeadingSignal[] = [];
+    const warnings =
+      "reason" in metadataResult
+        ? ["docx_metadata_unavailable"]
+        : [...new Set(metadataResult.warnings)];
+    const metadata = "reason" in metadataResult ? undefined : metadataResult.metadata;
 
     for (const match of html.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)) {
-      const heading = toSingleLine(stripHtmlTags(match[2] ?? ""));
-      if (!heading) {
+      const headingText = toSingleLine(stripHtmlTags(match[2] ?? ""));
+      const headingLevel = Number(match[1] ?? 0);
+      if (!headingText || !Number.isFinite(headingLevel) || headingLevel < 1 || headingLevel > 6) {
         continue;
       }
-      headings.push(heading);
-      if ((match[1] ?? "") === "1") {
-        titleCandidates.push(heading);
-      }
+      headingSignals.push({ level: headingLevel, text: headingText });
     }
 
     const rawLines = rawText
@@ -525,13 +574,45 @@ async function extractDocxEvidence(path: string): Promise<DocumentTitleEvidence 
       .split("\n")
       .map((line) => toSingleLine(line))
       .filter(Boolean);
-    if (rawLines.length > 0) {
-      titleCandidates.push(rawLines[0]!);
+    const headings = headingSignals.map((heading) => heading.text);
+    const h1Headings = headingSignals.filter((heading) => heading.level === 1).map((heading) => heading.text);
+    const strongEarlyHeadings = headingSignals
+      .filter((heading, index) => index < 4 && heading.level <= 2)
+      .map((heading) => heading.text);
+    const firstMeaningfulRawLine = rawLines.find((line) => !isWeakDocxTitleCandidate(line));
+
+    pushUniqueTitleCandidate(
+      titleCandidates,
+      metadata?.title && !isWeakDocxTitleCandidate(metadata.title) ? metadata.title : undefined,
+    );
+    for (const heading of h1Headings) {
+      if (!isWeakDocxTitleCandidate(heading)) {
+        pushUniqueTitleCandidate(titleCandidates, heading);
+      }
     }
+    for (const heading of strongEarlyHeadings) {
+      if (!isWeakDocxTitleCandidate(heading)) {
+        pushUniqueTitleCandidate(titleCandidates, heading);
+      }
+    }
+    pushUniqueTitleCandidate(titleCandidates, firstMeaningfulRawLine);
+    pushUniqueTitleCandidate(titleCandidates, metadata?.title);
+    if (!metadata?.title) {
+      for (const heading of h1Headings) {
+        pushUniqueTitleCandidate(titleCandidates, heading);
+      }
+      for (const heading of strongEarlyHeadings) {
+        pushUniqueTitleCandidate(titleCandidates, heading);
+      }
+    }
+    pushUniqueTitleCandidate(
+      titleCandidates,
+      !metadata?.title || !isWeakDocxTitleCandidate(rawLines[0] ?? "") ? rawLines[0] : undefined,
+    );
 
     const leadText = firstParagraph(rawLines);
     if (!leadText) {
-      warnings.push("no_lead_text");
+      warnings.push("docx_no_lead_text");
     }
 
     const dedupedTitles = [...new Set(titleCandidates)].slice(0, MAX_TITLE_CANDIDATES);
@@ -547,13 +628,15 @@ async function extractDocxEvidence(path: string): Promise<DocumentTitleEvidence 
       extension: extname(path).toLowerCase(),
       detectedType: "docx",
       titleCandidates: dedupedTitles,
+      authorCandidates: metadata?.creator ? [metadata.creator] : undefined,
       headings: dedupedHeadings.length > 0 ? dedupedHeadings : undefined,
       tocCandidates: dedupedHeadings.length > 0 ? dedupedHeadings : undefined,
       leadText,
       metadata: {
-        extractor: "mammoth",
+        ...metadata,
+        extractor: metadata ? "mammoth+ooxml" : "mammoth",
       },
-      warnings,
+      warnings: warnings.length > 0 ? [...new Set(warnings)] : undefined,
     };
   } catch {
     return { reason: "docx_extract_error" };
