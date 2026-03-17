@@ -1,6 +1,7 @@
 ---
 title: "Delimited text preview, conversion, and interactive flow"
 created-date: 2026-03-17
+modified-date: 2026-03-17
 status: draft
 agent: codex
 ---
@@ -119,16 +120,16 @@ data
 ├── parquet preview
 ├── query
 └── convert
-    ├── json to csv
-    ├── csv to json
-    ├── csv to tsv
-    └── tsv to csv
+    ├── choose source file
+    ├── confirm source format
+    ├── choose target format
+    └── choose output path
 ```
 
 Benefits:
 
 - keeps top-level `data` choices task-oriented
-- makes future delimited-text additions easier to place
+- makes future delimited-text additions easier to place without growing the menu one transform at a time
 - leaves room for later conversions without making the `data` menu noisy
 
 Implication:
@@ -150,31 +151,40 @@ Reasoning:
 - TSV already fits the preview/query mental model
 - the direct CLI becomes more internally consistent
 
-### Recommendation B. Generalize internals lightly, but keep direct commands explicit
+### Recommendation B. Generalize internals lightly, but keep direct commands explicit in the first pass
 
 Recommended implementation direction:
 
 - create small delimiter-aware parse/stringify helpers
 - reuse shared conversion plumbing internally
-- keep user-facing commands explicit instead of introducing a generic conversion command immediately
+- keep direct CLI commands explicit instead of introducing a generic conversion command immediately
+- preserve existing `json-to-csv` and `csv-to-json` commands in the first pass
+- add new direct conversions, if approved, using the same explicit pattern:
+  - `cdx-chores data <convert-action> -i <source> -o <output>`
 
 Reasoning:
 
 - reduces duplication
-- preserves command clarity
+- preserves command clarity in shell history and scripts
+- avoids avoidable direct-CLI churn while interactive mode evolves separately
 
-### Recommendation C. Group conversions under `data -> convert` in interactive mode
+### Recommendation C. Add a generic `data -> convert` wizard in interactive mode
 
 Recommended interactive direction:
 
 - keep `preview`, `parquet preview`, and `query` as top-level `data` actions
-- move conversion actions into a nested `convert` submenu
+- add a nested `convert` lane under `data`
+- inside `convert`, ask for:
+  - source file path
+  - inferred or confirmed source format
+  - target format from the remaining supported choices
+  - output path and overwrite behavior as usual
 
 Reasoning:
 
 - matches user intent more cleanly
-- scales better than a flat menu
-- avoids making the `data` submenu increasingly action-shaped instead of task-shaped
+- scales better than one interactive entry per transformation
+- allows CSV, TSV, and JSON conversions to feel like one guided workflow without forcing the same abstraction onto direct CLI
 
 ### Recommendation D. Keep this work separate from source-shaping research
 
@@ -189,12 +199,43 @@ Reasoning:
 - TSV support is a capability-expansion problem
 - source-shaping is a table-selection and schema-quality problem
 
-## Open Questions
+## Decision Updates
 
-- Should TSV preview be documented simply as “CSV-family delimited text,” or should CSV and TSV remain named separately in help and guides?
-- Should `data preview` infer TSV by file extension only, or also allow explicit format override for atypical filenames later?
-- Should interactive conversion eventually become one generic wizard, or should it remain a submenu of explicit transformations?
-- Is `tsv-to-json` or `json-to-tsv` part of the same first expansion, or should the first pass stay narrowly on CSV/TSV parity?
+- Keep CSV and TSV named separately in help text and guides.
+- It is still reasonable to describe them internally as one delimited-text family, but user-facing wording should continue to name `CSV` and `TSV` explicitly because users will recognize the file types faster that way.
+- Make `data preview` infer TSV by file extension in the first pass.
+- Do not add explicit format override or delimiter-pattern detection in this research track's first implementation plan.
+- Move interactive conversions toward one generic `data -> convert` wizard.
+- Keep direct CLI conversion commands explicit in the first pass, even if interactive mode becomes generic.
+- Do not introduce a new direct CLI `data convert ...` command in this plan.
+- Keep the current direct conversion usage pattern as the stable CLI contract:
+  - `cdx-chores data <convert-action> -i <source> -o <output>`
+- Do not treat the interactive wizard decision as justification for removing, renaming, or duplicating existing direct CLI commands immediately.
+
+## Scope Decision
+
+The first implementation should cover:
+
+- add TSV support to `data preview`
+- expand conversions to a full CSV/TSV/JSON triangle using explicit direct CLI actions:
+  - `csv-to-tsv`
+  - `tsv-to-csv`
+  - `csv-to-json`
+  - `json-to-csv`
+  - `tsv-to-json`
+  - `json-to-tsv`
+
+Clarifications:
+
+- this expands format parity, but it does not introduce a generic direct CLI `data convert ...` command
+- direct CLI remains explicit and action-shaped
+- interactive mode can still present conversion as one guided `data -> convert` lane while dispatching to the existing explicit actions underneath
+- output-format-specific flags should remain narrow and predictable, for example:
+  - `--pretty` applies only when the output format is JSON
+
+Implication:
+
+- the implementation plan should cover delimiter-aware preview support plus shared conversion plumbing that can serve all six explicit conversion commands coherently
 
 ## Related Research
 
