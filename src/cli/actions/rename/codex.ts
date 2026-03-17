@@ -138,10 +138,6 @@ const CODEX_MAX_TEXT_DOCUMENT_BYTES = 512 * 1024;
 const CODEX_MAX_PDF_DOCUMENT_BYTES = 20 * 1024 * 1024;
 const CODEX_MAX_DOCX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 
-function isCodexDocxExperimentalEnabled(): boolean {
-  return process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL === "1";
-}
-
 async function selectCodexStaticImageCandidates(
   plans: PlannedRename[],
 ): Promise<RenameTitleAnalyzerSelection> {
@@ -223,11 +219,6 @@ async function selectCodexDocumentTextCandidates(
     }
 
     candidateCount += 1;
-
-    if (isDocx && !isCodexDocxExperimentalEnabled()) {
-      skipReasonByPath.set(sourcePath, "docx_experimental_disabled");
-      continue;
-    }
 
     try {
       const fileStats = await stat(sourcePath);
@@ -572,13 +563,6 @@ export function printRenameFileCodexSummary(
       printLine(
         runtime.stdout,
         "Codex note: this file is not a supported document input for --codex-docs; deterministic rename is used.",
-      );
-    } else if (
-      options.analysis.reasonBySourcePath.get(options.sourcePath) === "docx_experimental_disabled"
-    ) {
-      printLine(
-        runtime.stdout,
-        "Codex note: DOCX semantic titles are experimental and currently disabled (set CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1 to opt in).",
       );
     } else if (doc.eligibleCount === 0 && !doc.errorMessage) {
       printLine(

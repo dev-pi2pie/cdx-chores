@@ -32,14 +32,15 @@ Rename support and Codex semantic support are separate layers:
 | GIF (`.gif`)                                                                              | Yes                         | No (currently skipped)   | Recorded as non-static skip                                                  |
 | Text-like docs (`.md`, `.txt`, `.json`, `.yaml`, `.toml`, `.xml`, `.html`)                | Yes                         | `--codex-docs`           | Best-effort; fallback-safe                                                   |
 | PDF (`.pdf`)                                                                              | Yes                         | `--codex-docs`           | PDF metadata/outline/page-text extraction                                    |
-| DOCX (`.docx`)                                                                            | Yes                         | Experimental (env-gated) | Requires `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`                         |
+| DOCX (`.docx`)                                                                            | Yes                         | `--codex-docs`           | Best-effort; fallback-safe                                                   |
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                       | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                      | Safety default                                                               |
 
 DOCX legacy note:
 
 - Older `v0.0.7` usage guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` to opt into DOCX semantic titles.
-- That env-gated usage is deprecated and is planned to be removed when DOCX default-on graduation lands.
+- Current releases no longer require that env var; DOCX semantic titles now participate by default under `--codex-docs`.
+- That older env-gated usage remains deprecated history only.
 
 ## Pattern/Template Coverage
 

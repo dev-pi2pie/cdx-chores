@@ -2,7 +2,7 @@
 title: "DOCX metadata helper and flag graduation"
 created-date: 2026-03-17
 modified-date: 2026-03-17
-status: active
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ Graduate DOCX semantic rename support from env-gated experimental behavior to de
 
 ## Why This Plan
 
-The current DOCX path is functional but intentionally gated:
+At plan start, the DOCX path was functional but intentionally gated:
 
 - `mammoth` provides useful headings and raw text
 - DOCX metadata is not yet extracted
@@ -35,7 +35,7 @@ Primary references:
 - `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
 - `docs/plans/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 
-Current implementation baseline:
+Implementation baseline at plan start:
 
 - DOCX semantic support exists behind `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`
 - DOCX extraction currently relies on `mammoth.convertToHtml()` plus `mammoth.extractRawText()`
@@ -201,43 +201,43 @@ Ranking remains in `src/adapters/codex/document-rename-titles.ts`, where metadat
 
 ### Phase 6: Default-on graduation and flag removal
 
-- [ ] Remove the default-disabled gating path from `src/cli/actions/rename/codex.ts`
-- [ ] Remove `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` parsing and references
-- [ ] Remove `docx_experimental_disabled` from active runtime behavior and document its retirement in a compatibility note for downstream reason-code consumers
-- [ ] Update tests so default-on DOCX support is the normal path
-- [ ] Update docs/guides and release notes to describe DOCX support as supported, best-effort, fallback-safe, and no longer env-gated
-- [ ] Add a usage-guide note explaining that older `v0.0.7` guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` and that this path is deprecated
+- [x] Remove the default-disabled gating path from `src/cli/actions/rename/codex.ts`
+- [x] Remove `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` parsing and references
+- [x] Remove `docx_experimental_disabled` from active runtime behavior and document its retirement in a compatibility note for downstream reason-code consumers
+- [x] Update tests so default-on DOCX support is the normal path
+- [x] Update docs/guides and release notes to describe DOCX support as supported, best-effort, fallback-safe, and no longer env-gated
+- [x] Add a usage-guide note explaining that older `v0.0.7` guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` and that this path is deprecated
 
 #### Phase deliverable
 
-- [ ] DOCX semantic rename support is enabled by default under `--codex-docs` and the old env gate is removed from active behavior
+- [x] DOCX semantic rename support is enabled by default under `--codex-docs` and the old env gate is removed from active behavior
 
 ### Phase 7: Documentation and cleanup closure
 
-- [ ] Remove obsolete gate-specific tests
-- [ ] Remove docs that still describe DOCX support as a current env-gated requirement
-- [ ] Keep only the intended legacy/deprecation note for the older `v0.0.7` usage shape
-- [ ] Add a closing job record for the full graduation/removal work
+- [x] Remove obsolete gate-specific tests
+- [x] Remove docs that still describe DOCX support as a current env-gated requirement
+- [x] Keep only the intended legacy/deprecation note for the older `v0.0.7` usage shape
+- [x] Add a closing job record for the full graduation/removal work
 
 #### Phase deliverable
 
-- [ ] The experimental DOCX env gate no longer exists in code or active docs, aside from the intentional legacy/deprecation note
+- [x] The experimental DOCX env gate no longer exists in code or active docs, aside from the intentional legacy/deprecation note
 
 ## Verification Plan
 
 ### Build and automated checks
 
 - [x] `bun run build`
-- [ ] `bun test`
+- [x] `bun test`
 - [x] targeted DOCX extractor and rename tests for metadata-rich and weak-signal fixtures
-- [ ] confirm the DOCX metadata helper path uses no runtime schema fetch
+- [x] confirm the DOCX metadata helper path uses no runtime schema fetch
 
 ### Manual checks
 
-- [ ] `rename file <docx> --dry-run --codex-docs` uses improved DOCX evidence without the env gate in the default-on phase
-- [ ] weak-signal DOCX files still degrade safely to deterministic rename
-- [ ] invalid DOCX files still produce stable fallback reason codes
-- [ ] mixed document batches report coherent DOCX summary and fallback behavior
+- [x] `rename file <docx> --dry-run --codex-docs` uses improved DOCX evidence without the env gate in the default-on phase
+- [x] weak-signal DOCX files still degrade safely to deterministic rename
+- [x] invalid DOCX files still produce stable fallback reason codes
+- [x] mixed document batches report coherent DOCX summary and fallback behavior
 
 ## Success Criteria
 

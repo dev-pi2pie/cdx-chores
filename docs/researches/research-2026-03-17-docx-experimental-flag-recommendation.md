@@ -2,7 +2,7 @@
 title: "Deprecate DOCX experimental rename flag after quality graduation"
 created-date: 2026-03-17
 modified-date: 2026-03-17
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -14,15 +14,23 @@ Define how to deprecate legacy `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` usage b
 
 Make DOCX support under `rename --codex-docs` reliable enough to enable by default, then remove the env gate without reducing rename quality or fallback safety, while keeping only a legacy usage note for older `v0.0.7` guidance.
 
+## Outcome Update
+
+This recommendation has now landed:
+
+- DOCX semantic rename support now participates by default under `--codex-docs`.
+- `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` and `docx_experimental_disabled` have been removed from active runtime behavior.
+- The remaining user-facing legacy note is the guide-level `v0.0.7` history note explaining the older env-gated usage.
+
 ## Key Findings
 
-- The gate is still active in `src/cli/actions/rename/codex.ts` and disables DOCX semantic analysis by default unless `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`.
-- User-facing output and CSV reason handling still explicitly model DOCX as experimental-disabled via `docx_experimental_disabled`.
-- Repository guidance still documents DOCX semantic support as experimental and env-gated in `docs/guides/rename-scope-and-codex-capability-guide.md`.
-- The reason for the gate is still quality, not package instability:
+- At research start, the gate was still active in `src/cli/actions/rename/codex.ts` and disabled DOCX semantic analysis by default unless `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`.
+- At research start, user-facing output and CSV reason handling still explicitly modeled DOCX as experimental-disabled via `docx_experimental_disabled`.
+- At research start, repository guidance still documented DOCX semantic support as experimental and env-gated in `docs/guides/rename-scope-and-codex-capability-guide.md`.
+- The reason for the gate was quality, not package instability:
   - earlier research concluded `mammoth` heading extraction was useful, but title selection quality was only "usable"
   - earlier plans called out missing DOCX metadata extraction and missing title-ranking improvements as the main blockers to default-on support
-- The current extractor in `src/adapters/codex/document-rename-titles.ts` still shows those limits:
+- The extractor in `src/adapters/codex/document-rename-titles.ts` showed those limits at that point:
   - title candidates come mainly from H1 headings and the first raw-text line
   - warnings always include `docx_metadata_unavailable`
   - no OOXML core-properties parsing is present
@@ -36,7 +44,7 @@ Make DOCX support under `rename --codex-docs` reliable enough to enable by defau
   - `/docProps/app.xml` means the package-root extended-properties part inside the `.docx` ZIP container
   - `/_rels/.rels` is the package-root relationships part that can point to those metadata parts
   - these leading-slash paths use OPC package-root notation and are resolved against the document package, not against the local machine or the web
-- Current tests prove the gate behavior and one heading-rich happy path, but they do not yet prove broad DOCX reliability across mixed real-world inputs.
+- At that point, tests proved the gate behavior and one heading-rich happy path, but they did not yet prove broad DOCX reliability across mixed real-world inputs.
 
 ## Implications or Recommendations
 

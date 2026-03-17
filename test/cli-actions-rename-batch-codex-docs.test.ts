@@ -21,11 +21,9 @@ afterEach(async () => {
 });
 
 describe("cli action modules: rename batch codex docs", () => {
-  test("actionRenameBatch codex-docs mode records weak-title docx fallback reason when experimental gate is enabled", async () => {
+  test("actionRenameBatch codex-docs mode records weak-title docx fallback reason", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
-    const previousDocxGate = process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
-    process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = "1";
     try {
       const { runtime, stdout, stderr } = createCapturedRuntime();
       const dirPath = join(fixtureDir, "rename-batch-codex-docx-weak");
@@ -50,16 +48,10 @@ describe("cli action modules: rename batch codex docs", () => {
       expect(result.totalCount).toBe(1);
       expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
       expect(stdout.text).toContain("Codex doc titles: 0/1 document file(s) suggested");
-      expect(stdout.text).not.toContain("experimental and currently disabled");
 
       const csvText = await readFile(planCsvPath!, "utf8");
       expect(csvText).toContain("docx_no_title_signal");
     } finally {
-      if (previousDocxGate === undefined) {
-        delete process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL;
-      } else {
-        process.env.CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL = previousDocxGate;
-      }
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
     }
