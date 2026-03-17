@@ -117,18 +117,26 @@ function buildStoredZip(entries: Array<[string, string | Buffer]>): Buffer {
   return Buffer.concat([...localParts, centralDirectory, endOfCentralDirectory]);
 }
 
+function encodeUtf16LeXml(xml: string): Buffer {
+  return Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(xml, "utf16le")]);
+}
+
 function buildDocxPackage(options: {
-  appXml?: string;
+  appXml?: string | Buffer;
+  appXmlContentTypePath?: string;
   appXmlPath?: string;
   appXmlRelationshipTarget?: string;
-  coreXml?: string;
+  coreXml?: string | Buffer;
+  coreXmlContentTypePath?: string;
   coreXmlPath?: string;
   coreXmlRelationshipTarget?: string;
   includeCoreRelationship?: boolean;
 }): Buffer {
   const entries: Array<[string, string | Buffer]> = [];
   const appXmlPath = options.appXmlPath ?? "docProps/app.xml";
+  const appXmlContentTypePath = options.appXmlContentTypePath ?? appXmlPath;
   const coreXmlPath = options.coreXmlPath ?? "docProps/core.xml";
+  const coreXmlContentTypePath = options.coreXmlContentTypePath ?? coreXmlPath;
   const appXmlRelationshipTarget = options.appXmlRelationshipTarget ?? appXmlPath;
   const coreXmlRelationshipTarget = options.coreXmlRelationshipTarget ?? coreXmlPath;
   const relationships = [
@@ -148,7 +156,7 @@ function buildDocxPackage(options: {
 
   entries.push([
     "[Content_Types].xml",
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>${options.coreXml ? `<Override PartName="/${coreXmlPath}" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` : ""}${options.appXml ? `<Override PartName="/${appXmlPath}" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>` : ""}</Types>`,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>${options.coreXml ? `<Override PartName="/${coreXmlContentTypePath}" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` : ""}${options.appXml ? `<Override PartName="/${appXmlContentTypePath}" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>` : ""}</Types>`,
   ]);
   entries.push([
     "_rels/.rels",
@@ -243,6 +251,31 @@ describe("docx OOXML metadata helper", () => {
     });
   });
 
+  test("reads UTF-16 encoded core properties", async () => {
+    await withTempFixtureDir("docx-metadata", async (fixtureDir) => {
+      const docxPath = join(fixtureDir, "utf16-core.docx");
+      await writeFile(
+        docxPath,
+        buildDocxPackage({
+          coreXml: encodeUtf16LeXml(
+            '<?xml version="1.0" encoding="UTF-16" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>UTF16 Title</dc:title><dc:creator>Fixture Generator</dc:creator></cp:coreProperties>',
+          ),
+        }),
+      );
+
+      const result = await readDocxCoreMetadata(docxPath);
+
+      expect("reason" in result).toBe(false);
+      if ("reason" in result) {
+        throw new Error("Expected metadata result");
+      }
+
+      expect(result.warnings).toEqual([]);
+      expect(result.metadata?.title).toBe("UTF16 Title");
+      expect(result.metadata?.creator).toBe("Fixture Generator");
+    });
+  });
+
   test("normalizes dot-segments in metadata relationship targets", async () => {
     await withTempFixtureDir("docx-metadata", async (fixtureDir) => {
       const docxPath = join(fixtureDir, "dot-segment-targets.docx");
@@ -269,6 +302,39 @@ describe("docx OOXML metadata helper", () => {
 
       expect(result.warnings).toEqual([]);
       expect(result.metadata?.title).toBe("Custom metadata path");
+      expect(result.metadata?.creator).toBe("Fixture Generator");
+      expect(result.metadata?.application).toBe("LibreOffice Writer");
+    });
+  });
+
+  test("normalizes percent-escaped metadata part paths", async () => {
+    await withTempFixtureDir("docx-metadata", async (fixtureDir) => {
+      const docxPath = join(fixtureDir, "escaped-paths.docx");
+      await writeFile(
+        docxPath,
+        buildDocxPackage({
+          appXml:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>LibreOffice Writer</Application></Properties>',
+          appXmlContentTypePath: "metadata/extended/app%20props.xml",
+          appXmlPath: "metadata/extended/app props.xml",
+          appXmlRelationshipTarget: "metadata/extended/app%20props.xml",
+          coreXml:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Escaped path title</dc:title><dc:creator>Fixture Generator</dc:creator></cp:coreProperties>',
+          coreXmlContentTypePath: "metadata/core/core%20props.xml",
+          coreXmlPath: "metadata/core/core props.xml",
+          coreXmlRelationshipTarget: "metadata/core/core%20props.xml",
+        }),
+      );
+
+      const result = await readDocxCoreMetadata(docxPath);
+
+      expect("reason" in result).toBe(false);
+      if ("reason" in result) {
+        throw new Error("Expected metadata result");
+      }
+
+      expect(result.warnings).toEqual([]);
+      expect(result.metadata?.title).toBe("Escaped path title");
       expect(result.metadata?.creator).toBe("Fixture Generator");
       expect(result.metadata?.application).toBe("LibreOffice Writer");
     });

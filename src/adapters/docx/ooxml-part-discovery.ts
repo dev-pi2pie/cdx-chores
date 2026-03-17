@@ -1,6 +1,5 @@
-import { posix as pathPosix } from "node:path";
-
 import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { normalizePackagePartPath } from "./ooxml-part-path";
 
 const DOCX_PACKAGE_RELS_PATH = "/_rels/.rels";
 const DOCX_CONTENT_TYPES_PATH = "/[Content_Types].xml";
@@ -25,11 +24,6 @@ type ContentTypeTargetPaths = {
   appPropertiesPaths: string[];
   corePropertiesPaths: string[];
 };
-
-function normalizePackagePartPath(value: string): string {
-  const normalized = pathPosix.normalize(value.startsWith("/") ? value : `/${value}`);
-  return normalized === "." ? "/" : normalized;
-}
 
 function asArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) {
