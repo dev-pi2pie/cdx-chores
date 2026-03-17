@@ -236,7 +236,12 @@ export function runInteractiveHarness(
         inputPath: String(input ?? ""),
         source: {
           columns: ["id", "name", "status", "region", "meta:key", "path"],
-          format: String(input ?? "").endsWith(".json") ? "json" : "csv",
+          format:
+            String(input ?? "").endsWith(".json")
+              ? "json"
+              : String(input ?? "").endsWith(".tsv")
+                ? "tsv"
+                : "csv",
           totalRows: 3,
           getWindow: () => [],
         },
@@ -244,8 +249,20 @@ export function runInteractiveHarness(
       actionJsonToCsv: async (_runtime, options) => {
         actionCalls.push({ name: "data:json-to-csv", options });
       },
+      actionJsonToTsv: async (_runtime, options) => {
+        actionCalls.push({ name: "data:json-to-tsv", options });
+      },
       actionCsvToJson: async (_runtime, options) => {
         actionCalls.push({ name: "data:csv-to-json", options });
+      },
+      actionCsvToTsv: async (_runtime, options) => {
+        actionCalls.push({ name: "data:csv-to-tsv", options });
+      },
+      actionTsvToCsv: async (_runtime, options) => {
+        actionCalls.push({ name: "data:tsv-to-csv", options });
+      },
+      actionTsvToJson: async (_runtime, options) => {
+        actionCalls.push({ name: "data:tsv-to-json", options });
       },
       actionMdToDocx: async (_runtime, options) => {
         actionCalls.push({ name: "md:to-docx", options });

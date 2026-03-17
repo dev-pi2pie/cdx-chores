@@ -3,10 +3,15 @@ import { select } from "@inquirer/prompts";
 export type InteractiveActionKey =
   | "doctor"
   | "data:preview"
+  | "data:convert"
   | "data:query"
   | "data:parquet-preview"
   | "data:json-to-csv"
+  | "data:json-to-tsv"
   | "data:csv-to-json"
+  | "data:csv-to-tsv"
+  | "data:tsv-to-csv"
+  | "data:tsv-to-json"
   | "md:to-docx"
   | "md:frontmatter-to-json"
   | "rename:file"
@@ -53,8 +58,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
       { name: "preview", value: "data:preview" },
       { name: "query", value: "data:query" },
       { name: "parquet preview", value: "data:parquet-preview" },
-      { name: "json-to-csv", value: "data:json-to-csv" },
-      { name: "csv-to-json", value: "data:csv-to-json" },
+      { name: "convert", value: "data:convert" },
     ],
   },
   md: {

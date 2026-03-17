@@ -1,8 +1,8 @@
 ---
 title: "Delimited-text preview and conversion parity"
 created-date: 2026-03-17
-modified-date: 2026-03-17
-status: draft
+modified-date: 2026-03-18
+status: completed
 agent: codex
 ---
 
@@ -196,73 +196,73 @@ The plan therefore locks one coherent lightweight family contract:
 
 ### Phase 5: Add interactive `data -> convert`
 
-- [ ] replace flat interactive conversion entries in the `data` submenu with one `convert` entry
-- [ ] add a new interactive action key and route for `data:convert`
-- [ ] inside the wizard:
-  - [ ] prompt for the source file path
-  - [ ] detect and display source format from file extension
-  - [ ] reject unsupported source formats for this lightweight lane
-  - [ ] prompt for the target format from remaining valid lightweight choices
-  - [ ] derive the default output path from the chosen target format
-  - [ ] prompt for `Pretty-print JSON?` only when the target format is JSON
-  - [ ] prompt for overwrite behavior
-- [ ] dispatch the wizard to the existing explicit actions underneath instead of inventing a new direct CLI contract
+- [x] replace flat interactive conversion entries in the `data` submenu with one `convert` entry
+- [x] add a new interactive action key and route for `data:convert`
+- [x] inside the wizard:
+  - [x] prompt for the source file path
+  - [x] detect and display source format from file extension
+  - [x] reject unsupported source formats for this lightweight lane
+  - [x] prompt for the target format from remaining valid lightweight choices
+  - [x] derive the default output path from the chosen target format
+  - [x] prompt for `Pretty-print JSON?` only when the target format is JSON
+  - [x] prompt for overwrite behavior
+- [x] dispatch the wizard to the existing explicit actions underneath instead of inventing a new direct CLI contract
 
 ### Phase 6: Tests
 
-- [ ] extend helper coverage for delimiter-aware parsing and stringification
-- [ ] add direct action coverage for:
-  - [ ] `csv-to-tsv`
-  - [ ] `tsv-to-csv`
-  - [ ] `tsv-to-json`
-  - [ ] `json-to-tsv`
-  - [ ] JSON-output-only `--pretty`
-  - [ ] invalid input shape or malformed file handling
-  - [ ] unsupported extension handling where relevant
-- [ ] add explicit delimited parity coverage for edge cases that are easy to make lossy during refactor:
-  - [ ] quoted delimiters
-  - [ ] embedded newlines inside quoted cells
-  - [ ] blank header cells
-  - [ ] duplicate header cells
-  - [ ] rows wider than the header row
-- [ ] add round-trip-focused assertions for `csv -> tsv -> csv` and `tsv -> csv -> tsv` using parsed row-array equivalence rather than raw string equality
-- [ ] add direct conversion coverage proving current delimited-to-JSON edge-case behavior remains intentional:
-  - [ ] blank headers omitted from JSON output
-  - [ ] duplicate headers collapse by last-write-wins
-  - [ ] wider-than-header cells are not surfaced in JSON output
-- [ ] extend preview coverage for TSV happy path and edge cases parallel to current CSV coverage
-- [ ] add interactive coverage for:
-  - [ ] `data -> convert` menu routing
-  - [ ] detected-format display
-  - [ ] target-format selection
-  - [ ] JSON-only `--pretty` prompt
-  - [ ] output-path defaulting
-- [ ] add CLI UX coverage for the expanded direct command surface:
-  - [ ] `data --help` lists the new explicit conversions
-  - [ ] each new command is wired in `src/command.ts`
-  - [ ] `--pretty` is exposed only on JSON-output commands
-  - [ ] `data preview --help` and related copy name TSV support explicitly
-- [ ] verify existing CSV/JSON conversion tests still pass under the shared helper layer
+- [x] extend helper coverage for delimiter-aware parsing and stringification
+- [x] add direct action coverage for:
+  - [x] `csv-to-tsv`
+  - [x] `tsv-to-csv`
+  - [x] `tsv-to-json`
+  - [x] `json-to-tsv`
+  - [x] JSON-output-only `--pretty`
+  - [x] invalid input shape or malformed file handling
+  - [x] unsupported extension handling where relevant
+- [x] add explicit delimited parity coverage for edge cases that are easy to make lossy during refactor:
+  - [x] quoted delimiters
+  - [x] embedded newlines inside quoted cells
+  - [x] blank header cells
+  - [x] duplicate header cells
+  - [x] rows wider than the header row
+- [x] add round-trip-focused assertions for `csv -> tsv -> csv` and `tsv -> csv -> tsv` using parsed row-array equivalence rather than raw string equality
+- [x] add direct conversion coverage proving current delimited-to-JSON edge-case behavior remains intentional:
+  - [x] blank headers omitted from JSON output
+  - [x] duplicate headers collapse by last-write-wins
+  - [x] wider-than-header cells are not surfaced in JSON output
+- [x] extend preview coverage for TSV happy path and edge cases parallel to current CSV coverage
+- [x] add interactive coverage for:
+  - [x] `data -> convert` menu routing
+  - [x] detected-format display
+  - [x] target-format selection
+  - [x] JSON-only `--pretty` prompt
+  - [x] output-path defaulting
+- [x] add CLI UX coverage for the expanded direct command surface:
+  - [x] `data --help` lists the new explicit conversions
+  - [x] each new command is wired in `src/command.ts`
+  - [x] `--pretty` is exposed only on JSON-output commands
+  - [x] `data preview --help` and related copy name TSV support explicitly
+- [x] verify existing CSV/JSON conversion tests still pass under the shared helper layer
 
 ### Phase 7: Fixtures, docs, and manual verification
 
-- [ ] revise `scripts/generate-tabular-preview-fixtures.mjs` so `seed`, `clean`, and `reset` cover TSV fixtures alongside the existing lightweight preview fixtures
-- [ ] extend existing lightweight preview fixture generation to include TSV fixtures
-- [ ] add at least:
-  - [ ] `basic.tsv`
-  - [ ] `wide.tsv`
-  - [ ] `large.tsv`
-- [ ] update `docs/guides/data-preview-usage.md` for TSV preview support
-- [ ] update `README.md` command examples for the expanded explicit conversion family
-- [ ] update interactive docs where current conversion menu wording is now outdated
-- [ ] document this plan's architecture boundary explicitly:
-  - [ ] lightweight `papaparse`-backed delimited parsing for `csv` / `tsv` / `json`
-  - [ ] no DuckDB-backed conversion in this track
-- [ ] run manual smoke checks for:
-  - [ ] direct TSV preview
-  - [ ] each new direct conversion path
-  - [ ] interactive `data -> convert`
-  - [ ] JSON pretty-print behavior
+- [x] revise `scripts/generate-tabular-preview-fixtures.mjs` so `seed`, `clean`, and `reset` cover TSV fixtures alongside the existing lightweight preview fixtures
+- [x] extend existing lightweight preview fixture generation to include TSV fixtures
+- [x] add at least:
+  - [x] `basic.tsv`
+  - [x] `wide.tsv`
+  - [x] `large.tsv`
+- [x] update `docs/guides/data-preview-usage.md` for TSV preview support
+- [x] update `README.md` command examples for the expanded explicit conversion family
+- [x] update interactive docs where current conversion menu wording is now outdated
+- [x] document this plan's architecture boundary explicitly:
+  - [x] lightweight `papaparse`-backed delimited parsing for `csv` / `tsv` / `json`
+  - [x] no DuckDB-backed conversion in this track
+- [x] run manual smoke checks for:
+  - [x] direct TSV preview
+  - [x] each new direct conversion path
+  - [x] interactive `data -> convert`
+  - [x] JSON pretty-print behavior
 
 ## Manual Smoke Strategy
 
