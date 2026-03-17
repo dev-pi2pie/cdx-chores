@@ -1,8 +1,8 @@
 ---
 title: "Delimited text preview, conversion, and interactive flow"
 created-date: 2026-03-17
-modified-date: 2026-03-17
-status: draft
+modified-date: 2026-03-18
+status: completed
 agent: codex
 ---
 
