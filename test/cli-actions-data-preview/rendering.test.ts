@@ -224,4 +224,18 @@ describe("cli action modules: data preview", () => {
       },
     });
   });
+
+  test("actionDataPreview truncates emoji-heavy columns by display width", async () => {
+    await withDataPreviewFixture({
+      content: `name\temoji\nAda\t${"😀".repeat(20)}\n`,
+      fileName: "emoji-width.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        expect(stdout.text).toContain("...");
+        expect(stdout.text).not.toContain("😀".repeat(20));
+      },
+    });
+  });
 });

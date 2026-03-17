@@ -1,3 +1,7 @@
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const EMOJI_GRAPHEME_PATTERN = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+const KEYCAP_MARK = "\u20E3";
+
 function isZeroWidthCodePoint(codePoint: number): boolean {
   return (
     (codePoint >= 0x0000 && codePoint <= 0x001f) ||
@@ -37,18 +41,30 @@ function isFullWidthCodePoint(codePoint: number): boolean {
   );
 }
 
-function getCodePointWidth(character: string): number {
-  const codePoint = character.codePointAt(0);
-  if (codePoint === undefined || isZeroWidthCodePoint(codePoint)) {
-    return 0;
+function isEmojiGrapheme(value: string): boolean {
+  return value.includes(KEYCAP_MARK) || EMOJI_GRAPHEME_PATTERN.test(value);
+}
+
+function getGraphemeWidth(value: string): number {
+  if (isEmojiGrapheme(value)) {
+    return 2;
   }
-  return isFullWidthCodePoint(codePoint) ? 2 : 1;
+
+  let width = 0;
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined || isZeroWidthCodePoint(codePoint)) {
+      continue;
+    }
+    width += isFullWidthCodePoint(codePoint) ? 2 : 1;
+  }
+  return width;
 }
 
 export function getDisplayWidth(value: string): number {
   let width = 0;
-  for (const character of value) {
-    width += getCodePointWidth(character);
+  for (const { segment } of graphemeSegmenter.segment(value)) {
+    width += getGraphemeWidth(segment);
   }
   return width;
 }
@@ -65,13 +81,13 @@ export function truncateToDisplayWidth(value: string, width: number): string {
 
   let result = "";
   let consumed = 0;
-  for (const character of value) {
-    const charWidth = getCodePointWidth(character);
-    if (consumed + charWidth > width) {
+  for (const { segment } of graphemeSegmenter.segment(value)) {
+    const graphemeWidth = getGraphemeWidth(segment);
+    if (consumed + graphemeWidth > width) {
       break;
     }
-    result += character;
-    consumed += charWidth;
+    result += segment;
+    consumed += graphemeWidth;
   }
   return result;
 }
