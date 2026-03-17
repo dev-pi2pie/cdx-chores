@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-03-03
+modified-date: 2026-03-17
 status: completed
 agent: codex
 ---
@@ -35,6 +35,11 @@ Rename support and Codex semantic support are separate layers:
 | DOCX (`.docx`)                                                                            | Yes                         | Experimental (env-gated) | Requires `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`                         |
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                       | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                      | Safety default                                                               |
+
+DOCX legacy note:
+
+- Older `v0.0.7` usage guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` to opt into DOCX semantic titles.
+- That env-gated usage is deprecated and is planned to be removed when DOCX default-on graduation lands.
 
 ## Pattern/Template Coverage
 

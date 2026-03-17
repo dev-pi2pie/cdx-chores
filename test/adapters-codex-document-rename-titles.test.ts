@@ -57,6 +57,27 @@ describe("codex document rename title extractor", () => {
     }
   });
 
+  test("extracts docx evidence from a metadata-rich fixture", async () => {
+    const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "metadata-rich.docx");
+
+    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+
+    expect(result.reason).toBeUndefined();
+    if (!result.evidence) {
+      throw new Error("Expected docx evidence");
+    }
+
+    expect(result.evidence.detectedType).toBe("docx");
+    expect(result.evidence.extension).toBe(".docx");
+    expect(result.evidence.filename).toBe("metadata-rich.docx");
+
+    const signalCount =
+      result.evidence.titleCandidates.length +
+      (result.evidence.headings?.length ?? 0) +
+      (result.evidence.leadText ? 1 : 0);
+    expect(signalCount > 0).toBe(true);
+  });
+
   test("builds unique prompt filenames for duplicate basenames", async () => {
     const fixtureDir = await createTempFixtureDir("doc-prompt");
     try {
