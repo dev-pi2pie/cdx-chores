@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { getDisplayWidth } from "../../src/cli/text-display-width";
 import { runDataPreview, withDataPreviewFixture } from "./helpers";
 
 describe("cli action modules: data preview", () => {
@@ -201,6 +202,25 @@ describe("cli action modules: data preview", () => {
         expect(stdout.text).toContain("Rows: 1");
         expect(stdout.text).toContain("C:\\logs\\app");
         expect(stdout.text).not.toContain("C:\\tmp\\else");
+      },
+    });
+  });
+
+  test("actionDataPreview keeps mixed English and CJK columns aligned by display width", async () => {
+    await withDataPreviewFixture({
+      content:
+        "Word\tMeaning (Chinese)\nstructure\t結構；架構\nhierarchy\t階層；等級制度\n",
+      fileName: "mixed-width.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        const tableLines = stdout.text
+          .split("\n")
+          .filter((line) => line.includes("|") || line.includes("+-"));
+        expect(tableLines).toHaveLength(4);
+        const widths = tableLines.map((line) => getDisplayWidth(line));
+        expect(new Set(widths).size).toBe(1);
       },
     });
   });

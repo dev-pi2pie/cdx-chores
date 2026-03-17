@@ -2,6 +2,7 @@ import { formatPathForDisplay } from "../fs-utils";
 import type { CliRuntime } from "../types";
 import { getCliColors } from "../colors";
 import type { DataPreviewContainsFilter, DataPreviewRow, DataPreviewSource } from "./source";
+import { getDisplayWidth, truncateAndPadToDisplayWidth } from "../text-display-width";
 
 export interface RenderDataPreviewOptions {
   columns?: string[];
@@ -45,16 +46,7 @@ function resolveRenderWidth(runtime: CliRuntime): number {
 }
 
 function truncateCell(value: string, width: number): string {
-  if (width <= 0) {
-    return "";
-  }
-  if (value.length <= width) {
-    return value.padEnd(width, " ");
-  }
-  if (width <= 3) {
-    return ".".repeat(width);
-  }
-  return `${value.slice(0, width - 3)}...`;
+  return truncateAndPadToDisplayWidth(value, width);
 }
 
 function createSeparator(widths: readonly number[]): string {
@@ -97,9 +89,9 @@ function resolveRequestedColumns(
 }
 
 function measureColumnWidth(name: string, rows: readonly DataPreviewRow[]): number {
-  let width = name.length;
+  let width = getDisplayWidth(name);
   for (const row of rows) {
-    width = Math.max(width, row.values[name]?.length ?? 0);
+    width = Math.max(width, getDisplayWidth(row.values[name] ?? ""));
   }
   return Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, width));
 }
@@ -208,7 +200,7 @@ function renderTable(
   const widths = visibleColumns.map((column) => column.width);
   const highlightedColumns = new Set(resolveContainsFilterColumns(options.containsFilters));
   const header = visibleColumns
-    .map((column) => pc.bold(pc.cyan(truncateCell(column.name, column.width).padEnd(column.width, " "))))
+    .map((column) => pc.bold(pc.cyan(truncateCell(column.name, column.width))))
     .join(COLUMN_SEPARATOR);
   const separator = createSeparator(widths);
   const body = rows.map((row) =>

@@ -3,6 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionDataQuery } from "../src/cli/actions";
+import { getDisplayWidth } from "../src/cli/text-display-width";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -117,6 +118,27 @@ describe("cli action modules: data query", () => {
       expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
       expect(stderr.text).toContain("Rows: 2");
       expect(await readFile(outputPath, "utf8")).toBe("name,id\nAda,1\nBob,2\n");
+    });
+  });
+
+  test("actionDataQuery keeps mixed English and CJK table output aligned by display width", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      await writeFile(inputPath, "word,meaning_zh\nstructure,結構；架構\nhierarchy,階層；等級制度\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select word, meaning_zh from file order by word desc",
+      });
+
+      expectNoStderr();
+      const tableLines = stdout.text
+        .split("\n")
+        .filter((line) => line.includes("|") || line.includes("+-"));
+      expect(tableLines).toHaveLength(4);
+      const widths = tableLines.map((line) => getDisplayWidth(line));
+      expect(new Set(widths).size).toBe(1);
     });
   });
 });
