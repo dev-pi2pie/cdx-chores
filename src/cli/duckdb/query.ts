@@ -60,23 +60,6 @@ function escapeSqlString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
-function dedupeRequestedColumns(columns: readonly string[] | undefined): string[] {
-  if (!columns) {
-    return [];
-  }
-
-  const values: string[] = [];
-  const seen = new Set<string>();
-  for (const column of columns.map((item) => item.trim()).filter((item) => item.length > 0)) {
-    if (seen.has(column)) {
-      continue;
-    }
-    seen.add(column);
-    values.push(column);
-  }
-  return values;
-}
-
 export function quoteSqlIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
 }

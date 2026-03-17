@@ -22,6 +22,25 @@ describe("cli action modules: data preview", () => {
     });
   });
 
+  test("actionDataPreview renders TSV summary and table output", async () => {
+    await withDataPreviewFixture({
+      content: "name\tage\nAda\t36\nBob\t28\n",
+      fileName: "rows.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context);
+
+        expectNoStderr();
+        expect(stdout.text).toContain(`Input: ${context.input}`);
+        expect(stdout.text).toContain("Format: tsv");
+        expect(stdout.text).toContain("Rows: 2");
+        expect(stdout.text).toContain("Window: 1-2 of 2");
+        expect(stdout.text).toContain("Visible columns: name, age");
+        expect(stdout.text).toContain("name | age");
+        expect(stdout.text).toContain("Ada  | 36 ");
+      },
+    });
+  });
+
   test("actionDataPreview preserves first-seen key order across heterogeneous JSON rows", async () => {
     await withDataPreviewFixture({
       content:

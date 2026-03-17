@@ -16,6 +16,7 @@ export interface KeypressParser {
 }
 
 const DEFAULT_ESCAPE_ABORT_DELAY_MS = 120;
+const POTENTIAL_ESCAPE_SEQUENCE_BUFFER_PATTERN = new RegExp(String.raw`^\u001B(?:\[[0-9;?]*|O[0-9;?]*)$`);
 
 function normalizeKeypressChunk(str: string | undefined, key: RawSessionKeypressInfo): string {
   if (typeof str === "string") {
@@ -28,7 +29,7 @@ function normalizeKeypressChunk(str: string | undefined, key: RawSessionKeypress
 }
 
 function isPotentialEscapeSequenceBuffer(value: string): boolean {
-  return /^\x1b(?:\[[0-9;?]*|O[0-9;?]*)$/.test(value);
+  return POTENTIAL_ESCAPE_SEQUENCE_BUFFER_PATTERN.test(value);
 }
 
 function parseSpecialEscapeSequence(

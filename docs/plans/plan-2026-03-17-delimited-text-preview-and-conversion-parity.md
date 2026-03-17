@@ -142,57 +142,57 @@ The plan therefore locks one coherent lightweight family contract:
 
 ### Phase 1: Freeze the lightweight family contract
 
-- [ ] freeze the implementation boundary as lightweight in-memory delimited parsing, not DuckDB
-- [ ] freeze extension-based detection for TSV preview and interactive convert
-- [ ] freeze the full explicit direct conversion family:
-  - [ ] `json-to-csv`
-  - [ ] `csv-to-json`
-  - [ ] `csv-to-tsv`
-  - [ ] `tsv-to-csv`
-  - [ ] `tsv-to-json`
-  - [ ] `json-to-tsv`
-- [ ] freeze `--pretty` as valid only when the output format is JSON
-- [ ] freeze interactive convert as detected-format display only, without format override
+- [x] freeze the implementation boundary as lightweight in-memory delimited parsing, not DuckDB
+- [x] freeze extension-based detection for TSV preview and interactive convert
+- [x] freeze the full explicit direct conversion family:
+  - [x] `json-to-csv`
+  - [x] `csv-to-json`
+  - [x] `csv-to-tsv`
+  - [x] `tsv-to-csv`
+  - [x] `tsv-to-json`
+  - [x] `json-to-tsv`
+- [x] freeze `--pretty` as valid only when the output format is JSON
+- [x] freeze interactive convert as detected-format display only, without format override
 
 ### Phase 2: Generalize lightweight delimited helpers
 
-- [ ] add one delimiter-aware parse/stringify seam for lightweight delimited text
-- [ ] keep existing CSV wrappers stable for current callers
-- [ ] support at least:
-  - [ ] comma-delimited parsing/stringification
-  - [ ] tab-delimited parsing/stringification
-- [ ] share header-row-to-object conversion rules across CSV and TSV
-- [ ] preserve current BOM/header normalization and error-shaping behavior where applicable
-- [ ] keep a row-array delimited path for `csv-to-tsv` / `tsv-to-csv` so they do not route through lossy object normalization
-- [ ] codify the existing delimited-to-JSON edge-case behavior explicitly:
-  - [ ] blank headers omitted
-  - [ ] duplicate headers collapse by last-write-wins
-  - [ ] cells beyond header width are ignored in JSON output
-- [ ] avoid regressions for rename-plan CSV and data-query CSV export callers that already depend on existing CSV helpers
+- [x] add one delimiter-aware parse/stringify seam for lightweight delimited text
+- [x] keep existing CSV wrappers stable for current callers
+- [x] support at least:
+  - [x] comma-delimited parsing/stringification
+  - [x] tab-delimited parsing/stringification
+- [x] share header-row-to-object conversion rules across CSV and TSV
+- [x] preserve current BOM/header normalization and error-shaping behavior where applicable
+- [x] keep a row-array delimited path for `csv-to-tsv` / `tsv-to-csv` so they do not route through lossy object normalization
+- [x] codify the existing delimited-to-JSON edge-case behavior explicitly:
+  - [x] blank headers omitted
+  - [x] duplicate headers collapse by last-write-wins
+  - [x] cells beyond header width are ignored in JSON output
+- [x] avoid regressions for rename-plan CSV and data-query CSV export callers that already depend on existing CSV helpers
 
 ### Phase 3: Extend `data preview` to TSV
 
-- [ ] extend preview format detection to include `.tsv`
-- [ ] reuse the generalized lightweight delimited parser for CSV and TSV preview loading
-- [ ] keep the current header-first contract for TSV preview
-- [ ] keep existing preview filtering, slicing, and rendering behavior unchanged outside the new format support
-- [ ] update preview summary/help text so CSV and TSV are both named explicitly
+- [x] extend preview format detection to include `.tsv`
+- [x] reuse the generalized lightweight delimited parser for CSV and TSV preview loading
+- [x] keep the current header-first contract for TSV preview
+- [x] keep existing preview filtering, slicing, and rendering behavior unchanged outside the new format support
+- [x] update preview summary/help text so CSV and TSV are both named explicitly
 
 ### Phase 4: Expand explicit direct conversion actions
 
-- [ ] refactor conversion internals so one shared worker or helper layer can serve all six explicit direct commands
-- [ ] preserve existing `json-to-csv` and `csv-to-json` behavior unless the new shared contract intentionally changes it
-- [ ] keep `csv-to-tsv` and `tsv-to-csv` on the delimited row-array path instead of reusing the JSON object conversion path
-- [ ] add new direct commands and action wiring for:
-  - [ ] `csv-to-tsv`
-  - [ ] `tsv-to-csv`
-  - [ ] `tsv-to-json`
-  - [ ] `json-to-tsv`
-- [ ] keep default output-path derivation aligned with the target extension
-- [ ] keep success output consistent with current conversion actions:
-  - [ ] written output path
-  - [ ] row count
-- [ ] ensure JSON-output commands alone expose `--pretty`
+- [x] refactor conversion internals so one shared worker or helper layer can serve all six explicit direct commands
+- [x] preserve existing `json-to-csv` and `csv-to-json` behavior unless the new shared contract intentionally changes it
+- [x] keep `csv-to-tsv` and `tsv-to-csv` on the delimited row-array path instead of reusing the JSON object conversion path
+- [x] add new direct commands and action wiring for:
+  - [x] `csv-to-tsv`
+  - [x] `tsv-to-csv`
+  - [x] `tsv-to-json`
+  - [x] `json-to-tsv`
+- [x] keep default output-path derivation aligned with the target extension
+- [x] keep success output consistent with current conversion actions:
+  - [x] written output path
+  - [x] row count
+- [x] ensure JSON-output commands alone expose `--pretty`
 
 ### Phase 5: Add interactive `data -> convert`
 

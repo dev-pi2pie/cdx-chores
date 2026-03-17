@@ -10,9 +10,10 @@ import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-te
 
 const queryExtensions = await inspectDataQueryExtensions();
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
+const ANSI_ESCAPE_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 
 function stripAnsi(text: string): string {
-  return text.replace(/\x1B\[[0-9;]*m/g, "");
+  return text.replace(ANSI_ESCAPE_PATTERN, "");
 }
 
 describe("cli action modules: data query codex", () => {

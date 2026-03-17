@@ -7,10 +7,6 @@ import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
-function parquetFixturePath(name: string): string {
-  return join(REPO_ROOT, "test", "fixtures", "parquet-preview", name);
-}
-
 function dataQueryFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "data-query", name);
 }
@@ -109,7 +105,7 @@ describe("cli action modules: data query", () => {
       const outputPath = join(fixtureDir, "people.csv.out.csv");
       await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
 
-      const { runtime, stdout, stderr, expectNoStdout } = createActionTestRuntime();
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
       await actionDataQuery(runtime, {
         input: toRepoRelativePath(inputPath),
         output: toRepoRelativePath(outputPath),

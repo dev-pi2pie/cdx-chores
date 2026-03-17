@@ -104,6 +104,7 @@ describe("CLI UX flags and path output", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Input CSV, TSV, or JSON file");
     expect(result.stdout).toContain("--rows <value>");
     expect(result.stdout).toContain("--offset <value>");
     expect(result.stdout).toContain("--columns <names>");
@@ -126,9 +127,33 @@ describe("CLI UX flags and path output", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Data preview, query, and conversion utilities");
+    expect(result.stdout).toContain("json-to-csv");
+    expect(result.stdout).toContain("json-to-tsv");
+    expect(result.stdout).toContain("csv-to-json");
+    expect(result.stdout).toContain("csv-to-tsv");
+    expect(result.stdout).toContain("tsv-to-csv");
+    expect(result.stdout).toContain("tsv-to-json");
     expect(result.stdout).toContain("preview");
     expect(result.stdout).toContain("parquet");
     expect(result.stdout).toContain("query");
+  });
+
+  test("data csv-to-tsv help does not expose JSON-only pretty printing", () => {
+    const result = runCli(["data", "csv-to-tsv", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).not.toContain("--pretty");
+    expect(result.stdout).toContain("Input CSV file");
+  });
+
+  test("data tsv-to-json help exposes pretty printing for JSON output", () => {
+    const result = runCli(["data", "tsv-to-json", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--pretty");
+    expect(result.stdout).toContain("Input TSV file");
   });
 
   test("data query help documents SQL, source, and output options", () => {

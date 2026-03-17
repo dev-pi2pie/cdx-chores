@@ -92,7 +92,7 @@ export async function handleDataInteractiveAction(
   }
 
   if (action === "data:preview") {
-    const inputPath = await promptRequiredPathWithConfig("Input CSV or JSON file", {
+    const inputPath = await promptRequiredPathWithConfig("Input CSV, TSV, or JSON file", {
       kind: "file",
       ...pathPromptContext,
     });

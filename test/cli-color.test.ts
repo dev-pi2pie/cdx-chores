@@ -5,7 +5,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { runCli as runCliInProcess } from "../src/command";
 import { createTempFixtureDir, toRepoRelativePath, createCapturedRuntime } from "./helpers/cli-test-utils";
 
-const ANSI_PATTERN = /\u001B\[[0-9;]*m/g;
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 
 function enableTty(stream: NodeJS.WritableStream, columns = 80): void {
   const ttyStream = stream as NodeJS.WritableStream & { columns?: number; isTTY?: boolean };

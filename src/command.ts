@@ -1,6 +1,7 @@
 import { Command, InvalidArgumentError } from "commander";
 import {
   actionCsvToJson,
+  actionCsvToTsv,
   actionDataDuckDbDoctor,
   actionDataDuckDbExtensionInstall,
   actionDataParquetPreview,
@@ -9,12 +10,15 @@ import {
   actionDataQueryCodex,
   actionDoctor,
   actionJsonToCsv,
+  actionJsonToTsv,
   actionMdFrontmatterToJson,
   actionMdToDocx,
   actionRenameApply,
   actionRenameBatch,
   actionRenameCleanup,
   actionRenameFile,
+  actionTsvToCsv,
+  actionTsvToJson,
   actionVideoConvert,
   actionVideoGif,
   actionVideoResize,
@@ -308,6 +312,16 @@ export async function runCli(
       }),
   );
 
+  applyCommonFileOptions(
+    dataCommand
+      .command("json-to-tsv")
+      .description("Convert JSON file to TSV")
+      .requiredOption("-i, --input <path>", "Input JSON file")
+      .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
+        await actionJsonToTsv(cliRuntime, options);
+      }),
+  );
+
   dataCommand
     .command("csv-to-json")
     .description("Convert CSV file to JSON")
@@ -326,10 +340,48 @@ export async function runCli(
       },
     );
 
+  applyCommonFileOptions(
+    dataCommand
+      .command("csv-to-tsv")
+      .description("Convert CSV file to TSV")
+      .requiredOption("-i, --input <path>", "Input CSV file")
+      .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
+        await actionCsvToTsv(cliRuntime, options);
+      }),
+  );
+
+  applyCommonFileOptions(
+    dataCommand
+      .command("tsv-to-csv")
+      .description("Convert TSV file to CSV")
+      .requiredOption("-i, --input <path>", "Input TSV file")
+      .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
+        await actionTsvToCsv(cliRuntime, options);
+      }),
+  );
+
+  dataCommand
+    .command("tsv-to-json")
+    .description("Convert TSV file to JSON")
+    .requiredOption("-i, --input <path>", "Input TSV file")
+    .option("-o, --output <path>", "Output JSON file path")
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .option("--pretty", "Pretty-print JSON output", false)
+    .action(
+      async (options: {
+        input: string;
+        output?: string;
+        overwrite?: boolean;
+        pretty?: boolean;
+      }) => {
+        await actionTsvToJson(cliRuntime, options);
+      },
+    );
+
   dataCommand
     .command("preview")
-    .description("Preview CSV or JSON data as a bounded terminal table")
-    .argument("<input>", "Input CSV or JSON file")
+    .description("Preview CSV, TSV, or JSON data as a bounded terminal table")
+    .argument("<input>", "Input CSV, TSV, or JSON file")
     .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
     .option("--offset <value>", "Row offset to start from", (value: string) =>
       parseNonNegativeIntegerOption(value, "--offset"),

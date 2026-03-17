@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 
-import { parseCsv } from "../../utils/csv";
+import { parseDelimited, type DelimitedFormat } from "../../utils/delimited";
 import { CliError } from "../errors";
 import {
   collectFirstSeenColumns,
@@ -9,7 +9,7 @@ import {
   type JsonRow,
 } from "./normalize";
 
-export type DataPreviewFormat = "csv" | "json";
+export type DataPreviewFormat = DelimitedFormat | "json";
 
 export interface DataPreviewContainsFilter {
   column: string;
@@ -94,7 +94,7 @@ class InMemoryDataPreviewSource implements DataPreviewSource {
   }
 }
 
-function normalizeCsvHeader(value: string | undefined, index: number): string {
+function normalizeDelimitedHeader(value: string | undefined, index: number): string {
   const trimmed = (index === 0 ? (value ?? "").replace(/^\uFEFF/, "") : (value ?? "")).trim();
   return trimmed || `column_${index + 1}`;
 }
@@ -108,21 +108,21 @@ function dedupeColumnName(name: string, seen: Map<string, number>): string {
   return `${name}_${current + 1}`;
 }
 
-function resolveCsvColumns(rows: readonly string[][]): string[] {
+function resolveDelimitedColumns(rows: readonly string[][]): string[] {
   const headerRow = rows[0] ?? [];
   const maxWidth = rows.reduce((largest, row) => Math.max(largest, row.length), 0);
   const seen = new Map<string, number>();
   const columns: string[] = [];
 
   for (let index = 0; index < maxWidth; index += 1) {
-    const normalized = normalizeCsvHeader(headerRow[index], index);
+    const normalized = normalizeDelimitedHeader(headerRow[index], index);
     columns.push(dedupeColumnName(normalized, seen));
   }
 
   return columns;
 }
 
-function buildCsvRows(rows: readonly string[][], columns: readonly string[]): DataPreviewRow[] {
+function buildDelimitedRows(rows: readonly string[][], columns: readonly string[]): DataPreviewRow[] {
   const dataRows = rows.slice(1).filter((row) => row.some((value) => value.length > 0));
   return dataRows.map((row) => {
     const values: Record<string, string> = {};
@@ -143,20 +143,23 @@ function buildJsonRows(rows: readonly JsonRow[], columns: readonly string[]): Da
   });
 }
 
-function createCsvPreviewSource(text: string): DataPreviewSource {
+function createDelimitedPreviewSource(text: string, format: DelimitedFormat): DataPreviewSource {
   let rows: string[][];
   try {
-    rows = parseCsv(text);
+    rows = parseDelimited(text, format);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Invalid CSV: ${message}`, { code: "INVALID_CSV", exitCode: 2 });
+    throw new CliError(`Invalid ${format.toUpperCase()}: ${message}`, {
+      code: `INVALID_${format.toUpperCase()}`,
+      exitCode: 2,
+    });
   }
 
-  const columns = resolveCsvColumns(rows);
+  const columns = resolveDelimitedColumns(rows);
   return new InMemoryDataPreviewSource({
     columns,
-    format: "csv",
-    rows: buildCsvRows(rows, columns),
+    format,
+    rows: buildDelimitedRows(rows, columns),
   });
 }
 
@@ -284,13 +287,16 @@ export function createDataPreviewSource(inputPath: string, text: string): DataPr
   const extension = extname(inputPath).toLowerCase();
 
   if (extension === ".csv") {
-    return createCsvPreviewSource(text);
+    return createDelimitedPreviewSource(text, "csv");
+  }
+  if (extension === ".tsv") {
+    return createDelimitedPreviewSource(text, "tsv");
   }
   if (extension === ".json") {
     return createJsonPreviewSource(text);
   }
 
-  throw new CliError(`Unsupported preview file type: ${extension || "(none)"}. Expected .csv or .json.`, {
+  throw new CliError(`Unsupported preview file type: ${extension || "(none)"}. Expected .csv, .tsv, or .json.`, {
     code: "INVALID_INPUT",
     exitCode: 2,
   });
