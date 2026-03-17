@@ -44,10 +44,10 @@
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.0-r.1",
-    "@inquirer/prompts": "^8.3.0",
+    "@inquirer/prompts": "^8.3.2",
     "@openai/codex-sdk": "^0.115.0",
     "commander": "^14.0.3",
-    "mammoth": "^1.11.0",
+    "mammoth": "^1.12.0",
     "papaparse": "^5.5.3",
     "pdfjs-dist": "^5.5.207",
     "yaml": "^2.8.2"
