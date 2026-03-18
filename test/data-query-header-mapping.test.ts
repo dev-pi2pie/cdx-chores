@@ -106,7 +106,7 @@ describe("data header mapping artifacts", () => {
       const rewritten = JSON.parse(await readFile(artifactPath, "utf8")) as {
         input: { format: string; path: string };
         mappings: Array<{ from: string; to: string }>;
-        metadata: { artifactType: string };
+        metadata: { artifactType: string; issuedAt: string };
         version: number;
       };
       expect(rewritten).toEqual({
