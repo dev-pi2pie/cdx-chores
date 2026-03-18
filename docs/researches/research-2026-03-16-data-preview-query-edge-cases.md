@@ -117,7 +117,7 @@ Implications:
 - `formal-guide` will offer noisy or misleading columns when the raw sheet shape is poor
 - interactive `Codex Assistant` will draft against the wrong schema because its prompt is built directly from that introspection
 - direct `data query codex` will also draft against the wrong schema for the same reason
-- multiline-editor hints are also degraded because the seeded `# Schema:` and `# Sample rows:` comments come from the same raw source
+- the multiline editor itself should stay, but its seeded `# Schema:` and `# Sample rows:` hints are currently degraded because they come from the same raw source instead of the accepted shaped source
 
 For merged-cell or lower-table-start workbooks, this makes Codex-assisted drafting look less capable than it actually is, because the main problem is not SQL drafting but bad pre-draft table selection.
 

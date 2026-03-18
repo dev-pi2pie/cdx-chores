@@ -61,6 +61,7 @@ This is the smallest implementation slice that turns the research conclusions in
 - update interactive `data query` so Excel source shaping happens before schema-and-sample introspection
 - ask for optional `range` before rendering schema/sample context
 - carry the accepted `range` through manual SQL execution, formal-guide execution, and Codex-assisted drafting so the previewed schema and later execution stay aligned
+- keep the existing multiline-editor option for interactive `Codex Assistant`, but regenerate its seeded schema/sample hints from the accepted shaped source rather than the raw source
 - add conservative Excel-only warning behavior when:
   - no explicit shaping was provided
   - introspection looks strongly suspicious
