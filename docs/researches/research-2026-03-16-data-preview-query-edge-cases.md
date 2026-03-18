@@ -203,6 +203,25 @@ Why:
 - improves `formal-guide` and `Codex Assistant` at the same time
 - avoids teaching Codex to compensate for a broken source contract
 
+Clean pattern:
+
+1. resolve input format
+2. resolve source object when needed
+3. build the current shaping state
+4. introspect the current shaped source
+5. evaluate schema health
+6. if the schema looks healthy, continue to SQL authoring
+7. if the schema looks suspicious and no explicit shaping was provided, offer shape resolution:
+   - continue as-is
+   - enter manual shaping
+   - ask Codex to suggest shaping
+8. if accepted shaping changes the source contract, rebuild the shaped source and re-introspect
+9. only after that, continue to SQL authoring
+
+Important clarification:
+
+- this should use one shared introspection engine with different pre-authoring states, not separate introspection implementations for direct CLI, interactive mode, and Codex-assisted flows
+
 ### Recommendation E. Treat source shaping, Codex shape assistance, and SQL drafting as separate LEGO layers
 
 Recommended model:
@@ -232,6 +251,7 @@ Implementation note:
   - direct `data query`
   - interactive `data query`
   - direct `data query codex`
+- the first query-side shaping flag should be available in direct `data query codex` when the shared helper lands, rather than creating a second hidden Codex-only shaping path
 
 Why:
 
@@ -247,52 +267,282 @@ Suggested design sketch:
 raw input
    |
    v
-Layer 1: deterministic source shaping
+resolve format + source
+   |
+   v
+build current shaping state
   - preview: --no-header
   - query: --range
+  - later: --header-row / --no-header for query if needed
    |
    +------------------------------+
-   | accept as-is                 |
+   | preview                      |
    |                              v
-   |                      rebuild shaped source
-   |                              |
-   |                              v
-   |                      introspect schema + sample rows
-   |                              |
-   |                              v
-   |                      Layer 3: query authoring
-   |                        - manual
-   |                        - formal-guide
-   |                        - Codex SQL drafting
+   |                      render preview
    |
-   +-> Layer 2: optional Codex shape assistance
-         - suggest headers
-         - suggest ranges
-         - require confirmation
-                |
-                v
-         rebuild shaped source
-                |
-                v
-         introspect schema + sample rows
-                |
-                v
-         Layer 3: query authoring
+   +-> query
+         |
+         v
+      introspect current shaped source
+         |
+         v
+      evaluate schema health
+         |
+         +------------------------------+
+         | schema looks healthy         |
+         |                              v
+         |                      SQL authoring
+         |                        - manual
+         |                        - formal-guide
+         |                        - Codex SQL drafting
+         |
+         +-> schema looks suspicious and no explicit shaping
+               |
+               v
+            shape resolution
+              - continue as-is
+              - manual shaping
+              - Codex shape suggestion
+               |
+               v
+            accept shaping?
+               |
+               +------ no ------> SQL authoring
+               |
+               +------ yes ----->
+                          rebuild shaped source
+                               |
+                               v
+                          introspect again
+                               |
+                               v
+                          SQL authoring
 ```
+
+Clarification:
+
+- `data preview` does not have a separate schema-and-sample introspection phase
+- after lightweight shape resolution, preview renders directly
+- schema-and-sample introspection is query-only because it exists to support SQL authoring
+
+### Recommendation G. Keep suspicious-schema warnings conservative and Excel-specific at first
+
+Recommended first-pass warning policy:
+
+- evaluate warnings only for Excel inputs
+- do not warn when the user already provided explicit shaping such as `--range`
+- warn only on strong structural signals, not vague semantic guesses
+
+Good first-pass warning examples:
+
+- one title-like column with no useful sample rows
+- placeholder-heavy generated columns such as `column_2`, `column_3`, ... combined with sparse sample rows
+- zero useful sample rows after whole-sheet introspection on a sheet that likely contains decorative banner or spacer regions
+
+Examples:
+
+- suspicious:
+  - columns: `Quarterly Operations Report`
+  - sample rows: none
+- suspicious:
+  - columns: `RAW_TITLE`
+  - sample rows: none
+- suspicious:
+  - columns: `id`, `column_2`, `column_3`, `status`, `column_5`
+  - sample rows: mostly blank in the generated columns
+- do not warn:
+  - columns: `email`
+  - sample rows: populated
+- do not warn:
+  - columns: `metric`, `value`
+  - sample rows: populated
+
+Why:
+
+- avoids punishing valid narrow tables
+- keeps the warning tied to obvious schema-shape failures
+- prevents the first pass from drifting into fuzzy header semantics
+
+### Recommendation H. Prefer `--header-row <n>` before query-side `--no-header`
+
+Recommended progression after `--range`:
+
+- first: `--range`
+- second: `--header-row <n>`
+- third: `--no-header`
+- later: Codex-assisted custom header suggestions if they prove useful
+
+Why:
+
+- `--header-row <n>` solves the common workbook case where the right table exists but the real header is lower in the sheet
+- `--no-header` is still useful for truly headerless selected ranges, but it should not be the first extra query-side flag
+- custom header generation is a separate feature from `--no-header` and should remain explicit if it lands later
+
+### Recommendation I. Present interactive shape resolution as source interpretation, not SQL drafting
+
+Recommended prompt-copy principle:
+
+- make it explicit that this step changes how the source is interpreted as a table
+- make it explicit that the user is not writing SQL yet
+- avoid wording that sounds like query drafting or result export
+
+Recommended prompt direction:
+
+- `Adjust source shape before SQL?`
+- `This step changes how the source is interpreted as a table.`
+- `You are not writing SQL yet.`
+- `Current sheet shape looks suspicious. Choose how to continue: keep as-is, enter a range manually, or ask Codex to suggest shaping.`
+- after acceptance: `Accepted source shape: --range B7:AZ20`
+- before the next step: `Re-inspecting shaped source before SQL authoring.`
+
+Why:
+
+- keeps the user oriented around table selection first
+- reduces confusion between source shaping and SQL drafting
+- makes the pre-authoring loop easier to explain in both direct and interactive guidance
+
+### Recommendation J. Defer persisted clean extraction as a separate feature track
+
+Do not make the first shaping repair depend on writing a new cleaned CSV, TSV, or JSON artifact.
+
+Recommended first-pass behavior:
+
+- keep shaping ephemeral and in-memory
+- make accepted shaping reproducible through explicit flags
+- let preview, direct query, interactive query, and direct `data query codex` operate on the shaped view
+
+Defer as a later question:
+
+- whether users should be able to export a shaped source as a new artifact
+- what format that artifact should use
+- whether Codex-assisted shaping should ever produce persisted outputs
+
+Why:
+
+- keeps the first shaping track focused on source interpretation rather than file generation
+- avoids introducing a second product decision around artifact creation, naming, and ownership
+- preserves one clear contract: shape the source first, then preview or query it
+
+### Recommendation K. Keep Codex semantic header guesses advisory if they land later
+
+If Codex later helps on headerless inputs:
+
+- keep deterministic contract names such as `column_1`, `column_2`, ...
+- present semantic header guesses only as advisory mappings
+- do not silently replace the actual contract names with Codex-generated labels
+
+Why:
+
+- preserves reproducibility
+- keeps `--columns`, `--contains`, and future query-side shaping flags deterministic
+- separates stable source-shaping contracts from optional AI assistance
+
+### Recommendation L. Define `data extract` as the explicit materialization lane
+
+Recommended command-family model:
+
+- `data preview`: inspect a shaped source
+- `data query`: run SQL against a shaped source
+- `data extract`: materialize a shaped source as a clean output artifact
+
+Recommended first-pass contract for `data extract`:
+
+- one input file per invocation
+- no SQL
+- one shaped logical table per invocation
+- output is a new artifact derived from the accepted shaping state
+- accepted shaping must remain reproducible through explicit flags and reviewed choices
+
+Recommended first-pass output targets:
+
+- `.csv`
+- `.tsv`
+- `.json`
+
+Recommended shaping inputs:
+
+- `--source` where the input exposes multiple logical source objects
+- `--range`
+- later `--header-row <n>`
+- later `--no-header`
+- `--codex-suggest-headers` as a reviewed shaping aid rather than an automatic rewrite
+
+Important boundary:
+
+- `data extract` should not be required for preview or query shaping to work
+- it is a separate lane for users who want a persisted clean artifact after shaping decisions are accepted
+
+Why:
+
+- keeps inspection, SQL, and artifact generation as separate product concepts
+- gives messy-source cleanup a clear home without overloading `data preview` or `data query`
+- creates a natural place to persist accepted header mappings or shaped ranges when users need a reusable clean file
+
+### Recommendation M. Make `--codex-suggest-headers` a review-first shaping feature
+
+Recommended contract:
+
+- `--codex-suggest-headers` is a shaping aid, not an automatic rewrite
+- it should propose semantic headers for weak-header or headerless inputs
+- the user must review suggestions before they become active
+- accepted suggestions become part of the active shaped header set for the current operation
+
+Recommended first homes:
+
+- interactive shaping flow
+- `data extract`
+
+Recommended review rule:
+
+- keep the deterministic underlying names visible during review
+- do not silently replace `column_n` names without user acceptance
+
+Smallest reviewable mapping UI:
+
+```text
+Suggested headers
+
+column_1 -> id          sample: 1001
+column_2 -> created_at  sample: 2026-03-01
+column_3 -> status      sample: active
+column_4 -> amount      sample: 19.95
+```
+
+Recommended first-pass actions:
+
+- `Accept all`
+- `Edit one`
+- `Keep generated names`
+
+Why:
+
+- keeps Codex assistance reviewable
+- preserves the underlying deterministic contract
+- makes the feature useful without requiring a large spreadsheet-like editing UI in the first pass
 
 ## Decision Updates
 
 - Treat headerless preview shaping as lightweight delimited-preview work that applies to `.csv` and `.tsv`, not as a CSV-only exception.
 - Reuse the existing preview-generated column family `column_n` for `--no-header`; do not introduce spreadsheet-style synthetic labels such as `A`, `AA`, or `A1`.
 - Let direct/shared CLI shaping land before interactive prompting, then layer interactive support on top of the shared helper path.
+- Keep one shared shaping and introspection engine across direct CLI, interactive query, and direct `data query codex`; vary only the pre-authoring loop, not the core introspection implementation.
+- When shared query-side shaping lands, direct `data query codex` should accept the same shaping flag instead of relying on a hidden Codex-only path.
+- Add suspicious-schema warnings only for strong Excel-specific structural signals, and suppress them when explicit shaping is already present.
 - Defer Excel header override as a follow-up question after `--range`; if it becomes necessary later, avoid a vague bare `--header` flag.
+- If later Excel header control is needed, prefer `--header-row <n>` before adding query-side `--no-header`.
+- Present interactive shape resolution as source interpretation before SQL authoring, not as query drafting or result extraction.
+- Defer persisted clean extraction as a separate feature track; keep first-pass shaping ephemeral and flag-driven.
+- If query-side `--no-header` lands later, it should apply to delimited `data query` inputs as well rather than remaining Excel-only.
+- If Codex later suggests semantic headers, keep those suggestions advisory and preserve deterministic `column_n` contract names underneath.
+- Define `data extract` as the separate materialization lane for shaped sources rather than overloading `data preview` or `data query` with artifact generation.
+- Treat `--codex-suggest-headers` as an in-scope review-first shaping feature, not as a hidden or purely deferred idea.
+- Keep the first `--codex-suggest-headers` review surface small and explicit: mapping table plus `Accept all`, `Edit one`, or `Keep generated names`.
 - Accepted shaping choices should map back to concrete CLI flags so the resulting behavior remains visible and reproducible.
 
 ## Open Questions
 
-- When query-side Excel shaping lands, should direct `data query codex` accept the same `--range` in the first implementation slice, or can that follow immediately after the base query helper lands?
-- Which warning heuristics are strong enough to flag suspicious Excel introspection without becoming noisy on valid narrow tables?
-- If a later Excel header override proves necessary, is `--header-row <n>` precise enough, or do we also need a `--no-header`-style query mode?
+- What is the narrowest v1 input-format boundary for `data extract`: Excel-only messy-source recovery first, or a broader shaped-table lane that also covers delimited inputs immediately?
+- Should `--codex-suggest-headers` be available on direct CLI only through `data extract` first, or should a reviewed direct `data query` variant also be part of the first implementation slice?
 
 ## Documentation Note
 
