@@ -31,6 +31,7 @@ export interface InteractiveHarnessScenario {
   dataSourceShapeSuggestion?: Record<string, unknown>;
   dataSourceShapeSuggestionErrorMessage?: string;
   dataQuerySources?: string[];
+  xlsxSheetSnapshot?: Record<string, unknown>;
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
@@ -515,6 +516,7 @@ export function runInteractiveHarness(
 
     mock.module(${JSON.stringify(xlsxSourcesModuleUrl)}, () => ({
       collectXlsxSheetSnapshot: async (_inputPath, sheetName) => ({
+        ...(scenario.xlsxSheetSnapshot ?? {}),
         mergedRanges: [],
         mergedRangesTruncated: false,
         nonEmptyCellCount: 6,
@@ -544,6 +546,7 @@ export function runInteractiveHarness(
         rowsTruncated: false,
         sheetName: String(sheetName ?? "Summary"),
         usedRange: "A1:B3",
+        ...(scenario.xlsxSheetSnapshot ?? {}),
       }),
     }));
 

@@ -195,6 +195,36 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery tolerates shaped Excel header-band rows when the first data rows are blank", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "header-band.xlsx");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        range: "B7:E12",
+        source: "Summary",
+        sql: "select ID, question, status from file order by ID",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Format: excel");
+      expect(stdout.text).toContain("Source: Summary");
+      expect(stdout.text).toContain("Range: B7:E12");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: ID, question, status");
+      expect(stdout.text).toContain("101 | Confirm tax residency");
+      expect(stdout.text).toContain("102 | Collect withholding certificate");
+    });
+  });
+
   test("actionDataQuery writes a reviewed header-mapping artifact and stops before SQL execution", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");

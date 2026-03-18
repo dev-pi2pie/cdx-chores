@@ -537,6 +537,41 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain("Accepted source shape: --range A1:B3 --header-row 7");
   });
 
+  test("warns for collapsed merged-sheet whole-sheet views even when one visible column still has sample rows", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "Sheet1", "continue", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: [""],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospection: {
+        columns: [{ name: "Hello_This_Is_the_merged", type: "VARCHAR" }],
+        sampleRows: [
+          { Hello_This_Is_the_merged: "ID" },
+          { Hello_This_Is_the_merged: "78.0" },
+          { Hello_This_Is_the_merged: "21.0" },
+        ],
+        selectedSource: "Sheet1",
+        truncated: false,
+      },
+      dataQuerySources: ["Sheet1"],
+      xlsxSheetSnapshot: {
+        mergedRanges: ["A1:C1"],
+        usedRange: "A1:C5",
+      },
+    });
+
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose how to continue",
+    );
+    expect(result.stderr).toContain(
+      "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
+    );
+    expect(result.actionCalls).toEqual([]);
+  });
+
   test("re-prompts the shape warning after a Codex source-shape failure instead of falling straight into extraction", () => {
     const result = runInteractiveHarness({
       mode: "run",

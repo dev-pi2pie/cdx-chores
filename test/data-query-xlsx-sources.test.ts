@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../src/cli/duckdb/xlsx-sources";
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 
 function createWorkbookWithInvalidCentralDirectoryOffset(): Buffer {
   const buffer = Buffer.alloc(22);
@@ -47,6 +48,26 @@ describe("xlsx source discovery", () => {
           messageIncludes: "failed to read workbook metadata",
         },
       );
+    });
+  });
+
+  test("collectXlsxSheetSnapshot captures merged ranges for the collapsed merged-sheet fixture", async () => {
+    await withTempFixtureDir("xlsx-sources", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const workbookPath = join(fixtureDir, "collapsed-merged.xlsx");
+
+      const snapshot = await collectXlsxSheetSnapshot(workbookPath, "Summary");
+
+      expect(snapshot.sheetName).toBe("Summary");
+      expect(snapshot.mergedRanges).toEqual(["B2:D2"]);
+      expect(snapshot.usedRange).toBe("B2:B8");
+      expect(snapshot.rows[0]).toEqual({
+        cellCount: 1,
+        cells: [{ ref: "B2", value: "Hello This Is The Merged" }],
+        firstRef: "B2",
+        lastRef: "B2",
+        rowNumber: 2,
+      });
     });
   });
 });

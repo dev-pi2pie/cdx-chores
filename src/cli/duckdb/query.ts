@@ -58,6 +58,8 @@ interface PreparedDataQuerySource {
   selectedRange?: string;
 }
 
+type ExcelImportMode = "default" | "empty_as_varchar" | "all_varchar";
+
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
   ".csv": "csv",
   ".tsv": "tsv",
@@ -204,6 +206,9 @@ function buildRelationSql(
   inputPath: string,
   format: DataQueryInputFormat,
   shape: DataQuerySourceShape = {},
+  options: {
+    excelImportMode?: ExcelImportMode;
+  } = {},
 ): string {
   const escapedInput = escapeSqlString(inputPath);
   switch (format) {
@@ -221,8 +226,15 @@ function buildRelationSql(
         `sheet = ${escapeSqlString(shape.source ?? "")}`,
         ...(shape.range ? [`range = ${escapeSqlString(shape.range)}`] : []),
         ...(shape.headerRow ? ["header = true"] : []),
+        ...(options.excelImportMode === "empty_as_varchar" ? ["empty_as_varchar = true"] : []),
+        ...(options.excelImportMode === "all_varchar" ? ["all_varchar = true"] : []),
       ].join(", ")})`;
   }
+}
+
+function isRetryableExcelImportError(error: unknown): boolean {
+  const message = toErrorMessage(error);
+  return /read_xlsx/i.test(message) && /Failed to parse cell|Could not convert string/i.test(message);
 }
 
 function assertSingleObjectSourceContract(
@@ -436,36 +448,63 @@ export async function prepareDataQuerySource(
     assertSingleObjectSourceContract(format, shape);
   }
 
-  try {
-    await connection.run(
-      `create or replace temp view file_source as ${buildRelationSql(inputPath, format, {
-        headerRow: selectedHeaderRow,
-        range: effectiveRange,
-        source: selectedSource,
-      })}`,
-    );
-    const relationColumns = await collectQueryRelationColumns(connection, "file_source");
-    const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
-      availableColumns: relationColumns.map((column) => column.name),
-      mappings: shape.headerMappings ?? [],
-    });
-    await connection.run(
-      `create or replace temp view file as ${buildPreparedFileProjectionSql(
-        relationColumns,
-        appliedHeaderMappings,
-      )}`,
-    );
-    return {
-      selectedHeaderRow,
-      selectedRange,
-      selectedSource,
-    };
-  } catch (error) {
-    throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
-      code: "DATA_QUERY_SOURCE_FAILED",
-      exitCode: 2,
-    });
+  const excelImportModes: ExcelImportMode[] =
+    format === "excel" && (selectedRange || selectedHeaderRow !== undefined)
+      ? ["empty_as_varchar", "all_varchar"]
+      : ["default"];
+
+  for (let index = 0; index < excelImportModes.length; index += 1) {
+    const excelImportMode = excelImportModes[index] ?? "default";
+    try {
+      await connection.run(
+        `create or replace temp view file_source as ${buildRelationSql(
+          inputPath,
+          format,
+          {
+            headerRow: selectedHeaderRow,
+            range: effectiveRange,
+            source: selectedSource,
+          },
+          {
+            excelImportMode,
+          },
+        )}`,
+      );
+      const relationColumns = await collectQueryRelationColumns(connection, "file_source");
+      const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
+        availableColumns: relationColumns.map((column) => column.name),
+        mappings: shape.headerMappings ?? [],
+      });
+      await connection.run(
+        `create or replace temp view file as ${buildPreparedFileProjectionSql(
+          relationColumns,
+          appliedHeaderMappings,
+          {
+            excludeBlankRows: format === "excel" && Boolean(selectedRange || selectedHeaderRow !== undefined),
+          },
+        )}`,
+      );
+      return {
+        selectedHeaderRow,
+        selectedRange,
+        selectedSource,
+      };
+    } catch (error) {
+      const isLastAttempt = index === excelImportModes.length - 1;
+      if (!isLastAttempt && isRetryableExcelImportError(error)) {
+        continue;
+      }
+      throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
+        code: "DATA_QUERY_SOURCE_FAILED",
+        exitCode: 2,
+      });
+    }
   }
+
+  throw new CliError(`Failed to prepare ${format} query input: exhausted Excel import retries.`, {
+    code: "DATA_QUERY_SOURCE_FAILED",
+    exitCode: 2,
+  });
 }
 
 async function collectQueryRelationColumns(
@@ -487,6 +526,9 @@ async function collectQueryRelationColumns(
 function buildPreparedFileProjectionSql(
   columns: readonly QueryRelationColumn[],
   headerMappings: readonly DataHeaderMappingEntry[],
+  options: {
+    excludeBlankRows?: boolean;
+  } = {},
 ): string {
   const targetBySource = new Map(headerMappings.map((mapping) => [mapping.from, mapping.to]));
   const selectList =
@@ -501,7 +543,16 @@ function buildPreparedFileProjectionSql(
           })
           .join(", ")
       : "*";
-  return `select ${selectList} from file_source`;
+  const blankRowPredicate =
+    options.excludeBlankRows && columns.length > 0
+      ? columns
+          .map(
+            (column) =>
+              `nullif(trim(cast(${quoteSqlIdentifier(column.name)} as varchar)), '') is not null`,
+          )
+          .join(" or ")
+      : undefined;
+  return `select ${selectList} from file_source${blankRowPredicate ? ` where ${blankRowPredicate}` : ""}`;
 }
 
 function assertResultSet(reader: DuckDBResultReader): void {

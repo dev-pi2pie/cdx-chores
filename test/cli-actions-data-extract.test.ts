@@ -130,6 +130,34 @@ describe("cli action modules: data extract", () => {
     });
   });
 
+  test("actionDataExtract tolerates shaped Excel header-band rows when blank rows follow the header", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "header-band.xlsx");
+      const outputPath = join(fixtureDir, "header-band.clean.csv");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+        range: "B7:E12",
+        source: "Summary",
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "ID,question,status,notes\n101,Confirm tax residency,open,Email pending\n102,Collect withholding certificate,closed,Received\n103,Review dividend statement,open,Waiting on broker\n",
+      );
+    });
+  });
+
   test("actionDataExtract writes a reviewed header-mapping artifact and stops before materialization", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");

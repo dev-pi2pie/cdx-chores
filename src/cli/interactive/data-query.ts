@@ -363,6 +363,10 @@ export async function promptOptionalSourceSelection(
 
 function describeSuspiciousExcelIntrospection(
   introspection: DataQuerySourceIntrospection,
+  options: {
+    mergedRangeCount?: number;
+    usedRange?: string;
+  } = {},
 ): string[] | undefined {
   const reasons: string[] = [];
   const generatedColumns = introspection.columns
@@ -384,6 +388,28 @@ function describeSuspiciousExcelIntrospection(
     ) {
       reasons.push(
         "Whole-sheet inspection produced many generated placeholder columns with mostly blank sample cells.",
+      );
+    }
+  }
+
+  if (
+    introspection.columns.length === 1 &&
+    introspection.sampleRows.length > 0 &&
+    (options.mergedRangeCount ?? 0) > 0
+  ) {
+    const onlyColumnName = introspection.columns[0]?.name ?? "";
+    const match =
+      typeof options.usedRange === "string" &&
+      /^[A-Z]+[1-9][0-9]*:[A-Z]+[1-9][0-9]*$/i.test(options.usedRange)
+        ? /^([A-Z]+)[1-9][0-9]*:([A-Z]+)[1-9][0-9]*$/i.exec(options.usedRange)
+        : undefined;
+    const startColumn = (match?.[1] ?? "").toUpperCase();
+    const endColumn = (match?.[2] ?? "").toUpperCase();
+    const hasWideUsedRange = Boolean(startColumn && endColumn && startColumn !== endColumn);
+    const hasTitleLikeSingleColumnHeader = onlyColumnName.length >= 16 && /[_\s]/.test(onlyColumnName);
+    if (hasWideUsedRange || hasTitleLikeSingleColumnHeader) {
+      reasons.push(
+        "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
       );
     }
   }
@@ -507,6 +533,16 @@ export async function collectInteractiveIntrospection(options: {
 }): Promise<{ introspection: DataQuerySourceIntrospection; sourceShape: InteractiveSourceShapeState }> {
   const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
   let sourceShape: InteractiveSourceShapeState = {};
+  let cachedSheetSnapshot: Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined;
+
+  const getSheetSnapshot = async (): Promise<Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined> => {
+    const selectedSource = options.selectedSource?.trim();
+    if (!selectedSource) {
+      return undefined;
+    }
+    cachedSheetSnapshot ??= await collectXlsxSheetSnapshot(options.inputPath, selectedSource);
+    return cachedSheetSnapshot;
+  };
 
   if (options.format === "excel") {
     printLine(options.runtime.stderr, "");
@@ -541,7 +577,12 @@ export async function collectInteractiveIntrospection(options: {
       return { introspection, sourceShape };
     }
 
-    const warningReasons = describeSuspiciousExcelIntrospection(introspection);
+    const sheetSnapshot =
+      introspection.columns.length === 1 ? await getSheetSnapshot() : undefined;
+    const warningReasons = describeSuspiciousExcelIntrospection(introspection, {
+      mergedRangeCount: sheetSnapshot?.mergedRanges.length,
+      usedRange: sheetSnapshot?.usedRange,
+    });
     if (!warningReasons) {
       return { introspection, sourceShape };
     }
@@ -604,7 +645,8 @@ export async function collectInteractiveIntrospection(options: {
     let suggestionResult;
     try {
       status.start("Inspecting worksheet structure");
-      const sheetSnapshot = await collectXlsxSheetSnapshot(options.inputPath, selectedSource);
+      const sheetSnapshot =
+        (await getSheetSnapshot()) ?? (await collectXlsxSheetSnapshot(options.inputPath, selectedSource));
       status.wait("Waiting for Codex source-shape suggestions");
       suggestionResult = await suggestDataSourceShapeWithCodex({
         context: {

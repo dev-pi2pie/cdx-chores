@@ -49,6 +49,7 @@ This plan therefore treats the next slice as one follow-up:
   - re-inspect after accepted range changes
 - interactive header review currently stays intentionally narrow:
   - it runs only when the current shaped source exposes generated `column_n` placeholder headers
+- headerless CSV inputs currently expose DuckDB-generated names such as `column0`, `column1`, ... in some paths, which do not match the reviewed-header trigger contract assumed by the research
 - interactive extract currently:
   - runs reviewed shaping and reviewed header suggestions in memory
   - asks directly for an output file path
@@ -111,6 +112,12 @@ This plan therefore treats the next slice as one follow-up:
 - add a tolerant Excel introspection/materialization fallback for accepted shaped ranges that still fail due to type inference across blank or merged header-band rows
 - defer any new shaping flag until after tolerant import behavior is tested against the hard merged-sheet class
 - only freeze a new deterministic shape contract if `source + range + header-row` plus tolerant import still cannot produce a stable logical table
+
+### Headerless placeholder follow-up
+
+- reconcile the generated-header contract assumed by research and reviewed header suggestions with the actual placeholder names DuckDB emits for headerless CSV inputs
+- ensure interactive reviewed header suggestions trigger for deterministic placeholder names regardless of whether the current path exposes `column0` or `column_1` style names
+- prefer one shared placeholder contract before widening more interactive-only heuristics
 
 ## Design Contract
 
@@ -275,6 +282,19 @@ Decision boundary:
 - if tolerant retry makes accepted reviewed shapes materialize reliably, do not add a new shaping flag yet
 - if tolerant retry still cannot represent header-band spacer rows safely, draft a separate follow-up contract for the next deterministic Excel shaping field
 
+### Generated header placeholder contract
+
+Freeze the next follow-up decision for headerless tabular inputs:
+
+1. treat DuckDB-emitted placeholder names such as `column0`, `column1`, ... as generated headers, not semantic headers
+2. decide whether the shared contract should normalize those names to `column_1`, `column_2`, ... or preserve them and broaden every reviewed-header detector
+3. prefer shared normalization if it avoids duplicated placeholder-detection logic across preview, query, and extract
+
+Decision boundary:
+
+- if shared normalization is low-risk, standardize on `column_<n>` to match the research and reviewed header-mapping artifacts
+- if shared normalization would be too invasive, broaden generated-header detection first and treat normalization as a later cleanup
+
 ## Non-Goals
 
 - freeform natural-language transformation for `data extract`
@@ -363,19 +383,26 @@ Decision boundary:
 ### Phase 6: Hard-case warnings, fixtures, and docs
 
 - [x] keep warning loops active when strong structural suspicion remains after range-only shaping
-- [ ] add or extend public-safe workbook fixtures for range-plus-header-row recovery
-- [ ] add semantic validation coverage for the generated hard workbook, not only byte-level determinism
+- [x] add or extend public-safe workbook fixtures for range-plus-header-row recovery
+- [x] add semantic validation coverage for the generated hard workbook, not only byte-level determinism
 - [ ] update interactive and extract guides for the staged review-and-write flow
 - [ ] document `--header-row <n>` behavior without exposing private local repro details
-- [ ] verify with focused tests and `bunx tsc --noEmit`
+- [x] verify with focused tests and `bunx tsc --noEmit`
 
 ### Phase 7: Hard merged-sheet recovery and tolerant Excel shaping
 
-- [ ] broaden suspicious Excel detection for merged-sheet cases that collapse into one visible column with non-empty sample rows
-- [ ] add a focused public-safe workbook fixture that reproduces the collapsed-one-column merged-sheet pattern
-- [ ] add tolerant Excel introspection/materialization retry for accepted shaped ranges that still fail due to early-row type inference
-- [ ] add focused tests for accepted reviewed shapes that previously failed after `--range` plus `--header-row`
+- [x] broaden suspicious Excel detection for merged-sheet cases that collapse into one visible column with non-empty sample rows
+- [x] add a focused public-safe workbook fixture that reproduces the collapsed-one-column merged-sheet pattern
+- [x] add tolerant Excel introspection/materialization retry for accepted shaped ranges that still fail due to early-row type inference
+- [x] add focused tests for accepted reviewed shapes that previously failed after `--range` plus `--header-row`
 - [ ] evaluate whether a new deterministic shaping field is still needed after tolerant retry, and only then draft the next contract change
+
+### Phase 8: Placeholder normalization and rebuilt-dist verification
+
+- [ ] normalize or otherwise recognize DuckDB-generated headerless names such as `column0`, `column1`, ... as reviewed-header trigger placeholders
+- [ ] decide whether to standardize those placeholders to `column_<n>` in the shared contract or broaden generated-header detection without rewriting names
+- [ ] verify the hard merged-sheet recovery path against a rebuilt `dist` artifact before deciding another deterministic shaping field is required
+- [ ] if rebuilt `dist` still fails on the hard merged-sheet class, record the remaining failure mode and feed it into the next shaping-contract decision
 
 ## Related Plans
 

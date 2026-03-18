@@ -355,12 +355,60 @@ async function writeMessyWorkbook(outputDir) {
   await writeFile(join(outputDir, "messy.xlsx"), zipBuffer);
 }
 
+async function writeCollapsedMergedWorkbook(outputDir) {
+  const workbook = buildXlsxFiles([
+    {
+      name: "Summary",
+      mergedRanges: ["B2:D2"],
+      rows: [
+        [],
+        [undefined, "Hello This Is The Merged"],
+        [],
+        [undefined, "ID"],
+        [undefined, 78],
+        [undefined, 21],
+        [undefined, 96],
+        [undefined, 83],
+      ],
+    },
+  ]);
+  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  await writeFile(join(outputDir, "collapsed-merged.xlsx"), zipBuffer);
+}
+
+async function writeHeaderBandWorkbook(outputDir) {
+  const workbook = buildXlsxFiles([
+    {
+      name: "Summary",
+      mergedRanges: ["B2:E2"],
+      rows: [
+        [],
+        [undefined, "Quarterly Review Packet"],
+        [],
+        [undefined, "Prepared for Operations"],
+        [],
+        [],
+        [undefined, "ID", "question", "status", "notes"],
+        [],
+        [],
+        [undefined, 101, "Confirm tax residency", "open", "Email pending"],
+        [undefined, 102, "Collect withholding certificate", "closed", "Received"],
+        [undefined, 103, "Review dividend statement", "open", "Waiting on broker"],
+      ],
+    },
+  ]);
+  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  await writeFile(join(outputDir, "header-band.xlsx"), zipBuffer);
+}
+
 async function seedFixtures(outputDir) {
   await ensureOutputDir(outputDir);
 
   await writeDelimitedFixture(outputDir, "basic.csv", createBasicRows(), ",");
   await writeDelimitedFixture(outputDir, "basic.tsv", createBasicRows(), "\t");
+  await writeCollapsedMergedWorkbook(outputDir);
   await writeDelimitedFixture(outputDir, "generic.csv", createGenericRows(), ",");
+  await writeHeaderBandWorkbook(outputDir);
   writeSqliteFixture(outputDir);
   await writeSimpleWorkbook(outputDir);
   await writeMessyWorkbook(outputDir);

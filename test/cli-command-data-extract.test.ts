@@ -164,6 +164,40 @@ describe("CLI data extract command", () => {
     });
   });
 
+  test("extracts a shaped Excel header-band workbook end to end after tolerant import retry", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "header-band.xlsx");
+      const outputPath = join(fixtureDir, "header-band.clean.csv");
+
+      const result = runCli([
+        "data",
+        "extract",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "Summary",
+        "--range",
+        "B7:E12",
+        "--header-row",
+        "7",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "ID,question,status,notes\n101,Confirm tax residency,open,Email pending\n102,Collect withholding certificate,closed,Received\n103,Review dividend statement,open,Waiting on broker\n",
+      );
+    });
+  });
+
   test("writes a reviewed header-mapping artifact and stops before extraction", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");

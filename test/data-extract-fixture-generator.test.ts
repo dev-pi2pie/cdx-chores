@@ -48,7 +48,9 @@ describe("data extract fixture generator", () => {
         expect(snapshotA.map((entry) => entry.name)).toEqual([
           "basic.csv",
           "basic.tsv",
+          "collapsed-merged.xlsx",
           "generic.csv",
+          "header-band.xlsx",
           "messy.xlsx",
           "multi.sqlite",
           "multi.xlsx",
