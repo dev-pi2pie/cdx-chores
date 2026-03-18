@@ -401,27 +401,24 @@ Why:
 - reduces confusion between source shaping and SQL drafting
 - makes the pre-authoring loop easier to explain in both direct and interactive guidance
 
-### Recommendation J. Defer persisted clean extraction as a separate feature track
+### Recommendation J. Keep shaping reusable in-memory, while also adding `data extract` as the explicit artifact lane
 
-Do not make the first shaping repair depend on writing a new cleaned CSV, TSV, or JSON artifact.
+Do not make preview or query depend on writing a new cleaned CSV, TSV, or JSON artifact.
 
 Recommended first-pass behavior:
 
-- keep shaping ephemeral and in-memory
-- make accepted shaping reproducible through explicit flags
-- let preview, direct query, interactive query, and direct `data query codex` operate on the shaped view
-
-Defer as a later question:
-
-- whether users should be able to export a shaped source as a new artifact
-- what format that artifact should use
-- whether Codex-assisted shaping should ever produce persisted outputs
+- keep shaping reusable in-memory for:
+  - `data preview`
+  - direct `data query`
+  - interactive `data query`
+  - direct `data query codex`
+- add `data extract` as the separate lane that materializes a shaped source when users want a persisted clean artifact
 
 Why:
 
-- keeps the first shaping track focused on source interpretation rather than file generation
-- avoids introducing a second product decision around artifact creation, naming, and ownership
-- preserves one clear contract: shape the source first, then preview or query it
+- preserves one clear contract: shape the source first, then choose whether to preview, query, or extract it
+- keeps preview and query lightweight when persistence is unnecessary
+- still gives artifact generation a clear, explicit home
 
 ### Recommendation K. Keep Codex semantic header guesses advisory if they land later
 
@@ -452,6 +449,12 @@ Recommended first-pass contract for `data extract`:
 - one shaped logical table per invocation
 - output is a new artifact derived from the accepted shaping state
 - accepted shaping must remain reproducible through explicit flags and reviewed choices
+
+Recommended first-pass input boundary:
+
+- make `data extract` a broader shaped-table lane from the start
+- include messy Excel recovery cases
+- also include delimited inputs immediately so the same shaping model can materialize headerless or weak-header CSV/TSV sources without inventing an Excel-only export concept
 
 Recommended first-pass output targets:
 
@@ -491,6 +494,7 @@ Recommended first homes:
 
 - interactive shaping flow
 - `data extract`
+- reviewed direct `data query`
 
 Recommended review rule:
 
@@ -520,6 +524,260 @@ Why:
 - preserves the underlying deterministic contract
 - makes the feature useful without requiring a large spreadsheet-like editing UI in the first pass
 
+### Recommendation N. Use an explicit mapping-artifact review flow for direct CLI `data query`
+
+Recommended direct-CLI pattern:
+
+- do not let `--codex-suggest-headers` silently continue straight into SQL execution
+- keep the accepted mapping explicit and scriptable through a review artifact
+
+Recommended first-pass flow:
+
+1. run `data query` with `--codex-suggest-headers`
+2. inspect the current shaped source
+3. ask Codex for semantic header suggestions
+4. write a reviewable header-mapping artifact
+5. print a compact human-readable summary and stop before SQL execution
+6. rerun `data query` with the accepted `--header-mapping <path>` plus `--sql "..."`
+7. rebuild the shaped source with the accepted mapping, re-introspect, and then continue to SQL execution
+
+Example shape:
+
+```text
+cdx-chores data query <input> --source <name> --range <A1:Z99> --codex-suggest-headers --write-header-mapping ./header-map.json
+cdx-chores data query <input> --source <name> --range <A1:Z99> --header-mapping ./header-map.json --sql "select ..."
+```
+
+Why:
+
+- keeps direct CLI workflows scriptable
+- makes the accepted mapping visible and reusable
+- avoids hidden state between the suggestion step and the query step
+- preserves a clear review boundary before SQL runs
+
+### Recommendation O. Share the suggestion engine, but keep the review UX command-specific
+
+Shared helper behavior should own:
+
+- collecting evidence from the current shaped source:
+  - deterministic column names
+  - sample values
+  - inferred types when available
+- calling Codex and normalizing suggested semantic headers
+- validating suggested mappings:
+  - non-empty names
+  - uniqueness
+  - collision handling
+- serializing and reading the mapping artifact
+- applying the accepted mapping to rebuild the shaped source
+- re-introspecting after accepted mappings are applied
+
+Command-specific UX should own:
+
+- how the user enters the suggestion flow
+- how review is displayed
+- whether the command stops for external review or keeps the user inside an interactive acceptance loop
+- what happens after acceptance
+
+Recommended command-specific continuations:
+
+- `data query`:
+  - shape source
+  - suggest and review headers
+  - accept mapping
+  - rebuild shaped source
+  - re-introspect
+  - continue to SQL authoring or execution
+- `data extract`:
+  - shape source
+  - suggest and review headers
+  - accept mapping
+  - rebuild shaped source
+  - write the clean artifact
+
+Why:
+
+- keeps the hard logic shared and testable
+- avoids duplicating Codex suggestion, validation, and mapping-application code
+- still lets each command explain and continue the workflow in a way that matches its own purpose
+
+### Recommendation P. Use JSON as the first-pass header-mapping artifact format
+
+Recommended first-pass artifact policy:
+
+- use JSON as the canonical header-mapping artifact
+- print a compact human-readable mapping summary to stdout or the interactive terminal for review
+- do not require a second persisted text-oriented artifact format in the first pass
+
+Why JSON first:
+
+- easy to validate and round-trip
+- easy to edit in scripts or editors
+- easy to extend later with metadata such as:
+  - input format
+  - source object
+  - range
+  - generated headers
+  - sample values
+  - inferred types
+- avoids delimiter and escaping edge cases in the source-of-truth artifact
+
+Recommended minimal structure direction:
+
+- keep `version` as the artifact schema-contract version
+- use a small `metadata` object for artifact-level details such as:
+  - artifact type
+  - issued timestamp in UTC
+- keep input reference details under `input`
+
+Important clarification:
+
+- `version` should mean the JSON schema contract version for this artifact family
+- it should not mean the CLI app version
+- it should not mean edit history or a revision snapshot of user changes
+- if app-version or history fields are needed later, they should live under `metadata` or a later dedicated history field
+
+Recommended first-pass input reference policy:
+
+- record the original input reference in the artifact
+- prefer a CLI-facing or cwd-relative path representation
+- avoid machine-specific absolute paths by default
+
+Recommended narrowest required first-pass field set:
+
+- required:
+  - `version`
+  - `metadata.artifactType`
+  - `metadata.issuedAt`
+  - `input.path`
+  - `input.format`
+  - `mappings`
+  - `mappings[].from`
+  - `mappings[].to`
+- conditionally required:
+  - `input.source` when the input exposes multiple logical source objects
+  - `input.range` when shaping used an explicit range
+- intentionally optional in the first pass:
+  - `sample`
+  - `inferredType`
+  - `confidence`
+  - edit-history fields
+
+Illustrative first-pass shape:
+
+```json
+{
+  "version": 1,
+  "metadata": {
+    "artifactType": "data-header-mapping",
+    "issuedAt": "2026-03-18T14:30:00Z"
+  },
+  "input": {
+    "path": "examples/playground/data-query/multi.xlsx",
+    "format": "excel",
+    "source": "Summary",
+    "range": "B7:AZ20"
+  },
+  "mappings": [
+    { "from": "column_1", "to": "id", "sample": "1001", "inferredType": "INTEGER" },
+    { "from": "column_2", "to": "created_at", "sample": "2026-03-01", "inferredType": "DATE" },
+    { "from": "column_3", "to": "status", "sample": "active", "inferredType": "VARCHAR" },
+    { "from": "column_4", "to": "amount", "sample": "19.95", "inferredType": "DOUBLE" }
+  ]
+}
+```
+
+Documentation implication:
+
+- this should ship with a dedicated schema-and-mapping guide that explains the artifact contract and review flow
+- related command guides for `data query` and `data extract` should link back to that shared guide rather than duplicating the canonical mapping schema contract
+- non-JSON review presentation should stay in CLI output only in the first pass, not as a second persisted contract
+- that guide should explicitly clarify that `version` is the schema-contract version, not app-version history
+
+### Recommendation R. Use one shared filename convention for header-mapping artifacts
+
+Recommended naming rule:
+
+- `data-header-mapping-<uid>.json`
+
+Recommended design principle:
+
+- keep one neutral artifact family for both `data query` and `data extract`
+- reuse the same explicit-review-artifact philosophy as `rename-plan-*.csv`
+- do not create command-specific naming families unless the artifact contracts later diverge
+
+Why:
+
+- keeps the mapping artifact portable across command flows
+- avoids implying that the file belongs exclusively to query or extract
+- makes docs, scripting, and artifact recognition simpler
+
+### Recommendation Q. Treat any later TTY accept-in-place shortcut as dry-run-like review convenience
+
+Recommended policy:
+
+- do not make a TTY-only accept-in-place shortcut part of the first pass
+- if it lands later, keep it optional
+- even when used, require the final accepted mapping to be written back to an explicit artifact
+
+Why:
+
+- preserves scriptability and reproducibility
+- keeps the accepted mapping inspectable after the TTY session ends
+- makes the shortcut analogous to a dry-run review boundary:
+  - visible proposal first
+  - explicit acceptance second
+  - real command continuation only after acceptance
+
+Important distinction:
+
+- this is dry-run-like in workflow shape
+- it is not the same feature as filesystem dry-run output such as `rename --dry-run`
+- the object under review here is a schema-shaping contract, not a file-operation batch
+
+### Recommendation S. Use strict input-context matching when reusing accepted mappings in the first pass
+
+Recommended first-pass reuse rule:
+
+- reuse an accepted mapping only when the current shaped-input context matches exactly
+
+Recommended first-pass matching keys:
+
+- `input.path`
+- `input.format`
+- `input.source` when present
+- `input.range` when present
+
+Why:
+
+- header mappings are schema-shaping contracts, not loose hints
+- applying the wrong mapping to a similar-looking source is a high-risk silent failure
+- exact matching is easier to explain, validate, and test in the first pass
+
+Defer for later:
+
+- looser compatibility heuristics
+- explicit override flags for advanced users if they are actually needed
+
+### Recommendation T. Preserve unknown JSON fields when rewriting mapping artifacts
+
+Recommended rewrite policy:
+
+- preserve unknown top-level fields
+- preserve unknown fields under `metadata`
+- preserve unknown fields inside mapping entries
+- update only the fields the CLI owns during the current operation
+
+Why:
+
+- improves forward compatibility
+- prevents older CLI versions from silently deleting metadata written by newer versions
+- keeps room for later optional fields such as confidence, edit history, or review annotations
+
+Fail-closed rule:
+
+- if the CLI encounters an artifact schema version it cannot safely understand and preserve, it should fail clearly instead of rewriting destructively
+
 ## Decision Updates
 
 - Treat headerless preview shaping as lightweight delimited-preview work that applies to `.csv` and `.tsv`, not as a CSV-only exception.
@@ -531,18 +789,39 @@ Why:
 - Defer Excel header override as a follow-up question after `--range`; if it becomes necessary later, avoid a vague bare `--header` flag.
 - If later Excel header control is needed, prefer `--header-row <n>` before adding query-side `--no-header`.
 - Present interactive shape resolution as source interpretation before SQL authoring, not as query drafting or result extraction.
-- Defer persisted clean extraction as a separate feature track; keep first-pass shaping ephemeral and flag-driven.
+- Keep first-pass shaping reusable and in-memory across preview and query, while implementing `data extract` as the explicit materialization lane.
 - If query-side `--no-header` lands later, it should apply to delimited `data query` inputs as well rather than remaining Excel-only.
 - If Codex later suggests semantic headers, keep those suggestions advisory and preserve deterministic `column_n` contract names underneath.
 - Define `data extract` as the separate materialization lane for shaped sources rather than overloading `data preview` or `data query` with artifact generation.
 - Treat `--codex-suggest-headers` as an in-scope review-first shaping feature, not as a hidden or purely deferred idea.
 - Keep the first `--codex-suggest-headers` review surface small and explicit: mapping table plus `Accept all`, `Edit one`, or `Keep generated names`.
+- Make `data extract` a broader shaped-table lane in the first implementation slice instead of limiting it to Excel-only messy-source recovery.
+- Make `--codex-suggest-headers` available in both `data extract` and a reviewed direct `data query` path in the first implementation slice.
+- For direct CLI `data query`, keep accepted Codex header suggestions explicit through a reviewed mapping artifact rather than a hidden in-memory acceptance step.
+- Share one Codex header-suggestion engine across `data extract` and `data query`, but keep review and continuation UX command-specific.
+- Use JSON as the first-pass canonical header-mapping artifact format.
+- Keep header-mapping artifacts JSON-only in the first implementation slice.
+- Treat `version` as the header-mapping artifact schema-contract version, not as app-version history or edit-history snapshot.
+- Freeze the narrowest required first-pass field set as:
+  - `version`
+  - `metadata.artifactType`
+  - `metadata.issuedAt`
+  - `input.path`
+  - `input.format`
+  - optional `input.source`
+  - optional `input.range`
+  - `mappings[].from`
+  - `mappings[].to`
+- If a later TTY-only accept-in-place shortcut lands, keep it optional and still require the final accepted mapping to be written to an explicit artifact.
+- Add one dedicated schema-and-mapping guide for the shared artifact contract, and link command guides back to it.
+- Use one shared on-disk mapping filename convention across `data extract` and `data query`: `data-header-mapping-<uid>.json`.
+- Reuse accepted mappings only on strict exact input-context matches in the first implementation slice.
+- Preserve unknown JSON fields when rewriting mapping artifacts, and fail clearly rather than rewriting when the schema version is too new or unsupported to preserve safely.
 - Accepted shaping choices should map back to concrete CLI flags so the resulting behavior remains visible and reproducible.
 
-## Open Questions
+## Remaining Open Questions
 
-- What is the narrowest v1 input-format boundary for `data extract`: Excel-only messy-source recovery first, or a broader shaped-table lane that also covers delimited inputs immediately?
-- Should `--codex-suggest-headers` be available on direct CLI only through `data extract` first, or should a reviewed direct `data query` variant also be part of the first implementation slice?
+- none for this research pass
 
 ## Documentation Note
 
