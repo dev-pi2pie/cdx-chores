@@ -1,8 +1,8 @@
 ---
 title: "Data preview and query edge cases from private issue scenarios"
 created-date: 2026-03-16
-modified-date: 2026-03-18
-status: draft
+modified-date: 2026-03-19
+status: completed
 agent: codex
 ---
 
@@ -13,6 +13,11 @@ Evaluate three private issue scenarios and determine whether the current `data p
 This document is exploratory research only.
 It should not be treated as shipped behavior or guide-level usage documentation until a related plan is accepted and implementation lands.
 The later `data extract` and header-mapping sections sketch candidate follow-on command and artifact contracts for planning discussion only; they are not accepted implementation scope on their own.
+
+Completion note:
+
+- the main contract questions in this research have now been harvested into completed data preview, query, header-mapping, source-shaping, interactive extract, and Excel header-row plans
+- one extreme merged-sheet class still remains as a follow-on shaping-contract decision, but that no longer blocks marking this exploratory research complete
 
 ## Key Findings
 
@@ -884,6 +889,8 @@ This keeps design and contract discussion focused on the data shape instead of e
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
 
 ## References
 
