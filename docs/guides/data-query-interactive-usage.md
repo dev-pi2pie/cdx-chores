@@ -22,15 +22,19 @@ Current interactive flow:
 3. select a SQLite table or Excel sheet when the input has multiple logical sources
 4. for Excel, optionally enter a `range` before schema inspection
 5. inspect schema and sample rows from the current shaped source
-6. when a raw whole-sheet Excel schema looks strongly suspicious, optionally enter a range and re-inspect before SQL authoring
-7. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
-8. choose one mode:
+6. when a raw whole-sheet Excel schema looks strongly suspicious, choose how to continue:
+   - keep as-is
+   - enter a range manually
+   - ask Codex to suggest shaping
+7. after accepted source-shape changes, re-inspect before SQL authoring
+8. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
+9. choose one mode:
    - `manual`
    - `formal-guide`
    - `Codex Assistant`
-9. review the generated SQL
-10. explicitly confirm execution
-11. choose one output mode:
+10. review the generated SQL
+11. explicitly confirm execution
+12. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
@@ -68,7 +72,7 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - SQLite requires choosing a table or view
 - Excel requires choosing a sheet
 - Excel also supports optional `range` shaping before SQL authoring
-- if whole-sheet Excel introspection looks structurally suspicious, the flow warns about source interpretation before continuing
+- if whole-sheet Excel introspection looks structurally suspicious, the flow can keep the current shape, accept a manual range, or ask Codex to suggest shaping before continuing
 - the selected source is always exposed to SQL as the logical table `file`
 
 ### Interactive Header Review

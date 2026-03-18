@@ -23,25 +23,42 @@ import {
   type DataHeaderSuggestionRunner,
   writeDataHeaderMappingArtifact,
 } from "../duckdb/header-mapping";
+import { collectXlsxSheetSnapshot } from "../duckdb/xlsx-sources";
+import {
+  createDataSourceShapeArtifact,
+  createSourceShapeInputReference,
+  generateDataSourceShapeFileName,
+  readDataSourceShapeArtifact,
+  resolveReusableSourceShape,
+  suggestDataSourceShapeWithCodex,
+  type DataSourceShapeSuggestionRunner,
+  writeDataSourceShapeArtifact,
+} from "../duckdb/source-shape";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 
 export interface DataExtractOptions {
+  codexSuggestShape?: boolean;
   codexSuggestHeaders?: boolean;
   headerMapping?: string;
   headerMappings?: DataHeaderMappingEntry[];
+  headerRow?: number;
   headerSuggestionRunner?: DataHeaderSuggestionRunner;
   input: string;
   inputFormat?: DataQueryInputFormat;
   output?: string;
   overwrite?: boolean;
   range?: string;
+  sourceShape?: string;
+  sourceShapeSuggestionRunner?: DataSourceShapeSuggestionRunner;
   source?: string;
   writeHeaderMapping?: string;
+  writeSourceShape?: string;
 }
 
 type DataExtractOutputFormat = DelimitedFormat | "json";
 
 const DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS = 5;
+const DATA_EXTRACT_SOURCE_SHAPE_SNAPSHOT_ROWS = 24;
 
 function normalizeOutputFormat(outputPath: string): DataExtractOutputFormat {
   const extension = extname(outputPath).toLowerCase();
@@ -57,6 +74,34 @@ function normalizeOutputFormat(outputPath: string): DataExtractOutputFormat {
 function validateDataExtractOptions(options: DataExtractOptions): void {
   const normalizedOutput = options.output?.trim();
 
+  if (options.codexSuggestShape && options.headerMapping) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --header-mapping.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.codexSuggestShape && options.codexSuggestHeaders) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --codex-suggest-headers.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.codexSuggestShape && options.range?.trim()) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --range in the first pass.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.codexSuggestShape && options.headerRow !== undefined) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --header-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (options.codexSuggestHeaders && options.headerMapping) {
     throw new CliError("--codex-suggest-headers cannot be used together with --header-mapping.", {
       code: "INVALID_INPUT",
@@ -71,6 +116,13 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
     });
   }
 
+  if (options.codexSuggestShape && normalizedOutput) {
+    throw new CliError("--codex-suggest-shape stops after writing a source shape artifact and cannot be used with --output.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (options.writeHeaderMapping && !options.codexSuggestHeaders) {
     throw new CliError("--write-header-mapping requires --codex-suggest-headers.", {
       code: "INVALID_INPUT",
@@ -78,7 +130,28 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
     });
   }
 
-  if (!options.codexSuggestHeaders && !normalizedOutput) {
+  if (options.writeSourceShape && !options.codexSuggestShape) {
+    throw new CliError("--write-source-shape requires --codex-suggest-shape.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.range?.trim()) {
+    throw new CliError("--source-shape cannot be used together with --range in the first pass.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.headerRow !== undefined) {
+    throw new CliError("--source-shape cannot be used together with --header-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (!options.codexSuggestHeaders && !options.codexSuggestShape && !normalizedOutput) {
     throw new CliError("--output is required for data extract materialization runs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -112,6 +185,32 @@ function classifyHeaderSuggestionFailure(message: string): { code: string; prefi
   };
 }
 
+function classifySourceShapeSuggestionFailure(message: string): { code: string; prefix: string } {
+  if (
+    /codex exec exited/i.test(message) ||
+    /missing optional dependency/i.test(message) ||
+    /spawn/i.test(message) ||
+    /enoent/i.test(message) ||
+    /auth/i.test(message) ||
+    /sign in/i.test(message) ||
+    /api key/i.test(message)
+  ) {
+    return {
+      code: "CODEX_UNAVAILABLE",
+      prefix: "Codex source-shape suggestions unavailable",
+    };
+  }
+
+  return {
+    code: "DATA_EXTRACT_SOURCE_SHAPE_SUGGESTION_FAILED",
+    prefix: "Codex source-shape suggestions failed",
+  };
+}
+
+function isSourceShapeFormat(format: DataQueryInputFormat): format is "excel" {
+  return format === "excel";
+}
+
 function renderHeaderSuggestionSummary(
   runtime: CliRuntime,
   mappings: readonly DataHeaderMappingEntry[],
@@ -140,6 +239,7 @@ function buildHeaderSuggestionFollowUpCommand(options: {
   inputPath: string;
   runtime: CliRuntime;
   shape: {
+    headerRow?: number;
     range?: string;
     source?: string;
   };
@@ -153,7 +253,50 @@ function buildHeaderSuggestionFollowUpCommand(options: {
     options.format,
     ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
     ...(options.shape.range ? ["--range", options.shape.range] : []),
+    ...(options.shape.headerRow !== undefined
+      ? ["--header-row", String(options.shape.headerRow)]
+      : []),
     "--header-mapping",
+    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
+    "--output",
+    JSON.stringify("<output.csv|.tsv|.json>"),
+  ];
+  return parts.join(" ");
+}
+
+function renderSourceShapeSuggestionSummary(
+  runtime: CliRuntime,
+  options: {
+    headerRow?: number;
+    range?: string;
+    reasoningSummary: string;
+  },
+): void {
+  printLine(runtime.stdout, "Suggested source shape");
+  printLine(runtime.stdout, "");
+  if (options.range) {
+    printLine(runtime.stdout, `- --range ${options.range}`);
+  }
+  if (options.headerRow !== undefined) {
+    printLine(runtime.stdout, `- --header-row ${options.headerRow}`);
+  }
+  printLine(runtime.stdout, `- reasoning: ${options.reasoningSummary}`);
+}
+
+function buildSourceShapeFollowUpCommand(options: {
+  artifactPath: string;
+  format: DataQueryInputFormat;
+  inputPath: string;
+  runtime: CliRuntime;
+}): string {
+  const parts = [
+    "cdx-chores",
+    "data",
+    "extract",
+    JSON.stringify(displayPath(options.runtime, options.inputPath)),
+    "--input-format",
+    options.format,
+    "--source-shape",
     JSON.stringify(displayPath(options.runtime, options.artifactPath)),
     "--output",
     JSON.stringify("<output.csv|.tsv|.json>"),
@@ -210,6 +353,7 @@ async function resolveReusableHeaderMappingsForExtract(options: {
   inputPath: string;
   runtime: CliRuntime;
   shape: {
+    headerRow?: number;
     range?: string;
     source?: string;
   };
@@ -227,11 +371,135 @@ async function resolveReusableHeaderMappingsForExtract(options: {
   });
 }
 
+async function resolveReusableSourceShapeForExtract(options: {
+  format: DataQueryInputFormat;
+  inputPath: string;
+  runtime: CliRuntime;
+  source?: string;
+  sourceShapePath: string;
+}): Promise<{ headerRow?: number; range?: string; source: string }> {
+  if (!isSourceShapeFormat(options.format)) {
+    throw new CliError("--source-shape is only valid for Excel extract inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const artifact = await readDataSourceShapeArtifact(options.sourceShapePath);
+  return resolveReusableSourceShape({
+    artifact,
+    currentInput: createSourceShapeInputReference({
+      cwd: options.runtime.cwd,
+      format: "excel",
+      inputPath: options.inputPath,
+      source: options.source?.trim() || artifact.input.source,
+    }),
+  });
+}
+
+async function runCodexSourceShapeSuggestionFlow(
+  runtime: CliRuntime,
+  options: {
+    format: DataQueryInputFormat;
+    inputPath: string;
+    overwrite?: boolean;
+    source?: string;
+    sourceShapeSuggestionRunner?: DataSourceShapeSuggestionRunner;
+    writeSourceShape?: string;
+  },
+): Promise<void> {
+  if (!isSourceShapeFormat(options.format)) {
+    throw new CliError("--codex-suggest-shape is only valid for Excel extract inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const selectedSource = assertNonEmpty(options.source, "Source");
+  const artifactPath = options.writeSourceShape?.trim()
+    ? resolveFromCwd(runtime, options.writeSourceShape.trim())
+    : join(runtime.cwd, generateDataSourceShapeFileName());
+
+  let connection;
+  try {
+    connection = await createDuckDbConnection();
+    const currentIntrospection = await collectDataQuerySourceIntrospection(
+      connection,
+      options.inputPath,
+      options.format,
+      {
+        source: selectedSource,
+      },
+      DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS,
+    );
+    const sheetSnapshot = await collectXlsxSheetSnapshot(options.inputPath, selectedSource, {
+      maxRows: DATA_EXTRACT_SOURCE_SHAPE_SNAPSHOT_ROWS,
+    });
+    const suggestionResult = await suggestDataSourceShapeWithCodex({
+      context: {
+        currentIntrospection,
+        sheetSnapshot,
+      },
+      currentHeaderRow: currentIntrospection.selectedHeaderRow,
+      currentRange: currentIntrospection.selectedRange,
+      runner: options.sourceShapeSuggestionRunner,
+      workingDirectory: runtime.cwd,
+    });
+
+    if (suggestionResult.errorMessage || !suggestionResult.shape || !suggestionResult.reasoningSummary) {
+      const failure = classifySourceShapeSuggestionFailure(
+        suggestionResult.errorMessage ?? "Codex did not return a valid source-shape suggestion.",
+      );
+      throw new CliError(`${failure.prefix}: ${suggestionResult.errorMessage ?? "Codex did not return a valid source-shape suggestion."}`, {
+        code: failure.code,
+        exitCode: 2,
+      });
+    }
+
+    const artifact = createDataSourceShapeArtifact({
+      input: createSourceShapeInputReference({
+        cwd: runtime.cwd,
+        format: "excel",
+        inputPath: options.inputPath,
+        source: selectedSource,
+      }),
+      now: runtime.now(),
+      shape: suggestionResult.shape,
+    });
+    await writeDataSourceShapeArtifact(artifactPath, artifact, {
+      overwrite: options.overwrite,
+    });
+
+    renderSourceShapeSuggestionSummary(runtime, {
+      headerRow: suggestionResult.shape.headerRow,
+      range: suggestionResult.shape.range,
+      reasoningSummary: suggestionResult.reasoningSummary,
+    });
+    printLine(runtime.stderr, `Wrote source shape: ${displayPath(runtime, artifactPath)}`);
+    printLine(
+      runtime.stderr,
+      "Review the shape artifact, then rerun with --source-shape and --output to materialize the shaped table.",
+    );
+    printLine(
+      runtime.stderr,
+      buildSourceShapeFollowUpCommand({
+        artifactPath,
+        format: options.format,
+        inputPath: options.inputPath,
+        runtime,
+      }),
+    );
+  } finally {
+    connection?.closeSync();
+  }
+}
+
 async function runCodexHeaderSuggestionFlow(
   runtime: CliRuntime,
   options: {
     format: DataQueryInputFormat;
     headerSuggestionRunner?: DataHeaderSuggestionRunner;
+    headerRow?: number;
     inputPath: string;
     overwrite?: boolean;
     range?: string;
@@ -251,6 +519,7 @@ async function runCodexHeaderSuggestionFlow(
       options.inputPath,
       options.format,
       {
+        headerRow: options.headerRow,
         range: options.range,
         source: options.source,
       },
@@ -277,6 +546,7 @@ async function runCodexHeaderSuggestionFlow(
         format: options.format,
         inputPath: options.inputPath,
         shape: {
+          headerRow: options.headerRow,
           range: options.range,
           source: options.source,
         },
@@ -302,6 +572,7 @@ async function runCodexHeaderSuggestionFlow(
         inputPath: options.inputPath,
         runtime,
         shape: {
+          headerRow: options.headerRow,
           range: options.range,
           source: options.source,
         },
@@ -320,13 +591,40 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
-  const range = options.range?.trim() || undefined;
-  const source = options.source?.trim() || undefined;
+  const headerRow = options.headerRow;
+  const explicitRange = options.range?.trim() || undefined;
+  const explicitSource = options.source?.trim() || undefined;
+
+  if (options.codexSuggestShape) {
+    await runCodexSourceShapeSuggestionFlow(runtime, {
+      format,
+      inputPath,
+      overwrite: options.overwrite,
+      source: explicitSource,
+      sourceShapeSuggestionRunner: options.sourceShapeSuggestionRunner,
+      writeSourceShape: options.writeSourceShape,
+    });
+    return;
+  }
+
+  const resolvedSourceShape = options.sourceShape?.trim()
+    ? await resolveReusableSourceShapeForExtract({
+        format,
+        inputPath,
+        runtime,
+        source: explicitSource,
+        sourceShapePath: resolveFromCwd(runtime, options.sourceShape.trim()),
+      })
+    : undefined;
+  const range = resolvedSourceShape?.range ?? explicitRange;
+  const effectiveHeaderRow = resolvedSourceShape?.headerRow ?? headerRow;
+  const source = resolvedSourceShape?.source ?? explicitSource;
 
   if (options.codexSuggestHeaders) {
     await runCodexHeaderSuggestionFlow(runtime, {
       format,
       headerSuggestionRunner: options.headerSuggestionRunner,
+      headerRow: effectiveHeaderRow,
       inputPath,
       overwrite: options.overwrite,
       range,
@@ -345,6 +643,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
           inputPath,
           runtime,
           shape: {
+            ...(effectiveHeaderRow !== undefined ? { headerRow: effectiveHeaderRow } : {}),
             range,
             source,
           },
@@ -360,6 +659,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
       format,
       {
         headerMappings: resolvedHeaderMappings,
+        headerRow: effectiveHeaderRow,
         range,
         source,
       },

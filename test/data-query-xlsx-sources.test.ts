@@ -1,8 +1,8 @@
-import { describe, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { listXlsxSheetNames } from "../src/cli/duckdb/xlsx-sources";
+import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../src/cli/duckdb/xlsx-sources";
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -15,6 +15,25 @@ function createWorkbookWithInvalidCentralDirectoryOffset(): Buffer {
 }
 
 describe("xlsx source discovery", () => {
+  test("collectXlsxSheetSnapshot summarizes non-empty rows and used range for a simple workbook", async () => {
+    const snapshot = await collectXlsxSheetSnapshot("test/fixtures/data-query/multi.xlsx", "Summary");
+
+    expect(snapshot.sheetName).toBe("Summary");
+    expect(snapshot.usedRange).toBe("A1:C3");
+    expect(snapshot.nonEmptyRowCount).toBe(3);
+    expect(snapshot.rows[0]).toEqual({
+      cellCount: 3,
+      cells: [
+        { ref: "A1", value: "id" },
+        { ref: "B1", value: "name" },
+        { ref: "C1", value: "status" },
+      ],
+      firstRef: "A1",
+      lastRef: "C1",
+      rowNumber: 1,
+    });
+  });
+
   test("listXlsxSheetNames converts corrupt zip offsets into CliError", async () => {
     await withTempFixtureDir("xlsx-sources", async (fixtureDir) => {
       const workbookPath = join(fixtureDir, "broken.xlsx");

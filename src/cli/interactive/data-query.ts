@@ -18,6 +18,7 @@ import {
   createDuckDbConnection,
   detectDataQueryInputFormat,
   listDataQuerySources,
+  normalizeExcelHeaderRow,
   normalizeExcelRange,
   quoteSqlIdentifier,
   type DataQueryInputFormat,
@@ -29,7 +30,11 @@ import {
   suggestDataHeaderMappingsWithCodex,
   type DataHeaderMappingEntry,
 } from "../duckdb/header-mapping";
+import {
+  suggestDataSourceShapeWithCodex,
+} from "../duckdb/source-shape";
 import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
+import { collectXlsxSheetSnapshot } from "../duckdb/xlsx-sources";
 import { CliError } from "../errors";
 import { resolveFromCwd } from "../fs-utils";
 import { createInteractiveAnalyzerStatus } from "./analyzer-status";
@@ -69,6 +74,23 @@ interface InteractiveHeaderReviewState {
   headerMappings?: DataHeaderMappingEntry[];
   introspection: DataQuerySourceIntrospection;
 }
+
+interface InteractiveSourceShapeState {
+  selectedHeaderRow?: number;
+  selectedRange?: string;
+}
+
+interface InteractiveContinuationLabels {
+  continuationLabel: string;
+  notWritingLabel: string;
+  reviewPromptLabel: string;
+}
+
+const QUERY_CONTINUATION_LABELS: InteractiveContinuationLabels = {
+  continuationLabel: "SQL authoring",
+  notWritingLabel: "SQL yet",
+  reviewPromptLabel: "SQL",
+};
 
 function isDataQuerySqlExecutionError(error: unknown): boolean {
   return (
@@ -248,6 +270,9 @@ function renderIntrospectionSummary(
     ...(options.introspection.selectedRange
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
       : []),
+    ...(options.introspection.selectedHeaderRow !== undefined
+      ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]
+      : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0
       ? options.introspection.columns.map((column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`)
@@ -278,7 +303,7 @@ function renderCodexIntentPreview(runtime: CliRuntime, intent: string): void {
   printLine(runtime.stderr, `${pc.bold(pc.cyan("Intent"))}: ${pc.white(intent)}`);
 }
 
-async function promptInteractiveInputFormat(
+export async function promptInteractiveInputFormat(
   runtime: CliRuntime,
   inputPath: string,
 ): Promise<DataQueryInputFormat> {
@@ -319,7 +344,7 @@ async function promptInteractiveInputFormat(
   });
 }
 
-async function promptOptionalSourceSelection(
+export async function promptOptionalSourceSelection(
   format: DataQueryInputFormat,
   sources: readonly string[] | undefined,
 ): Promise<string | undefined> {
@@ -380,10 +405,10 @@ function validateExcelRangeInput(value: string, options: { required: boolean }):
   }
 }
 
-async function promptOptionalExcelRange(): Promise<string | undefined> {
+async function promptOptionalExcelRange(defaultValue = ""): Promise<string | undefined> {
   const value = await input({
     message: "Excel range (optional, e.g. A1:Z99)",
-    default: "",
+    default: defaultValue,
     validate: (nextValue) => validateExcelRangeInput(nextValue, { required: false }),
   });
 
@@ -391,31 +416,106 @@ async function promptOptionalExcelRange(): Promise<string | undefined> {
   return trimmed.length > 0 ? normalizeExcelRange(trimmed) : undefined;
 }
 
-async function promptRequiredExcelRange(): Promise<string> {
+async function promptRequiredExcelRange(defaultValue = ""): Promise<string> {
   const value = await input({
     message: "Excel range (required, e.g. A1:Z99)",
+    default: defaultValue,
     validate: (nextValue) => validateExcelRangeInput(nextValue, { required: true }),
   });
 
   return normalizeExcelRange(value.trim());
 }
 
-async function collectInteractiveIntrospection(options: {
+function validateExcelHeaderRowInput(value: string, options: { required: boolean }): true | string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return options.required ? "Enter a positive worksheet row number." : true;
+  }
+
+  const parsed = Number(trimmed);
+  try {
+    normalizeExcelHeaderRow(parsed);
+    return true;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+async function promptOptionalExcelHeaderRow(defaultValue = ""): Promise<number | undefined> {
+  const value = await input({
+    message: "Excel header row (optional, absolute worksheet row)",
+    default: defaultValue,
+    validate: (nextValue) => validateExcelHeaderRowInput(nextValue, { required: false }),
+  });
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? normalizeExcelHeaderRow(Number(trimmed)) : undefined;
+}
+
+function formatSourceShapeFlags(shape: { headerRow?: number; range?: string }): string {
+  return [
+    ...(shape.range ? [`--range ${shape.range}`] : []),
+    ...(shape.headerRow !== undefined ? [`--header-row ${shape.headerRow}`] : []),
+  ].join(" ");
+}
+
+async function promptRequiredSourceShapeState(defaultShape: {
+  headerRow?: number;
+  range?: string;
+} = {}): Promise<InteractiveSourceShapeState> {
+  while (true) {
+    const selectedRange = await promptOptionalExcelRange(defaultShape.range ?? "");
+    const selectedHeaderRow = await promptOptionalExcelHeaderRow(
+      defaultShape.headerRow !== undefined ? String(defaultShape.headerRow) : "",
+    );
+    if (selectedRange || selectedHeaderRow !== undefined) {
+      return {
+        ...(selectedHeaderRow !== undefined ? { selectedHeaderRow } : {}),
+        ...(selectedRange ? { selectedRange } : {}),
+      };
+    }
+  }
+}
+
+function renderSuggestedSourceShape(
+  runtime: CliRuntime,
+  options: {
+    headerRow?: number;
+    range?: string;
+    reasoningSummary: string;
+  },
+): void {
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, "Suggested source shape");
+  printLine(runtime.stderr, "");
+  if (options.range) {
+    printLine(runtime.stderr, `- --range ${options.range}`);
+  }
+  if (options.headerRow !== undefined) {
+    printLine(runtime.stderr, `- --header-row ${options.headerRow}`);
+  }
+  printLine(runtime.stderr, `- reasoning: ${options.reasoningSummary}`);
+}
+
+export async function collectInteractiveIntrospection(options: {
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: DataQueryInputFormat;
   inputPath: string;
+  labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
   selectedSource?: string;
-}): Promise<{ introspection: DataQuerySourceIntrospection; selectedRange?: string }> {
-  let selectedRange: string | undefined;
+}): Promise<{ introspection: DataQuerySourceIntrospection; sourceShape: InteractiveSourceShapeState }> {
+  const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
+  let sourceShape: InteractiveSourceShapeState = {};
 
   if (options.format === "excel") {
     printLine(options.runtime.stderr, "");
     printLine(
       options.runtime.stderr,
-      "This step changes how the source is interpreted as a table. You are not writing SQL yet.",
+      `This step changes how the source is interpreted as a table. You are not writing ${labels.notWritingLabel}.`,
     );
-    selectedRange = await promptOptionalExcelRange();
+    const selectedRange = await promptOptionalExcelRange();
+    sourceShape = selectedRange ? { selectedRange } : {};
   }
 
   while (true) {
@@ -424,7 +524,8 @@ async function collectInteractiveIntrospection(options: {
       options.inputPath,
       options.format,
       {
-        range: selectedRange,
+        headerRow: sourceShape.selectedHeaderRow,
+        range: sourceShape.selectedRange,
         source: options.selectedSource,
       },
       DATA_QUERY_INTERACTIVE_SAMPLE_ROWS,
@@ -436,48 +537,148 @@ async function collectInteractiveIntrospection(options: {
       introspection,
     });
 
-    if (options.format !== "excel" || selectedRange) {
-      return { introspection, selectedRange };
+    if (options.format !== "excel") {
+      return { introspection, sourceShape };
     }
 
     const warningReasons = describeSuspiciousExcelIntrospection(introspection);
     if (!warningReasons) {
-      return { introspection, selectedRange };
+      return { introspection, sourceShape };
     }
 
     printLine(options.runtime.stderr, "");
     printLine(options.runtime.stderr, "Sheet shape warning: current Excel sheet shape looks suspicious.");
     printLine(
       options.runtime.stderr,
-      "This step changes how the source is interpreted as a table. You are not writing SQL yet.",
+      `This step changes how the source is interpreted as a table. You are not writing ${labels.notWritingLabel}.`,
     );
     for (const reason of warningReasons) {
       printLine(options.runtime.stderr, `- ${reason}`);
     }
 
-    const nextStep = await select<"continue" | "range">({
+    const nextStep = await select<"continue" | "range" | "suggest">({
       message: "Choose how to continue",
       choices: [
         {
           name: "continue as-is",
           value: "continue",
-          description: "Keep the whole-sheet source shape and move on to SQL authoring",
+          description: `Keep the current source shape and move on to ${labels.continuationLabel}`,
         },
         {
           name: "enter range manually",
           value: "range",
-          description: "Narrow the sheet before SQL authoring",
+          description: `Adjust the source shape manually before ${labels.continuationLabel}`,
+        },
+        {
+          name: "ask Codex to suggest shaping",
+          value: "suggest",
+          description: "Ask Codex to suggest an explicit range and/or header row before continuing",
         },
       ],
     });
 
     if (nextStep === "continue") {
-      return { introspection, selectedRange };
+      return { introspection, sourceShape };
     }
 
-    selectedRange = await promptRequiredExcelRange();
-    printLine(options.runtime.stderr, `Accepted source shape: --range ${selectedRange}`);
-    printLine(options.runtime.stderr, "Re-inspecting shaped source before SQL authoring.");
+    if (nextStep === "range") {
+      sourceShape = {
+        selectedRange: await promptRequiredExcelRange(),
+      };
+      printLine(
+        options.runtime.stderr,
+        `Accepted source shape: ${formatSourceShapeFlags({
+          range: sourceShape.selectedRange,
+        })}`,
+      );
+      printLine(options.runtime.stderr, `Re-inspecting shaped source before ${labels.continuationLabel}.`);
+      continue;
+    }
+
+    const selectedSource = options.selectedSource?.trim();
+    if (!selectedSource) {
+      return { introspection, sourceShape };
+    }
+
+    const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+    let suggestionResult;
+    try {
+      status.start("Inspecting worksheet structure");
+      const sheetSnapshot = await collectXlsxSheetSnapshot(options.inputPath, selectedSource);
+      status.wait("Waiting for Codex source-shape suggestions");
+      suggestionResult = await suggestDataSourceShapeWithCodex({
+        context: {
+          currentIntrospection: introspection,
+          sheetSnapshot,
+        },
+        currentHeaderRow: sourceShape.selectedHeaderRow,
+        currentRange: sourceShape.selectedRange,
+        workingDirectory: options.runtime.cwd,
+      });
+    } finally {
+      status.stop();
+    }
+
+    if (suggestionResult.errorMessage || !suggestionResult.shape || !suggestionResult.reasoningSummary) {
+      printLine(
+        options.runtime.stderr,
+        `Codex source-shape suggestion failed: ${suggestionResult.errorMessage ?? "Codex did not return a valid source shape."}`,
+      );
+      printLine(options.runtime.stderr, "Keeping current source shape.");
+      continue;
+    }
+
+    renderSuggestedSourceShape(options.runtime, {
+      headerRow: suggestionResult.shape.headerRow,
+      range: suggestionResult.shape.range,
+      reasoningSummary: suggestionResult.reasoningSummary,
+    });
+
+    const reviewAction = await select<"accept" | "edit" | "keep">({
+      message: "Source shape review",
+      choices: [
+        {
+          name: "Accept suggested shape",
+          value: "accept",
+          description: `Use the suggested shape and re-inspect before ${labels.continuationLabel}`,
+        },
+        {
+          name: "Edit manually",
+          value: "edit",
+          description: "Adjust the suggested range and/or header row before acceptance",
+        },
+        {
+          name: "Keep current shape",
+          value: "keep",
+          description: "Ignore the suggestion and continue with the current whole-sheet shape",
+        },
+      ],
+    });
+
+    if (reviewAction === "keep") {
+      return { introspection, sourceShape };
+    }
+
+    sourceShape =
+      reviewAction === "edit"
+        ? await promptRequiredSourceShapeState({
+            headerRow: suggestionResult.shape.headerRow,
+            range: suggestionResult.shape.range,
+          })
+        : {
+            ...(suggestionResult.shape.headerRow !== undefined
+              ? { selectedHeaderRow: suggestionResult.shape.headerRow }
+              : {}),
+            ...(suggestionResult.shape.range ? { selectedRange: suggestionResult.shape.range } : {}),
+          };
+    printLine(
+      options.runtime.stderr,
+      `Accepted source shape: ${formatSourceShapeFlags({
+        headerRow: sourceShape.selectedHeaderRow,
+        range: sourceShape.selectedRange,
+      })}`,
+    );
+    printLine(options.runtime.stderr, `Re-inspecting shaped source before ${labels.continuationLabel}.`);
   }
 }
 
@@ -518,15 +719,18 @@ function validateInteractiveHeaderMappings(
   }
 }
 
-async function reviewInteractiveHeaderMappings(options: {
+export async function reviewInteractiveHeaderMappings(options: {
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: DataQueryInputFormat;
   inputPath: string;
   introspection: DataQuerySourceIntrospection;
+  labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
+  selectedHeaderRow?: number;
   selectedRange?: string;
   selectedSource?: string;
 }): Promise<InteractiveHeaderReviewState> {
+  const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
   if (!hasGeneratedHeaderColumns(options.introspection)) {
     return {
       introspection: options.introspection,
@@ -534,7 +738,7 @@ async function reviewInteractiveHeaderMappings(options: {
   }
 
   const wantsReview = await confirm({
-    message: "Review semantic header suggestions before SQL?",
+    message: `Review semantic header suggestions before ${labels.reviewPromptLabel}?`,
     default: true,
   });
   if (!wantsReview) {
@@ -543,11 +747,18 @@ async function reviewInteractiveHeaderMappings(options: {
     };
   }
 
-  const suggestionResult = await suggestDataHeaderMappingsWithCodex({
-    format: options.format,
-    introspection: options.introspection,
-    workingDirectory: options.runtime.cwd,
-  });
+  const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+  let suggestionResult;
+  try {
+    status.wait("Waiting for Codex header suggestions");
+    suggestionResult = await suggestDataHeaderMappingsWithCodex({
+      format: options.format,
+      introspection: options.introspection,
+      workingDirectory: options.runtime.cwd,
+    });
+  } finally {
+    status.stop();
+  }
 
   if (suggestionResult.errorMessage) {
     printLine(options.runtime.stderr, `Codex header suggestions failed: ${suggestionResult.errorMessage}`);
@@ -575,7 +786,7 @@ async function reviewInteractiveHeaderMappings(options: {
         {
           name: "Accept all",
           value: "accept",
-          description: "Use the suggested semantic headers and re-inspect before SQL",
+          description: `Use the suggested semantic headers and re-inspect before ${labels.continuationLabel}`,
         },
         {
           name: "Edit one",
@@ -601,13 +812,14 @@ async function reviewInteractiveHeaderMappings(options: {
         availableColumns,
         mappings: workingMappings,
       });
-      printLine(options.runtime.stderr, "Accepted header mappings. Re-inspecting shaped source before SQL authoring.");
+      printLine(options.runtime.stderr, `Accepted header mappings. Re-inspecting shaped source before ${labels.continuationLabel}.`);
       const introspection = await collectDataQuerySourceIntrospection(
         options.connection,
         options.inputPath,
         options.format,
         {
           headerMappings: acceptedMappings,
+          headerRow: options.selectedHeaderRow,
           range: options.selectedRange,
           source: options.selectedSource,
         },
@@ -758,6 +970,7 @@ async function executeInteractiveCandidate(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
     sql: string;
@@ -781,6 +994,7 @@ async function executeInteractiveCandidate(
         pretty: outputOptions.pretty,
         rows: outputOptions.rows,
         ...(options.headerMappings ? { headerMappings: options.headerMappings } : {}),
+        ...(options.selectedHeaderRow !== undefined ? { headerRow: options.selectedHeaderRow } : {}),
         ...(options.selectedRange ? { range: options.selectedRange } : {}),
         ...(options.selectedSource ? { source: options.selectedSource } : {}),
         sql: options.sql,
@@ -807,6 +1021,7 @@ async function runManualInteractiveQuery(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
   },
@@ -956,6 +1171,7 @@ async function runFormalGuideInteractiveQuery(
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
     introspection: DataQuerySourceIntrospection;
+    selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
   },
@@ -967,6 +1183,7 @@ async function runFormalGuideInteractiveQuery(
       format: options.format,
       headerMappings: options.headerMappings,
       input: options.input,
+      selectedHeaderRow: options.selectedHeaderRow,
       selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,
       sql,
@@ -985,6 +1202,7 @@ async function runCodexInteractiveQuery(
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
     introspection: DataQuerySourceIntrospection;
+    selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
   },
@@ -1007,7 +1225,7 @@ async function runCodexInteractiveQuery(
                 intent: lastIntent,
                 introspection: options.introspection,
               }),
-              message: "Describe the query intent",
+              message: "Describe the query intent:",
               postfix: ".md",
               validate: (value) =>
                 normalizeDataQueryCodexEditorIntent(value).length > 0 ? true : "Enter a query intent.",
@@ -1027,7 +1245,7 @@ async function runCodexInteractiveQuery(
       : normalizeDataQueryCodexIntent(
           await input({
             default: lastIntent,
-            message: "Describe the query intent",
+            message: "Describe the query intent:",
             validate: (value) =>
               normalizeDataQueryCodexIntent(value).length > 0 ? true : "Enter a query intent.",
           }),
@@ -1062,6 +1280,7 @@ async function runCodexInteractiveQuery(
             format: options.format,
             headerMappings: options.headerMappings,
             input: options.input,
+            selectedHeaderRow: options.selectedHeaderRow,
             selectedRange: options.selectedRange,
             selectedSource: options.selectedSource,
             sql: draftResult.draft.sql,
@@ -1109,10 +1328,11 @@ export async function runInteractiveDataQuery(
     connection = await createDuckDbConnection();
     const sources = await listDataQuerySources(connection, inputPath, format);
     const selectedSource = await promptOptionalSourceSelection(format, sources);
-    const { introspection, selectedRange } = await collectInteractiveIntrospection({
+    const { introspection, sourceShape } = await collectInteractiveIntrospection({
       connection,
       format,
       inputPath,
+      labels: QUERY_CONTINUATION_LABELS,
       runtime,
       selectedSource,
     });
@@ -1121,8 +1341,10 @@ export async function runInteractiveDataQuery(
       format,
       inputPath,
       introspection,
+      labels: QUERY_CONTINUATION_LABELS,
       runtime,
-      selectedRange,
+      selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedRange: sourceShape.selectedRange,
       selectedSource,
     });
 
@@ -1140,7 +1362,8 @@ export async function runInteractiveDataQuery(
         format,
         headerMappings: reviewedHeaders.headerMappings,
         input,
-        selectedRange,
+        selectedHeaderRow: sourceShape.selectedHeaderRow,
+        selectedRange: sourceShape.selectedRange,
         selectedSource,
       });
       return;
@@ -1152,7 +1375,8 @@ export async function runInteractiveDataQuery(
         input,
         introspection: reviewedHeaders.introspection,
         headerMappings: reviewedHeaders.headerMappings,
-        selectedRange,
+        selectedHeaderRow: sourceShape.selectedHeaderRow,
+        selectedRange: sourceShape.selectedRange,
         selectedSource,
       });
       return;
@@ -1163,7 +1387,8 @@ export async function runInteractiveDataQuery(
       input,
       introspection: reviewedHeaders.introspection,
       headerMappings: reviewedHeaders.headerMappings,
-      selectedRange,
+      selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedRange: sourceShape.selectedRange,
       selectedSource,
     });
   } catch (error) {

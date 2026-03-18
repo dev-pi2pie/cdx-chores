@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { actionDataExtract } from "../src/cli/actions";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function dataQueryFixturePath(name: string): string {
@@ -101,6 +102,34 @@ describe("cli action modules: data extract", () => {
     });
   });
 
+  test("actionDataExtract applies header-row shaping on top of an explicit Excel range", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const outputPath = join(fixtureDir, "messy.clean.csv");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+        range: "B2:E11",
+        source: "Summary",
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "ID,item,status,description\n1001,Starter,active,Initial package\n1002,Expansion,paused,Requires follow-up\n1003,Renewal,active,Ready to ship\n1004,Archive,draft,Awaiting approval\n",
+      );
+    });
+  });
+
   test("actionDataExtract writes a reviewed header-mapping artifact and stops before materialization", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");
@@ -153,6 +182,69 @@ describe("cli action modules: data extract", () => {
     });
   });
 
+  test("actionDataExtract writes a reviewed source-shape artifact and stops before materialization", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        codexSuggestShape: true,
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        source: "Summary",
+        sourceShapeSuggestionRunner: async ({ prompt }) => {
+          expect(prompt).toContain("Selected sheet: Summary");
+          expect(prompt).toContain("Current range: (whole sheet)");
+          expect(prompt).toContain("Worksheet non-empty row summaries:");
+          expect(prompt).toContain('B2="Quarterly Operations Report"');
+          return JSON.stringify({
+            header_row: 7,
+            range: "B2:E11",
+            reasoning_summary: "The clean table starts at worksheet row 7 and spans columns B:E.",
+          });
+        },
+        writeSourceShape: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("Suggested source shape");
+      expect(stdout.text).toContain("--range B2:E11");
+      expect(stdout.text).toContain("--header-row 7");
+      expect(stdout.text).toContain("The clean table starts at worksheet row 7");
+      expect(stderr.text).toContain(`Wrote source shape: ${toRepoRelativePath(artifactPath)}`);
+      expect(stderr.text).toContain("--source-shape");
+      expect(stderr.text).toContain("--output");
+
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as {
+        input: { format: string; path: string; source: string };
+        metadata: { artifactType: string; issuedAt: string };
+        shape: { headerRow: number; range: string };
+        version: number;
+      };
+      expect(artifact).toEqual({
+        input: {
+          format: "excel",
+          path: toRepoRelativePath(inputPath),
+          source: "Summary",
+        },
+        metadata: {
+          artifactType: "data-source-shape",
+          issuedAt: "2026-02-25T00:00:00.000Z",
+        },
+        shape: {
+          headerRow: 7,
+          range: "B2:E11",
+        },
+        version: 1,
+      });
+    });
+  });
+
   test("actionDataExtract reuses an accepted header-mapping artifact when it matches exactly", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");
@@ -190,6 +282,53 @@ describe("cli action modules: data extract", () => {
       expectNoStdout();
       expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
       expect(await readFile(outputPath, "utf8")).toBe("id,status\n1001,active\n1002,paused\n");
+    });
+  });
+
+  test("actionDataExtract reuses an accepted source-shape artifact when it matches exactly", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      const outputPath = join(fixtureDir, "messy.clean.csv");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: toRepoRelativePath(inputPath),
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-18T00:00:00.000Z",
+          },
+          shape: {
+            headerRow: 7,
+            range: "B2:E11",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+        sourceShape: toRepoRelativePath(artifactPath),
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "ID,item,status,description\n1001,Starter,active,Initial package\n1002,Expansion,paused,Requires follow-up\n1003,Renewal,active,Ready to ship\n1004,Archive,draft,Awaiting approval\n",
+      );
     });
   });
 });
@@ -250,6 +389,87 @@ describe("cli action modules: data extract failure modes", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "--codex-suggest-headers stops after writing a header mapping artifact",
+        },
+      );
+    });
+  });
+
+  test("actionDataExtract rejects --codex-suggest-shape with --output", async () => {
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      await expectCliError(
+        () =>
+          actionDataExtract(createActionTestRuntime().runtime, {
+            codexSuggestShape: true,
+            input: "test/fixtures/data-query/multi.xlsx",
+            output: toRepoRelativePath(join(fixtureDir, "summary.json")),
+            source: "Summary",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-suggest-shape stops after writing a source shape artifact",
+        },
+      );
+    });
+  });
+
+  test("actionDataExtract rejects --codex-suggest-shape with --header-row", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataExtract(runtime, {
+          codexSuggestShape: true,
+          headerRow: 7,
+          input: "test/fixtures/data-query/multi.xlsx",
+          source: "Summary",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--codex-suggest-shape cannot be used together with --header-row",
+      },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataExtract rejects --source-shape for non-Excel inputs", async () => {
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: "test/fixtures/data-query/multi.xlsx",
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-18T00:00:00.000Z",
+          },
+          shape: {
+            range: "A1:B3",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      await expectCliError(
+        () =>
+          actionDataExtract(createActionTestRuntime().runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "people.json")),
+            sourceShape: toRepoRelativePath(artifactPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--source-shape is only valid for Excel extract inputs",
         },
       );
     });

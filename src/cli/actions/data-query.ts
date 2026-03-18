@@ -32,6 +32,7 @@ export interface DataQueryOptions {
   headerMapping?: string;
   headerMappings?: DataHeaderMappingEntry[];
   headerSuggestionRunner?: DataHeaderSuggestionRunner;
+  headerRow?: number;
   installMissingExtension?: boolean;
   input: string;
   inputFormat?: DataQueryInputFormat;
@@ -158,6 +159,7 @@ async function resolveReusableHeaderMappingsForQuery(options: {
   inputPath: string;
   runtime: CliRuntime;
   shape: {
+    headerRow?: number;
     range?: string;
     source?: string;
   };
@@ -203,6 +205,7 @@ function buildHeaderSuggestionFollowUpCommand(options: {
   inputPath: string;
   runtime: CliRuntime;
   shape: {
+    headerRow?: number;
     range?: string;
     source?: string;
   };
@@ -216,6 +219,9 @@ function buildHeaderSuggestionFollowUpCommand(options: {
     options.format,
     ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
     ...(options.shape.range ? ["--range", options.shape.range] : []),
+    ...(options.shape.headerRow !== undefined
+      ? ["--header-row", String(options.shape.headerRow)]
+      : []),
     "--header-mapping",
     JSON.stringify(displayPath(options.runtime, options.artifactPath)),
     "--sql",
@@ -229,6 +235,7 @@ async function runCodexHeaderSuggestionFlow(
   options: {
     format: DataQueryInputFormat;
     headerSuggestionRunner?: DataHeaderSuggestionRunner;
+    headerRow?: number;
     inputPath: string;
     overwrite?: boolean;
     range?: string;
@@ -249,6 +256,7 @@ async function runCodexHeaderSuggestionFlow(
       options.format,
       {
         range: options.range,
+        headerRow: options.headerRow,
         source: options.source,
       },
       DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
@@ -275,6 +283,7 @@ async function runCodexHeaderSuggestionFlow(
         inputPath: options.inputPath,
         shape: {
           range: options.range,
+          headerRow: options.headerRow,
           source: options.source,
         },
       }),
@@ -300,6 +309,7 @@ async function runCodexHeaderSuggestionFlow(
         runtime,
         shape: {
           range: options.range,
+          headerRow: options.headerRow,
           source: options.source,
         },
       }),
@@ -317,6 +327,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const headerRow = options.headerRow;
   if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
     throw new CliError(
       "--install-missing-extension is only valid for extension-backed query formats (sqlite, excel).",
@@ -336,6 +347,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       headerSuggestionRunner: options.headerSuggestionRunner,
       inputPath,
       overwrite: options.overwrite,
+      headerRow,
       range,
       source,
       writeHeaderMapping: options.writeHeaderMapping,
@@ -353,6 +365,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
           runtime,
           shape: {
             range,
+            headerRow,
             source,
           },
         })
@@ -368,6 +381,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       format,
       {
         headerMappings: resolvedHeaderMappings,
+        headerRow,
         range,
         source,
       },
@@ -407,6 +421,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       format,
       inputPath,
       range: preparedSource.selectedRange,
+      headerRow: preparedSource.selectedHeaderRow,
       rows: table.rows,
       source: preparedSource.selectedSource,
       truncated: table.truncated,

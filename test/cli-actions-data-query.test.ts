@@ -6,6 +6,7 @@ import { actionDataQuery } from "../src/cli/actions";
 import { getDisplayWidth } from "../src/cli/text-display-width";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function dataQueryFixturePath(name: string): string {
@@ -162,6 +163,36 @@ describe("cli action modules: data query", () => {
     expect(stdout.text).toContain("Range: A1:B3");
     expect(stdout.text).toContain("Visible columns: id, name");
     expect(stdout.text).not.toContain("status");
+  });
+
+  test("actionDataQuery applies header-row shaping on top of an explicit Excel range", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        range: "B2:E11",
+        source: "Summary",
+        sql: "select id, item, status from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Format: excel");
+      expect(stdout.text).toContain("Source: Summary");
+      expect(stdout.text).toContain("Range: B2:E11");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: ID, item, status");
+      expect(stdout.text).toContain("1001 | Starter");
+      expect(stdout.text).not.toContain("Quarterly Operations Report");
+    });
   });
 
   test("actionDataQuery writes a reviewed header-mapping artifact and stops before SQL execution", async () => {

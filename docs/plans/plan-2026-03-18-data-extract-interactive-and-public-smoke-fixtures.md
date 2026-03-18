@@ -2,7 +2,7 @@
 title: "Codex source-shape assistance, interactive data extract, and public-safe smoke fixtures"
 created-date: 2026-03-18
 modified-date: 2026-03-18
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -346,54 +346,54 @@ The generator should stay public-safe:
 
 ### Phase 1: Freeze shared source-shape contract
 
-- [ ] freeze `--codex-suggest-shape`
-- [ ] freeze `--write-source-shape <path>`
-- [ ] freeze `--source-shape <path>`
-- [ ] freeze the JSON source-shape artifact schema helper surface
-- [ ] freeze one filename family: `data-source-shape-<uid>.json`
-- [ ] freeze strict first-pass source-shape reuse matching
-- [ ] freeze direct-CLI validation and stop-before-continuation rules
+- [x] freeze `--codex-suggest-shape`
+- [x] freeze `--write-source-shape <path>`
+- [x] freeze `--source-shape <path>`
+- [x] freeze the JSON source-shape artifact schema helper surface
+- [x] freeze one filename family: `data-source-shape-<uid>.json`
+- [x] freeze strict first-pass source-shape reuse matching
+- [x] freeze direct-CLI validation and stop-before-continuation rules
 
 ### Phase 2: Direct CLI shape-suggestion reuse for extract
 
-- [ ] implement direct CLI source-shape artifact writing for `data extract`
-- [ ] implement direct CLI source-shape artifact reuse for `data extract`
-- [ ] rebuild and re-introspect after accepted source-shape reuse
-- [ ] keep `--codex-suggest-headers` downstream of accepted source shaping
-- [ ] add focused direct CLI coverage for source-shape suggestion and reuse
+- [x] implement direct CLI source-shape artifact writing for `data extract`
+- [x] implement direct CLI source-shape artifact reuse for `data extract`
+- [x] rebuild and re-introspect after accepted source-shape reuse
+- [x] keep `--codex-suggest-headers` downstream of accepted source shaping
+- [x] add focused direct CLI coverage for source-shape suggestion and reuse
 
 ### Phase 3: Interactive extract route and shape resolution
 
-- [ ] add `data:extract` to the interactive menu
-- [ ] route `data:extract` through the interactive dispatcher
-- [ ] implement interactive source selection for SQLite or Excel extract inputs
-- [ ] implement suspicious-schema shape-resolution choices for extract:
-  - [ ] keep as-is
-  - [ ] enter range manually
-  - [ ] ask Codex to suggest shaping
-- [ ] rebuild and re-introspect after accepted shaping changes
+- [x] add `data:extract` to the interactive menu
+- [x] route `data:extract` through the interactive dispatcher
+- [x] implement interactive source selection for SQLite or Excel extract inputs
+- [x] implement suspicious-schema shape-resolution choices for extract:
+  - [x] keep as-is
+  - [x] enter range manually
+  - [x] ask Codex to suggest shaping
+- [x] rebuild and re-introspect after accepted shaping changes
 
 ### Phase 4: Interactive extract review and output flow
 
-- [ ] reuse in-memory semantic header review when placeholder headers remain
-- [ ] prompt for output path with `.csv`, `.tsv`, or `.json`
-- [ ] reuse explicit overwrite confirmation behavior
-- [ ] execute extraction through shared action helpers
-- [ ] add focused interactive coverage for the new flow
+- [x] reuse in-memory semantic header review when placeholder headers remain
+- [x] prompt for output path with `.csv`, `.tsv`, or `.json`
+- [x] reuse explicit overwrite confirmation behavior
+- [x] execute extraction through shared action helpers
+- [x] add focused interactive coverage for the new flow
 
 ### Phase 5: Interactive query prompt polish
 
-- [ ] add `:` to the single-line `Codex Assistant` intent prompt
-- [ ] add `:` to the editor-backed `Codex Assistant` intent prompt
-- [ ] update prompt-copy expectations in tests
+- [x] add `:` to the single-line `Codex Assistant` intent prompt
+- [x] add `:` to the editor-backed `Codex Assistant` intent prompt
+- [x] update prompt-copy expectations in tests
 
 ### Phase 6: Public-safe smoke fixtures
 
-- [ ] add a new deterministic fixture-generator script
-- [ ] generate public-safe extraction and shaping smoke fixtures
-- [ ] add generator determinism tests
-- [ ] document how to regenerate the smoke fixtures
-- [ ] keep public docs and generated fixture names free of private local repro references
+- [x] add a new deterministic fixture-generator script
+- [x] generate public-safe extraction and shaping smoke fixtures
+- [x] add generator determinism tests
+- [x] document how to regenerate the smoke fixtures
+- [x] keep public docs and generated fixture names free of private local repro references
 
 ## Related Plans
 

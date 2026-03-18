@@ -57,6 +57,28 @@ export function normalizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
+export function normalizeOptionalPositiveInteger(value: unknown, context: string): number | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value.trim());
+    if (Number.isInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  throw new CliError(`Invalid header mapping artifact: ${context} must be a positive integer.`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
 export function throwUnsupportedHeaderMappingVersion(
   version: unknown,
   options: { rewriting?: boolean } = {},
@@ -97,6 +119,7 @@ export function createHeaderMappingInputReference(options: {
   const normalizedRelativePath = normalizeArtifactPath(relative(options.cwd, options.inputPath) || ".");
   return {
     format: options.format,
+    ...(options.shape?.headerRow !== undefined ? { headerRow: options.shape.headerRow } : {}),
     path: normalizedRelativePath,
     ...(options.shape?.range ? { range: options.shape.range } : {}),
     ...(options.shape?.source ? { source: options.shape.source } : {}),

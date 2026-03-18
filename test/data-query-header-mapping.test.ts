@@ -23,6 +23,7 @@ describe("data header mapping artifacts", () => {
       format: "excel",
       inputPath: join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"),
       shape: {
+        headerRow: 7,
         range: "A1:B3",
         source: "Summary",
       },
@@ -30,6 +31,7 @@ describe("data header mapping artifacts", () => {
 
     expect(inputReference).toEqual({
       format: "excel",
+      headerRow: 7,
       path: "test/fixtures/data-query/multi.xlsx",
       range: "A1:B3",
       source: "Summary",
@@ -161,5 +163,30 @@ describe("data header mapping artifacts", () => {
       expect(error).toBeInstanceOf(CliError);
       expect((error as CliError).message).toContain("does not match the current input context exactly");
     }
+  });
+
+  test("resolveReusableHeaderMappings treats headerRow as part of the exact shape context", () => {
+    expect(() =>
+      resolveReusableHeaderMappings({
+        artifact: createDataHeaderMappingArtifact({
+          input: {
+            format: "excel",
+            headerRow: 7,
+            path: "examples/playground/data.xlsx",
+            range: "A1:E11",
+            source: "Summary",
+          },
+          mappings: [{ from: "column_1", to: "id" }],
+          now: new Date("2026-03-18T00:00:00.000Z"),
+        }),
+        currentInput: {
+          format: "excel",
+          headerRow: 6,
+          path: "examples/playground/data.xlsx",
+          range: "A1:E11",
+          source: "Summary",
+        },
+      }),
+    ).toThrow(CliError);
   });
 });

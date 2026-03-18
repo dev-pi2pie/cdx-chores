@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { REPO_ROOT, runCli, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
@@ -233,6 +234,41 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("Range: A1:B3");
     expect(result.stdout).toContain("Visible columns: id, name");
     expect(result.stdout).not.toContain("status");
+  });
+
+  test("queries an explicit Excel range plus header-row end to end when the extension is ready", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+
+      const result = runCli([
+        "data",
+        "query",
+        inputPath.slice(REPO_ROOT.length + 1),
+        "--source",
+        "Summary",
+        "--range",
+        "B2:E11",
+        "--header-row",
+        "7",
+        "--sql",
+        "select ID, item, status from file order by ID",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: excel");
+      expect(result.stdout).toContain("Source: Summary");
+      expect(result.stdout).toContain("Range: B2:E11");
+      expect(result.stdout).toContain("Header row: 7");
+      expect(result.stdout).toContain("Visible columns: ID, item, status");
+      expect(result.stdout).toContain("1001 | Starter");
+      expect(result.stdout).not.toContain("Quarterly Operations Report");
+    });
   });
 
   test("honors explicit row bounds for bounded table output", () => {

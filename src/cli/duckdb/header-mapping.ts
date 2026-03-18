@@ -20,6 +20,7 @@ export {
   isRecord,
   normalizeArtifactPath,
   normalizeHeaderMappingTargetName,
+  normalizeOptionalPositiveInteger,
   normalizeOptionalString,
   throwUnsupportedHeaderMappingVersion,
 } from "./header-mapping/normalize";

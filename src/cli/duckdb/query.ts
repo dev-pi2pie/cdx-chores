@@ -14,7 +14,7 @@ import {
   normalizeAndValidateAcceptedHeaderMappings,
   type DataHeaderMappingEntry,
 } from "./header-mapping";
-import { listXlsxSheetNames } from "./xlsx-sources";
+import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "./xlsx-sources";
 
 export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
 
@@ -39,6 +39,7 @@ export interface DataQueryIntrospectionColumn {
 export interface DataQuerySourceIntrospection {
   columns: DataQueryIntrospectionColumn[];
   sampleRows: Array<Record<string, string>>;
+  selectedHeaderRow?: number;
   selectedSource?: string;
   selectedRange?: string;
   truncated: boolean;
@@ -46,11 +47,13 @@ export interface DataQuerySourceIntrospection {
 
 export interface DataQuerySourceShape {
   headerMappings?: DataHeaderMappingEntry[];
+  headerRow?: number;
   range?: string;
   source?: string;
 }
 
 interface PreparedDataQuerySource {
+  selectedHeaderRow?: number;
   selectedSource?: string;
   selectedRange?: string;
 }
@@ -79,6 +82,13 @@ export function quoteSqlIdentifier(name: string): string {
 interface QueryRelationColumn {
   name: string;
   type: string;
+}
+
+interface ExcelRangeParts {
+  endColumn: string;
+  endRow: number;
+  startColumn: string;
+  startRow: number;
 }
 
 function columnNameToNumber(value: string): number {
@@ -115,6 +125,39 @@ export function normalizeExcelRange(value: string): string {
   }
 
   return `${startColumn}${startRow}:${endColumn}${endRow}`;
+}
+
+function parseNormalizedExcelRange(value: string): ExcelRangeParts {
+  const normalized = normalizeExcelRange(value);
+  const match = /^([A-Z]+)([1-9][0-9]*):([A-Z]+)([1-9][0-9]*)$/.exec(normalized);
+  if (!match) {
+    throw new CliError("--range must use A1:Z99 cell notation.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return {
+    endColumn: match[3] ?? "",
+    endRow: Number(match[4] ?? ""),
+    startColumn: match[1] ?? "",
+    startRow: Number(match[2] ?? ""),
+  };
+}
+
+function buildExcelRange(parts: ExcelRangeParts): string {
+  return `${parts.startColumn}${parts.startRow}:${parts.endColumn}${parts.endRow}`;
+}
+
+export function normalizeExcelHeaderRow(value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new CliError("--header-row must be a positive integer.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return value;
 }
 
 export function detectDataQueryInputFormat(
@@ -177,6 +220,7 @@ function buildRelationSql(
         escapedInput,
         `sheet = ${escapeSqlString(shape.source ?? "")}`,
         ...(shape.range ? [`range = ${escapeSqlString(shape.range)}`] : []),
+        ...(shape.headerRow ? ["header = true"] : []),
       ].join(", ")})`;
   }
 }
@@ -195,6 +239,13 @@ function assertSingleObjectSourceContract(
 
   if (shape.range?.trim()) {
     throw new CliError("--range is only valid for Excel query inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (shape.headerRow !== undefined) {
+    throw new CliError("--header-row is only valid for Excel inputs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -296,10 +347,19 @@ export async function prepareDataQuerySource(
 ): Promise<PreparedDataQuerySource> {
   let selectedSource = shape.source?.trim();
   const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
+  const selectedHeaderRow =
+    shape.headerRow !== undefined ? normalizeExcelHeaderRow(shape.headerRow) : undefined;
+  let effectiveRange = selectedRange;
 
   if (format === "sqlite") {
     if (selectedRange) {
       throw new CliError("--range is only valid for Excel query inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (selectedHeaderRow !== undefined) {
+      throw new CliError("--header-row is only valid for Excel inputs.", {
         code: "INVALID_INPUT",
         exitCode: 2,
       });
@@ -324,6 +384,52 @@ export async function prepareDataQuerySource(
       },
     );
     selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", shape.source);
+
+    if (selectedHeaderRow !== undefined) {
+      if (selectedRange) {
+        const rangeParts = parseNormalizedExcelRange(selectedRange);
+        if (selectedHeaderRow < rangeParts.startRow || selectedHeaderRow > rangeParts.endRow) {
+          throw new CliError(
+            `--header-row must fall within the selected Excel range ${selectedRange}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+        effectiveRange = buildExcelRange({
+          ...rangeParts,
+          startRow: selectedHeaderRow,
+        });
+      } else {
+        const sheetSnapshot = await collectXlsxSheetSnapshot(inputPath, selectedSource);
+        const usedRange = sheetSnapshot.usedRange;
+        if (!usedRange) {
+          throw new CliError(
+            `Cannot apply --header-row because the selected Excel sheet has no detectable used range: ${selectedSource}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+
+        const usedRangeParts = parseNormalizedExcelRange(usedRange);
+        if (selectedHeaderRow < usedRangeParts.startRow || selectedHeaderRow > usedRangeParts.endRow) {
+          throw new CliError(
+            `--header-row must fall within the detected Excel sheet used range ${usedRange}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+        effectiveRange = buildExcelRange({
+          ...usedRangeParts,
+          startRow: selectedHeaderRow,
+        });
+      }
+    }
   }
 
   if (format === "csv" || format === "tsv" || format === "parquet") {
@@ -333,7 +439,8 @@ export async function prepareDataQuerySource(
   try {
     await connection.run(
       `create or replace temp view file_source as ${buildRelationSql(inputPath, format, {
-        range: selectedRange,
+        headerRow: selectedHeaderRow,
+        range: effectiveRange,
         source: selectedSource,
       })}`,
     );
@@ -349,6 +456,7 @@ export async function prepareDataQuerySource(
       )}`,
     );
     return {
+      selectedHeaderRow,
       selectedRange,
       selectedSource,
     };
@@ -496,6 +604,7 @@ export async function collectDataQuerySourceIntrospection(
         name,
         type: columnTypes[index]?.toString() ?? "UNKNOWN",
       })),
+      selectedHeaderRow: preparedSource.selectedHeaderRow,
       sampleRows: visibleRows,
       selectedRange: preparedSource.selectedRange,
       selectedSource: preparedSource.selectedSource,

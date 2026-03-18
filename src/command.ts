@@ -488,6 +488,12 @@ export async function runCli(
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
+      parsePositiveIntegerOption(value, "--header-row"),
+    )
+    .option("--source-shape <path>", "Reuse an accepted JSON source-shape artifact")
+    .option("--codex-suggest-shape", "Ask Codex to suggest an explicit Excel source shape and stop after writing the review artifact", false)
+    .option("--write-source-shape <path>", "Write the suggested source-shape artifact to an explicit path")
     .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
     .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
     .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
@@ -497,26 +503,34 @@ export async function runCli(
       async (
         input: string,
         options: {
+          codexSuggestShape?: boolean;
           codexSuggestHeaders?: boolean;
           headerMapping?: string;
+          headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           output?: string;
           overwrite?: boolean;
           range?: string;
+          sourceShape?: string;
           source?: string;
           writeHeaderMapping?: string;
+          writeSourceShape?: string;
         },
       ) => {
         await actionDataExtract(cliRuntime, {
+          codexSuggestShape: options.codexSuggestShape,
           codexSuggestHeaders: options.codexSuggestHeaders,
           headerMapping: options.headerMapping,
+          headerRow: options.headerRow,
           input,
           inputFormat: options.inputFormat,
           output: options.output,
           overwrite: options.overwrite,
           range: options.range,
+          sourceShape: options.sourceShape,
           source: options.source,
           writeHeaderMapping: options.writeHeaderMapping,
+          writeSourceShape: options.writeSourceShape,
         });
       },
     );
@@ -533,6 +547,9 @@ export async function runCli(
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
+      parsePositiveIntegerOption(value, "--header-row"),
+    )
     .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
     .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
     .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
@@ -554,6 +571,7 @@ export async function runCli(
         options: {
           codexSuggestHeaders?: boolean;
           headerMapping?: string;
+          headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           installMissingExtension?: boolean;
           json?: boolean;
@@ -570,6 +588,7 @@ export async function runCli(
         await actionDataQuery(cliRuntime, {
           codexSuggestHeaders: options.codexSuggestHeaders,
           headerMapping: options.headerMapping,
+          headerRow: options.headerRow,
           input,
           inputFormat: options.inputFormat,
           installMissingExtension: options.installMissingExtension,
@@ -598,6 +617,9 @@ export async function runCli(
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
+      parsePositiveIntegerOption(value, "--header-row"),
+    )
     .option("--print-sql", "Write drafted SQL only to stdout", false)
     .action(
       async (
@@ -605,6 +627,7 @@ export async function runCli(
         options: {
           inputFormat?: DataQueryInputFormat;
           intent: string;
+          headerRow?: number;
           printSql?: boolean;
           range?: string;
           source?: string;
@@ -612,11 +635,13 @@ export async function runCli(
         command: Command,
       ) => {
         const parentOptions = command.parent?.opts<{
+          headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           range?: string;
           source?: string;
         }>();
         await actionDataQueryCodex(cliRuntime, {
+          headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,
           inputFormat: options.inputFormat ?? parentOptions?.inputFormat,
           intent: options.intent,

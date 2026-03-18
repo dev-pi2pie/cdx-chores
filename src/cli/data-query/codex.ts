@@ -122,6 +122,9 @@ export function buildDataQueryCodexIntentEditorTemplate(options: {
     ...(options.introspection.selectedRange
       ? [`# Range: ${options.introspection.selectedRange}`]
       : []),
+    ...(options.introspection.selectedHeaderRow !== undefined
+      ? [`# Header row: ${options.introspection.selectedHeaderRow}`]
+      : []),
     `# Schema: ${summarizeEditorSchema(options.introspection)}`,
     "# Sample rows:",
     ...sampleLines.map((line) => `# ${line}`),
@@ -159,6 +162,11 @@ export function buildDataQueryCodexPrompt(options: {
     `Detected format: ${options.format}`,
     `Selected source: ${options.introspection.selectedSource ?? "(implicit single source)"}`,
     `Selected range: ${options.introspection.selectedRange ?? "(whole source)"}`,
+    `Selected header row: ${
+      options.introspection.selectedHeaderRow !== undefined
+        ? String(options.introspection.selectedHeaderRow)
+        : "(auto or first row)"
+    }`,
     "",
     `Schema (${options.introspection.columns.length} columns):`,
     ...schemaLines,
@@ -250,6 +258,9 @@ export function renderDataQueryCodexDraft(options: {
       : []),
     ...(options.introspection.selectedRange
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
+      : []),
+    ...(options.introspection.selectedHeaderRow !== undefined
+      ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]
       : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0

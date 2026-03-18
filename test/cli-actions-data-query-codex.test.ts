@@ -7,8 +7,11 @@ import {
 } from "../src/cli/data-query/codex";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 const ANSI_ESCAPE_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 
@@ -65,6 +68,43 @@ describe("cli action modules: data query codex", () => {
     expectNoStderr();
     expect(stderr.text).toBe("");
     expect(stdout.text.trim()).toBe("select\n  *\nfrom file\nwhere note = 'A  B'\norder by id");
+  });
+
+  test("actionDataQueryCodex includes the accepted header row in prompt and rendered output", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = `${fixtureDir}/messy.xlsx`;
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+      await actionDataQueryCodex(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        intent: "show id and status ordered by id",
+        range: "B2:E11",
+        runner: async ({ prompt }) => {
+          expect(prompt).toContain(`Selected source: Summary`);
+          expect(prompt).toContain("Selected range: B2:E11");
+          expect(prompt).toContain("Selected header row: 7");
+          expect(prompt).toContain("1. ID: DOUBLE");
+          expect(prompt).toContain('"item":"Starter"');
+          return JSON.stringify({
+            sql: 'select "ID", status from file order by "ID"',
+            reasoning_summary: "Projects the requested columns from the accepted shaped sheet.",
+          });
+        },
+        source: "Summary",
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Range: B2:E11");
+      expect(stdout.text).toContain('SQL:\nselect "ID", status from file order by "ID"');
+    });
   });
 
   test("actionDataQueryCodex shows transient tty progress and clears it before final output", async () => {
@@ -177,6 +217,26 @@ describe("cli action modules: data query codex", () => {
 
     expect(template).toContain("# Source: Summary");
     expect(template).toContain("# Range: A1:B3");
+  });
+
+  test("buildDataQueryCodexIntentEditorTemplate includes the selected header row when present", () => {
+    const template = buildDataQueryCodexIntentEditorTemplate({
+      format: "excel",
+      introspection: {
+        columns: [
+          { name: "ID", type: "BIGINT" },
+          { name: "status", type: "VARCHAR" },
+        ],
+        sampleRows: [{ ID: "1001", status: "active" }],
+        selectedHeaderRow: 7,
+        selectedRange: "B2:E11",
+        selectedSource: "Summary",
+        truncated: false,
+      },
+    });
+
+    expect(template).toContain("# Range: B2:E11");
+    expect(template).toContain("# Header row: 7");
   });
 
   test("actionDataQueryCodex reports codex unavailability failures clearly", async () => {

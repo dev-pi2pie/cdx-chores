@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { runCli, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
@@ -204,6 +205,55 @@ describe("CLI data query codex command", () => {
       expect(prompt).toContain("Selected source: Summary");
       expect(prompt).toContain("Selected range: A1:B3");
       expect(prompt).toContain("Schema (2 columns):");
+    });
+  });
+
+  test("accepts --header-row on the codex lane for Excel inputs", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const promptPath = join(fixtureDir, "header-row-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: 'select "ID", status from file order by "ID"',
+        summary: "Uses the selected header row within the reviewed Excel shape.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          `${fixtureDir}/messy.xlsx`,
+          "--source",
+          "Summary",
+          "--range",
+          "B2:E11",
+          "--header-row",
+          "7",
+          "--intent",
+          "show ids and status ordered by id",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Source: Summary");
+      expect(result.stdout).toContain("Range: B2:E11");
+      expect(result.stdout).toContain("Header row: 7");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Selected source: Summary");
+      expect(prompt).toContain("Selected range: B2:E11");
+      expect(prompt).toContain("Selected header row: 7");
+      expect(prompt).toContain("Schema (4 columns):");
+      expect(prompt).toContain("1. ID: DOUBLE");
     });
   });
 });

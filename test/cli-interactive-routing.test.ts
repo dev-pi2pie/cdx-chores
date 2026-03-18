@@ -19,7 +19,7 @@ describe("interactive mode routing", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
-  test("shows the broadened data menu copy and includes data query", () => {
+  test("shows the broadened data menu copy and includes data extract plus data query", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "cancel"],
@@ -33,6 +33,7 @@ describe("interactive mode routing", () => {
     });
     expect(result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value)).toEqual([
       "data:preview",
+      "data:extract",
       "data:query",
       "data:parquet-preview",
       "data:convert",
@@ -127,6 +128,71 @@ describe("interactive mode routing", () => {
       "select:Output mode",
       "input:Rows to show (optional)",
     ]);
+  });
+
+  test("routes interactive data extract through shared extraction execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          output: "fixtures/query.json",
+          overwrite: false,
+        },
+      },
+    ]);
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom JSON output path",
+        defaultHint: "fixtures/query.csv.json",
+        kind: "file",
+      }),
+    });
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("- output format: JSON");
+  });
+
+  test("lets interactive data extract stop before materialization at the final write boundary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("Skipped extraction write.");
   });
 
   test("prompts for Excel range before SQL authoring and carries it into execution", () => {
@@ -287,7 +353,7 @@ describe("interactive mode routing", () => {
       "confirm:Use multiline editor?",
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "input:Describe the query intent",
+      "input:Describe the query intent:",
     );
   });
 
@@ -401,6 +467,110 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
   });
 
+  test("warns about suspicious raw Excel schemas before SQL authoring and supports reviewed Codex shape recovery", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "suggest", "accept", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [{ name: "Quarterly Operations Report", type: "VARCHAR" }],
+          sampleRows: [],
+          selectedSource: "Summary",
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1", name: "Ada" }],
+          selectedHeaderRow: 7,
+          selectedRange: "A1:B3",
+          selectedSource: "Summary",
+          truncated: false,
+        },
+      ],
+      dataQuerySources: ["Summary"],
+      dataSourceShapeSuggestion: {
+        reasoningSummary: "The real table starts at row 7 across the first two columns.",
+        shape: {
+          range: "A1:B3",
+          headerRow: 7,
+        },
+      },
+    });
+
+    expect(result.actionCalls).toContainEqual({
+      name: "data:source-shape-suggest",
+      options: {
+        selectedSource: "Summary",
+        sheetName: "Summary",
+      },
+    });
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        headerRow: 7,
+        input: "fixtures/query.xlsx",
+        inputFormat: "excel",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        range: "A1:B3",
+        rows: 10,
+        source: "Summary",
+        sql: "select * from file order by id",
+      },
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Source shape review",
+    );
+    expect(result.stdout).toContain("Inspecting worksheet structure");
+    expect(result.stdout).toContain("Waiting for Codex source-shape suggestions");
+    expect(result.stderr).toContain("Suggested source shape");
+    expect(result.stderr).toContain("--header-row 7");
+    expect(result.stderr).toContain("Accepted source shape: --range A1:B3 --header-row 7");
+  });
+
+  test("re-prompts the shape warning after a Codex source-shape failure instead of falling straight into extraction", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "Sheet1", "suggest", "continue", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: [""],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospection: {
+        columns: [{ name: "RAW_TITLE", type: "DOUBLE" }],
+        sampleRows: [],
+        selectedSource: "Sheet1",
+        truncated: false,
+      },
+      dataQuerySources: ["Sheet1"],
+      dataSourceShapeSuggestionErrorMessage: "schema rejected",
+    });
+
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Choose how to continue"),
+    ).toHaveLength(2);
+    expect(result.stderr).toContain("Codex source-shape suggestion failed: schema rejected");
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:source-shape-suggest",
+        options: {
+          selectedSource: "Sheet1",
+          sheetName: "Sheet1",
+        },
+      },
+    ]);
+  });
+
   test("accepts all interactive header suggestions and re-inspects before SQL authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -465,6 +635,7 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Header suggestion review",
     );
+    expect(result.stdout).toContain("Waiting for Codex header suggestions");
     expect(result.stderr).toContain("Accepted header mappings. Re-inspecting shaped source before SQL authoring.");
   });
 
@@ -621,13 +792,13 @@ describe("interactive mode routing", () => {
       },
     ]);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "editor:Describe the query intent",
+      "editor:Describe the query intent:",
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Send this intent to Codex drafting?",
     );
     const editorPrompt = result.promptCalls.find(
-      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+      (call) => call.kind === "editor" && call.message === "Describe the query intent:",
     );
     expect(editorPrompt?.postfix).toBe(".md");
     expect(editorPrompt?.defaultValue).toContain("# Logical table: file");
@@ -679,7 +850,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(
-      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent"),
+      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent:"),
     ).toHaveLength(2);
     expect(result.actionCalls).toContainEqual({
       name: "data:query:codex-draft",
@@ -690,7 +861,7 @@ describe("interactive mode routing", () => {
       },
     });
     const editorPrompts = result.promptCalls.filter(
-      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+      (call) => call.kind === "editor" && call.message === "Describe the query intent:",
     );
     expect(editorPrompts[1]?.defaultValue).toContain("count rows by status");
   });

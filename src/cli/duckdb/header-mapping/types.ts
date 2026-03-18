@@ -9,6 +9,7 @@ export const DATA_HEADER_MAPPING_VERSION = 1;
 
 export interface DataHeaderMappingInputReference {
   format: DataQueryInputFormat;
+  headerRow?: number;
   path: string;
   range?: string;
   source?: string;
@@ -48,6 +49,6 @@ export interface DataHeaderSuggestionEvidence {
   sample?: string;
 }
 
-export type DataHeaderMappingShape = Pick<DataQuerySourceShape, "range" | "source">;
+export type DataHeaderMappingShape = Pick<DataQuerySourceShape, "headerRow" | "range" | "source">;
 export type DataHeaderSuggestionIntrospection = DataQuerySourceIntrospection;
 export type DataHeaderMappingFormat = DataQueryInputFormat;
