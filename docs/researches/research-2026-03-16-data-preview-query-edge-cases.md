@@ -1,7 +1,7 @@
 ---
 title: "Data preview and query edge cases from private issue scenarios"
 created-date: 2026-03-16
-modified-date: 2026-03-16
+modified-date: 2026-03-18
 status: draft
 agent: codex
 ---
@@ -15,7 +15,7 @@ It should not be treated as shipped behavior or guide-level usage documentation 
 
 ## Key Findings
 
-### 1. `data preview` currently hard-codes `CSV row 1 = header`
+### 1. `data preview` currently hard-codes `delimited row 1 = header`
 
 Scenario A is a headerless CSV where every row is data.
 
@@ -27,15 +27,18 @@ Observed behavior:
 - visible columns become `1, Ada, active, 2026-03-01`
 - the actual first record is not shown as data
 
-This matches the current v1 contract in `src/cli/data-preview/source.ts` and `docs/guides/data-preview-usage.md`:
+This matches the current lightweight delimited preview contract in `src/cli/data-preview/source.ts` and `docs/guides/data-preview-usage.md`:
 
-- the first CSV row is always treated as the header row
-- there is no opt-out for headerless CSV input
+- `.csv` and `.tsv` both use the same header-first preview normalization path
+- the first delimited row is always treated as the header row
+- blank or extended columns already use generated names such as `column_2`, `column_3`, ...
+- there is no opt-out for headerless delimited input
 
 Implication:
 
 - headerless CSV support is not a regression in the current implementation
-- it is a missing contract surface
+- it is a missing contract surface in the lightweight delimited preview lane
+- the first repair should extend the current CSV/TSV preview contract instead of inventing a CSV-only exception
 
 ### 2. Raw Excel sheet querying is too weak for banner rows and merged header regions
 
@@ -90,7 +93,7 @@ Implication:
 - avoid a generic "auto-detect the table" feature as the first repair
 - prefer explicit user-controlled shaping flags first
 
-### 5. Interactive `data query` and Codex drafting inherit the same messy schema
+### 5. Interactive `data query` and Codex-assisted query drafting inherit the same messy schema
 
 The interactive query flow currently does:
 
@@ -102,31 +105,49 @@ The interactive query flow currently does:
 
 That means the introspection step happens before the user has any way to shape the logical table.
 
+The same underlying problem also affects the separate direct CLI drafting lane:
+
+- `data query codex` gathers bounded introspection from the same shared query helper before drafting SQL
+- without a shaping seam in that shared helper, direct Codex drafting inherits the same noisy Excel schema as interactive mode
+
 Implications:
 
 - `formal-guide` will offer noisy or misleading columns when the raw sheet shape is poor
-- `Codex Assistant` will draft against the wrong schema because its prompt is built directly from that introspection
+- interactive `Codex Assistant` will draft against the wrong schema because its prompt is built directly from that introspection
+- direct `data query codex` will also draft against the wrong schema for the same reason
 - multiline-editor hints are also degraded because the seeded `# Schema:` and `# Sample rows:` comments come from the same raw source
 
 For merged-cell or lower-table-start workbooks, this makes Codex-assisted drafting look less capable than it actually is, because the main problem is not SQL drafting but bad pre-draft table selection.
 
+Implication:
+
+- query-side shaping must be implemented in the shared relation-building and introspection layer, not only as an interactive prompt tweak
+
 ## Recommendations
 
-### Recommendation A. Add explicit headerless CSV support to `data preview`
+### Recommendation A. Add explicit headerless delimited support to `data preview`
 
 Recommended first contract:
 
 - add `--no-header` for `data preview`
 - when set:
+  - apply it to the lightweight delimited preview lane (`.csv` and `.tsv`)
   - do not consume row 1 as headers
   - generate deterministic column names such as `column_1`, `column_2`, ...
   - keep row counting and preview windowing based on all rows
+  - keep `--columns` and `--contains` targeting those generated names when no source header exists
+
+Naming note:
+
+- reuse the current preview-generated column family `column_n`
+- do not introduce a second synthetic naming style such as spreadsheet letters or cell addresses
 
 Why:
 
 - low-risk
 - easy to explain
 - avoids brittle auto-detection
+- stays consistent with the current preview contract for blank or extended delimited columns
 
 ### Recommendation B. Add explicit Excel range shaping to `data query`
 
@@ -140,6 +161,7 @@ Recommended initial behavior:
 - valid only for `--input-format excel` or `.xlsx`
 - still requires `--source <sheet>`
 - keep the default whole-sheet behavior when `--range` is omitted
+- implement it in the shared relation-building path so direct `data query`, interactive `data query`, and direct `data query codex` can reuse the same shaping result
 
 Why:
 
@@ -203,6 +225,14 @@ Important seam:
 
 That means introspection is not a separate user-facing layer, but it is a required internal boundary between shape resolution and SQL authoring.
 
+Implementation note:
+
+- any accepted query-side shaping contract should be representable as concrete CLI flags
+- the same shaping semantics should be shared by:
+  - direct `data query`
+  - interactive `data query`
+  - direct `data query codex`
+
 Why:
 
 - users can skip Codex and still shape sources explicitly
@@ -250,13 +280,19 @@ Layer 1: deterministic source shaping
          Layer 3: query authoring
 ```
 
+## Decision Updates
+
+- Treat headerless preview shaping as lightweight delimited-preview work that applies to `.csv` and `.tsv`, not as a CSV-only exception.
+- Reuse the existing preview-generated column family `column_n` for `--no-header`; do not introduce spreadsheet-style synthetic labels such as `A`, `AA`, or `A1`.
+- Let direct/shared CLI shaping land before interactive prompting, then layer interactive support on top of the shared helper path.
+- Defer Excel header override as a follow-up question after `--range`; if it becomes necessary later, avoid a vague bare `--header` flag.
+- Accepted shaping choices should map back to concrete CLI flags so the resulting behavior remains visible and reproducible.
+
 ## Open Questions
 
-- Should headerless CSV support be added to `data query` at the same time for consistency, or can preview lead here?
-- Should Excel range support also be exposed in the interactive `data query` flow immediately, or should direct CLI land first?
-- After `--range` exists, do we want a follow-up `--header` override for Excel as a separate flag?
-- Should interactive mode show a short warning when the introspected schema looks suspiciously sparse or placeholder-heavy?
-- Should Codex shape assistance write back accepted shaping choices as concrete flags or only as transient interactive state?
+- When query-side Excel shaping lands, should direct `data query codex` accept the same `--range` in the first implementation slice, or can that follow immediately after the base query helper lands?
+- Which warning heuristics are strong enough to flag suspicious Excel introspection without becoming noisy on valid narrow tables?
+- If a later Excel header override proves necessary, is `--header-row <n>` precise enough, or do we also need a `--no-header`-style query mode?
 
 ## Documentation Note
 
@@ -270,8 +306,15 @@ Recommended wording pattern:
 
 This keeps design and contract discussion focused on the data shape instead of exposing internal fixture names.
 
+## Related Research
+
+- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
