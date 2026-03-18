@@ -46,6 +46,8 @@ Revise the edge-case research doc so it reflects the current lightweight `data p
 - froze one shared filename convention across `data extract` and `data query`: `data-header-mapping-<uid>.json`
 - resolved mapping reuse behavior to strict exact input-context matching in the first pass
 - resolved mapping rewrite behavior to preserve unknown JSON fields and fail closed on unsupported schema versions
+- revised the research verification notes to keep evidence behavior-oriented while removing over-detailed local repro mechanics
+- made the public-doc guidance explicit that private issue-data fixture names and paths must stay undisclosed
 - clarified that any later TTY-only accept-in-place shortcut should remain optional and still write the accepted mapping back to an explicit artifact
 - decided that this feature family should ship with a dedicated schema-and-mapping guide, with related command guides linking back to it
 - closed the remaining open questions for this research pass

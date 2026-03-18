@@ -12,6 +12,7 @@ Evaluate three private issue scenarios and determine whether the current `data p
 
 This document is exploratory research only.
 It should not be treated as shipped behavior or guide-level usage documentation until a related plan is accepted and implementation lands.
+The later `data extract` and header-mapping sections sketch candidate follow-on command and artifact contracts for planning discussion only; they are not accepted implementation scope on their own.
 
 ## Key Findings
 
@@ -27,7 +28,7 @@ Observed behavior:
 - visible columns become `1, Ada, active, 2026-03-01`
 - the actual first record is not shown as data
 
-This matches the current lightweight delimited preview contract in `src/cli/data-preview/source.ts` and `docs/guides/data-preview-usage.md`:
+This matches the current lightweight delimited preview contract in `src/cli/data-preview/source.ts` and `docs/guides/data-preview-usage.md`.[^preview-source][^preview-guide]
 
 - `.csv` and `.tsv` both use the same header-first preview normalization path
 - the first delimited row is always treated as the header row
@@ -42,7 +43,7 @@ Implication:
 
 ### 2. Raw Excel sheet querying is too weak for banner rows and merged header regions
 
-The current Excel query path creates the logical table `file` with:
+The current Excel query path creates the logical table `file` with:[^query-source]
 
 - `read_xlsx(<path>, sheet = <name>)`
 
@@ -70,14 +71,15 @@ Local verification against DuckDB's `read_xlsx` options shows the current failur
 
 Verified scenario outcomes:
 
-- Scenario B becomes usable with a range like `A2:D7` and forced header handling
-- Scenario C becomes queryable with a range like `B7:AZ20`
-- after narrowing the range, the logical columns `id`, `item`, `status`, and `description` become available, even though merged-width filler columns still exist between them
+- Scenario B becomes usable with a range like `A2:D7`
+- Scenario C improves materially with a range like `B7:AZ20`, but in local probing it becomes queryable with the intended logical names only when that narrowed range is paired with explicit header handling and name normalization such as `header = true`, `all_varchar = true`, and `normalize_names = true`
+- after narrowing the range and enabling header normalization, the logical columns `id`, `item`, `status`, and `description` become available, even though filler columns still exist between them
 
 Implication:
 
 - a first fix does not require replacing DuckDB or building a full workbook parser
-- the missing piece is relation-shaping options before `create temp view file as ...`
+- the first missing piece is relation-shaping options before `create temp view file as ...`
+- more irregular sheets may still need follow-up header and type controls after `--range`
 
 ### 4. The two problem classes should not be solved with one heuristic
 
@@ -95,7 +97,7 @@ Implication:
 
 ### 5. Interactive `data query` and Codex-assisted query drafting inherit the same messy schema
 
-The interactive query flow currently does:
+The interactive query flow currently does:[^interactive-query-guide]
 
 1. choose input
 2. detect format
@@ -165,9 +167,10 @@ Recommended initial behavior:
 
 Why:
 
-- directly fixes both new workbook fixtures
+- directly fixes table-region selection for both new workbook fixtures
 - keeps the query contract explicit
 - lets users recover the correct table without inventing unreliable heuristics
+- creates the prerequisite for later header-row or header-normalization follow-up on more irregular sheets
 
 ### Recommendation C. Defer auto-detection and merge-aware cleanup
 
@@ -370,13 +373,13 @@ Recommended progression after `--range`:
 - first: `--range`
 - second: `--header-row <n>`
 - third: `--no-header`
-- later: Codex-assisted custom header suggestions if they prove useful
+- optional adjunct: reviewed `--codex-suggest-headers` on top of an accepted deterministic shaping state
 
 Why:
 
 - `--header-row <n>` solves the common workbook case where the right table exists but the real header is lower in the sheet
 - `--no-header` is still useful for truly headerless selected ranges, but it should not be the first extra query-side flag
-- custom header generation is a separate feature from `--no-header` and should remain explicit if it lands later
+- reviewed Codex header suggestions can be useful in the same feature family, but they are not a substitute for the deterministic flag progression
 
 ### Recommendation I. Present interactive shape resolution as source interpretation, not SQL drafting
 
@@ -420,9 +423,9 @@ Why:
 - keeps preview and query lightweight when persistence is unnecessary
 - still gives artifact generation a clear, explicit home
 
-### Recommendation K. Keep Codex semantic header guesses advisory if they land later
+### Recommendation K. Keep Codex semantic header guesses advisory when used
 
-If Codex later helps on headerless inputs:
+If Codex helps on headerless inputs:
 
 - keep deterministic contract names such as `column_1`, `column_2`, ...
 - present semantic header guesses only as advisory mappings
@@ -780,6 +783,8 @@ Fail-closed rule:
 
 ## Decision Updates
 
+These are research conclusions for planning use, not shipped CLI contracts.
+
 - Treat headerless preview shaping as lightweight delimited-preview work that applies to `.csv` and `.tsv`, not as a CSV-only exception.
 - Reuse the existing preview-generated column family `column_n` for `--no-header`; do not introduce spreadsheet-style synthetic labels such as `A`, `AA`, or `A1`.
 - Let direct/shared CLI shaping land before interactive prompting, then layer interactive support on top of the shared helper path.
@@ -791,7 +796,7 @@ Fail-closed rule:
 - Present interactive shape resolution as source interpretation before SQL authoring, not as query drafting or result extraction.
 - Keep first-pass shaping reusable and in-memory across preview and query, while implementing `data extract` as the explicit materialization lane.
 - If query-side `--no-header` lands later, it should apply to delimited `data query` inputs as well rather than remaining Excel-only.
-- If Codex later suggests semantic headers, keep those suggestions advisory and preserve deterministic `column_n` contract names underneath.
+- When Codex suggests semantic headers, keep those suggestions advisory and preserve deterministic `column_n` contract names underneath.
 - Define `data extract` as the separate materialization lane for shaped sources rather than overloading `data preview` or `data query` with artifact generation.
 - Treat `--codex-suggest-headers` as an in-scope review-first shaping feature, not as a hidden or purely deferred idea.
 - Keep the first `--codex-suggest-headers` review surface small and explicit: mapping table plus `Accept all`, `Edit one`, or `Keep generated names`.
@@ -823,6 +828,35 @@ Fail-closed rule:
 
 - none for this research pass
 
+## Verification Notes
+
+Local verification was re-run on 2026-03-18 UTC against private repro fixtures that are intentionally kept out of public docs and repository-visible guide examples.
+
+Observed current behavior:
+
+- Scenario A:
+  - current `data preview` still treats row 1 as the header row on a headerless delimited input
+  - the first data row is therefore consumed into visible column names instead of remaining in the rendered row set
+- Scenario B:
+  - current whole-sheet Excel query binding still collapses the useful table into one merged-banner-derived visible column
+- Scenario C:
+  - current whole-sheet Excel query binding still produces one sparse title-like column and no meaningful rows
+
+Observed shaping probe outcomes:
+
+- Scenario B:
+  - narrowing the sheet to the real table region makes the intended logical header row queryable
+- Scenario C:
+  - narrowing the sheet materially improves the result, but the most usable query surface in local probing still depended on explicit header and name-normalization options in addition to the narrowed range
+
+Public-doc note:
+
+- do not reference the private local repro fixture filenames or paths in public guides, research summaries, or plan docs
+- document these cases by behavior only:
+  - headerless delimited input
+  - workbook with a merged banner row above the real header
+  - workbook with multiple decorative merged regions and a lower table start
+
 ## Documentation Note
 
 These scenarios should be referred to in documentation by behavior, not by private fixture names or paths.
@@ -847,3 +881,10 @@ This keeps design and contract discussion focused on the data shape instead of e
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+
+## References
+
+[^preview-source]: `src/cli/data-preview/source.ts`
+[^preview-guide]: `docs/guides/data-preview-usage.md`
+[^query-source]: `src/cli/duckdb/query.ts`
+[^interactive-query-guide]: `docs/guides/data-query-interactive-usage.md`
