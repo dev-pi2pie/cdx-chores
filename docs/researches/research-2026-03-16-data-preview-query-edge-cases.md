@@ -881,6 +881,9 @@ This keeps design and contract discussion focused on the data shape instead of e
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## References
 

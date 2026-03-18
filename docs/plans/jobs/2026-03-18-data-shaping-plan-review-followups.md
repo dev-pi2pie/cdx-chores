@@ -17,6 +17,8 @@ Address the March 18 review findings on the new data-shaping plan set so the pla
 - froze `data extract` header suggestion as a reviewed two-step flow that stops after writing a mapping artifact and only materializes on a follow-up run with `--header-mapping <path>`
 - updated `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - narrowed first-pass mapping reuse to normalized input-reference matching and deferred file-content fingerprinting or stale-file detection
+- updated `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- linked the three new March 18 plan docs back into the research doc's `Related Plans` section
 
 ## Verification
 
