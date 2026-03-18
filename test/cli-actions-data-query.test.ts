@@ -164,6 +164,25 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery preserves explicit CSV headers that match columnN patterns", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "literal-column-names.csv");
+      await writeFile(inputPath, "column1,column2\n1001,active\n1002,paused\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select column1, column2 from file order by column1",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Visible columns: column1, column2");
+      expect(stdout.text).toContain("1001    | active");
+      expect(stdout.text).not.toContain("column_2");
+      expect(stdout.text).not.toContain("column_3");
+    });
+  });
+
   test("actionDataQuery suggests semantic headers for headerless CSV inputs using normalized placeholder names", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "no-head.csv");

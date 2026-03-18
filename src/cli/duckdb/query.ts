@@ -95,6 +95,18 @@ function normalizeGeneratedQueryColumnName(name: string): string {
   return `column_${index + 1}`;
 }
 
+function isGeneratedQueryPlaceholderSequence(names: readonly string[]): boolean {
+  return names.length > 0 && names.every((name, index) => {
+    const match = /^column(\d+)$/i.exec(name.trim());
+    if (!match) {
+      return false;
+    }
+
+    const detectedIndex = Number(match[1] ?? "");
+    return Number.isInteger(detectedIndex) && detectedIndex === index;
+  });
+}
+
 interface QueryRelationColumn {
   name: string;
   sourceName: string;
@@ -485,7 +497,10 @@ export async function prepareDataQuerySource(
           },
         )}`,
       );
-      const relationColumns = await collectQueryRelationColumns(connection, "file_source");
+      const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
+        format,
+        inputPath,
+      });
       const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
         availableColumns: relationColumns.map((column) => column.name),
         mappings: shape.headerMappings ?? [],
@@ -525,6 +540,10 @@ export async function prepareDataQuerySource(
 async function collectQueryRelationColumns(
   connection: DuckDBConnection,
   relationName: string,
+  options: {
+    format: DataQueryInputFormat;
+    inputPath: string;
+  },
 ): Promise<QueryRelationColumn[]> {
   const reader = await connection.runAndReadAll(
     `select * from ${quoteSqlIdentifier(relationName)} limit 0`,
@@ -532,11 +551,39 @@ async function collectQueryRelationColumns(
   assertResultSet(reader);
   const columnNames = reader.deduplicatedColumnNames();
   const columnTypes = reader.columnTypes();
+  const shouldNormalizeGeneratedColumns = await shouldNormalizeGeneratedQueryColumnNames(
+    connection,
+    options.inputPath,
+    options.format,
+    columnNames,
+  );
   return columnNames.map((name, index) => ({
-    name: normalizeGeneratedQueryColumnName(name),
+    name: shouldNormalizeGeneratedColumns ? normalizeGeneratedQueryColumnName(name) : name,
     sourceName: name,
     type: columnTypes[index]?.toString() ?? "UNKNOWN",
   }));
+}
+
+async function shouldNormalizeGeneratedQueryColumnNames(
+  connection: DuckDBConnection,
+  inputPath: string,
+  format: DataQueryInputFormat,
+  columnNames: readonly string[],
+): Promise<boolean> {
+  if ((format !== "csv" && format !== "tsv") || !isGeneratedQueryPlaceholderSequence(columnNames)) {
+    return false;
+  }
+
+  try {
+    const delimiter = format === "tsv" ? "\t" : ",";
+    const reader = await connection.runAndReadAll(
+      `select HasHeader from sniff_csv(${escapeSqlString(inputPath)}, delim = ${escapeSqlString(delimiter)})`,
+    );
+    const rows = reader.getRowObjectsJson() as Array<{ HasHeader?: boolean }>;
+    return rows[0]?.HasHeader === false;
+  } catch {
+    return false;
+  }
 }
 
 function buildPreparedFileProjectionSql(
