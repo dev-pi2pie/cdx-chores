@@ -1,9 +1,11 @@
+import { stat } from "node:fs/promises";
 import { confirm, input, select } from "@inquirer/prompts";
 import { extname } from "node:path";
 
 import {
   actionCsvToJson,
   actionCsvToTsv,
+  actionDataExtract,
   actionDataParquetPreview,
   actionDataPreview,
   actionJsonToCsv,
@@ -24,13 +26,35 @@ import {
   promptRequiredPathWithConfig,
 } from "../prompts/path";
 import type { CliRuntime } from "../types";
-import { runInteractiveDataQuery } from "./data-query";
+import {
+  collectInteractiveIntrospection,
+  promptInteractiveInputFormat,
+  promptOptionalSourceSelection,
+  reviewInteractiveHeaderMappings,
+  runInteractiveDataQuery,
+} from "./data-query";
 import type { DataInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 import { CliError } from "../errors";
-import { printLine } from "../actions/shared";
+import { displayPath, printLine } from "../actions/shared";
+import { createDuckDbConnection, listDataQuerySources, type DataQueryInputFormat } from "../duckdb/query";
+import { defaultOutputPath, resolveFromCwd } from "../fs-utils";
+import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 
 type LightweightInteractiveDataFormat = "csv" | "tsv" | "json";
+type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";
+
+interface InteractiveExtractWritePlan {
+  output: string;
+  overwrite: boolean;
+  outputFormat: InteractiveExtractOutputFormat;
+}
+
+const EXTRACT_CONTINUATION_LABELS = {
+  continuationLabel: "extraction",
+  notWritingLabel: "output yet",
+  reviewPromptLabel: "extraction",
+} as const;
 
 function detectInteractiveDataFormat(inputPath: string): LightweightInteractiveDataFormat {
   const extension = extname(inputPath).toLowerCase();
@@ -118,6 +142,234 @@ async function runInteractiveDataConvert(
   });
 }
 
+function isDuckDbExtensionUnavailableError(error: unknown): error is CliError | { code: string } {
+  return (
+    (error instanceof CliError && error.code === "DUCKDB_EXTENSION_UNAVAILABLE") ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: unknown }).code === "DUCKDB_EXTENSION_UNAVAILABLE")
+  );
+}
+
+function formatSupportsManagedDuckDbExtensionInstall(
+  format: DataQueryInputFormat,
+): format is "sqlite" | "excel" {
+  return format === "sqlite" || format === "excel";
+}
+
+function canSuggestManagedDuckDbExtensionInstall(
+  error: Error | { code: string; message?: string },
+): boolean {
+  const message = error instanceof Error ? error.message : String(error.message ?? "");
+  return !/cannot install or cache it/i.test(message);
+}
+
+function renderDuckDbExtensionRemediationCommand(
+  runtime: CliRuntime,
+  format: "sqlite" | "excel",
+): void {
+  printLine(runtime.stderr, "");
+  printLine(
+    runtime.stderr,
+    `Install the missing DuckDB extension with: ${createDuckDbExtensionInstallCommand(format)}`,
+  );
+}
+
+async function promptInteractiveExtractOutput(
+  runtime: CliRuntime,
+  inputPath: string,
+  pathPromptContext: InteractivePathPromptContext,
+): Promise<InteractiveExtractWritePlan> {
+  const outputFormat = await select<InteractiveExtractOutputFormat>({
+    message: "Output format",
+    choices: [
+      { name: "CSV", value: "csv" },
+      { name: "TSV", value: "tsv" },
+      { name: "JSON", value: "json" },
+    ],
+  });
+  const outputHint = formatDefaultOutputPathHint(runtime, inputPath, `.${outputFormat}`);
+
+  while (true) {
+    const outputPath =
+      (await promptOptionalOutputPathChoice({
+        message: `Output ${outputFormat.toUpperCase()} file`,
+        defaultHint: outputHint,
+        kind: "file",
+        ...pathPromptContext,
+        customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
+      })) ?? defaultOutputPath(inputPath, `.${outputFormat}`);
+    const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
+    try {
+      await stat(normalizedOutputPath);
+      const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
+      if (overwrite) {
+        return { output: outputPath, outputFormat, overwrite };
+      }
+      printLine(runtime.stdout, "Choose a different output destination.");
+      continue;
+    } catch {
+      return { output: outputPath, outputFormat, overwrite: false };
+    }
+  }
+}
+
+function renderInteractiveExtractWriteSummary(
+  runtime: CliRuntime,
+  options: {
+    headerMappingCount: number;
+    inputPath: string;
+    outputPath: string;
+    outputFormat: InteractiveExtractOutputFormat;
+    overwrite: boolean;
+    selectedHeaderRow?: number;
+    selectedRange?: string;
+    selectedSource?: string;
+  },
+): void {
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, "Extraction write summary");
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, `- input: ${displayPath(runtime, resolveFromCwd(runtime, options.inputPath))}`);
+  if (options.selectedSource) {
+    printLine(runtime.stderr, `- source: ${options.selectedSource}`);
+  }
+  if (options.selectedRange) {
+    printLine(runtime.stderr, `- range: ${options.selectedRange}`);
+  }
+  if (options.selectedHeaderRow !== undefined) {
+    printLine(runtime.stderr, `- header row: ${options.selectedHeaderRow}`);
+  }
+  printLine(
+    runtime.stderr,
+    `- headers: ${
+      options.headerMappingCount > 0
+        ? `${options.headerMappingCount} reviewed semantic mapping${options.headerMappingCount === 1 ? "" : "s"}`
+        : "keep current column names"
+    }`,
+  );
+  printLine(runtime.stderr, `- output format: ${options.outputFormat.toUpperCase()}`);
+  printLine(runtime.stderr, `- output: ${displayPath(runtime, resolveFromCwd(runtime, options.outputPath))}`);
+  printLine(runtime.stderr, `- overwrite: ${options.overwrite ? "yes" : "no"}`);
+}
+
+async function confirmInteractiveExtractWrite(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  options: {
+    headerMappingCount: number;
+    inputPath: string;
+    selectedHeaderRow?: number;
+    selectedRange?: string;
+    selectedSource?: string;
+  },
+): Promise<InteractiveExtractWritePlan | undefined> {
+  while (true) {
+    const outputPlan = await promptInteractiveExtractOutput(runtime, options.inputPath, pathPromptContext);
+    renderInteractiveExtractWriteSummary(runtime, {
+      ...options,
+      outputPath: outputPlan.output,
+      outputFormat: outputPlan.outputFormat,
+      overwrite: outputPlan.overwrite,
+    });
+    const confirmed = await confirm({ message: "Write extracted output now?", default: true });
+    if (confirmed) {
+      return outputPlan;
+    }
+
+    const nextStep = await select<"destination" | "cancel">({
+      message: "Extraction write next step",
+      choices: [
+        {
+          name: "choose another destination",
+          value: "destination",
+          description: "Adjust the output format or destination before writing",
+        },
+        {
+          name: "cancel",
+          value: "cancel",
+          description: "Stop before materializing the extracted output",
+        },
+      ],
+    });
+    if (nextStep === "cancel") {
+      printLine(runtime.stderr, "Skipped extraction write.");
+      return undefined;
+    }
+  }
+}
+
+async function runInteractiveDataExtract(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+): Promise<void> {
+  const input = await promptRequiredPathWithConfig("Input data file", {
+    kind: "file",
+    ...pathPromptContext,
+  });
+  const inputPath = resolveFromCwd(runtime, input);
+  const format = await promptInteractiveInputFormat(runtime, inputPath);
+
+  let connection;
+  try {
+    connection = await createDuckDbConnection();
+    const sources = await listDataQuerySources(connection, inputPath, format);
+    const selectedSource = await promptOptionalSourceSelection(format, sources);
+    const { introspection, sourceShape } = await collectInteractiveIntrospection({
+      connection,
+      format,
+      inputPath,
+      labels: EXTRACT_CONTINUATION_LABELS,
+      runtime,
+      selectedSource,
+    });
+    const reviewedHeaders = await reviewInteractiveHeaderMappings({
+      connection,
+      format,
+      inputPath,
+      introspection,
+      labels: EXTRACT_CONTINUATION_LABELS,
+      runtime,
+      selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedRange: sourceShape.selectedRange,
+      selectedSource,
+    });
+    const outputOptions = await confirmInteractiveExtractWrite(runtime, pathPromptContext, {
+      headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
+      inputPath: input,
+      selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedRange: sourceShape.selectedRange,
+      selectedSource,
+    });
+    if (!outputOptions) {
+      return;
+    }
+
+    await actionDataExtract(runtime, {
+      ...(reviewedHeaders.headerMappings ? { headerMappings: reviewedHeaders.headerMappings } : {}),
+      input,
+      inputFormat: format,
+      output: outputOptions.output,
+      overwrite: outputOptions.overwrite,
+      ...(sourceShape.selectedHeaderRow !== undefined ? { headerRow: sourceShape.selectedHeaderRow } : {}),
+      ...(sourceShape.selectedRange ? { range: sourceShape.selectedRange } : {}),
+      ...(selectedSource ? { source: selectedSource } : {}),
+    });
+  } catch (error) {
+    if (
+      isDuckDbExtensionUnavailableError(error) &&
+      formatSupportsManagedDuckDbExtensionInstall(format) &&
+      canSuggestManagedDuckDbExtensionInstall(error instanceof Error ? error : new Error(String(error)))
+    ) {
+      renderDuckDbExtensionRemediationCommand(runtime, format);
+    }
+    throw error;
+  } finally {
+    connection?.closeSync();
+  }
+}
+
 function toContainsValidationMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -188,6 +440,11 @@ export async function handleDataInteractiveAction(
 
   if (action === "data:query") {
     await runInteractiveDataQuery(runtime, pathPromptContext);
+    return;
+  }
+
+  if (action === "data:extract") {
+    await runInteractiveDataExtract(runtime, pathPromptContext);
     return;
   }
 

@@ -13,6 +13,10 @@ export interface InteractiveHarnessScenario {
   inputQueue?: string[];
   requiredPathQueue?: string[];
   optionalPathQueue?: Array<string | undefined>;
+  dataExtractActionErrorMessage?: string;
+  dataExtractActionErrorCode?: string;
+  dataExtractActionStderr?: string;
+  dataExtractActionStdout?: string;
   dataQueryActionErrorMessage?: string;
   dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;
@@ -20,8 +24,14 @@ export interface InteractiveHarnessScenario {
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
   dataQueryCodexErrorMessage?: string;
   dataQueryDetectedFormat?: string;
+  dataQueryHeaderSuggestionErrorMessage?: string;
+  dataQueryHeaderSuggestions?: Array<Record<string, unknown>>;
   dataQueryIntrospection?: Record<string, unknown>;
+  dataQueryIntrospectionQueue?: Record<string, unknown>[];
+  dataSourceShapeSuggestion?: Record<string, unknown>;
+  dataSourceShapeSuggestionErrorMessage?: string;
   dataQuerySources?: string[];
+  xlsxSheetSnapshot?: Record<string, unknown>;
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
@@ -61,7 +71,11 @@ const pathConfigModuleUrl = pathToFileURL(
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
 const dataQueryCodexModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/data-query/codex.ts")).href;
+const dataQueryHeaderMappingModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/duckdb/header-mapping.ts"),
+).href;
 const duckdbQueryModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/duckdb/query.ts")).href;
+const xlsxSourcesModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/duckdb/xlsx-sources.ts")).href;
 
 export function runInteractiveHarness(
   scenario: InteractiveHarnessScenario,
@@ -207,6 +221,30 @@ export function runInteractiveHarness(
       },
       actionDataParquetPreview: async (_runtime, options) => {
         actionCalls.push({ name: "data:parquet-preview", options });
+      },
+      actionDataExtract: async (_runtime, options) => {
+        actionCalls.push({ name: "data:extract", options });
+        if (typeof scenario.dataExtractActionStdout === "string") {
+          _runtime.stdout.write(scenario.dataExtractActionStdout);
+        }
+        if (typeof scenario.dataExtractActionStderr === "string") {
+          _runtime.stderr.write(scenario.dataExtractActionStderr);
+        }
+        const existingPaths = new Set((scenario.existingPaths ?? []).map((item) => resolveHarnessPath(item)));
+        const outputPath =
+          typeof options.output === "string" && options.output.length > 0
+            ? resolveHarnessPath(options.output)
+            : undefined;
+        if (outputPath && existingPaths.has(outputPath) && !options.overwrite) {
+          const error = new Error(\`Output file already exists: \${outputPath}. Use --overwrite to replace it.\`);
+          error.code = "OUTPUT_EXISTS";
+          throw error;
+        }
+        if (scenario.dataExtractActionErrorMessage) {
+          const error = new Error(scenario.dataExtractActionErrorMessage);
+          error.code = scenario.dataExtractActionErrorCode ?? "DATA_EXTRACT_FAILED";
+          throw error;
+        }
       },
       actionDataQuery: async (_runtime, options) => {
         actionCalls.push({ name: "data:query", options });
@@ -444,14 +482,22 @@ export function runInteractiveHarness(
 
     mock.module(${JSON.stringify(duckdbQueryModuleUrl)}, () => ({
       DATA_QUERY_INPUT_FORMAT_VALUES: ["csv", "tsv", "parquet", "sqlite", "excel"],
+      normalizeExcelHeaderRow: (value) => {
+        const parsed = Number(value);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          throw new Error("--header-row must be a positive integer.");
+        }
+        return parsed;
+      },
+      normalizeExcelRange: (value) => String(value ?? "").trim().toUpperCase(),
       quoteSqlIdentifier: (value) => \`"\${String(value).replaceAll('"', '""')}"\`,
       createDuckDbConnection: async () => ({
         closeSync() {},
       }),
       detectDataQueryInputFormat: () => scenario.dataQueryDetectedFormat ?? "csv",
       listDataQuerySources: async () => scenario.dataQuerySources,
-      collectDataQuerySourceIntrospection: async (_connection, _input, _format, source) =>
-        scenario.dataQueryIntrospection ?? {
+      collectDataQuerySourceIntrospection: async (_connection, _input, _format, shape) =>
+        (scenario.dataQueryIntrospectionQueue ?? []).shift() ?? scenario.dataQueryIntrospection ?? {
           columns: [
             { name: "id", type: "BIGINT" },
             { name: "name", type: "VARCHAR" },
@@ -461,9 +507,47 @@ export function runInteractiveHarness(
             { id: "1", name: "Ada", status: "active" },
             { id: "2", name: "Bob", status: "inactive" },
           ],
-          selectedSource: source,
+          selectedHeaderRow: shape?.headerRow,
+          selectedRange: shape?.range,
+          selectedSource: shape?.source,
           truncated: false,
         },
+    }));
+
+    mock.module(${JSON.stringify(xlsxSourcesModuleUrl)}, () => ({
+      collectXlsxSheetSnapshot: async (_inputPath, sheetName) => ({
+        ...(scenario.xlsxSheetSnapshot ?? {}),
+        mergedRanges: [],
+        mergedRangesTruncated: false,
+        nonEmptyCellCount: 6,
+        nonEmptyRowCount: 3,
+        rows: [
+          {
+            rowNumber: 1,
+            cellCount: 2,
+            firstRef: "A1",
+            lastRef: "B1",
+            cells: [
+              { ref: "A1", value: "id" },
+              { ref: "B1", value: "name" },
+            ],
+          },
+          {
+            rowNumber: 2,
+            cellCount: 2,
+            firstRef: "A2",
+            lastRef: "B2",
+            cells: [
+              { ref: "A2", value: "1" },
+              { ref: "B2", value: "Ada" },
+            ],
+          },
+        ],
+        rowsTruncated: false,
+        sheetName: String(sheetName ?? "Summary"),
+        usedRange: "A1:B3",
+        ...(scenario.xlsxSheetSnapshot ?? {}),
+      }),
     }));
 
     mock.module(${JSON.stringify(dataQueryCodexModuleUrl)}, () => ({
@@ -498,6 +582,10 @@ export function runInteractiveHarness(
           "# Logical table: file",
           \`# Format: \${options.format}\`,
           ...(options.introspection?.selectedSource ? [\`# Source: \${options.introspection.selectedSource}\`] : []),
+          ...(options.introspection?.selectedRange ? [\`# Range: \${options.introspection.selectedRange}\`] : []),
+          ...(options.introspection?.selectedHeaderRow !== undefined
+            ? [\`# Header row: \${options.introspection.selectedHeaderRow}\`]
+            : []),
           \`# Schema: \${schema}\`,
           "# Sample rows:",
           ...(sampleRows.length > 0
@@ -515,6 +603,12 @@ export function runInteractiveHarness(
           options: {
             format: options.format,
             intent: options.intent,
+            ...(options.introspection?.selectedHeaderRow !== undefined
+              ? { selectedHeaderRow: options.introspection.selectedHeaderRow }
+              : {}),
+            ...(options.introspection?.selectedRange
+              ? { selectedRange: options.introspection.selectedRange }
+              : {}),
             selectedSource: options.introspection?.selectedSource,
           },
         });
@@ -527,6 +621,77 @@ export function runInteractiveHarness(
               sql: "select count(*) as total from file",
               reasoningSummary: "Counts rows from the selected source.",
             },
+        };
+      },
+    }));
+
+    mock.module(${JSON.stringify(dataQueryHeaderMappingModuleUrl)}, () => ({
+      normalizeHeaderMappingTargetName: (value) =>
+        String(value ?? "")
+          .trim()
+          .replace(/[^A-Za-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .replace(/_+/g, "_")
+          .toLowerCase(),
+      normalizeAndValidateAcceptedHeaderMappings: ({ availableColumns, mappings }) => {
+        return (mappings ?? [])
+          .map((mapping) => ({
+            ...mapping,
+            from: String(mapping.from ?? "").trim() || String((availableColumns ?? [])[0] ?? "column_1"),
+            to: String(mapping.to ?? "").trim() || "edited_header",
+          }))
+          .filter((mapping) => mapping.to !== mapping.from);
+      },
+      suggestDataHeaderMappingsWithCodex: async (options) => {
+        actionCalls.push({
+          name: "data:query:header-suggest",
+          options: {
+            format: options.format,
+            ...(options.introspection?.selectedHeaderRow !== undefined
+              ? { selectedHeaderRow: options.introspection.selectedHeaderRow }
+              : {}),
+            ...(options.introspection?.selectedRange
+              ? { selectedRange: options.introspection.selectedRange }
+              : {}),
+            selectedSource: options.introspection?.selectedSource,
+          },
+        });
+        if (scenario.dataQueryHeaderSuggestionErrorMessage) {
+          return { errorMessage: scenario.dataQueryHeaderSuggestionErrorMessage, mappings: [] };
+        }
+        return {
+          mappings:
+            scenario.dataQueryHeaderSuggestions ?? [
+              { from: "column_1", to: "id", sample: "1", inferredType: "BIGINT" },
+              { from: "column_2", to: "name", sample: "Ada", inferredType: "VARCHAR" },
+            ],
+        };
+      },
+    }));
+
+    mock.module(${JSON.stringify(pathToFileURL(resolve(REPO_ROOT, "src/cli/duckdb/source-shape.ts")).href)}, () => ({
+      suggestDataSourceShapeWithCodex: async (options) => {
+        actionCalls.push({
+          name: "data:source-shape-suggest",
+          options: {
+            ...(options.currentHeaderRow !== undefined
+              ? { currentHeaderRow: options.currentHeaderRow }
+              : {}),
+            ...(options.currentRange
+              ? { currentRange: options.currentRange }
+              : {}),
+            selectedSource: options.context?.currentIntrospection?.selectedSource,
+            sheetName: options.context?.sheetSnapshot?.sheetName,
+          },
+        });
+        if (scenario.dataSourceShapeSuggestionErrorMessage) {
+          return { errorMessage: scenario.dataSourceShapeSuggestionErrorMessage };
+        }
+        return scenario.dataSourceShapeSuggestion ?? {
+          reasoningSummary: "The table starts at A1 and spans two columns.",
+          shape: {
+            range: "A1:B3",
+          },
         };
       },
     }));

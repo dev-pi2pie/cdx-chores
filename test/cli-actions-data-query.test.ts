@@ -6,6 +6,7 @@ import { actionDataQuery } from "../src/cli/actions";
 import { getDisplayWidth } from "../src/cli/text-display-width";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function dataQueryFixturePath(name: string): string {
@@ -13,6 +14,7 @@ function dataQueryFixturePath(name: string): string {
 }
 
 const queryExtensions = await inspectDataQueryExtensions();
+const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
 describe("cli action modules: data query", () => {
@@ -141,6 +143,302 @@ describe("cli action modules: data query", () => {
       expect(new Set(widths).size).toBe(1);
     });
   });
+
+  test("actionDataQuery normalizes headerless CSV placeholder names to the shared column_n contract", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      await writeFile(inputPath, "1,Ada,active,2026-03-01\n2,Bob,paused,2026-03-02\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select column_1, column_2, column_3, column_4 from file order by column_1",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Visible columns: column_1, column_2, column_3, column_4");
+      expect(stdout.text).toContain("1        | Ada");
+      expect(stdout.text).not.toContain("column0");
+      expect(stdout.text).not.toContain("column1");
+    });
+  });
+
+  test("actionDataQuery preserves explicit CSV headers that match columnN patterns", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "literal-column-names.csv");
+      await writeFile(inputPath, "column1,column2\n1001,active\n1002,paused\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select column1, column2 from file order by column1",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Visible columns: column1, column2");
+      expect(stdout.text).toContain("1001    | active");
+      expect(stdout.text).not.toContain("column_2");
+      expect(stdout.text).not.toContain("column_3");
+    });
+  });
+
+  test("actionDataQuery suggests semantic headers for headerless CSV inputs using normalized placeholder names", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "1,Ada,active,2026-03-01\n2,Bob,paused,2026-03-02\n", "utf8");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async ({ prompt }) => {
+          expect(prompt).toContain("1. column_1 (BIGINT) samples: 1, 2");
+          expect(prompt).toContain("2. column_2 (VARCHAR) samples: Ada, Bob");
+          expect(prompt).toContain("3. column_3 (VARCHAR) samples: active, paused");
+          expect(prompt).toContain("4. column_4 (DATE) samples: 2026-03-01, 2026-03-02");
+          return JSON.stringify({
+            suggestions: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "name" },
+              { from: "column_3", to: "status" },
+              { from: "column_4", to: "created_at" },
+            ],
+          });
+        },
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("column_1 -> id");
+      expect(stdout.text).toContain("column_4 -> created_at");
+      expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
+  test("actionDataQuery applies Excel range shaping before querying", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    await actionDataQuery(runtime, {
+      input: toRepoRelativePath(dataQueryFixturePath("multi.xlsx")),
+      range: "A1:B3",
+      source: "Summary",
+      sql: "select * from file order by id",
+    });
+
+    expectNoStderr();
+    expect(stdout.text).toContain("Format: excel");
+    expect(stdout.text).toContain("Source: Summary");
+    expect(stdout.text).toContain("Range: A1:B3");
+    expect(stdout.text).toContain("Visible columns: id, name");
+    expect(stdout.text).not.toContain("status");
+  });
+
+  test("actionDataQuery applies header-row shaping on top of an explicit Excel range", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        range: "B2:E11",
+        source: "Summary",
+        sql: "select id, item, status from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Format: excel");
+      expect(stdout.text).toContain("Source: Summary");
+      expect(stdout.text).toContain("Range: B2:E11");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: ID, item, status");
+      expect(stdout.text).toContain("1001 | Starter");
+      expect(stdout.text).not.toContain("Quarterly Operations Report");
+    });
+  });
+
+  test("actionDataQuery tolerates shaped Excel header-band rows when the first data rows are blank", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "header-band.xlsx");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        range: "B7:E12",
+        source: "Summary",
+        sql: "select ID, question, status from file order by ID",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Format: excel");
+      expect(stdout.text).toContain("Source: Summary");
+      expect(stdout.text).toContain("Range: B7:E12");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: ID, question, status");
+      expect(stdout.text).toContain("101 | Confirm tax residency");
+      expect(stdout.text).toContain("102 | Collect withholding certificate");
+    });
+  });
+
+  test("actionDataQuery writes a reviewed header-mapping artifact and stops before SQL execution", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "generic.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
+
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async ({ prompt }) => {
+          expect(prompt).toContain("Detected format: csv");
+          expect(prompt).toContain("1. column_1 (BIGINT) samples: 1001, 1002");
+          expect(prompt).toContain("2. column_2 (VARCHAR) samples: active, paused");
+          return JSON.stringify({
+            suggestions: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "status" },
+            ],
+          });
+        },
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("Suggested headers");
+      expect(stdout.text).toContain("column_1 -> id");
+      expect(stdout.text).toContain("column_2 -> status");
+      expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+      expect(stderr.text).toContain("--header-mapping");
+      expect(stderr.text).toContain("--sql");
+
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as {
+        input: { format: string; path: string };
+        mappings: Array<{ from: string; inferredType?: string; sample?: string; to: string }>;
+        metadata: { artifactType: string; issuedAt: string };
+        version: number;
+      };
+      expect(artifact.version).toBe(1);
+      expect(artifact.metadata.artifactType).toBe("data-header-mapping");
+      expect(artifact.input).toEqual({
+        format: "csv",
+        path: toRepoRelativePath(inputPath),
+      });
+      expect(artifact.mappings).toEqual([
+        { from: "column_1", inferredType: "BIGINT", sample: "1001", to: "id" },
+        { from: "column_2", inferredType: "VARCHAR", sample: "active", to: "status" },
+      ]);
+    });
+  });
+
+  test("actionDataQuery forwards --install-missing-extension when reviewed header suggestions inspect extension-backed inputs", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const artifactPath = join(fixtureDir, "header-map.json");
+      const collectedOptions: Array<{
+        installMissingExtension?: boolean;
+        statusStream?: NodeJS.WritableStream;
+      }> = [];
+      const { runtime, stderr } = createActionTestRuntime();
+
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async () =>
+          JSON.stringify({
+            suggestions: [{ from: "column_1", to: "id" }],
+          }),
+        input: toRepoRelativePath(dataQueryFixturePath("multi.xlsx")),
+        installMissingExtension: true,
+        overwrite: true,
+        source: "Summary",
+        sourceIntrospectionCollector: async (
+          _connection,
+          _inputPath,
+          _format,
+          _shape,
+          _sampleRowLimit,
+          options = {},
+        ) => {
+          collectedOptions.push({
+            installMissingExtension: options.installMissingExtension,
+            statusStream: options.statusStream,
+          });
+          return {
+            columns: [{ name: "column_1", type: "BIGINT" }],
+            sampleRows: [{ column_1: "1" }],
+            selectedSource: "Summary",
+            truncated: false,
+          };
+        },
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(collectedOptions).toEqual([
+        {
+          installMissingExtension: true,
+          statusStream: runtime.stderr,
+        },
+      ]);
+      expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
+  test("actionDataQuery reuses an accepted header-mapping artifact when it matches exactly", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "generic.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "csv",
+            path: toRepoRelativePath(inputPath),
+          },
+          mappings: [
+            { from: "column_1", to: "id" },
+            { from: "column_2", to: "status" },
+          ],
+          metadata: {
+            artifactType: "data-header-mapping",
+            issuedAt: "2026-03-18T00:00:00.000Z",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        headerMapping: toRepoRelativePath(artifactPath),
+        input: toRepoRelativePath(inputPath),
+        sql: "select id, status from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Visible columns: id, status");
+      expect(stdout.text).toContain("1001 | active");
+      expect(stdout.text).not.toContain("column_1");
+      expect(stdout.text).not.toContain("column_2");
+    });
+  });
 });
 
 describe("cli action modules: data query failure modes", () => {
@@ -261,6 +559,67 @@ describe("cli action modules: data query failure modes", () => {
             sql: "select * from file",
           }),
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is not valid for CSV" },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataQuery rejects --range for non-Excel inputs", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            range: "A1:B2",
+            sql: "select * from file",
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--range is only valid for Excel query inputs" },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataQuery rejects mismatched header-mapping artifacts", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "generic.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "column_1,column_2\n1001,active\n", "utf8");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "csv",
+            path: "examples/playground/other.csv",
+          },
+          mappings: [{ from: "column_1", to: "id" }],
+          metadata: {
+            artifactType: "data-header-mapping",
+            issuedAt: "2026-03-18T00:00:00.000Z",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            headerMapping: toRepoRelativePath(artifactPath),
+            input: toRepoRelativePath(inputPath),
+            sql: "select * from file",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "does not match the current input context exactly",
+        },
       );
 
       expectNoOutput();

@@ -8,6 +8,7 @@ Current boundary:
 - intent is required through `--intent`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit Excel shaping is available through `--range <A1:Z99>`
 - default output: human-readable assistant summary plus drafted SQL
 - shell-friendly output: `--print-sql`
 - no `--execute` in the first pass
@@ -15,7 +16,7 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query codex <input> --intent "<text>" [--input-format <format>] [--source <name>] [--print-sql]
+cdx-chores data query codex <input> --intent "<text>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--print-sql]
 ```
 
 Supported `--input-format` values:
@@ -33,6 +34,7 @@ cdx-chores data query codex ./examples/playground/data-query/basic.csv --intent 
 cdx-chores data query codex ./examples/playground/data-query/basic.parquet --intent "count rows" --print-sql
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list active users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show status counts by name"
+cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 ```
 
 ### Execution split
@@ -51,11 +53,14 @@ The first `data query codex` implementation is advisory only. It always shows th
 - SQLite: table or view name
 - Excel: sheet name
 
+`--range` is valid only for Excel inputs and narrows the selected sheet before bounded introspection is collected for Codex drafting.
+
 Examples:
 
 ```bash
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show ids and names"
+cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 ```
 
 Single-object inputs do not need `--source`.
@@ -65,6 +70,7 @@ Single-object inputs do not need `--source`.
 - default output writes a human-readable summary to stdout:
   - detected format
   - selected source when present
+  - selected range when present
   - concise schema summary
   - bounded sample rows
   - drafted SQL revealed under a dedicated `SQL:` label on its own line

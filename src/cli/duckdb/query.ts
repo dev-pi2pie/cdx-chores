@@ -10,7 +10,11 @@ import {
   ensureDuckDbManagedExtensionLoaded,
   probeDuckDbManagedExtension,
 } from "./extensions";
-import { listXlsxSheetNames } from "./xlsx-sources";
+import {
+  normalizeAndValidateAcceptedHeaderMappings,
+  type DataHeaderMappingEntry,
+} from "./header-mapping";
+import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "./xlsx-sources";
 
 export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
 
@@ -35,13 +39,26 @@ export interface DataQueryIntrospectionColumn {
 export interface DataQuerySourceIntrospection {
   columns: DataQueryIntrospectionColumn[];
   sampleRows: Array<Record<string, string>>;
+  selectedHeaderRow?: number;
   selectedSource?: string;
+  selectedRange?: string;
   truncated: boolean;
 }
 
-interface PreparedDataQuerySource {
-  selectedSource?: string;
+export interface DataQuerySourceShape {
+  headerMappings?: DataHeaderMappingEntry[];
+  headerRow?: number;
+  range?: string;
+  source?: string;
 }
+
+interface PreparedDataQuerySource {
+  selectedHeaderRow?: number;
+  selectedSource?: string;
+  selectedRange?: string;
+}
+
+type ExcelImportMode = "default" | "empty_as_varchar" | "all_varchar";
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
   ".csv": "csv",
@@ -62,6 +79,114 @@ function escapeSqlString(value: string): string {
 
 export function quoteSqlIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
+}
+
+function normalizeGeneratedQueryColumnName(name: string): string {
+  const match = /^column(\d+)$/i.exec(name.trim());
+  if (!match) {
+    return name;
+  }
+
+  const index = Number(match[1] ?? "");
+  if (!Number.isInteger(index) || index < 0) {
+    return name;
+  }
+
+  return `column_${index + 1}`;
+}
+
+function isGeneratedQueryPlaceholderSequence(names: readonly string[]): boolean {
+  return names.length > 0 && names.every((name, index) => {
+    const match = /^column(\d+)$/i.exec(name.trim());
+    if (!match) {
+      return false;
+    }
+
+    const detectedIndex = Number(match[1] ?? "");
+    return Number.isInteger(detectedIndex) && detectedIndex === index;
+  });
+}
+
+interface QueryRelationColumn {
+  name: string;
+  sourceName: string;
+  type: string;
+}
+
+interface ExcelRangeParts {
+  endColumn: string;
+  endRow: number;
+  startColumn: string;
+  startRow: number;
+}
+
+function columnNameToNumber(value: string): number {
+  let result = 0;
+  for (const character of value.toUpperCase()) {
+    result = result * 26 + (character.charCodeAt(0) - 64);
+  }
+  return result;
+}
+
+export function normalizeExcelRange(value: string): string {
+  const trimmed = value.trim();
+  const match = /^([A-Za-z]+)([1-9][0-9]*):([A-Za-z]+)([1-9][0-9]*)$/.exec(trimmed);
+  if (!match) {
+    throw new CliError("--range must use A1:Z99 cell notation.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const startColumn = (match[1] ?? "").toUpperCase();
+  const startRow = Number(match[2] ?? "");
+  const endColumn = (match[3] ?? "").toUpperCase();
+  const endRow = Number(match[4] ?? "");
+
+  if (
+    columnNameToNumber(startColumn) > columnNameToNumber(endColumn) ||
+    startRow > endRow
+  ) {
+    throw new CliError("--range must start at the top-left cell of the selected rectangle.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return `${startColumn}${startRow}:${endColumn}${endRow}`;
+}
+
+function parseNormalizedExcelRange(value: string): ExcelRangeParts {
+  const normalized = normalizeExcelRange(value);
+  const match = /^([A-Z]+)([1-9][0-9]*):([A-Z]+)([1-9][0-9]*)$/.exec(normalized);
+  if (!match) {
+    throw new CliError("--range must use A1:Z99 cell notation.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return {
+    endColumn: match[3] ?? "",
+    endRow: Number(match[4] ?? ""),
+    startColumn: match[1] ?? "",
+    startRow: Number(match[2] ?? ""),
+  };
+}
+
+function buildExcelRange(parts: ExcelRangeParts): string {
+  return `${parts.startColumn}${parts.startRow}:${parts.endColumn}${parts.endRow}`;
+}
+
+export function normalizeExcelHeaderRow(value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new CliError("--header-row must be a positive integer.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return value;
 }
 
 export function detectDataQueryInputFormat(
@@ -104,7 +229,14 @@ function getDuckDbManagedExtensionNameForFormat(
   return format;
 }
 
-function buildRelationSql(inputPath: string, format: DataQueryInputFormat, source?: string): string {
+function buildRelationSql(
+  inputPath: string,
+  format: DataQueryInputFormat,
+  shape: DataQuerySourceShape = {},
+  options: {
+    excelImportMode?: ExcelImportMode;
+  } = {},
+): string {
   const escapedInput = escapeSqlString(inputPath);
   switch (format) {
     case "csv":
@@ -114,16 +246,45 @@ function buildRelationSql(inputPath: string, format: DataQueryInputFormat, sourc
     case "parquet":
       return `select * from read_parquet(${escapedInput})`;
     case "sqlite":
-      return `select * from sqlite_scan(${escapedInput}, ${escapeSqlString(source ?? "")})`;
+      return `select * from sqlite_scan(${escapedInput}, ${escapeSqlString(shape.source ?? "")})`;
     case "excel":
-      return `select * from read_xlsx(${escapedInput}, sheet = ${escapeSqlString(source ?? "")})`;
+      return `select * from read_xlsx(${[
+        escapedInput,
+        `sheet = ${escapeSqlString(shape.source ?? "")}`,
+        ...(shape.range ? [`range = ${escapeSqlString(shape.range)}`] : []),
+        ...(shape.headerRow ? ["header = true"] : []),
+        ...(options.excelImportMode === "empty_as_varchar" ? ["empty_as_varchar = true"] : []),
+        ...(options.excelImportMode === "all_varchar" ? ["all_varchar = true"] : []),
+      ].join(", ")})`;
   }
 }
 
-function assertSingleObjectSourceContract(format: DataQueryInputFormat, source?: string): void {
-  const normalized = source?.trim();
-  if (normalized) {
+function isRetryableExcelImportError(error: unknown): boolean {
+  const message = toErrorMessage(error);
+  return /read_xlsx/i.test(message) && /Failed to parse cell|Could not convert string/i.test(message);
+}
+
+function assertSingleObjectSourceContract(
+  format: DataQueryInputFormat,
+  shape: DataQuerySourceShape,
+): void {
+  const normalizedSource = shape.source?.trim();
+  if (normalizedSource) {
     throw new CliError(`--source is not valid for ${format.toUpperCase()} query inputs.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (shape.range?.trim()) {
+    throw new CliError("--range is only valid for Excel query inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (shape.headerRow !== undefined) {
+    throw new CliError("--header-row is only valid for Excel inputs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -217,15 +378,31 @@ export async function prepareDataQuerySource(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
-  source?: string,
+  shape: DataQuerySourceShape = {},
   options: {
     installMissingExtension?: boolean;
     statusStream?: NodeJS.WritableStream;
   } = {},
 ): Promise<PreparedDataQuerySource> {
-  let selectedSource = source?.trim();
+  let selectedSource = shape.source?.trim();
+  const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
+  const selectedHeaderRow =
+    shape.headerRow !== undefined ? normalizeExcelHeaderRow(shape.headerRow) : undefined;
+  let effectiveRange = selectedRange;
 
   if (format === "sqlite") {
+    if (selectedRange) {
+      throw new CliError("--range is only valid for Excel query inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (selectedHeaderRow !== undefined) {
+      throw new CliError("--header-row is only valid for Excel inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
     await ensureDuckDbManagedExtensionLoaded(
       connection,
       getDuckDbManagedExtensionNameForFormat("sqlite"),
@@ -234,7 +411,7 @@ export async function prepareDataQuerySource(
         statusStream: options.statusStream,
       },
     );
-    selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", source);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", shape.source);
   }
   if (format === "excel") {
     await ensureDuckDbManagedExtensionLoaded(
@@ -245,22 +422,203 @@ export async function prepareDataQuerySource(
         statusStream: options.statusStream,
       },
     );
-    selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", source);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", shape.source);
+
+    if (selectedHeaderRow !== undefined) {
+      if (selectedRange) {
+        const rangeParts = parseNormalizedExcelRange(selectedRange);
+        if (selectedHeaderRow < rangeParts.startRow || selectedHeaderRow > rangeParts.endRow) {
+          throw new CliError(
+            `--header-row must fall within the selected Excel range ${selectedRange}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+        effectiveRange = buildExcelRange({
+          ...rangeParts,
+          startRow: selectedHeaderRow,
+        });
+      } else {
+        const sheetSnapshot = await collectXlsxSheetSnapshot(inputPath, selectedSource);
+        const usedRange = sheetSnapshot.usedRange;
+        if (!usedRange) {
+          throw new CliError(
+            `Cannot apply --header-row because the selected Excel sheet has no detectable used range: ${selectedSource}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+
+        const usedRangeParts = parseNormalizedExcelRange(usedRange);
+        if (selectedHeaderRow < usedRangeParts.startRow || selectedHeaderRow > usedRangeParts.endRow) {
+          throw new CliError(
+            `--header-row must fall within the detected Excel sheet used range ${usedRange}.`,
+            {
+              code: "INVALID_INPUT",
+              exitCode: 2,
+            },
+          );
+        }
+        effectiveRange = buildExcelRange({
+          ...usedRangeParts,
+          startRow: selectedHeaderRow,
+        });
+      }
+    }
   }
 
   if (format === "csv" || format === "tsv" || format === "parquet") {
-    assertSingleObjectSourceContract(format, source);
+    assertSingleObjectSourceContract(format, shape);
+  }
+
+  const excelImportModes: ExcelImportMode[] =
+    format === "excel" && (selectedRange || selectedHeaderRow !== undefined)
+      ? ["empty_as_varchar", "all_varchar"]
+      : ["default"];
+
+  for (let index = 0; index < excelImportModes.length; index += 1) {
+    const excelImportMode = excelImportModes[index] ?? "default";
+    try {
+      await connection.run(
+        `create or replace temp view file_source as ${buildRelationSql(
+          inputPath,
+          format,
+          {
+            headerRow: selectedHeaderRow,
+            range: effectiveRange,
+            source: selectedSource,
+          },
+          {
+            excelImportMode,
+          },
+        )}`,
+      );
+      const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
+        format,
+        inputPath,
+      });
+      const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
+        availableColumns: relationColumns.map((column) => column.name),
+        mappings: shape.headerMappings ?? [],
+      });
+      await connection.run(
+        `create or replace temp view file as ${buildPreparedFileProjectionSql(
+          relationColumns,
+          appliedHeaderMappings,
+          {
+            excludeBlankRows: format === "excel" && Boolean(selectedRange || selectedHeaderRow !== undefined),
+          },
+        )}`,
+      );
+      return {
+        selectedHeaderRow,
+        selectedRange,
+        selectedSource,
+      };
+    } catch (error) {
+      const isLastAttempt = index === excelImportModes.length - 1;
+      if (!isLastAttempt && isRetryableExcelImportError(error)) {
+        continue;
+      }
+      throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
+        code: "DATA_QUERY_SOURCE_FAILED",
+        exitCode: 2,
+      });
+    }
+  }
+
+  throw new CliError(`Failed to prepare ${format} query input: exhausted Excel import retries.`, {
+    code: "DATA_QUERY_SOURCE_FAILED",
+    exitCode: 2,
+  });
+}
+
+async function collectQueryRelationColumns(
+  connection: DuckDBConnection,
+  relationName: string,
+  options: {
+    format: DataQueryInputFormat;
+    inputPath: string;
+  },
+): Promise<QueryRelationColumn[]> {
+  const reader = await connection.runAndReadAll(
+    `select * from ${quoteSqlIdentifier(relationName)} limit 0`,
+  );
+  assertResultSet(reader);
+  const columnNames = reader.deduplicatedColumnNames();
+  const columnTypes = reader.columnTypes();
+  const shouldNormalizeGeneratedColumns = await shouldNormalizeGeneratedQueryColumnNames(
+    connection,
+    options.inputPath,
+    options.format,
+    columnNames,
+  );
+  return columnNames.map((name, index) => ({
+    name: shouldNormalizeGeneratedColumns ? normalizeGeneratedQueryColumnName(name) : name,
+    sourceName: name,
+    type: columnTypes[index]?.toString() ?? "UNKNOWN",
+  }));
+}
+
+async function shouldNormalizeGeneratedQueryColumnNames(
+  connection: DuckDBConnection,
+  inputPath: string,
+  format: DataQueryInputFormat,
+  columnNames: readonly string[],
+): Promise<boolean> {
+  if ((format !== "csv" && format !== "tsv") || !isGeneratedQueryPlaceholderSequence(columnNames)) {
+    return false;
   }
 
   try {
-    await connection.run(`create or replace temp view file as ${buildRelationSql(inputPath, format, selectedSource)}`);
-    return { selectedSource };
-  } catch (error) {
-    throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
-      code: "DATA_QUERY_SOURCE_FAILED",
-      exitCode: 2,
-    });
+    const delimiter = format === "tsv" ? "\t" : ",";
+    const reader = await connection.runAndReadAll(
+      `select HasHeader from sniff_csv(${escapeSqlString(inputPath)}, delim = ${escapeSqlString(delimiter)})`,
+    );
+    const rows = reader.getRowObjectsJson() as Array<{ HasHeader?: boolean }>;
+    return rows[0]?.HasHeader === false;
+  } catch {
+    return false;
   }
+}
+
+function buildPreparedFileProjectionSql(
+  columns: readonly QueryRelationColumn[],
+  headerMappings: readonly DataHeaderMappingEntry[],
+  options: {
+    excludeBlankRows?: boolean;
+  } = {},
+): string {
+  const targetBySource = new Map(headerMappings.map((mapping) => [mapping.from, mapping.to]));
+  const selectList =
+    columns.length > 0
+      ? columns
+          .map((column) => {
+            const renamedTarget = targetBySource.get(column.name);
+            if (!renamedTarget) {
+              if (column.sourceName === column.name) {
+                return quoteSqlIdentifier(column.sourceName);
+              }
+              return `${quoteSqlIdentifier(column.sourceName)} as ${quoteSqlIdentifier(column.name)}`;
+            }
+            return `${quoteSqlIdentifier(column.sourceName)} as ${quoteSqlIdentifier(renamedTarget)}`;
+          })
+          .join(", ")
+      : "*";
+  const blankRowPredicate =
+    options.excludeBlankRows && columns.length > 0
+      ? columns
+          .map(
+            (column) =>
+              `nullif(trim(cast(${quoteSqlIdentifier(column.sourceName)} as varchar)), '') is not null`,
+          )
+          .join(" or ")
+      : undefined;
+  return `select ${selectList} from file_source${blankRowPredicate ? ` where ${blankRowPredicate}` : ""}`;
 }
 
 function assertResultSet(reader: DuckDBResultReader): void {
@@ -340,10 +698,17 @@ export async function collectDataQuerySourceIntrospection(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
-  source: string | undefined,
+  shape: DataQuerySourceShape,
   sampleRowLimit: number,
+  options: {
+    installMissingExtension?: boolean;
+    statusStream?: NodeJS.WritableStream;
+  } = {},
 ): Promise<DataQuerySourceIntrospection> {
-  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source);
+  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, shape, {
+    installMissingExtension: options.installMissingExtension,
+    statusStream: options.statusStream,
+  });
 
   try {
     const reader = await connection.streamAndReadUntil("select * from file", sampleRowLimit + 1);
@@ -363,7 +728,9 @@ export async function collectDataQuerySourceIntrospection(
         name,
         type: columnTypes[index]?.toString() ?? "UNKNOWN",
       })),
+      selectedHeaderRow: preparedSource.selectedHeaderRow,
       sampleRows: visibleRows,
+      selectedRange: preparedSource.selectedRange,
       selectedSource: preparedSource.selectedSource,
       truncated: allRows.length > sampleRowLimit || !reader.done,
     };

@@ -42,6 +42,46 @@ describe("cli action modules: data preview", () => {
     });
   });
 
+  test("actionDataPreview supports headerless CSV preview with generated column names", async () => {
+    await withDataPreviewFixture({
+      content: "1,Ada,active\n2,Bob,paused\n3,Cyd,active\n",
+      fileName: "headerless.csv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context, {
+          noHeader: true,
+        });
+
+        expectNoStderr();
+        expect(stdout.text).toContain("Rows: 3");
+        expect(stdout.text).toContain("Window: 1-3 of 3");
+        expect(stdout.text).toContain("Visible columns: column_1, column_2, column_3");
+        expect(stdout.text).toContain("column_1 | column_2 | column_3");
+        expect(stdout.text).toContain("1        | Ada      | active");
+      },
+    });
+  });
+
+  test("actionDataPreview lets generated column names drive filters in no-header mode", async () => {
+    await withDataPreviewFixture({
+      content: "10\tAda\tactive\n11\tBob\tpaused\n12\tCyd\tactive\n",
+      fileName: "headerless.tsv",
+      run: async ({ expectNoStderr, stdout, ...context }) => {
+        await runDataPreview(context, {
+          columns: ["column_1", "column_3"],
+          contains: ["column_3:active"],
+          noHeader: true,
+        });
+
+        expectNoStderr();
+        expect(stdout.text).toContain("Rows: 2");
+        expect(stdout.text).toContain("Visible columns: column_1, column_3");
+        expect(stdout.text).toContain("10       | active");
+        expect(stdout.text).toContain("12       | active");
+        expect(stdout.text).not.toContain("11       | paused");
+      },
+    });
+  });
+
   test("actionDataPreview preserves first-seen key order across heterogeneous JSON rows", async () => {
     await withDataPreviewFixture({
       content:

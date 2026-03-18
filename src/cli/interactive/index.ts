@@ -33,6 +33,7 @@ export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
   switch (action) {
     case "data:preview":
     case "data:convert":
+    case "data:extract":
     case "data:query":
     case "data:parquet-preview":
     case "data:json-to-csv":

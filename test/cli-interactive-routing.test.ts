@@ -19,7 +19,7 @@ describe("interactive mode routing", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
-  test("shows the broadened data menu copy and includes data query", () => {
+  test("shows the broadened data menu copy and includes data extract plus data query", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "cancel"],
@@ -33,6 +33,7 @@ describe("interactive mode routing", () => {
     });
     expect(result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value)).toEqual([
       "data:preview",
+      "data:extract",
       "data:query",
       "data:parquet-preview",
       "data:convert",
@@ -127,6 +128,125 @@ describe("interactive mode routing", () => {
       "select:Output mode",
       "input:Rows to show (optional)",
     ]);
+  });
+
+  test("routes interactive data extract through shared extraction execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          output: "fixtures/query.json",
+          overwrite: false,
+        },
+      },
+    ]);
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom JSON output path",
+        defaultHint: "fixtures/query.csv.json",
+        kind: "file",
+      }),
+    });
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("- output format: JSON");
+  });
+
+  test("lets interactive data extract stop before materialization at the final write boundary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("Skipped extraction write.");
+  });
+
+  test("prompts for Excel range before SQL authoring and carries it into execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["A1:B3", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQuerySources: ["Summary"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        selectedRange: "A1:B3",
+        selectedSource: "Summary",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.xlsx",
+          inputFormat: "excel",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          range: "A1:B3",
+          rows: 10,
+          source: "Summary",
+          sql: "select * from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "confirm:Use detected input format: excel?",
+      "select:Choose an Excel sheet",
+      "input:Excel range (optional, e.g. A1:Z99)",
+      "select:Choose mode",
+      "input:SQL query",
+      "confirm:Execute this SQL?",
+      "select:Output mode",
+      "input:Rows to show (optional)",
+    ]);
+    expect(result.stderr).toContain("This step changes how the source is interpreted as a table.");
+    expect(result.stderr).toContain("Range:");
   });
 
   test("routes interactive data query formal-guide mode and builds deterministic SQL", () => {
@@ -233,7 +353,7 @@ describe("interactive mode routing", () => {
       "confirm:Use multiline editor?",
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "input:Describe the query intent",
+      "input:Describe the query intent:",
     );
   });
 
@@ -267,7 +387,7 @@ describe("interactive mode routing", () => {
         mode: "run",
         selectQueue: ["data", "data:query", "Summary", "manual", "table"],
         requiredPathQueue: ["fixtures/query.xlsx"],
-        inputQueue: ["select id from file", "10"],
+        inputQueue: ["", "select id from file", "10"],
         confirmQueue: [true, true],
         dataQueryActionErrorCode: "DUCKDB_EXTENSION_UNAVAILABLE",
         dataQueryActionErrorMessage:
@@ -288,6 +408,382 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain(
       "Install the missing DuckDB extension with: cdx-chores data duckdb extension install excel",
     );
+  });
+
+  test("warns about suspicious raw Excel schemas before SQL authoring and supports manual range recovery", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "range", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["", "A1:B3", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [{ name: "Quarterly Operations Report", type: "VARCHAR" }],
+          sampleRows: [],
+          selectedSource: "Summary",
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1", name: "Ada" }],
+          selectedRange: "A1:B3",
+          selectedSource: "Summary",
+          truncated: false,
+        },
+      ],
+      dataQuerySources: ["Summary"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.xlsx",
+          inputFormat: "excel",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          range: "A1:B3",
+          rows: 10,
+          source: "Summary",
+          sql: "select * from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose how to continue",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Excel range (required, e.g. A1:Z99)",
+    );
+    expect(result.stderr).toContain("Sheet shape warning: current Excel sheet shape looks suspicious.");
+    expect(result.stderr).toContain("Accepted source shape: --range A1:B3");
+    expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
+  });
+
+  test("warns about suspicious raw Excel schemas before SQL authoring and supports reviewed Codex shape recovery", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "suggest", "accept", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [{ name: "Quarterly Operations Report", type: "VARCHAR" }],
+          sampleRows: [],
+          selectedSource: "Summary",
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1", name: "Ada" }],
+          selectedHeaderRow: 7,
+          selectedRange: "A1:B3",
+          selectedSource: "Summary",
+          truncated: false,
+        },
+      ],
+      dataQuerySources: ["Summary"],
+      dataSourceShapeSuggestion: {
+        reasoningSummary: "The real table starts at row 7 across the first two columns.",
+        shape: {
+          range: "A1:B3",
+          headerRow: 7,
+        },
+      },
+    });
+
+    expect(result.actionCalls).toContainEqual({
+      name: "data:source-shape-suggest",
+      options: {
+        selectedSource: "Summary",
+        sheetName: "Summary",
+      },
+    });
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        headerRow: 7,
+        input: "fixtures/query.xlsx",
+        inputFormat: "excel",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        range: "A1:B3",
+        rows: 10,
+        source: "Summary",
+        sql: "select * from file order by id",
+      },
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Source shape review",
+    );
+    expect(result.stdout).toContain("Inspecting worksheet structure");
+    expect(result.stdout).toContain("Waiting for Codex source-shape suggestions");
+    expect(result.stderr).toContain("Suggested source shape");
+    expect(result.stderr).toContain("--header-row 7");
+    expect(result.stderr).toContain("Accepted source shape: --range A1:B3 --header-row 7");
+  });
+
+  test("warns for collapsed merged-sheet whole-sheet views even when one visible column still has sample rows", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "Sheet1", "continue", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: [""],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospection: {
+        columns: [{ name: "Hello_This_Is_the_merged", type: "VARCHAR" }],
+        sampleRows: [
+          { Hello_This_Is_the_merged: "ID" },
+          { Hello_This_Is_the_merged: "78.0" },
+          { Hello_This_Is_the_merged: "21.0" },
+        ],
+        selectedSource: "Sheet1",
+        truncated: false,
+      },
+      dataQuerySources: ["Sheet1"],
+      xlsxSheetSnapshot: {
+        mergedRanges: ["A1:C1"],
+        usedRange: "A1:C5",
+      },
+    });
+
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose how to continue",
+    );
+    expect(result.stderr).toContain(
+      "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
+    );
+    expect(result.actionCalls).toEqual([]);
+  });
+
+  test("re-prompts the shape warning after a Codex source-shape failure instead of falling straight into extraction", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "Sheet1", "suggest", "continue", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: [""],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospection: {
+        columns: [{ name: "RAW_TITLE", type: "DOUBLE" }],
+        sampleRows: [],
+        selectedSource: "Sheet1",
+        truncated: false,
+      },
+      dataQuerySources: ["Sheet1"],
+      dataSourceShapeSuggestionErrorMessage: "schema rejected",
+    });
+
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Choose how to continue"),
+    ).toHaveLength(2);
+    expect(result.stderr).toContain("Codex source-shape suggestion failed: schema rejected");
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:source-shape-suggest",
+        options: {
+          selectedSource: "Sheet1",
+          sheetName: "Sheet1",
+        },
+      },
+    ]);
+  });
+
+  test("accepts all interactive header suggestions and re-inspects before SQL authoring", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "accept", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id, status from file order by id", "10"],
+      confirmQueue: [true, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryHeaderSuggestions: [
+        { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
+        { from: "column_2", to: "status", sample: "active", inferredType: "VARCHAR" },
+      ],
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [
+            { name: "column_1", type: "BIGINT" },
+            { name: "column_2", type: "VARCHAR" },
+          ],
+          sampleRows: [{ column_1: "1001", column_2: "active" }],
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "status", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1001", status: "active" }],
+          truncated: false,
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query:header-suggest",
+        options: {
+          format: "csv",
+          selectedSource: undefined,
+        },
+      },
+      {
+        name: "data:query",
+        options: {
+          headerMappings: [
+            { from: "column_1", inferredType: "BIGINT", sample: "1001", to: "id" },
+            { from: "column_2", inferredType: "VARCHAR", sample: "active", to: "status" },
+          ],
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          sql: "select id, status from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Review semantic header suggestions before SQL?",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Header suggestion review",
+    );
+    expect(result.stdout).toContain("Waiting for Codex header suggestions");
+    expect(result.stderr).toContain("Accepted header mappings. Re-inspecting shaped source before SQL authoring.");
+  });
+
+  test("supports editing one interactive header suggestion before acceptance", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "edit", "column_2", "accept", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["state", "select id, state from file order by id", "10"],
+      confirmQueue: [true, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryHeaderSuggestions: [
+        { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
+        { from: "column_2", to: "status", sample: "active", inferredType: "VARCHAR" },
+      ],
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [
+            { name: "column_1", type: "BIGINT" },
+            { name: "column_2", type: "VARCHAR" },
+          ],
+          sampleRows: [{ column_1: "1001", column_2: "active" }],
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "state", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1001", state: "active" }],
+          truncated: false,
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query:header-suggest",
+        options: {
+          format: "csv",
+          selectedSource: undefined,
+        },
+      },
+      {
+        name: "data:query",
+        options: {
+          headerMappings: [
+            { from: "column_1", inferredType: "BIGINT", sample: "1001", to: "id" },
+            { from: "column_2", inferredType: "VARCHAR", sample: "active", to: "state" },
+          ],
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          sql: "select id, state from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose one mapping to edit",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Header for column_2",
+    );
+  });
+
+  test("supports keeping generated names after interactive header suggestions are shown", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "keep", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select column_1, column_2 from file order by column_1", "10"],
+      confirmQueue: [true, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryHeaderSuggestions: [
+        { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
+        { from: "column_2", to: "status", sample: "active", inferredType: "VARCHAR" },
+      ],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "column_1", type: "BIGINT" },
+          { name: "column_2", type: "VARCHAR" },
+        ],
+        sampleRows: [{ column_1: "1001", column_2: "active" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query:header-suggest",
+        options: {
+          format: "csv",
+          selectedSource: undefined,
+        },
+      },
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          sql: "select column_1, column_2 from file order by column_1",
+        },
+      },
+    ]);
   });
 
   test("routes Codex Assistant through the multiline editor when requested", () => {
@@ -331,13 +827,13 @@ describe("interactive mode routing", () => {
       },
     ]);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "editor:Describe the query intent",
+      "editor:Describe the query intent:",
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Send this intent to Codex drafting?",
     );
     const editorPrompt = result.promptCalls.find(
-      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+      (call) => call.kind === "editor" && call.message === "Describe the query intent:",
     );
     expect(editorPrompt?.postfix).toBe(".md");
     expect(editorPrompt?.defaultValue).toContain("# Logical table: file");
@@ -389,7 +885,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(
-      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent"),
+      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent:"),
     ).toHaveLength(2);
     expect(result.actionCalls).toContainEqual({
       name: "data:query:codex-draft",
@@ -400,7 +896,7 @@ describe("interactive mode routing", () => {
       },
     });
     const editorPrompts = result.promptCalls.filter(
-      (call) => call.kind === "editor" && call.message === "Describe the query intent",
+      (call) => call.kind === "editor" && call.message === "Describe the query intent:",
     );
     expect(editorPrompts[1]?.defaultValue).toContain("count rows by status");
   });

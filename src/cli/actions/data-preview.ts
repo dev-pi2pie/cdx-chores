@@ -14,6 +14,7 @@ export interface DataPreviewOptions {
   columns?: string[];
   contains?: string[];
   input: string;
+  noHeader?: boolean;
   offset?: number;
   rows?: number;
 }
@@ -23,6 +24,7 @@ const DEFAULT_DATA_PREVIEW_ROWS = 20;
 export async function loadDataPreviewSource(
   runtime: CliRuntime,
   input: string,
+  options: Pick<DataPreviewOptions, "noHeader"> = {},
 ): Promise<{ inputPath: string; source: DataPreviewSource }> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(input, "Input path"));
   await ensureFileExists(inputPath, "Input");
@@ -30,12 +32,14 @@ export async function loadDataPreviewSource(
   const raw = await readTextFileRequired(inputPath);
   return {
     inputPath,
-    source: createDataPreviewSource(inputPath, raw),
+    source: createDataPreviewSource(inputPath, raw, { noHeader: options.noHeader }),
   };
 }
 
 export async function actionDataPreview(runtime: CliRuntime, options: DataPreviewOptions): Promise<void> {
-  const { inputPath, source: loadedSource } = await loadDataPreviewSource(runtime, options.input);
+  const { inputPath, source: loadedSource } = await loadDataPreviewSource(runtime, options.input, {
+    noHeader: options.noHeader,
+  });
   const containsFilters = parseContainsFilterValues(options.contains);
   let source = loadedSource;
   if (containsFilters.length > 0) {

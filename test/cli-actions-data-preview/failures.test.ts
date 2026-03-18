@@ -183,4 +183,26 @@ describe("cli action modules: data preview failure modes", () => {
       },
     });
   });
+
+  test("actionDataPreview rejects --no-header for JSON input", async () => {
+    await withDataPreviewFixture({
+      content: '[{"name":"Ada"}]\n',
+      fileName: "rows.json",
+      run: async ({ expectNoOutput, ...context }) => {
+        await expectCliError(
+          () =>
+            runDataPreview(context, {
+              noHeader: true,
+            }),
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+            messageIncludes: "--no-header is only supported for CSV and TSV preview inputs",
+          },
+        );
+
+        expectNoOutput();
+      },
+    });
+  });
 });

@@ -3,6 +3,8 @@
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file through the logical table name `file`.
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
+For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
+For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
 Current boundary:
 
@@ -10,6 +12,9 @@ Current boundary:
 - SQL is required through `--sql`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit Excel shaping is available through `--range <A1:Z99>`
+- accepted semantic header renames can be reused through `--header-mapping <path>`
+- reviewed semantic header suggestions can be requested through `--codex-suggest-headers`
 - default output: bounded terminal table
 - machine-readable stdout: `--json`
 - file output: `--output <path>` with `.json` or `.csv`
@@ -18,7 +23,8 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-mapping <path>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -36,6 +42,9 @@ cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select i
 cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
+cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
+cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --sql "select id, status from file order by id"
 ```
 
 ### Source selection
@@ -45,12 +54,33 @@ cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select *
 - SQLite: table or view name
 - Excel: sheet name
 
+`--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
+Other input formats reject `--range`.
+
 Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 ```
+
+### Header review and reuse
+
+`--codex-suggest-headers` is a reviewed shaping flow:
+
+- it inspects the current shaped source
+- it asks Codex for semantic header suggestions
+- it writes a JSON header-mapping artifact
+- it stops before SQL execution
+
+Then rerun `data query` with the accepted `--header-mapping <path>` plus `--sql`.
+
+First-pass reuse is strict:
+
+- the artifact must match the current normalized `input.path`
+- the artifact must match the current `input.format`
+- optional `source` and `range` must also match exactly when present
 
 Single-object inputs reject `--source`.
 
