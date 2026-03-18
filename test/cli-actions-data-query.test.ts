@@ -13,6 +13,7 @@ function dataQueryFixturePath(name: string): string {
 }
 
 const queryExtensions = await inspectDataQueryExtensions();
+const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
 describe("cli action modules: data query", () => {
@@ -141,6 +142,27 @@ describe("cli action modules: data query", () => {
       expect(new Set(widths).size).toBe(1);
     });
   });
+
+  test("actionDataQuery applies Excel range shaping before querying", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    await actionDataQuery(runtime, {
+      input: toRepoRelativePath(dataQueryFixturePath("multi.xlsx")),
+      range: "A1:B3",
+      source: "Summary",
+      sql: "select * from file order by id",
+    });
+
+    expectNoStderr();
+    expect(stdout.text).toContain("Format: excel");
+    expect(stdout.text).toContain("Source: Summary");
+    expect(stdout.text).toContain("Range: A1:B3");
+    expect(stdout.text).toContain("Visible columns: id, name");
+    expect(stdout.text).not.toContain("status");
+  });
 });
 
 describe("cli action modules: data query failure modes", () => {
@@ -261,6 +283,26 @@ describe("cli action modules: data query failure modes", () => {
             sql: "select * from file",
           }),
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is not valid for CSV" },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataQuery rejects --range for non-Excel inputs", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            range: "A1:B2",
+            sql: "select * from file",
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--range is only valid for Excel query inputs" },
       );
 
       expectNoOutput();

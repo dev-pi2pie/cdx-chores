@@ -2,7 +2,7 @@
 title: "Data source-shaping foundation"
 created-date: 2026-03-18
 modified-date: 2026-03-18
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -125,41 +125,41 @@ This is the smallest implementation slice that turns the research conclusions in
 
 ### Phase 1: Freeze shaping surface
 
-- [ ] add `--no-header` to `data preview`
-- [ ] freeze `--no-header` as `.csv` / `.tsv` only
-- [ ] add `--range <A1:Z99>` to Excel `data query`
-- [ ] freeze `--range` as Excel-only and still dependent on `--source`
-- [ ] freeze interactive Excel prompt order so optional `range` happens before schema inspection
+- [x] add `--no-header` to `data preview`
+- [x] freeze `--no-header` as `.csv` / `.tsv` only
+- [x] add `--range <A1:Z99>` to Excel `data query`
+- [x] freeze `--range` as Excel-only and still dependent on `--source`
+- [x] freeze interactive Excel prompt order so optional `range` happens before schema inspection
 
 ### Phase 2: Implement lightweight preview no-header path
 
-- [ ] update delimited preview loading to support headerless mode
-- [ ] preserve `column_n` naming for generated headers
-- [ ] keep `--columns`, `--contains`, row counts, and windowing aligned with the headerless row set
-- [ ] add focused tests for headerless CSV and TSV
+- [x] update delimited preview loading to support headerless mode
+- [x] preserve `column_n` naming for generated headers
+- [x] keep `--columns`, `--contains`, row counts, and windowing aligned with the headerless row set
+- [x] add focused tests for headerless CSV and TSV
 
 ### Phase 3: Implement shared Excel range shaping
 
-- [ ] extend shared query relation-building to accept `range`
-- [ ] wire `--range` into direct `data query`
-- [ ] wire `--range` into direct `data query codex`
-- [ ] keep existing whole-sheet behavior when `--range` is absent
-- [ ] add focused tests for range-shaped Excel query and Codex introspection
+- [x] extend shared query relation-building to accept `range`
+- [x] wire `--range` into direct `data query`
+- [x] wire `--range` into direct `data query codex`
+- [x] keep existing whole-sheet behavior when `--range` is absent
+- [x] add focused tests for range-shaped Excel query and Codex introspection
 
 ### Phase 4: Interactive shape-first query flow
 
-- [ ] prompt for optional Excel `range` before introspection
-- [ ] re-run introspection against the shaped source
-- [ ] keep the accepted interactive `range` active through manual execution, formal-guide execution, and Codex drafting/execution confirmation
-- [ ] add conservative suspicious-schema warnings for raw whole-sheet Excel introspection
-- [ ] keep prompt copy explicit that this is source shaping, not SQL authoring
-- [ ] add interactive coverage for the new prompt order and warning behavior
+- [x] prompt for optional Excel `range` before introspection
+- [x] re-run introspection against the shaped source
+- [x] keep the accepted interactive `range` active through manual execution, formal-guide execution, and Codex drafting/execution confirmation
+- [x] add conservative suspicious-schema warnings for raw whole-sheet Excel introspection
+- [x] keep prompt copy explicit that this is source shaping, not SQL authoring
+- [x] add interactive coverage for the new prompt order and warning behavior
 
 ### Phase 5: Docs and verification
 
-- [ ] update preview/query/Codex guides for the new shaping flags
-- [ ] keep docs behavior-oriented rather than fixture-path-oriented
-- [ ] add manual verification notes that private local repro files stay undisclosed in public docs
+- [x] update preview/query/Codex guides for the new shaping flags
+- [x] keep docs behavior-oriented rather than fixture-path-oriented
+- [x] add manual verification notes that private local repro files stay undisclosed in public docs
 
 ## Related Research
 

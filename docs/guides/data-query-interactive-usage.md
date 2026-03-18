@@ -18,14 +18,16 @@ Current interactive flow:
 1. prompt for the input file
 2. detect the input format, with override support when needed
 3. select a SQLite table or Excel sheet when the input has multiple logical sources
-4. inspect schema and sample rows
-5. choose one mode:
+4. for Excel, optionally enter a `range` before schema inspection
+5. inspect schema and sample rows from the current shaped source
+6. when a raw whole-sheet Excel schema looks strongly suspicious, optionally enter a range and re-inspect before SQL authoring
+7. choose one mode:
    - `manual`
    - `formal-guide`
    - `Codex Assistant`
-6. review the generated SQL
-7. explicitly confirm execution
-8. choose one output mode:
+8. review the generated SQL
+9. explicitly confirm execution
+10. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
@@ -62,6 +64,8 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - CSV, TSV, and Parquet use one implicit source
 - SQLite requires choosing a table or view
 - Excel requires choosing a sheet
+- Excel also supports optional `range` shaping before SQL authoring
+- if whole-sheet Excel introspection looks structurally suspicious, the flow warns about source interpretation before continuing
 - the selected source is always exposed to SQL as the logical table `file`
 
 ### Output rules

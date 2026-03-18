@@ -7,6 +7,7 @@ import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { runCli, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
 async function createCodexStub(options: {
@@ -160,6 +161,49 @@ describe("CLI data query codex command", () => {
 
       const prompt = await readFile(promptPath, "utf8");
       expect(prompt).toContain("Selected source: users");
+    });
+  });
+
+  test("accepts --range on the codex lane for Excel inputs", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const promptPath = join(fixtureDir, "excel-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select id, name from file order by id",
+        summary: "Uses the selected Excel range.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.xlsx",
+          "--source",
+          "Summary",
+          "--range",
+          "A1:B3",
+          "--intent",
+          "show ids and names ordered by id",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Source: Summary");
+      expect(result.stdout).toContain("Range: A1:B3");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Selected source: Summary");
+      expect(prompt).toContain("Selected range: A1:B3");
+      expect(prompt).toContain("Schema (2 columns):");
     });
   });
 });

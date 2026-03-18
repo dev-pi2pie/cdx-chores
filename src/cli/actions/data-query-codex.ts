@@ -23,6 +23,7 @@ export interface DataQueryCodexOptions {
   inputFormat?: DataQueryInputFormat;
   intent: string;
   printSql?: boolean;
+  range?: string;
   runner?: DataQueryCodexRunner;
   source?: string;
   timeoutMs?: number;
@@ -60,6 +61,7 @@ export async function actionDataQueryCodex(
 
   const intent = normalizeDataQueryCodexIntent(assertNonEmpty(options.intent, "Intent"));
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const range = options.range?.trim() || undefined;
   const source = options.source?.trim() || undefined;
   const statusStream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean };
   const status = statusStream.isTTY
@@ -79,7 +81,10 @@ export async function actionDataQueryCodex(
       connection,
       inputPath,
       format,
-      source,
+      {
+        range,
+        source,
+      },
       DATA_QUERY_CODEX_SAMPLE_ROWS,
     );
     status.wait("Drafting SQL with Codex");

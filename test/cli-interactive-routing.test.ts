@@ -129,6 +129,60 @@ describe("interactive mode routing", () => {
     ]);
   });
 
+  test("prompts for Excel range before SQL authoring and carries it into execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["A1:B3", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQuerySources: ["Summary"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        selectedRange: "A1:B3",
+        selectedSource: "Summary",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.xlsx",
+          inputFormat: "excel",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          range: "A1:B3",
+          rows: 10,
+          source: "Summary",
+          sql: "select * from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "confirm:Use detected input format: excel?",
+      "select:Choose an Excel sheet",
+      "input:Excel range (optional, e.g. A1:Z99)",
+      "select:Choose mode",
+      "input:SQL query",
+      "confirm:Execute this SQL?",
+      "select:Output mode",
+      "input:Rows to show (optional)",
+    ]);
+    expect(result.stderr).toContain("This step changes how the source is interpreted as a table.");
+    expect(result.stderr).toContain("Range:");
+  });
+
   test("routes interactive data query formal-guide mode and builds deterministic SQL", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -267,7 +321,7 @@ describe("interactive mode routing", () => {
         mode: "run",
         selectQueue: ["data", "data:query", "Summary", "manual", "table"],
         requiredPathQueue: ["fixtures/query.xlsx"],
-        inputQueue: ["select id from file", "10"],
+        inputQueue: ["", "select id from file", "10"],
         confirmQueue: [true, true],
         dataQueryActionErrorCode: "DUCKDB_EXTENSION_UNAVAILABLE",
         dataQueryActionErrorMessage:
@@ -288,6 +342,63 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain(
       "Install the missing DuckDB extension with: cdx-chores data duckdb extension install excel",
     );
+  });
+
+  test("warns about suspicious raw Excel schemas before SQL authoring and supports manual range recovery", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Summary", "range", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["", "A1:B3", "select * from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [{ name: "Quarterly Operations Report", type: "VARCHAR" }],
+          sampleRows: [],
+          selectedSource: "Summary",
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1", name: "Ada" }],
+          selectedRange: "A1:B3",
+          selectedSource: "Summary",
+          truncated: false,
+        },
+      ],
+      dataQuerySources: ["Summary"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.xlsx",
+          inputFormat: "excel",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          range: "A1:B3",
+          rows: 10,
+          source: "Summary",
+          sql: "select * from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose how to continue",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Excel range (required, e.g. A1:Z99)",
+    );
+    expect(result.stderr).toContain("Sheet shape warning: current Excel sheet shape looks suspicious.");
+    expect(result.stderr).toContain("Accepted source shape: --range A1:B3");
+    expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
   });
 
   test("routes Codex Assistant through the multiline editor when requested", () => {

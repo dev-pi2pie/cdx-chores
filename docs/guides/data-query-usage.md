@@ -10,6 +10,7 @@ Current boundary:
 - SQL is required through `--sql`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit Excel shaping is available through `--range <A1:Z99>`
 - default output: bounded terminal table
 - machine-readable stdout: `--json`
 - file output: `--output <path>` with `.json` or `.csv`
@@ -18,7 +19,7 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -36,6 +37,7 @@ cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select i
 cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
 ```
 
 ### Source selection
@@ -45,11 +47,15 @@ cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select *
 - SQLite: table or view name
 - Excel: sheet name
 
+`--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
+Other input formats reject `--range`.
+
 Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
+cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 ```
 
 Single-object inputs reject `--source`.

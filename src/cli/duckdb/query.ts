@@ -36,11 +36,18 @@ export interface DataQuerySourceIntrospection {
   columns: DataQueryIntrospectionColumn[];
   sampleRows: Array<Record<string, string>>;
   selectedSource?: string;
+  selectedRange?: string;
   truncated: boolean;
+}
+
+export interface DataQuerySourceShape {
+  range?: string;
+  source?: string;
 }
 
 interface PreparedDataQuerySource {
   selectedSource?: string;
+  selectedRange?: string;
 }
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
@@ -62,6 +69,42 @@ function escapeSqlString(value: string): string {
 
 export function quoteSqlIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
+}
+
+function columnNameToNumber(value: string): number {
+  let result = 0;
+  for (const character of value.toUpperCase()) {
+    result = result * 26 + (character.charCodeAt(0) - 64);
+  }
+  return result;
+}
+
+export function normalizeExcelRange(value: string): string {
+  const trimmed = value.trim();
+  const match = /^([A-Za-z]+)([1-9][0-9]*):([A-Za-z]+)([1-9][0-9]*)$/.exec(trimmed);
+  if (!match) {
+    throw new CliError("--range must use A1:Z99 cell notation.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const startColumn = (match[1] ?? "").toUpperCase();
+  const startRow = Number(match[2] ?? "");
+  const endColumn = (match[3] ?? "").toUpperCase();
+  const endRow = Number(match[4] ?? "");
+
+  if (
+    columnNameToNumber(startColumn) > columnNameToNumber(endColumn) ||
+    startRow > endRow
+  ) {
+    throw new CliError("--range must start at the top-left cell of the selected rectangle.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  return `${startColumn}${startRow}:${endColumn}${endRow}`;
 }
 
 export function detectDataQueryInputFormat(
@@ -104,7 +147,11 @@ function getDuckDbManagedExtensionNameForFormat(
   return format;
 }
 
-function buildRelationSql(inputPath: string, format: DataQueryInputFormat, source?: string): string {
+function buildRelationSql(
+  inputPath: string,
+  format: DataQueryInputFormat,
+  shape: DataQuerySourceShape = {},
+): string {
   const escapedInput = escapeSqlString(inputPath);
   switch (format) {
     case "csv":
@@ -114,16 +161,30 @@ function buildRelationSql(inputPath: string, format: DataQueryInputFormat, sourc
     case "parquet":
       return `select * from read_parquet(${escapedInput})`;
     case "sqlite":
-      return `select * from sqlite_scan(${escapedInput}, ${escapeSqlString(source ?? "")})`;
+      return `select * from sqlite_scan(${escapedInput}, ${escapeSqlString(shape.source ?? "")})`;
     case "excel":
-      return `select * from read_xlsx(${escapedInput}, sheet = ${escapeSqlString(source ?? "")})`;
+      return `select * from read_xlsx(${[
+        escapedInput,
+        `sheet = ${escapeSqlString(shape.source ?? "")}`,
+        ...(shape.range ? [`range = ${escapeSqlString(shape.range)}`] : []),
+      ].join(", ")})`;
   }
 }
 
-function assertSingleObjectSourceContract(format: DataQueryInputFormat, source?: string): void {
-  const normalized = source?.trim();
-  if (normalized) {
+function assertSingleObjectSourceContract(
+  format: DataQueryInputFormat,
+  shape: DataQuerySourceShape,
+): void {
+  const normalizedSource = shape.source?.trim();
+  if (normalizedSource) {
     throw new CliError(`--source is not valid for ${format.toUpperCase()} query inputs.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (shape.range?.trim()) {
+    throw new CliError("--range is only valid for Excel query inputs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -217,15 +278,22 @@ export async function prepareDataQuerySource(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
-  source?: string,
+  shape: DataQuerySourceShape = {},
   options: {
     installMissingExtension?: boolean;
     statusStream?: NodeJS.WritableStream;
   } = {},
 ): Promise<PreparedDataQuerySource> {
-  let selectedSource = source?.trim();
+  let selectedSource = shape.source?.trim();
+  const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
 
   if (format === "sqlite") {
+    if (selectedRange) {
+      throw new CliError("--range is only valid for Excel query inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
     await ensureDuckDbManagedExtensionLoaded(
       connection,
       getDuckDbManagedExtensionNameForFormat("sqlite"),
@@ -234,7 +302,7 @@ export async function prepareDataQuerySource(
         statusStream: options.statusStream,
       },
     );
-    selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", source);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", shape.source);
   }
   if (format === "excel") {
     await ensureDuckDbManagedExtensionLoaded(
@@ -245,16 +313,24 @@ export async function prepareDataQuerySource(
         statusStream: options.statusStream,
       },
     );
-    selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", source);
+    selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", shape.source);
   }
 
   if (format === "csv" || format === "tsv" || format === "parquet") {
-    assertSingleObjectSourceContract(format, source);
+    assertSingleObjectSourceContract(format, shape);
   }
 
   try {
-    await connection.run(`create or replace temp view file as ${buildRelationSql(inputPath, format, selectedSource)}`);
-    return { selectedSource };
+    await connection.run(
+      `create or replace temp view file as ${buildRelationSql(inputPath, format, {
+        range: selectedRange,
+        source: selectedSource,
+      })}`,
+    );
+    return {
+      selectedRange,
+      selectedSource,
+    };
   } catch (error) {
     throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
       code: "DATA_QUERY_SOURCE_FAILED",
@@ -340,10 +416,10 @@ export async function collectDataQuerySourceIntrospection(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
-  source: string | undefined,
+  shape: DataQuerySourceShape,
   sampleRowLimit: number,
 ): Promise<DataQuerySourceIntrospection> {
-  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source);
+  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, shape);
 
   try {
     const reader = await connection.streamAndReadUntil("select * from file", sampleRowLimit + 1);
@@ -364,6 +440,7 @@ export async function collectDataQuerySourceIntrospection(
         type: columnTypes[index]?.toString() ?? "UNKNOWN",
       })),
       sampleRows: visibleRows,
+      selectedRange: preparedSource.selectedRange,
       selectedSource: preparedSource.selectedSource,
       truncated: allRows.length > sampleRowLimit || !reader.done,
     };

@@ -23,6 +23,7 @@ export interface DataQueryOptions {
   output?: string;
   overwrite?: boolean;
   pretty?: boolean;
+  range?: string;
   rows?: number;
   source?: string;
   sql: string;
@@ -101,16 +102,26 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       },
     );
   }
+  const range = options.range?.trim() || undefined;
   const source = options.source?.trim() || undefined;
   const rowCount = options.rows ?? DEFAULT_QUERY_ROWS;
 
   let connection;
   try {
     connection = await createDuckDbConnection();
-    const preparedSource = await prepareDataQuerySource(connection, inputPath, format, source, {
-      installMissingExtension: options.installMissingExtension,
-      statusStream: runtime.stderr,
-    });
+    const preparedSource = await prepareDataQuerySource(
+      connection,
+      inputPath,
+      format,
+      {
+        range,
+        source,
+      },
+      {
+        installMissingExtension: options.installMissingExtension,
+        statusStream: runtime.stderr,
+      },
+    );
 
     if (options.json) {
       const result = await executeDataQueryForAllRows(connection, sql);
@@ -141,6 +152,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       columns: table.columns,
       format,
       inputPath,
+      range: preparedSource.selectedRange,
       rows: table.rows,
       source: preparedSource.selectedSource,
       truncated: table.truncated,

@@ -21,6 +21,7 @@ export interface InteractiveHarnessScenario {
   dataQueryCodexErrorMessage?: string;
   dataQueryDetectedFormat?: string;
   dataQueryIntrospection?: Record<string, unknown>;
+  dataQueryIntrospectionQueue?: Record<string, unknown>[];
   dataQuerySources?: string[];
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
@@ -444,14 +445,15 @@ export function runInteractiveHarness(
 
     mock.module(${JSON.stringify(duckdbQueryModuleUrl)}, () => ({
       DATA_QUERY_INPUT_FORMAT_VALUES: ["csv", "tsv", "parquet", "sqlite", "excel"],
+      normalizeExcelRange: (value) => String(value ?? "").trim().toUpperCase(),
       quoteSqlIdentifier: (value) => \`"\${String(value).replaceAll('"', '""')}"\`,
       createDuckDbConnection: async () => ({
         closeSync() {},
       }),
       detectDataQueryInputFormat: () => scenario.dataQueryDetectedFormat ?? "csv",
       listDataQuerySources: async () => scenario.dataQuerySources,
-      collectDataQuerySourceIntrospection: async (_connection, _input, _format, source) =>
-        scenario.dataQueryIntrospection ?? {
+      collectDataQuerySourceIntrospection: async (_connection, _input, _format, shape) =>
+        (scenario.dataQueryIntrospectionQueue ?? []).shift() ?? scenario.dataQueryIntrospection ?? {
           columns: [
             { name: "id", type: "BIGINT" },
             { name: "name", type: "VARCHAR" },
@@ -461,7 +463,8 @@ export function runInteractiveHarness(
             { id: "1", name: "Ada", status: "active" },
             { id: "2", name: "Bob", status: "inactive" },
           ],
-          selectedSource: source,
+          selectedRange: shape?.range,
+          selectedSource: shape?.source,
           truncated: false,
         },
     }));
@@ -498,6 +501,7 @@ export function runInteractiveHarness(
           "# Logical table: file",
           \`# Format: \${options.format}\`,
           ...(options.introspection?.selectedSource ? [\`# Source: \${options.introspection.selectedSource}\`] : []),
+          ...(options.introspection?.selectedRange ? [\`# Range: \${options.introspection.selectedRange}\`] : []),
           \`# Schema: \${schema}\`,
           "# Sample rows:",
           ...(sampleRows.length > 0
@@ -515,6 +519,9 @@ export function runInteractiveHarness(
           options: {
             format: options.format,
             intent: options.intent,
+            ...(options.introspection?.selectedRange
+              ? { selectedRange: options.introspection.selectedRange }
+              : {}),
             selectedSource: options.introspection?.selectedSource,
           },
         });

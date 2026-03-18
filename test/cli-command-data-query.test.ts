@@ -109,6 +109,32 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
+  test("queries an explicit Excel range end to end when the extension is ready", () => {
+    if (!excelReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.xlsx"),
+      "--source",
+      "Summary",
+      "--range",
+      "A1:B3",
+      "--sql",
+      "select * from file order by id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Format: excel");
+    expect(result.stdout).toContain("Source: Summary");
+    expect(result.stdout).toContain("Range: A1:B3");
+    expect(result.stdout).toContain("Visible columns: id, name");
+    expect(result.stdout).not.toContain("status");
+  });
+
   test("honors explicit row bounds for bounded table output", () => {
     const result = runCli([
       "data",

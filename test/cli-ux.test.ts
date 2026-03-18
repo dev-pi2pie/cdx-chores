@@ -99,12 +99,13 @@ describe("CLI UX flags and path output", () => {
     }
   });
 
-  test("data preview help documents window, column, and contains options", () => {
+  test("data preview help documents window, column, contains, and no-header options", () => {
     const result = runCli(["data", "preview", "--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Input CSV, TSV, or JSON file");
+    expect(result.stdout).toContain("--no-header");
     expect(result.stdout).toContain("--rows <value>");
     expect(result.stdout).toContain("--offset <value>");
     expect(result.stdout).toContain("--columns <names>");
@@ -156,7 +157,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("Input TSV file");
   });
 
-  test("data query help documents SQL, source, and output options", () => {
+  test("data query help documents SQL, shaping, source, and output options", () => {
     const result = runCli(["data", "query", "--help"]);
 
     expect(result.exitCode).toBe(0);
@@ -164,6 +165,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--sql <query>");
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
+    expect(result.stdout).toContain("--range <A1:Z99>");
     expect(result.stdout).toContain("--rows <value>");
     expect(result.stdout).toContain("--json");
     expect(result.stdout).toContain("--pretty");
@@ -178,7 +180,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stderr).toContain("--input-format must be one of:");
   });
 
-  test("data query codex help documents intent and print-sql options", () => {
+  test("data query codex help documents intent, shaping, and print-sql options", () => {
     const result = runCli(["data", "query", "codex", "--help"]);
 
     expect(result.exitCode).toBe(0);
@@ -186,6 +188,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
+    expect(result.stdout).toContain("--range <A1:Z99>");
     expect(result.stdout).toContain("--print-sql");
   });
 

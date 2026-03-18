@@ -382,6 +382,7 @@ export async function runCli(
     .command("preview")
     .description("Preview CSV, TSV, or JSON data as a bounded terminal table")
     .argument("<input>", "Input CSV, TSV, or JSON file")
+    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names", false)
     .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
     .option("--offset <value>", "Row offset to start from", (value: string) =>
       parseNonNegativeIntegerOption(value, "--offset"),
@@ -399,6 +400,7 @@ export async function runCli(
         options: {
           columns?: string[];
           contains?: string[];
+          noHeader?: boolean;
           offset?: number;
           rows?: number;
         },
@@ -407,6 +409,7 @@ export async function runCli(
           columns: options.columns,
           contains: options.contains,
           input,
+          noHeader: options.noHeader,
           offset: options.offset,
           rows: options.rows,
         });
@@ -484,6 +487,7 @@ export async function runCli(
       parseDataQueryInputFormatOption,
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
       "--install-missing-extension",
       "Attempt one DuckDB extension install-and-retry for sqlite/excel inputs",
@@ -506,6 +510,7 @@ export async function runCli(
           output?: string;
           overwrite?: boolean;
           pretty?: boolean;
+          range?: string;
           rows?: number;
           source?: string;
           sql: string;
@@ -519,6 +524,7 @@ export async function runCli(
           output: options.output,
           overwrite: options.overwrite,
           pretty: options.pretty,
+          range: options.range,
           rows: options.rows,
           source: options.source,
           sql: options.sql,
@@ -537,6 +543,7 @@ export async function runCli(
       parseDataQueryInputFormatOption,
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option("--print-sql", "Write drafted SQL only to stdout", false)
     .action(
       async (
@@ -545,12 +552,14 @@ export async function runCli(
           inputFormat?: DataQueryInputFormat;
           intent: string;
           printSql?: boolean;
+          range?: string;
           source?: string;
         },
         command: Command,
       ) => {
         const parentOptions = command.parent?.opts<{
           inputFormat?: DataQueryInputFormat;
+          range?: string;
           source?: string;
         }>();
         await actionDataQueryCodex(cliRuntime, {
@@ -558,6 +567,7 @@ export async function runCli(
           inputFormat: options.inputFormat ?? parentOptions?.inputFormat,
           intent: options.intent,
           printSql: options.printSql,
+          range: options.range ?? parentOptions?.range,
           source: options.source ?? parentOptions?.source,
         });
       },

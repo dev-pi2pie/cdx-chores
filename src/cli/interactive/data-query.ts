@@ -18,6 +18,7 @@ import {
   createDuckDbConnection,
   detectDataQueryInputFormat,
   listDataQuerySources,
+  normalizeExcelRange,
   quoteSqlIdentifier,
   type DataQueryInputFormat,
   type DataQuerySourceIntrospection,
@@ -233,6 +234,9 @@ function renderIntrospectionSummary(
     ...(options.introspection.selectedSource
       ? [`${pc.bold(pc.cyan("Source"))}: ${pc.white(options.introspection.selectedSource)}`]
       : []),
+    ...(options.introspection.selectedRange
+      ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
+      : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0
       ? options.introspection.columns.map((column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`)
@@ -319,6 +323,151 @@ async function promptOptionalSourceSelection(
       value: source,
     })),
   });
+}
+
+function describeSuspiciousExcelIntrospection(
+  introspection: DataQuerySourceIntrospection,
+): string[] | undefined {
+  const reasons: string[] = [];
+  const generatedColumns = introspection.columns
+    .map((column) => column.name)
+    .filter((name) => /^column_\d+$/i.test(name));
+
+  if (introspection.columns.length === 1 && introspection.sampleRows.length === 0) {
+    reasons.push("Whole-sheet inspection found one visible column and no usable sample rows.");
+  }
+
+  if (generatedColumns.length >= 2 && introspection.sampleRows.length > 0) {
+    const generatedCellValues = introspection.sampleRows.flatMap((row) =>
+      generatedColumns.map((column) => row[column] ?? ""),
+    );
+    const blankGeneratedCells = generatedCellValues.filter((value) => value.trim().length === 0).length;
+    if (
+      generatedColumns.length >= Math.ceil(introspection.columns.length / 2) &&
+      blankGeneratedCells / generatedCellValues.length >= 0.7
+    ) {
+      reasons.push(
+        "Whole-sheet inspection produced many generated placeholder columns with mostly blank sample cells.",
+      );
+    }
+  }
+
+  return reasons.length > 0 ? reasons : undefined;
+}
+
+function validateExcelRangeInput(value: string, options: { required: boolean }): true | string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return options.required ? "Enter an Excel range like A1:Z99." : true;
+  }
+
+  try {
+    normalizeExcelRange(trimmed);
+    return true;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+async function promptOptionalExcelRange(): Promise<string | undefined> {
+  const value = await input({
+    message: "Excel range (optional, e.g. A1:Z99)",
+    default: "",
+    validate: (nextValue) => validateExcelRangeInput(nextValue, { required: false }),
+  });
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? normalizeExcelRange(trimmed) : undefined;
+}
+
+async function promptRequiredExcelRange(): Promise<string> {
+  const value = await input({
+    message: "Excel range (required, e.g. A1:Z99)",
+    validate: (nextValue) => validateExcelRangeInput(nextValue, { required: true }),
+  });
+
+  return normalizeExcelRange(value.trim());
+}
+
+async function collectInteractiveIntrospection(options: {
+  connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
+  format: DataQueryInputFormat;
+  inputPath: string;
+  runtime: CliRuntime;
+  selectedSource?: string;
+}): Promise<{ introspection: DataQuerySourceIntrospection; selectedRange?: string }> {
+  let selectedRange: string | undefined;
+
+  if (options.format === "excel") {
+    printLine(options.runtime.stderr, "");
+    printLine(
+      options.runtime.stderr,
+      "This step changes how the source is interpreted as a table. You are not writing SQL yet.",
+    );
+    selectedRange = await promptOptionalExcelRange();
+  }
+
+  while (true) {
+    const introspection = await collectDataQuerySourceIntrospection(
+      options.connection,
+      options.inputPath,
+      options.format,
+      {
+        range: selectedRange,
+        source: options.selectedSource,
+      },
+      DATA_QUERY_INTERACTIVE_SAMPLE_ROWS,
+    );
+
+    renderIntrospectionSummary(options.runtime, {
+      format: options.format,
+      inputPath: options.inputPath,
+      introspection,
+    });
+
+    if (options.format !== "excel" || selectedRange) {
+      return { introspection, selectedRange };
+    }
+
+    const warningReasons = describeSuspiciousExcelIntrospection(introspection);
+    if (!warningReasons) {
+      return { introspection, selectedRange };
+    }
+
+    printLine(options.runtime.stderr, "");
+    printLine(options.runtime.stderr, "Sheet shape warning: current Excel sheet shape looks suspicious.");
+    printLine(
+      options.runtime.stderr,
+      "This step changes how the source is interpreted as a table. You are not writing SQL yet.",
+    );
+    for (const reason of warningReasons) {
+      printLine(options.runtime.stderr, `- ${reason}`);
+    }
+
+    const nextStep = await select<"continue" | "range">({
+      message: "Choose how to continue",
+      choices: [
+        {
+          name: "continue as-is",
+          value: "continue",
+          description: "Keep the whole-sheet source shape and move on to SQL authoring",
+        },
+        {
+          name: "enter range manually",
+          value: "range",
+          description: "Narrow the sheet before SQL authoring",
+        },
+      ],
+    });
+
+    if (nextStep === "continue") {
+      return { introspection, selectedRange };
+    }
+
+    selectedRange = await promptRequiredExcelRange();
+    printLine(options.runtime.stderr, `Accepted source shape: --range ${selectedRange}`);
+    printLine(options.runtime.stderr, "Re-inspecting shaped source before SQL authoring.");
+  }
 }
 
 async function promptOutputSelection(
@@ -415,6 +564,7 @@ async function executeInteractiveCandidate(
   options: {
     format: DataQueryInputFormat;
     input: string;
+    selectedRange?: string;
     selectedSource?: string;
     sql: string;
   },
@@ -436,7 +586,8 @@ async function executeInteractiveCandidate(
         overwrite: outputOptions.overwrite,
         pretty: outputOptions.pretty,
         rows: outputOptions.rows,
-        source: options.selectedSource,
+        ...(options.selectedRange ? { range: options.selectedRange } : {}),
+        ...(options.selectedSource ? { source: options.selectedSource } : {}),
         sql: options.sql,
       });
       return "executed";
@@ -460,6 +611,7 @@ async function runManualInteractiveQuery(
   options: {
     format: DataQueryInputFormat;
     input: string;
+    selectedRange?: string;
     selectedSource?: string;
   },
 ): Promise<void> {
@@ -607,6 +759,7 @@ async function runFormalGuideInteractiveQuery(
     format: DataQueryInputFormat;
     input: string;
     introspection: DataQuerySourceIntrospection;
+    selectedRange?: string;
     selectedSource?: string;
   },
 ): Promise<void> {
@@ -616,6 +769,7 @@ async function runFormalGuideInteractiveQuery(
     const result = await executeInteractiveCandidate(runtime, pathPromptContext, {
       format: options.format,
       input: options.input,
+      selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,
       sql,
     });
@@ -632,6 +786,7 @@ async function runCodexInteractiveQuery(
     format: DataQueryInputFormat;
     input: string;
     introspection: DataQuerySourceIntrospection;
+    selectedRange?: string;
     selectedSource?: string;
   },
 ): Promise<void> {
@@ -707,6 +862,7 @@ async function runCodexInteractiveQuery(
           const executionResult = await executeInteractiveCandidate(runtime, pathPromptContext, {
             format: options.format,
             input: options.input,
+            selectedRange: options.selectedRange,
             selectedSource: options.selectedSource,
             sql: draftResult.draft.sql,
           });
@@ -753,17 +909,12 @@ export async function runInteractiveDataQuery(
     connection = await createDuckDbConnection();
     const sources = await listDataQuerySources(connection, inputPath, format);
     const selectedSource = await promptOptionalSourceSelection(format, sources);
-    const introspection = await collectDataQuerySourceIntrospection(
+    const { introspection, selectedRange } = await collectInteractiveIntrospection({
       connection,
-      inputPath,
       format,
+      inputPath,
+      runtime,
       selectedSource,
-      DATA_QUERY_INTERACTIVE_SAMPLE_ROWS,
-    );
-    renderIntrospectionSummary(runtime, {
-      format,
-      inputPath,
-      introspection,
     });
 
     const mode = await select<DataQueryInteractiveMode>({
@@ -779,6 +930,7 @@ export async function runInteractiveDataQuery(
       await runManualInteractiveQuery(runtime, pathPromptContext, {
         format,
         input,
+        selectedRange,
         selectedSource,
       });
       return;
@@ -789,6 +941,7 @@ export async function runInteractiveDataQuery(
         format,
         input,
         introspection,
+        selectedRange,
         selectedSource,
       });
       return;
@@ -798,6 +951,7 @@ export async function runInteractiveDataQuery(
       format,
       input,
       introspection,
+      selectedRange,
       selectedSource,
     });
   } catch (error) {

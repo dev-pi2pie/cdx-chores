@@ -160,6 +160,25 @@ describe("cli action modules: data query codex", () => {
     expect(template).toContain("# Write plain intent below. Comment lines starting with # are ignored.");
   });
 
+  test("buildDataQueryCodexIntentEditorTemplate includes the selected range when present", () => {
+    const template = buildDataQueryCodexIntentEditorTemplate({
+      format: "excel",
+      introspection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        selectedRange: "A1:B3",
+        selectedSource: "Summary",
+        truncated: false,
+      },
+    });
+
+    expect(template).toContain("# Source: Summary");
+    expect(template).toContain("# Range: A1:B3");
+  });
+
   test("actionDataQueryCodex reports codex unavailability failures clearly", async () => {
     const { runtime, expectNoOutput } = createActionTestRuntime();
 

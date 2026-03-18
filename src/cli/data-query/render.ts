@@ -8,6 +8,7 @@ export interface RenderDataQueryOptions {
   columns: string[];
   format: string;
   inputPath: string;
+  range?: string;
   rows: DataPreviewRow[];
   source?: string;
   truncated: boolean;
@@ -144,6 +145,9 @@ export function renderDataQuery(
     `${pc.bold(pc.cyan("Format"))}: ${options.format}`,
     ...(options.source
       ? [`${pc.bold(pc.cyan("Source"))}: ${options.source}`]
+      : []),
+    ...(options.range
+      ? [`${pc.bold(pc.cyan("Range"))}: ${options.range}`]
       : []),
     `${pc.bold(pc.cyan("Result rows"))}: ${resultRowsLabel}`,
     `${pc.bold(pc.cyan("Visible columns"))}: ${formatColumnSummary(options.columns, visibleColumns)}`,

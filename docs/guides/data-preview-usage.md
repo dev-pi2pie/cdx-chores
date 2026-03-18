@@ -19,6 +19,7 @@ Follow-up improvements now available:
 
 - `data preview` is available in interactive mode
 - interactive preview can now collect `contains` filters
+- headerless CSV and TSV preview is now available through `--no-header`
 - summary labels and table headers use restrained color in TTY output
 - active contains filters now highlight matching cells in TTY output
 - global color disabling is supported through:
@@ -28,7 +29,7 @@ Follow-up improvements now available:
 ### Command shape
 
 ```bash
-cdx-chores data preview <input> [--rows <n>] [--offset <n>] [--columns <name,name,...>] [--contains <column:keyword>]
+cdx-chores data preview <input> [--no-header] [--rows <n>] [--offset <n>] [--columns <name,name,...>] [--contains <column:keyword>]
 ```
 
 Examples:
@@ -39,6 +40,7 @@ cdx-chores data preview ./examples/playground/tabular-preview/basic.tsv
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json
 cdx-chores data preview ./examples/playground/tabular-preview/wide.csv --columns id,status,message
 cdx-chores data preview ./examples/playground/tabular-preview/large.json --rows 20 --offset 120
+cdx-chores data preview ./examples/playground/tabular-preview/headerless.csv --no-header
 cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contains status:active
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json --contains name:ada --contains city:tai
 ```
@@ -120,7 +122,10 @@ The v1 renderer is intentionally conservative:
 
 ### Delimited-text normalization rules
 
-- both `.csv` and `.tsv` treat the first row as the header row
+- by default, both `.csv` and `.tsv` treat the first row as the header row
+- `--no-header` applies only to `.csv` and `.tsv`
+- with `--no-header`, row 1 stays in the data row set and the preview generates deterministic column names such as `column_1`, `column_2`, ...
+- in `--no-header` mode, `--columns` and `--contains` target those generated `column_n` names
 - blank header cells become generated names such as `column_2`
 - duplicate header names are deduplicated deterministically
 - rows wider than the header extend the column set with generated column names

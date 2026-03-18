@@ -119,6 +119,9 @@ export function buildDataQueryCodexIntentEditorTemplate(options: {
     ...(options.introspection.selectedSource
       ? [`# Source: ${options.introspection.selectedSource}`]
       : []),
+    ...(options.introspection.selectedRange
+      ? [`# Range: ${options.introspection.selectedRange}`]
+      : []),
     `# Schema: ${summarizeEditorSchema(options.introspection)}`,
     "# Sample rows:",
     ...sampleLines.map((line) => `# ${line}`),
@@ -155,6 +158,7 @@ export function buildDataQueryCodexPrompt(options: {
     `User intent: ${options.intent}`,
     `Detected format: ${options.format}`,
     `Selected source: ${options.introspection.selectedSource ?? "(implicit single source)"}`,
+    `Selected range: ${options.introspection.selectedRange ?? "(whole source)"}`,
     "",
     `Schema (${options.introspection.columns.length} columns):`,
     ...schemaLines,
@@ -243,6 +247,9 @@ export function renderDataQueryCodexDraft(options: {
     `${pc.bold(pc.cyan("Format"))}: ${pc.white(options.format)}`,
     ...(options.introspection.selectedSource
       ? [`${pc.bold(pc.cyan("Source"))}: ${pc.white(options.introspection.selectedSource)}`]
+      : []),
+    ...(options.introspection.selectedRange
+      ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
       : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0

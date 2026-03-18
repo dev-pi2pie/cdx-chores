@@ -27,6 +27,10 @@ export interface DataPreviewSource {
   getWindow(offset: number, rowCount: number): DataPreviewRow[];
 }
 
+export interface CreateDataPreviewSourceOptions {
+  noHeader?: boolean;
+}
+
 interface InMemoryDataPreviewSourceOptions {
   columns: string[];
   format: DataPreviewFormat;
@@ -122,8 +126,18 @@ function resolveDelimitedColumns(rows: readonly string[][]): string[] {
   return columns;
 }
 
-function buildDelimitedRows(rows: readonly string[][], columns: readonly string[]): DataPreviewRow[] {
-  const dataRows = rows.slice(1).filter((row) => row.some((value) => value.length > 0));
+function resolveHeaderlessDelimitedColumns(rows: readonly string[][]): string[] {
+  const maxWidth = rows.reduce((largest, row) => Math.max(largest, row.length), 0);
+  return Array.from({ length: maxWidth }, (_, index) => `column_${index + 1}`);
+}
+
+function buildDelimitedRows(
+  rows: readonly string[][],
+  columns: readonly string[],
+  options: { noHeader?: boolean } = {},
+): DataPreviewRow[] {
+  const sourceRows = options.noHeader ? rows : rows.slice(1);
+  const dataRows = sourceRows.filter((row) => row.some((value) => value.length > 0));
   return dataRows.map((row) => {
     const values: Record<string, string> = {};
     columns.forEach((column, index) => {
@@ -143,7 +157,11 @@ function buildJsonRows(rows: readonly JsonRow[], columns: readonly string[]): Da
   });
 }
 
-function createDelimitedPreviewSource(text: string, format: DelimitedFormat): DataPreviewSource {
+function createDelimitedPreviewSource(
+  text: string,
+  format: DelimitedFormat,
+  options: CreateDataPreviewSourceOptions = {},
+): DataPreviewSource {
   let rows: string[][];
   try {
     rows = parseDelimited(text, format);
@@ -155,11 +173,13 @@ function createDelimitedPreviewSource(text: string, format: DelimitedFormat): Da
     });
   }
 
-  const columns = resolveDelimitedColumns(rows);
+  const columns = options.noHeader
+    ? resolveHeaderlessDelimitedColumns(rows)
+    : resolveDelimitedColumns(rows);
   return new InMemoryDataPreviewSource({
     columns,
     format,
-    rows: buildDelimitedRows(rows, columns),
+    rows: buildDelimitedRows(rows, columns, options),
   });
 }
 
@@ -283,16 +303,26 @@ export function applyContainsFilters(
   return source.filterContains(filters);
 }
 
-export function createDataPreviewSource(inputPath: string, text: string): DataPreviewSource {
+export function createDataPreviewSource(
+  inputPath: string,
+  text: string,
+  options: CreateDataPreviewSourceOptions = {},
+): DataPreviewSource {
   const extension = extname(inputPath).toLowerCase();
 
   if (extension === ".csv") {
-    return createDelimitedPreviewSource(text, "csv");
+    return createDelimitedPreviewSource(text, "csv", options);
   }
   if (extension === ".tsv") {
-    return createDelimitedPreviewSource(text, "tsv");
+    return createDelimitedPreviewSource(text, "tsv", options);
   }
   if (extension === ".json") {
+    if (options.noHeader) {
+      throw new CliError("--no-header is only supported for CSV and TSV preview inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
     return createJsonPreviewSource(text);
   }
 
