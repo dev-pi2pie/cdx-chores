@@ -144,6 +144,60 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery normalizes headerless CSV placeholder names to the shared column_n contract", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      await writeFile(inputPath, "1,Ada,active,2026-03-01\n2,Bob,paused,2026-03-02\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select column_1, column_2, column_3, column_4 from file order by column_1",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Visible columns: column_1, column_2, column_3, column_4");
+      expect(stdout.text).toContain("1        | Ada");
+      expect(stdout.text).not.toContain("column0");
+      expect(stdout.text).not.toContain("column1");
+    });
+  });
+
+  test("actionDataQuery suggests semantic headers for headerless CSV inputs using normalized placeholder names", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "1,Ada,active,2026-03-01\n2,Bob,paused,2026-03-02\n", "utf8");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async ({ prompt }) => {
+          expect(prompt).toContain("1. column_1 (BIGINT) samples: 1, 2");
+          expect(prompt).toContain("2. column_2 (VARCHAR) samples: Ada, Bob");
+          expect(prompt).toContain("3. column_3 (VARCHAR) samples: active, paused");
+          expect(prompt).toContain("4. column_4 (DATE) samples: 2026-03-01, 2026-03-02");
+          return JSON.stringify({
+            suggestions: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "name" },
+              { from: "column_3", to: "status" },
+              { from: "column_4", to: "created_at" },
+            ],
+          });
+        },
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("column_1 -> id");
+      expect(stdout.text).toContain("column_4 -> created_at");
+      expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
   test("actionDataQuery applies Excel range shaping before querying", async () => {
     if (!excelReady) {
       return;

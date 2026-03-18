@@ -81,8 +81,23 @@ export function quoteSqlIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
 }
 
+function normalizeGeneratedQueryColumnName(name: string): string {
+  const match = /^column(\d+)$/i.exec(name.trim());
+  if (!match) {
+    return name;
+  }
+
+  const index = Number(match[1] ?? "");
+  if (!Number.isInteger(index) || index < 0) {
+    return name;
+  }
+
+  return `column_${index + 1}`;
+}
+
 interface QueryRelationColumn {
   name: string;
+  sourceName: string;
   type: string;
 }
 
@@ -518,7 +533,8 @@ async function collectQueryRelationColumns(
   const columnNames = reader.deduplicatedColumnNames();
   const columnTypes = reader.columnTypes();
   return columnNames.map((name, index) => ({
-    name,
+    name: normalizeGeneratedQueryColumnName(name),
+    sourceName: name,
     type: columnTypes[index]?.toString() ?? "UNKNOWN",
   }));
 }
@@ -537,9 +553,12 @@ function buildPreparedFileProjectionSql(
           .map((column) => {
             const renamedTarget = targetBySource.get(column.name);
             if (!renamedTarget) {
-              return quoteSqlIdentifier(column.name);
+              if (column.sourceName === column.name) {
+                return quoteSqlIdentifier(column.sourceName);
+              }
+              return `${quoteSqlIdentifier(column.sourceName)} as ${quoteSqlIdentifier(column.name)}`;
             }
-            return `${quoteSqlIdentifier(column.name)} as ${quoteSqlIdentifier(renamedTarget)}`;
+            return `${quoteSqlIdentifier(column.sourceName)} as ${quoteSqlIdentifier(renamedTarget)}`;
           })
           .join(", ")
       : "*";
@@ -548,7 +567,7 @@ function buildPreparedFileProjectionSql(
       ? columns
           .map(
             (column) =>
-              `nullif(trim(cast(${quoteSqlIdentifier(column.name)} as varchar)), '') is not null`,
+              `nullif(trim(cast(${quoteSqlIdentifier(column.sourceName)} as varchar)), '') is not null`,
           )
           .join(" or ")
       : undefined;

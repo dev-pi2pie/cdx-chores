@@ -12,6 +12,7 @@ Current first-pass boundary:
   - `input.format`
   - optional `input.source`
   - optional `input.range`
+  - optional `input.headerRow`
 - file-content fingerprints and stale-file detection after in-place edits are deferred
 
 ### Artifact shape
@@ -30,6 +31,7 @@ Conditionally required first-pass fields:
 
 - `input.source` when the shaped source requires one
 - `input.range` when shaping used an explicit Excel range
+- `input.headerRow` when shaping used an explicit Excel header row
 
 Optional fields may appear on mapping entries, such as:
 
@@ -55,6 +57,11 @@ Illustrative shape:
   ]
 }
 ```
+
+Generated placeholder contract:
+
+- reviewed semantic header suggestions use deterministic placeholder names such as `column_1`, `column_2`, ...
+- when an underlying engine emits raw headerless names like `column0`, `column1`, ... the shared query/extract layer normalizes them to the `column_<n>` contract before reviewed header suggestions run
 
 ### Direct CLI Review Flow
 

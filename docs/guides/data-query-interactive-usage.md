@@ -73,11 +73,14 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - Excel requires choosing a sheet
 - Excel also supports optional `range` shaping before SQL authoring
 - if whole-sheet Excel introspection looks structurally suspicious, the flow can keep the current shape, accept a manual range, or ask Codex to suggest shaping before continuing
+- merged-sheet whole-sheet views that collapse into one visible column can also trigger reviewed shaping before SQL authoring
 - the selected source is always exposed to SQL as the logical table `file`
 
 ### Interactive Header Review
 
 When the current shaped source exposes generated placeholder columns such as `column_1`, `column_2`, ... the interactive flow can review semantic header suggestions before SQL authoring.
+
+That placeholder contract is shared even when the underlying engine originally exposes headerless columns with names such as `column0`, `column1`, ... .
 
 The first review surface stays intentionally small:
 

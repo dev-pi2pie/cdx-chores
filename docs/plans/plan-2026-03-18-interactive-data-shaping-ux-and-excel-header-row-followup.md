@@ -2,7 +2,7 @@
 title: "Interactive data shaping UX, reviewed extract flow, and Excel header-row follow-up"
 created-date: 2026-03-18
 modified-date: 2026-03-19
-status: active
+status: completed
 agent: codex
 ---
 
@@ -385,8 +385,8 @@ Decision boundary:
 - [x] keep warning loops active when strong structural suspicion remains after range-only shaping
 - [x] add or extend public-safe workbook fixtures for range-plus-header-row recovery
 - [x] add semantic validation coverage for the generated hard workbook, not only byte-level determinism
-- [ ] update interactive and extract guides for the staged review-and-write flow
-- [ ] document `--header-row <n>` behavior without exposing private local repro details
+- [x] update interactive and extract guides for the staged review-and-write flow
+- [x] document `--header-row <n>` behavior without exposing private local repro details
 - [x] verify with focused tests and `bunx tsc --noEmit`
 
 ### Phase 7: Hard merged-sheet recovery and tolerant Excel shaping
@@ -395,14 +395,14 @@ Decision boundary:
 - [x] add a focused public-safe workbook fixture that reproduces the collapsed-one-column merged-sheet pattern
 - [x] add tolerant Excel introspection/materialization retry for accepted shaped ranges that still fail due to early-row type inference
 - [x] add focused tests for accepted reviewed shapes that previously failed after `--range` plus `--header-row`
-- [ ] evaluate whether a new deterministic shaping field is still needed after tolerant retry, and only then draft the next contract change
+- [x] evaluate whether a new deterministic shaping field is still needed after tolerant retry, and only then draft the next contract change
 
 ### Phase 8: Placeholder normalization and rebuilt-dist verification
 
-- [ ] normalize or otherwise recognize DuckDB-generated headerless names such as `column0`, `column1`, ... as reviewed-header trigger placeholders
-- [ ] decide whether to standardize those placeholders to `column_<n>` in the shared contract or broaden generated-header detection without rewriting names
-- [ ] verify the hard merged-sheet recovery path against a rebuilt `dist` artifact before deciding another deterministic shaping field is required
-- [ ] if rebuilt `dist` still fails on the hard merged-sheet class, record the remaining failure mode and feed it into the next shaping-contract decision
+- [x] normalize or otherwise recognize DuckDB-generated headerless names such as `column0`, `column1`, ... as reviewed-header trigger placeholders
+- [x] decide whether to standardize those placeholders to `column_<n>` in the shared contract or broaden generated-header detection without rewriting names
+- [x] verify the hard merged-sheet recovery path against a rebuilt `dist` artifact before deciding another deterministic shaping field is required
+- [x] if rebuilt `dist` still fails on the hard merged-sheet class, record the remaining failure mode and feed it into the next shaping-contract decision
 
 ## Related Plans
 

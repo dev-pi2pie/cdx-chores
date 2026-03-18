@@ -14,6 +14,7 @@ Current boundary:
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
 - explicit Excel shaping is available through `--range <A1:Z99>`
+- explicit Excel header selection is available through `--header-row <n>`
 - reviewed Codex source-shape suggestions can be requested through `--codex-suggest-shape`
 - accepted source shapes can be reused through `--source-shape <path>`
 - accepted semantic header renames can be reused through `--header-mapping <path>`
@@ -25,9 +26,9 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
+cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-row <n>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
 cdx-chores data extract <input> --source <name> --codex-suggest-shape [--write-source-shape <path>] [--input-format <format>] [--overwrite]
-cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99> | --source-shape <path>] [--overwrite]
+cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-row <n>] [--source-shape <path>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -62,14 +63,21 @@ cdx-chores data extract ./examples/playground/data-query/generic.csv --header-ma
 `--range` is valid only for Excel inputs and narrows the selected sheet before the shaped table is materialized.
 Other input formats reject `--range`.
 
+`--header-row <n>` is also valid only for Excel inputs:
+
+- it uses absolute worksheet row numbering
+- it changes source interpretation before semantic header review or extraction
+- when `--range` is present, the header row must fall inside that rectangle
+- when a reviewed `--source-shape` artifact is reused, its accepted `headerRow` becomes part of the active source shape
+
 First-pass reviewed Codex source-shape help is narrower:
 
 - valid only for Excel inputs
 - still requires `--source`
-- suggests an explicit `range`
+- suggests an explicit `range`, `header-row`, or both
 - writes a JSON source-shape artifact and stops before materialization
 
-`--source-shape <path>` reuses an accepted source-shape artifact and applies the accepted sheet plus range before extraction continues.
+`--source-shape <path>` reuses an accepted source-shape artifact and applies the accepted sheet plus reviewed shape before extraction continues.
 
 Examples:
 
@@ -77,6 +85,7 @@ Examples:
 cdx-chores data extract ./examples/playground/data-query/multi.sqlite --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/header-band.xlsx --source Summary --range B7:E12 --header-row 7 --output ./examples/playground/.tmp-tests/header-band.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --output ./examples/playground/.tmp-tests/messy.clean.csv --overwrite
 ```
@@ -96,7 +105,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source` and `range` must also match exactly when present
+- optional `source`, `range`, and `headerRow` must also match exactly when present
 
 ### Interactive mode
 
@@ -123,9 +132,15 @@ Current interactive flow:
    - ask Codex to suggest shaping
 6. after accepted source-shape changes, re-inspect
 7. when generated placeholder headers remain, optionally review semantic header suggestions
-8. choose the output file path
-9. confirm overwrite when needed
-10. materialize the shaped table
+8. choose output format:
+   - CSV
+   - TSV
+   - JSON
+9. choose destination style:
+   - use default output path
+   - custom output path
+10. review the final write summary
+11. explicitly confirm materialization
 
 ### Output rules
 
@@ -134,6 +149,7 @@ Current interactive flow:
 - `--overwrite` is required to replace an existing output artifact
 - materialization status lines are written to stderr
 - suggestion runs write the mapping summary to stdout and artifact status lines to stderr
+- interactive extract defaults to the input path with the extension replaced by the selected output format
 
 ### Smoke fixtures
 

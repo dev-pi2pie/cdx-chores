@@ -93,6 +93,28 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("Ada  | active");
   });
 
+  test("queries headerless CSV input end to end with normalized placeholder names", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      await writeFile(inputPath, "1,Ada,active,2026-03-01\n2,Bob,paused,2026-03-02\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "query",
+        inputPath.slice(REPO_ROOT.length + 1),
+        "--sql",
+        "select column_1, column_2, column_3, column_4 from file order by column_1",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Visible columns: column_1, column_2, column_3, column_4");
+      expect(result.stdout).toContain("Ada");
+      expect(result.stdout).not.toContain("column0");
+      expect(result.stdout).not.toContain("column1");
+    });
+  });
+
   test("writes a reviewed header-mapping artifact and stops before SQL execution", async () => {
     await withTempFixtureDir("query-header-review", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");
