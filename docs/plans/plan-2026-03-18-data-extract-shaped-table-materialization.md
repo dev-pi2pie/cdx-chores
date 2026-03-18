@@ -2,7 +2,7 @@
 title: "Data extract shaped-table materialization"
 created-date: 2026-03-18
 modified-date: 2026-03-18
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -126,34 +126,34 @@ That is enough product surface to keep separate from both deterministic shaping 
 
 ### Phase 1: Freeze CLI materialization contract
 
-- [ ] add `data extract <input>`
-- [ ] define required output-path behavior for materialization runs
-- [ ] freeze output-format inference for `.csv`, `.tsv`, and `.json`
-- [ ] freeze overwrite behavior
-- [ ] freeze stdout/stderr contract for artifact-writing commands
-- [ ] freeze the reviewed two-step `--codex-suggest-headers` flow so suggestion runs stop after writing a mapping artifact and materialization runs require accepted `--header-mapping <path>`
+- [x] add `data extract <input>`
+- [x] define required output-path behavior for materialization runs
+- [x] freeze output-format inference for `.csv`, `.tsv`, and `.json`
+- [x] freeze overwrite behavior
+- [x] freeze stdout/stderr contract for artifact-writing commands
+- [x] freeze the reviewed two-step `--codex-suggest-headers` flow so suggestion runs stop after writing a mapping artifact and materialization runs require accepted `--header-mapping <path>`
 
 ### Phase 2: Reuse shared shaping helpers
 
-- [ ] consume shared source-shaping state from the foundation plan
-- [ ] support `--source` and `--range` where applicable
-- [ ] support `--header-mapping <path>`
-- [ ] reuse shared mapping-artifact output/input flags when `--codex-suggest-headers` is requested
-- [ ] support `--codex-suggest-headers` if the mapping plan has landed
+- [x] consume shared source-shaping state from the foundation plan
+- [x] support `--source` and `--range` where applicable
+- [x] support `--header-mapping <path>`
+- [x] reuse shared mapping-artifact output/input flags when `--codex-suggest-headers` is requested
+- [x] support `--codex-suggest-headers` if the mapping plan has landed
 
 ### Phase 3: Output writers
 
-- [ ] write shaped rows to CSV
-- [ ] write shaped rows to TSV
-- [ ] write shaped rows to JSON
-- [ ] add focused tests for output inference, overwrite checks, and content shape
+- [x] write shaped rows to CSV
+- [x] write shaped rows to TSV
+- [x] write shaped rows to JSON
+- [x] add focused tests for output inference, overwrite checks, and content shape
 
 ### Phase 4: Documentation and verification
 
-- [ ] add `data extract` guide
-- [ ] link back to the dedicated schema-and-mapping guide
-- [ ] keep docs behavior-focused and avoid private local issue-data paths
-- [ ] add manual verification notes for local-only private repro files without naming them in public docs
+- [x] add `data extract` guide
+- [x] link back to the dedicated schema-and-mapping guide
+- [x] keep docs behavior-focused and avoid private local issue-data paths
+- [x] add manual verification notes for local-only private repro files without naming them in public docs
 
 ## Related Research
 

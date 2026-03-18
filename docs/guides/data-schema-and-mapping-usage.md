@@ -1,6 +1,6 @@
 ## Data Schema And Mapping
 
-Use this guide for the shared header-mapping artifact contract behind reviewed semantic header suggestions.
+Use this guide for the shared header-mapping artifact contract behind reviewed semantic header suggestions used by `data query` and `data extract`.
 
 Current first-pass boundary:
 
@@ -58,17 +58,21 @@ Illustrative shape:
 
 ### Direct CLI Review Flow
 
-Reviewed direct `data query` stays two-step and explicit:
+Reviewed direct `data query` and `data extract` stay two-step and explicit:
 
 1. suggest semantic headers and write the review artifact
 2. inspect or edit the JSON artifact
-3. rerun `data query` with the accepted `--header-mapping <path>` plus `--sql`
+3. rerun either:
+   - `data query` with the accepted `--header-mapping <path>` plus `--sql`
+   - `data extract` with the accepted `--header-mapping <path>` plus `--output <path>`
 
 Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
 cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --sql "select id, status from file order by id"
+cdx-chores data extract ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
+cdx-chores data extract ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --output ./examples/playground/.tmp-tests/generic.clean.csv --overwrite
 ```
 
 If `--write-header-mapping` is omitted, the CLI generates a filename in the shared `data-header-mapping-<uid>.json` family.

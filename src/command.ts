@@ -4,6 +4,7 @@ import {
   actionCsvToTsv,
   actionDataDuckDbDoctor,
   actionDataDuckDbExtensionInstall,
+  actionDataExtract,
   actionDataParquetPreview,
   actionDataPreview,
   actionDataQuery,
@@ -300,7 +301,7 @@ export async function runCli(
       await actionDoctor(cliRuntime, { json: options.json });
     });
 
-  const dataCommand = program.command("data").description("Data preview, query, and conversion utilities");
+  const dataCommand = program.command("data").description("Data preview, extract, query, and conversion utilities");
 
   applyCommonFileOptions(
     dataCommand
@@ -472,6 +473,50 @@ export async function runCli(
           input,
           offset: options.offset,
           rows: options.rows,
+        });
+      },
+    );
+
+  dataCommand
+    .command("extract")
+    .description("Materialize one shaped table from one input file")
+    .argument("<input>", "Input data file")
+    .option(
+      "--input-format <format>",
+      `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
+      parseDataQueryInputFormatOption,
+    )
+    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
+    .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
+    .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
+    .option("-o, --output <path>", "Write the shaped table to a .csv, .tsv, or .json file")
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .action(
+      async (
+        input: string,
+        options: {
+          codexSuggestHeaders?: boolean;
+          headerMapping?: string;
+          inputFormat?: DataQueryInputFormat;
+          output?: string;
+          overwrite?: boolean;
+          range?: string;
+          source?: string;
+          writeHeaderMapping?: string;
+        },
+      ) => {
+        await actionDataExtract(cliRuntime, {
+          codexSuggestHeaders: options.codexSuggestHeaders,
+          headerMapping: options.headerMapping,
+          input,
+          inputFormat: options.inputFormat,
+          output: options.output,
+          overwrite: options.overwrite,
+          range: options.range,
+          source: options.source,
+          writeHeaderMapping: options.writeHeaderMapping,
         });
       },
     );

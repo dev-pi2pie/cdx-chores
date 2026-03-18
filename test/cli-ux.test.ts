@@ -127,13 +127,14 @@ describe("CLI UX flags and path output", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Data preview, query, and conversion utilities");
+    expect(result.stdout).toContain("Data preview, extract, query, and conversion utilities");
     expect(result.stdout).toContain("json-to-csv");
     expect(result.stdout).toContain("json-to-tsv");
     expect(result.stdout).toContain("csv-to-json");
     expect(result.stdout).toContain("csv-to-tsv");
     expect(result.stdout).toContain("tsv-to-csv");
     expect(result.stdout).toContain("tsv-to-json");
+    expect(result.stdout).toContain("extract");
     expect(result.stdout).toContain("preview");
     expect(result.stdout).toContain("parquet");
     expect(result.stdout).toContain("query");
@@ -176,8 +177,31 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("codex");
   });
 
+  test("data extract help documents shaping, reviewed header suggestions, and output options", () => {
+    const result = runCli(["data", "extract", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--input-format <format>");
+    expect(result.stdout).toContain("--source <name>");
+    expect(result.stdout).toContain("--range <A1:Z99>");
+    expect(result.stdout).toContain("--header-mapping <path>");
+    expect(result.stdout).toContain("--codex-suggest-headers");
+    expect(result.stdout).toContain("--write-header-mapping <path>");
+    expect(result.stdout).toContain("--output <path>");
+    expect(result.stdout).toContain("--overwrite");
+    expect(result.stdout).not.toContain("--sql");
+  });
+
   test("data query rejects invalid input-format values at CLI parsing time", () => {
     const result = runCli(["data", "query", "sample.csv", "--sql", "select * from file", "--input-format", "json"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--input-format must be one of:");
+  });
+
+  test("data extract rejects invalid input-format values at CLI parsing time", () => {
+    const result = runCli(["data", "extract", "sample.csv", "--output", "sample.json", "--input-format", "json"]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--input-format must be one of:");
