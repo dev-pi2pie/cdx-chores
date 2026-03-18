@@ -157,7 +157,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("Input TSV file");
   });
 
-  test("data query help documents SQL, shaping, source, and output options", () => {
+  test("data query help documents SQL, shaping, header review, source, and output options", () => {
     const result = runCli(["data", "query", "--help"]);
 
     expect(result.exitCode).toBe(0);
@@ -166,6 +166,9 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
+    expect(result.stdout).toContain("--header-mapping <path>");
+    expect(result.stdout).toContain("--codex-suggest-headers");
+    expect(result.stdout).toContain("--write-header-mapping <path>");
     expect(result.stdout).toContain("--rows <value>");
     expect(result.stdout).toContain("--json");
     expect(result.stdout).toContain("--pretty");

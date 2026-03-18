@@ -488,6 +488,9 @@ export async function runCli(
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
+    .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
+    .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
     .option(
       "--install-missing-extension",
       "Attempt one DuckDB extension install-and-retry for sqlite/excel inputs",
@@ -504,6 +507,8 @@ export async function runCli(
       async (
         input: string,
         options: {
+          codexSuggestHeaders?: boolean;
+          headerMapping?: string;
           inputFormat?: DataQueryInputFormat;
           installMissingExtension?: boolean;
           json?: boolean;
@@ -513,10 +518,13 @@ export async function runCli(
           range?: string;
           rows?: number;
           source?: string;
-          sql: string;
+          sql?: string;
+          writeHeaderMapping?: string;
         },
       ) => {
         await actionDataQuery(cliRuntime, {
+          codexSuggestHeaders: options.codexSuggestHeaders,
+          headerMapping: options.headerMapping,
           input,
           inputFormat: options.inputFormat,
           installMissingExtension: options.installMissingExtension,
@@ -528,6 +536,7 @@ export async function runCli(
           rows: options.rows,
           source: options.source,
           sql: options.sql,
+          writeHeaderMapping: options.writeHeaderMapping,
         });
       },
     );

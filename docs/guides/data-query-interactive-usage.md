@@ -2,6 +2,8 @@
 
 Use interactive mode when you want the CLI to inspect the input first, then help you author or review SQL before execution.
 
+For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
+
 Start the flow with:
 
 ```bash
@@ -21,13 +23,14 @@ Current interactive flow:
 4. for Excel, optionally enter a `range` before schema inspection
 5. inspect schema and sample rows from the current shaped source
 6. when a raw whole-sheet Excel schema looks strongly suspicious, optionally enter a range and re-inspect before SQL authoring
-7. choose one mode:
+7. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
+8. choose one mode:
    - `manual`
    - `formal-guide`
    - `Codex Assistant`
-8. review the generated SQL
-9. explicitly confirm execution
-10. choose one output mode:
+9. review the generated SQL
+10. explicitly confirm execution
+11. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
@@ -67,6 +70,18 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - Excel also supports optional `range` shaping before SQL authoring
 - if whole-sheet Excel introspection looks structurally suspicious, the flow warns about source interpretation before continuing
 - the selected source is always exposed to SQL as the logical table `file`
+
+### Interactive Header Review
+
+When the current shaped source exposes generated placeholder columns such as `column_1`, `column_2`, ... the interactive flow can review semantic header suggestions before SQL authoring.
+
+The first review surface stays intentionally small:
+
+- `Accept all`
+- `Edit one`
+- `Keep generated names`
+
+Accepted suggestions are re-inspected before SQL authoring continues.
 
 ### Output rules
 

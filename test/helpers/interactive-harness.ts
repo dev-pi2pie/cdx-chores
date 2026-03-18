@@ -20,6 +20,8 @@ export interface InteractiveHarnessScenario {
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
   dataQueryCodexErrorMessage?: string;
   dataQueryDetectedFormat?: string;
+  dataQueryHeaderSuggestionErrorMessage?: string;
+  dataQueryHeaderSuggestions?: Array<Record<string, unknown>>;
   dataQueryIntrospection?: Record<string, unknown>;
   dataQueryIntrospectionQueue?: Record<string, unknown>[];
   dataQuerySources?: string[];
@@ -62,6 +64,9 @@ const pathConfigModuleUrl = pathToFileURL(
 const interactiveIndexUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/index.ts")).href;
 const interactiveDataUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/interactive/data.ts")).href;
 const dataQueryCodexModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/data-query/codex.ts")).href;
+const dataQueryHeaderMappingModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/duckdb/header-mapping.ts"),
+).href;
 const duckdbQueryModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/duckdb/query.ts")).href;
 
 export function runInteractiveHarness(
@@ -534,6 +539,47 @@ export function runInteractiveHarness(
               sql: "select count(*) as total from file",
               reasoningSummary: "Counts rows from the selected source.",
             },
+        };
+      },
+    }));
+
+    mock.module(${JSON.stringify(dataQueryHeaderMappingModuleUrl)}, () => ({
+      normalizeHeaderMappingTargetName: (value) =>
+        String(value ?? "")
+          .trim()
+          .replace(/[^A-Za-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .replace(/_+/g, "_")
+          .toLowerCase(),
+      normalizeAndValidateAcceptedHeaderMappings: ({ availableColumns, mappings }) => {
+        return (mappings ?? [])
+          .map((mapping) => ({
+            ...mapping,
+            from: String(mapping.from ?? "").trim() || String((availableColumns ?? [])[0] ?? "column_1"),
+            to: String(mapping.to ?? "").trim() || "edited_header",
+          }))
+          .filter((mapping) => mapping.to !== mapping.from);
+      },
+      suggestDataHeaderMappingsWithCodex: async (options) => {
+        actionCalls.push({
+          name: "data:query:header-suggest",
+          options: {
+            format: options.format,
+            ...(options.introspection?.selectedRange
+              ? { selectedRange: options.introspection.selectedRange }
+              : {}),
+            selectedSource: options.introspection?.selectedSource,
+          },
+        });
+        if (scenario.dataQueryHeaderSuggestionErrorMessage) {
+          return { errorMessage: scenario.dataQueryHeaderSuggestionErrorMessage, mappings: [] };
+        }
+        return {
+          mappings:
+            scenario.dataQueryHeaderSuggestions ?? [
+              { from: "column_1", to: "id", sample: "1", inferredType: "BIGINT" },
+              { from: "column_2", to: "name", sample: "Ada", inferredType: "VARCHAR" },
+            ],
         };
       },
     }));

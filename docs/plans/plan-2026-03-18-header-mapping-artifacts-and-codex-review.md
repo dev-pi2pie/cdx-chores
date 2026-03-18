@@ -2,7 +2,7 @@
 title: "Header-mapping artifacts and Codex review"
 created-date: 2026-03-18
 modified-date: 2026-03-18
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -150,43 +150,43 @@ Those are review-artifact and AI-assistance concerns, not just query or preview 
 
 ### Phase 1: Freeze artifact contract
 
-- [ ] define the JSON schema helper surface
-- [ ] freeze required and optional first-pass fields
-- [ ] freeze one normalized CLI-facing representation for `input.path`
-- [ ] freeze filename generation as `data-header-mapping-<uid>.json`
-- [ ] freeze strict reuse as normalized input-reference matching on `path` / `format` / optional `source` / optional `range`
-- [ ] explicitly defer file-content fingerprints and in-place edit detection
-- [ ] freeze preserve-unknown-fields rewrite policy
+- [x] define the JSON schema helper surface
+- [x] freeze required and optional first-pass fields
+- [x] freeze one normalized CLI-facing representation for `input.path`
+- [x] freeze filename generation as `data-header-mapping-<uid>.json`
+- [x] freeze strict reuse as normalized input-reference matching on `path` / `format` / optional `source` / optional `range`
+- [x] explicitly defer file-content fingerprints and in-place edit detection
+- [x] freeze preserve-unknown-fields rewrite policy
 
 ### Phase 2: Shared suggestion and mapping engine
 
-- [ ] implement suggestion-evidence collection from shaped sources
-- [ ] implement Codex header-suggestion call and normalization
-- [ ] implement mapping validation and collision handling
-- [ ] implement mapping artifact read/write helpers
-- [ ] implement accepted-mapping application and re-introspection helpers
+- [x] implement suggestion-evidence collection from shaped sources
+- [x] implement Codex header-suggestion call and normalization
+- [x] implement mapping validation and collision handling
+- [x] implement mapping artifact read/write helpers
+- [x] implement accepted-mapping application and re-introspection helpers
 
 ### Phase 3: Direct CLI reviewed query flow
 
-- [ ] add direct CLI flags for suggestion and mapping artifact reuse
-- [ ] implement the two-step reviewed `data query` flow
-- [ ] stop before SQL execution when only suggestion output was requested
-- [ ] add focused tests for artifact writing, reuse, matching, and rewrite preservation
+- [x] add direct CLI flags for suggestion and mapping artifact reuse
+- [x] implement the two-step reviewed `data query` flow
+- [x] stop before SQL execution when only suggestion output was requested
+- [x] add focused tests for artifact writing, reuse, matching, and rewrite preservation
 
 ### Phase 4: Interactive review flow
 
-- [ ] add interactive review UI for suggested headers
-- [ ] support `Accept all`
-- [ ] support `Edit one`
-- [ ] support `Keep generated names`
-- [ ] re-introspect the shaped source after accepted mappings
+- [x] add interactive review UI for suggested headers
+- [x] support `Accept all`
+- [x] support `Edit one`
+- [x] support `Keep generated names`
+- [x] re-introspect the shaped source after accepted mappings
 
 ### Phase 5: Documentation
 
-- [ ] add dedicated schema-and-mapping guide
-- [ ] link command docs back to that guide
-- [ ] document JSON-only first-pass artifacts
-- [ ] keep public docs free of private fixture names or paths
+- [x] add dedicated schema-and-mapping guide
+- [x] link command docs back to that guide
+- [x] document JSON-only first-pass artifacts
+- [x] keep public docs free of private fixture names or paths
 
 ## Related Research
 

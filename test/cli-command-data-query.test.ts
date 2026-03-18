@@ -1,4 +1,4 @@
-import { chmod } from "node:fs/promises";
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -12,6 +12,52 @@ const excelReady = queryExtensions.available && queryExtensions.excel?.loadable 
 
 function fixturePath(name: string): string {
   return join("test", "fixtures", "data-query", name);
+}
+
+async function createHeaderSuggestionStub(options: {
+  promptPath?: string;
+  suggestions: Array<{ from: string; to: string }>;
+  workingDirectory: string;
+}): Promise<string> {
+  const stubPath = join(options.workingDirectory, "header-suggest-stub.mjs");
+  const promptWrite =
+    options.promptPath
+      ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
+      : "";
+  const script = `#!/usr/bin/env node
+import { writeFile } from "node:fs/promises";
+
+const prompt = await new Promise((resolve, reject) => {
+  let text = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (chunk) => {
+    text += chunk;
+  });
+  process.stdin.on("end", () => resolve(text));
+  process.stdin.on("error", reject);
+});
+
+${promptWrite}
+
+const response = JSON.stringify({
+  suggestions: ${JSON.stringify(options.suggestions)},
+});
+
+process.stdout.write(JSON.stringify({ type: "thread.started", thread_id: "stub-thread" }) + "\\n");
+process.stdout.write(JSON.stringify({ type: "turn.started" }) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "item.completed",
+  item: { id: "msg-1", type: "agent_message", text: response },
+}) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "turn.completed",
+  usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
+}) + "\\n");
+`;
+
+  await writeFile(stubPath, script, "utf8");
+  await chmod(stubPath, 0o755);
+  return stubPath;
 }
 
 describe("CLI data query command", () => {
@@ -44,6 +90,60 @@ describe("CLI data query command", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Format: tsv");
     expect(result.stdout).toContain("Ada  | active");
+  });
+
+  test("writes a reviewed header-mapping artifact and stops before SQL execution", async () => {
+    await withTempFixtureDir("query-header-review", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "generic.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      const promptPath = join(fixtureDir, "header-suggest-prompt.txt");
+      await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
+      const stubPath = await createHeaderSuggestionStub({
+        promptPath,
+        suggestions: [
+          { from: "column_1", to: "id" },
+          { from: "column_2", to: "status" },
+        ],
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          inputPath.slice(REPO_ROOT.length + 1),
+          "--codex-suggest-headers",
+          "--write-header-mapping",
+          artifactPath.slice(REPO_ROOT.length + 1),
+        ],
+        REPO_ROOT,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Suggested headers");
+      expect(result.stdout).toContain("column_1 -> id");
+      expect(result.stdout).toContain("column_2 -> status");
+      expect(result.stderr).toContain("--header-mapping");
+      expect(result.stderr).toContain("--sql");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Detected format: csv");
+      expect(prompt).toContain("1. column_1 (BIGINT) samples: 1001, 1002");
+
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as {
+        input: { format: string; path: string };
+        mappings: Array<{ from: string; inferredType?: string; sample?: string; to: string }>;
+      };
+      expect(artifact.input).toEqual({
+        format: "csv",
+        path: inputPath.slice(REPO_ROOT.length + 1),
+      });
+      expect(artifact.mappings).toEqual([
+        { from: "column_1", inferredType: "BIGINT", sample: "1001", to: "id" },
+        { from: "column_2", inferredType: "VARCHAR", sample: "active", to: "status" },
+      ]);
+    });
   });
 
   test("queries Parquet input end to end", () => {

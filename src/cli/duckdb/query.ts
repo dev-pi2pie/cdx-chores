@@ -10,6 +10,10 @@ import {
   ensureDuckDbManagedExtensionLoaded,
   probeDuckDbManagedExtension,
 } from "./extensions";
+import {
+  normalizeAndValidateAcceptedHeaderMappings,
+  type DataHeaderMappingEntry,
+} from "./header-mapping";
 import { listXlsxSheetNames } from "./xlsx-sources";
 
 export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
@@ -41,6 +45,7 @@ export interface DataQuerySourceIntrospection {
 }
 
 export interface DataQuerySourceShape {
+  headerMappings?: DataHeaderMappingEntry[];
   range?: string;
   source?: string;
 }
@@ -69,6 +74,11 @@ function escapeSqlString(value: string): string {
 
 export function quoteSqlIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
+}
+
+interface QueryRelationColumn {
+  name: string;
+  type: string;
 }
 
 function columnNameToNumber(value: string): number {
@@ -322,10 +332,21 @@ export async function prepareDataQuerySource(
 
   try {
     await connection.run(
-      `create or replace temp view file as ${buildRelationSql(inputPath, format, {
+      `create or replace temp view file_source as ${buildRelationSql(inputPath, format, {
         range: selectedRange,
         source: selectedSource,
       })}`,
+    );
+    const relationColumns = await collectQueryRelationColumns(connection, "file_source");
+    const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
+      availableColumns: relationColumns.map((column) => column.name),
+      mappings: shape.headerMappings ?? [],
+    });
+    await connection.run(
+      `create or replace temp view file as ${buildPreparedFileProjectionSql(
+        relationColumns,
+        appliedHeaderMappings,
+      )}`,
     );
     return {
       selectedRange,
@@ -337,6 +358,42 @@ export async function prepareDataQuerySource(
       exitCode: 2,
     });
   }
+}
+
+async function collectQueryRelationColumns(
+  connection: DuckDBConnection,
+  relationName: string,
+): Promise<QueryRelationColumn[]> {
+  const reader = await connection.runAndReadAll(
+    `select * from ${quoteSqlIdentifier(relationName)} limit 0`,
+  );
+  assertResultSet(reader);
+  const columnNames = reader.deduplicatedColumnNames();
+  const columnTypes = reader.columnTypes();
+  return columnNames.map((name, index) => ({
+    name,
+    type: columnTypes[index]?.toString() ?? "UNKNOWN",
+  }));
+}
+
+function buildPreparedFileProjectionSql(
+  columns: readonly QueryRelationColumn[],
+  headerMappings: readonly DataHeaderMappingEntry[],
+): string {
+  const targetBySource = new Map(headerMappings.map((mapping) => [mapping.from, mapping.to]));
+  const selectList =
+    columns.length > 0
+      ? columns
+          .map((column) => {
+            const renamedTarget = targetBySource.get(column.name);
+            if (!renamedTarget) {
+              return quoteSqlIdentifier(column.name);
+            }
+            return `${quoteSqlIdentifier(column.name)} as ${quoteSqlIdentifier(renamedTarget)}`;
+          })
+          .join(", ")
+      : "*";
+  return `select ${selectList} from file_source`;
 }
 
 function assertResultSet(reader: DuckDBResultReader): void {
