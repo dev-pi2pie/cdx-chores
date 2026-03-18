@@ -42,6 +42,7 @@ export interface DataQueryOptions {
   pretty?: boolean;
   range?: string;
   rows?: number;
+  sourceIntrospectionCollector?: typeof collectDataQuerySourceIntrospection;
   source?: string;
   sql?: string;
   writeHeaderMapping?: string;
@@ -237,20 +238,25 @@ async function runCodexHeaderSuggestionFlow(
     headerSuggestionRunner?: DataHeaderSuggestionRunner;
     headerRow?: number;
     inputPath: string;
+    installMissingExtension?: boolean;
     overwrite?: boolean;
     range?: string;
+    sourceIntrospectionCollector?: typeof collectDataQuerySourceIntrospection;
     source?: string;
+    statusStream?: NodeJS.WritableStream;
     writeHeaderMapping?: string;
   },
 ): Promise<void> {
   const artifactPath = options.writeHeaderMapping?.trim()
     ? resolveFromCwd(runtime, options.writeHeaderMapping.trim())
     : join(runtime.cwd, generateDataHeaderMappingFileName());
+  const collectSourceIntrospection =
+    options.sourceIntrospectionCollector ?? collectDataQuerySourceIntrospection;
 
   let connection;
   try {
     connection = await createDuckDbConnection();
-    const introspection = await collectDataQuerySourceIntrospection(
+    const introspection = await collectSourceIntrospection(
       connection,
       options.inputPath,
       options.format,
@@ -260,6 +266,10 @@ async function runCodexHeaderSuggestionFlow(
         source: options.source,
       },
       DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
+      {
+        installMissingExtension: options.installMissingExtension,
+        statusStream: options.statusStream,
+      },
     );
     const suggestionResult = await suggestDataHeaderMappingsWithCodex({
       format: options.format,
@@ -346,10 +356,13 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       format,
       headerSuggestionRunner: options.headerSuggestionRunner,
       inputPath,
+      installMissingExtension: options.installMissingExtension,
       overwrite: options.overwrite,
       headerRow,
       range,
+      sourceIntrospectionCollector: options.sourceIntrospectionCollector,
       source,
+      statusStream: runtime.stderr,
       writeHeaderMapping: options.writeHeaderMapping,
     });
     return;

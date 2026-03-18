@@ -330,6 +330,57 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery forwards --install-missing-extension when reviewed header suggestions inspect extension-backed inputs", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const artifactPath = join(fixtureDir, "header-map.json");
+      const collectedOptions: Array<{
+        installMissingExtension?: boolean;
+        statusStream?: NodeJS.WritableStream;
+      }> = [];
+      const { runtime, stderr } = createActionTestRuntime();
+
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async () =>
+          JSON.stringify({
+            suggestions: [{ from: "column_1", to: "id" }],
+          }),
+        input: toRepoRelativePath(dataQueryFixturePath("multi.xlsx")),
+        installMissingExtension: true,
+        overwrite: true,
+        source: "Summary",
+        sourceIntrospectionCollector: async (
+          _connection,
+          _inputPath,
+          _format,
+          _shape,
+          _sampleRowLimit,
+          options = {},
+        ) => {
+          collectedOptions.push({
+            installMissingExtension: options.installMissingExtension,
+            statusStream: options.statusStream,
+          });
+          return {
+            columns: [{ name: "column_1", type: "BIGINT" }],
+            sampleRows: [{ column_1: "1" }],
+            selectedSource: "Summary",
+            truncated: false,
+          };
+        },
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(collectedOptions).toEqual([
+        {
+          installMissingExtension: true,
+          statusStream: runtime.stderr,
+        },
+      ]);
+      expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
   test("actionDataQuery reuses an accepted header-mapping artifact when it matches exactly", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");

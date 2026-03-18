@@ -653,8 +653,15 @@ export async function collectDataQuerySourceIntrospection(
   format: DataQueryInputFormat,
   shape: DataQuerySourceShape,
   sampleRowLimit: number,
+  options: {
+    installMissingExtension?: boolean;
+    statusStream?: NodeJS.WritableStream;
+  } = {},
 ): Promise<DataQuerySourceIntrospection> {
-  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, shape);
+  const preparedSource = await prepareDataQuerySource(connection, inputPath, format, shape, {
+    installMissingExtension: options.installMissingExtension,
+    statusStream: options.statusStream,
+  });
 
   try {
     const reader = await connection.streamAndReadUntil("select * from file", sampleRowLimit + 1);

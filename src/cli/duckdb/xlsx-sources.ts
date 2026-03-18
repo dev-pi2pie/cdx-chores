@@ -129,6 +129,12 @@ function decodeXmlEntities(value: string): string {
     .replaceAll("&amp;", "&");
 }
 
+function extractXmlAttribute(attributes: string, attributeName: string): string | undefined {
+  const escapedName = attributeName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`(?:^|\\s)${escapedName}\\s*=\\s*(['"])([\\s\\S]*?)\\1`).exec(attributes);
+  return typeof match?.[2] === "string" ? decodeXmlEntities(match[2]) : undefined;
+}
+
 interface XlsxWorkbookPackage {
   buffer: Buffer;
   entries: ZipEntryMeta[];
@@ -187,17 +193,38 @@ function listWorkbookSheetEntries(pkg: XlsxWorkbookPackage): XlsxWorkbookSheetEn
   );
 
   const targetByRelationshipId = new Map(
-    [...workbookRelsXml.matchAll(/<Relationship\b[^>]*\bId="([^"]+)"[^>]*\bTarget="([^"]+)"/g)].map(
-      (match) => [match[1] ?? "", normalizeZipTargetPath("xl/workbook.xml", match[2] ?? "")] as const,
-    ),
+    [...workbookRelsXml.matchAll(/<Relationship\b([^>]*)\/?>/g)]
+      .map((match) => {
+        const attributes = match[1] ?? "";
+        const relationshipId = extractXmlAttribute(attributes, "Id")?.trim() ?? "";
+        const target = extractXmlAttribute(attributes, "Target")?.trim() ?? "";
+        return relationshipId && target
+          ? ([relationshipId, normalizeZipTargetPath("xl/workbook.xml", target)] as const)
+          : undefined;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry)),
   );
 
-  const sheets = [...workbookXml.matchAll(/<sheet\b[^>]*\bname="([^"]+)"[^>]*\br:id="([^"]+)"/g)].map(
-    (match) => ({
-      name: decodeXmlEntities(match[1] ?? ""),
-      relationshipId: match[2] ?? "",
-    }),
-  );
+  const sheets = [...workbookXml.matchAll(/<sheet\b([^>]*)\/?>/g)]
+    .map((match) => {
+      const attributes = match[1] ?? "";
+      const name = extractXmlAttribute(attributes, "name")?.trim() ?? "";
+      const relationshipId = extractXmlAttribute(attributes, "r:id")?.trim() ?? "";
+      return name && relationshipId
+        ? {
+            name,
+            relationshipId,
+          }
+        : undefined;
+    })
+    .filter(
+      (
+        entry,
+      ): entry is {
+        name: string;
+        relationshipId: string;
+      } => Boolean(entry),
+    );
 
   const resolvedSheets = sheets.map((sheet) => ({
     name: sheet.name,
