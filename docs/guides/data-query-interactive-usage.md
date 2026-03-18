@@ -90,6 +90,12 @@ The first review surface stays intentionally small:
 
 Accepted suggestions are re-inspected before SQL authoring continues.
 
+Interactive review persistence:
+
+- reviewed source-shape and semantic header decisions stay in memory for the current interactive session
+- interactive mode does not currently write source-shape or header-mapping JSON artifacts
+- use direct CLI reviewed flows when you want reusable artifact files
+
 ### Output rules
 
 Interactive output choices map directly to the non-interactive `data query` contract:

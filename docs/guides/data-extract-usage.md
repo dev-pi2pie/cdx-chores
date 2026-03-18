@@ -142,6 +142,12 @@ Current interactive flow:
 10. review the final write summary
 11. explicitly confirm materialization
 
+Interactive review persistence:
+
+- interactive reviewed source-shape and semantic header decisions are in-memory only for the current session
+- interactive mode does not currently write source-shape or header-mapping JSON artifacts
+- use direct CLI `--codex-suggest-shape` or `--codex-suggest-headers` when you want reusable reviewed artifacts
+
 ### Output rules
 
 - `--output <path>` is required for materialization runs

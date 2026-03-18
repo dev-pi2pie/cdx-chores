@@ -94,6 +94,11 @@ Interactive query review is smaller and in-memory:
 
 Accepted mappings trigger a re-inspection before SQL authoring continues.
 
+Important boundary:
+
+- interactive review does not currently write a persisted header-mapping artifact
+- direct CLI reviewed flows are still the path that produces reusable `data-header-mapping-<uid>.json` artifacts
+
 ### Rewrite Policy
 
 When the CLI rewrites an existing supported artifact version:
