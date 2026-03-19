@@ -310,6 +310,12 @@ Do not use `ts_structure_refactorer` to refactor all hotspots in one pass.
 
 - [x] shared data workflow helpers exist under `src/cli/data-workflows/` and direct callers become thinner composition layers
 
+### Follow-up Note
+
+- Remaining deferred Phase 2 items should be handled in:
+  - `docs/plans/jobs/2026-03-19-phase2-followup-source-shape-and-output-boundaries.md`
+- That follow-up exists specifically to reassess the two unchecked items after Phase 3 and Phase 4 stabilized the interactive and DuckDB query boundaries.
+
 ## Phase 3: Interactive data-query split
 
 ### Task Items

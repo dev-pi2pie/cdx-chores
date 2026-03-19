@@ -77,6 +77,10 @@ Execute Phase 2 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-
 
 These were kept out of Phase 2 because the current duplication was not yet strong enough to justify introducing shared modules for them.
 
+Follow-up location:
+
+- `docs/plans/jobs/2026-03-19-phase2-followup-source-shape-and-output-boundaries.md`
+
 ## Verification
 
 - `bunx tsc --noEmit`
