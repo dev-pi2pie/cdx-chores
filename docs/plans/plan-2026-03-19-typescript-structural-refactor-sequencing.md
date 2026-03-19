@@ -347,14 +347,14 @@ Do not use `ts_structure_refactorer` to refactor all hotspots in one pass.
 
 ### Task Items
 
-- [ ] convert `src/adapters/codex/document-rename-titles.ts` into a folder-based module
-- [ ] move file-type-specific extraction into extractor modules
-- [ ] keep prompt assembly and batch orchestration as separate modules
-- [ ] preserve the `suggestDocumentRenameTitlesWithCodex()` public surface
+- [x] convert `src/adapters/codex/document-rename-titles.ts` into a folder-based module
+- [x] move file-type-specific extraction into extractor modules
+- [x] keep prompt assembly and batch orchestration as separate modules
+- [x] preserve the `suggestDocumentRenameTitlesWithCodex()` public surface
 
 ### Deliverable
 
-- [ ] document rename extraction logic is organized by extractor type and orchestration concern
+- [x] document rename extraction logic is organized by extractor type and orchestration concern
 
 ## Phase 6: Rename/path/file utility cleanup
 
