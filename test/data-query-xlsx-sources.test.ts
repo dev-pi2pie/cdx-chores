@@ -8,6 +8,7 @@ import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../src/cli/duckdb/
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
 function createWorkbookWithInvalidCentralDirectoryOffset(): Buffer {
   const buffer = Buffer.alloc(22);
@@ -122,6 +123,28 @@ describe("xlsx source discovery", () => {
         lastRef: "B2",
         rowNumber: 2,
       });
+    });
+  });
+
+  test("listXlsxSheetNames and sheet snapshots surface the public stacked merged-band fixture", async () => {
+    await withTempFixtureDir("xlsx-sources", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const workbookPath = join(fixtureDir, "stacked-merged-band.xlsx");
+
+      await expect(listXlsxSheetNames(workbookPath)).resolves.toEqual(["Sheet1"]);
+
+      const snapshot = await collectXlsxSheetSnapshot(workbookPath, "Sheet1");
+
+      expect(snapshot.sheetName).toBe("Sheet1");
+      expect(snapshot.nonEmptyRowCount).toBeGreaterThan(0);
+      expect(snapshot.mergedRanges.slice(0, 6)).toEqual([
+        "A1:BS4",
+        "BG5:BR6",
+        "B7:D9",
+        "E7:AK9",
+        "AL7:AY9",
+        "AZ7:BR9",
+      ]);
     });
   });
 

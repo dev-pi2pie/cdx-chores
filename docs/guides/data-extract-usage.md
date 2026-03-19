@@ -165,10 +165,27 @@ Reset the public-safe manual smoke fixtures under `examples/playground/data-extr
 node scripts/generate-data-extract-fixtures.mjs reset
 ```
 
+Regenerate the dedicated hard merged-band workbook fixture:
+
+```bash
+node scripts/generate-stacked-merged-band-fixture.mjs reset
+```
+
+Current note:
+
+- `examples/playground/data-extract/stacked-merged-band.xlsx` is the public-safe repro for the remaining stacked merged-band Excel failure class
+- under the current contract, `--range B7:BR20 --header-row 7` still fails on that workbook and is intentionally preserved as a regression case until the shaping contract is extended
+
 Reset the fixture set into a custom directory:
 
 ```bash
 node scripts/generate-data-extract-fixtures.mjs reset --output-dir examples/playground/.tmp-tests/data-extract-smoke
+```
+
+Reset the dedicated hard merged-band workbook into a custom directory:
+
+```bash
+node scripts/generate-stacked-merged-band-fixture.mjs reset --output-dir examples/playground/.tmp-tests/data-extract-smoke
 ```
 
 ### DuckDB readiness

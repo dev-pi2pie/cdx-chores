@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 import { REPO_ROOT, runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
@@ -195,6 +196,39 @@ describe("CLI data extract command", () => {
       expect(await readFile(outputPath, "utf8")).toBe(
         "ID,question,status,notes\n101,Confirm tax residency,open,Email pending\n102,Collect withholding certificate,closed,Received\n103,Review dividend statement,open,Waiting on broker\n",
       );
+    });
+  });
+
+  test("keeps the public stacked merged-band workbook as a failing regression case", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const inputPath = join(fixtureDir, "stacked-merged-band.xlsx");
+      const outputPath = join(fixtureDir, "stacked-merged-band.clean.csv");
+
+      const result = runCli([
+        "data",
+        "extract",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "Sheet1",
+        "--range",
+        "B7:BR20",
+        "--header-row",
+        "7",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Failed to execute query");
+      expect(result.stderr).toContain("Failed to parse cell 'E10'");
+      expect(result.stderr).toContain("Does the customer need a follow-up call after the outage review?");
     });
   });
 
