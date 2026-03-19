@@ -81,6 +81,10 @@ Follow-up location:
 
 - `docs/plans/jobs/2026-03-19-phase2-followup-source-shape-and-output-boundaries.md`
 
+Follow-up status:
+
+- completed on 2026-03-19
+
 ## Verification
 
 - `bunx tsc --noEmit`

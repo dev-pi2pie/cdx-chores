@@ -1,4 +1,3 @@
-import { stat } from "node:fs/promises";
 import { confirm, input, select } from "@inquirer/prompts";
 import { extname } from "node:path";
 
@@ -15,6 +14,7 @@ import {
   loadDataPreviewSource,
 } from "../actions";
 import { maybeRenderDuckDbExtensionRemediationCommand } from "../data-workflows/duckdb-remediation";
+import { promptFileOutputTarget } from "../data-workflows/output";
 import {
   assertContainsFilterColumns,
   parseContainsFilterValue,
@@ -156,29 +156,21 @@ async function promptInteractiveExtractOutput(
     ],
   });
   const outputHint = formatDefaultOutputPathHint(runtime, inputPath, `.${outputFormat}`);
-
-  while (true) {
-    const outputPath =
-      (await promptOptionalOutputPathChoice({
-        message: `Output ${outputFormat.toUpperCase()} file`,
-        defaultHint: outputHint,
-        kind: "file",
-        ...pathPromptContext,
-        customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
-      })) ?? defaultOutputPath(inputPath, `.${outputFormat}`);
-    const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
-    try {
-      await stat(normalizedOutputPath);
-      const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-      if (overwrite) {
-        return { output: outputPath, outputFormat, overwrite };
-      }
-      printLine(runtime.stdout, "Choose a different output destination.");
-      continue;
-    } catch {
-      return { output: outputPath, outputFormat, overwrite: false };
-    }
-  }
+  const target = await promptFileOutputTarget({
+    runtime,
+    pathPromptContext,
+    message: `Output ${outputFormat.toUpperCase()} file`,
+    allowedExtensions: [`.${outputFormat}`],
+    invalidExtensionMessage: `Output file must end with .${outputFormat}.`,
+    defaultHint: outputHint,
+    customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
+    fallbackOutputPath: defaultOutputPath(inputPath, `.${outputFormat}`),
+  });
+  return {
+    output: target.output,
+    overwrite: target.overwrite,
+    outputFormat,
+  };
 }
 
 function renderInteractiveExtractWriteSummary(

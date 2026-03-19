@@ -5,6 +5,13 @@ import {
   resolveReusableHeaderMappingsForDataFlow,
   runCodexHeaderSuggestionFlow,
 } from "../data-workflows/header-mapping-flow";
+import {
+  buildSourceShapeFollowUpCommand,
+  classifySourceShapeSuggestionFailure,
+  isSourceShapeFormat,
+  renderSuggestedSourceShape,
+  resolveReusableSourceShapeForDataFlow,
+} from "../data-workflows/source-shape-flow";
 import { CliError } from "../errors";
 import { resolveFromCwd, writeTextFileSafe } from "../fs-utils";
 import type { CliRuntime } from "../types";
@@ -25,8 +32,6 @@ import {
   createDataSourceShapeArtifact,
   createSourceShapeInputReference,
   generateDataSourceShapeFileName,
-  readDataSourceShapeArtifact,
-  resolveReusableSourceShape,
   suggestDataSourceShapeWithCodex,
   type DataSourceShapeSuggestionRunner,
   writeDataSourceShapeArtifact,
@@ -160,32 +165,6 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
   }
 }
 
-function classifySourceShapeSuggestionFailure(message: string): { code: string; prefix: string } {
-  if (
-    /codex exec exited/i.test(message) ||
-    /missing optional dependency/i.test(message) ||
-    /spawn/i.test(message) ||
-    /enoent/i.test(message) ||
-    /auth/i.test(message) ||
-    /sign in/i.test(message) ||
-    /api key/i.test(message)
-  ) {
-    return {
-      code: "CODEX_UNAVAILABLE",
-      prefix: "Codex source-shape suggestions unavailable",
-    };
-  }
-
-  return {
-    code: "DATA_EXTRACT_SOURCE_SHAPE_SUGGESTION_FAILED",
-    prefix: "Codex source-shape suggestions failed",
-  };
-}
-
-function isSourceShapeFormat(format: DataQueryInputFormat): format is "excel" {
-  return format === "excel";
-}
-
 function renderHeaderSuggestionSummary(
   runtime: CliRuntime,
   mappings: readonly DataHeaderMappingEntry[],
@@ -239,46 +218,6 @@ function buildHeaderSuggestionFollowUpCommand(options: {
   return parts.join(" ");
 }
 
-function renderSourceShapeSuggestionSummary(
-  runtime: CliRuntime,
-  options: {
-    headerRow?: number;
-    range?: string;
-    reasoningSummary: string;
-  },
-): void {
-  printLine(runtime.stdout, "Suggested source shape");
-  printLine(runtime.stdout, "");
-  if (options.range) {
-    printLine(runtime.stdout, `- --range ${options.range}`);
-  }
-  if (options.headerRow !== undefined) {
-    printLine(runtime.stdout, `- --header-row ${options.headerRow}`);
-  }
-  printLine(runtime.stdout, `- reasoning: ${options.reasoningSummary}`);
-}
-
-function buildSourceShapeFollowUpCommand(options: {
-  artifactPath: string;
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-}): string {
-  const parts = [
-    "cdx-chores",
-    "data",
-    "extract",
-    JSON.stringify(displayPath(options.runtime, options.inputPath)),
-    "--input-format",
-    options.format,
-    "--source-shape",
-    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
-    "--output",
-    JSON.stringify("<output.csv|.tsv|.json>"),
-  ];
-  return parts.join(" ");
-}
-
 function orderMaterializedRows(
   columns: readonly string[],
   rows: ReadonlyArray<Record<string, unknown>>,
@@ -320,32 +259,6 @@ function stringifyMaterializedRows(options: {
     ),
   ];
   return stringifyDelimitedRows(tableRows, options.format);
-}
-
-async function resolveReusableSourceShapeForExtract(options: {
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-  source?: string;
-  sourceShapePath: string;
-}): Promise<{ headerRow?: number; range?: string; source: string }> {
-  if (!isSourceShapeFormat(options.format)) {
-    throw new CliError("--source-shape is only valid for Excel extract inputs.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-
-  const artifact = await readDataSourceShapeArtifact(options.sourceShapePath);
-  return resolveReusableSourceShape({
-    artifact,
-    currentInput: createSourceShapeInputReference({
-      cwd: options.runtime.cwd,
-      format: "excel",
-      inputPath: options.inputPath,
-      source: options.source?.trim() || artifact.input.source,
-    }),
-  });
 }
 
 async function runCodexSourceShapeSuggestionFlow(
@@ -421,10 +334,11 @@ async function runCodexSourceShapeSuggestionFlow(
       overwrite: options.overwrite,
     });
 
-    renderSourceShapeSuggestionSummary(runtime, {
+    renderSuggestedSourceShape(runtime, {
       headerRow: suggestionResult.shape.headerRow,
       range: suggestionResult.shape.range,
       reasoningSummary: suggestionResult.reasoningSummary,
+      stream: "stdout",
     });
     printLine(runtime.stderr, `Wrote source shape: ${displayPath(runtime, artifactPath)}`);
     printLine(
@@ -470,7 +384,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
   }
 
   const resolvedSourceShape = options.sourceShape?.trim()
-    ? await resolveReusableSourceShapeForExtract({
+    ? await resolveReusableSourceShapeForDataFlow({
         format,
         inputPath,
         runtime,

@@ -1,16 +1,12 @@
-import { stat } from "node:fs/promises";
-import { extname } from "node:path";
-
 import { confirm, input, select } from "@inquirer/prompts";
 
 import { actionDataQuery } from "../../actions";
 import { printLine } from "../../actions/shared";
 import { getCliColors } from "../../colors";
+import { promptFileOutputTarget } from "../../data-workflows/output";
 import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
 import type { DataQueryInputFormat } from "../../duckdb/query";
 import { CliError } from "../../errors";
-import { resolveFromCwd } from "../../fs-utils";
-import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import type { OutputPromptSelection } from "./types";
@@ -90,40 +86,21 @@ async function promptOutputSelection(
     };
   }
 
-  let outputPath = "";
-  let overwrite = false;
-  while (true) {
-    const nextPath = await promptRequiredPathWithConfig("Output file path", {
-      kind: "file",
-      ...pathPromptContext,
-    });
-    const extension = extname(nextPath).toLowerCase();
-    if (extension === ".json" || extension === ".csv") {
-      outputPath = nextPath;
-      const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
-      try {
-        await stat(normalizedOutputPath);
-        overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-        if (overwrite) {
-          break;
-        }
-        printLine(runtime.stdout, "Choose a different output file path.");
-        continue;
-      } catch {
-        overwrite = false;
-        break;
-      }
-    }
-    printLine(runtime.stdout, "Output file must end with .json or .csv.");
-  }
+  const target = await promptFileOutputTarget({
+    runtime,
+    pathPromptContext,
+    message: "Output file path",
+    allowedExtensions: [".json", ".csv"],
+    invalidExtensionMessage: "Output file must end with .json or .csv.",
+  });
 
-  const pretty = extname(outputPath).toLowerCase() === ".json"
+  const pretty = target.extension === ".json"
     ? await confirm({ message: "Pretty-print JSON?", default: true })
     : undefined;
 
   return {
-    output: outputPath,
-    overwrite,
+    output: target.output,
+    overwrite: target.overwrite,
     pretty,
   };
 }

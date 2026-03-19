@@ -10,6 +10,10 @@ import {
   type DataQueryInputFormat,
   type DataQuerySourceIntrospection,
 } from "../../duckdb/query";
+import {
+  formatSourceShapeFlags,
+  renderSuggestedSourceShape,
+} from "../../data-workflows/source-shape-flow";
 import { suggestDataSourceShapeWithCodex } from "../../duckdb/source-shape";
 import { collectXlsxSheetSnapshot } from "../../duckdb/xlsx-sources";
 import type { CliRuntime } from "../../types";
@@ -136,13 +140,6 @@ async function promptOptionalExcelHeaderRow(defaultValue = ""): Promise<number |
   return trimmed.length > 0 ? normalizeExcelHeaderRow(Number(trimmed)) : undefined;
 }
 
-function formatSourceShapeFlags(shape: { headerRow?: number; range?: string }): string {
-  return [
-    ...(shape.range ? [`--range ${shape.range}`] : []),
-    ...(shape.headerRow !== undefined ? [`--header-row ${shape.headerRow}`] : []),
-  ].join(" ");
-}
-
 async function promptRequiredSourceShapeState(defaultShape: {
   headerRow?: number;
   range?: string;
@@ -159,26 +156,6 @@ async function promptRequiredSourceShapeState(defaultShape: {
       };
     }
   }
-}
-
-function renderSuggestedSourceShape(
-  runtime: CliRuntime,
-  options: {
-    headerRow?: number;
-    range?: string;
-    reasoningSummary: string;
-  },
-): void {
-  printLine(runtime.stderr, "");
-  printLine(runtime.stderr, "Suggested source shape");
-  printLine(runtime.stderr, "");
-  if (options.range) {
-    printLine(runtime.stderr, `- --range ${options.range}`);
-  }
-  if (options.headerRow !== undefined) {
-    printLine(runtime.stderr, `- --header-row ${options.headerRow}`);
-  }
-  printLine(runtime.stderr, `- reasoning: ${options.reasoningSummary}`);
 }
 
 export function renderIntrospectionSummary(
@@ -370,6 +347,7 @@ export async function collectInteractiveIntrospection(options: {
       headerRow: suggestionResult.shape.headerRow,
       range: suggestionResult.shape.range,
       reasoningSummary: suggestionResult.reasoningSummary,
+      stream: "stderr",
     });
 
     const reviewAction = await select<"accept" | "edit" | "keep">({

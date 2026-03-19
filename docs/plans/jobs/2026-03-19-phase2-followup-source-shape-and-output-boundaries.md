@@ -1,7 +1,8 @@
 ---
 title: "Phase 2 follow-up for source-shape and output boundaries"
 created-date: 2026-03-19
-status: draft
+modified-date: 2026-03-19
+status: completed
 agent: codex
 ---
 
@@ -88,3 +89,34 @@ Possible destination if justified:
 ## Related Research
 
 - `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+
+## What Changed
+
+- Added `src/cli/data-workflows/source-shape-flow.ts` and moved shared source-shape helpers there:
+  - source-shape suggestion failure classification
+  - accepted source-shape artifact reuse for extract flows
+  - suggested source-shape rendering
+  - source-shape flag formatting
+  - direct CLI follow-up command rendering
+- Rewired:
+  - `src/cli/actions/data-extract.ts`
+  - `src/cli/interactive/data-query/source-shape.ts`
+- Added `src/cli/data-workflows/output.ts` for shared interactive file-target and overwrite-decision handling.
+- Rewired:
+  - `src/cli/interactive/data.ts`
+  - `src/cli/interactive/data-query/execution.ts`
+
+## Outcome
+
+- the deferred source-shape item is now resolved
+- the deferred output/write-decision item is now resolved
+- both extractions landed as workflow-owned helpers rather than generic utility buckets
+
+## Verification
+
+- `bunx tsc --noEmit`
+- `bun test test/cli-actions-data-query.test.ts`
+- `bun test test/cli-actions-data-extract.test.ts`
+- `bun test test/cli-command-data-query.test.ts`
+- `bun test test/cli-command-data-extract.test.ts`
+- `bun test test/cli-interactive-routing.test.ts`
