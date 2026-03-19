@@ -254,7 +254,7 @@ function mergeDataHeaderMappingArtifacts(
       ...next.input,
     },
     mappings: next.mappings.map((mapping) => ({
-      ...(existingMappingsByFrom.get(mapping.from) ?? {}),
+      ...existingMappingsByFrom.get(mapping.from),
       ...mapping,
     })),
     metadata: {

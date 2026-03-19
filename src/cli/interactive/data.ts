@@ -38,7 +38,7 @@ import type { DataInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 import { CliError } from "../errors";
 import { displayPath, printLine } from "../actions/shared";
-import { createDuckDbConnection, listDataQuerySources, type DataQueryInputFormat } from "../duckdb/query";
+import { createDuckDbConnection, listDataQuerySources } from "../duckdb/query";
 import { defaultOutputPath, resolveFromCwd } from "../fs-utils";
 
 type LightweightInteractiveDataFormat = "csv" | "tsv" | "json";

@@ -1,4 +1,4 @@
-import { extname, basename } from "node:path";
+import { extname } from "node:path";
 import { readFile } from "node:fs/promises";
 
 import {
@@ -9,7 +9,6 @@ import {
   startCodexReadOnlyThread,
   summarizeBatchErrors,
 } from "../shared";
-import { parseTomlFrontmatter } from "../../../markdown/toml-simple";
 import {
   DOC_DOCX_EXTENSIONS,
   DOC_HTML_EXTENSIONS,

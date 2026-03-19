@@ -165,59 +165,6 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
   }
 }
 
-function renderHeaderSuggestionSummary(
-  runtime: CliRuntime,
-  mappings: readonly DataHeaderMappingEntry[],
-): void {
-  printLine(runtime.stdout, "Suggested headers");
-  printLine(runtime.stdout, "");
-
-  if (mappings.length === 0) {
-    printLine(runtime.stdout, "(no semantic header changes suggested)");
-    return;
-  }
-
-  for (const mapping of mappings) {
-    const details = [
-      `${mapping.from} -> ${mapping.to}`,
-      typeof mapping.sample === "string" ? `sample: ${JSON.stringify(mapping.sample)}` : undefined,
-      typeof mapping.inferredType === "string" ? `type: ${mapping.inferredType}` : undefined,
-    ].filter((value): value is string => Boolean(value));
-    printLine(runtime.stdout, `- ${details.join("  ")}`);
-  }
-}
-
-function buildHeaderSuggestionFollowUpCommand(options: {
-  artifactPath: string;
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-  shape: {
-    headerRow?: number;
-    range?: string;
-    source?: string;
-  };
-}): string {
-  const parts = [
-    "cdx-chores",
-    "data",
-    "extract",
-    JSON.stringify(displayPath(options.runtime, options.inputPath)),
-    "--input-format",
-    options.format,
-    ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
-    ...(options.shape.range ? ["--range", options.shape.range] : []),
-    ...(options.shape.headerRow !== undefined
-      ? ["--header-row", String(options.shape.headerRow)]
-      : []),
-    "--header-mapping",
-    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
-    "--output",
-    JSON.stringify("<output.csv|.tsv|.json>"),
-  ];
-  return parts.join(" ");
-}
-
 function orderMaterializedRows(
   columns: readonly string[],
   rows: ReadonlyArray<Record<string, unknown>>,

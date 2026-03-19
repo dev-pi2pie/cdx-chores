@@ -304,7 +304,7 @@ describe("cli action modules: data query", () => {
       const artifactPath = join(fixtureDir, "header-map.json");
       await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
 
-      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stdout, stderr } = createActionTestRuntime();
       await actionDataQuery(runtime, {
         codexSuggestHeaders: true,
         headerSuggestionRunner: async ({ prompt }) => {

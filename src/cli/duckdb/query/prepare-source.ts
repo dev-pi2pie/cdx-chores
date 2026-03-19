@@ -1,6 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 
-import { stringifyPreviewValue } from "../../data-preview/normalize";
 import { CliError } from "../../errors";
 import {
   normalizeAndValidateAcceptedHeaderMappings,
