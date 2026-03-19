@@ -2,7 +2,7 @@
 title: "Big merged-cell workbook shaping gap"
 created-date: 2026-03-19
 modified-date: 2026-03-19
-status: in-progress
+status: completed
 agent: codex
 ---
 

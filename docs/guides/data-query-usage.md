@@ -13,6 +13,8 @@ Current boundary:
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
 - explicit Excel shaping is available through `--range <A1:Z99>`
+- explicit Excel body-start selection is available through `--body-start-row <n>`
+- explicit Excel header selection is available through `--header-row <n>`
 - accepted semantic header renames can be reused through `--header-mapping <path>`
 - reviewed semantic header suggestions can be requested through `--codex-suggest-headers`
 - default output: bounded terminal table
@@ -23,8 +25,8 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-mapping <path>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
-cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -43,6 +45,7 @@ cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select s
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
+cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
 cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --sql "select id, status from file order by id"
 ```
@@ -57,12 +60,21 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 `--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
 Other input formats reject `--range`.
 
+`--body-start-row <n>` and `--header-row <n>` are also valid only for Excel inputs:
+
+- both use absolute worksheet row numbering
+- `body-start-row` marks where logical body rows begin
+- when `--range` is present, each row must fall inside that rectangle
+- when both rows are present, `body-start-row` must be greater than `header-row`
+- `body-start-row` changes import-time shaping instead of acting as a later SQL filter
+
 Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
+cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 ```
 
 ### Header review and reuse
@@ -80,7 +92,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source` and `range` must also match exactly when present
+- optional `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
 
 Single-object inputs reject `--source`.
 

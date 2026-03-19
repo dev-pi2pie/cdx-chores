@@ -73,6 +73,7 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - Excel requires choosing a sheet
 - Excel also supports optional `range` shaping before SQL authoring
 - if whole-sheet Excel introspection looks structurally suspicious, the flow can keep the current shape, accept a manual range, or ask Codex to suggest shaping before continuing
+- reviewed source-shape suggestions can now include `body-start-row` when a merged header band needs an explicit body boundary
 - merged-sheet whole-sheet views that collapse into one visible column can also trigger reviewed shaping before SQL authoring
 - the selected source is always exposed to SQL as the logical table `file`
 
@@ -93,6 +94,7 @@ Accepted suggestions are re-inspected before SQL authoring continues.
 Interactive review persistence:
 
 - reviewed source-shape and semantic header decisions stay in memory for the current interactive session
+- accepted in-memory source shapes may include `range`, `header-row`, and `body-start-row`
 - interactive mode does not currently write source-shape or header-mapping JSON artifacts
 - use direct CLI reviewed flows when you want reusable artifact files
 

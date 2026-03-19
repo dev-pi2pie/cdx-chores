@@ -2,7 +2,7 @@
 title: "Big merged-cell source-shape follow-up"
 created-date: 2026-03-19
 modified-date: 2026-03-19
-status: active
+status: completed
 agent: codex
 ---
 
@@ -299,11 +299,22 @@ Implementation result:
 
 ### Phase 6: Docs and verification
 
-- [ ] update `docs/guides/data-extract-usage.md`
-- [ ] update `docs/guides/data-query-usage.md` if the CLI surface changes there
-- [ ] update any reviewed source-shape behavior docs that mention accepted shape fields
-- [ ] verify the hard merged workbook against source, tests, and built `dist`
-- [ ] verify existing public header-band fixtures still work
+- [x] update `docs/guides/data-extract-usage.md`
+- [x] update `docs/guides/data-query-usage.md` if the CLI surface changes there
+- [x] update any reviewed source-shape behavior docs that mention accepted shape fields
+- [x] verify the hard merged workbook against source, tests, and built `dist`
+- [x] verify existing public header-band fixtures still work
+
+### Phase 6 checkpoint
+
+The user-facing docs now match the shipped shaping contract.
+
+Documentation result:
+
+- updated `docs/guides/data-extract-usage.md` for `--body-start-row`, widened reviewed source-shape behavior, and the stacked merged-band success path
+- updated `docs/guides/data-query-usage.md`, `docs/guides/data-query-codex-usage.md`, and `docs/guides/data-query-interactive-usage.md` so query, Codex drafting, and interactive query docs expose the new row-shaping field
+- updated `docs/guides/data-schema-and-mapping-usage.md` so strict header-mapping artifact matching now includes optional `bodyStartRow`
+- verified the hard workbook and existing public header-band fixtures through targeted tests and a fresh build
 
 ## Verification
 
