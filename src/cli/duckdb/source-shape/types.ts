@@ -11,6 +11,7 @@ export interface DataSourceShapeInputReference {
 }
 
 export interface DataSourceShapeSelection {
+  bodyStartRow?: number;
   headerRow?: number;
   range?: string;
 }

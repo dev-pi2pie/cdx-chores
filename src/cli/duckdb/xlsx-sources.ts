@@ -361,7 +361,7 @@ export async function collectXlsxSheetSnapshot(
 
     for (const rowMatch of worksheetXml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
       const rowXml = rowMatch[1] ?? "";
-      for (const cellMatch of rowXml.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
+      for (const cellMatch of rowXml.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
         const attributes = cellMatch[1] ?? "";
         const cellXml = cellMatch[2] ?? "";
         const ref = /(?:^|\s)r="([^"]+)"/.exec(attributes)?.[1]?.trim() ?? "";

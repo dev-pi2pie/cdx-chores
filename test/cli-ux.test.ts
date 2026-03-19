@@ -167,6 +167,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
+    expect(result.stdout).toContain("--body-start-row <value>");
     expect(result.stdout).toContain("--header-row <value>");
     expect(result.stdout).toContain("--header-mapping <path>");
     expect(result.stdout).toContain("--codex-suggest-headers");
@@ -186,6 +187,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
+    expect(result.stdout).toContain("--body-start-row <value>");
     expect(result.stdout).toContain("--header-row <value>");
     expect(result.stdout).toContain("--source-shape <path>");
     expect(result.stdout).toContain("--codex-suggest-shape");
@@ -221,6 +223,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
+    expect(result.stdout).toContain("--body-start-row <value>");
     expect(result.stdout).toContain("--header-row <value>");
     expect(result.stdout).toContain("--print-sql");
   });

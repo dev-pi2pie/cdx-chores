@@ -1,7 +1,7 @@
 import { basename, resolve } from "node:path";
 
 import { appendAll } from "../utils";
-import { formatPathForDisplay } from "./fs-utils";
+import { formatPathForDisplay } from "./path-utils";
 import type { RenamePlanCsvRow } from "./rename-plan-csv";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 

@@ -2,7 +2,7 @@ import { readdir } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 
 import { writeRenamePlanCsv } from "../../rename-plan-csv";
-import { applyPlannedRenames } from "../../fs-utils";
+import { applyPlannedRenames } from "../../rename/apply";
 import type { CliRuntime, PlannedRename } from "../../types";
 import { CliError } from "../../errors";
 import { assertNonEmpty, displayPath, printLine } from "../shared";

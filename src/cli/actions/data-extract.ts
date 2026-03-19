@@ -1,8 +1,21 @@
 import { extname, join } from "node:path";
 
 import { stringifyDelimitedRows, type DelimitedFormat } from "../../utils/delimited";
+import {
+  resolveReusableHeaderMappingsForDataFlow,
+  runCodexHeaderSuggestionFlow,
+} from "../data-workflows/header-mapping-flow";
+import {
+  buildSourceShapeHeaderSuggestionFollowUpCommand,
+  buildSourceShapeFollowUpCommand,
+  classifySourceShapeSuggestionFailure,
+  isSourceShapeFormat,
+  renderSuggestedSourceShape,
+  resolveReusableSourceShapeForDataFlow,
+} from "../data-workflows/source-shape-flow";
 import { CliError } from "../errors";
-import { resolveFromCwd, writeTextFileSafe } from "../fs-utils";
+import { writeTextFileSafe } from "../file-io";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import {
   collectDataQuerySourceIntrospection,
@@ -13,23 +26,14 @@ import {
   prepareDataQuerySource,
 } from "../duckdb/query";
 import {
-  createDataHeaderMappingArtifact,
-  createHeaderMappingInputReference,
-  generateDataHeaderMappingFileName,
-  readDataHeaderMappingArtifact,
-  resolveReusableHeaderMappings,
-  suggestDataHeaderMappingsWithCodex,
   type DataHeaderMappingEntry,
   type DataHeaderSuggestionRunner,
-  writeDataHeaderMappingArtifact,
 } from "../duckdb/header-mapping";
 import { collectXlsxSheetSnapshot } from "../duckdb/xlsx-sources";
 import {
   createDataSourceShapeArtifact,
   createSourceShapeInputReference,
   generateDataSourceShapeFileName,
-  readDataSourceShapeArtifact,
-  resolveReusableSourceShape,
   suggestDataSourceShapeWithCodex,
   type DataSourceShapeSuggestionRunner,
   writeDataSourceShapeArtifact,
@@ -37,6 +41,7 @@ import {
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 
 export interface DataExtractOptions {
+  bodyStartRow?: number;
   codexSuggestShape?: boolean;
   codexSuggestHeaders?: boolean;
   headerMapping?: string;
@@ -102,6 +107,13 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
     });
   }
 
+  if (options.codexSuggestShape && options.bodyStartRow !== undefined) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --body-start-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (options.codexSuggestHeaders && options.headerMapping) {
     throw new CliError("--codex-suggest-headers cannot be used together with --header-mapping.", {
       code: "INVALID_INPUT",
@@ -151,6 +163,13 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
     });
   }
 
+  if (options.sourceShape?.trim() && options.bodyStartRow !== undefined) {
+    throw new CliError("--source-shape cannot be used together with --body-start-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (!options.codexSuggestHeaders && !options.codexSuggestShape && !normalizedOutput) {
     throw new CliError("--output is required for data extract materialization runs.", {
       code: "INVALID_INPUT",
@@ -161,147 +180,6 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
   if (normalizedOutput) {
     normalizeOutputFormat(normalizedOutput);
   }
-}
-
-function classifyHeaderSuggestionFailure(message: string): { code: string; prefix: string } {
-  if (
-    /codex exec exited/i.test(message) ||
-    /missing optional dependency/i.test(message) ||
-    /spawn/i.test(message) ||
-    /enoent/i.test(message) ||
-    /auth/i.test(message) ||
-    /sign in/i.test(message) ||
-    /api key/i.test(message)
-  ) {
-    return {
-      code: "CODEX_UNAVAILABLE",
-      prefix: "Codex header suggestions unavailable",
-    };
-  }
-
-  return {
-    code: "DATA_EXTRACT_HEADER_SUGGESTION_FAILED",
-    prefix: "Codex header suggestions failed",
-  };
-}
-
-function classifySourceShapeSuggestionFailure(message: string): { code: string; prefix: string } {
-  if (
-    /codex exec exited/i.test(message) ||
-    /missing optional dependency/i.test(message) ||
-    /spawn/i.test(message) ||
-    /enoent/i.test(message) ||
-    /auth/i.test(message) ||
-    /sign in/i.test(message) ||
-    /api key/i.test(message)
-  ) {
-    return {
-      code: "CODEX_UNAVAILABLE",
-      prefix: "Codex source-shape suggestions unavailable",
-    };
-  }
-
-  return {
-    code: "DATA_EXTRACT_SOURCE_SHAPE_SUGGESTION_FAILED",
-    prefix: "Codex source-shape suggestions failed",
-  };
-}
-
-function isSourceShapeFormat(format: DataQueryInputFormat): format is "excel" {
-  return format === "excel";
-}
-
-function renderHeaderSuggestionSummary(
-  runtime: CliRuntime,
-  mappings: readonly DataHeaderMappingEntry[],
-): void {
-  printLine(runtime.stdout, "Suggested headers");
-  printLine(runtime.stdout, "");
-
-  if (mappings.length === 0) {
-    printLine(runtime.stdout, "(no semantic header changes suggested)");
-    return;
-  }
-
-  for (const mapping of mappings) {
-    const details = [
-      `${mapping.from} -> ${mapping.to}`,
-      typeof mapping.sample === "string" ? `sample: ${JSON.stringify(mapping.sample)}` : undefined,
-      typeof mapping.inferredType === "string" ? `type: ${mapping.inferredType}` : undefined,
-    ].filter((value): value is string => Boolean(value));
-    printLine(runtime.stdout, `- ${details.join("  ")}`);
-  }
-}
-
-function buildHeaderSuggestionFollowUpCommand(options: {
-  artifactPath: string;
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-  shape: {
-    headerRow?: number;
-    range?: string;
-    source?: string;
-  };
-}): string {
-  const parts = [
-    "cdx-chores",
-    "data",
-    "extract",
-    JSON.stringify(displayPath(options.runtime, options.inputPath)),
-    "--input-format",
-    options.format,
-    ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
-    ...(options.shape.range ? ["--range", options.shape.range] : []),
-    ...(options.shape.headerRow !== undefined
-      ? ["--header-row", String(options.shape.headerRow)]
-      : []),
-    "--header-mapping",
-    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
-    "--output",
-    JSON.stringify("<output.csv|.tsv|.json>"),
-  ];
-  return parts.join(" ");
-}
-
-function renderSourceShapeSuggestionSummary(
-  runtime: CliRuntime,
-  options: {
-    headerRow?: number;
-    range?: string;
-    reasoningSummary: string;
-  },
-): void {
-  printLine(runtime.stdout, "Suggested source shape");
-  printLine(runtime.stdout, "");
-  if (options.range) {
-    printLine(runtime.stdout, `- --range ${options.range}`);
-  }
-  if (options.headerRow !== undefined) {
-    printLine(runtime.stdout, `- --header-row ${options.headerRow}`);
-  }
-  printLine(runtime.stdout, `- reasoning: ${options.reasoningSummary}`);
-}
-
-function buildSourceShapeFollowUpCommand(options: {
-  artifactPath: string;
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-}): string {
-  const parts = [
-    "cdx-chores",
-    "data",
-    "extract",
-    JSON.stringify(displayPath(options.runtime, options.inputPath)),
-    "--input-format",
-    options.format,
-    "--source-shape",
-    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
-    "--output",
-    JSON.stringify("<output.csv|.tsv|.json>"),
-  ];
-  return parts.join(" ");
 }
 
 function orderMaterializedRows(
@@ -347,56 +225,6 @@ function stringifyMaterializedRows(options: {
   return stringifyDelimitedRows(tableRows, options.format);
 }
 
-async function resolveReusableHeaderMappingsForExtract(options: {
-  format: DataQueryInputFormat;
-  headerMappingPath: string;
-  inputPath: string;
-  runtime: CliRuntime;
-  shape: {
-    headerRow?: number;
-    range?: string;
-    source?: string;
-  };
-}): Promise<DataHeaderMappingEntry[]> {
-  const artifact = await readDataHeaderMappingArtifact(options.headerMappingPath);
-  const currentInput = createHeaderMappingInputReference({
-    cwd: options.runtime.cwd,
-    format: options.format,
-    inputPath: options.inputPath,
-    shape: options.shape,
-  });
-  return resolveReusableHeaderMappings({
-    artifact,
-    currentInput,
-  });
-}
-
-async function resolveReusableSourceShapeForExtract(options: {
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-  source?: string;
-  sourceShapePath: string;
-}): Promise<{ headerRow?: number; range?: string; source: string }> {
-  if (!isSourceShapeFormat(options.format)) {
-    throw new CliError("--source-shape is only valid for Excel extract inputs.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-
-  const artifact = await readDataSourceShapeArtifact(options.sourceShapePath);
-  return resolveReusableSourceShape({
-    artifact,
-    currentInput: createSourceShapeInputReference({
-      cwd: options.runtime.cwd,
-      format: "excel",
-      inputPath: options.inputPath,
-      source: options.source?.trim() || artifact.input.source,
-    }),
-  });
-}
-
 async function runCodexSourceShapeSuggestionFlow(
   runtime: CliRuntime,
   options: {
@@ -440,6 +268,7 @@ async function runCodexSourceShapeSuggestionFlow(
         currentIntrospection,
         sheetSnapshot,
       },
+      currentBodyStartRow: currentIntrospection.selectedBodyStartRow,
       currentHeaderRow: currentIntrospection.selectedHeaderRow,
       currentRange: currentIntrospection.selectedRange,
       runner: options.sourceShapeSuggestionRunner,
@@ -470,15 +299,17 @@ async function runCodexSourceShapeSuggestionFlow(
       overwrite: options.overwrite,
     });
 
-    renderSourceShapeSuggestionSummary(runtime, {
+    renderSuggestedSourceShape(runtime, {
+      bodyStartRow: suggestionResult.shape.bodyStartRow,
       headerRow: suggestionResult.shape.headerRow,
       range: suggestionResult.shape.range,
       reasoningSummary: suggestionResult.reasoningSummary,
+      stream: "stdout",
     });
     printLine(runtime.stderr, `Wrote source shape: ${displayPath(runtime, artifactPath)}`);
     printLine(
       runtime.stderr,
-      "Review the shape artifact, then rerun with --source-shape and --output to materialize the shaped table.",
+      "Review the shape artifact, then rerun with --source-shape to replay the accepted source interpretation. If the replayed columns are still positional or generic, run --codex-suggest-headers after --source-shape before final extraction.",
     );
     printLine(
       runtime.stderr,
@@ -489,93 +320,13 @@ async function runCodexSourceShapeSuggestionFlow(
         runtime,
       }),
     );
-  } finally {
-    connection?.closeSync();
-  }
-}
-
-async function runCodexHeaderSuggestionFlow(
-  runtime: CliRuntime,
-  options: {
-    format: DataQueryInputFormat;
-    headerSuggestionRunner?: DataHeaderSuggestionRunner;
-    headerRow?: number;
-    inputPath: string;
-    overwrite?: boolean;
-    range?: string;
-    source?: string;
-    writeHeaderMapping?: string;
-  },
-): Promise<void> {
-  const artifactPath = options.writeHeaderMapping?.trim()
-    ? resolveFromCwd(runtime, options.writeHeaderMapping.trim())
-    : join(runtime.cwd, generateDataHeaderMappingFileName());
-
-  let connection;
-  try {
-    connection = await createDuckDbConnection();
-    const introspection = await collectDataQuerySourceIntrospection(
-      connection,
-      options.inputPath,
-      options.format,
-      {
-        headerRow: options.headerRow,
-        range: options.range,
-        source: options.source,
-      },
-      DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS,
-    );
-    const suggestionResult = await suggestDataHeaderMappingsWithCodex({
-      format: options.format,
-      introspection,
-      runner: options.headerSuggestionRunner,
-      workingDirectory: runtime.cwd,
-    });
-
-    if (suggestionResult.errorMessage) {
-      const failure = classifyHeaderSuggestionFailure(suggestionResult.errorMessage);
-      throw new CliError(`${failure.prefix}: ${suggestionResult.errorMessage}`, {
-        code: failure.code,
-        exitCode: 2,
-      });
-    }
-
-    const artifact = createDataHeaderMappingArtifact({
-      input: createHeaderMappingInputReference({
-        cwd: runtime.cwd,
-        format: options.format,
-        inputPath: options.inputPath,
-        shape: {
-          headerRow: options.headerRow,
-          range: options.range,
-          source: options.source,
-        },
-      }),
-      mappings: suggestionResult.mappings,
-      now: runtime.now(),
-    });
-    await writeDataHeaderMappingArtifact(artifactPath, artifact, {
-      overwrite: options.overwrite,
-    });
-
-    renderHeaderSuggestionSummary(runtime, suggestionResult.mappings);
-    printLine(runtime.stderr, `Wrote header mapping: ${displayPath(runtime, artifactPath)}`);
     printLine(
       runtime.stderr,
-      "Review the mapping, then rerun with --header-mapping and --output to materialize the shaped table.",
-    );
-    printLine(
-      runtime.stderr,
-      buildHeaderSuggestionFollowUpCommand({
+      buildSourceShapeHeaderSuggestionFollowUpCommand({
         artifactPath,
         format: options.format,
         inputPath: options.inputPath,
         runtime,
-        shape: {
-          headerRow: options.headerRow,
-          range: options.range,
-          source: options.source,
-        },
       }),
     );
   } finally {
@@ -591,6 +342,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   const explicitRange = options.range?.trim() || undefined;
   const explicitSource = options.source?.trim() || undefined;
@@ -608,7 +360,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
   }
 
   const resolvedSourceShape = options.sourceShape?.trim()
-    ? await resolveReusableSourceShapeForExtract({
+    ? await resolveReusableSourceShapeForDataFlow({
         format,
         inputPath,
         runtime,
@@ -617,32 +369,62 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
       })
     : undefined;
   const range = resolvedSourceShape?.range ?? explicitRange;
+  const effectiveBodyStartRow = resolvedSourceShape?.bodyStartRow ?? bodyStartRow;
   const effectiveHeaderRow = resolvedSourceShape?.headerRow ?? headerRow;
   const source = resolvedSourceShape?.source ?? explicitSource;
 
   if (options.codexSuggestHeaders) {
-    await runCodexHeaderSuggestionFlow(runtime, {
-      format,
-      headerSuggestionRunner: options.headerSuggestionRunner,
-      headerRow: effectiveHeaderRow,
-      inputPath,
-      overwrite: options.overwrite,
-      range,
-      source,
-      writeHeaderMapping: options.writeHeaderMapping,
-    });
+    const connection = await createDuckDbConnection();
+    try {
+      await runCodexHeaderSuggestionFlow({
+        runtime,
+        format,
+        inputPath,
+        shape: {
+          bodyStartRow: effectiveBodyStartRow,
+          headerRow: effectiveHeaderRow,
+          range,
+          source,
+        },
+        overwrite: options.overwrite,
+        writeHeaderMapping: options.writeHeaderMapping,
+        headerSuggestionRunner: options.headerSuggestionRunner,
+        collectIntrospection: async () =>
+          await collectDataQuerySourceIntrospection(
+            connection,
+            inputPath,
+            format,
+            {
+              bodyStartRow: effectiveBodyStartRow,
+              headerRow: effectiveHeaderRow,
+              range,
+              source,
+            },
+            DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS,
+          ),
+        failureCode: "DATA_EXTRACT_HEADER_SUGGESTION_FAILED",
+        failurePrefix: "Codex header suggestions failed",
+        reviewMessage:
+          "Review the mapping, then rerun with --header-mapping and --output to materialize the shaped table.",
+        followUpCommandPath: ["data", "extract"],
+        followUpTailArgs: ["--output", JSON.stringify("<output.csv|.tsv|.json>")],
+      });
+    } finally {
+      connection.closeSync();
+    }
     return;
   }
 
   const resolvedHeaderMappings = options.headerMappings
     ? options.headerMappings.map((mapping) => ({ ...mapping }))
     : options.headerMapping?.trim()
-      ? await resolveReusableHeaderMappingsForExtract({
+      ? await resolveReusableHeaderMappingsForDataFlow({
           format,
           headerMappingPath: resolveFromCwd(runtime, options.headerMapping.trim()),
           inputPath,
           runtime,
           shape: {
+            ...(effectiveBodyStartRow !== undefined ? { bodyStartRow: effectiveBodyStartRow } : {}),
             ...(effectiveHeaderRow !== undefined ? { headerRow: effectiveHeaderRow } : {}),
             range,
             source,
@@ -658,6 +440,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
       inputPath,
       format,
       {
+        bodyStartRow: effectiveBodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow: effectiveHeaderRow,
         range,

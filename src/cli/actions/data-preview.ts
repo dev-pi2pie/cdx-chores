@@ -1,4 +1,5 @@
-import { readTextFileRequired, resolveFromCwd } from "../fs-utils";
+import { readTextFileRequired } from "../file-io";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { printLine, assertNonEmpty, ensureFileExists } from "./shared";
 import {

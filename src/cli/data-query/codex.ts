@@ -122,6 +122,9 @@ export function buildDataQueryCodexIntentEditorTemplate(options: {
     ...(options.introspection.selectedRange
       ? [`# Range: ${options.introspection.selectedRange}`]
       : []),
+    ...(options.introspection.selectedBodyStartRow !== undefined
+      ? [`# Body start row: ${options.introspection.selectedBodyStartRow}`]
+      : []),
     ...(options.introspection.selectedHeaderRow !== undefined
       ? [`# Header row: ${options.introspection.selectedHeaderRow}`]
       : []),
@@ -162,6 +165,11 @@ export function buildDataQueryCodexPrompt(options: {
     `Detected format: ${options.format}`,
     `Selected source: ${options.introspection.selectedSource ?? "(implicit single source)"}`,
     `Selected range: ${options.introspection.selectedRange ?? "(whole source)"}`,
+    `Selected body start row: ${
+      options.introspection.selectedBodyStartRow !== undefined
+        ? String(options.introspection.selectedBodyStartRow)
+        : "(not set)"
+    }`,
     `Selected header row: ${
       options.introspection.selectedHeaderRow !== undefined
         ? String(options.introspection.selectedHeaderRow)
@@ -258,6 +266,9 @@ export function renderDataQueryCodexDraft(options: {
       : []),
     ...(options.introspection.selectedRange
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
+      : []),
+    ...(options.introspection.selectedBodyStartRow !== undefined
+      ? [`${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`]
       : []),
     ...(options.introspection.selectedHeaderRow !== undefined
       ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]

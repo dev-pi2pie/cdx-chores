@@ -9,6 +9,8 @@ Current boundary:
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
 - explicit Excel shaping is available through `--range <A1:Z99>`
+- explicit Excel body-start selection is available through `--body-start-row <n>`
+- explicit Excel header selection is available through `--header-row <n>`
 - default output: human-readable assistant summary plus drafted SQL
 - shell-friendly output: `--print-sql`
 - no `--execute` in the first pass
@@ -16,7 +18,7 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query codex <input> --intent "<text>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--print-sql]
+cdx-chores data query codex <input> --intent "<text>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--print-sql]
 ```
 
 Supported `--input-format` values:
@@ -35,6 +37,7 @@ cdx-chores data query codex ./examples/playground/data-query/basic.parquet --int
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list active users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show status counts by name"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
+cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
 ```
 
 ### Execution split
@@ -55,12 +58,19 @@ The first `data query codex` implementation is advisory only. It always shows th
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before bounded introspection is collected for Codex drafting.
 
+`--body-start-row <n>` and `--header-row <n>` are also valid only for Excel inputs:
+
+- both use absolute worksheet row numbering
+- `body-start-row` marks where logical body rows begin before introspection is collected
+- when both rows are present, `body-start-row` must be greater than `header-row`
+
 Examples:
 
 ```bash
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
+cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
 ```
 
 Single-object inputs do not need `--source`.
@@ -71,6 +81,8 @@ Single-object inputs do not need `--source`.
   - detected format
   - selected source when present
   - selected range when present
+  - selected body start row when present
+  - selected header row when present
   - concise schema summary
   - bounded sample rows
   - drafted SQL revealed under a dedicated `SQL:` label on its own line

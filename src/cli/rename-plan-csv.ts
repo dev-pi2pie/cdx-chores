@@ -4,7 +4,8 @@ import { basename, isAbsolute, relative, resolve } from "node:path";
 import { csvRowsToObjects, parseCsv, stringifyCsv } from "../utils/csv";
 import { formatUtcFileDateTimeISO } from "../utils/datetime";
 import { CliError } from "./errors";
-import { applyPlannedRenames, readTextFileRequired, writeTextFileSafe } from "./fs-utils";
+import { readTextFileRequired, writeTextFileSafe } from "./file-io";
+import { applyPlannedRenames } from "./rename/apply";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 
 export const RENAME_PLAN_CSV_HEADERS = [

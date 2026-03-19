@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 import { REPO_ROOT, runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
@@ -198,6 +199,42 @@ describe("CLI data extract command", () => {
     });
   });
 
+  test("extracts the public stacked merged-band workbook end to end when body-start-row is provided", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const inputPath = join(fixtureDir, "stacked-merged-band.xlsx");
+      const outputPath = join(fixtureDir, "stacked-merged-band.clean.csv");
+
+      const result = runCli([
+        "data",
+        "extract",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "Sheet1",
+        "--range",
+        "B7:BR20",
+        "--body-start-row",
+        "10",
+        "--header-row",
+        "7",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id,question,status,notes\n1,Does the customer need a follow-up call after the outage review?,- [ ] Yes; - [ ] No,callback\n2,Is there any pending refund evidence that finance still needs to verify?,- [ ] Yes; - [ ] No,refund\n3,Do we already have the replacement tracking number from the warehouse?,- [ ] Yes; - [ ] No,tracking\n4,Did legal approve the latest waiver wording for the support response?,- [ ] Yes; - [ ] No,waiver\n5,Should billing pause the renewal invoice until the dispute is closed?,- [ ] Yes; - [ ] No,renewal\n6,Has the onboarding checklist been resent to the implementation contact?,- [ ] Yes; - [ ] No,onboarding\n7,Do we need another maintenance window before the migration can resume?,- [ ] Yes; - [ ] No,maintenance\n8,Is there a signed change request covering the expanded delivery scope?,- [ ] Yes; - [ ] No,change\n9,Has procurement confirmed the revised purchase order for the hardware?,- [ ] Yes; - [ ] No,procurement\n10,Do we still need security sign-off for the temporary access exception?,- [ ] Yes; - [ ] No,security\n11,Should the account remain in watch status until the next leadership review?,- [ ] Yes; - [ ] No,watch\n",
+      );
+    });
+  });
+
   test("writes a reviewed header-mapping artifact and stops before extraction", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");
@@ -326,6 +363,7 @@ process.stdout.write(JSON.stringify({
       expect(result.stdout).toContain("--range B2:E11");
       expect(result.stdout).toContain("--header-row 7");
       expect(result.stderr).toContain("--source-shape");
+      expect(result.stderr).toContain("--codex-suggest-headers");
       expect(result.stderr).toContain("--output");
 
       const prompt = await readFile(promptPath, "utf8");
@@ -349,6 +387,90 @@ process.stdout.write(JSON.stringify({
       expect(artifact.shape).toEqual({
         headerRow: 7,
         range: "B2:E11",
+      });
+    });
+  });
+
+  test("writes a reviewed body-start-only source-shape artifact and points to header review next", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const inputPath = join(fixtureDir, "stacked-merged-band.xlsx");
+      const artifactPath = join(fixtureDir, "shape-body-only.json");
+      const promptPath = join(fixtureDir, "shape-suggest-prompt.txt");
+      const stubPath = await createHeaderSuggestionStub({
+        promptPath,
+        suggestions: [],
+        workingDirectory: fixtureDir,
+      });
+      await writeFile(
+        stubPath,
+        `#!/usr/bin/env node
+import { writeFile } from "node:fs/promises";
+
+const prompt = await new Promise((resolve, reject) => {
+  let text = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (chunk) => {
+    text += chunk;
+  });
+  process.stdin.on("end", () => resolve(text));
+  process.stdin.on("error", reject);
+});
+
+await writeFile(${JSON.stringify(promptPath)}, prompt, "utf8");
+
+const response = JSON.stringify({
+  body_start_row: 10,
+  header_row: null,
+  range: null,
+  reasoning_summary: "The current sheet selection is fine; only the logical body boundary needs to move to worksheet row 10.",
+});
+
+process.stdout.write(JSON.stringify({ type: "thread.started", thread_id: "stub-thread" }) + "\\n");
+process.stdout.write(JSON.stringify({ type: "turn.started" }) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "item.completed",
+  item: { id: "msg-1", type: "agent_message", text: response },
+}) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "turn.completed",
+  usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
+}) + "\\n");
+`,
+        "utf8",
+      );
+      await chmod(stubPath, 0o755);
+
+      const result = runCli(
+        [
+          "data",
+          "extract",
+          toRepoRelativePath(inputPath),
+          "--source",
+          "Sheet1",
+          "--codex-suggest-shape",
+          "--write-source-shape",
+          toRepoRelativePath(artifactPath),
+        ],
+        REPO_ROOT,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Suggested source shape");
+      expect(result.stdout).toContain("--body-start-row 10");
+      expect(result.stderr).toContain("--source-shape");
+      expect(result.stderr).toContain("--codex-suggest-headers");
+
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as {
+        shape: { bodyStartRow: number };
+      };
+      expect(artifact.shape).toEqual({
+        bodyStartRow: 10,
       });
     });
   });

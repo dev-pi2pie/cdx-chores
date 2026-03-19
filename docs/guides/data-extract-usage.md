@@ -14,6 +14,7 @@ Current boundary:
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
 - explicit Excel shaping is available through `--range <A1:Z99>`
+- explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
 - reviewed Codex source-shape suggestions can be requested through `--codex-suggest-shape`
 - accepted source shapes can be reused through `--source-shape <path>`
@@ -26,9 +27,9 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-row <n>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
+cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
 cdx-chores data extract <input> --source <name> --codex-suggest-shape [--write-source-shape <path>] [--input-format <format>] [--overwrite]
-cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--header-row <n>] [--source-shape <path>] [--overwrite]
+cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -45,6 +46,7 @@ Examples:
 cdx-chores data extract ./examples/playground/data-query/basic.csv --output ./examples/playground/.tmp-tests/basic.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/basic.tsv --output ./examples/playground/.tmp-tests/basic.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.tsv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --output ./examples/playground/.tmp-tests/messy.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
@@ -70,14 +72,31 @@ Other input formats reject `--range`.
 - when `--range` is present, the header row must fall inside that rectangle
 - when a reviewed `--source-shape` artifact is reused, its accepted `headerRow` becomes part of the active source shape
 
+`--body-start-row <n>` is also valid only for Excel inputs:
+
+- it uses absolute worksheet row numbering
+- it marks the first logical body row after any header band
+- when `--range` is present, the body start row must fall inside that rectangle
+- when `--header-row` is also present, `body-start-row` must be greater than `header-row`
+- it changes import-time source shaping rather than acting as a later row filter
+- when a reviewed `--source-shape` artifact is reused, its accepted `bodyStartRow` becomes part of the active source shape
+
 First-pass reviewed Codex source-shape help is narrower:
 
 - valid only for Excel inputs
 - still requires `--source`
-- suggests an explicit `range`, `header-row`, or both
+- suggests an explicit `range`, `header-row`, `body-start-row`, or any valid combination of them
 - writes a JSON source-shape artifact and stops before materialization
 
 `--source-shape <path>` reuses an accepted source-shape artifact and applies the accepted sheet plus reviewed shape before extraction continues.
+
+Important distinction:
+
+- source-shape artifacts persist source interpretation only
+- they do not persist semantic header renames
+- a reviewed source-shape artifact may contain only `bodyStartRow` when that is the only deterministic source change
+- replaying a body-start-only artifact may still expose positional or generic columns
+- when that happens, the intended next step is `--codex-suggest-headers` after `--source-shape`, followed by `--header-mapping` for final extraction
 
 Examples:
 
@@ -86,8 +105,12 @@ cdx-chores data extract ./examples/playground/data-query/multi.sqlite --source u
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/header-band.xlsx --source Summary --range B7:E12 --header-row 7 --output ./examples/playground/.tmp-tests/header-band.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --output ./examples/playground/.tmp-tests/messy.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --codex-suggest-headers --write-header-mapping ./stacked.headers.json
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --header-mapping ./stacked.headers.json --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 ```
 
 ### Reviewed header suggestions
@@ -105,7 +128,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source`, `range`, and `headerRow` must also match exactly when present
+- optional `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
 
 ### Interactive mode
 
@@ -165,10 +188,28 @@ Reset the public-safe manual smoke fixtures under `examples/playground/data-extr
 node scripts/generate-data-extract-fixtures.mjs reset
 ```
 
+Regenerate the dedicated hard merged-band workbook fixture:
+
+```bash
+node scripts/generate-stacked-merged-band-fixture.mjs reset
+```
+
+Current note:
+
+- `examples/playground/data-extract/stacked-merged-band.xlsx` is the public-safe repro for the stacked merged-band Excel shaping class
+- `--range B7:BR20 --header-row 7` is still insufficient on that workbook because it does not identify where real body rows begin
+- the supported deterministic fix is `--range B7:BR20 --body-start-row 10 --header-row 7`
+
 Reset the fixture set into a custom directory:
 
 ```bash
 node scripts/generate-data-extract-fixtures.mjs reset --output-dir examples/playground/.tmp-tests/data-extract-smoke
+```
+
+Reset the dedicated hard merged-band workbook into a custom directory:
+
+```bash
+node scripts/generate-stacked-merged-band-fixture.mjs reset --output-dir examples/playground/.tmp-tests/data-extract-smoke
 ```
 
 ### DuckDB readiness

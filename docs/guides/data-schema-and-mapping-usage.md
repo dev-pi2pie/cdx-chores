@@ -12,6 +12,7 @@ Current first-pass boundary:
   - `input.format`
   - optional `input.source`
   - optional `input.range`
+  - optional `input.bodyStartRow`
   - optional `input.headerRow`
 - file-content fingerprints and stale-file detection after in-place edits are deferred
 
@@ -31,6 +32,7 @@ Conditionally required first-pass fields:
 
 - `input.source` when the shaped source requires one
 - `input.range` when shaping used an explicit Excel range
+- `input.bodyStartRow` when shaping used an explicit Excel body-start row
 - `input.headerRow` when shaping used an explicit Excel header row
 
 Optional fields may appear on mapping entries, such as:

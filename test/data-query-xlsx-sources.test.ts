@@ -8,6 +8,7 @@ import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../src/cli/duckdb/
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
 function createWorkbookWithInvalidCentralDirectoryOffset(): Buffer {
   const buffer = Buffer.alloc(22);
@@ -121,6 +122,60 @@ describe("xlsx source discovery", () => {
         firstRef: "B2",
         lastRef: "B2",
         rowNumber: 2,
+      });
+    });
+  });
+
+  test("listXlsxSheetNames and sheet snapshots preserve the true anchors for the public stacked merged-band fixture", async () => {
+    await withTempFixtureDir("xlsx-sources", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const workbookPath = join(fixtureDir, "stacked-merged-band.xlsx");
+
+      await expect(listXlsxSheetNames(workbookPath)).resolves.toEqual(["Sheet1"]);
+
+      const snapshot = await collectXlsxSheetSnapshot(workbookPath, "Sheet1");
+
+      expect(snapshot.sheetName).toBe("Sheet1");
+      expect(snapshot.nonEmptyRowCount).toBeGreaterThan(0);
+      expect(snapshot.usedRange).toBe("B5:BG20");
+      expect(snapshot.mergedRanges.slice(0, 6)).toEqual([
+        "A1:BS4",
+        "BG5:BR6",
+        "B7:D9",
+        "E7:AK9",
+        "AL7:AY9",
+        "AZ7:BR9",
+      ]);
+      expect(snapshot.rows[0]).toEqual({
+        cellCount: 1,
+        cells: [{ ref: "BG5", value: "RAW_TITLE" }],
+        firstRef: "BG5",
+        lastRef: "BG5",
+        rowNumber: 5,
+      });
+      expect(snapshot.rows[1]).toEqual({
+        cellCount: 4,
+        cells: [
+          { ref: "B7", value: "id" },
+          { ref: "E7", value: "question" },
+          { ref: "AL7", value: "status" },
+          { ref: "AZ7", value: "notes" },
+        ],
+        firstRef: "B7",
+        lastRef: "AZ7",
+        rowNumber: 7,
+      });
+      expect(snapshot.rows[2]).toEqual({
+        cellCount: 4,
+        cells: [
+          { ref: "B10", value: "1.0" },
+          { ref: "E10", value: "Does the customer need a follow-up call after the outage review?" },
+          { ref: "AL10", value: "- [ ] Yes; - [ ] No" },
+          { ref: "AZ10", value: "callback" },
+        ],
+        firstRef: "B10",
+        lastRef: "AZ10",
+        rowNumber: 10,
       });
     });
   });

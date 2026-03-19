@@ -127,6 +127,47 @@ describe("data source shape artifacts", () => {
     });
   });
 
+  test("readDataSourceShapeArtifact accepts bodyStartRow-only widened version 1 artifacts", async () => {
+    await withTempFixtureDir("source-shape", async (fixtureDir) => {
+      const artifactPath = join(fixtureDir, "data-source-shape-test.json");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: "examples/playground/data-extract/stacked-merged-band.xlsx",
+            source: "Sheet1",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-19T00:00:00.000Z",
+          },
+          shape: {
+            bodyStartRow: 10,
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      await expect(readDataSourceShapeArtifact(artifactPath)).resolves.toEqual({
+        input: {
+          format: "excel",
+          path: "examples/playground/data-extract/stacked-merged-band.xlsx",
+          source: "Sheet1",
+        },
+        metadata: {
+          artifactType: "data-source-shape",
+          issuedAt: "2026-03-19T00:00:00.000Z",
+        },
+        shape: {
+          bodyStartRow: 10,
+        },
+        version: 1,
+      });
+    });
+  });
+
   test("suggestDataSourceShapeWithCodex accepts null for omitted structured-output fields", async () => {
     await expect(
       suggestDataSourceShapeWithCodex({
@@ -158,6 +199,7 @@ describe("data source shape artifacts", () => {
         },
         runner: async () =>
           JSON.stringify({
+            body_start_row: null,
             header_row: null,
             range: "A1:B3",
             reasoning_summary: "The range is sufficient, and the automatic header row is acceptable.",
@@ -168,6 +210,57 @@ describe("data source shape artifacts", () => {
       reasoningSummary: "The range is sufficient, and the automatic header row is acceptable.",
       shape: {
         range: "A1:B3",
+      },
+    });
+  });
+
+  test("suggestDataSourceShapeWithCodex accepts body_start_row as the only needed deterministic change", async () => {
+    await expect(
+      suggestDataSourceShapeWithCodex({
+        context: {
+          currentIntrospection: {
+            columns: [{ name: "column_1", type: "DOUBLE" }],
+            sampleRows: [{ column_1: "1" }],
+            selectedSource: "Sheet1",
+            truncated: false,
+          },
+          sheetSnapshot: {
+            mergedRanges: ["B7:D9", "E7:AK9", "AL7:AY9", "AZ7:BR9"],
+            mergedRangesTruncated: false,
+            nonEmptyCellCount: 12,
+            nonEmptyRowCount: 3,
+            rows: [
+              {
+                cellCount: 4,
+                cells: [
+                  { ref: "B7", value: "id" },
+                  { ref: "E7", value: "question" },
+                  { ref: "AL7", value: "status" },
+                  { ref: "AZ7", value: "notes" },
+                ],
+                firstRef: "B7",
+                lastRef: "AZ7",
+                rowNumber: 7,
+              },
+            ],
+            rowsTruncated: false,
+            sheetName: "Sheet1",
+            usedRange: "B7:AZ20",
+          },
+        },
+        runner: async () =>
+          JSON.stringify({
+            body_start_row: 10,
+            header_row: null,
+            range: null,
+            reasoning_summary: "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
+          }),
+        workingDirectory: REPO_ROOT,
+      }),
+    ).resolves.toEqual({
+      reasoningSummary: "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
+      shape: {
+        bodyStartRow: 10,
       },
     });
   });
@@ -287,6 +380,36 @@ describe("data source shape artifacts", () => {
       headerRow: 7,
       range: "B7:E11",
       source: "Summary",
+    });
+  });
+
+  test("resolveReusableSourceShape returns bodyStartRow when the reviewed artifact matches exactly", () => {
+    expect(
+      resolveReusableSourceShape({
+        artifact: createDataSourceShapeArtifact({
+          input: {
+            format: "excel",
+            path: "examples/playground/data-extract/stacked-merged-band.xlsx",
+            source: "Sheet1",
+          },
+          now: new Date("2026-03-19T00:00:00.000Z"),
+          shape: {
+            bodyStartRow: 10,
+            headerRow: 7,
+            range: "B7:BR20",
+          },
+        }),
+        currentInput: {
+          format: "excel",
+          path: "examples/playground/data-extract/stacked-merged-band.xlsx",
+          source: "Sheet1",
+        },
+      }),
+    ).toEqual({
+      bodyStartRow: 10,
+      headerRow: 7,
+      range: "B7:BR20",
+      source: "Sheet1",
     });
   });
 });

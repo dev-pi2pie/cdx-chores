@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import { requireCommandAvailable } from "../deps";
 import { CliError } from "../errors";
-import { defaultOutputPath } from "../fs-utils";
+import { defaultOutputPath } from "../path-utils";
 import { execCommand } from "../process";
 import type { CliRuntime } from "../types";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";

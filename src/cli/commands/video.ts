@@ -1,0 +1,81 @@
+import type { Command } from "commander";
+
+import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
+import {
+  parsePositiveIntegerOption,
+  parsePositiveNumberOption,
+} from "../options/parsers";
+import type { CliRuntime } from "../types";
+
+export function registerVideoCommands(program: Command, runtime: CliRuntime): void {
+  const videoCommand = program.command("video").description("Video utilities (ffmpeg-backed)");
+
+  videoCommand
+    .command("convert")
+    .description("Convert a video file to another format via ffmpeg")
+    .requiredOption("-i, --input <path>", "Input video file")
+    .requiredOption("-o, --output <path>", "Output video file")
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .action(async (options: { input: string; output: string; overwrite?: boolean }) => {
+      await actionVideoConvert(runtime, options);
+    });
+
+  videoCommand
+    .command("resize")
+    .description("Resize video via ffmpeg")
+    .requiredOption("-i, --input <path>", "Input video file")
+    .requiredOption("-o, --output <path>", "Output video file")
+    .option(
+      "-s, --scale <factor>",
+      "Scale factor multiplier (for example 0.5 halves size, 2 doubles it)",
+      (value) => parsePositiveNumberOption(value, "--scale"),
+    )
+    .option("--width <px>", "Output width in pixels (requires --height)", (value) =>
+      parsePositiveIntegerOption(value, "--width"),
+    )
+    .option("--height <px>", "Output height in pixels (requires --width)", (value) =>
+      parsePositiveIntegerOption(value, "--height"),
+    )
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Resize modes:",
+        "  Preferred: --scale 0.5",
+        "  Explicit override: --width 1280 --height 720",
+      ].join("\n"),
+    )
+    .action(
+      async (options: {
+        input: string;
+        output: string;
+        scale?: number;
+        width?: number;
+        height?: number;
+        overwrite?: boolean;
+      }) => {
+        await actionVideoResize(runtime, options);
+      },
+    );
+
+  videoCommand
+    .command("gif")
+    .description("Convert video to GIF via ffmpeg")
+    .requiredOption("-i, --input <path>", "Input video file")
+    .option("-o, --output <path>", "Output GIF file path")
+    .option("--width <px>", "GIF width", (value) => Number(value))
+    .option("--fps <value>", "GIF frames per second", (value) => Number(value))
+    .option("--overwrite", "Overwrite output file if it already exists", false)
+    .action(
+      async (options: {
+        input: string;
+        output?: string;
+        width?: number;
+        fps?: number;
+        overwrite?: boolean;
+      }) => {
+        await actionVideoGif(runtime, options);
+      },
+    );
+}

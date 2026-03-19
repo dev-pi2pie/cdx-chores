@@ -1,4 +1,4 @@
-import { resolveFromCwd } from "../fs-utils";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
 import {
@@ -19,6 +19,7 @@ import { assertNonEmpty, ensureFileExists, printLine } from "./shared";
 const DATA_QUERY_CODEX_SAMPLE_ROWS = 5;
 
 export interface DataQueryCodexOptions {
+  bodyStartRow?: number;
   headerRow?: number;
   input: string;
   inputFormat?: DataQueryInputFormat;
@@ -62,6 +63,7 @@ export async function actionDataQueryCodex(
 
   const intent = normalizeDataQueryCodexIntent(assertNonEmpty(options.intent, "Intent"));
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   const range = options.range?.trim() || undefined;
   const source = options.source?.trim() || undefined;
@@ -84,6 +86,7 @@ export async function actionDataQueryCodex(
       inputPath,
       format,
       {
+        bodyStartRow,
         headerRow,
         range,
         source,

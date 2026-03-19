@@ -1,4 +1,3 @@
-import { stat } from "node:fs/promises";
 import { confirm, input, select } from "@inquirer/prompts";
 import { extname } from "node:path";
 
@@ -14,6 +13,8 @@ import {
   actionTsvToJson,
   loadDataPreviewSource,
 } from "../actions";
+import { maybeRenderDuckDbExtensionRemediationCommand } from "../data-workflows/duckdb-remediation";
+import { promptFileOutputTarget } from "../data-workflows/output";
 import {
   assertContainsFilterColumns,
   parseContainsFilterValue,
@@ -37,9 +38,8 @@ import type { DataInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 import { CliError } from "../errors";
 import { displayPath, printLine } from "../actions/shared";
-import { createDuckDbConnection, listDataQuerySources, type DataQueryInputFormat } from "../duckdb/query";
-import { defaultOutputPath, resolveFromCwd } from "../fs-utils";
-import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
+import { createDuckDbConnection, listDataQuerySources } from "../duckdb/query";
+import { defaultOutputPath, resolveFromCwd } from "../path-utils";
 
 type LightweightInteractiveDataFormat = "csv" | "tsv" | "json";
 type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";
@@ -142,40 +142,6 @@ async function runInteractiveDataConvert(
   });
 }
 
-function isDuckDbExtensionUnavailableError(error: unknown): error is CliError | { code: string } {
-  return (
-    (error instanceof CliError && error.code === "DUCKDB_EXTENSION_UNAVAILABLE") ||
-    (typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: unknown }).code === "DUCKDB_EXTENSION_UNAVAILABLE")
-  );
-}
-
-function formatSupportsManagedDuckDbExtensionInstall(
-  format: DataQueryInputFormat,
-): format is "sqlite" | "excel" {
-  return format === "sqlite" || format === "excel";
-}
-
-function canSuggestManagedDuckDbExtensionInstall(
-  error: Error | { code: string; message?: string },
-): boolean {
-  const message = error instanceof Error ? error.message : String(error.message ?? "");
-  return !/cannot install or cache it/i.test(message);
-}
-
-function renderDuckDbExtensionRemediationCommand(
-  runtime: CliRuntime,
-  format: "sqlite" | "excel",
-): void {
-  printLine(runtime.stderr, "");
-  printLine(
-    runtime.stderr,
-    `Install the missing DuckDB extension with: ${createDuckDbExtensionInstallCommand(format)}`,
-  );
-}
-
 async function promptInteractiveExtractOutput(
   runtime: CliRuntime,
   inputPath: string,
@@ -190,29 +156,21 @@ async function promptInteractiveExtractOutput(
     ],
   });
   const outputHint = formatDefaultOutputPathHint(runtime, inputPath, `.${outputFormat}`);
-
-  while (true) {
-    const outputPath =
-      (await promptOptionalOutputPathChoice({
-        message: `Output ${outputFormat.toUpperCase()} file`,
-        defaultHint: outputHint,
-        kind: "file",
-        ...pathPromptContext,
-        customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
-      })) ?? defaultOutputPath(inputPath, `.${outputFormat}`);
-    const normalizedOutputPath = resolveFromCwd(runtime, outputPath);
-    try {
-      await stat(normalizedOutputPath);
-      const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
-      if (overwrite) {
-        return { output: outputPath, outputFormat, overwrite };
-      }
-      printLine(runtime.stdout, "Choose a different output destination.");
-      continue;
-    } catch {
-      return { output: outputPath, outputFormat, overwrite: false };
-    }
-  }
+  const target = await promptFileOutputTarget({
+    runtime,
+    pathPromptContext,
+    message: `Output ${outputFormat.toUpperCase()} file`,
+    allowedExtensions: [`.${outputFormat}`],
+    invalidExtensionMessage: `Output file must end with .${outputFormat}.`,
+    defaultHint: outputHint,
+    customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
+    fallbackOutputPath: defaultOutputPath(inputPath, `.${outputFormat}`),
+  });
+  return {
+    output: target.output,
+    overwrite: target.overwrite,
+    outputFormat,
+  };
 }
 
 function renderInteractiveExtractWriteSummary(
@@ -223,6 +181,7 @@ function renderInteractiveExtractWriteSummary(
     outputPath: string;
     outputFormat: InteractiveExtractOutputFormat;
     overwrite: boolean;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -237,6 +196,9 @@ function renderInteractiveExtractWriteSummary(
   }
   if (options.selectedRange) {
     printLine(runtime.stderr, `- range: ${options.selectedRange}`);
+  }
+  if (options.selectedBodyStartRow !== undefined) {
+    printLine(runtime.stderr, `- body start row: ${options.selectedBodyStartRow}`);
   }
   if (options.selectedHeaderRow !== undefined) {
     printLine(runtime.stderr, `- header row: ${options.selectedHeaderRow}`);
@@ -260,6 +222,7 @@ async function confirmInteractiveExtractWrite(
   options: {
     headerMappingCount: number;
     inputPath: string;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -331,6 +294,7 @@ async function runInteractiveDataExtract(
       introspection,
       labels: EXTRACT_CONTINUATION_LABELS,
       runtime,
+      selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
@@ -338,6 +302,7 @@ async function runInteractiveDataExtract(
     const outputOptions = await confirmInteractiveExtractWrite(runtime, pathPromptContext, {
       headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
       inputPath: input,
+      selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
@@ -352,18 +317,13 @@ async function runInteractiveDataExtract(
       inputFormat: format,
       output: outputOptions.output,
       overwrite: outputOptions.overwrite,
+      ...(sourceShape.selectedBodyStartRow !== undefined ? { bodyStartRow: sourceShape.selectedBodyStartRow } : {}),
       ...(sourceShape.selectedHeaderRow !== undefined ? { headerRow: sourceShape.selectedHeaderRow } : {}),
       ...(sourceShape.selectedRange ? { range: sourceShape.selectedRange } : {}),
       ...(selectedSource ? { source: selectedSource } : {}),
     });
   } catch (error) {
-    if (
-      isDuckDbExtensionUnavailableError(error) &&
-      formatSupportsManagedDuckDbExtensionInstall(format) &&
-      canSuggestManagedDuckDbExtensionInstall(error instanceof Error ? error : new Error(String(error)))
-    ) {
-      renderDuckDbExtensionRemediationCommand(runtime, format);
-    }
+    maybeRenderDuckDbExtensionRemediationCommand(runtime, format, error);
     throw error;
   } finally {
     connection?.closeSync();

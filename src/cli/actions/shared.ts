@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 
 import { CliError } from "../errors";
-import { formatPathForDisplay } from "../fs-utils";
+import { formatPathForDisplay } from "../path-utils";
 import type { CliRuntime } from "../types";
 
 export function printLine(stream: NodeJS.WritableStream, line = ""): void {
@@ -36,4 +36,3 @@ export async function ensureFileExists(path: string, label: string): Promise<voi
     });
   }
 }
-

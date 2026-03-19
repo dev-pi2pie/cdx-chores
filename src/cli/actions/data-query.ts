@@ -1,10 +1,15 @@
-import { extname, join } from "node:path";
+import { extname } from "node:path";
 
 import { stringifyCsv } from "../../utils/csv";
 import { renderDataQuery } from "../data-query/render";
+import {
+  resolveReusableHeaderMappingsForDataFlow,
+  runCodexHeaderSuggestionFlow,
+} from "../data-workflows/header-mapping-flow";
 import { CliError } from "../errors";
 import { displayPath, assertNonEmpty, ensureFileExists, printLine } from "./shared";
-import { resolveFromCwd, writeTextFileSafe } from "../fs-utils";
+import { writeTextFileSafe } from "../file-io";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import {
   collectDataQuerySourceIntrospection,
@@ -16,18 +21,12 @@ import {
   prepareDataQuerySource,
 } from "../duckdb/query";
 import {
-  createDataHeaderMappingArtifact,
-  createHeaderMappingInputReference,
-  generateDataHeaderMappingFileName,
-  readDataHeaderMappingArtifact,
-  resolveReusableHeaderMappings,
-  suggestDataHeaderMappingsWithCodex,
   type DataHeaderMappingEntry,
   type DataHeaderSuggestionRunner,
-  writeDataHeaderMappingArtifact,
 } from "../duckdb/header-mapping";
 
 export interface DataQueryOptions {
+  bodyStartRow?: number;
   codexSuggestHeaders?: boolean;
   headerMapping?: string;
   headerMappings?: DataHeaderMappingEntry[];
@@ -116,28 +115,6 @@ function normalizeSql(sql: string): string {
   return value.endsWith(";") ? value : value;
 }
 
-function classifyHeaderSuggestionFailure(message: string): { code: string; prefix: string } {
-  if (
-    /codex exec exited/i.test(message) ||
-    /missing optional dependency/i.test(message) ||
-    /spawn/i.test(message) ||
-    /enoent/i.test(message) ||
-    /auth/i.test(message) ||
-    /sign in/i.test(message) ||
-    /api key/i.test(message)
-  ) {
-    return {
-      code: "CODEX_UNAVAILABLE",
-      prefix: "Codex header suggestions unavailable",
-    };
-  }
-
-  return {
-    code: "DATA_QUERY_HEADER_SUGGESTION_FAILED",
-    prefix: "Codex header suggestions failed",
-  };
-}
-
 function normalizeCsvExportRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   return rows.map((row) =>
     Object.fromEntries(
@@ -154,181 +131,6 @@ function normalizeCsvExportRows(rows: Array<Record<string, unknown>>): Array<Rec
   );
 }
 
-async function resolveReusableHeaderMappingsForQuery(options: {
-  format: DataQueryInputFormat;
-  headerMappingPath: string;
-  inputPath: string;
-  runtime: CliRuntime;
-  shape: {
-    headerRow?: number;
-    range?: string;
-    source?: string;
-  };
-}): Promise<DataHeaderMappingEntry[]> {
-  const artifact = await readDataHeaderMappingArtifact(options.headerMappingPath);
-  const currentInput = createHeaderMappingInputReference({
-    cwd: options.runtime.cwd,
-    format: options.format,
-    inputPath: options.inputPath,
-    shape: options.shape,
-  });
-  return resolveReusableHeaderMappings({
-    artifact,
-    currentInput,
-  });
-}
-
-function renderHeaderSuggestionSummary(
-  runtime: CliRuntime,
-  mappings: readonly DataHeaderMappingEntry[],
-): void {
-  printLine(runtime.stdout, "Suggested headers");
-  printLine(runtime.stdout, "");
-
-  if (mappings.length === 0) {
-    printLine(runtime.stdout, "(no semantic header changes suggested)");
-    return;
-  }
-
-  for (const mapping of mappings) {
-    const details = [
-      `${mapping.from} -> ${mapping.to}`,
-      typeof mapping.sample === "string" ? `sample: ${JSON.stringify(mapping.sample)}` : undefined,
-      typeof mapping.inferredType === "string" ? `type: ${mapping.inferredType}` : undefined,
-    ].filter((value): value is string => Boolean(value));
-    printLine(runtime.stdout, `- ${details.join("  ")}`);
-  }
-}
-
-function buildHeaderSuggestionFollowUpCommand(options: {
-  artifactPath: string;
-  format: DataQueryInputFormat;
-  inputPath: string;
-  runtime: CliRuntime;
-  shape: {
-    headerRow?: number;
-    range?: string;
-    source?: string;
-  };
-}): string {
-  const parts = [
-    "cdx-chores",
-    "data",
-    "query",
-    JSON.stringify(displayPath(options.runtime, options.inputPath)),
-    "--input-format",
-    options.format,
-    ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
-    ...(options.shape.range ? ["--range", options.shape.range] : []),
-    ...(options.shape.headerRow !== undefined
-      ? ["--header-row", String(options.shape.headerRow)]
-      : []),
-    "--header-mapping",
-    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
-    "--sql",
-    JSON.stringify("<query>"),
-  ];
-  return parts.join(" ");
-}
-
-async function runCodexHeaderSuggestionFlow(
-  runtime: CliRuntime,
-  options: {
-    format: DataQueryInputFormat;
-    headerSuggestionRunner?: DataHeaderSuggestionRunner;
-    headerRow?: number;
-    inputPath: string;
-    installMissingExtension?: boolean;
-    overwrite?: boolean;
-    range?: string;
-    sourceIntrospectionCollector?: typeof collectDataQuerySourceIntrospection;
-    source?: string;
-    statusStream?: NodeJS.WritableStream;
-    writeHeaderMapping?: string;
-  },
-): Promise<void> {
-  const artifactPath = options.writeHeaderMapping?.trim()
-    ? resolveFromCwd(runtime, options.writeHeaderMapping.trim())
-    : join(runtime.cwd, generateDataHeaderMappingFileName());
-  const collectSourceIntrospection =
-    options.sourceIntrospectionCollector ?? collectDataQuerySourceIntrospection;
-
-  let connection;
-  try {
-    connection = await createDuckDbConnection();
-    const introspection = await collectSourceIntrospection(
-      connection,
-      options.inputPath,
-      options.format,
-      {
-        range: options.range,
-        headerRow: options.headerRow,
-        source: options.source,
-      },
-      DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
-      {
-        installMissingExtension: options.installMissingExtension,
-        statusStream: options.statusStream,
-      },
-    );
-    const suggestionResult = await suggestDataHeaderMappingsWithCodex({
-      format: options.format,
-      introspection,
-      runner: options.headerSuggestionRunner,
-      workingDirectory: runtime.cwd,
-    });
-
-    if (suggestionResult.errorMessage) {
-      const failure = classifyHeaderSuggestionFailure(suggestionResult.errorMessage);
-      throw new CliError(`${failure.prefix}: ${suggestionResult.errorMessage}`, {
-        code: failure.code,
-        exitCode: 2,
-      });
-    }
-
-    const artifact = createDataHeaderMappingArtifact({
-      input: createHeaderMappingInputReference({
-        cwd: runtime.cwd,
-        format: options.format,
-        inputPath: options.inputPath,
-        shape: {
-          range: options.range,
-          headerRow: options.headerRow,
-          source: options.source,
-        },
-      }),
-      mappings: suggestionResult.mappings,
-      now: runtime.now(),
-    });
-    await writeDataHeaderMappingArtifact(artifactPath, artifact, {
-      overwrite: options.overwrite,
-    });
-
-    renderHeaderSuggestionSummary(runtime, suggestionResult.mappings);
-    printLine(runtime.stderr, `Wrote header mapping: ${displayPath(runtime, artifactPath)}`);
-    printLine(
-      runtime.stderr,
-      `Review the mapping, then rerun with --header-mapping before SQL execution.`,
-    );
-    printLine(
-      runtime.stderr,
-      buildHeaderSuggestionFollowUpCommand({
-        artifactPath,
-        format: options.format,
-        inputPath: options.inputPath,
-        runtime,
-        shape: {
-          range: options.range,
-          headerRow: options.headerRow,
-          source: options.source,
-        },
-      }),
-    );
-  } finally {
-    connection?.closeSync();
-  }
-}
-
 export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOptions): Promise<void> {
   validateDataQueryOptions(options);
 
@@ -337,6 +139,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
     throw new CliError(
@@ -352,31 +155,62 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
   const rowCount = options.rows ?? DEFAULT_QUERY_ROWS;
 
   if (options.codexSuggestHeaders) {
-    await runCodexHeaderSuggestionFlow(runtime, {
-      format,
-      headerSuggestionRunner: options.headerSuggestionRunner,
-      inputPath,
-      installMissingExtension: options.installMissingExtension,
-      overwrite: options.overwrite,
-      headerRow,
-      range,
-      sourceIntrospectionCollector: options.sourceIntrospectionCollector,
-      source,
-      statusStream: runtime.stderr,
-      writeHeaderMapping: options.writeHeaderMapping,
-    });
+    const collectSourceIntrospection =
+      options.sourceIntrospectionCollector ?? collectDataQuerySourceIntrospection;
+    const connection = await createDuckDbConnection();
+    try {
+      await runCodexHeaderSuggestionFlow({
+        runtime,
+        format,
+        inputPath,
+        shape: {
+          bodyStartRow,
+          range,
+          headerRow,
+          source,
+        },
+        overwrite: options.overwrite,
+        writeHeaderMapping: options.writeHeaderMapping,
+        headerSuggestionRunner: options.headerSuggestionRunner,
+        collectIntrospection: async () =>
+          await collectSourceIntrospection(
+            connection,
+            inputPath,
+            format,
+            {
+              bodyStartRow,
+              range,
+              headerRow,
+              source,
+            },
+            DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
+            {
+              installMissingExtension: options.installMissingExtension,
+              statusStream: runtime.stderr,
+            },
+          ),
+        failureCode: "DATA_QUERY_HEADER_SUGGESTION_FAILED",
+        failurePrefix: "Codex header suggestions failed",
+        reviewMessage: "Review the mapping, then rerun with --header-mapping before SQL execution.",
+        followUpCommandPath: ["data", "query"],
+        followUpTailArgs: ["--sql", JSON.stringify("<query>")],
+      });
+    } finally {
+      connection.closeSync();
+    }
     return;
   }
 
   const resolvedHeaderMappings = options.headerMappings
     ? options.headerMappings.map((mapping) => ({ ...mapping }))
     : options.headerMapping?.trim()
-      ? await resolveReusableHeaderMappingsForQuery({
+      ? await resolveReusableHeaderMappingsForDataFlow({
           format,
           headerMappingPath: resolveFromCwd(runtime, options.headerMapping.trim()),
           inputPath,
           runtime,
           shape: {
+            bodyStartRow,
             range,
             headerRow,
             source,
@@ -393,6 +227,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       inputPath,
       format,
       {
+        bodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow,
         range,
@@ -432,6 +267,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
     const rendered = renderDataQuery(runtime, {
       columns: table.columns,
       format,
+      bodyStartRow: preparedSource.selectedBodyStartRow,
       inputPath,
       range: preparedSource.selectedRange,
       headerRow: preparedSource.selectedHeaderRow,

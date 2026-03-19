@@ -17,15 +17,19 @@ import {
   normalizeOptionalPositiveInteger,
   throwUnsupportedSourceShapeVersion,
 } from "./normalize";
-import { normalizeExcelHeaderRow, normalizeExcelRange } from "../query";
+import { normalizeExcelBodyStartRow, normalizeExcelHeaderRow, normalizeExcelRange } from "../query";
+
+function isValidReviewedSourceShape(shape: DataSourceShapeSelection): boolean {
+  return Boolean(shape.range) || shape.headerRow !== undefined || shape.bodyStartRow !== undefined;
+}
 
 export function createDataSourceShapeArtifact(options: {
   input: DataSourceShapeInputReference;
   now: Date;
   shape: DataSourceShapeSelection;
 }): DataSourceShapeArtifact {
-  if (!options.shape.range && options.shape.headerRow === undefined) {
-    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, or both.", {
+  if (!isValidReviewedSourceShape(options.shape)) {
+    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -40,6 +44,9 @@ export function createDataSourceShapeArtifact(options: {
       issuedAt: options.now.toISOString(),
     },
     shape: {
+      ...(options.shape.bodyStartRow !== undefined
+        ? { bodyStartRow: normalizeExcelBodyStartRow(options.shape.bodyStartRow) }
+        : {}),
       ...(options.shape.range ? { range: normalizeExcelRange(options.shape.range) } : {}),
       ...(options.shape.headerRow !== undefined
         ? { headerRow: normalizeExcelHeaderRow(options.shape.headerRow) }
@@ -107,16 +114,18 @@ function parseDataSourceShapeArtifact(
     });
   }
 
+  const normalizedBodyStartRow = normalizeOptionalPositiveInteger(shape.bodyStartRow, "shape.bodyStartRow");
   const normalizedHeaderRow = normalizeOptionalPositiveInteger(shape.headerRow, "shape.headerRow");
   const normalizedShape: DataSourceShapeArtifact["shape"] = {
     ...shape,
+    ...(normalizedBodyStartRow !== undefined ? { bodyStartRow: normalizeExcelBodyStartRow(normalizedBodyStartRow) } : {}),
     ...(typeof shape.range === "string" && shape.range.trim().length > 0
       ? { range: normalizeExcelRange(shape.range) }
       : {}),
     ...(normalizedHeaderRow !== undefined ? { headerRow: normalizedHeaderRow } : {}),
   };
-  if (!normalizedShape.range && normalizedShape.headerRow === undefined) {
-    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, or both.", {
+  if (!isValidReviewedSourceShape(normalizedShape)) {
+    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -255,6 +264,9 @@ export function resolveReusableSourceShape(options: {
   }
 
   return {
+    ...(options.artifact.shape.bodyStartRow !== undefined
+      ? { bodyStartRow: options.artifact.shape.bodyStartRow }
+      : {}),
     ...(options.artifact.shape.range ? { range: options.artifact.shape.range } : {}),
     ...(options.artifact.shape.headerRow !== undefined
       ? { headerRow: options.artifact.shape.headerRow }
