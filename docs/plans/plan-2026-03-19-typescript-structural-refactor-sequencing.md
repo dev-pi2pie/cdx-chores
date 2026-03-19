@@ -1,6 +1,7 @@
 ---
 title: "TypeScript structural refactor sequencing"
 created-date: 2026-03-19
+modified-date: 2026-03-19
 status: draft
 agent: codex
 ---
@@ -285,29 +286,29 @@ Do not use `ts_structure_refactorer` to refactor all hotspots in one pass.
 
 ### Task Items
 
-- [ ] move command-family registration out of `src/command.ts`
-- [ ] extract shared option parser helpers into `src/cli/options/parsers.ts`
-- [ ] extract shared option wiring helpers into `src/cli/options/common.ts`
-- [ ] keep `runCli()` as the stable public entrypoint
-- [ ] preserve all current command names, flags, and semantics
+- [x] move command-family registration out of `src/command.ts`
+- [x] extract shared option parser helpers into `src/cli/options/parsers.ts`
+- [x] extract shared option wiring helpers into `src/cli/options/common.ts`
+- [x] keep `runCli()` as the stable public entrypoint
+- [x] preserve all current command names, flags, and semantics
 
 ### Deliverable
 
-- [ ] `src/command.ts` is reduced to bootstrap/runtime setup and command registration composition
+- [x] `src/command.ts` is reduced to bootstrap/runtime setup and command registration composition
 
 ## Phase 2: Shared data workflow extraction
 
 ### Task Items
 
-- [ ] extract DuckDB remediation helpers reused by extract/query flows
-- [ ] extract shared header-mapping review or artifact-resolution helpers where duplication is real
+- [x] extract DuckDB remediation helpers reused by extract/query flows
+- [x] extract shared header-mapping review or artifact-resolution helpers where duplication is real
 - [ ] extract shared source-shape review or artifact-resolution helpers where duplication is real
 - [ ] isolate reusable output/write-decision helpers
-- [ ] keep action and interactive entry modules behaviorally unchanged
+- [x] keep action and interactive entry modules behaviorally unchanged
 
 ### Deliverable
 
-- [ ] shared data workflow helpers exist under `src/cli/data-workflows/` and direct callers become thinner composition layers
+- [x] shared data workflow helpers exist under `src/cli/data-workflows/` and direct callers become thinner composition layers
 
 ## Phase 3: Interactive data-query split
 
