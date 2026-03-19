@@ -56,9 +56,10 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
 - First-pass validation should not require `header-row` whenever `body-start-row` is present
   - `header-row` answers where column names come from
   - `body-start-row` answers where real records begin
-  - those often appear together, but no-header body-start cases still need to remain valid
+- those often appear together, but no-header body-start cases still need to remain valid
 - Reviewed source-shape suggestions should be allowed to suggest `bodyStartRow` by itself when that is the only deterministic change needed
-- Source-shape artifacts should remain on `version: 1` because `bodyStartRow` is a backward-compatible widening of the existing `shape` object
+- `body-start-row` must change import-time shaping, not only post-import filtering, otherwise the current `read_xlsx(...)` failure class is untouched
+- Source-shape artifacts should remain on `version: 1` in the current canary line, with `bodyStartRow` treated as an optional widening of the existing `shape` object
 - The no-new-field fallback should be investigated, but it should not block freezing the explicit contract
 
 ## Validation Decisions
@@ -68,6 +69,27 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
   - if `range` is absent, `body-start-row` should validate against the detected sheet used range
 - `header-row` is not required when `body-start-row` is present
 - when `header-row` is also present, `header-row` becomes the governing boundary and `body-start-row` must be greater than `header-row`
+
+## Import-Time Semantics Decisions
+
+- `body-start-row` is import-time shaping, not only a later row filter.
+- `bodyStartRow` without `headerRow`:
+  - narrows the effective import range so the imported rectangle starts at `bodyStartRow`
+  - if `range` is present, reuse that column span and end row
+  - if `range` is absent, derive the column span and end row from the detected used range
+  - resulting columns continue through the existing no-header path and can later be renamed through reviewed header suggestions
+- `range + bodyStartRow`:
+  - derive the effective import range from the selected range by replacing its start row with `bodyStartRow`
+- `headerRow + bodyStartRow` without `range`:
+  - use the detected used-range columns
+  - import the header row separately from the body rows
+  - import the body rows starting at `bodyStartRow`
+  - stitch header names and body rows together in application code before downstream shaping continues
+- `range + headerRow + bodyStartRow`:
+  - use the selected range columns
+  - import the header row separately from the body rows
+  - import the body rows starting at `bodyStartRow`
+  - stitch header names and body rows together in application code before downstream shaping continues
 
 ## Reviewed Shape Decisions
 
@@ -102,6 +124,14 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
   - if that body boundary is captured explicitly, the system is already close to an explicit `body-start-row` contract
 - Because of that, the two-pass path is worth investigating as an internal remediation or fallback note, but not as a complete replacement for a deterministic shaping contract.
 - Even if the fallback proves robust, it should remain an internal remediation note unless there is a strong reason to expose it as explicit user-visible behavior.
+
+## Artifact Compatibility Decision
+
+- Existing `version: 1` source-shape artifacts should remain readable by newer binaries.
+- Widened source-shape artifacts that include `bodyStartRow` should remain on `version: 1` in the current canary line.
+- Newer binaries in this line should read both older v1 artifacts and widened v1 artifacts.
+- Older binaries are not guaranteed to replay widened v1 artifacts that include `bodyStartRow`.
+- This keeps the schema version stable without overstating replay compatibility across older binaries.
 
 ## Related Plans
 

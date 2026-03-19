@@ -50,6 +50,7 @@ This follow-up should treat those as separate layers:
 ### Shared DuckDB integration
 
 - apply the new field in the shared Excel relation-building path used by both query and extract
+- treat `body-start-row` as import-time shaping, not only post-import filtering
 - ensure tolerant import retries still work on top of the new contract
 - preserve blank-row cleanup behavior for shaped Excel sources
 
@@ -124,7 +125,8 @@ First-pass compatibility expectations:
 - keep the existing `shape` object and widen it compatibly
 - preserve range-only and range-plus-header-row artifacts
 - allow `bodyStartRow` only when it is valid for the current Excel source
-- keep `version: 1`
+- read existing `version: 1` artifacts
+- keep widened artifacts on `version: 1` in the current canary line
 - do not require `headerRow` when `bodyStartRow` is present
 - support these deterministic shape combinations:
   - `range`
@@ -137,6 +139,25 @@ Validation expectations:
 - if `range` is present, `bodyStartRow` must fall within the selected range
 - if `range` is absent, `bodyStartRow` must fall within the detected used range
 - when `headerRow` is also present, `headerRow` becomes the governing boundary and `bodyStartRow` must be greater than `headerRow`
+
+Import-time behavior expectations:
+
+- `bodyStartRow` without `headerRow`:
+  - derive the effective import range so the imported rectangle starts at `bodyStartRow`
+  - if `range` is present, reuse the selected column span and end row
+  - if `range` is absent, reuse the detected used-range column span and end row
+- `range + bodyStartRow`:
+  - derive the effective import range from the selected range by replacing its start row with `bodyStartRow`
+- `headerRow + bodyStartRow` without `range`:
+  - use the detected used-range columns
+  - import the header row separately from the body rows
+  - import the body rows starting at `bodyStartRow`
+  - stitch header names and body rows together in application code before downstream shaping continues
+- `range + headerRow + bodyStartRow`:
+  - use the selected range columns
+  - import the header row separately from the body rows
+  - import the body rows starting at `bodyStartRow`
+  - stitch header names and body rows together in application code before downstream shaping continues
 
 ### Boundaries
 
@@ -175,9 +196,14 @@ Decision boundary:
 - [ ] freeze Excel-only first-pass scope
 - [ ] freeze the rule that `body-start-row` does not require `header-row`
 - [ ] freeze the validation rule that `header-row` becomes the governing boundary when both rows are present
+- [ ] freeze import-time behavior for:
+  - `bodyStartRow`
+  - `range + bodyStartRow`
+  - `headerRow + bodyStartRow`
+  - `range + headerRow + bodyStartRow`
 - [ ] freeze the rule that reviewed shaping may return any valid combination of `range`, `headerRow`, and `bodyStartRow`
-- [ ] keep source-shape artifacts on `version: 1`
-- [ ] confirm source-shape artifact widening strategy without unnecessary version churn
+- [ ] freeze the rule that source-shape artifacts remain on `version: 1` in this canary line
+- [ ] freeze the compatibility rule that newer binaries read older and widened `version: 1` artifacts, while older binaries are not guaranteed to replay widened `version: 1` artifacts
 
 ### Phase 2: Snapshot parser correction
 
@@ -194,6 +220,8 @@ Decision boundary:
 ### Phase 4: Shared `body-start-row` implementation
 
 - [ ] extend the shared Excel relation-preparation path
+- [ ] implement effective-range derivation for `bodyStartRow` without `headerRow`
+- [ ] implement split header-row plus body-row import for cases where both `headerRow` and `bodyStartRow` are present
 - [ ] wire `body-start-row` through direct query
 - [ ] wire `body-start-row` through direct extract
 - [ ] preserve or revise tolerant retry ordering based on implementation results
@@ -202,7 +230,7 @@ Decision boundary:
 
 - [ ] update Codex source-shape prompt schema and parsing
 - [ ] update the prompt guidance so Codex can suggest `bodyStartRow` alone when appropriate
-- [ ] update source-shape artifact compatibility and rendering
+- [ ] update source-shape artifact compatibility and rendering for widened `version: 1`
 - [ ] update reviewed-shape rendering to show `body-start-row`
 - [ ] add focused interactive and command-level tests
 
