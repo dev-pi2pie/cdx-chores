@@ -19,16 +19,16 @@ import {
 } from "./normalize";
 import { normalizeExcelBodyStartRow, normalizeExcelHeaderRow, normalizeExcelRange } from "../query";
 
+function isValidReviewedSourceShape(shape: DataSourceShapeSelection): boolean {
+  return Boolean(shape.range) || shape.headerRow !== undefined || shape.bodyStartRow !== undefined;
+}
+
 export function createDataSourceShapeArtifact(options: {
   input: DataSourceShapeInputReference;
   now: Date;
   shape: DataSourceShapeSelection;
 }): DataSourceShapeArtifact {
-  if (
-    !options.shape.range &&
-    options.shape.headerRow === undefined &&
-    options.shape.bodyStartRow === undefined
-  ) {
+  if (!isValidReviewedSourceShape(options.shape)) {
     throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -124,11 +124,7 @@ function parseDataSourceShapeArtifact(
       : {}),
     ...(normalizedHeaderRow !== undefined ? { headerRow: normalizedHeaderRow } : {}),
   };
-  if (
-    !normalizedShape.range &&
-    normalizedShape.headerRow === undefined &&
-    normalizedShape.bodyStartRow === undefined
-  ) {
+  if (!isValidReviewedSourceShape(normalizedShape)) {
     throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
       code: "INVALID_INPUT",
       exitCode: 2,

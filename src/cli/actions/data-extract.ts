@@ -6,6 +6,7 @@ import {
   runCodexHeaderSuggestionFlow,
 } from "../data-workflows/header-mapping-flow";
 import {
+  buildSourceShapeHeaderSuggestionFollowUpCommand,
   buildSourceShapeFollowUpCommand,
   classifySourceShapeSuggestionFailure,
   isSourceShapeFormat,
@@ -308,11 +309,20 @@ async function runCodexSourceShapeSuggestionFlow(
     printLine(runtime.stderr, `Wrote source shape: ${displayPath(runtime, artifactPath)}`);
     printLine(
       runtime.stderr,
-      "Review the shape artifact, then rerun with --source-shape and --output to materialize the shaped table.",
+      "Review the shape artifact, then rerun with --source-shape to replay the accepted source interpretation. If the replayed columns are still positional or generic, run --codex-suggest-headers after --source-shape before final extraction.",
     );
     printLine(
       runtime.stderr,
       buildSourceShapeFollowUpCommand({
+        artifactPath,
+        format: options.format,
+        inputPath: options.inputPath,
+        runtime,
+      }),
+    );
+    printLine(
+      runtime.stderr,
+      buildSourceShapeHeaderSuggestionFollowUpCommand({
         artifactPath,
         format: options.format,
         inputPath: options.inputPath,

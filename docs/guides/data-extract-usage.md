@@ -90,6 +90,14 @@ First-pass reviewed Codex source-shape help is narrower:
 
 `--source-shape <path>` reuses an accepted source-shape artifact and applies the accepted sheet plus reviewed shape before extraction continues.
 
+Important distinction:
+
+- source-shape artifacts persist source interpretation only
+- they do not persist semantic header renames
+- a reviewed source-shape artifact may contain only `bodyStartRow` when that is the only deterministic source change
+- replaying a body-start-only artifact may still expose positional or generic columns
+- when that happens, the intended next step is `--codex-suggest-headers` after `--source-shape`, followed by `--header-mapping` for final extraction
+
 Examples:
 
 ```bash
@@ -100,6 +108,9 @@ cdx-chores data extract ./examples/playground/data-extract/header-band.xlsx --so
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --output ./examples/playground/.tmp-tests/messy.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --codex-suggest-headers --write-header-mapping ./stacked.headers.json
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --header-mapping ./stacked.headers.json --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 ```
 
 ### Reviewed header suggestions

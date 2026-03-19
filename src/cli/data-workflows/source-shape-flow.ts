@@ -89,6 +89,28 @@ export function buildSourceShapeFollowUpCommand(options: {
   return parts.join(" ");
 }
 
+export function buildSourceShapeHeaderSuggestionFollowUpCommand(options: {
+  artifactPath: string;
+  format: DataQueryInputFormat;
+  inputPath: string;
+  runtime: CliRuntime;
+}): string {
+  const parts = [
+    "cdx-chores",
+    "data",
+    "extract",
+    JSON.stringify(displayPath(options.runtime, options.inputPath)),
+    "--input-format",
+    options.format,
+    "--source-shape",
+    JSON.stringify(displayPath(options.runtime, options.artifactPath)),
+    "--codex-suggest-headers",
+    "--write-header-mapping",
+    JSON.stringify("<header-mapping.json>"),
+  ];
+  return parts.join(" ");
+}
+
 export async function resolveReusableSourceShapeForDataFlow(options: {
   format: DataQueryInputFormat;
   inputPath: string;
