@@ -1,7 +1,7 @@
 ---
 title: "Big merged-cell source-shape follow-up"
 created-date: 2026-03-19
-modified-date: 2026-03-19
+modified-date: 2026-03-20
 status: draft
 agent: codex
 ---
@@ -42,7 +42,9 @@ This follow-up should treat those as separate layers:
 - add one optional Excel shaping field, `body-start-row`, to represent the first true data row after the header band
 - keep the common path unchanged so standard shaped Excel cases still work with only `range` and `header-row`
 - use absolute worksheet row numbering to match the existing `header-row` contract
-- validate `body-start-row` against the selected range or detected used range
+- if `range` is present, validate `body-start-row` against the selected range
+- if `range` is absent, validate `body-start-row` against the detected used range
+- do not require `header-row` whenever `body-start-row` is present
 - keep `header-row` semantics unchanged
 
 ### Shared DuckDB integration
@@ -92,8 +94,9 @@ The next deterministic Excel shaping layer should become:
 - absolute worksheet row number
 - first row that belongs to the logical record body
 - valid only for Excel inputs in the first pass
-- must fall within the selected range or detected used range
-- must be greater than `header-row`
+- if `range` is present, must fall within the selected range
+- if `range` is absent, must fall within the detected used range
+- when `header-row` is also present, `header-row` becomes the governing boundary and `body-start-row` must be greater than `header-row`
 - should remain optional; when omitted, current behavior stays unchanged
 
 ### Schema Design
@@ -121,7 +124,19 @@ First-pass compatibility expectations:
 - keep the existing `shape` object and widen it compatibly
 - preserve range-only and range-plus-header-row artifacts
 - allow `bodyStartRow` only when it is valid for the current Excel source
-- prefer requiring `headerRow` when `bodyStartRow` is present in the first pass
+- keep `version: 1`
+- do not require `headerRow` when `bodyStartRow` is present
+- support these deterministic shape combinations:
+  - `range`
+  - `headerRow`
+  - `bodyStartRow`
+  - any valid combination of them
+
+Validation expectations:
+
+- if `range` is present, `bodyStartRow` must fall within the selected range
+- if `range` is absent, `bodyStartRow` must fall within the detected used range
+- when `headerRow` is also present, `headerRow` becomes the governing boundary and `bodyStartRow` must be greater than `headerRow`
 
 ### Boundaries
 
@@ -146,8 +161,10 @@ The plan should explicitly test whether the hard workbook can be recovered witho
 
 Decision boundary:
 
-- if the two-pass path is robust, it may remain as an internal fallback
+- if the two-pass path is robust, it may remain as an internal fallback or remediation note
 - if the two-pass path still needs an explicit saved body boundary for replayable shaping, keep `body-start-row` as the deterministic contract
+- do not delay contract freeze on the outcome of this experiment
+- do not treat the fallback as primary user-visible contract behavior in this follow-up unless there is a strong reason to expose it
 
 ## Proposed Phases
 
@@ -156,7 +173,10 @@ Decision boundary:
 - [ ] freeze `body-start-row` as the preferred name
 - [ ] freeze absolute worksheet row numbering
 - [ ] freeze Excel-only first-pass scope
-- [ ] define whether `header-row` is required when `body-start-row` is present
+- [ ] freeze the rule that `body-start-row` does not require `header-row`
+- [ ] freeze the validation rule that `header-row` becomes the governing boundary when both rows are present
+- [ ] freeze the rule that reviewed shaping may return any valid combination of `range`, `headerRow`, and `bodyStartRow`
+- [ ] keep source-shape artifacts on `version: 1`
 - [ ] confirm source-shape artifact widening strategy without unnecessary version churn
 
 ### Phase 2: Snapshot parser correction
@@ -169,6 +189,7 @@ Decision boundary:
 - [ ] prototype two-pass header-only plus body-only recovery on the public stacked merged-band workbook
 - [ ] decide whether that path is robust enough to keep as an internal remediation
 - [ ] document the tradeoff between internal fallback and explicit deterministic shaping
+- [ ] keep this phase non-blocking for the explicit contract
 
 ### Phase 4: Shared `body-start-row` implementation
 
@@ -180,6 +201,7 @@ Decision boundary:
 ### Phase 5: Reviewed-shape and artifact updates
 
 - [ ] update Codex source-shape prompt schema and parsing
+- [ ] update the prompt guidance so Codex can suggest `bodyStartRow` alone when appropriate
 - [ ] update source-shape artifact compatibility and rendering
 - [ ] update reviewed-shape rendering to show `body-start-row`
 - [ ] add focused interactive and command-level tests

@@ -1,7 +1,7 @@
 ---
 title: "Big merged-cell workbook shaping gap"
 created-date: 2026-03-19
-modified-date: 2026-03-19
+modified-date: 2026-03-20
 status: completed
 agent: codex
 ---
@@ -53,8 +53,35 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
 - Expected usage: optional and additive
   - standard shaped Excel cases should continue to rely on `range` and `header-row`
   - `body-start-row` should only be needed for the remaining hard merged-band class
+- First-pass validation should not require `header-row` whenever `body-start-row` is present
+  - `header-row` answers where column names come from
+  - `body-start-row` answers where real records begin
+  - those often appear together, but no-header body-start cases still need to remain valid
+- Reviewed source-shape suggestions should be allowed to suggest `bodyStartRow` by itself when that is the only deterministic change needed
+- Source-shape artifacts should remain on `version: 1` because `bodyStartRow` is a backward-compatible widening of the existing `shape` object
+- The no-new-field fallback should be investigated, but it should not block freezing the explicit contract
 
-## Generalization Notes
+## Validation Decisions
+
+- First-pass validation should use the selected range as the primary boundary:
+  - if `range` is present, `body-start-row` must fall within the selected range
+  - if `range` is absent, `body-start-row` should validate against the detected sheet used range
+- `header-row` is not required when `body-start-row` is present
+- when `header-row` is also present, `header-row` becomes the governing boundary and `body-start-row` must be greater than `header-row`
+
+## Reviewed Shape Decisions
+
+- Reviewed source-shape prompts should explicitly allow:
+  - `range`
+  - `headerRow`
+  - `bodyStartRow`
+  - any valid combination of them
+- This keeps reviewed shaping compatible with:
+  - no-header cases
+  - already-correct-header cases
+  - hard merged-band cases
+
+## Generalization Decisions
 
 - The cleanest first pass is Excel-only, because the current problem is tied to worksheet row structure and merged-cell bands.
 - If later generalization is needed, the most practical route is:
@@ -62,13 +89,6 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
   - keep first-pass CLI validation format-specific
   - only widen to CSV or TSV if a real banner-row body-start case appears
 - SQLite and Parquet do not currently present the same row-band shaping problem and should stay out of scope for this field.
-
-## Open Questions
-
-- Should first-pass validation require `header-row` whenever `body-start-row` is provided?
-- Should reviewed source-shape suggestions be allowed to suggest only `body-start-row`, or should the first pass require it to be paired with `headerRow`?
-- Should the source-shape artifact stay backward-compatible by simply widening the existing `shape` object, or is any schema version bump warranted?
-- Should a no-new-flag fallback be attempted before freezing the explicit contract?
 
 ## No-New-Field Fallback Notes
 
@@ -80,7 +100,8 @@ Confirm whether the remaining failure is primarily a bad reviewed-shape suggesti
   - the application still needs a way to know where the body starts
   - if that body boundary is inferred heuristically, the behavior becomes opaque and harder to replay
   - if that body boundary is captured explicitly, the system is already close to an explicit `body-start-row` contract
-- Because of that, the two-pass path is worth investigating as an internal remediation or fallback, but not as a complete replacement for a deterministic shaping contract.
+- Because of that, the two-pass path is worth investigating as an internal remediation or fallback note, but not as a complete replacement for a deterministic shaping contract.
+- Even if the fallback proves robust, it should remain an internal remediation note unless there is a strong reason to expose it as explicit user-visible behavior.
 
 ## Related Plans
 
