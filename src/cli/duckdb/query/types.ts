@@ -22,6 +22,7 @@ export interface DataQueryIntrospectionColumn {
 }
 
 export interface DataQuerySourceIntrospection {
+  selectedBodyStartRow?: number;
   columns: DataQueryIntrospectionColumn[];
   sampleRows: Array<Record<string, string>>;
   selectedHeaderRow?: number;
@@ -31,6 +32,7 @@ export interface DataQuerySourceIntrospection {
 }
 
 export interface DataQuerySourceShape {
+  bodyStartRow?: number;
   headerMappings?: DataHeaderMappingEntry[];
   headerRow?: number;
   range?: string;
@@ -38,6 +40,7 @@ export interface DataQuerySourceShape {
 }
 
 export interface PreparedDataQuerySource {
+  selectedBodyStartRow?: number;
   selectedHeaderRow?: number;
   selectedSource?: string;
   selectedRange?: string;

@@ -222,6 +222,9 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
+      parsePositiveIntegerOption(value, "--body-start-row"),
+    )
     .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
       parsePositiveIntegerOption(value, "--header-row"),
     )
@@ -237,6 +240,7 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
       async (
         input: string,
         options: {
+          bodyStartRow?: number;
           codexSuggestShape?: boolean;
           codexSuggestHeaders?: boolean;
           headerMapping?: string;
@@ -252,6 +256,7 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
         },
       ) => {
         await actionDataExtract(runtime, {
+          bodyStartRow: options.bodyStartRow,
           codexSuggestShape: options.codexSuggestShape,
           codexSuggestHeaders: options.codexSuggestHeaders,
           headerMapping: options.headerMapping,
@@ -281,6 +286,9 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
+      parsePositiveIntegerOption(value, "--body-start-row"),
+    )
     .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
       parsePositiveIntegerOption(value, "--header-row"),
     )
@@ -303,6 +311,7 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
       async (
         input: string,
         options: {
+          bodyStartRow?: number;
           codexSuggestHeaders?: boolean;
           headerMapping?: string;
           headerRow?: number;
@@ -320,6 +329,7 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
         },
       ) => {
         await actionDataQuery(runtime, {
+          bodyStartRow: options.bodyStartRow,
           codexSuggestHeaders: options.codexSuggestHeaders,
           headerMapping: options.headerMapping,
           headerRow: options.headerRow,
@@ -351,6 +361,9 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
+      parsePositiveIntegerOption(value, "--body-start-row"),
+    )
     .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
       parsePositiveIntegerOption(value, "--header-row"),
     )
@@ -359,6 +372,7 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
       async (
         input: string,
         options: {
+          bodyStartRow?: number;
           inputFormat?: DataQueryInputFormat;
           intent: string;
           headerRow?: number;
@@ -369,12 +383,14 @@ export function registerDataCommands(program: Command, runtime: CliRuntime): voi
         command: Command,
       ) => {
         const parentOptions = command.parent?.opts<{
+          bodyStartRow?: number;
           headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           range?: string;
           source?: string;
         }>();
         await actionDataQueryCodex(runtime, {
+          bodyStartRow: options.bodyStartRow ?? parentOptions?.bodyStartRow,
           headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,
           inputFormat: options.inputFormat ?? parentOptions?.inputFormat,

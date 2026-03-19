@@ -1,5 +1,5 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
-import { normalizeExcelHeaderRow, normalizeExcelRange } from "../query";
+import { normalizeExcelBodyStartRow, normalizeExcelHeaderRow, normalizeExcelRange } from "../query";
 import type {
   DataSourceShapeSuggestionContext,
   DataSourceShapeSuggestionResult,
@@ -9,6 +9,9 @@ import type {
 const DATA_SOURCE_SHAPE_OUTPUT_SCHEMA = {
   type: "object",
   properties: {
+    body_start_row: {
+      type: ["integer", "null"],
+    },
     header_row: {
       type: ["integer", "null"],
     },
@@ -19,7 +22,7 @@ const DATA_SOURCE_SHAPE_OUTPUT_SCHEMA = {
       type: "string",
     },
   },
-  required: ["header_row", "range", "reasoning_summary"],
+  required: ["body_start_row", "header_row", "range", "reasoning_summary"],
   additionalProperties: false,
 } as const;
 
@@ -37,6 +40,7 @@ function truncateForPrompt(value: string, maxChars: number): string {
 }
 
 function buildSourceShapeSuggestionPrompt(options: {
+  currentBodyStartRow?: number;
   currentHeaderRow?: number;
   currentRange?: string;
   context: DataSourceShapeSuggestionContext;
@@ -69,23 +73,29 @@ function buildSourceShapeSuggestionPrompt(options: {
     "Return JSON only following the provided schema.",
     "",
     "Rules:",
-    "- Always return `range`, `header_row`, and `reasoning_summary`.",
+    "- Always return `range`, `header_row`, `body_start_row`, and `reasoning_summary`.",
     "- `range` must use A1:Z99-style rectangular notation when present.",
     "- `header_row` must use the absolute worksheet row number when present.",
+    "- `body_start_row` must use the absolute worksheet row number when present.",
     "- Choose the narrowest reasonable rectangle that contains the real header row and data rows when changing `range`.",
     "- Exclude decorative titles, banner rows, and spacer regions when possible.",
     "- Do not invent sheet names or semantic headers.",
     "- Base the suggestion on the worksheet cell evidence and the current shaped-source result.",
     "- Use `null` for `range` when the current range should stay unchanged.",
     "- Use `null` for `header_row` when the current header row should stay unchanged.",
+    "- Use `null` for `body_start_row` when no explicit body-start change is needed.",
+    "- If the current range is already plausible but only the body boundary needs correction, return `body_start_row` and set the unchanged fields to null.",
     "- If the current range is already plausible but the header row is wrong, return `header_row` and set `range` to null.",
-    "- If the current range and header row both need correction, return both.",
+    "- If multiple shaping fields need correction, return every field that should change.",
     "- Do not return empty strings or zero placeholders.",
     "",
     `Selected sheet: ${options.context.sheetSnapshot.sheetName}`,
     `Current range: ${options.currentRange ?? "(whole sheet)"}`,
     `Current header row: ${
       options.currentHeaderRow !== undefined ? String(options.currentHeaderRow) : "(auto or first row)"
+    }`,
+    `Current body start row: ${
+      options.currentBodyStartRow !== undefined ? String(options.currentBodyStartRow) : "(not set)"
     }`,
     `Worksheet used range: ${options.context.sheetSnapshot.usedRange ?? "(unknown)"}`,
     `Merged ranges: ${
@@ -109,11 +119,13 @@ function buildSourceShapeSuggestionPrompt(options: {
 }
 
 function parseSourceShapeSuggestionResponse(finalResponse: string): {
+  bodyStartRow?: number;
   headerRow?: number;
   range?: string;
   reasoningSummary: string;
 } {
   const parsed = JSON.parse(finalResponse) as {
+    body_start_row?: unknown;
     header_row?: unknown;
     range?: unknown;
     reasoning_summary?: unknown;
@@ -121,6 +133,13 @@ function parseSourceShapeSuggestionResponse(finalResponse: string): {
 
   const range = typeof parsed.range === "string" && parsed.range.trim().length > 0
     ? normalizeExcelRange(parsed.range)
+    : undefined;
+  const bodyStartRow = parsed.body_start_row !== undefined && parsed.body_start_row !== null
+    ? normalizeExcelBodyStartRow(
+        typeof parsed.body_start_row === "number"
+          ? parsed.body_start_row
+          : Number(parsed.body_start_row),
+      )
     : undefined;
   const headerRow = parsed.header_row !== undefined && parsed.header_row !== null
     ? normalizeExcelHeaderRow(
@@ -135,11 +154,12 @@ function parseSourceShapeSuggestionResponse(finalResponse: string): {
   if (!reasoningSummary) {
     throw new Error("Codex source-shape response did not include reasoning_summary.");
   }
-  if (!range && headerRow === undefined) {
-    throw new Error("Codex source-shape response must include range, header_row, or both.");
+  if (!range && bodyStartRow === undefined && headerRow === undefined) {
+    throw new Error("Codex source-shape response must include range, header_row, body_start_row, or a valid combination of them.");
   }
 
   return {
+    ...(bodyStartRow !== undefined ? { bodyStartRow } : {}),
     ...(headerRow !== undefined ? { headerRow } : {}),
     ...(range ? { range } : {}),
     reasoningSummary,
@@ -161,6 +181,7 @@ async function runSourceShapePrompt(options: {
 
 export async function suggestDataSourceShapeWithCodex(options: {
   context: DataSourceShapeSuggestionContext;
+  currentBodyStartRow?: number;
   currentHeaderRow?: number;
   currentRange?: string;
   runner?: DataSourceShapeSuggestionRunner;
@@ -172,6 +193,7 @@ export async function suggestDataSourceShapeWithCodex(options: {
     const finalResponse = await runner({
       prompt: buildSourceShapeSuggestionPrompt({
         context: options.context,
+        currentBodyStartRow: options.currentBodyStartRow,
         currentHeaderRow: options.currentHeaderRow,
         currentRange: options.currentRange,
       }),
@@ -182,6 +204,7 @@ export async function suggestDataSourceShapeWithCodex(options: {
     return {
       reasoningSummary: parsed.reasoningSummary,
       shape: {
+        ...(parsed.bodyStartRow !== undefined ? { bodyStartRow: parsed.bodyStartRow } : {}),
         ...(parsed.headerRow !== undefined ? { headerRow: parsed.headerRow } : {}),
         ...(parsed.range ? { range: parsed.range } : {}),
       },

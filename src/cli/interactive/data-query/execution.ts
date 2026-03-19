@@ -112,6 +112,7 @@ export async function executeInteractiveCandidate(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -136,6 +137,7 @@ export async function executeInteractiveCandidate(
         pretty: outputOptions.pretty,
         rows: outputOptions.rows,
         ...(options.headerMappings ? { headerMappings: options.headerMappings } : {}),
+        ...(options.selectedBodyStartRow !== undefined ? { bodyStartRow: options.selectedBodyStartRow } : {}),
         ...(options.selectedHeaderRow !== undefined ? { headerRow: options.selectedHeaderRow } : {}),
         ...(options.selectedRange ? { range: options.selectedRange } : {}),
         ...(options.selectedSource ? { source: options.selectedSource } : {}),

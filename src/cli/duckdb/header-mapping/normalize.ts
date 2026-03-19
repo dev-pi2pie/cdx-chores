@@ -118,6 +118,7 @@ export function createHeaderMappingInputReference(options: {
 }): DataHeaderMappingInputReference {
   const normalizedRelativePath = normalizeArtifactPath(relative(options.cwd, options.inputPath) || ".");
   return {
+    ...(options.shape?.bodyStartRow !== undefined ? { bodyStartRow: options.shape.bodyStartRow } : {}),
     format: options.format,
     ...(options.shape?.headerRow !== undefined ? { headerRow: options.shape.headerRow } : {}),
     path: normalizedRelativePath,

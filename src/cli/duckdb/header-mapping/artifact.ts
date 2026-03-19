@@ -148,9 +148,13 @@ function parseDataHeaderMappingArtifact(
     format: ensureKnownQueryInputFormat(input.format, "input.format"),
     path: normalizeArtifactPath(ensureNonEmptyString(input.path, "input.path")),
   };
+  const bodyStartRow = normalizeOptionalPositiveInteger(input.bodyStartRow, "input.bodyStartRow");
   const headerRow = normalizeOptionalPositiveInteger(input.headerRow, "input.headerRow");
   const source = normalizeOptionalString(input.source);
   const range = normalizeOptionalString(input.range);
+  if (bodyStartRow !== undefined) {
+    normalizedInput.bodyStartRow = bodyStartRow;
+  }
   if (headerRow !== undefined) {
     normalizedInput.headerRow = headerRow;
   }
@@ -316,6 +320,7 @@ export function resolveReusableHeaderMappings(options: {
   const expected = options.currentInput;
   const actual = options.artifact.input;
   const exactMatch =
+    actual.bodyStartRow === expected.bodyStartRow &&
     actual.path === expected.path &&
     actual.format === expected.format &&
     actual.headerRow === expected.headerRow &&

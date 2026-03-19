@@ -5,6 +5,7 @@ import type { DataPreviewRow } from "../data-preview/source";
 import { getDisplayWidth, truncateAndPadToDisplayWidth } from "../text-display-width";
 
 export interface RenderDataQueryOptions {
+  bodyStartRow?: number;
   columns: string[];
   format: string;
   headerRow?: number;
@@ -149,6 +150,9 @@ export function renderDataQuery(
       : []),
     ...(options.range
       ? [`${pc.bold(pc.cyan("Range"))}: ${options.range}`]
+      : []),
+    ...(options.bodyStartRow !== undefined
+      ? [`${pc.bold(pc.cyan("Body start row"))}: ${options.bodyStartRow}`]
       : []),
     ...(options.headerRow !== undefined
       ? [`${pc.bold(pc.cyan("Header row"))}: ${options.headerRow}`]

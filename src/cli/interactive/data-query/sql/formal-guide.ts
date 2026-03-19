@@ -242,6 +242,7 @@ export async function runFormalGuideInteractiveQuery(
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
     introspection: DataQuerySourceIntrospection;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -254,6 +255,7 @@ export async function runFormalGuideInteractiveQuery(
       format: options.format,
       headerMappings: options.headerMappings,
       input: options.input,
+      selectedBodyStartRow: options.selectedBodyStartRow,
       selectedHeaderRow: options.selectedHeaderRow,
       selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,

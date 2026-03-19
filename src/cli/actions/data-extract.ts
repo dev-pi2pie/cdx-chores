@@ -40,6 +40,7 @@ import {
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 
 export interface DataExtractOptions {
+  bodyStartRow?: number;
   codexSuggestShape?: boolean;
   codexSuggestHeaders?: boolean;
   headerMapping?: string;
@@ -105,6 +106,13 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
     });
   }
 
+  if (options.codexSuggestShape && options.bodyStartRow !== undefined) {
+    throw new CliError("--codex-suggest-shape cannot be used together with --body-start-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (options.codexSuggestHeaders && options.headerMapping) {
     throw new CliError("--codex-suggest-headers cannot be used together with --header-mapping.", {
       code: "INVALID_INPUT",
@@ -149,6 +157,13 @@ function validateDataExtractOptions(options: DataExtractOptions): void {
 
   if (options.sourceShape?.trim() && options.headerRow !== undefined) {
     throw new CliError("--source-shape cannot be used together with --header-row in the current reviewed-shape flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.bodyStartRow !== undefined) {
+    throw new CliError("--source-shape cannot be used together with --body-start-row in the current reviewed-shape flow.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -252,6 +267,7 @@ async function runCodexSourceShapeSuggestionFlow(
         currentIntrospection,
         sheetSnapshot,
       },
+      currentBodyStartRow: currentIntrospection.selectedBodyStartRow,
       currentHeaderRow: currentIntrospection.selectedHeaderRow,
       currentRange: currentIntrospection.selectedRange,
       runner: options.sourceShapeSuggestionRunner,
@@ -283,6 +299,7 @@ async function runCodexSourceShapeSuggestionFlow(
     });
 
     renderSuggestedSourceShape(runtime, {
+      bodyStartRow: suggestionResult.shape.bodyStartRow,
       headerRow: suggestionResult.shape.headerRow,
       range: suggestionResult.shape.range,
       reasoningSummary: suggestionResult.reasoningSummary,
@@ -315,6 +332,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   const explicitRange = options.range?.trim() || undefined;
   const explicitSource = options.source?.trim() || undefined;
@@ -341,6 +359,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
       })
     : undefined;
   const range = resolvedSourceShape?.range ?? explicitRange;
+  const effectiveBodyStartRow = resolvedSourceShape?.bodyStartRow ?? bodyStartRow;
   const effectiveHeaderRow = resolvedSourceShape?.headerRow ?? headerRow;
   const source = resolvedSourceShape?.source ?? explicitSource;
 
@@ -352,6 +371,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
         format,
         inputPath,
         shape: {
+          bodyStartRow: effectiveBodyStartRow,
           headerRow: effectiveHeaderRow,
           range,
           source,
@@ -365,6 +385,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
             inputPath,
             format,
             {
+              bodyStartRow: effectiveBodyStartRow,
               headerRow: effectiveHeaderRow,
               range,
               source,
@@ -393,6 +414,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
           inputPath,
           runtime,
           shape: {
+            ...(effectiveBodyStartRow !== undefined ? { bodyStartRow: effectiveBodyStartRow } : {}),
             ...(effectiveHeaderRow !== undefined ? { headerRow: effectiveHeaderRow } : {}),
             range,
             source,
@@ -408,6 +430,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
       inputPath,
       format,
       {
+        bodyStartRow: effectiveBodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow: effectiveHeaderRow,
         range,

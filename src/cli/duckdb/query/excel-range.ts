@@ -60,8 +60,16 @@ export function buildExcelRange(parts: ExcelRangeParts): string {
 }
 
 export function normalizeExcelHeaderRow(value: number): number {
+  return normalizeExcelWorksheetRow(value, "--header-row");
+}
+
+export function normalizeExcelBodyStartRow(value: number): number {
+  return normalizeExcelWorksheetRow(value, "--body-start-row");
+}
+
+function normalizeExcelWorksheetRow(value: number, flagName: string): number {
   if (!Number.isInteger(value) || value <= 0) {
-    throw new CliError("--header-row must be a positive integer.", {
+    throw new CliError(`${flagName} must be a positive integer.`, {
       code: "INVALID_INPUT",
       exitCode: 2,
     });

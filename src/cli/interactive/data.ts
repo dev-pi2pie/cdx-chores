@@ -181,6 +181,7 @@ function renderInteractiveExtractWriteSummary(
     outputPath: string;
     outputFormat: InteractiveExtractOutputFormat;
     overwrite: boolean;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -195,6 +196,9 @@ function renderInteractiveExtractWriteSummary(
   }
   if (options.selectedRange) {
     printLine(runtime.stderr, `- range: ${options.selectedRange}`);
+  }
+  if (options.selectedBodyStartRow !== undefined) {
+    printLine(runtime.stderr, `- body start row: ${options.selectedBodyStartRow}`);
   }
   if (options.selectedHeaderRow !== undefined) {
     printLine(runtime.stderr, `- header row: ${options.selectedHeaderRow}`);
@@ -218,6 +222,7 @@ async function confirmInteractiveExtractWrite(
   options: {
     headerMappingCount: number;
     inputPath: string;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;
@@ -289,6 +294,7 @@ async function runInteractiveDataExtract(
       introspection,
       labels: EXTRACT_CONTINUATION_LABELS,
       runtime,
+      selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
@@ -296,6 +302,7 @@ async function runInteractiveDataExtract(
     const outputOptions = await confirmInteractiveExtractWrite(runtime, pathPromptContext, {
       headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
       inputPath: input,
+      selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
@@ -310,6 +317,7 @@ async function runInteractiveDataExtract(
       inputFormat: format,
       output: outputOptions.output,
       overwrite: outputOptions.overwrite,
+      ...(sourceShape.selectedBodyStartRow !== undefined ? { bodyStartRow: sourceShape.selectedBodyStartRow } : {}),
       ...(sourceShape.selectedHeaderRow !== undefined ? { headerRow: sourceShape.selectedHeaderRow } : {}),
       ...(sourceShape.selectedRange ? { range: sourceShape.selectedRange } : {}),
       ...(selectedSource ? { source: selectedSource } : {}),

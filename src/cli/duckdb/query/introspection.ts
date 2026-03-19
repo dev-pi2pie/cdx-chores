@@ -46,6 +46,7 @@ export async function collectDataQuerySourceIntrospection(
         name,
         type: columnTypes[index]?.toString() ?? "UNKNOWN",
       })),
+      selectedBodyStartRow: preparedSource.selectedBodyStartRow,
       selectedHeaderRow: preparedSource.selectedHeaderRow,
       sampleRows: visibleRows,
       selectedRange: preparedSource.selectedRange,

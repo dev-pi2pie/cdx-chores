@@ -5,7 +5,13 @@ import {
   normalizeAndValidateAcceptedHeaderMappings,
 } from "../header-mapping";
 import { collectXlsxSheetSnapshot } from "../xlsx-sources";
-import { buildExcelRange, normalizeExcelHeaderRow, normalizeExcelRange, parseNormalizedExcelRange } from "./excel-range";
+import {
+  buildExcelRange,
+  normalizeExcelBodyStartRow,
+  normalizeExcelHeaderRow,
+  normalizeExcelRange,
+  parseNormalizedExcelRange,
+} from "./excel-range";
 import {
   escapeSqlStringLiteral,
   getDuckDbManagedExtensionNameForFormat,
@@ -53,6 +59,7 @@ function buildRelationSql(
   format: DataQueryInputFormat,
   shape: DataQuerySourceShape = {},
   options: {
+    excelHeader?: boolean;
     excelImportMode?: ExcelImportMode;
   } = {},
 ): string {
@@ -71,7 +78,7 @@ function buildRelationSql(
         escapedInput,
         `sheet = ${escapeSqlStringLiteral(shape.source ?? "")}`,
         ...(shape.range ? [`range = ${escapeSqlStringLiteral(shape.range)}`] : []),
-        ...(shape.headerRow ? ["header = true"] : []),
+        ...(options.excelHeader ? ["header = true"] : []),
         ...(options.excelImportMode === "empty_as_varchar" ? ["empty_as_varchar = true"] : []),
         ...(options.excelImportMode === "all_varchar" ? ["all_varchar = true"] : []),
       ].join(", ")})`;
@@ -104,6 +111,13 @@ function assertSingleObjectSourceContract(
 
   if (shape.headerRow !== undefined) {
     throw new CliError("--header-row is only valid for Excel inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (shape.bodyStartRow !== undefined) {
+    throw new CliError("--body-start-row is only valid for Excel inputs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -193,6 +207,201 @@ function buildPreparedFileProjectionSql(
   return `select ${selectList} from file_source${blankRowPredicate ? ` where ${blankRowPredicate}` : ""}`;
 }
 
+function buildExcelImportModes(isShapedExcel: boolean): ExcelImportMode[] {
+  return isShapedExcel ? ["empty_as_varchar", "all_varchar"] : ["default"];
+}
+
+async function createExcelTempViewWithRetries(options: {
+  connection: DuckDBConnection;
+  inputPath: string;
+  range?: string;
+  selectedSource: string;
+  viewName: string;
+  modes: readonly ExcelImportMode[];
+}): Promise<void> {
+  for (let index = 0; index < options.modes.length; index += 1) {
+    const excelImportMode = options.modes[index] ?? "default";
+    try {
+      await options.connection.run(
+        `create or replace temp view ${quoteSqlIdentifier(options.viewName)} as ${buildRelationSql(
+          options.inputPath,
+          "excel",
+          {
+            range: options.range,
+            source: options.selectedSource,
+          },
+          {
+            excelHeader: false,
+            excelImportMode,
+          },
+        )}`,
+      );
+      return;
+    } catch (error) {
+      const isLastAttempt = index === options.modes.length - 1;
+      if (!isLastAttempt && isRetryableExcelImportError(error)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+async function resolveExcelBoundaryRange(options: {
+  inputPath: string;
+  selectedRange?: string;
+  selectedSource: string;
+}): Promise<{ parts: import("./types").ExcelRangeParts; range: string }> {
+  if (options.selectedRange) {
+    return {
+      parts: parseNormalizedExcelRange(options.selectedRange),
+      range: options.selectedRange,
+    };
+  }
+
+  const sheetSnapshot = await collectXlsxSheetSnapshot(options.inputPath, options.selectedSource);
+  const usedRange = sheetSnapshot.usedRange;
+  if (!usedRange) {
+    throw new CliError(
+      `Cannot apply Excel row-based shaping because the selected Excel sheet has no detectable used range: ${options.selectedSource}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return {
+    parts: parseNormalizedExcelRange(usedRange),
+    range: usedRange,
+  };
+}
+
+function normalizeHeaderCellName(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function deduplicateSelectedColumnNames(names: readonly string[]): string[] {
+  const seen = new Map<string, number>();
+  return names.map((name) => {
+    const base = name.trim() || "column";
+    const normalizedKey = base.toLowerCase();
+    const nextCount = (seen.get(normalizedKey) ?? 0) + 1;
+    seen.set(normalizedKey, nextCount);
+    return nextCount === 1 ? base : `${base}_${nextCount}`;
+  });
+}
+
+async function collectNonEmptyBodyColumns(
+  connection: DuckDBConnection,
+  relationName: string,
+  columns: readonly QueryRelationColumn[],
+): Promise<Set<string>> {
+  if (columns.length === 0) {
+    return new Set();
+  }
+
+  const reader = await connection.runAndReadAll(
+    `select ${columns
+      .map(
+        (column) =>
+          `max(case when nullif(trim(cast(${quoteSqlIdentifier(column.sourceName)} as varchar)), '') is not null then 1 else 0 end) as ${quoteSqlIdentifier(column.sourceName)}`,
+      )
+      .join(", ")} from ${quoteSqlIdentifier(relationName)}`,
+  );
+  const row = (reader.getRowObjectsJson() as Array<Record<string, unknown>>)[0] ?? {};
+  return new Set(
+    columns
+      .filter((column) => row[column.sourceName] === 1 || row[column.sourceName] === true)
+      .map((column) => column.sourceName),
+  );
+}
+
+async function createSplitHeaderBodyExcelSourceView(options: {
+  connection: DuckDBConnection;
+  inputPath: string;
+  rangeParts: import("./types").ExcelRangeParts;
+  selectedBodyStartRow: number;
+  selectedHeaderRow: number;
+  selectedSource: string;
+}): Promise<void> {
+  const headerRange = buildExcelRange({
+    ...options.rangeParts,
+    endRow: options.selectedHeaderRow,
+    startRow: options.selectedHeaderRow,
+  });
+  const bodyRange = buildExcelRange({
+    ...options.rangeParts,
+    startRow: options.selectedBodyStartRow,
+  });
+
+  await options.connection.run(
+    `create or replace temp view ${quoteSqlIdentifier("file_source_header_raw")} as ${buildRelationSql(
+      options.inputPath,
+      "excel",
+      {
+        range: headerRange,
+        source: options.selectedSource,
+      },
+      {
+        excelHeader: false,
+        excelImportMode: "all_varchar",
+      },
+    )}`,
+  );
+
+  await createExcelTempViewWithRetries({
+    connection: options.connection,
+    inputPath: options.inputPath,
+    modes: buildExcelImportModes(true),
+    range: bodyRange,
+    selectedSource: options.selectedSource,
+    viewName: "file_source_body_raw",
+  });
+
+  const bodyColumns = await collectQueryRelationColumns(options.connection, "file_source_body_raw", {
+    format: "excel",
+    inputPath: options.inputPath,
+  });
+  const headerReader = await options.connection.runAndReadAll(
+    `select * from ${quoteSqlIdentifier("file_source_header_raw")} limit 1`,
+  );
+  const headerRow = (headerReader.getRowObjectsJson() as Array<Record<string, unknown>>)[0] ?? {};
+  const nonEmptyBodyColumns = await collectNonEmptyBodyColumns(
+    options.connection,
+    "file_source_body_raw",
+    bodyColumns,
+  );
+
+  const selectedColumns = (bodyColumns.filter((column) => {
+    const headerName = normalizeHeaderCellName(headerRow[column.sourceName]);
+    return headerName !== undefined || nonEmptyBodyColumns.has(column.sourceName);
+  }) || bodyColumns).map((column) => ({
+    aliasBase: normalizeHeaderCellName(headerRow[column.sourceName]) ?? column.name,
+    column,
+  }));
+  const effectiveSelectedColumns = selectedColumns.length > 0
+    ? selectedColumns
+    : bodyColumns.map((column) => ({ aliasBase: column.name, column }));
+  const deduplicatedNames = deduplicateSelectedColumnNames(
+    effectiveSelectedColumns.map((column) => column.aliasBase),
+  );
+
+  await options.connection.run(
+    `create or replace temp view ${quoteSqlIdentifier("file_source")} as select ${effectiveSelectedColumns
+      .map(
+        (entry, index) =>
+          `${quoteSqlIdentifier(entry.column.sourceName)} as ${quoteSqlIdentifier(deduplicatedNames[index] ?? entry.aliasBase)}`,
+      )
+      .join(", ")} from ${quoteSqlIdentifier("file_source_body_raw")}`,
+  );
+}
+
 export async function prepareDataQuerySource(
   connection: DuckDBConnection,
   inputPath: string,
@@ -204,10 +413,13 @@ export async function prepareDataQuerySource(
   } = {},
 ): Promise<PreparedDataQuerySource> {
   let selectedSource = shape.source?.trim();
+  const selectedBodyStartRow =
+    shape.bodyStartRow !== undefined ? normalizeExcelBodyStartRow(shape.bodyStartRow) : undefined;
   const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
   const selectedHeaderRow =
     shape.headerRow !== undefined ? normalizeExcelHeaderRow(shape.headerRow) : undefined;
   let effectiveRange = selectedRange;
+  let boundaryRangeParts: import("./types").ExcelRangeParts | undefined;
 
   if (format === "sqlite") {
     if (selectedRange) {
@@ -218,6 +430,12 @@ export async function prepareDataQuerySource(
     }
     if (selectedHeaderRow !== undefined) {
       throw new CliError("--header-row is only valid for Excel inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (selectedBodyStartRow !== undefined) {
+      throw new CliError("--body-start-row is only valid for Excel inputs.", {
         code: "INVALID_INPUT",
         exitCode: 2,
       });
@@ -243,47 +461,60 @@ export async function prepareDataQuerySource(
     );
     selectedSource = await resolveMultiObjectSource(connection, inputPath, "excel", shape.source);
 
-    if (selectedHeaderRow !== undefined) {
-      if (selectedRange) {
-        const rangeParts = parseNormalizedExcelRange(selectedRange);
-        if (selectedHeaderRow < rangeParts.startRow || selectedHeaderRow > rangeParts.endRow) {
-          throw new CliError(
-            `--header-row must fall within the selected Excel range ${selectedRange}.`,
-            {
-              code: "INVALID_INPUT",
-              exitCode: 2,
-            },
-          );
-        }
-        effectiveRange = buildExcelRange({
-          ...rangeParts,
-          startRow: selectedHeaderRow,
-        });
-      } else {
-        const sheetSnapshot = await collectXlsxSheetSnapshot(inputPath, selectedSource);
-        const usedRange = sheetSnapshot.usedRange;
-        if (!usedRange) {
-          throw new CliError(
-            `Cannot apply --header-row because the selected Excel sheet has no detectable used range: ${selectedSource}.`,
-            {
-              code: "INVALID_INPUT",
-              exitCode: 2,
-            },
-          );
-        }
+    if (selectedHeaderRow !== undefined || selectedBodyStartRow !== undefined) {
+      const boundaryRange = await resolveExcelBoundaryRange({
+        inputPath,
+        selectedRange,
+        selectedSource,
+      });
+      boundaryRangeParts = boundaryRange.parts;
 
-        const usedRangeParts = parseNormalizedExcelRange(usedRange);
-        if (selectedHeaderRow < usedRangeParts.startRow || selectedHeaderRow > usedRangeParts.endRow) {
-          throw new CliError(
-            `--header-row must fall within the detected Excel sheet used range ${usedRange}.`,
-            {
-              code: "INVALID_INPUT",
-              exitCode: 2,
-            },
-          );
-        }
+      if (
+        selectedHeaderRow !== undefined &&
+        (selectedHeaderRow < boundaryRange.parts.startRow || selectedHeaderRow > boundaryRange.parts.endRow)
+      ) {
+        throw new CliError(
+          `--header-row must fall within the ${selectedRange ? "selected Excel range" : "detected Excel sheet used range"} ${boundaryRange.range}.`,
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          },
+        );
+      }
+
+      if (
+        selectedBodyStartRow !== undefined &&
+        (selectedBodyStartRow < boundaryRange.parts.startRow ||
+          selectedBodyStartRow > boundaryRange.parts.endRow)
+      ) {
+        throw new CliError(
+          `--body-start-row must fall within the ${selectedRange ? "selected Excel range" : "detected Excel sheet used range"} ${boundaryRange.range}.`,
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          },
+        );
+      }
+
+      if (
+        selectedHeaderRow !== undefined &&
+        selectedBodyStartRow !== undefined &&
+        selectedBodyStartRow <= selectedHeaderRow
+      ) {
+        throw new CliError("--body-start-row must be greater than --header-row when both are provided.", {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+
+      if (selectedBodyStartRow !== undefined && selectedHeaderRow === undefined) {
         effectiveRange = buildExcelRange({
-          ...usedRangeParts,
+          ...boundaryRange.parts,
+          startRow: selectedBodyStartRow,
+        });
+      } else if (selectedHeaderRow !== undefined && selectedBodyStartRow === undefined) {
+        effectiveRange = buildExcelRange({
+          ...boundaryRange.parts,
           startRow: selectedHeaderRow,
         });
       }
@@ -294,10 +525,59 @@ export async function prepareDataQuerySource(
     assertSingleObjectSourceContract(format, shape);
   }
 
-  const excelImportModes: ExcelImportMode[] =
-    format === "excel" && (selectedRange || selectedHeaderRow !== undefined)
-      ? ["empty_as_varchar", "all_varchar"]
-      : ["default"];
+  const isShapedExcel =
+    format === "excel" &&
+    (selectedRange !== undefined ||
+      selectedHeaderRow !== undefined ||
+      selectedBodyStartRow !== undefined);
+
+  if (
+    format === "excel" &&
+    selectedHeaderRow !== undefined &&
+    selectedBodyStartRow !== undefined &&
+    boundaryRangeParts
+  ) {
+    try {
+      await createSplitHeaderBodyExcelSourceView({
+        connection,
+        inputPath,
+        rangeParts: boundaryRangeParts,
+        selectedBodyStartRow,
+        selectedHeaderRow,
+        selectedSource: selectedSource ?? "",
+      });
+      const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
+        format,
+        inputPath,
+      });
+      const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
+        availableColumns: relationColumns.map((column) => column.name),
+        mappings: shape.headerMappings ?? [],
+      });
+      await connection.run(
+        `create or replace temp view file as ${buildPreparedFileProjectionSql(
+          relationColumns,
+          appliedHeaderMappings,
+          {
+            excludeBlankRows: true,
+          },
+        )}`,
+      );
+      return {
+        selectedBodyStartRow,
+        selectedHeaderRow,
+        selectedRange,
+        selectedSource,
+      };
+    } catch (error) {
+      throw new CliError(`Failed to prepare ${format} query input: ${toErrorMessage(error)}`, {
+        code: "DATA_QUERY_SOURCE_FAILED",
+        exitCode: 2,
+      });
+    }
+  }
+
+  const excelImportModes = buildExcelImportModes(isShapedExcel);
 
   for (let index = 0; index < excelImportModes.length; index += 1) {
     const excelImportMode = excelImportModes[index] ?? "default";
@@ -307,11 +587,11 @@ export async function prepareDataQuerySource(
           inputPath,
           format,
           {
-            headerRow: selectedHeaderRow,
             range: effectiveRange,
             source: selectedSource,
           },
           {
+            excelHeader: selectedHeaderRow !== undefined,
             excelImportMode,
           },
         )}`,
@@ -329,11 +609,12 @@ export async function prepareDataQuerySource(
           relationColumns,
           appliedHeaderMappings,
           {
-            excludeBlankRows: format === "excel" && Boolean(selectedRange || selectedHeaderRow !== undefined),
+            excludeBlankRows: isShapedExcel,
           },
         )}`,
       );
       return {
+        selectedBodyStartRow,
         selectedHeaderRow,
         selectedRange,
         selectedSource,

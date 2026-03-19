@@ -65,6 +65,7 @@ export async function reviewInteractiveHeaderMappings(options: {
   introspection: DataQuerySourceIntrospection;
   labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
+  selectedBodyStartRow?: number;
   selectedHeaderRow?: number;
   selectedRange?: string;
   selectedSource?: string;
@@ -157,6 +158,7 @@ export async function reviewInteractiveHeaderMappings(options: {
         options.inputPath,
         options.format,
         {
+          bodyStartRow: options.selectedBodyStartRow,
           headerMappings: acceptedMappings,
           headerRow: options.selectedHeaderRow,
           range: options.selectedRange,

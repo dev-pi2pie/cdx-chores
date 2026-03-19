@@ -482,6 +482,13 @@ export function runInteractiveHarness(
 
     mock.module(${JSON.stringify(duckdbQueryModuleUrl)}, () => ({
       DATA_QUERY_INPUT_FORMAT_VALUES: ["csv", "tsv", "parquet", "sqlite", "excel"],
+      normalizeExcelBodyStartRow: (value) => {
+        const parsed = Number(value);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          throw new Error("--body-start-row must be a positive integer.");
+        }
+        return parsed;
+      },
       normalizeExcelHeaderRow: (value) => {
         const parsed = Number(value);
         if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -507,6 +514,7 @@ export function runInteractiveHarness(
             { id: "1", name: "Ada", status: "active" },
             { id: "2", name: "Bob", status: "inactive" },
           ],
+          selectedBodyStartRow: shape?.bodyStartRow,
           selectedHeaderRow: shape?.headerRow,
           selectedRange: shape?.range,
           selectedSource: shape?.source,

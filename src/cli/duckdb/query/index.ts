@@ -11,6 +11,7 @@ export {
 export {
   normalizeExcelRange,
   normalizeExcelHeaderRow,
+  normalizeExcelBodyStartRow,
 } from "./excel-range";
 
 export {

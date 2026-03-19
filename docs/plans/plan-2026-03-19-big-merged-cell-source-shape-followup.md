@@ -238,27 +238,64 @@ Implementation result:
 
 ### Phase 3: No-new-field fallback investigation
 
-- [ ] prototype two-pass header-only plus body-only recovery on the public stacked merged-band workbook
-- [ ] decide whether that path is robust enough to keep as an internal remediation
-- [ ] document the tradeoff between internal fallback and explicit deterministic shaping
-- [ ] keep this phase non-blocking for the explicit contract
+- [x] prototype two-pass header-only plus body-only recovery on the public stacked merged-band workbook
+- [x] decide whether that path is robust enough to keep as an internal remediation
+- [x] document the tradeoff between internal fallback and explicit deterministic shaping
+- [x] keep this phase non-blocking for the explicit contract
+
+### Phase 3 checkpoint
+
+The header-only plus body-only recovery path works on the hard public workbook.
+
+Implementation conclusion:
+
+- the split path is viable as an internal remediation for `header-row + body-start-row`
+- it does not remove the need for an explicit deterministic body boundary
+- the follow-up keeps `body-start-row` as the user-visible contract and uses the split path internally when both rows are present
 
 ### Phase 4: Shared `body-start-row` implementation
 
-- [ ] extend the shared Excel relation-preparation path
-- [ ] implement effective-range derivation for `bodyStartRow` without `headerRow`
-- [ ] implement split header-row plus body-row import for cases where both `headerRow` and `bodyStartRow` are present
-- [ ] wire `body-start-row` through direct query
-- [ ] wire `body-start-row` through direct extract
-- [ ] preserve or revise tolerant retry ordering based on implementation results
+- [x] extend the shared Excel relation-preparation path
+- [x] implement effective-range derivation for `bodyStartRow` without `headerRow`
+- [x] implement split header-row plus body-row import for cases where both `headerRow` and `bodyStartRow` are present
+- [x] wire `body-start-row` through direct query
+- [x] wire `body-start-row` through direct extract
+- [x] preserve or revise tolerant retry ordering based on implementation results
+
+### Phase 4 checkpoint
+
+Shared Excel preparation now supports three deterministic row-shaping modes:
+
+- `header-row` only: existing effective-range behavior remains in place
+- `body-start-row` only: the effective import range starts at `body-start-row`
+- `header-row + body-start-row`: the header row and body rows are imported separately and stitched into one logical table before downstream shaping continues
+
+Observed implementation behavior:
+
+- split header/body import now keeps the meaningful worksheet anchors and drops columns that remain blank across the body with no header label
+- direct `data query` and `data extract` now materialize the stacked merged-band workbook successfully with `--range B7:BR20 --header-row 7 --body-start-row 10`
 
 ### Phase 5: Reviewed-shape and artifact updates
 
-- [ ] update Codex source-shape prompt schema and parsing
-- [ ] update the prompt guidance so Codex can suggest `bodyStartRow` alone when appropriate
-- [ ] update source-shape artifact compatibility and rendering for widened `version: 1`
-- [ ] update reviewed-shape rendering to show `body-start-row`
-- [ ] add focused interactive and command-level tests
+- [x] update Codex source-shape prompt schema and parsing
+- [x] update the prompt guidance so Codex can suggest `bodyStartRow` alone when appropriate
+- [x] update source-shape artifact compatibility and rendering for widened `version: 1`
+- [x] update reviewed-shape rendering to show `body-start-row`
+- [x] add focused interactive and command-level tests
+
+### Phase 5 checkpoint
+
+Reviewed source-shape assistance now understands and renders `body-start-row`.
+
+Implementation result:
+
+- reviewed Codex source-shape structured output now includes `body_start_row`
+- widened `version: 1` source-shape artifacts now accept `bodyStartRow`
+- source-shape rendering, interactive reviewed-shape output, direct query rendering, and Codex query context all surface the new field when present
+- targeted tests now cover:
+  - widened source-shape artifacts
+  - `bodyStartRow`-only reviewed suggestions
+  - action and command success on the public stacked merged-band workbook
 
 ### Phase 6: Docs and verification
 

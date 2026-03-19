@@ -8,6 +8,7 @@ import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
 function dataQueryFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "data-query", name);
@@ -295,6 +296,37 @@ describe("cli action modules: data query", () => {
       expect(stdout.text).toContain("Visible columns: ID, question, status");
       expect(stdout.text).toContain("101 | Confirm tax residency");
       expect(stdout.text).toContain("102 | Collect withholding certificate");
+    });
+  });
+
+  test("actionDataQuery materializes the stacked merged-band workbook when body-start-row is provided", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedStackedMergedBandFixture(fixtureDir);
+      const inputPath = join(fixtureDir, "stacked-merged-band.xlsx");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        bodyStartRow: 10,
+        headerRow: 7,
+        input: toRepoRelativePath(inputPath),
+        range: "B7:BR20",
+        source: "Sheet1",
+        sql: "select id, question, status, notes from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
+      expect(stdout.text).toContain("Source: Sheet1");
+      expect(stdout.text).toContain("Range: B7:BR20");
+      expect(stdout.text).toContain("Body start row: 10");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: id, question, status, notes");
+      expect(stdout.text).toContain("1   | Does the customer need");
+      expect(stdout.text).toContain("11  | Should the account remain");
     });
   });
 

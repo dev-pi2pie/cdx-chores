@@ -26,6 +26,7 @@ import {
 } from "../duckdb/header-mapping";
 
 export interface DataQueryOptions {
+  bodyStartRow?: number;
   codexSuggestHeaders?: boolean;
   headerMapping?: string;
   headerMappings?: DataHeaderMappingEntry[];
@@ -138,6 +139,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
 
   const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
+  const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
     throw new CliError(
@@ -162,6 +164,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
         format,
         inputPath,
         shape: {
+          bodyStartRow,
           range,
           headerRow,
           source,
@@ -175,6 +178,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
             inputPath,
             format,
             {
+              bodyStartRow,
               range,
               headerRow,
               source,
@@ -206,6 +210,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
           inputPath,
           runtime,
           shape: {
+            bodyStartRow,
             range,
             headerRow,
             source,
@@ -222,6 +227,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       inputPath,
       format,
       {
+        bodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow,
         range,
@@ -261,6 +267,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
     const rendered = renderDataQuery(runtime, {
       columns: table.columns,
       format,
+      bodyStartRow: preparedSource.selectedBodyStartRow,
       inputPath,
       range: preparedSource.selectedRange,
       headerRow: preparedSource.selectedHeaderRow,

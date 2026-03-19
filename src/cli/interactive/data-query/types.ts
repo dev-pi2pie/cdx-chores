@@ -34,6 +34,7 @@ export interface InteractiveHeaderReviewState {
 }
 
 export interface InteractiveSourceShapeState {
+  selectedBodyStartRow?: number;
   selectedHeaderRow?: number;
   selectedRange?: string;
 }

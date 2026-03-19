@@ -13,6 +13,7 @@ export async function runManualInteractiveQuery(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedRange?: string;
     selectedSource?: string;

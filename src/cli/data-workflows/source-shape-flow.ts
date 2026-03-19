@@ -34,9 +34,10 @@ export function classifySourceShapeSuggestionFailure(message: string): { code: s
   };
 }
 
-export function formatSourceShapeFlags(shape: { headerRow?: number; range?: string }): string {
+export function formatSourceShapeFlags(shape: { bodyStartRow?: number; headerRow?: number; range?: string }): string {
   return [
     ...(shape.range ? [`--range ${shape.range}`] : []),
+    ...(shape.bodyStartRow !== undefined ? [`--body-start-row ${shape.bodyStartRow}`] : []),
     ...(shape.headerRow !== undefined ? [`--header-row ${shape.headerRow}`] : []),
   ].join(" ");
 }
@@ -44,6 +45,7 @@ export function formatSourceShapeFlags(shape: { headerRow?: number; range?: stri
 export function renderSuggestedSourceShape(
   runtime: CliRuntime,
   options: {
+    bodyStartRow?: number;
     headerRow?: number;
     range?: string;
     reasoningSummary: string;
@@ -56,6 +58,9 @@ export function renderSuggestedSourceShape(
   printLine(stream, "");
   if (options.range) {
     printLine(stream, `- --range ${options.range}`);
+  }
+  if (options.bodyStartRow !== undefined) {
+    printLine(stream, `- --body-start-row ${options.bodyStartRow}`);
   }
   if (options.headerRow !== undefined) {
     printLine(stream, `- --header-row ${options.headerRow}`);
@@ -90,7 +95,7 @@ export async function resolveReusableSourceShapeForDataFlow(options: {
   runtime: CliRuntime;
   source?: string;
   sourceShapePath: string;
-}): Promise<{ headerRow?: number; range?: string; source: string }> {
+}): Promise<{ bodyStartRow?: number; headerRow?: number; range?: string; source: string }> {
   if (!isSourceShapeFormat(options.format)) {
     throw new CliError("--source-shape is only valid for Excel extract inputs.", {
       code: "INVALID_INPUT",

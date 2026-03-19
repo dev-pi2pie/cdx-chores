@@ -4,6 +4,7 @@ import { input, select } from "@inquirer/prompts";
 import { displayPath, printLine } from "../../actions/shared";
 import { getCliColors } from "../../colors";
 import {
+  normalizeExcelBodyStartRow,
   collectDataQuerySourceIntrospection,
   normalizeExcelHeaderRow,
   normalizeExcelRange,
@@ -140,17 +141,48 @@ async function promptOptionalExcelHeaderRow(defaultValue = ""): Promise<number |
   return trimmed.length > 0 ? normalizeExcelHeaderRow(Number(trimmed)) : undefined;
 }
 
+function validateExcelBodyStartRowInput(value: string, options: { required: boolean }): true | string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return options.required ? "Enter a positive worksheet row number." : true;
+  }
+
+  const parsed = Number(trimmed);
+  try {
+    normalizeExcelBodyStartRow(parsed);
+    return true;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+async function promptOptionalExcelBodyStartRow(defaultValue = ""): Promise<number | undefined> {
+  const value = await input({
+    message: "Excel body start row (optional, absolute worksheet row)",
+    default: defaultValue,
+    validate: (nextValue) => validateExcelBodyStartRowInput(nextValue, { required: false }),
+  });
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? normalizeExcelBodyStartRow(Number(trimmed)) : undefined;
+}
+
 async function promptRequiredSourceShapeState(defaultShape: {
+  bodyStartRow?: number;
   headerRow?: number;
   range?: string;
 } = {}): Promise<InteractiveSourceShapeState> {
   while (true) {
     const selectedRange = await promptOptionalExcelRange(defaultShape.range ?? "");
+    const selectedBodyStartRow = await promptOptionalExcelBodyStartRow(
+      defaultShape.bodyStartRow !== undefined ? String(defaultShape.bodyStartRow) : "",
+    );
     const selectedHeaderRow = await promptOptionalExcelHeaderRow(
       defaultShape.headerRow !== undefined ? String(defaultShape.headerRow) : "",
     );
-    if (selectedRange || selectedHeaderRow !== undefined) {
+    if (selectedRange || selectedHeaderRow !== undefined || selectedBodyStartRow !== undefined) {
       return {
+        ...(selectedBodyStartRow !== undefined ? { selectedBodyStartRow } : {}),
         ...(selectedHeaderRow !== undefined ? { selectedHeaderRow } : {}),
         ...(selectedRange ? { selectedRange } : {}),
       };
@@ -175,6 +207,9 @@ export function renderIntrospectionSummary(
       : []),
     ...(options.introspection.selectedRange
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
+      : []),
+    ...(options.introspection.selectedBodyStartRow !== undefined
+      ? [`${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`]
       : []),
     ...(options.introspection.selectedHeaderRow !== undefined
       ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]
@@ -233,6 +268,7 @@ export async function collectInteractiveIntrospection(options: {
       options.inputPath,
       options.format,
       {
+        bodyStartRow: sourceShape.selectedBodyStartRow,
         headerRow: sourceShape.selectedHeaderRow,
         range: sourceShape.selectedRange,
         source: options.selectedSource,
@@ -327,6 +363,7 @@ export async function collectInteractiveIntrospection(options: {
           sheetSnapshot,
         },
         currentHeaderRow: sourceShape.selectedHeaderRow,
+        currentBodyStartRow: sourceShape.selectedBodyStartRow,
         currentRange: sourceShape.selectedRange,
         workingDirectory: options.runtime.cwd,
       });
@@ -344,6 +381,7 @@ export async function collectInteractiveIntrospection(options: {
     }
 
     renderSuggestedSourceShape(options.runtime, {
+      bodyStartRow: suggestionResult.shape.bodyStartRow,
       headerRow: suggestionResult.shape.headerRow,
       range: suggestionResult.shape.range,
       reasoningSummary: suggestionResult.reasoningSummary,
@@ -378,10 +416,14 @@ export async function collectInteractiveIntrospection(options: {
     sourceShape =
       reviewAction === "edit"
         ? await promptRequiredSourceShapeState({
+            bodyStartRow: suggestionResult.shape.bodyStartRow,
             headerRow: suggestionResult.shape.headerRow,
             range: suggestionResult.shape.range,
           })
         : {
+            ...(suggestionResult.shape.bodyStartRow !== undefined
+              ? { selectedBodyStartRow: suggestionResult.shape.bodyStartRow }
+              : {}),
             ...(suggestionResult.shape.headerRow !== undefined
               ? { selectedHeaderRow: suggestionResult.shape.headerRow }
               : {}),
@@ -390,6 +432,7 @@ export async function collectInteractiveIntrospection(options: {
     printLine(
       options.runtime.stderr,
       `Accepted source shape: ${formatSourceShapeFlags({
+        bodyStartRow: sourceShape.selectedBodyStartRow,
         headerRow: sourceShape.selectedHeaderRow,
         range: sourceShape.selectedRange,
       })}`,
