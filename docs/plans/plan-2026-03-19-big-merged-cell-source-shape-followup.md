@@ -1,8 +1,8 @@
 ---
 title: "Big merged-cell source-shape follow-up"
 created-date: 2026-03-19
-modified-date: 2026-03-20
-status: draft
+modified-date: 2026-03-19
+status: active
 agent: codex
 ---
 
@@ -191,24 +191,50 @@ Decision boundary:
 
 ### Phase 1: Contract freeze and schema check
 
-- [ ] freeze `body-start-row` as the preferred name
-- [ ] freeze absolute worksheet row numbering
-- [ ] freeze Excel-only first-pass scope
-- [ ] freeze the rule that `body-start-row` does not require `header-row`
-- [ ] freeze the validation rule that `header-row` becomes the governing boundary when both rows are present
-- [ ] freeze import-time behavior for:
+- [x] freeze `body-start-row` as the preferred name
+- [x] freeze absolute worksheet row numbering
+- [x] freeze Excel-only first-pass scope
+- [x] freeze the rule that `body-start-row` does not require `header-row`
+- [x] freeze the validation rule that `header-row` becomes the governing boundary when both rows are present
+- [x] freeze import-time behavior for:
   - `bodyStartRow`
   - `range + bodyStartRow`
   - `headerRow + bodyStartRow`
   - `range + headerRow + bodyStartRow`
-- [ ] freeze the rule that reviewed shaping may return any valid combination of `range`, `headerRow`, and `bodyStartRow`
-- [ ] freeze the rule that source-shape artifacts remain on `version: 1` in this canary line
-- [ ] freeze the compatibility rule that newer binaries read older and widened `version: 1` artifacts, while older binaries are not guaranteed to replay widened `version: 1` artifacts
+- [x] freeze the rule that reviewed shaping may return any valid combination of `range`, `headerRow`, and `bodyStartRow`
+- [x] freeze the rule that source-shape artifacts remain on `version: 1` in this canary line
+- [x] freeze the compatibility rule that newer binaries read older and widened `version: 1` artifacts, while older binaries are not guaranteed to replay widened `version: 1` artifacts
+
+### Phase 1 checkpoint
+
+Phase 1 is now frozen at the contract level.
+
+Schema audit result:
+
+- the current source-shape type and artifact surface only model `range` and `headerRow`
+- the current reviewed source-shape structured-output schema in `src/cli/duckdb/source-shape/suggestions.ts` only admits `range` and `header_row`
+- the shared Excel preparation path in `src/cli/duckdb/query/prepare-source.ts` still validates and derives behavior only for `range` and `header-row`
+
+That audit means later implementation should treat Phase 2, Phase 4, and Phase 5 as coordinated updates across the snapshot parser, artifact/type layer, reviewed-shape contract, and shared Excel import path.
 
 ### Phase 2: Snapshot parser correction
 
-- [ ] fix worksheet parsing for self-closing `<c .../>` cells
-- [ ] add a focused workbook-level snapshot test that proves the hard workbook now reports the true anchors and used range
+- [x] fix worksheet parsing for self-closing `<c .../>` cells
+- [x] add a focused workbook-level snapshot test that proves the hard workbook now reports the true anchors and used range
+
+### Phase 2 checkpoint
+
+Worksheet snapshot correctness is now fixed for the hard merged-band fixture.
+
+Implementation result:
+
+- `src/cli/duckdb/xlsx-sources.ts` now scans worksheet cells with a pattern that distinguishes self-closing `<c .../>` nodes from `<c ...>...</c>` nodes
+- blank merged-region placeholders no longer swallow the next populated cell and misassign its value to the earlier reference
+- the stacked merged-band workbook snapshot now reports the expected anchors:
+  - row 5 title anchor at `BG5`
+  - row 7 header anchors at `B7`, `E7`, `AL7`, `AZ7`
+  - row 10 body anchors at `B10`, `E10`, `AL10`, `AZ10`
+- the corrected workbook-level `usedRange` is now `B5:BG20`
 
 ### Phase 3: No-new-field fallback investigation
 
