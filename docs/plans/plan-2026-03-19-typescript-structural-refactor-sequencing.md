@@ -314,27 +314,27 @@ Do not use `ts_structure_refactorer` to refactor all hotspots in one pass.
 
 ### Task Items
 
-- [ ] convert `src/cli/interactive/data-query.ts` into a folder-based module
-- [ ] separate source selection, shape review, header review, execution, and authoring modes
-- [ ] keep `runInteractiveDataQuery()` as the single public entrypoint
-- [ ] avoid introducing hidden shared runtime state while moving helpers
+- [x] convert `src/cli/interactive/data-query.ts` into a folder-based module
+- [x] separate source selection, shape review, header review, execution, and authoring modes
+- [x] keep `runInteractiveDataQuery()` as the single public entrypoint
+- [x] avoid introducing hidden shared runtime state while moving helpers
 
 ### Deliverable
 
-- [ ] interactive data-query flow is split by concern and no replacement mixed-responsibility controller appears
+- [x] interactive data-query flow is split by concern and no replacement mixed-responsibility controller appears
 
 ## Phase 4: DuckDB query service split
 
 ### Task Items
 
-- [ ] convert `src/cli/duckdb/query.ts` into a folder-based module
-- [ ] isolate format detection, source preparation, execution, introspection, and Excel range parsing
-- [ ] preserve the current public exports through `index.ts`
-- [ ] watch explicitly for circular imports with `header-mapping`, `source-shape`, and `xlsx-sources`
+- [x] convert `src/cli/duckdb/query.ts` into a folder-based module
+- [x] isolate format detection, source preparation, execution, introspection, and Excel range parsing
+- [x] preserve the current public exports through `index.ts`
+- [x] watch explicitly for circular imports with `header-mapping`, `source-shape`, and `xlsx-sources`
 
 ### Deliverable
 
-- [ ] DuckDB query internals use clear domain files instead of one service bottleneck
+- [x] DuckDB query internals use clear domain files instead of one service bottleneck
 
 ## Phase 5: Codex document adapter split
 
