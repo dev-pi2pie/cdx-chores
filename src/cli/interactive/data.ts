@@ -14,6 +14,7 @@ import {
   actionTsvToJson,
   loadDataPreviewSource,
 } from "../actions";
+import { maybeRenderDuckDbExtensionRemediationCommand } from "../data-workflows/duckdb-remediation";
 import {
   assertContainsFilterColumns,
   parseContainsFilterValue,
@@ -39,7 +40,6 @@ import { CliError } from "../errors";
 import { displayPath, printLine } from "../actions/shared";
 import { createDuckDbConnection, listDataQuerySources, type DataQueryInputFormat } from "../duckdb/query";
 import { defaultOutputPath, resolveFromCwd } from "../fs-utils";
-import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 
 type LightweightInteractiveDataFormat = "csv" | "tsv" | "json";
 type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";
@@ -140,40 +140,6 @@ async function runInteractiveDataConvert(
     code: "INVALID_INPUT",
     exitCode: 2,
   });
-}
-
-function isDuckDbExtensionUnavailableError(error: unknown): error is CliError | { code: string } {
-  return (
-    (error instanceof CliError && error.code === "DUCKDB_EXTENSION_UNAVAILABLE") ||
-    (typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: unknown }).code === "DUCKDB_EXTENSION_UNAVAILABLE")
-  );
-}
-
-function formatSupportsManagedDuckDbExtensionInstall(
-  format: DataQueryInputFormat,
-): format is "sqlite" | "excel" {
-  return format === "sqlite" || format === "excel";
-}
-
-function canSuggestManagedDuckDbExtensionInstall(
-  error: Error | { code: string; message?: string },
-): boolean {
-  const message = error instanceof Error ? error.message : String(error.message ?? "");
-  return !/cannot install or cache it/i.test(message);
-}
-
-function renderDuckDbExtensionRemediationCommand(
-  runtime: CliRuntime,
-  format: "sqlite" | "excel",
-): void {
-  printLine(runtime.stderr, "");
-  printLine(
-    runtime.stderr,
-    `Install the missing DuckDB extension with: ${createDuckDbExtensionInstallCommand(format)}`,
-  );
 }
 
 async function promptInteractiveExtractOutput(
@@ -357,13 +323,7 @@ async function runInteractiveDataExtract(
       ...(selectedSource ? { source: selectedSource } : {}),
     });
   } catch (error) {
-    if (
-      isDuckDbExtensionUnavailableError(error) &&
-      formatSupportsManagedDuckDbExtensionInstall(format) &&
-      canSuggestManagedDuckDbExtensionInstall(error instanceof Error ? error : new Error(String(error)))
-    ) {
-      renderDuckDbExtensionRemediationCommand(runtime, format);
-    }
+    maybeRenderDuckDbExtensionRemediationCommand(runtime, format, error);
     throw error;
   } finally {
     connection?.closeSync();

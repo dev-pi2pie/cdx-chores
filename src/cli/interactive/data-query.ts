@@ -6,6 +6,7 @@ import { confirm, editor, input, select } from "@inquirer/prompts";
 import { actionDataQuery, type DataQueryOptions } from "../actions";
 import { printLine, displayPath } from "../actions/shared";
 import { getCliColors } from "../colors";
+import { maybeRenderDuckDbExtensionRemediationCommand } from "../data-workflows/duckdb-remediation";
 import {
   buildDataQueryCodexIntentEditorTemplate,
   draftDataQueryWithCodex,
@@ -33,7 +34,6 @@ import {
 import {
   suggestDataSourceShapeWithCodex,
 } from "../duckdb/source-shape";
-import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 import { collectXlsxSheetSnapshot } from "../duckdb/xlsx-sources";
 import { CliError } from "../errors";
 import { resolveFromCwd } from "../fs-utils";
@@ -108,40 +108,6 @@ function isOutputExistsError(error: unknown): boolean {
   )
     ? (error as { code?: unknown }).code === "OUTPUT_EXISTS"
     : false;
-}
-
-function isDuckDbExtensionUnavailableError(error: unknown): error is CliError | { code: string } {
-  return (
-    (error instanceof CliError && error.code === "DUCKDB_EXTENSION_UNAVAILABLE") ||
-    (typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: unknown }).code === "DUCKDB_EXTENSION_UNAVAILABLE")
-  );
-}
-
-function formatSupportsManagedDuckDbExtensionInstall(
-  format: DataQueryInputFormat,
-): format is "sqlite" | "excel" {
-  return format === "sqlite" || format === "excel";
-}
-
-function canSuggestManagedDuckDbExtensionInstall(
-  error: Error | { code: string; message?: string },
-): boolean {
-  const message = error instanceof Error ? error.message : String(error.message ?? "");
-  return !/cannot install or cache it/i.test(message);
-}
-
-function renderDuckDbExtensionRemediationCommand(
-  runtime: CliRuntime,
-  format: "sqlite" | "excel",
-): void {
-  printLine(runtime.stderr, "");
-  printLine(
-    runtime.stderr,
-    `Install the missing DuckDB extension with: ${createDuckDbExtensionInstallCommand(format)}`,
-  );
 }
 
 function escapeSqlString(value: string): string {
@@ -1434,13 +1400,7 @@ export async function runInteractiveDataQuery(
       selectedSource,
     });
   } catch (error) {
-    if (
-      isDuckDbExtensionUnavailableError(error) &&
-      formatSupportsManagedDuckDbExtensionInstall(format) &&
-      canSuggestManagedDuckDbExtensionInstall(error)
-    ) {
-      renderDuckDbExtensionRemediationCommand(runtime, format);
-    }
+    maybeRenderDuckDbExtensionRemediationCommand(runtime, format, error);
     throw error;
   } finally {
     connection?.closeSync();
