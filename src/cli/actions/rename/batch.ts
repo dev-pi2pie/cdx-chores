@@ -5,7 +5,8 @@ import {
   type RenameSerialScope,
   type TimestampTimezone,
 } from "../../rename-template";
-import { applyPlannedRenames, planBatchRename } from "../../fs-utils";
+import { applyPlannedRenames } from "../../rename/apply";
+import { planBatchRename } from "../../rename/planner";
 import type { CliRuntime } from "../../types";
 import {
   type CodexDocumentRenameTitleSuggester,

@@ -5,7 +5,7 @@ import {
   createDuckDbConnection,
   listDataQuerySources,
 } from "../../duckdb/query";
-import { resolveFromCwd } from "../../fs-utils";
+import { resolveFromCwd } from "../../path-utils";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";

@@ -14,7 +14,7 @@ import {
 } from "../duckdb/header-mapping";
 import type { DataQueryInputFormat, DataQuerySourceIntrospection } from "../duckdb/query";
 import { CliError } from "../errors";
-import { resolveFromCwd } from "../fs-utils";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 
 export interface DataWorkflowHeaderMappingShape {

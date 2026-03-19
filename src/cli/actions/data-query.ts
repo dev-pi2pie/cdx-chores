@@ -8,7 +8,8 @@ import {
 } from "../data-workflows/header-mapping-flow";
 import { CliError } from "../errors";
 import { displayPath, assertNonEmpty, ensureFileExists, printLine } from "./shared";
-import { resolveFromCwd, writeTextFileSafe } from "../fs-utils";
+import { writeTextFileSafe } from "../file-io";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import {
   collectDataQuerySourceIntrospection,

@@ -7,12 +7,8 @@ import {
 } from "../../utils/delimited";
 import { normalizeRowsFromJson } from "../data-preview/normalize";
 import { CliError } from "../errors";
-import {
-  defaultOutputPath,
-  readTextFileRequired,
-  resolveFromCwd,
-  writeTextFileSafe,
-} from "../fs-utils";
+import { readTextFileRequired, writeTextFileSafe } from "../file-io";
+import { defaultOutputPath, resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 

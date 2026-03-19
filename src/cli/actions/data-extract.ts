@@ -13,7 +13,8 @@ import {
   resolveReusableSourceShapeForDataFlow,
 } from "../data-workflows/source-shape-flow";
 import { CliError } from "../errors";
-import { resolveFromCwd, writeTextFileSafe } from "../fs-utils";
+import { writeTextFileSafe } from "../file-io";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import {
   collectDataQuerySourceIntrospection,

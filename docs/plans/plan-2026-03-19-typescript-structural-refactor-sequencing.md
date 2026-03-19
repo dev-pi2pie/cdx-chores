@@ -2,7 +2,7 @@
 title: "TypeScript structural refactor sequencing"
 created-date: 2026-03-19
 modified-date: 2026-03-19
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -360,27 +360,27 @@ Do not use `ts_structure_refactorer` to refactor all hotspots in one pass.
 
 ### Task Items
 
-- [ ] separate path-display and path-resolution helpers from generic file IO
-- [ ] move rename planning and apply helpers into rename-owned modules
-- [ ] keep or remove `src/cli/fs-utils.ts` based on whether a temporary compatibility shim is still useful
+- [x] separate path-display and path-resolution helpers from generic file IO
+- [x] move rename planning and apply helpers into rename-owned modules
+- [x] keep or remove `src/cli/fs-utils.ts` based on whether a temporary compatibility shim is still useful
 
 ### Deliverable
 
-- [ ] `src/cli/fs-utils.ts` no longer functions as a mixed utility bucket
+- [x] `src/cli/fs-utils.ts` no longer functions as a mixed utility bucket
 
 ## Verification Plan
 
 ### Per phase
 
-- [ ] run targeted tests for the touched area
-- [ ] run `bunx tsc --noEmit`
-- [ ] run `bunx oxlint --tsconfig tsconfig.json src test scripts`
+- [x] run targeted tests for the touched area
+- [x] run `bunx tsc --noEmit`
+- [x] run `bunx oxlint --tsconfig tsconfig.json src test scripts`
 
 ### Milestone checks
 
-- [ ] run `bun run build` after each completed hotspot split
-- [ ] run focused interactive or command smoke checks for the affected workflow
-- [ ] run broader `bun test` at the end of each milestone or after any especially invasive move
+- [x] run `bun run build` after each completed hotspot split
+- [x] run focused interactive or command smoke checks for the affected workflow
+- [x] run broader `bun test` at the end of each milestone or after any especially invasive move
 
 ## Risks and Mitigations
 

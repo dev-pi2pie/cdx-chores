@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 
-import { resolveFromCwd } from "../fs-utils";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { renderDataPreview, type RenderDataPreviewSource } from "../data-preview/render";
 import { loadParquetPreviewWindow } from "../duckdb/parquet-preview";

@@ -3,7 +3,7 @@ import { relative, resolve } from "node:path";
 
 import { stringifyCsv } from "../../../utils/csv";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
-import { writeTextFileSafe } from "../../fs-utils";
+import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import type { RenameCleanupAnalyzerEvidence } from "./cleanup-analyzer";
 import type { RenameCleanupCodexSuggestion } from "./cleanup-codex";

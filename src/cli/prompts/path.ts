@@ -1,6 +1,6 @@
 import { input, select } from "@inquirer/prompts";
 
-import { defaultOutputPath, formatPathForDisplay, resolveFromCwd } from "../fs-utils";
+import { defaultOutputPath, formatPathForDisplay, resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import type { PathPromptRuntimeConfig } from "./path-config";
 import { promptPathInlineGhost } from "./path-inline";

@@ -1,6 +1,6 @@
 import { lstat } from "node:fs/promises";
 
-import { resolveFromCwd } from "../../fs-utils";
+import { resolveFromCwd } from "../../path-utils";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 

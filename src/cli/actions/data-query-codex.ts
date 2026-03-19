@@ -1,4 +1,4 @@
-import { resolveFromCwd } from "../fs-utils";
+import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
 import {

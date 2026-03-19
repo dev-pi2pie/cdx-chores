@@ -39,7 +39,7 @@ import { assertNeverInteractiveAction, type InteractivePathPromptContext } from 
 import { CliError } from "../errors";
 import { displayPath, printLine } from "../actions/shared";
 import { createDuckDbConnection, listDataQuerySources } from "../duckdb/query";
-import { defaultOutputPath, resolveFromCwd } from "../fs-utils";
+import { defaultOutputPath, resolveFromCwd } from "../path-utils";
 
 type LightweightInteractiveDataFormat = "csv" | "tsv" | "json";
 type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";

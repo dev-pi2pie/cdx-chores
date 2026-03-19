@@ -4,7 +4,7 @@ import { extname } from "node:path";
 import { confirm } from "@inquirer/prompts";
 
 import { printLine } from "../actions/shared";
-import { resolveFromCwd } from "../fs-utils";
+import { resolveFromCwd } from "../path-utils";
 import { promptOptionalOutputPathChoice, promptRequiredPathWithConfig } from "../prompts/path";
 import type { CliRuntime } from "../types";
 import type { InteractivePathPromptContext } from "../interactive/shared";

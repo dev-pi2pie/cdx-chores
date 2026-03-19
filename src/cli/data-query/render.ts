@@ -1,4 +1,4 @@
-import { formatPathForDisplay } from "../fs-utils";
+import { formatPathForDisplay } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { getCliColors } from "../colors";
 import type { DataPreviewRow } from "../data-preview/source";

@@ -2,7 +2,7 @@
 title: "TypeScript refactor scan for remaining structural hotspots"
 created-date: 2026-03-19
 modified-date: 2026-03-19
-status: draft
+status: completed
 agent: codex
 ---
 
