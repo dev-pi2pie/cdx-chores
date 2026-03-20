@@ -2,7 +2,7 @@
 title: "Data command surface headerless and Codex boundary evaluation"
 created-date: 2026-03-20
 modified-date: 2026-03-20
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -12,6 +12,12 @@ Evaluate two command-surface questions across `data preview`, `data query`, `dat
 
 1. whether headerless CSV handling should stay split between explicit preview controls and DuckDB auto-detection in query/extract
 2. whether `--codex-suggest-shape` should remain a direct-CLI `data extract` feature only, or expand into direct `data query`
+
+## Status Note
+
+Direction B from this research has been implemented, but the related follow-up plan at `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` is still active.
+
+Keep this research in `in-progress` until the remaining direct query replay follow-up, including `data query --source-shape <path>`, is completed and the parent plan is closed.
 
 ## Key Findings
 
@@ -266,7 +272,20 @@ Cons:
 
 ## Recommendation
 
-Recommend Direction B for the next feature release after the current patch cycle, with Direction D as the preferred follow-up immediately after that if the new shape-first CLI workflow sees real use.
+Recommend Direction B as the first shipped slice, with Direction D as the remaining planned follow-up.
+
+Current alignment with the plan:
+
+- Direction B is the accepted and now-landed slice:
+  - explicit `--no-header` parity across preview/query/extract
+  - interactive CSV/TSV headerless prompts for query/extract
+  - shared `column_n` placeholder contract
+  - shared source-shape guide split from header-mapping guidance
+- Direction D remains the next follow-up:
+  - add `data query --source-shape <path>`
+  - define replay conflict and precedence rules
+  - generalize the current extract-specific replay helper before reusing it in query
+  - decide whether `data query codex` stays explicitly separate in that replay slice or aligns at the same time
 
 Why this is the right cut:
 
@@ -274,7 +293,7 @@ Why this is the right cut:
 - it keeps `data extract` as the primary shaping/materialization lane
 - it avoids turning `data query` into a second artifact-producing shaping workflow before there is stronger evidence that users need that duplication
 - it lets the team improve the command family in a way users will immediately understand
-- if the paired CLI workflow still feels too manual after that, `data query --source-shape <path>` is the cleaner next step than `data query --codex-suggest-shape`
+- the remaining direct-CLI smoothing step is still `data query --source-shape <path>`, not `data query --codex-suggest-shape`
 
 Pragmatic position on `--codex-suggest-shape`:
 
@@ -285,7 +304,7 @@ Pragmatic position on `--codex-suggest-shape`:
 
 ## Concrete CLI and Docs Implications
 
-Recommended future-release implications:
+Direction B implications now aligned with the shipped slice:
 
 - add `--no-header` to `data query <input>`
 - add `--no-header` to `data extract <input>`
@@ -300,15 +319,22 @@ Recommended future-release implications:
   - reusable reviewed source-shape artifacts are still produced through direct `data extract`
 - add a shared source-shape guide rather than expanding `data-schema-and-mapping-usage.md` to cover both layers
 
-Recommended follow-up after that:
+Remaining planned follow-up after Direction B:
 
 - add `--source-shape <path>` to `data query`
 - document the direct CLI shape-first workflow as:
   - `data extract --codex-suggest-shape` to discover and confirm deterministic shape
   - `data query --source-shape <path> --sql ...` to run scoped SQL against the accepted shape
 - keep source-shape artifact generation and source-shape artifact replay as separate concepts in the docs
-- define one strict precedence rule in the shared source-shape guide:
-  - `--source-shape <path>` replaces explicit shape flags, not merges with them
+- define replay conflict and precedence rules for:
+  - `--source-shape`
+  - `--source`
+  - `--range`
+  - `--header-row`
+  - `--body-start-row`
+- generalize the current extract-specific source-shape replay helper before wiring query-side replay
+- keep exact-match replay behavior explicit in docs and user-facing errors
+- decide whether direct `data query codex` remains explicitly out of scope for that replay slice or aligns in the same later phase
 
 ## Related Plans
 
