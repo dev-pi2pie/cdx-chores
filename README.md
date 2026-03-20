@@ -140,6 +140,12 @@ cdx-chores data preview ./input.csv --rows 20
 cdx-chores data preview ./input.tsv --rows 20
 ```
 
+Preview a headerless CSV with generated `column_n` names:
+
+```bash
+cdx-chores data preview ./input.csv --no-header
+```
+
 Interactive lightweight conversion groups these formats under:
 
 ```text

@@ -25,7 +25,7 @@ Current boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
 cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 

@@ -1,6 +1,6 @@
 ## `data duckdb`
 
-`data duckdb` is the explicit DuckDB lifecycle lane for inspecting and installing the DuckDB extensions used by `data query`.
+`data duckdb` is the explicit DuckDB lifecycle lane for inspecting and installing the DuckDB extensions used by `data query` and `data extract`.
 
 Current first-pass scope:
 
@@ -45,11 +45,13 @@ cdx-chores data duckdb extension install --all-supported
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 
-### Relationship to `data query`
+### Relationship to `data query` and `data extract`
 
 Use `data query` when you already know the SQL you want to run.
 
-Use `data duckdb` when you need to inspect or repair DuckDB extension state before running `data query`.
+Use `data extract` when you want one shaped table materialized without SQL.
+
+Use `data duckdb` when you need to inspect or repair DuckDB extension state before running `data query` or `data extract`.
 
 If you want the query command itself to attempt one install-and-retry pass, use:
 
@@ -63,6 +65,14 @@ That flag only applies to extension-backed query formats:
 - `excel`
 
 Built-in DuckDB query formats such as `csv`, `tsv`, and `parquet` reject `--install-missing-extension`.
+
+`data extract` does not currently expose an `--install-missing-extension` retry flag, so the intended repair flow for extract remains:
+
+```bash
+cdx-chores data duckdb doctor
+cdx-chores data duckdb extension install sqlite
+cdx-chores data duckdb extension install excel
+```
 
 ### Versioned cache note
 

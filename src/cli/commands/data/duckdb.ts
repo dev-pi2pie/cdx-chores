@@ -10,7 +10,7 @@ export function registerDataDuckDbCommands(dataCommand: Command, runtime: CliRun
 
   duckdbCommand
     .command("doctor")
-    .description("Inspect DuckDB-managed extension state for data query")
+    .description("Inspect DuckDB-managed extension state for data query and data extract")
     .option("--json", "Output machine-readable JSON", false)
     .action(async (options: { json?: boolean }) => {
       await actionDataDuckDbDoctor(runtime, { json: options.json });
@@ -18,7 +18,7 @@ export function registerDataDuckDbCommands(dataCommand: Command, runtime: CliRun
 
   const duckdbExtensionCommand = duckdbCommand
     .command("extension")
-    .description("Manage DuckDB extensions used by data query");
+    .description("Manage DuckDB extensions used by data query and data extract");
 
   duckdbExtensionCommand
     .command("install")
