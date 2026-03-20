@@ -10,6 +10,7 @@ import {
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
+import { detectInteractiveDataFormat } from "./shared";
 
 function toContainsValidationMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -18,10 +19,13 @@ function toContainsValidationMessage(error: unknown): string {
 async function promptContainsFilters(
   runtime: CliRuntime,
   inputPath: string,
+  options: { noHeader?: boolean } = {},
 ): Promise<string[] | undefined> {
   let sourcePromise: Promise<DataPreviewSource> | undefined;
   const getSource = async (): Promise<DataPreviewSource> => {
-    sourcePromise ??= loadDataPreviewSource(runtime, inputPath).then((loaded) => loaded.source);
+    sourcePromise ??= loadDataPreviewSource(runtime, inputPath, {
+      noHeader: options.noHeader,
+    }).then((loaded) => loaded.source);
     return await sourcePromise;
   };
 
@@ -67,6 +71,18 @@ async function promptContainsFilters(
   }
 
   return contains.length > 0 ? contains : undefined;
+}
+
+async function promptPreviewHeaderMode(inputPath: string): Promise<boolean | undefined> {
+  const format = detectInteractiveDataFormat(inputPath);
+  if (format === "json") {
+    return undefined;
+  }
+
+  return await confirm({
+    message: "Treat CSV/TSV input as headerless?",
+    default: false,
+  });
 }
 
 function parseOptionalPositiveInteger(value: string): number | undefined {
@@ -126,13 +142,15 @@ export async function runInteractiveDataPreview(
     kind: "file",
     ...pathPromptContext,
   });
+  const noHeader = await promptPreviewHeaderMode(inputPath);
   const windowInputs = await promptWindowInputs();
-  const contains = await promptContainsFilters(runtime, inputPath);
+  const contains = await promptContainsFilters(runtime, inputPath, { noHeader });
 
   await actionDataPreview(runtime, {
     columns: windowInputs.columns,
     contains,
     input: inputPath,
+    ...(noHeader ? { noHeader: true } : {}),
     offset: windowInputs.offset,
     rows: windowInputs.rows,
   });

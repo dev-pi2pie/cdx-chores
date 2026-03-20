@@ -14,7 +14,7 @@ export function registerDataPreviewCommands(dataCommand: Command, runtime: CliRu
     .command("preview")
     .description("Preview CSV, TSV, or JSON data as a bounded terminal table")
     .argument("<input>", "Input CSV, TSV, or JSON file")
-    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names", false)
+    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
     .option("--rows <value>", "Number of rows to show", (value: string) => parsePositiveIntegerOption(value, "--rows"))
     .option("--offset <value>", "Row offset to start from", (value: string) =>
       parseNonNegativeIntegerOption(value, "--offset"),
@@ -32,6 +32,7 @@ export function registerDataPreviewCommands(dataCommand: Command, runtime: CliRu
         options: {
           columns?: string[];
           contains?: string[];
+          header?: boolean;
           noHeader?: boolean;
           offset?: number;
           rows?: number;
@@ -41,7 +42,7 @@ export function registerDataPreviewCommands(dataCommand: Command, runtime: CliRu
           columns: options.columns,
           contains: options.contains,
           input,
-          noHeader: options.noHeader,
+          noHeader: options.noHeader ?? options.header === false,
           offset: options.offset,
           rows: options.rows,
         });
