@@ -94,7 +94,7 @@ This boundary is defendable as intentional for now, even if it may not be the be
 
 ### 5. The smoother direct-CLI follow-up is replay, not duplicate reviewed-shape generation
 
-Once the direct docs explicitly describe the current shape-first CLI workflow:
+Now that the query guide explicitly describes the current shape-first CLI workflow:
 
 1. `data extract --codex-suggest-shape`
 2. carry accepted shape flags into `data query --sql ...`
@@ -128,7 +128,7 @@ The current docs record source-shape behavior, but not yet in one shared place:
 That creates a documentation gap:
 
 - source shape and header mapping are different layers, but only header mapping has a shared contract guide
-- the new shape-first CLI workflow is harder to explain cleanly without one shared source-shape reference
+- the current shape-first CLI workflow has no single shared source-shape reference to point to
 - if `data query --source-shape <path>` is added later, documenting source-shape only under `data extract` will no longer scale
 
 Recommended documentation follow-up:

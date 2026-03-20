@@ -1,6 +1,7 @@
 ---
-title: "Data command surface follow-up: headerless contract and source-shape replay"
+title: "Data command surface follow-up: headerless contract and source-shape docs alignment"
 created-date: 2026-03-20
+modified-date: 2026-03-20
 status: draft
 agent: codex
 ---
@@ -10,21 +11,28 @@ agent: codex
 Turn the current data command-surface research into an implementation-ready follow-up plan that:
 
 - unifies explicit headerless delimited behavior across `data preview`, `data query`, `data extract`, and interactive mode
-- smooths the current shape-first direct CLI workflow by allowing `data query` to replay accepted source-shape artifacts
 - closes the shared documentation gap by introducing one source-shape guide parallel to the existing header-mapping guide
 
 ## Why This Plan
 
-The current research now points to two separate but related follow-ups:
+The current research now points to two separate but related follow-ups, but it recommends shipping them in sequence:
 
 1. the most obvious cross-command inconsistency is headerless CSV/TSV behavior
 2. the cleanest next direct-CLI smoothing step is `data query --source-shape <path>`, not `data query --codex-suggest-shape`
 
-Those should be planned together because they touch the same product surface questions:
+This plan intentionally covers only the first shipped slice from that research:
+
+- Direction B now:
+  - unify explicit headerless behavior across preview/query/extract and interactive mode
+  - add the missing shared source-shape guide
+- Direction D later:
+  - add `data query --source-shape <path>` if the shape-first direct CLI workflow still feels too manual in practice
+
+Why keep the first implementation slice narrower:
 
 - what source interpretation is explicit versus implicit
-- how shape generation and shape replay differ
-- how direct CLI and interactive flows tell the same story without collapsing `data extract` and `data query` into one command
+- how direct CLI and interactive flows tell the same story without changing the current extract/query ownership boundary too early
+- how to preserve the research recommendation that replay follow only after the headerless contract lands and real usage proves the remaining friction
 
 This plan should stay additive and backward-compatible with the current stable `v0.0.8` command surface.
 
@@ -37,6 +45,7 @@ This plan should stay additive and backward-compatible with the current stable `
 - `docs/guides/data-extract-usage.md` documents source-shape generation and replay from the extract lane
 - `docs/guides/data-schema-and-mapping-usage.md` documents header-mapping artifacts only
 - there is no shared guide for source-shape artifacts and replay semantics
+- `data query codex` uses the shared query-family introspection path, but this plan does not change that lane yet
 
 ## Scope
 
@@ -49,25 +58,6 @@ This plan should stay additive and backward-compatible with the current stable `
   - `column_1`, `column_2`, ...
 - keep omission of `--no-header` backward-compatible with the current default detection behavior
 
-### Source-shape replay in query
-
-- add `--source-shape <path>` to direct `data query`
-- treat the artifact as the source of effective deterministic shape:
-  - `source`
-  - `range`
-  - `headerRow`
-  - `bodyStartRow`
-- keep source-shape artifact generation on direct `data extract`
-- do not add `data query --codex-suggest-shape` in this slice
-
-### Source-shape precedence and conflict contract
-
-- freeze the direct query replay rule:
-  - `--source-shape <path>` replaces explicit shape flags
-  - it does not merge with `--source`, `--range`, `--header-row`, or `--body-start-row`
-- fail clearly when `--source-shape` is combined with explicit deterministic shape flags
-- keep `<input>` required and continue exact-match validation between artifact input and current invocation input
-
 ### Shared documentation
 
 - add a shared guide:
@@ -79,9 +69,8 @@ This plan should stay additive and backward-compatible with the current stable `
   - `docs/guides/data-query-interactive-usage.md`
 - describe:
   - shape generation
-  - shape replay
-  - exact-match compatibility
-  - precedence/conflict behavior
+  - current extract-side shape replay
+  - current exact-match compatibility
   - shape-first CLI workflow versus interactive query workflow
 
 ### Product copy and command-surface alignment
@@ -92,12 +81,21 @@ This plan should stay additive and backward-compatible with the current stable `
 - keep the new docs explicit that source shape and header mapping are different layers
 - avoid wording that implies `data query` and `data extract` should collapse into one command
 
+### Deferred follow-up captured by this plan, but not implemented here
+
+- `data query --source-shape <path>`
+- direct query replay precedence rules
+- helper generalization required to support query-side source-shape replay without reusing extract-specific validation text
+- any `data query codex` alignment work that should accompany a later query-family replay feature
+
 ## Non-Goals
 
 - `data query --codex-suggest-shape`
+- `data query --source-shape <path>`
 - changes to the source-shape artifact schema version unless strictly necessary
 - automatic CSV header detection heuristics beyond the existing engine default when `--no-header` is omitted
 - automatic source-shape artifact generation from interactive query
+- `data query codex` command-surface changes in this slice
 - unifying source-shape and header-mapping guides into one document
 
 ## Risks and Mitigations
@@ -105,17 +103,14 @@ This plan should stay additive and backward-compatible with the current stable `
 - Risk: `--no-header` semantics drift across preview, query, and extract.
   Mitigation: freeze one shared rule for row retention and `column_n` naming and test all three lanes against the same examples.
 
-- Risk: `--source-shape` plus explicit flags creates unclear override behavior.
-  Mitigation: make them mutually exclusive in the first pass and fail clearly instead of inventing merge precedence.
-
-- Risk: `data query` starts to look like a second source-shape generation lane.
-  Mitigation: add replay only; keep reviewed shape generation owned by `data extract`.
-
 - Risk: docs duplicate source-shape details across multiple guides.
   Mitigation: add one shared source-shape guide and make other guides link to it for contract details.
 
-- Risk: the direct CLI workflow is documented before the replay path exists and becomes stale.
-  Mitigation: update the query guide in the same implementation slice so examples and recommended workflows match shipped behavior.
+- Risk: excluding `data query codex` from this slice leaves the query-family surface uneven.
+  Mitigation: state that exclusion explicitly now, and revisit Codex alignment only after the base headerless contract lands.
+
+- Risk: the shared source-shape guide accidentally implies query-side replay already exists.
+  Mitigation: document current shipped generation/replay behavior precisely and describe query replay only as a future follow-up when relevant.
 
 ## Implementation Touchpoints
 
@@ -123,7 +118,6 @@ This plan should stay additive and backward-compatible with the current stable `
 - `src/cli/commands/data/extract.ts`
 - `src/cli/actions/data-query.ts`
 - `src/cli/actions/data-extract.ts`
-- source-shape reuse helpers under `src/cli/data-workflows/` and `src/cli/duckdb/source-shape/`
 - shared query-source preparation under `src/cli/duckdb/query/`
 - interactive query and extract flows under `src/cli/interactive/data-query/` and `src/cli/interactive/data/`
 - tests under `test/`
@@ -140,11 +134,10 @@ This plan should stay additive and backward-compatible with the current stable `
 - [ ] freeze `--no-header` for direct `data query`
 - [ ] freeze `--no-header` for direct `data extract`
 - [ ] freeze interactive headerless prompts for query/extract on `.csv` and `.tsv`
-- [ ] freeze `data query --source-shape <path>`
-- [ ] freeze `--source-shape` as mutually exclusive with `--source`, `--range`, `--header-row`, and `--body-start-row`
 - [ ] freeze the shared documentation split:
   - `data-source-shape-usage.md` for shape
   - `data-schema-and-mapping-usage.md` for header mapping
+- [ ] freeze explicit exclusion of `data query codex` from this implementation slice
 
 ### Phase 2: Implement direct headerless query/extract support
 
@@ -163,23 +156,20 @@ This plan should stay additive and backward-compatible with the current stable `
 - [ ] carry accepted headerless state through introspection, header review, SQL authoring, and extraction
 - [ ] add focused interactive coverage for both flows
 
-### Phase 4: Implement source-shape replay in query
+### Phase 4: Record deferred replay follow-up
 
-- [ ] add `--source-shape <path>` to direct `data query`
-- [ ] reuse the existing source-shape artifact resolution path rather than inventing a query-only parser
-- [ ] apply accepted shape values before query source preparation
-- [ ] fail clearly on mixed `--source-shape` plus explicit shape flags
-- [ ] add focused tests for:
-  - successful replay
-  - exact-match failures
-  - shape-flag conflict failures
+- [ ] no implementation work in this slice
+- [ ] record the future follow-up contract for `data query --source-shape <path>` without implementing it here
+- [ ] note that a later replay plan must first generalize the current extract-specific source-shape helper before query can reuse it safely
+- [ ] note that a later replay plan must decide whether `data query codex` aligns in the same slice or remains explicitly separate
 
 ### Phase 5: Documentation alignment
 
 - [ ] add `docs/guides/data-source-shape-usage.md`
 - [ ] move shared source-shape contract details out of extract-only narrative and into the new guide
-- [ ] update query usage examples to include the replay form:
-  - `data query --source-shape <path> --sql ...`
+- [ ] update query usage examples to keep the current manual shape-first CLI workflow accurate:
+  - `data extract --codex-suggest-shape`
+  - then `data query` with explicit accepted shape flags
 - [ ] update extract docs to describe source-shape generation and replay without implying query owns generation
 - [ ] update schema/mapping docs to cross-link the new source-shape guide instead of absorbing shape semantics
 
