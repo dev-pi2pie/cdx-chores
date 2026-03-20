@@ -48,7 +48,7 @@ Runtime requirement:
 | Command group | Important subcommands | Purpose | Capability notes |
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
-| `data` | `preview`, `extract`, `query`, `query codex`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` and `query` cover shaped Excel inputs and other DuckDB-backed sources when the runtime is available |
+| `data` | `preview`, `extract`, `query`, `query codex`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is currently most useful for shaping one clean table, especially from awkward Excel inputs, while `query` is the more expressive lane for nontrivial filtering, projection, and output selection |
 | `md` | `to-docx`, `frontmatter-to-json` | Markdown conversion and metadata extraction | `to-docx` requires `pandoc` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
@@ -57,7 +57,8 @@ Runtime requirement:
 Data notes:
 
 - conversion actions are `json-to-csv`, `json-to-tsv`, `csv-to-json`, `csv-to-tsv`, `tsv-to-csv`, and `tsv-to-json`
-- `data extract` materializes one shaped table from one input file to `.csv`, `.tsv`, or `.json`; for Excel inputs it can target a sheet or range, set `--header-row` and `--body-start-row`, and replay reviewed source-shape or header-mapping artifacts for awkward header bands or merged-cell layouts
+- `data extract` materializes one shaped table from one input file to `.csv`, `.tsv`, or `.json`; today its strongest shaping surface is for Excel inputs, where it can target a sheet or range, set `--header-row` and `--body-start-row`, and replay reviewed source-shape or header-mapping artifacts for awkward header bands or merged-cell layouts
+- `data query` is the current general-purpose lane when you need richer filtering or transformation logic than `data extract` exposes without SQL
 
 ## Capability Checks And External Tools
 

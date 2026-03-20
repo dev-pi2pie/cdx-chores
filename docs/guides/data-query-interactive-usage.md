@@ -2,6 +2,8 @@
 
 Use interactive mode when you want the CLI to inspect the input first, then help you author or review SQL before execution.
 
+This is the interactive lane to prefer when `data extract` is too narrow for the transformation you need and you want output control without dropping to raw CLI flags immediately.
+
 For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
 
 Start the flow with:
