@@ -2,7 +2,7 @@
 title: "Data command surface headerless and Codex boundary evaluation"
 created-date: 2026-03-20
 modified-date: 2026-03-20
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -13,17 +13,13 @@ Evaluate two command-surface questions across `data preview`, `data query`, `dat
 1. whether headerless CSV handling should stay split between explicit preview controls and DuckDB auto-detection in query/extract
 2. whether `--codex-suggest-shape` should remain a direct-CLI `data extract` feature only, or expand into direct `data query`
 
-## Status Note
-
-Direction B from this research has been implemented, but the related follow-up plan at `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` is still active.
-
-Keep this research in `in-progress` until the remaining direct query replay follow-up, including `data query --source-shape <path>`, is completed and the parent plan is closed.
+This document records the evaluation state and recommendation that drove the later follow-up plan work. Direction B and the later replay follow-up have since been implemented.
 
 ## Key Findings
 
 ### 1. The current behavior is functionally usable but product-level inconsistent
 
-Today the product behaves like this:
+At evaluation time, the product behaved like this:
 
 - `data preview`
   - lightweight in-memory lane for `.csv`, `.tsv`, `.json`
@@ -123,7 +119,7 @@ Why this is cleaner:
   - `data extract` discovers or replays shape for shaping/materialization work
   - `data query` executes SQL against an accepted deterministic shape
 
-### 6. Shared source-shape documentation is still missing
+### 6. Shared source-shape documentation was still missing
 
 The current docs record source-shape behavior, but not yet in one shared place:
 

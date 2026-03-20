@@ -33,6 +33,7 @@ Current intent:
 - use `data extract` when you want one clean output table and do not need SQL
 - use it first for awkward Excel inputs that need sheet, range, header-row, or body-start-row interpretation before export
 - for nontrivial filtering, projection, aggregation, or other transformation logic across any supported format, prefer `data query` with `--output`
+- when you want SQL against the exact same reviewed Excel scope, replay the accepted artifact with `data query --source-shape <path> --sql ...`
 
 ### Command shape
 

@@ -2,7 +2,7 @@
 title: "Data command surface follow-up: headerless contract and source-shape docs alignment"
 created-date: 2026-03-20
 modified-date: 2026-03-20
-status: active
+status: completed
 agent: codex
 ---
 
@@ -38,8 +38,7 @@ This plan should stay additive and backward-compatible with the current stable `
 
 Progress status:
 
-- Phases 1 through 5 are completed for Direction B
-- the plan remains active because the direct query replay follow-up is still pending
+- Phases 1 through 6 are completed
 
 ## Current State
 
@@ -180,21 +179,21 @@ Progress status:
 
 ### Phase 6: Implement direct query source-shape replay
 
-- [ ] add `data query --source-shape <path>`
-- [ ] define conflict and precedence rules for:
+- [x] add `data query --source-shape <path>`
+- [x] define conflict and precedence rules for:
   - `--source-shape`
   - `--source`
   - `--range`
   - `--header-row`
   - `--body-start-row`
-- [ ] generalize the current extract-specific reusable source-shape helper so query can reuse the same exact-match contract without extract-only validation text
-- [ ] keep exact-match replay behavior explicit in direct query docs and errors
-- [ ] decide whether direct `data query codex` stays explicitly out of scope for the replay slice or needs alignment in the same later phase
-- [ ] add focused direct CLI tests for:
+- [x] generalize the current extract-specific reusable source-shape helper so query can reuse the same exact-match contract without extract-only validation text
+- [x] keep exact-match replay behavior explicit in direct query docs and errors
+- [x] decide whether direct `data query codex` stays explicitly out of scope for the replay slice or needs alignment in the same later phase
+- [x] add focused direct CLI tests for:
   - query replay from a reviewed source-shape artifact
   - explicit flag conflicts with `--source-shape`
   - exact-match failure reporting
-- [ ] update docs after query replay ships
+- [x] update docs after query replay ships
 
 ## Related Research
 

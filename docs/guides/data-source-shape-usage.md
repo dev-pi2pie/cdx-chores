@@ -88,37 +88,43 @@ If `--write-source-shape` is omitted, the CLI generates a filename in the shared
 
 ### Current Query Relationship
 
-`data query` and `data extract` share the same deterministic shape contract, but they do not currently replay reviewed shape artifacts in the same way.
+`data query` and `data extract` now share the same reviewed source-shape replay contract.
 
 Current shipped behavior:
 
 - `data extract` can generate reviewed source-shape artifacts
 - `data extract` can replay `--source-shape <path>`
-- `data query` can consume the same accepted deterministic values as explicit flags
-- `data query` does not yet accept `--source-shape <path>`
-
-Planned follow-up:
-
-- add direct query replay through `data query --source-shape <path>`
-- keep that as a later command-surface follow-up rather than implying it is already shipped
+- `data query` can replay `--source-shape <path>`
+- direct `data query` can still consume the same accepted deterministic shape values as explicit flags when you do not want artifact replay
+- direct `data query codex` remains separate in this slice and still uses explicit shape flags only
 
 Current direct query workflow:
 
 1. use `data extract --codex-suggest-shape` if you need help discovering the correct Excel table boundary
 2. inspect the accepted artifact
-3. rerun `data query` with the accepted explicit flags plus `--sql`
+3. rerun `data query --source-shape <path> --sql ...`
 
 Example:
 
 ```bash
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
-cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --header-row 7 --body-start-row 10 --sql "select id, question, status, notes from file order by id"
+cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --sql "select id, question, status, notes from file order by id"
 ```
 
 This is intentional in the current product split:
 
 - `data extract` owns reviewed reusable shape generation
-- `data query` owns SQL against an accepted deterministic shape
+- `data query` owns SQL against an accepted deterministic shape, including replay of an accepted reviewed shape artifact
+
+Replay precedence rule:
+
+- `--source-shape <path>` replaces explicit shape flags for the current direct query run
+- do not combine it with:
+  - `--source`
+  - `--range`
+  - `--header-row`
+  - `--body-start-row`
+- replay remains strict exact-match reuse against the current input path, format, and artifact source
 
 ### Interactive Relationship
 

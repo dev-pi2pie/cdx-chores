@@ -579,6 +579,53 @@ describe("cli action modules: data query", () => {
       expect(stdout.text).not.toContain("column_2");
     });
   });
+
+  test("actionDataQuery reuses an accepted source-shape artifact when it matches exactly", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: toRepoRelativePath(inputPath),
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-20T00:00:00.000Z",
+          },
+          shape: {
+            headerRow: 7,
+            range: "B2:E11",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sourceShape: toRepoRelativePath(artifactPath),
+        sql: "select ID, item, status from file order by ID",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Format: excel");
+      expect(stdout.text).toContain("Source: Summary");
+      expect(stdout.text).toContain("Range: B2:E11");
+      expect(stdout.text).toContain("Header row: 7");
+      expect(stdout.text).toContain("Visible columns: ID, item, status");
+      expect(stdout.text).toContain("1001 | Starter");
+    });
+  });
 });
 
 describe("cli action modules: data query failure modes", () => {
@@ -725,6 +772,67 @@ describe("cli action modules: data query failure modes", () => {
     });
   });
 
+  test("actionDataQuery rejects --source-shape for non-Excel inputs", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "people.csv");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: "test/fixtures/data-query/multi.xlsx",
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-20T00:00:00.000Z",
+          },
+          shape: {
+            range: "A1:B3",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            sourceShape: toRepoRelativePath(artifactPath),
+            sql: "select * from file",
+          }),
+        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source-shape is only valid for Excel query inputs" },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataQuery rejects explicit shape flags when --source-shape is provided", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: "test/fixtures/data-query/multi.xlsx",
+          range: "A1:B3",
+          sourceShape: "shape.json",
+          sql: "select * from file",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--source-shape cannot be used together with --range",
+      },
+    );
+
+    expectNoOutput();
+  });
+
   test("actionDataQuery rejects mismatched header-mapping artifacts", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "generic.csv");
@@ -759,6 +867,54 @@ describe("cli action modules: data query failure modes", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "does not match the current input context exactly",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataQuery rejects mismatched source-shape artifacts", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: "examples/playground/other.xlsx",
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-20T00:00:00.000Z",
+          },
+          shape: {
+            range: "B2:E11",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            sourceShape: toRepoRelativePath(artifactPath),
+            sql: "select * from file",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Source shape artifact does not match the current input context exactly",
         },
       );
 

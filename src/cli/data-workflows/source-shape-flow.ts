@@ -112,6 +112,7 @@ export function buildSourceShapeHeaderSuggestionFollowUpCommand(options: {
 }
 
 export async function resolveReusableSourceShapeForDataFlow(options: {
+  commandName: "extract" | "query";
   format: DataQueryInputFormat;
   inputPath: string;
   runtime: CliRuntime;
@@ -119,7 +120,7 @@ export async function resolveReusableSourceShapeForDataFlow(options: {
   sourceShapePath: string;
 }): Promise<{ bodyStartRow?: number; headerRow?: number; range?: string; source: string }> {
   if (!isSourceShapeFormat(options.format)) {
-    throw new CliError("--source-shape is only valid for Excel extract inputs.", {
+    throw new CliError(`--source-shape is only valid for Excel ${options.commandName} inputs.`, {
       code: "INVALID_INPUT",
       exitCode: 2,
     });

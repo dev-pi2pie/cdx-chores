@@ -36,7 +36,7 @@ Implement Direction B from `docs/plans/plan-2026-03-20-data-command-surface-foll
 
 This job record is completed for Direction B only.
 
-The parent plan at `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` remains active because the later direct query replay slice for `data query --source-shape <path>` is still pending.
+The later direct query replay slice for `data query --source-shape <path>` was completed afterward as a separate follow-up in `docs/plans/jobs/2026-03-20-data-query-source-shape-replay.md`.
 
 ## Verification
 

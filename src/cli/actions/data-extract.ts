@@ -56,6 +56,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
 
   const resolvedSourceShape = options.sourceShape?.trim()
     ? await resolveReusableSourceShapeForDataFlow({
+        commandName: "extract",
         format,
         inputPath,
         runtime,
