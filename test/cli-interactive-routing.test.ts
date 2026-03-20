@@ -946,6 +946,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:preview"],
       requiredPathQueue: ["fixtures/table.csv"],
+      confirmQueue: [false],
       inputQueue: ["15", "", "id,status", ""],
     });
 
@@ -964,12 +965,46 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
       "select:Choose a data command",
+      "confirm:Treat CSV/TSV input as headerless?",
       "input:Rows to show (optional)",
       "input:Row offset (optional)",
       "input:Columns to show (comma-separated, optional)",
       "input:Contains filter (column:keyword, optional)",
     ]);
     expect(result.validationCalls).toEqual([]);
+  });
+
+  test("routes data preview in headerless mode for CSV input", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      requiredPathQueue: ["fixtures/table.csv"],
+      confirmQueue: [true],
+      inputQueue: ["", "", "", ""],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: undefined,
+          noHeader: true,
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a data command",
+      "confirm:Treat CSV/TSV input as headerless?",
+      "input:Rows to show (optional)",
+      "input:Row offset (optional)",
+      "input:Columns to show (comma-separated, optional)",
+      "input:Contains filter (column:keyword, optional)",
+    ]);
   });
 
   test("routes interactive data convert to JSON with JSON-only pretty prompt", () => {
@@ -1080,8 +1115,8 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:preview"],
       requiredPathQueue: ["fixtures/table.csv"],
+      confirmQueue: [false, false],
       inputQueue: ["", "", "", "status:active"],
-      confirmQueue: [false],
     });
 
     expect(result.actionCalls).toEqual([
@@ -1099,6 +1134,7 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
       "select:Choose a data command",
+      "confirm:Treat CSV/TSV input as headerless?",
       "input:Rows to show (optional)",
       "input:Row offset (optional)",
       "input:Columns to show (comma-separated, optional)",
@@ -1148,8 +1184,8 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:preview"],
       requiredPathQueue: ["fixtures/table.csv"],
+      confirmQueue: [false, false],
       inputQueue: ["", "", "", "status", "status:active"],
-      confirmQueue: [false],
     });
 
     expect(result.actionCalls).toEqual([
@@ -1178,7 +1214,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:preview"],
       requiredPathQueue: ["fixtures/table.csv"],
       inputQueue: ["", "", "", "owner:ada", "status:active"],
-      confirmQueue: [false],
+      confirmQueue: [false, false],
     });
 
     expect(result.actionCalls).toEqual([

@@ -2,6 +2,8 @@
 
 `data extract` materializes one shaped logical table from one local input file into a clean `.csv`, `.tsv`, or `.json` artifact.
 
+Today, this command is most valuable for source-shaping work, especially Excel-oriented cleanup before materialization. It remains format-general at the input level, but its distinctive shaping controls are currently centered on Excel.
+
 For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`.
 For SQL execution instead of direct materialization, use `docs/guides/data-query-usage.md`.
@@ -23,6 +25,12 @@ Current boundary:
 - materialization runs require `--output <path>`
 - output format is inferred from `.csv`, `.tsv`, or `.json`
 - extracted table content is written to the output artifact, not mixed into stdout
+
+Current intent:
+
+- use `data extract` when you want one clean output table and do not need SQL
+- use it first for awkward Excel inputs that need sheet, range, header-row, or body-start-row interpretation before export
+- for nontrivial filtering, projection, aggregation, or other transformation logic across any supported format, prefer `data query` with `--output`
 
 ### Command shape
 
@@ -56,6 +64,8 @@ cdx-chores data extract ./examples/playground/data-query/generic.csv --header-ma
 ### Source shaping
 
 `data extract` reuses the same explicit shaping contract as the shared query helpers.
+
+That does not mean every tricky case belongs in `data extract`. The current design keeps Excel-style source interpretation here, while richer transformation logic stays in `data query`.
 
 `--source` is required for multi-object formats:
 

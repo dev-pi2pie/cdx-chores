@@ -2,6 +2,8 @@
 
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file through the logical table name `file`.
 
+It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
+
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
@@ -22,10 +24,16 @@ Current boundary:
 - file output: `--output <path>` with `.json` or `.csv`
 - interactive mode is available through `cdx-chores interactive`; see `docs/guides/data-query-interactive-usage.md`
 
+Current intent:
+
+- use `data query` when you already know the SQL you want to run
+- use `data query` when `data extract` is too narrow for the transformation you need, even if the input is not Excel
+- use `--output` on `data query` when you want SQL-backed materialization rather than bounded terminal output
+
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
 cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 

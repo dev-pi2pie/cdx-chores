@@ -59,6 +59,7 @@ Then choose:
 The interactive preview flow prompts for:
 
 - input path
+- for `.csv` and `.tsv`, whether the input should be treated as headerless
 - optional row count
 - optional offset
 - optional comma-separated columns
@@ -67,10 +68,17 @@ The interactive preview flow prompts for:
 
 Blank optional answers map to the CLI defaults:
 
+- `Treat CSV/TSV input as headerless?` => `No`
 - blank rows => default row window
 - blank offset => `0`
 - blank columns => no filter
 - blank first contains filter => no contains filter
+
+Interactive headerless note:
+
+- the prompt appears only for `.csv` and `.tsv`
+- `.json` skips the prompt because `--no-header` is not valid for JSON preview
+- when headerless mode is accepted, interactive `contains` validation also uses generated `column_n` names
 
 ### Contains filtering
 

@@ -1,12 +1,14 @@
 # cdx-chores
 
-A Node.js CLI for file-processing chores, data utilities, rename workflows, and Codex-assisted tasks.
+A Node.js CLI for file-processing chores, tabular data workflows, rename automation, and Codex-assisted tasks.
 
-Current launch-phase focus:
+Stable release scope in `v0.0.8`:
 
 - interactive mode + nested CLI commands
 - `doctor` capability checks
-- data conversion, preview, and query workflows
+- CSV / TSV / JSON conversion and preview workflows
+- `data extract` for shaping difficult tabular inputs, including Excel edge cases
+- DuckDB-backed query and Parquet preview workflows
 - `md to-docx` via `pandoc`
 - preview-first rename flows
 - `ffmpeg`-backed video wrappers
@@ -46,11 +48,17 @@ Runtime requirement:
 | Command group | Important subcommands | Purpose | Capability notes |
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
-| `data` | `json-to-csv`, `json-to-tsv`, `csv-to-json`, `csv-to-tsv`, `tsv-to-csv`, `tsv-to-json`, `preview`, `parquet preview`, `query`, `query codex`, `duckdb doctor`, `duckdb extension install` | Data conversion, preview, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `query` support depends on DuckDB runtime availability |
+| `data` | `preview`, `extract`, `query`, `query codex`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is currently most useful for shaping one clean table, especially from awkward Excel inputs, while `query` is the more expressive lane for nontrivial filtering, projection, and output selection |
 | `md` | `to-docx`, `frontmatter-to-json` | Markdown conversion and metadata extraction | `to-docx` requires `pandoc` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
 | `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
+
+Data notes:
+
+- conversion actions are `json-to-csv`, `json-to-tsv`, `csv-to-json`, `csv-to-tsv`, `tsv-to-csv`, and `tsv-to-json`
+- `data extract` materializes one shaped table from one input file to `.csv`, `.tsv`, or `.json`; today its strongest shaping surface is for Excel inputs, where it can target a sheet or range, set `--header-row` and `--body-start-row`, and replay reviewed source-shape or header-mapping artifacts for awkward header bands or merged-cell layouts
+- `data query` is the current general-purpose lane when you need richer filtering or transformation logic than `data extract` exposes without SQL
 
 ## Capability Checks And External Tools
 
@@ -62,9 +70,9 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | ---- | ---------------------------- | ---------------------- | ----------------------- |
 | `md to-docx` | Markdown-to-DOCX command wrapper | `pandoc` must be installed on `PATH` | Run `cdx-chores doctor` |
 | `video convert`, `video resize`, `video gif` | Video command wrappers | `ffmpeg` must be installed on `PATH` | Run `cdx-chores doctor` |
-| `data query` for `csv`, `tsv`, `parquet` | Query command surface and DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
-| `data query` for `sqlite`, `excel` | Query command surface | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
-| `data query codex` | Natural-language SQL drafting lane | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
+| `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
+| `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
+| `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
 
 For automation or machine-readable checks, use:
 
@@ -133,10 +141,28 @@ cdx-chores data preview ./input.csv --rows 20
 cdx-chores data preview ./input.tsv --rows 20
 ```
 
+Preview a headerless CSV with generated `column_n` names:
+
+```bash
+cdx-chores data preview ./input.csv --no-header
+```
+
 Interactive lightweight conversion groups these formats under:
 
 ```text
 data -> convert
+```
+
+Extract one shaped table from an Excel sheet:
+
+```bash
+cdx-chores data extract ./input.xlsx --source Sheet1 --header-row 2 --body-start-row 3 -o ./output.tsv
+```
+
+Extract from a messier Excel range with explicit body rows:
+
+```bash
+cdx-chores data extract ./messy.xlsx --source Report --range A1:Z200 --header-row 4 --body-start-row 6 -o ./output.csv
 ```
 
 Preview Parquet through DuckDB:
@@ -308,8 +334,11 @@ Rename:
 - `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 
-Data query:
+Data:
 
+- `docs/guides/data-preview-usage.md`
+- `docs/guides/data-extract-usage.md`
+- `docs/guides/data-schema-and-mapping-usage.md`
 - `docs/guides/data-query-usage.md`
 - `docs/guides/data-duckdb-usage.md`
 - `docs/guides/data-query-codex-usage.md`

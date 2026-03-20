@@ -1,7 +1,7 @@
 ---
 title: "TypeScript refactor scan for remaining structural hotspots"
 created-date: 2026-03-19
-modified-date: 2026-03-19
+modified-date: 2026-03-20
 status: completed
 agent: codex
 ---
@@ -131,6 +131,31 @@ Identify the highest-value remaining TypeScript refactor targets in the reposito
 
 - `src/cli/prompts/path-inline.ts` is still large, but recent prompt-module work already gave it supporting modules and it appears more cohesive than the top hotspots.
 - `src/cli/actions/rename/cleanup.ts` and `src/cli/rename-preview.ts` are above the preferred file-size range, but they are not the main structural risk right now.
+
+## Follow-up Scan (2026-03-20)
+
+The highest-risk hotspots shifted after the recent command, interactive, and DuckDB folder splits landed.
+
+Current follow-up priorities:
+
+1. `src/cli/duckdb/query/prepare-source.ts`
+2. `src/cli/interactive/data.ts`
+3. `src/cli/actions/data-extract.ts`
+4. `src/cli/commands/data.ts`
+5. `src/cli/rename/planner.ts`
+
+Updated notes:
+
+- `src/cli/duckdb/query/prepare-source.ts` is now the clearest data-layer hotspot. It combines format-specific validation, DuckDB extension setup, Excel range normalization, retry behavior, temporary-view creation, header/body splitting, and final prepared-source assembly.
+- `src/cli/interactive/data.ts` is now the clearest interactive hotspot. It mixes convert, preview, parquet preview, extract, contains-filter prompting, and the top-level action router in one file even though `src/cli/interactive/data-query/` is already split into focused modules.
+- `src/cli/actions/data-extract.ts` is no longer just a thin action wrapper. It owns option validation, output serialization, Codex source-shape suggestion flow, and extraction orchestration. That is enough mixed responsibility to justify a split.
+- `src/cli/commands/data.ts` is structurally repetitive rather than algorithmically complex. It is a good low-risk split candidate into per-subcommand registration helpers.
+- `src/cli/rename/planner.ts` remains large because it combines template parsing, serial planning, directory walking, batch planning, and single-file planning. This is a valid refactor target, but it is slightly lower-risk and lower-urgency than the data workflow files above.
+
+Current recommendation:
+
+- use a targeted `ts_structure_refactorer` pass now, but scope it to the data workflow surface first rather than the entire `src/` tree
+- keep `src/cli/prompts/path-inline.ts` and `src/cli/actions/rename/codex.ts` deferred for now because they are large but comparatively cohesive after prior supporting-module splits
 
 ## Related Plans
 

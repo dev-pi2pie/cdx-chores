@@ -112,6 +112,26 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("--contains <column:keyword>");
   });
 
+  test("data preview honors --no-header end to end for CSV input", async () => {
+    const fixtureDir = await createTempFixtureDir("cli-ux");
+    try {
+      const inputPath = join(fixtureDir, "headerless.csv");
+      await writeFile(inputPath, "1,Ada,active\n2,Bob,paused\n3,Cyd,draft\n", "utf8");
+
+      const relativeInputPath = toRepoRelativePath(inputPath);
+      const result = runCli(["data", "preview", relativeInputPath, "--no-header"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Rows: 3");
+      expect(result.stdout).toContain("Visible columns: column_1, column_2, column_3");
+      expect(result.stdout).toContain("column_1 | column_2 | column_3");
+      expect(result.stdout).toContain("1        | Ada      | active");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("data parquet preview renders relative input paths by default", () => {
     const result = runCli(["data", "parquet", "preview", "test/fixtures/parquet-preview/basic.parquet"]);
 
