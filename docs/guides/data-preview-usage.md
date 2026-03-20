@@ -40,7 +40,7 @@ cdx-chores data preview ./examples/playground/tabular-preview/basic.tsv
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json
 cdx-chores data preview ./examples/playground/tabular-preview/wide.csv --columns id,status,message
 cdx-chores data preview ./examples/playground/tabular-preview/large.json --rows 20 --offset 120
-cdx-chores data preview ./examples/playground/tabular-preview/headerless.csv --no-header
+cdx-chores data preview ./examples/playground/data-query-probe/auto-headerless.csv --no-header
 cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contains status:active
 cdx-chores data preview ./examples/playground/tabular-preview/basic.json --contains name:ada --contains city:tai
 ```

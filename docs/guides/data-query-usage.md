@@ -4,6 +4,8 @@
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 
+As of `v0.0.9`, this guide reflects the shipped split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation still begins on the `data extract` lane.
+
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
 For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
@@ -94,7 +96,7 @@ Examples:
 ```bash
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select id, name from file order by id"
 cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
-cdx-chores data query ./examples/playground/data-extract/no-head.csv --no-header --sql "select column_1, column_2 from file order by column_1"
+cdx-chores data query ./examples/playground/data-query-probe/auto-headerless.csv --no-header --sql "select column_1, column_2 from file order by column_1"
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
@@ -133,6 +135,7 @@ Other input formats reject `--range`.
 - it replays an accepted reviewed source-shape artifact before SQL execution continues
 - replay is strict exact-match against the current input path, format, and artifact source
 - it replaces explicit shape flags instead of merging with them
+- direct `data query` is the replay consumer in the current product split; reviewed artifact generation still starts with `data extract --codex-suggest-shape`
 - do not combine it with:
   - `--source`
   - `--range`
@@ -199,6 +202,7 @@ Practical reading:
 Current limitation:
 
 - direct `data query codex` still takes explicit shape flags only in this slice
+- direct `data query codex` does not currently accept `--source-shape <path>`
 - this replay pass does not change the `data query codex` command surface
 
 ### Header review and reuse

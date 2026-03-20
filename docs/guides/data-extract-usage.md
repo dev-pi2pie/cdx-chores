@@ -4,6 +4,8 @@
 
 Today, this command is most valuable for source-shaping work, especially Excel-oriented cleanup before materialization. It remains format-general at the input level, but its distinctive shaping controls are currently centered on Excel.
 
+As of `v0.0.9`, this guide reflects the shipped split where `data extract` owns direct shaped-table materialization and reviewed source-shape generation, while `data query` is the SQL lane that can later replay an accepted reviewed shape.
+
 For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`.
 For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`.
@@ -56,7 +58,7 @@ Examples:
 ```bash
 cdx-chores data extract ./examples/playground/data-query/basic.csv --output ./examples/playground/.tmp-tests/basic.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/basic.tsv --output ./examples/playground/.tmp-tests/basic.clean.csv --overwrite
-cdx-chores data extract ./examples/playground/data-extract/no-head.csv --no-header --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-query-probe/auto-headerless.csv --no-header --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.tsv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
@@ -117,6 +119,8 @@ Important distinction:
 - current source-shape artifacts are Excel-only
 - they do not persist semantic header renames
 - they do not currently persist CSV or TSV `--no-header` decisions
+- `data extract` is the reviewed source-shape producer in the current direct-CLI split
+- `data query` is the SQL consumer that can replay the same accepted shape with `--source-shape <path>`
 - a reviewed source-shape artifact may contain only `bodyStartRow` when that is the only deterministic source change
 - replaying a body-start-only artifact may still expose positional or generic columns
 - when that happens, the intended next step is `--codex-suggest-headers` after `--source-shape`, followed by `--header-mapping` for final extraction
@@ -151,7 +155,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
+- optional `noHeader`, `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
 
 ### Interactive mode
 

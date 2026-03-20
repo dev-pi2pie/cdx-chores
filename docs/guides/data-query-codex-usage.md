@@ -2,6 +2,8 @@
 
 `data query codex` is the natural-language drafting lane for SQL against one local input file. It inspects the selected data source first, drafts SQL second, and does not execute the drafted SQL automatically.
 
+As of `v0.0.9`, this lane is still intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
+
 Current boundary:
 
 - one input file per invocation
@@ -11,6 +13,8 @@ Current boundary:
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
+- no reviewed `--source-shape <path>` replay in this lane
+- no direct `--header-mapping <path>` reuse in this lane
 - default output: human-readable assistant summary plus drafted SQL
 - shell-friendly output: `--print-sql`
 - no `--execute` in the first pass
@@ -48,6 +52,12 @@ Keep the two lanes separate:
 - `data query codex` drafts SQL from natural-language intent
 
 The first `data query codex` implementation is advisory only. It always shows the drafted SQL and does not run it for you. `--execute` is intentionally not implemented yet.
+
+If you need SQL against an accepted reviewed source shape, use the current two-step direct-CLI flow instead:
+
+1. `data extract --codex-suggest-shape`
+2. inspect the artifact
+3. `data query --source-shape <path> --sql ...`
 
 ### Source selection
 
