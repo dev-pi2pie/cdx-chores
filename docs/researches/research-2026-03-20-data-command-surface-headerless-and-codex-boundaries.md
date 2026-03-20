@@ -92,6 +92,51 @@ That is mildly confusing, but the current docs can still explain it:
 
 This boundary is defendable as intentional for now, even if it may not be the best long-term command surface.
 
+### 5. The smoother direct-CLI follow-up is replay, not duplicate reviewed-shape generation
+
+Once the direct docs explicitly describe the current shape-first CLI workflow:
+
+1. `data extract --codex-suggest-shape`
+2. carry accepted shape flags into `data query --sql ...`
+
+the main product gap becomes clearer:
+
+- `data query` cannot replay an accepted source-shape artifact directly
+- users must manually copy accepted `source`, `range`, `header-row`, and `body-start-row` values into the next command
+
+That points to a better follow-up than adding `data query --codex-suggest-shape`:
+
+- add `data query --source-shape <path>`
+
+Why this is cleaner:
+
+- it preserves the existing boundary that reviewed reusable source-shape generation belongs to `data extract`
+- it smooths the direct CLI workflow that already mirrors interactive query behavior
+- it reduces flag-copy friction without making `data query` a second reviewed-shape artifact producer
+- it keeps the product distinction understandable:
+  - `data extract` discovers or replays shape for shaping/materialization work
+  - `data query` executes SQL against an accepted deterministic shape
+
+### 6. Shared source-shape documentation is still missing
+
+The current docs record source-shape behavior, but not yet in one shared place:
+
+- `docs/guides/data-extract-usage.md` documents source-shape generation and replay from the `data extract` lane
+- `docs/guides/data-schema-and-mapping-usage.md` documents header-mapping artifacts only
+- there is no dedicated shared guide for source-shape artifacts and replay semantics
+
+That creates a documentation gap:
+
+- source shape and header mapping are different layers, but only header mapping has a shared contract guide
+- the new shape-first CLI workflow is harder to explain cleanly without one shared source-shape reference
+- if `data query --source-shape <path>` is added later, documenting source-shape only under `data extract` will no longer scale
+
+Recommended documentation follow-up:
+
+- add a shared guide such as `docs/guides/data-source-shape-usage.md`
+- keep it separate from `data-schema-and-mapping-usage.md`
+- define generation, replay, exact-match reuse, and precedence semantics there once the replay contract is accepted
+
 ## Main UX Confusion Points
 
 - `data preview` teaches an explicit `--no-header` contract, but `data query` and `data extract` do not expose the same user intent.
@@ -99,6 +144,7 @@ This boundary is defendable as intentional for now, even if it may not be the be
 - interactive `data query` can ask Codex for shape help, but direct `data query` has no equivalent reusable reviewed-shape command.
 - the current split makes `data extract` look like the owner of shaping artifacts, while interactive `data query` partially behaves like it also owns reviewed shaping.
 - docs are forced to explain behavior in terms of internal implementation seams instead of one stable user-facing rule.
+- source-shape artifacts do not yet have one shared guide parallel to the shared header-mapping guide.
 
 ## Design Directions
 
@@ -168,6 +214,26 @@ Cons:
 - more chance of users asking why two commands now produce the same reviewed artifact before diverging later
 - higher implementation and maintenance surface
 
+### Direction D. Keep reviewed shape generation on `extract`, but let `query` replay source-shape artifacts
+
+Contract:
+
+- do Direction B
+- add `--source-shape <path>` to direct `data query`
+- keep `--codex-suggest-shape` owned by direct `data extract`
+
+Pros:
+
+- preserves the current product boundary
+- smooths the shape-first CLI workflow substantially
+- reduces manual flag copying between review and SQL execution
+- easier to explain than adding a second reviewed-shape generator entry point
+
+Cons:
+
+- `data query` gains one more shaping input surface
+- docs must explain artifact replay separately from artifact generation
+
 ## Tradeoff Comparison
 
 ### Docs
@@ -175,28 +241,32 @@ Cons:
 - Direction A keeps docs stable but forces more caveats.
 - Direction B simplifies the headerless story substantially while keeping the shaping-artifact story focused.
 - Direction C is the most symmetrical but creates more duplicate documentation around reviewed shaping.
+- Direction D keeps docs slightly larger than B, but the added complexity is high-value because it removes a real two-command friction point.
 
 ### User Expectations
 
 - Direction A preserves current behavior but leaves the most surprising gaps.
 - Direction B matches user intuition better: “headerless is a property of the file, not of one command.”
 - Direction C is easiest to reason about at first glance, but it weakens the product distinction between shaping/materialization and SQL authoring.
+- Direction D aligns well with user expectations once the shape-first CLI workflow is taught: users can discover shape in one lane and replay it in the SQL lane.
 
 ### Backward Compatibility
 
 - Direction A is safest.
 - Direction B is still safe if `--no-header` is additive and default auto-detection remains unchanged.
 - Direction C is additive too, but it changes product perception more than raw compatibility.
+- Direction D is also additive and keeps the current stable mental model intact better than C.
 
 ### Implementation Complexity
 
 - Direction A is trivial.
 - Direction B is moderate because it requires explicit header override plumbing in DuckDB-backed query/extract and interactive prompts.
 - Direction C is highest because it adds both headerless unification and a second reviewed shape-artifact entry point.
+- Direction D is moderate-to-high, but more targeted than C because it reuses the existing source-shape artifact contract instead of duplicating reviewed-shape generation.
 
 ## Recommendation
 
-Recommend Direction B for the next feature release after the current patch cycle.
+Recommend Direction B for the next feature release after the current patch cycle, with Direction D as the preferred follow-up immediately after that if the new shape-first CLI workflow sees real use.
 
 Why this is the right cut:
 
@@ -204,12 +274,14 @@ Why this is the right cut:
 - it keeps `data extract` as the primary shaping/materialization lane
 - it avoids turning `data query` into a second artifact-producing shaping workflow before there is stronger evidence that users need that duplication
 - it lets the team improve the command family in a way users will immediately understand
+- if the paired CLI workflow still feels too manual after that, `data query --source-shape <path>` is the cleaner next step than `data query --codex-suggest-shape`
 
 Pragmatic position on `--codex-suggest-shape`:
 
 - treat the current direct-CLI `data extract` ownership as intentional, not accidental
 - describe the lack of direct `data query --codex-suggest-shape` as temporary-but-acceptable, not urgent
-- revisit it only after the headerless contract is unified and after real usage shows whether users actually want reusable shaping artifacts from the query lane itself
+- do not make it the first smoothing step for the direct CLI workflow
+- prefer `data query --source-shape <path>` first if replay friction becomes the next obvious pain point
 
 ## Concrete CLI and Docs Implications
 
@@ -226,6 +298,17 @@ Recommended future-release implications:
 - update interactive guides to say:
   - interactive query/extract may use temporary in-session reviewed shaping
   - reusable reviewed source-shape artifacts are still produced through direct `data extract`
+- add a shared source-shape guide rather than expanding `data-schema-and-mapping-usage.md` to cover both layers
+
+Recommended follow-up after that:
+
+- add `--source-shape <path>` to `data query`
+- document the direct CLI shape-first workflow as:
+  - `data extract --codex-suggest-shape` to discover and confirm deterministic shape
+  - `data query --source-shape <path> --sql ...` to run scoped SQL against the accepted shape
+- keep source-shape artifact generation and source-shape artifact replay as separate concepts in the docs
+- define one strict precedence rule in the shared source-shape guide:
+  - `--source-shape <path>` replaces explicit shape flags, not merges with them
 
 ## Related Plans
 
