@@ -36,8 +36,16 @@ export async function prepareDataQuerySource(
   const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
   const selectedHeaderRow =
     shape.headerRow !== undefined ? normalizeExcelHeaderRow(shape.headerRow) : undefined;
+  const noHeader = shape.noHeader === true;
   let effectiveRange = selectedRange;
   let boundaryRangeParts: import("./types").ExcelRangeParts | undefined;
+
+  if (noHeader && format !== "csv" && format !== "tsv") {
+    throw new CliError("--no-header is only valid for CSV and TSV query inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
 
   if (format === "sqlite") {
     if (selectedRange) {
@@ -167,6 +175,7 @@ export async function prepareDataQuerySource(
       const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
         format,
         inputPath,
+        noHeader,
       });
       const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
         availableColumns: relationColumns.map((column) => column.name),
@@ -205,6 +214,7 @@ export async function prepareDataQuerySource(
           inputPath,
           format,
           {
+            noHeader,
             range: effectiveRange,
             source: selectedSource,
           },
@@ -217,6 +227,7 @@ export async function prepareDataQuerySource(
       const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
         format,
         inputPath,
+        noHeader,
       });
       const appliedHeaderMappings = normalizeAndValidateAcceptedHeaderMappings({
         availableColumns: relationColumns.map((column) => column.name),

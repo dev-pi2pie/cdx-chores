@@ -86,6 +86,29 @@ describe("CLI data extract command", () => {
     });
   });
 
+  test("extracts CSV input with explicit --no-header and preserves row 1 as data", async () => {
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "header-row-as-data.csv");
+      const outputPath = join(fixtureDir, "header-row-as-data.clean.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "extract",
+        toRepoRelativePath(inputPath),
+        "--no-header",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe("column_1,column_2\nid,name\n1,Ada\n2,Bob\n");
+    });
+  });
+
   test("extracts an explicit Excel range end to end when the extension is ready", async () => {
     if (!excelReady) {
       return;

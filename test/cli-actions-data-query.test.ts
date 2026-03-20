@@ -175,6 +175,25 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery honors explicit --no-header when DuckDB would otherwise treat row 1 as headers", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "header-row-as-data.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
+
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        noHeader: true,
+        sql: "select column_1, column_2 from file order by column_1",
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain("Visible columns: column_1, column_2");
+      expect(stdout.text).toContain("id       | name");
+      expect(stdout.text).toContain("1        | Ada");
+    });
+  });
+
   test("actionDataQuery preserves explicit CSV headers that match columnN patterns", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "literal-column-names.csv");
@@ -225,6 +244,43 @@ describe("cli action modules: data query", () => {
       expect(stdout.text).toContain("column_1 -> id");
       expect(stdout.text).toContain("column_4 -> created_at");
       expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
+  test("actionDataQuery carries explicit no-header into reviewed header-mapping artifacts and follow-up guidance", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "no-head.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "1,Ada,active\n2,Bob,paused\n", "utf8");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async () =>
+          JSON.stringify({
+            suggestions: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "name" },
+              { from: "column_3", to: "status" },
+            ],
+          }),
+        input: toRepoRelativePath(inputPath),
+        noHeader: true,
+        overwrite: true,
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("column_1 -> id");
+      expect(stderr.text).toContain("--no-header");
+
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as {
+        input: { format: string; noHeader?: boolean; path: string };
+      };
+      expect(artifact.input).toEqual({
+        format: "csv",
+        noHeader: true,
+        path: toRepoRelativePath(inputPath),
+      });
     });
   });
 

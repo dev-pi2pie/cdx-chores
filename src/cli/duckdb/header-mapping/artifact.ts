@@ -15,6 +15,7 @@ import {
   isRecord,
   normalizeArtifactPath,
   normalizeHeaderMappingTargetName,
+  normalizeOptionalBoolean,
   normalizeOptionalPositiveInteger,
   normalizeOptionalString,
   throwUnsupportedHeaderMappingVersion,
@@ -150,6 +151,7 @@ function parseDataHeaderMappingArtifact(
   };
   const bodyStartRow = normalizeOptionalPositiveInteger(input.bodyStartRow, "input.bodyStartRow");
   const headerRow = normalizeOptionalPositiveInteger(input.headerRow, "input.headerRow");
+  const noHeader = normalizeOptionalBoolean(input.noHeader, "input.noHeader");
   const source = normalizeOptionalString(input.source);
   const range = normalizeOptionalString(input.range);
   if (bodyStartRow !== undefined) {
@@ -157,6 +159,9 @@ function parseDataHeaderMappingArtifact(
   }
   if (headerRow !== undefined) {
     normalizedInput.headerRow = headerRow;
+  }
+  if (noHeader) {
+    normalizedInput.noHeader = true;
   }
   if (source) {
     normalizedInput.source = source;
@@ -324,6 +329,7 @@ export function resolveReusableHeaderMappings(options: {
     actual.path === expected.path &&
     actual.format === expected.format &&
     actual.headerRow === expected.headerRow &&
+    actual.noHeader === expected.noHeader &&
     actual.source === expected.source &&
     actual.range === expected.range;
 

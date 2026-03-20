@@ -67,6 +67,7 @@ export async function reviewInteractiveHeaderMappings(options: {
   runtime: CliRuntime;
   selectedBodyStartRow?: number;
   selectedHeaderRow?: number;
+  selectedNoHeader?: boolean;
   selectedRange?: string;
   selectedSource?: string;
 }): Promise<InteractiveHeaderReviewState> {
@@ -161,6 +162,7 @@ export async function reviewInteractiveHeaderMappings(options: {
           bodyStartRow: options.selectedBodyStartRow,
           headerMappings: acceptedMappings,
           headerRow: options.selectedHeaderRow,
+          noHeader: options.selectedNoHeader,
           range: options.selectedRange,
           source: options.selectedSource,
         },

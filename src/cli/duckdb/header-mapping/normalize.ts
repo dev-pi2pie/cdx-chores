@@ -79,6 +79,21 @@ export function normalizeOptionalPositiveInteger(value: unknown, context: string
   });
 }
 
+export function normalizeOptionalBoolean(value: unknown, context: string): boolean | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  throw new CliError(`Invalid header mapping artifact: ${context} must be a boolean.`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
 export function throwUnsupportedHeaderMappingVersion(
   version: unknown,
   options: { rewriting?: boolean } = {},
@@ -121,6 +136,7 @@ export function createHeaderMappingInputReference(options: {
     ...(options.shape?.bodyStartRow !== undefined ? { bodyStartRow: options.shape.bodyStartRow } : {}),
     format: options.format,
     ...(options.shape?.headerRow !== undefined ? { headerRow: options.shape.headerRow } : {}),
+    ...(options.shape?.noHeader ? { noHeader: true } : {}),
     path: normalizedRelativePath,
     ...(options.shape?.range ? { range: options.shape.range } : {}),
     ...(options.shape?.source ? { source: options.shape.source } : {}),

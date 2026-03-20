@@ -36,6 +36,7 @@ export interface DataQueryOptions {
   input: string;
   inputFormat?: DataQueryInputFormat;
   json?: boolean;
+  noHeader?: boolean;
   output?: string;
   overwrite?: boolean;
   pretty?: boolean;
@@ -141,6 +142,13 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
+  const noHeader = options.noHeader === true;
+  if (noHeader && format !== "csv" && format !== "tsv") {
+    throw new CliError("--no-header is only valid for CSV and TSV query inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
     throw new CliError(
       "--install-missing-extension is only valid for extension-backed query formats (sqlite, excel).",
@@ -167,6 +175,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
           bodyStartRow,
           range,
           headerRow,
+          noHeader,
           source,
         },
         overwrite: options.overwrite,
@@ -181,6 +190,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
               bodyStartRow,
               range,
               headerRow,
+              noHeader,
               source,
             },
             DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
@@ -213,6 +223,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
             bodyStartRow,
             range,
             headerRow,
+            noHeader,
             source,
           },
         })
@@ -230,6 +241,7 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
         bodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow,
+        noHeader,
         range,
         source,
       },

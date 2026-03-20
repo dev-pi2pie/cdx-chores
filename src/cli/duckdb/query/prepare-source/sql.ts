@@ -14,9 +14,17 @@ export function buildRelationSql(
   const escapedInput = escapeSqlStringLiteral(inputPath);
   switch (format) {
     case "csv":
-      return `select * from read_csv_auto(${escapedInput}, delim = ',')`;
+      return `select * from read_csv_auto(${[
+        escapedInput,
+        "delim = ','",
+        ...(shape.noHeader ? ["header = false"] : []),
+      ].join(", ")})`;
     case "tsv":
-      return `select * from read_csv_auto(${escapedInput}, delim = '\t')`;
+      return `select * from read_csv_auto(${[
+        escapedInput,
+        "delim = '\t'",
+        ...(shape.noHeader ? ["header = false"] : []),
+      ].join(", ")})`;
     case "parquet":
       return `select * from read_parquet(${escapedInput})`;
     case "sqlite":

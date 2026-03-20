@@ -5,6 +5,7 @@ Use interactive mode when you want the CLI to inspect the input first, then help
 This is the interactive lane to prefer when `data extract` is too narrow for the transformation you need and you want output control without dropping to raw CLI flags immediately.
 
 For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
+For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`.
 
 Start the flow with:
 
@@ -21,22 +22,23 @@ Current interactive flow:
 
 1. prompt for the input file
 2. detect the input format, with override support when needed
-3. select a SQLite table or Excel sheet when the input has multiple logical sources
-4. for Excel, optionally enter a `range` before schema inspection
-5. inspect schema and sample rows from the current shaped source
-6. when a raw whole-sheet Excel schema looks strongly suspicious, choose how to continue:
+3. for CSV and TSV, decide whether the input should be treated as headerless
+4. select a SQLite table or Excel sheet when the input has multiple logical sources
+5. for Excel, optionally enter a `range` before schema inspection
+6. inspect schema and sample rows from the current shaped source
+7. when a raw whole-sheet Excel schema looks strongly suspicious, choose how to continue:
    - keep as-is
    - enter a range manually
    - ask Codex to suggest shaping
-7. after accepted source-shape changes, re-inspect before SQL authoring
-8. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
-9. choose one mode:
+8. after accepted source-shape changes, re-inspect before SQL authoring
+9. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
+10. choose one mode:
    - `manual`
    - `formal-guide`
    - `Codex Assistant`
-10. review the generated SQL
-11. explicitly confirm execution
-12. choose one output mode:
+11. review the generated SQL
+12. explicitly confirm execution
+13. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
@@ -71,6 +73,7 @@ Current interactive flow:
 Interactive `data query` follows the same source contract as direct CLI query:
 
 - CSV, TSV, and Parquet use one implicit source
+- CSV and TSV can also switch into explicit headerless mode before SQL authoring
 - SQLite requires choosing a table or view
 - Excel requires choosing a sheet
 - Excel also supports optional `range` shaping before SQL authoring
@@ -97,6 +100,7 @@ Interactive review persistence:
 
 - reviewed source-shape and semantic header decisions stay in memory for the current interactive session
 - accepted in-memory source shapes may include `range`, `header-row`, and `body-start-row`
+- accepted in-memory CSV or TSV interpretation may include `--no-header`
 - interactive mode does not currently write source-shape or header-mapping JSON artifacts
 - use direct CLI reviewed flows when you want reusable artifact files
 

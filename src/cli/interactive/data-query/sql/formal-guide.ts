@@ -244,6 +244,7 @@ export async function runFormalGuideInteractiveQuery(
     introspection: DataQuerySourceIntrospection;
     selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
+    selectedNoHeader?: boolean;
     selectedRange?: string;
     selectedSource?: string;
   },
@@ -257,6 +258,7 @@ export async function runFormalGuideInteractiveQuery(
       input: options.input,
       selectedBodyStartRow: options.selectedBodyStartRow,
       selectedHeaderRow: options.selectedHeaderRow,
+      selectedNoHeader: options.selectedNoHeader,
       selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,
       sql,

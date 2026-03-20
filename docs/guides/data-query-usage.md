@@ -6,6 +6,7 @@ It is also the current general-purpose lane for tricky transformations that go b
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
+For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
 Current boundary:
@@ -14,6 +15,7 @@ Current boundary:
 - SQL is required through `--sql`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
@@ -74,8 +76,8 @@ choose output mode
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
-cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -91,6 +93,7 @@ Examples:
 ```bash
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select id, name from file order by id"
 cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
+cdx-chores data query ./examples/playground/data-extract/no-head.csv --no-header --sql "select column_1, column_2 from file order by column_1"
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
@@ -108,6 +111,12 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
 Other input formats reject `--range`.
+
+`--no-header` is valid only for CSV and TSV inputs:
+
+- it keeps row 1 in the data row set
+- it generates deterministic placeholder names such as `column_1`, `column_2`, ...
+- when reviewed header mappings are written from an explicit `--no-header` run, that explicit headerless choice becomes part of the exact-match reuse context
 
 `--body-start-row <n>` and `--header-row <n>` are also valid only for Excel inputs:
 
@@ -154,6 +163,7 @@ Why this is the current direct-CLI pattern:
   - author SQL against the accepted scope
 - direct CLI keeps reviewed reusable source-shape generation on the `data extract` lane today
 - direct `data query` consumes accepted deterministic shape flags, but does not yet accept `--source-shape <path>`
+- explicit CSV or TSV `--no-header` stays a direct query flag today rather than part of the reviewed source-shape artifact layer
 
 Recommended direct-CLI pattern today:
 
@@ -194,7 +204,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
+- optional `noHeader`, `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
 
 Single-object inputs reject `--source`.
 

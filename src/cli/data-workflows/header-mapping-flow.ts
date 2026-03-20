@@ -21,6 +21,7 @@ import type { CliRuntime } from "../types";
 export interface DataWorkflowHeaderMappingShape {
   bodyStartRow?: number;
   headerRow?: number;
+  noHeader?: boolean;
   range?: string;
   source?: string;
 }
@@ -89,6 +90,7 @@ export function buildHeaderSuggestionFollowUpCommand(options: {
     options.format,
     ...(options.shape.source ? ["--source", JSON.stringify(options.shape.source)] : []),
     ...(options.shape.range ? ["--range", options.shape.range] : []),
+    ...(options.shape.noHeader ? ["--no-header"] : []),
     ...(options.shape.bodyStartRow !== undefined
       ? ["--body-start-row", String(options.shape.bodyStartRow)]
       : []),

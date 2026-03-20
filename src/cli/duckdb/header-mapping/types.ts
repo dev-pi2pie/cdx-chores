@@ -11,6 +11,7 @@ export interface DataHeaderMappingInputReference {
   bodyStartRow?: number;
   format: DataQueryInputFormat;
   headerRow?: number;
+  noHeader?: boolean;
   path: string;
   range?: string;
   source?: string;
@@ -50,6 +51,6 @@ export interface DataHeaderSuggestionEvidence {
   sample?: string;
 }
 
-export type DataHeaderMappingShape = Pick<DataQuerySourceShape, "bodyStartRow" | "headerRow" | "range" | "source">;
+export type DataHeaderMappingShape = Pick<DataQuerySourceShape, "bodyStartRow" | "headerRow" | "noHeader" | "range" | "source">;
 export type DataHeaderSuggestionIntrospection = DataQuerySourceIntrospection;
 export type DataHeaderMappingFormat = DataQueryInputFormat;

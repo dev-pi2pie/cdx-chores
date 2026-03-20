@@ -2,7 +2,7 @@
 title: "Data command surface follow-up: headerless contract and source-shape docs alignment"
 created-date: 2026-03-20
 modified-date: 2026-03-20
-status: draft
+status: active
 agent: codex
 ---
 
@@ -35,6 +35,11 @@ Why keep the first implementation slice narrower:
 - how to preserve the research recommendation that replay follow only after the headerless contract lands and real usage proves the remaining friction
 
 This plan should stay additive and backward-compatible with the current stable `v0.0.8` command surface.
+
+Progress status:
+
+- Phases 1 through 5 are completed for Direction B
+- the plan remains active because the direct query replay follow-up is still pending
 
 ## Current State
 
@@ -131,47 +136,65 @@ This plan should stay additive and backward-compatible with the current stable `
 
 ### Phase 1: Freeze product contract
 
-- [ ] freeze `--no-header` for direct `data query`
-- [ ] freeze `--no-header` for direct `data extract`
-- [ ] freeze interactive headerless prompts for query/extract on `.csv` and `.tsv`
-- [ ] freeze the shared documentation split:
+- [x] freeze `--no-header` for direct `data query`
+- [x] freeze `--no-header` for direct `data extract`
+- [x] freeze interactive headerless prompts for query/extract on `.csv` and `.tsv`
+- [x] freeze the shared documentation split:
   - `data-source-shape-usage.md` for shape
   - `data-schema-and-mapping-usage.md` for header mapping
-- [ ] freeze explicit exclusion of `data query codex` from this implementation slice
+- [x] freeze explicit exclusion of `data query codex` from this implementation slice
 
 ### Phase 2: Implement direct headerless query/extract support
 
-- [ ] extend DuckDB-backed query/extract preparation so `--no-header` can explicitly force headerless delimited interpretation
-- [ ] preserve the shared `column_n` placeholder contract
-- [ ] keep current behavior unchanged when `--no-header` is omitted
-- [ ] add focused direct CLI tests for:
+- [x] extend DuckDB-backed query/extract preparation so `--no-header` can explicitly force headerless delimited interpretation
+- [x] preserve the shared `column_n` placeholder contract
+- [x] keep current behavior unchanged when `--no-header` is omitted
+- [x] add focused direct CLI tests for:
   - query with headerless CSV
   - extract with headerless CSV
   - placeholder-name reuse with header mapping
 
 ### Phase 3: Implement interactive headerless parity
 
-- [ ] add `.csv` / `.tsv` headerless prompts to interactive query
-- [ ] add `.csv` / `.tsv` headerless prompts to interactive extract
-- [ ] carry accepted headerless state through introspection, header review, SQL authoring, and extraction
-- [ ] add focused interactive coverage for both flows
+- [x] add `.csv` / `.tsv` headerless prompts to interactive query
+- [x] add `.csv` / `.tsv` headerless prompts to interactive extract
+- [x] carry accepted headerless state through introspection, header review, SQL authoring, and extraction
+- [x] add focused interactive coverage for both flows
 
 ### Phase 4: Record deferred replay follow-up
 
-- [ ] no implementation work in this slice
-- [ ] record the future follow-up contract for `data query --source-shape <path>` without implementing it here
-- [ ] note that a later replay plan must first generalize the current extract-specific source-shape helper before query can reuse it safely
-- [ ] note that a later replay plan must decide whether `data query codex` aligns in the same slice or remains explicitly separate
+- [x] no implementation work in this slice
+- [x] record the future follow-up contract for `data query --source-shape <path>` without implementing it here
+- [x] note that a later replay plan must first generalize the current extract-specific source-shape helper before query can reuse it safely
+- [x] note that a later replay plan must decide whether `data query codex` aligns in the same slice or remains explicitly separate
 
 ### Phase 5: Documentation alignment
 
-- [ ] add `docs/guides/data-source-shape-usage.md`
-- [ ] move shared source-shape contract details out of extract-only narrative and into the new guide
-- [ ] update query usage examples to keep the current manual shape-first CLI workflow accurate:
+- [x] add `docs/guides/data-source-shape-usage.md`
+- [x] move shared source-shape contract details out of extract-only narrative and into the new guide
+- [x] update query usage examples to keep the current manual shape-first CLI workflow accurate:
   - `data extract --codex-suggest-shape`
   - then `data query` with explicit accepted shape flags
-- [ ] update extract docs to describe source-shape generation and replay without implying query owns generation
-- [ ] update schema/mapping docs to cross-link the new source-shape guide instead of absorbing shape semantics
+- [x] update extract docs to describe source-shape generation and replay without implying query owns generation
+- [x] update schema/mapping docs to cross-link the new source-shape guide instead of absorbing shape semantics
+
+### Phase 6: Implement direct query source-shape replay
+
+- [ ] add `data query --source-shape <path>`
+- [ ] define conflict and precedence rules for:
+  - `--source-shape`
+  - `--source`
+  - `--range`
+  - `--header-row`
+  - `--body-start-row`
+- [ ] generalize the current extract-specific reusable source-shape helper so query can reuse the same exact-match contract without extract-only validation text
+- [ ] keep exact-match replay behavior explicit in direct query docs and errors
+- [ ] decide whether direct `data query codex` stays explicitly out of scope for the replay slice or needs alignment in the same later phase
+- [ ] add focused direct CLI tests for:
+  - query replay from a reviewed source-shape artifact
+  - explicit flag conflicts with `--source-shape`
+  - exact-match failure reporting
+- [ ] update docs after query replay ships
 
 ## Related Research
 

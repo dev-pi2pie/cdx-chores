@@ -17,6 +17,7 @@ export function registerDataExtractCommand(dataCommand: Command, runtime: CliRun
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
     .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
       parsePositiveIntegerOption(value, "--body-start-row"),
     )
@@ -38,9 +39,11 @@ export function registerDataExtractCommand(dataCommand: Command, runtime: CliRun
           bodyStartRow?: number;
           codexSuggestShape?: boolean;
           codexSuggestHeaders?: boolean;
+          header?: boolean;
           headerMapping?: string;
           headerRow?: number;
           inputFormat?: DataQueryInputFormat;
+          noHeader?: boolean;
           output?: string;
           overwrite?: boolean;
           range?: string;
@@ -58,6 +61,7 @@ export function registerDataExtractCommand(dataCommand: Command, runtime: CliRun
           headerRow: options.headerRow,
           input,
           inputFormat: options.inputFormat,
+          noHeader: options.noHeader ?? options.header === false,
           output: options.output,
           overwrite: options.overwrite,
           range: options.range,

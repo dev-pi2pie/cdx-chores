@@ -116,6 +116,29 @@ describe("CLI data query command", () => {
     });
   });
 
+  test("queries CSV input with explicit --no-header and keeps row 1 in the result set", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "header-row-as-data.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "query",
+        inputPath.slice(REPO_ROOT.length + 1),
+        "--no-header",
+        "--sql",
+        "select column_1, column_2 from file order by column_1",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Visible columns: column_1, column_2");
+      expect(result.stdout).toContain("column_1 | column_2");
+      expect(result.stdout).toContain("id       | name");
+      expect(result.stdout).toContain("1        | Ada");
+    });
+  });
+
   test("queries CSV input with explicit columnN headers without renaming them", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "literal-column-names.csv");

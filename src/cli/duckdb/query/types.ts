@@ -35,6 +35,7 @@ export interface DataQuerySourceShape {
   bodyStartRow?: number;
   headerMappings?: DataHeaderMappingEntry[];
   headerRow?: number;
+  noHeader?: boolean;
   range?: string;
   source?: string;
 }

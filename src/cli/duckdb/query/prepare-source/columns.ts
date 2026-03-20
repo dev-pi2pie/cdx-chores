@@ -34,9 +34,14 @@ async function shouldNormalizeGeneratedQueryColumnNames(
   inputPath: string,
   format: DataQueryInputFormat,
   columnNames: readonly string[],
+  options: { noHeader?: boolean } = {},
 ): Promise<boolean> {
   if ((format !== "csv" && format !== "tsv") || !isGeneratedQueryPlaceholderSequence(columnNames)) {
     return false;
+  }
+
+  if (options.noHeader) {
+    return true;
   }
 
   try {
@@ -57,6 +62,7 @@ export async function collectQueryRelationColumns(
   options: {
     format: DataQueryInputFormat;
     inputPath: string;
+    noHeader?: boolean;
   },
 ): Promise<QueryRelationColumn[]> {
   const reader = await connection.runAndReadAll(
@@ -69,6 +75,9 @@ export async function collectQueryRelationColumns(
     options.inputPath,
     options.format,
     columnNames,
+    {
+      noHeader: options.noHeader,
+    },
   );
   return columnNames.map((name, index) => ({
     name: shouldNormalizeGeneratedColumns ? normalizeGeneratedQueryColumnName(name) : name,

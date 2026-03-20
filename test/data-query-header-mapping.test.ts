@@ -38,6 +38,23 @@ describe("data header mapping artifacts", () => {
     });
   });
 
+  test("createHeaderMappingInputReference records explicit no-header input context", () => {
+    const inputReference = createHeaderMappingInputReference({
+      cwd: REPO_ROOT,
+      format: "csv",
+      inputPath: join(REPO_ROOT, "examples", "playground", "data-extract", "no-head.csv"),
+      shape: {
+        noHeader: true,
+      },
+    });
+
+    expect(inputReference).toEqual({
+      format: "csv",
+      noHeader: true,
+      path: "examples/playground/data-extract/no-head.csv",
+    });
+  });
+
   test("writeDataHeaderMappingArtifact preserves unknown fields when rewriting a version 1 artifact", async () => {
     await withTempFixtureDir("header-mapping", async (fixtureDir) => {
       const artifactPath = join(fixtureDir, "data-header-mapping-test.json");
@@ -185,6 +202,26 @@ describe("data header mapping artifacts", () => {
           path: "examples/playground/data.xlsx",
           range: "A1:E11",
           source: "Summary",
+        },
+      }),
+    ).toThrow(CliError);
+  });
+
+  test("resolveReusableHeaderMappings treats noHeader as part of the exact shape context", () => {
+    expect(() =>
+      resolveReusableHeaderMappings({
+        artifact: createDataHeaderMappingArtifact({
+          input: {
+            format: "csv",
+            noHeader: true,
+            path: "examples/playground/data.csv",
+          },
+          mappings: [{ from: "column_1", to: "id" }],
+          now: new Date("2026-03-18T00:00:00.000Z"),
+        }),
+        currentInput: {
+          format: "csv",
+          path: "examples/playground/data.csv",
         },
       }),
     ).toThrow(CliError);
