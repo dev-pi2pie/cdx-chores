@@ -4,6 +4,8 @@ Use this guide for the reviewed source-shape artifact contract and the current s
 
 Use `docs/guides/data-schema-and-mapping-usage.md` for semantic header-mapping artifacts.
 
+As of `v0.0.9`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
+
 Current first-pass boundary:
 
 - persisted source-shape artifacts are JSON-only
@@ -115,6 +117,7 @@ This is intentional in the current product split:
 
 - `data extract` owns reviewed reusable shape generation
 - `data query` owns SQL against an accepted deterministic shape, including replay of an accepted reviewed shape artifact
+- `data query codex` remains advisory drafting on top of explicit shape flags; it is not yet a reviewed source-shape artifact consumer
 
 Replay precedence rule:
 

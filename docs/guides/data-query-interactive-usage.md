@@ -4,6 +4,8 @@ Use interactive mode when you want the CLI to inspect the input first, then help
 
 This is the interactive lane to prefer when `data extract` is too narrow for the transformation you need and you want output control without dropping to raw CLI flags immediately.
 
+As of `v0.0.9`, the interactive flow mirrors the same shipped product split as the direct CLI: in-session shaping and header review can happen before SQL authoring, but reusable reviewed source-shape and header-mapping artifacts are still produced by the direct CLI reviewed flows.
+
 For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
 For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`.
 
@@ -102,7 +104,10 @@ Interactive review persistence:
 - accepted in-memory source shapes may include `range`, `header-row`, and `body-start-row`
 - accepted in-memory CSV or TSV interpretation may include `--no-header`
 - interactive mode does not currently write source-shape or header-mapping JSON artifacts
-- use direct CLI reviewed flows when you want reusable artifact files
+- use direct CLI reviewed flows when you want reusable artifact files:
+  - `data extract --codex-suggest-shape`
+  - `data query --codex-suggest-headers`
+  - `data extract --codex-suggest-headers`
 
 ### Output rules
 

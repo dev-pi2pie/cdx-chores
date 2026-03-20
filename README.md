@@ -2,13 +2,13 @@
 
 A Node.js CLI for file-processing chores, tabular data workflows, rename automation, and Codex-assisted tasks.
 
-Stable release scope in `v0.0.8`:
+Stable release scope in `v0.0.9`:
 
 - interactive mode + nested CLI commands
 - `doctor` capability checks
-- CSV / TSV / JSON conversion and preview workflows
-- `data extract` for shaping difficult tabular inputs, including Excel edge cases
-- DuckDB-backed query and Parquet preview workflows
+- CSV / TSV / JSON conversion and preview workflows, including explicit headerless preview support
+- `data extract` for shaped-table materialization across delimited, SQLite, and Excel inputs
+- DuckDB-backed query, reviewed header-mapping, source-shape replay, and Parquet preview workflows
 - `md to-docx` via `pandoc`
 - preview-first rename flows
 - `ffmpeg`-backed video wrappers

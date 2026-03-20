@@ -4,6 +4,8 @@ Use this guide for the shared header-mapping artifact contract behind reviewed s
 
 Use `docs/guides/data-source-shape-usage.md` for reviewed source-shape artifacts and shape-first Excel workflows.
 
+As of `v0.0.9`, this guide reflects the shipped split where header mappings stay a separate semantic-renaming layer on top of the current shaped source. They are reusable from both `data query` and `data extract`, but they are not a source-shape artifact and they do not change the `data query codex` surface.
+
 Current first-pass boundary:
 
 - persisted artifacts are JSON-only
@@ -105,6 +107,7 @@ Important boundary:
 - this guide is about semantic column renaming only
 - it does not define worksheet range selection, header-row selection, or body-start-row selection
 - those source-interpretation concerns belong to `docs/guides/data-source-shape-usage.md`
+- it also does not define reviewed source-shape artifact generation; that direct-CLI flow still starts from `data extract --codex-suggest-shape`
 - interactive review does not currently write a persisted header-mapping artifact
 - direct CLI reviewed flows are still the path that produces reusable `data-header-mapping-<uid>.json` artifacts
 
