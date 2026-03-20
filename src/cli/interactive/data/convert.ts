@@ -9,6 +9,7 @@ import {
   actionTsvToCsv,
   actionTsvToJson,
 } from "../../actions";
+import { printLine } from "../../actions/shared";
 import { CliError } from "../../errors";
 import {
   formatDefaultOutputPathHint,
@@ -55,7 +56,6 @@ export async function runInteractiveDataConvert(
     ...pathPromptContext,
   });
   const sourceFormat = detectInteractiveDataFormat(inputPath);
-  const { printLine } = await import("../../actions/shared");
   printLine(runtime.stderr, `Detected source format: ${sourceFormat}`);
 
   const targetFormat = await select<LightweightInteractiveDataFormat>({
