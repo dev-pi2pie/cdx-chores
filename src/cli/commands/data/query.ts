@@ -18,6 +18,8 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
+    .option("--source-shape <path>", "Reuse an accepted JSON source-shape artifact for Excel query replay")
+    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
     .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
       parsePositiveIntegerOption(value, "--body-start-row"),
     )
@@ -45,16 +47,19 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
         options: {
           bodyStartRow?: number;
           codexSuggestHeaders?: boolean;
+          header?: boolean;
           headerMapping?: string;
           headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           installMissingExtension?: boolean;
           json?: boolean;
+          noHeader?: boolean;
           output?: string;
           overwrite?: boolean;
           pretty?: boolean;
           range?: string;
           rows?: number;
+          sourceShape?: string;
           source?: string;
           sql?: string;
           writeHeaderMapping?: string;
@@ -69,11 +74,13 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           inputFormat: options.inputFormat,
           installMissingExtension: options.installMissingExtension,
           json: options.json,
+          noHeader: options.noHeader ?? options.header === false,
           output: options.output,
           overwrite: options.overwrite,
           pretty: options.pretty,
           range: options.range,
           rows: options.rows,
+          sourceShape: options.sourceShape,
           source: options.source,
           sql: options.sql,
           writeHeaderMapping: options.writeHeaderMapping,

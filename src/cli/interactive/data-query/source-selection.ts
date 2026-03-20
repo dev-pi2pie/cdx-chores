@@ -66,3 +66,16 @@ export async function promptOptionalSourceSelection(
     })),
   });
 }
+
+export async function promptDelimitedHeaderMode(
+  format: DataQueryInputFormat,
+): Promise<boolean | undefined> {
+  if (format !== "csv" && format !== "tsv") {
+    return undefined;
+  }
+
+  return await confirm({
+    message: "Treat CSV/TSV input as headerless?",
+    default: false,
+  });
+}

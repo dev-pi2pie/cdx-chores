@@ -9,6 +9,7 @@ import { defaultOutputPath, resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import {
   collectInteractiveIntrospection,
+  promptDelimitedHeaderMode,
   promptInteractiveInputFormat,
   promptOptionalSourceSelection,
   reviewInteractiveHeaderMappings,
@@ -164,6 +165,7 @@ export async function runInteractiveDataExtract(
   });
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
+  const noHeader = await promptDelimitedHeaderMode(format);
 
   let connection;
   try {
@@ -173,6 +175,7 @@ export async function runInteractiveDataExtract(
     const { introspection, sourceShape } = await collectInteractiveIntrospection({
       connection,
       format,
+      initialNoHeader: noHeader,
       inputPath,
       labels: EXTRACT_CONTINUATION_LABELS,
       runtime,
@@ -187,6 +190,7 @@ export async function runInteractiveDataExtract(
       runtime,
       selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedNoHeader: sourceShape.selectedNoHeader,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
     });
@@ -206,6 +210,7 @@ export async function runInteractiveDataExtract(
       ...(reviewedHeaders.headerMappings ? { headerMappings: reviewedHeaders.headerMappings } : {}),
       input,
       inputFormat: format,
+      ...(sourceShape.selectedNoHeader ? { noHeader: true } : {}),
       output: outputOptions.output,
       overwrite: outputOptions.overwrite,
       ...(sourceShape.selectedBodyStartRow !== undefined ? { bodyStartRow: sourceShape.selectedBodyStartRow } : {}),

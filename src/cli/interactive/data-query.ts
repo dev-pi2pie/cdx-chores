@@ -1,4 +1,5 @@
 export {
+  promptDelimitedHeaderMode,
   promptInteractiveInputFormat,
   promptOptionalSourceSelection,
 } from "./data-query/source-selection";

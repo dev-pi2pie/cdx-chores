@@ -2,6 +2,8 @@
 
 Use this guide for the shared header-mapping artifact contract behind reviewed semantic header suggestions used by `data query` and `data extract`.
 
+Use `docs/guides/data-source-shape-usage.md` for reviewed source-shape artifacts and shape-first Excel workflows.
+
 Current first-pass boundary:
 
 - persisted artifacts are JSON-only
@@ -10,6 +12,7 @@ Current first-pass boundary:
 - first-pass reuse is strict exact matching on:
   - `input.path`
   - `input.format`
+  - optional `input.noHeader`
   - optional `input.source`
   - optional `input.range`
   - optional `input.bodyStartRow`
@@ -30,6 +33,7 @@ Required first-pass fields:
 
 Conditionally required first-pass fields:
 
+- `input.noHeader` when the current reviewed header flow explicitly used `--no-header`
 - `input.source` when the shaped source requires one
 - `input.range` when shaping used an explicit Excel range
 - `input.bodyStartRow` when shaping used an explicit Excel body-start row
@@ -98,6 +102,9 @@ Accepted mappings trigger a re-inspection before SQL authoring continues.
 
 Important boundary:
 
+- this guide is about semantic column renaming only
+- it does not define worksheet range selection, header-row selection, or body-start-row selection
+- those source-interpretation concerns belong to `docs/guides/data-source-shape-usage.md`
 - interactive review does not currently write a persisted header-mapping artifact
 - direct CLI reviewed flows are still the path that produces reusable `data-header-mapping-<uid>.json` artifacts
 

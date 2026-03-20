@@ -234,13 +234,14 @@ export function renderIntrospectionSummary(
 export async function collectInteractiveIntrospection(options: {
   connection: DuckDBConnection;
   format: DataQueryInputFormat;
+  initialNoHeader?: boolean;
   inputPath: string;
   labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
   selectedSource?: string;
 }): Promise<{ introspection: DataQuerySourceIntrospection; sourceShape: InteractiveSourceShapeState }> {
   const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
-  let sourceShape: InteractiveSourceShapeState = {};
+  let sourceShape: InteractiveSourceShapeState = options.initialNoHeader ? { selectedNoHeader: true } : {};
   let cachedSheetSnapshot: Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined;
 
   const getSheetSnapshot = async (): Promise<Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined> => {
@@ -270,6 +271,7 @@ export async function collectInteractiveIntrospection(options: {
       {
         bodyStartRow: sourceShape.selectedBodyStartRow,
         headerRow: sourceShape.selectedHeaderRow,
+        noHeader: sourceShape.selectedNoHeader,
         range: sourceShape.selectedRange,
         source: options.selectedSource,
       },

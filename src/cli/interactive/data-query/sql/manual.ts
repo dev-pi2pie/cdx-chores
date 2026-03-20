@@ -15,6 +15,7 @@ export async function runManualInteractiveQuery(
     input: string;
     selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
+    selectedNoHeader?: boolean;
     selectedRange?: string;
     selectedSource?: string;
   },

@@ -18,6 +18,7 @@ import { normalizeOutputFormat, stringifyMaterializedRows } from "./data-extract
 import { runCodexSourceShapeSuggestionFlow } from "./data-extract/source-shape";
 import { DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS, type DataExtractOptions } from "./data-extract/types";
 import { validateDataExtractOptions } from "./data-extract/validate";
+import { CliError } from "../errors";
 
 export type { DataExtractOptions } from "./data-extract/types";
 
@@ -31,6 +32,13 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
+  const noHeader = options.noHeader === true;
+  if (noHeader && format !== "csv" && format !== "tsv") {
+    throw new CliError("--no-header is only valid for CSV and TSV extract inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   const explicitRange = options.range?.trim() || undefined;
   const explicitSource = options.source?.trim() || undefined;
 
@@ -48,6 +56,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
 
   const resolvedSourceShape = options.sourceShape?.trim()
     ? await resolveReusableSourceShapeForDataFlow({
+        commandName: "extract",
         format,
         inputPath,
         runtime,
@@ -70,6 +79,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
         shape: {
           bodyStartRow: effectiveBodyStartRow,
           headerRow: effectiveHeaderRow,
+          noHeader,
           range,
           source,
         },
@@ -84,6 +94,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
             {
               bodyStartRow: effectiveBodyStartRow,
               headerRow: effectiveHeaderRow,
+              noHeader,
               range,
               source,
             },
@@ -113,6 +124,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
           shape: {
             ...(effectiveBodyStartRow !== undefined ? { bodyStartRow: effectiveBodyStartRow } : {}),
             ...(effectiveHeaderRow !== undefined ? { headerRow: effectiveHeaderRow } : {}),
+            ...(noHeader ? { noHeader: true } : {}),
             range,
             source,
           },
@@ -130,6 +142,7 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
         bodyStartRow: effectiveBodyStartRow,
         headerMappings: resolvedHeaderMappings,
         headerRow: effectiveHeaderRow,
+        noHeader,
         range,
         source,
       },

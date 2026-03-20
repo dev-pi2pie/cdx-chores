@@ -6,6 +6,7 @@ import {
   resolveReusableHeaderMappingsForDataFlow,
   runCodexHeaderSuggestionFlow,
 } from "../data-workflows/header-mapping-flow";
+import { resolveReusableSourceShapeForDataFlow } from "../data-workflows/source-shape-flow";
 import { CliError } from "../errors";
 import { displayPath, assertNonEmpty, ensureFileExists, printLine } from "./shared";
 import { writeTextFileSafe } from "../file-io";
@@ -36,12 +37,14 @@ export interface DataQueryOptions {
   input: string;
   inputFormat?: DataQueryInputFormat;
   json?: boolean;
+  noHeader?: boolean;
   output?: string;
   overwrite?: boolean;
   pretty?: boolean;
   range?: string;
   rows?: number;
   sourceIntrospectionCollector?: typeof collectDataQuerySourceIntrospection;
+  sourceShape?: string;
   source?: string;
   sql?: string;
   writeHeaderMapping?: string;
@@ -104,6 +107,34 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
       exitCode: 2,
     });
   }
+
+  if (options.sourceShape?.trim() && options.source?.trim()) {
+    throw new CliError("--source-shape cannot be used together with --source in the current replay flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.range?.trim()) {
+    throw new CliError("--source-shape cannot be used together with --range in the current replay flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.headerRow !== undefined) {
+    throw new CliError("--source-shape cannot be used together with --header-row in the current replay flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.sourceShape?.trim() && options.bodyStartRow !== undefined) {
+    throw new CliError("--source-shape cannot be used together with --body-start-row in the current replay flow.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
 }
 
 function isDuckDbBuiltInQueryFormat(format: DataQueryInputFormat): boolean {
@@ -141,6 +172,13 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
+  const noHeader = options.noHeader === true;
+  if (noHeader && format !== "csv" && format !== "tsv") {
+    throw new CliError("--no-header is only valid for CSV and TSV query inputs.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   if (options.installMissingExtension && isDuckDbBuiltInQueryFormat(format)) {
     throw new CliError(
       "--install-missing-extension is only valid for extension-backed query formats (sqlite, excel).",
@@ -150,8 +188,22 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       },
     );
   }
-  const range = options.range?.trim() || undefined;
-  const source = options.source?.trim() || undefined;
+  const explicitRange = options.range?.trim() || undefined;
+  const explicitSource = options.source?.trim() || undefined;
+  const resolvedSourceShape = options.sourceShape?.trim()
+    ? await resolveReusableSourceShapeForDataFlow({
+        commandName: "query",
+        format,
+        inputPath,
+        runtime,
+        source: explicitSource,
+        sourceShapePath: resolveFromCwd(runtime, options.sourceShape.trim()),
+      })
+    : undefined;
+  const range = resolvedSourceShape?.range ?? explicitRange;
+  const source = resolvedSourceShape?.source ?? explicitSource;
+  const effectiveBodyStartRow = resolvedSourceShape?.bodyStartRow ?? bodyStartRow;
+  const effectiveHeaderRow = resolvedSourceShape?.headerRow ?? headerRow;
   const rowCount = options.rows ?? DEFAULT_QUERY_ROWS;
 
   if (options.codexSuggestHeaders) {
@@ -164,9 +216,10 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
         format,
         inputPath,
         shape: {
-          bodyStartRow,
+          bodyStartRow: effectiveBodyStartRow,
           range,
-          headerRow,
+          headerRow: effectiveHeaderRow,
+          noHeader,
           source,
         },
         overwrite: options.overwrite,
@@ -178,9 +231,10 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
             inputPath,
             format,
             {
-              bodyStartRow,
+              bodyStartRow: effectiveBodyStartRow,
               range,
-              headerRow,
+              headerRow: effectiveHeaderRow,
+              noHeader,
               source,
             },
             DATA_QUERY_HEADER_SUGGESTION_SAMPLE_ROWS,
@@ -210,9 +264,10 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
           inputPath,
           runtime,
           shape: {
-            bodyStartRow,
+            ...(effectiveBodyStartRow !== undefined ? { bodyStartRow: effectiveBodyStartRow } : {}),
             range,
-            headerRow,
+            ...(effectiveHeaderRow !== undefined ? { headerRow: effectiveHeaderRow } : {}),
+            noHeader,
             source,
           },
         })
@@ -227,9 +282,10 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
       inputPath,
       format,
       {
-        bodyStartRow,
+        bodyStartRow: effectiveBodyStartRow,
         headerMappings: resolvedHeaderMappings,
-        headerRow,
+        headerRow: effectiveHeaderRow,
+        noHeader,
         range,
         source,
       },

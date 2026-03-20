@@ -6,7 +6,7 @@ import { describe, expect, test } from "bun:test";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
-import { REPO_ROOT, runCli, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { REPO_ROOT, runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
@@ -113,6 +113,29 @@ describe("CLI data query command", () => {
       expect(result.stdout).toContain("Ada");
       expect(result.stdout).not.toContain("column0");
       expect(result.stdout).not.toContain("column1");
+    });
+  });
+
+  test("queries CSV input with explicit --no-header and keeps row 1 in the result set", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "header-row-as-data.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "query",
+        inputPath.slice(REPO_ROOT.length + 1),
+        "--no-header",
+        "--sql",
+        "select column_1, column_2 from file order by column_1",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Visible columns: column_1, column_2");
+      expect(result.stdout).toContain("column_1 | column_2");
+      expect(result.stdout).toContain("id       | name");
+      expect(result.stdout).toContain("1        | Ada");
     });
   });
 
@@ -316,6 +339,57 @@ describe("CLI data query command", () => {
     });
   });
 
+  test("reuses an accepted source-shape artifact end to end", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: toRepoRelativePath(inputPath),
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-20T00:00:00.000Z",
+          },
+          shape: {
+            headerRow: 7,
+            range: "B2:E11",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source-shape",
+        toRepoRelativePath(artifactPath),
+        "--sql",
+        "select ID, item, status from file order by ID",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: excel");
+      expect(result.stdout).toContain("Source: Summary");
+      expect(result.stdout).toContain("Range: B2:E11");
+      expect(result.stdout).toContain("Header row: 7");
+      expect(result.stdout).toContain("Visible columns: ID, item, status");
+      expect(result.stdout).toContain("1001 | Starter");
+    });
+  });
+
   test("queries the stacked merged-band workbook end to end when body-start-row is provided", async () => {
     if (!excelReady) {
       return;
@@ -483,6 +557,67 @@ describe("CLI data query command", () => {
     expect(result.stderr).toContain(
       "--install-missing-extension is only valid for extension-backed query formats",
     );
+  });
+
+  test("rejects explicit shape flags when --source-shape is provided", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.xlsx"),
+      "--source-shape",
+      "shape.json",
+      "--range",
+      "A1:B3",
+      "--sql",
+      "select * from file",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("--source-shape cannot be used together with --range");
+  });
+
+  test("reports exact-match failure when a source-shape artifact does not match the current query input", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      await writeFile(
+        artifactPath,
+        `${JSON.stringify({
+          input: {
+            format: "excel",
+            path: "examples/playground/other.xlsx",
+            source: "Summary",
+          },
+          metadata: {
+            artifactType: "data-source-shape",
+            issuedAt: "2026-03-20T00:00:00.000Z",
+          },
+          shape: {
+            range: "B2:E11",
+          },
+          version: 1,
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source-shape",
+        toRepoRelativePath(artifactPath),
+        "--sql",
+        "select * from file",
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("Source shape artifact does not match the current input context exactly");
+    });
   });
 });
 

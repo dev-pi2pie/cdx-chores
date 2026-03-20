@@ -11,7 +11,7 @@ import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import { reviewInteractiveHeaderMappings } from "./header-review";
 import { collectInteractiveIntrospection } from "./source-shape";
-import { promptInteractiveInputFormat, promptOptionalSourceSelection } from "./source-selection";
+import { promptDelimitedHeaderMode, promptInteractiveInputFormat, promptOptionalSourceSelection } from "./source-selection";
 import { runCodexInteractiveQuery } from "./sql/codex";
 import { runFormalGuideInteractiveQuery } from "./sql/formal-guide";
 import { runManualInteractiveQuery } from "./sql/manual";
@@ -20,6 +20,7 @@ import { QUERY_CONTINUATION_LABELS } from "./types";
 
 export {
   promptInteractiveInputFormat,
+  promptDelimitedHeaderMode,
   promptOptionalSourceSelection,
   collectInteractiveIntrospection,
   reviewInteractiveHeaderMappings,
@@ -35,6 +36,7 @@ export async function runInteractiveDataQuery(
   });
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
+  const noHeader = await promptDelimitedHeaderMode(format);
 
   let connection;
   try {
@@ -44,6 +46,7 @@ export async function runInteractiveDataQuery(
     const { introspection, sourceShape } = await collectInteractiveIntrospection({
       connection,
       format,
+      initialNoHeader: noHeader,
       inputPath,
       labels: QUERY_CONTINUATION_LABELS,
       runtime,
@@ -58,6 +61,7 @@ export async function runInteractiveDataQuery(
       runtime,
       selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedNoHeader: sourceShape.selectedNoHeader,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
     });
@@ -78,6 +82,7 @@ export async function runInteractiveDataQuery(
         input,
         selectedBodyStartRow: sourceShape.selectedBodyStartRow,
         selectedHeaderRow: sourceShape.selectedHeaderRow,
+        selectedNoHeader: sourceShape.selectedNoHeader,
         selectedRange: sourceShape.selectedRange,
         selectedSource,
       });
@@ -92,6 +97,7 @@ export async function runInteractiveDataQuery(
         headerMappings: reviewedHeaders.headerMappings,
         selectedBodyStartRow: sourceShape.selectedBodyStartRow,
         selectedHeaderRow: sourceShape.selectedHeaderRow,
+        selectedNoHeader: sourceShape.selectedNoHeader,
         selectedRange: sourceShape.selectedRange,
         selectedSource,
       });
@@ -105,6 +111,7 @@ export async function runInteractiveDataQuery(
       headerMappings: reviewedHeaders.headerMappings,
       selectedBodyStartRow: sourceShape.selectedBodyStartRow,
       selectedHeaderRow: sourceShape.selectedHeaderRow,
+      selectedNoHeader: sourceShape.selectedNoHeader,
       selectedRange: sourceShape.selectedRange,
       selectedSource,
     });

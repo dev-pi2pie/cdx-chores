@@ -5,6 +5,7 @@
 Today, this command is most valuable for source-shaping work, especially Excel-oriented cleanup before materialization. It remains format-general at the input level, but its distinctive shaping controls are currently centered on Excel.
 
 For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
+For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`.
 For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`.
 For SQL execution instead of direct materialization, use `docs/guides/data-query-usage.md`.
 
@@ -15,6 +16,7 @@ Current boundary:
 - no SQL in this lane
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
@@ -31,13 +33,14 @@ Current intent:
 - use `data extract` when you want one clean output table and do not need SQL
 - use it first for awkward Excel inputs that need sheet, range, header-row, or body-start-row interpretation before export
 - for nontrivial filtering, projection, aggregation, or other transformation logic across any supported format, prefer `data query` with `--output`
+- when you want SQL against the exact same reviewed Excel scope, replay the accepted artifact with `data query --source-shape <path> --sql ...`
 
 ### Command shape
 
 ```bash
-cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
+cdx-chores data extract <input> --output <path> [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--header-mapping <path>] [--overwrite]
 cdx-chores data extract <input> --source <name> --codex-suggest-shape [--write-source-shape <path>] [--input-format <format>] [--overwrite]
-cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--overwrite]
+cdx-chores data extract <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--source-shape <path>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -53,6 +56,7 @@ Examples:
 ```bash
 cdx-chores data extract ./examples/playground/data-query/basic.csv --output ./examples/playground/.tmp-tests/basic.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/basic.tsv --output ./examples/playground/.tmp-tests/basic.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/no-head.csv --no-header --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.tsv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
@@ -65,7 +69,7 @@ cdx-chores data extract ./examples/playground/data-extract/no-head.csv --header-
 
 `data extract` reuses the same explicit shaping contract as the shared query helpers.
 
-That does not mean every tricky case belongs in `data extract`. The current design keeps Excel-style source interpretation here, while richer transformation logic stays in `data query`.
+That does not mean every tricky case belongs in `data extract`. The current design keeps reviewed reusable source-shape generation here, while richer transformation logic stays in `data query`.
 
 `--source` is required for multi-object formats:
 
@@ -74,6 +78,13 @@ That does not mean every tricky case belongs in `data extract`. The current desi
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before the shaped table is materialized.
 Other input formats reject `--range`.
+
+`--no-header` is valid only for CSV and TSV inputs:
+
+- it keeps row 1 in the shaped data row set
+- it generates deterministic placeholder names such as `column_1`, `column_2`, ...
+- it is a direct input-interpretation flag, not a reviewed source-shape artifact
+- when reviewed header mappings are written from an explicit `--no-header` run, that explicit choice becomes part of the exact-match header-mapping context
 
 `--header-row <n>` is also valid only for Excel inputs:
 
@@ -103,7 +114,9 @@ First-pass reviewed Codex source-shape help is narrower:
 Important distinction:
 
 - source-shape artifacts persist source interpretation only
+- current source-shape artifacts are Excel-only
 - they do not persist semantic header renames
+- they do not currently persist CSV or TSV `--no-header` decisions
 - a reviewed source-shape artifact may contain only `bodyStartRow` when that is the only deterministic source change
 - replaying a body-start-only artifact may still expose positional or generic columns
 - when that happens, the intended next step is `--codex-suggest-headers` after `--source-shape`, followed by `--header-mapping` for final extraction
@@ -158,22 +171,23 @@ Current interactive flow:
 1. choose input
 2. detect format
 3. choose source when needed
-4. inspect the current shaped source
-5. for suspicious whole-sheet Excel inputs, choose:
+4. for CSV and TSV, decide whether the input should be treated as headerless
+5. inspect the current shaped source
+6. for suspicious whole-sheet Excel inputs, choose:
    - keep as-is
    - enter range manually
    - ask Codex to suggest shaping
-6. after accepted source-shape changes, re-inspect
-7. when generated placeholder headers remain, optionally review semantic header suggestions
-8. choose output format:
+7. after accepted source-shape changes, re-inspect
+8. when generated placeholder headers remain, optionally review semantic header suggestions
+9. choose output format:
    - CSV
    - TSV
    - JSON
-9. choose destination style:
+10. choose destination style:
    - use default output path
    - custom output path
-10. review the final write summary
-11. explicitly confirm materialization
+11. review the final write summary
+12. explicitly confirm materialization
 
 Interactive review persistence:
 

@@ -13,6 +13,7 @@ export interface DataExtractOptions {
   headerSuggestionRunner?: DataHeaderSuggestionRunner;
   input: string;
   inputFormat?: DataQueryInputFormat;
+  noHeader?: boolean;
   output?: string;
   overwrite?: boolean;
   range?: string;

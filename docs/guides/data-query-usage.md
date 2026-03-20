@@ -6,6 +6,7 @@ It is also the current general-purpose lane for tricky transformations that go b
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
+For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
 Current boundary:
@@ -14,9 +15,11 @@ Current boundary:
 - SQL is required through `--sql`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
+- accepted source-shape replay is available through `--source-shape <path>` for Excel inputs
 - accepted semantic header renames can be reused through `--header-mapping <path>`
 - reviewed semantic header suggestions can be requested through `--codex-suggest-headers`
 - default output: bounded terminal table
@@ -30,11 +33,52 @@ Current intent:
 - use `data query` when `data extract` is too narrow for the transformation you need, even if the input is not Excel
 - use `--output` on `data query` when you want SQL-backed materialization rather than bounded terminal output
 
+### Direct CLI vs interactive mode
+
+Use direct CLI when you already know the SQL or want a scriptable one-shot command.
+Use interactive mode when you want the CLI to inspect the source first, help shape it, and guide SQL authoring before execution.
+
+```text
+Direct CLI: cdx-chores data query ...
+
+input + flags + SQL
+        |
+        v
+shape source if needed
+        |
+        v
+execute query
+        |
+        v
+table output | JSON stdout | file output
+
+
+Interactive: cdx-chores interactive -> data -> query
+
+choose input
+        |
+        v
+inspect source
+        |
+        v
+shape/review if needed
+        |
+        v
+choose SQL authoring mode
+(manual | formal-guide | Codex Assistant)
+        |
+        v
+review SQL and confirm execution
+        |
+        v
+choose output mode
+```
+
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
-cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--source-shape <path>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--source-shape <path>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 
 Supported `--input-format` values:
@@ -50,9 +94,11 @@ Examples:
 ```bash
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select id, name from file order by id"
 cdx-chores data query ./examples/playground/data-query/basic.tsv --sql "select status, count(*) as total from file group by status order by status" --rows 10
+cdx-chores data query ./examples/playground/data-extract/no-head.csv --no-header --sql "select column_1, column_2 from file order by column_1"
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
+cdx-chores data query ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --sql "select ID, item, status from file order by ID"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
 cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --sql "select id, status from file order by id"
@@ -68,6 +114,12 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 `--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
 Other input formats reject `--range`.
 
+`--no-header` is valid only for CSV and TSV inputs:
+
+- it keeps row 1 in the data row set
+- it generates deterministic placeholder names such as `column_1`, `column_2`, ...
+- when reviewed header mappings are written from an explicit `--no-header` run, that explicit headerless choice becomes part of the exact-match reuse context
+
 `--body-start-row <n>` and `--header-row <n>` are also valid only for Excel inputs:
 
 - both use absolute worksheet row numbering
@@ -75,6 +127,17 @@ Other input formats reject `--range`.
 - when `--range` is present, each row must fall inside that rectangle
 - when both rows are present, `body-start-row` must be greater than `header-row`
 - `body-start-row` changes import-time shaping instead of acting as a later SQL filter
+
+`--source-shape <path>` is also valid only for Excel inputs:
+
+- it replays an accepted reviewed source-shape artifact before SQL execution continues
+- replay is strict exact-match against the current input path, format, and artifact source
+- it replaces explicit shape flags instead of merging with them
+- do not combine it with:
+  - `--source`
+  - `--range`
+  - `--header-row`
+  - `--body-start-row`
 
 Examples:
 
@@ -84,6 +147,59 @@ cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summa
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 ```
+
+### Shape-first CLI workflow
+
+When a workbook is messy enough that you would normally use interactive `data query` to inspect the sheet, review shaping, and only then author SQL, the direct-CLI equivalent is now:
+
+1. use direct `data extract` reviewed shaping to discover and confirm the deterministic source shape
+2. rerun `data query` with `--source-shape <path>` plus `--sql`
+
+ASCII flow:
+
+```text
+data extract --codex-suggest-shape
+        |
+        v
+review accepted shape
+(source / range / header-row / body-start-row)
+        |
+        v
+data query --source-shape <path> --sql ...
+```
+
+Why this is the current direct-CLI pattern:
+
+- interactive `data query` already follows the same product rhythm in one guided session:
+  - inspect source
+  - review shape if needed
+  - author SQL against the accepted scope
+- direct CLI keeps reviewed reusable source-shape generation on the `data extract` lane today
+- direct `data query` now replays the accepted reviewed shape artifact without making query a second shape-artifact producer
+- explicit CSV or TSV `--no-header` stays a direct query flag today rather than part of the reviewed source-shape artifact layer
+
+Recommended direct-CLI pattern today:
+
+```bash
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
+```
+
+Then inspect the accepted artifact and rerun `data query` with the same accepted scope:
+
+```bash
+cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source-shape ./stacked.shape.json --sql "select id, question, status, notes from file order by id"
+```
+
+Practical reading:
+
+- use `data extract --codex-suggest-shape` when you need help finding the correct deterministic table scope
+- use `data query --source-shape <path>` once you have an accepted reviewed scope and want filtering, projection, aggregation, or SQL-backed output
+- this is the current direct-CLI way to reach the same shape-first outcome that interactive `data query` reaches in one guided flow
+
+Current limitation:
+
+- direct `data query codex` still takes explicit shape flags only in this slice
+- this replay pass does not change the `data query codex` command surface
 
 ### Header review and reuse
 
@@ -100,7 +216,7 @@ First-pass reuse is strict:
 
 - the artifact must match the current normalized `input.path`
 - the artifact must match the current `input.format`
-- optional `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
+- optional `noHeader`, `source`, `range`, `bodyStartRow`, and `headerRow` must also match exactly when present
 
 Single-object inputs reject `--source`.
 

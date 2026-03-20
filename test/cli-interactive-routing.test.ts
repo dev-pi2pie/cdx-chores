@@ -136,7 +136,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:extract", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, true],
+      confirmQueue: [true, false, true],
       dataQueryDetectedFormat: "csv",
       dataQueryIntrospection: {
         columns: [
@@ -178,7 +178,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:extract", "csv", "cancel"],
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, false],
+      confirmQueue: [true, false, false],
       dataQueryDetectedFormat: "csv",
       dataQueryIntrospection: {
         columns: [
@@ -193,6 +193,41 @@ describe("interactive mode routing", () => {
     expect(result.actionCalls).toEqual([]);
     expect(result.stderr).toContain("Extraction write summary");
     expect(result.stderr).toContain("Skipped extraction write.");
+  });
+
+  test("routes interactive data extract in explicit headerless mode for CSV input", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, true, false, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "column_1", type: "VARCHAR" },
+          { name: "column_2", type: "VARCHAR" },
+        ],
+        sampleRows: [{ column_1: "id", column_2: "name" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          noHeader: true,
+          output: "fixtures/query.json",
+          overwrite: false,
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Treat CSV/TSV input as headerless?",
+    );
   });
 
   test("prompts for Excel range before SQL authoring and carries it into execution", () => {
@@ -255,7 +290,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["all", "status", "status:asc", "5"],
-      confirmQueue: [true, false, true],
+      confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
 
@@ -277,13 +312,52 @@ describe("interactive mode routing", () => {
     ]);
   });
 
+  test("routes interactive data query manual mode in explicit headerless CSV mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select column_1, column_2 from file order by column_1", "10"],
+      confirmQueue: [true, true, false, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "column_1", type: "VARCHAR" },
+          { name: "column_2", type: "VARCHAR" },
+        ],
+        sampleRows: [{ column_1: "id", column_2: "name" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          noHeader: true,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          sql: "select column_1, column_2 from file order by column_1",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Treat CSV/TSV input as headerless?",
+    );
+  });
+
   test("rejects aggregate formal-guide order-by columns outside the result set", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["all", "", "status:asc", "row_count:desc", "5"],
-      confirmQueue: [true, false, true],
+      confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
 
@@ -316,7 +390,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "Codex Assistant", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
-      confirmQueue: [true, false, true, false],
+      confirmQueue: [true, false, false, true, false],
       inputQueue: ["count rows by status"],
       dataQueryDetectedFormat: "csv",
       dataQueryCodexDraft: {
@@ -363,7 +437,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "manual", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["select id from file"],
-      confirmQueue: [true, true, false],
+      confirmQueue: [true, false, true, false],
       dataQueryActionStdout: '[{"id":1}]\n',
       dataQueryDetectedFormat: "csv",
       dataQueryIntrospection: {
@@ -612,7 +686,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["select id, status from file order by id", "10"],
-      confirmQueue: [true, true, true],
+      confirmQueue: [true, false, true, true],
       dataQueryDetectedFormat: "csv",
       dataQueryHeaderSuggestions: [
         { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
@@ -680,7 +754,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "edit", "column_2", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["state", "select id, state from file order by id", "10"],
-      confirmQueue: [true, true, true],
+      confirmQueue: [true, false, true, true],
       dataQueryDetectedFormat: "csv",
       dataQueryHeaderSuggestions: [
         { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
@@ -746,7 +820,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "keep", "manual", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["select column_1, column_2 from file order by column_1", "10"],
-      confirmQueue: [true, true, true],
+      confirmQueue: [true, false, true, true],
       dataQueryDetectedFormat: "csv",
       dataQueryHeaderSuggestions: [
         { from: "column_1", to: "id", sample: "1001", inferredType: "BIGINT" },
@@ -791,7 +865,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "Codex Assistant", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
-      confirmQueue: [true, true, true, true, false],
+      confirmQueue: [true, false, true, true, true, false],
       editorQueue: [
         "# Query context for Codex drafting.\n# Logical table: file\n# Write plain intent below.\ncount rows\nby status",
       ],
@@ -849,7 +923,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "Codex Assistant", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
-      confirmQueue: [true, true, true, true, false],
+      confirmQueue: [true, false, true, true, true, false],
       editorQueue: [
         "# Query context for Codex drafting.\n# Logical table: file\ncount rows\nby status",
       ],
@@ -872,7 +946,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "Codex Assistant", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
-      confirmQueue: [true, true, false, true, true, true, false],
+      confirmQueue: [true, false, true, false, true, true, true, false],
       editorQueue: [
         "# Query context for Codex drafting.\ncount rows\nby status",
         "# Query context for Codex drafting.\ncount active rows\nby status",
@@ -907,7 +981,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:query", "manual", "file", "file"],
       requiredPathQueue: ["fixtures/query.csv", "reports/existing.json", "reports/fresh.json"],
       inputQueue: ["select id from file"],
-      confirmQueue: [true, true, false, false],
+      confirmQueue: [true, false, true, false, false],
       existingPaths: ["reports/existing.json"],
       dataQueryDetectedFormat: "csv",
     });

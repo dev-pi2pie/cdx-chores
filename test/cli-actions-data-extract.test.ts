@@ -48,6 +48,26 @@ describe("cli action modules: data extract", () => {
     });
   });
 
+  test("actionDataExtract honors explicit --no-header when materializing CSV input", async () => {
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "header-row-as-data.csv");
+      const outputPath = join(fixtureDir, "header-row-as-data.clean.csv");
+      await writeFile(inputPath, "id,name\n1,Ada\n2,Bob\n", "utf8");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        input: toRepoRelativePath(inputPath),
+        noHeader: true,
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe("column_1,column_2\nid,name\n1,Ada\n2,Bob\n");
+    });
+  });
+
   test("actionDataExtract writes TSV output with the shaped table columns", async () => {
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "people.csv");
