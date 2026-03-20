@@ -1,2 +1,12 @@
 *
 !.gitignore
+!data-extract/
+!data-extract/**
+!data-query/
+!data-query/**
+!data-query-probe/
+!data-query-probe/**
+!parquet-preview/
+!parquet-preview/**
+!tabular-preview/
+!tabular-preview/**

@@ -102,6 +102,13 @@ function stringifyDelimitedRows(rows, delimiter) {
   return `${lines.join("\n")}\n`;
 }
 
+function createGenericRows() {
+  return [
+    { column_1: 1001, column_2: "active", column_3: "north" },
+    { column_1: 1002, column_2: "paused", column_3: "south" },
+  ];
+}
+
 function toColumnName(index) {
   let current = index + 1;
   let result = "";
@@ -344,10 +351,12 @@ async function seedFixtures(outputDir, largeRows) {
   await ensureOutputDir(outputDir);
 
   const basicRows = createBasicRows();
+  const genericRows = createGenericRows();
   const largeFixtureRows = createLargeRows(largeRows);
 
   await writeDelimitedFixture(outputDir, "basic.csv", basicRows, ",");
   await writeDelimitedFixture(outputDir, "basic.tsv", basicRows, "\t");
+  await writeDelimitedFixture(outputDir, "generic.csv", genericRows, ",");
   await writeDelimitedFixture(outputDir, "large.csv", largeFixtureRows, ",");
 
   const duckdb = await import("@duckdb/node-api");

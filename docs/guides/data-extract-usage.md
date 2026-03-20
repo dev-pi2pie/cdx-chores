@@ -57,8 +57,8 @@ cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Sum
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --output ./examples/playground/.tmp-tests/messy.clean.csv --overwrite
-cdx-chores data extract ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
-cdx-chores data extract ./examples/playground/data-query/generic.csv --header-mapping ./header-map.json --output ./examples/playground/.tmp-tests/generic.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-extract/no-head.csv --codex-suggest-headers --write-header-mapping ./header-map.json
+cdx-chores data extract ./examples/playground/data-extract/no-head.csv --header-mapping ./header-map.json --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
 ```
 
 ### Source shaping

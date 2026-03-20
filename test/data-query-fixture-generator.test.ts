@@ -49,6 +49,7 @@ describe("data query fixture generator", () => {
           "basic.csv",
           "basic.parquet",
           "basic.tsv",
+          "generic.csv",
           "large.csv",
           "large.parquet",
           "multi.sqlite",

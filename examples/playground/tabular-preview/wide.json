@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "status": "ok",
+    "message": "Short message for bounded preview checks",
+    "owner": "ada",
+    "region": "tw",
+    "environment": "staging",
+    "note": "This row is intentionally wide so the renderer has to hide columns."
+  }
+]

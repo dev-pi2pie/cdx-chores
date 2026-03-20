@@ -1,0 +1,4 @@
+id,name,status,created_at
+1,Ada,active,2026-03-01
+2,Bob,paused,2026-03-02
+3,Cyd,draft,2026-03-03

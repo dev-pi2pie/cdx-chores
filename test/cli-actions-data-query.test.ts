@@ -14,6 +14,16 @@ function dataQueryFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "data-query", name);
 }
 
+class TtyCaptureStream {
+  public text = "";
+  public isTTY = true;
+
+  write(chunk: string | Uint8Array): boolean {
+    this.text += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
+    return true;
+  }
+}
+
 const queryExtensions = await inspectDataQueryExtensions();
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
@@ -215,6 +225,48 @@ describe("cli action modules: data query", () => {
       expect(stdout.text).toContain("column_1 -> id");
       expect(stdout.text).toContain("column_4 -> created_at");
       expect(stderr.text).toContain(`Wrote header mapping: ${toRepoRelativePath(artifactPath)}`);
+    });
+  });
+
+  test("actionDataQuery shows tty Codex thinking status while reviewing headers", async () => {
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "generic.csv");
+      const artifactPath = join(fixtureDir, "header-map.json");
+      await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
+      const stdout = new TtyCaptureStream();
+      const stderr = new TtyCaptureStream();
+      const runtime = {
+        colorEnabled: true,
+        cwd: REPO_ROOT,
+        displayPathStyle: "relative" as const,
+        now: () => new Date("2026-02-25T00:00:00.000Z"),
+        platform: process.platform,
+        stderr: stderr as unknown as NodeJS.WritableStream,
+        stdin: process.stdin,
+        stdout: stdout as unknown as NodeJS.WritableStream,
+      };
+
+      await actionDataQuery(runtime, {
+        codexSuggestHeaders: true,
+        headerSuggestionRunner: async () => {
+          await Bun.sleep(420);
+          return JSON.stringify({
+            suggestions: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "status" },
+            ],
+          });
+        },
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        writeHeaderMapping: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("Thinking");
+      expect(stdout.text).toContain("Inspecting shaped source");
+      expect(stdout.text).toContain("Waiting for Codex header suggestions");
+      expect(stdout.text).toContain("Suggested headers");
+      expect(stdout.text).toContain("\r\x1b[2K");
     });
   });
 

@@ -13,6 +13,16 @@ function dataQueryFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "data-query", name);
 }
 
+class TtyCaptureStream {
+  public text = "";
+  public isTTY = true;
+
+  write(chunk: string | Uint8Array): boolean {
+    this.text += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
+    return true;
+  }
+}
+
 const queryExtensions = await inspectDataQueryExtensions();
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
@@ -271,6 +281,52 @@ describe("cli action modules: data extract", () => {
         },
         version: 1,
       });
+    });
+  });
+
+  test("actionDataExtract shows tty Codex thinking status while reviewing a source shape", async () => {
+    if (!excelReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      seedDataExtractFixtures(fixtureDir);
+      const inputPath = join(fixtureDir, "messy.xlsx");
+      const artifactPath = join(fixtureDir, "shape.json");
+      const stdout = new TtyCaptureStream();
+      const stderr = new TtyCaptureStream();
+      const runtime = {
+        colorEnabled: true,
+        cwd: REPO_ROOT,
+        displayPathStyle: "relative" as const,
+        now: () => new Date("2026-02-25T00:00:00.000Z"),
+        platform: process.platform,
+        stderr: stderr as unknown as NodeJS.WritableStream,
+        stdin: process.stdin,
+        stdout: stdout as unknown as NodeJS.WritableStream,
+      };
+
+      await actionDataExtract(runtime, {
+        codexSuggestShape: true,
+        input: toRepoRelativePath(inputPath),
+        overwrite: true,
+        source: "Summary",
+        sourceShapeSuggestionRunner: async () => {
+          await Bun.sleep(420);
+          return JSON.stringify({
+            header_row: 7,
+            range: "B2:E11",
+            reasoning_summary: "The clean table starts at worksheet row 7 and spans columns B:E.",
+          });
+        },
+        writeSourceShape: toRepoRelativePath(artifactPath),
+      });
+
+      expect(stdout.text).toContain("Thinking");
+      expect(stdout.text).toContain("Inspecting worksheet structure");
+      expect(stdout.text).toContain("Waiting for Codex source-shape suggestions");
+      expect(stdout.text).toContain("Suggested source shape");
+      expect(stdout.text).toContain("\r\x1b[2K");
     });
   });
 

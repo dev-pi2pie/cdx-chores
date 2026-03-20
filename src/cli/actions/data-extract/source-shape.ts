@@ -8,6 +8,7 @@ import {
   renderSuggestedSourceShape,
 } from "../../data-workflows/source-shape-flow";
 import { CliError } from "../../errors";
+import { createInteractiveAnalyzerStatus } from "../../interactive/analyzer-status";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { collectDataQuerySourceIntrospection, createDuckDbConnection, type DataQueryInputFormat } from "../../duckdb/query";
@@ -45,10 +46,12 @@ export async function runCodexSourceShapeSuggestionFlow(
   const artifactPath = options.writeSourceShape?.trim()
     ? resolveFromCwd(runtime, options.writeSourceShape.trim())
     : join(runtime.cwd, generateDataSourceShapeFileName());
+  const status = createInteractiveAnalyzerStatus(runtime.stdout, runtime.colorEnabled);
 
   let connection;
   try {
     connection = await createDuckDbConnection();
+    status.start("Inspecting worksheet structure");
     const currentIntrospection = await collectDataQuerySourceIntrospection(
       connection,
       options.inputPath,
@@ -61,6 +64,7 @@ export async function runCodexSourceShapeSuggestionFlow(
     const sheetSnapshot = await collectXlsxSheetSnapshot(options.inputPath, selectedSource, {
       maxRows: DATA_EXTRACT_SOURCE_SHAPE_SNAPSHOT_ROWS,
     });
+    status.wait("Waiting for Codex source-shape suggestions");
     const suggestionResult = await suggestDataSourceShapeWithCodex({
       context: {
         currentIntrospection,
@@ -72,6 +76,7 @@ export async function runCodexSourceShapeSuggestionFlow(
       runner: options.sourceShapeSuggestionRunner,
       workingDirectory: runtime.cwd,
     });
+    status.stop();
 
     if (suggestionResult.errorMessage || !suggestionResult.shape || !suggestionResult.reasoningSummary) {
       const failure = classifySourceShapeSuggestionFailure(
@@ -128,6 +133,7 @@ export async function runCodexSourceShapeSuggestionFlow(
       }),
     );
   } finally {
+    status.stop();
     connection?.closeSync();
   }
 }
