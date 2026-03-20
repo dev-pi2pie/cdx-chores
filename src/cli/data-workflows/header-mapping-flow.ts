@@ -14,6 +14,7 @@ import {
 } from "../duckdb/header-mapping";
 import type { DataQueryInputFormat, DataQuerySourceIntrospection } from "../duckdb/query";
 import { CliError } from "../errors";
+import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 
@@ -139,13 +140,21 @@ export async function runCodexHeaderSuggestionFlow(options: {
   const artifactPath = options.writeHeaderMapping?.trim()
     ? resolveFromCwd(options.runtime, options.writeHeaderMapping.trim())
     : join(options.runtime.cwd, generateDataHeaderMappingFileName());
-  const introspection = await options.collectIntrospection();
-  const suggestionResult = await suggestDataHeaderMappingsWithCodex({
-    format: options.format,
-    introspection,
-    runner: options.headerSuggestionRunner,
-    workingDirectory: options.runtime.cwd,
-  });
+  const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+  let suggestionResult;
+  try {
+    status.start("Inspecting shaped source");
+    const introspection = await options.collectIntrospection();
+    status.wait("Waiting for Codex header suggestions");
+    suggestionResult = await suggestDataHeaderMappingsWithCodex({
+      format: options.format,
+      introspection,
+      runner: options.headerSuggestionRunner,
+      workingDirectory: options.runtime.cwd,
+    });
+  } finally {
+    status.stop();
+  }
 
   if (suggestionResult.errorMessage) {
     const failure = classifyHeaderSuggestionFailure(suggestionResult.errorMessage, {
