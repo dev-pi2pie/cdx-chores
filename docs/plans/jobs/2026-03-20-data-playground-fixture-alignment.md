@@ -15,7 +15,6 @@ What changed:
   - `data-extract/`
   - `data-query/`
   - `data-query-probe/`
-  - `issue-data/`
   - `parquet-preview/`
   - `tabular-preview/`
 - updated the data-query fixture generator test to expect the new representative fixture

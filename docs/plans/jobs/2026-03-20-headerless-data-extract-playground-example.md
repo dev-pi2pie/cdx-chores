@@ -15,7 +15,6 @@ What changed:
 
 Why:
 
-- the repo already had a useful headerless CSV repro under `examples/playground/issue-data/`
 - a public stable example belongs under the extract playground where the data shaping examples live
 - generator parity keeps the checked-in playground set aligned with the documented/manual smoke assets
 
