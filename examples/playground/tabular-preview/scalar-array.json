@@ -1,0 +1,8 @@
+[
+  "Ada",
+  36,
+  true,
+  {
+    "nested": "value"
+  }
+]

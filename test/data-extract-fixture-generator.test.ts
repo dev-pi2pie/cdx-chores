@@ -54,6 +54,7 @@ describe("data extract fixture generator", () => {
           "messy.xlsx",
           "multi.sqlite",
           "multi.xlsx",
+          "no-head.csv",
         ]);
       });
     });

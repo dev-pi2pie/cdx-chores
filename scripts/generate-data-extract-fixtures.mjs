@@ -277,8 +277,21 @@ function createGenericRows() {
   ];
 }
 
+function createNoHeadRows() {
+  return [
+    ["1", "Ada", "active", "2026-03-01"],
+    ["2", "Bob", "paused", "2026-03-02"],
+    ["3", "Cyd", "draft", "2026-03-03"],
+  ];
+}
+
 async function writeDelimitedFixture(outputDir, fileName, rows, delimiter) {
   await writeFile(join(outputDir, fileName), stringifyDelimitedRows(rows, delimiter), "utf8");
+}
+
+async function writeRawDelimitedFixture(outputDir, fileName, rows, delimiter) {
+  const lines = rows.map((row) => row.join(delimiter));
+  await writeFile(join(outputDir, fileName), `${lines.join("\n")}\n`, "utf8");
 }
 
 function writeSqliteFixture(outputDir) {
@@ -409,6 +422,7 @@ async function seedFixtures(outputDir) {
   await writeCollapsedMergedWorkbook(outputDir);
   await writeDelimitedFixture(outputDir, "generic.csv", createGenericRows(), ",");
   await writeHeaderBandWorkbook(outputDir);
+  await writeRawDelimitedFixture(outputDir, "no-head.csv", createNoHeadRows(), ",");
   writeSqliteFixture(outputDir);
   await writeSimpleWorkbook(outputDir);
   await writeMessyWorkbook(outputDir);
