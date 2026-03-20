@@ -30,6 +30,47 @@ Current intent:
 - use `data query` when `data extract` is too narrow for the transformation you need, even if the input is not Excel
 - use `--output` on `data query` when you want SQL-backed materialization rather than bounded terminal output
 
+### Direct CLI vs interactive mode
+
+Use direct CLI when you already know the SQL or want a scriptable one-shot command.
+Use interactive mode when you want the CLI to inspect the source first, help shape it, and guide SQL authoring before execution.
+
+```text
+Direct CLI: cdx-chores data query ...
+
+input + flags + SQL
+        |
+        v
+shape source if needed
+        |
+        v
+execute query
+        |
+        v
+table output | JSON stdout | file output
+
+
+Interactive: cdx-chores interactive -> data -> query
+
+choose input
+        |
+        v
+inspect source
+        |
+        v
+shape/review if needed
+        |
+        v
+choose SQL authoring mode
+(manual | formal-guide | Codex Assistant)
+        |
+        v
+review SQL and confirm execution
+        |
+        v
+choose output mode
+```
+
 ### Command shape
 
 ```bash
@@ -84,6 +125,59 @@ cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summa
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 ```
+
+### Shape-first CLI workflow
+
+When a workbook is messy enough that you would normally use interactive `data query` to inspect the sheet, review shaping, and only then author SQL, the current direct-CLI equivalent is a shape-first workflow:
+
+1. use direct `data extract` reviewed shaping to discover and confirm the deterministic source shape
+2. rerun `data query` with the accepted shape flags plus `--sql`
+
+ASCII flow:
+
+```text
+data extract --codex-suggest-shape
+        |
+        v
+review accepted shape
+(source / range / header-row / body-start-row)
+        |
+        v
+data query --source ... --range ... --header-row ... --body-start-row ... --sql ...
+```
+
+Why this is the current direct-CLI pattern:
+
+- interactive `data query` already follows the same product rhythm in one guided session:
+  - inspect source
+  - review shape if needed
+  - author SQL against the accepted scope
+- direct CLI keeps reviewed reusable source-shape generation on the `data extract` lane today
+- direct `data query` consumes accepted deterministic shape flags, but does not yet accept `--source-shape <path>`
+
+Recommended direct-CLI pattern today:
+
+```bash
+cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
+```
+
+Then inspect the accepted artifact and rerun `data query` with the same accepted scope:
+
+```bash
+cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --header-row 7 --body-start-row 10 --sql "select id, question, status, notes from file order by id"
+```
+
+Practical reading:
+
+- use `data extract --codex-suggest-shape` when you need help finding the correct deterministic table scope
+- use `data query` once you know the scope and want filtering, projection, aggregation, or SQL-backed output
+- this is the current direct-CLI way to reach the same shape-first outcome that interactive `data query` reaches in one guided flow
+
+Current limitation:
+
+- the reviewed source-shape artifact is reusable as a review record, but `data query` does not yet replay it directly
+- today you must carry the accepted deterministic values into `data query` as explicit flags
+- if this workflow needs smoothing later, the cleaner follow-up would be `data query --source-shape <path>`, not collapsing `data query` and `data extract` into one command
 
 ### Header review and reuse
 
