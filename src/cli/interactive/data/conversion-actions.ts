@@ -18,31 +18,28 @@ import type { DataInteractiveActionKey } from "../menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "../shared";
 
 type DirectDataConversionAction =
-  | "data:json-to-csv"
-  | "data:json-to-tsv"
-  | "data:csv-to-json"
-  | "data:csv-to-tsv"
-  | "data:tsv-to-csv"
-  | "data:tsv-to-json";
+  (typeof DIRECT_DATA_CONVERSION_ACTIONS)[number];
 
-function isDirectDataConversionAction(action: DataInteractiveActionKey): action is DirectDataConversionAction {
-  return action === "data:json-to-csv"
-    || action === "data:json-to-tsv"
-    || action === "data:csv-to-json"
-    || action === "data:csv-to-tsv"
-    || action === "data:tsv-to-csv"
-    || action === "data:tsv-to-json";
+export const DIRECT_DATA_CONVERSION_ACTIONS = [
+  "data:json-to-csv",
+  "data:json-to-tsv",
+  "data:csv-to-json",
+  "data:csv-to-tsv",
+  "data:tsv-to-csv",
+  "data:tsv-to-json",
+] as const;
+
+export function isDirectDataConversionAction(
+  action: DataInteractiveActionKey,
+): action is DirectDataConversionAction {
+  return DIRECT_DATA_CONVERSION_ACTIONS.includes(action as DirectDataConversionAction);
 }
 
 export async function handleDirectDataConversionAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-  action: DataInteractiveActionKey,
-): Promise<boolean> {
-  if (!isDirectDataConversionAction(action)) {
-    return false;
-  }
-
+  action: DirectDataConversionAction,
+): Promise<void> {
   if (action === "data:json-to-csv") {
     const inputPath = await promptRequiredPathWithConfig("Input JSON file", {
       kind: "file",
@@ -58,7 +55,7 @@ export async function handleDirectDataConversionAction(
     });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionJsonToCsv(runtime, { input: inputPath, output: outputPath, overwrite });
-    return true;
+    return;
   }
 
   if (action === "data:json-to-tsv") {
@@ -76,7 +73,7 @@ export async function handleDirectDataConversionAction(
     });
     const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
     await actionJsonToTsv(runtime, { input: inputPath, output: outputPath, overwrite });
-    return true;
+    return;
   }
 
   if (action === "data:csv-to-json") {
@@ -100,7 +97,7 @@ export async function handleDirectDataConversionAction(
       pretty,
       overwrite,
     });
-    return true;
+    return;
   }
 
   if (action === "data:csv-to-tsv") {
@@ -122,7 +119,7 @@ export async function handleDirectDataConversionAction(
       output: outputPath,
       overwrite,
     });
-    return true;
+    return;
   }
 
   if (action === "data:tsv-to-csv") {
@@ -144,7 +141,7 @@ export async function handleDirectDataConversionAction(
       output: outputPath,
       overwrite,
     });
-    return true;
+    return;
   }
 
   if (action === "data:tsv-to-json") {
@@ -168,7 +165,7 @@ export async function handleDirectDataConversionAction(
       pretty,
       overwrite,
     });
-    return true;
+    return;
   }
 
   assertNeverInteractiveAction(action);

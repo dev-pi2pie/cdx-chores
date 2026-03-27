@@ -1,6 +1,9 @@
 import type { CliRuntime } from "../types";
 import type { DataInteractiveActionKey } from "./menu";
-import { handleDirectDataConversionAction } from "./data/conversion-actions";
+import {
+  handleDirectDataConversionAction,
+  isDirectDataConversionAction,
+} from "./data/conversion-actions";
 import { runInteractiveDataConvert } from "./data/convert";
 import { runInteractiveDataExtract } from "./data/extract";
 import { runInteractiveDataPreview, runInteractiveParquetPreview } from "./data/preview";
@@ -37,7 +40,8 @@ export async function handleDataInteractiveAction(
     return;
   }
 
-  if (await handleDirectDataConversionAction(runtime, pathPromptContext, action)) {
+  if (isDirectDataConversionAction(action)) {
+    await handleDirectDataConversionAction(runtime, pathPromptContext, action);
     return;
   }
 
