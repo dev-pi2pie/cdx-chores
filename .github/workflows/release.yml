@@ -225,6 +225,13 @@ jobs:
                   trap 'rm -f "$NOTES_FILE"' EXIT
                   printf '%s\n' "$RELEASE_NOTES" > "$NOTES_FILE"
 
+                  if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+                    gh release edit "$TAG_NAME" \
+                      --title "$TAG_NAME" \
+                      --notes-file "$NOTES_FILE"
+                    exit 0
+                  fi
+
                   GH_ARGS=(
                     release
                     create
