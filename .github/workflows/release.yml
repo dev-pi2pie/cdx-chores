@@ -214,9 +214,17 @@ jobs:
         permissions:
             contents: write
         steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 1
+                  ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || (inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref) }}
+                  show-progress: false
+
             - name: Create GitHub release
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_REPO: ${{ github.repository }}
                   TAG_NAME: ${{ needs.notes.outputs.tag }}
                   IS_PRERELEASE: ${{ needs.notes.outputs.prerelease }}
                   RELEASE_NOTES: ${{ needs.notes.outputs.release_notes }}
@@ -225,8 +233,9 @@ jobs:
                   trap 'rm -f "$NOTES_FILE"' EXIT
                   printf '%s\n' "$RELEASE_NOTES" > "$NOTES_FILE"
 
-                  if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+                  if gh release view "$TAG_NAME" --repo "$GH_REPO" >/dev/null 2>&1; then
                     gh release edit "$TAG_NAME" \
+                      --repo "$GH_REPO" \
                       --title "$TAG_NAME" \
                       --notes-file "$NOTES_FILE"
                     exit 0
@@ -236,6 +245,7 @@ jobs:
                     release
                     create
                     "$TAG_NAME"
+                    --repo "$GH_REPO"
                     --title "$TAG_NAME"
                     --notes-file "$NOTES_FILE"
                   )
