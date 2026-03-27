@@ -127,7 +127,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v6
               with:
-                  node-version: 22.14.0
+                  node-version: 24.14.1
                   registry-url: https://registry.npmjs.org
 
             - name: Verify package metadata
@@ -146,9 +146,6 @@ jobs:
                     echo "Tag '$TAG_NAME' does not match package.json version '$PKG_VERSION'." >&2
                     exit 1
                   fi
-
-            - name: Update npm to latest # Ensuring NPM Trusted Publishing is Work
-              run: npm install -g npm@latest
 
             - name: Install dependencies
               run: bun install --frozen-lockfile

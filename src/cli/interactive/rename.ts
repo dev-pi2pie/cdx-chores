@@ -1,10 +1,6 @@
 import { confirm, input, select } from "@inquirer/prompts";
 
-import {
-  actionRenameApply,
-  actionRenameBatch,
-  actionRenameFile,
-} from "../actions";
+import { actionRenameApply, actionRenameBatch, actionRenameFile } from "../actions";
 import { promptRequiredPathWithConfig } from "../prompts/path";
 import { promptTextWithGhost } from "../prompts/text-inline";
 import {

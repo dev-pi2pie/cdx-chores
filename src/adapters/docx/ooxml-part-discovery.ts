@@ -5,7 +5,8 @@ const DOCX_PACKAGE_RELS_PATH = "/_rels/.rels";
 const DOCX_CONTENT_TYPES_PATH = "/[Content_Types].xml";
 const DOCX_DEFAULT_CORE_PROPERTIES_PATH = "/docProps/core.xml";
 const DOCX_DEFAULT_APP_PROPERTIES_PATH = "/docProps/app.xml";
-const DOCX_CORE_PROPERTIES_CONTENT_TYPE = "application/vnd.openxmlformats-package.core-properties+xml";
+const DOCX_CORE_PROPERTIES_CONTENT_TYPE =
+  "application/vnd.openxmlformats-package.core-properties+xml";
 const DOCX_EXTENDED_PROPERTIES_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.extended-properties+xml";
 
@@ -116,7 +117,10 @@ function resolveMetadataPartPath(options: {
 
   if (options.relationshipTargets) {
     for (const relationshipTarget of options.relationshipTargets) {
-      if (relationshipTarget.endsWith(options.fallbackSuffix) && options.parts.has(relationshipTarget)) {
+      if (
+        relationshipTarget.endsWith(options.fallbackSuffix) &&
+        options.parts.has(relationshipTarget)
+      ) {
         return relationshipTarget;
       }
     }

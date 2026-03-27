@@ -57,7 +57,10 @@ export function normalizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
-export function normalizeOptionalPositiveInteger(value: unknown, context: string): number | undefined {
+export function normalizeOptionalPositiveInteger(
+  value: unknown,
+  context: string,
+): number | undefined {
   if (value === undefined || value === null || value === "") {
     return undefined;
   }
@@ -131,9 +134,13 @@ export function createHeaderMappingInputReference(options: {
   inputPath: string;
   shape?: DataHeaderMappingShape;
 }): DataHeaderMappingInputReference {
-  const normalizedRelativePath = normalizeArtifactPath(relative(options.cwd, options.inputPath) || ".");
+  const normalizedRelativePath = normalizeArtifactPath(
+    relative(options.cwd, options.inputPath) || ".",
+  );
   return {
-    ...(options.shape?.bodyStartRow !== undefined ? { bodyStartRow: options.shape.bodyStartRow } : {}),
+    ...(options.shape?.bodyStartRow !== undefined
+      ? { bodyStartRow: options.shape.bodyStartRow }
+      : {}),
     format: options.format,
     ...(options.shape?.headerRow !== undefined ? { headerRow: options.shape.headerRow } : {}),
     ...(options.shape?.noHeader ? { noHeader: true } : {}),

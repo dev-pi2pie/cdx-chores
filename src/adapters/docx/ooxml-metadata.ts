@@ -33,7 +33,9 @@ export async function readDocxCoreMetadata(path: string): Promise<ReadDocxCoreMe
 
   const { appPropertiesPath, corePropertiesPath } = resolveDocxMetadataPartPaths(parts);
 
-  const metadata = parseDocxCoreProperties(corePropertiesPath ? parts.get(corePropertiesPath) ?? "" : "");
+  const metadata = parseDocxCoreProperties(
+    corePropertiesPath ? (parts.get(corePropertiesPath) ?? "") : "",
+  );
   if (!metadata) {
     return { warnings: ["docx_metadata_unavailable"] };
   }

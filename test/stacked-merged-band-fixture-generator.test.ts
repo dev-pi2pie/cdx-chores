@@ -6,7 +6,13 @@ import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function runGenerator(outputDir: string): { exitCode: number; stdout: string; stderr: string } {
   const proc = Bun.spawnSync({
-    cmd: ["node", "scripts/generate-stacked-merged-band-fixture.mjs", "reset", "--output-dir", outputDir],
+    cmd: [
+      "node",
+      "scripts/generate-stacked-merged-band-fixture.mjs",
+      "reset",
+      "--output-dir",
+      outputDir,
+    ],
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -18,7 +24,9 @@ function runGenerator(outputDir: string): { exitCode: number; stdout: string; st
   };
 }
 
-async function snapshotDirectory(outputDir: string): Promise<Array<{ hash: string; name: string }>> {
+async function snapshotDirectory(
+  outputDir: string,
+): Promise<Array<{ hash: string; name: string }>> {
   const names = (await readdir(outputDir)).sort();
   const entries = [];
   for (const name of names) {

@@ -55,7 +55,9 @@ export async function runCodexInteractiveQuery(
               message: "Describe the query intent:",
               postfix: ".md",
               validate: (value) =>
-                normalizeDataQueryCodexEditorIntent(value).length > 0 ? true : "Enter a query intent.",
+                normalizeDataQueryCodexEditorIntent(value).length > 0
+                  ? true
+                  : "Enter a query intent.",
             });
             const cleanedIntent = normalizeDataQueryCodexEditorIntent(intentValue);
             renderCodexIntentPreview(runtime, cleanedIntent);
@@ -101,7 +103,10 @@ export async function runCodexInteractiveQuery(
         status.stop();
 
         if (!draftResult.draft) {
-          printLine(runtime.stderr, `Codex drafting failed: ${draftResult.errorMessage ?? "Unknown error."}`);
+          printLine(
+            runtime.stderr,
+            `Codex drafting failed: ${draftResult.errorMessage ?? "Unknown error."}`,
+          );
         } else {
           const executionResult = await executeInteractiveCandidate(runtime, pathPromptContext, {
             format: options.format,

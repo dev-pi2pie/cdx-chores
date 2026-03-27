@@ -316,7 +316,9 @@ describe("interactive rename routing", () => {
     ]);
     expect(result.stdout).toContain("Sampling filenames for cleanup analysis...");
     expect(result.stdout).toContain("Waiting for Codex cleanup suggestions...");
-    expect(result.stdout).toContain("Codex cleanup suggestion unavailable: mocked analyzer failure");
+    expect(result.stdout).toContain(
+      "Codex cleanup suggestion unavailable: mocked analyzer failure",
+    );
     expect(result.stdout).toContain("Falling back to manual cleanup settings.");
     expect(result.promptCalls).toContainEqual({
       kind: "select",
@@ -348,18 +350,12 @@ describe("interactive rename routing", () => {
           {
             pattern: "report-{uid}-final.txt",
             count: 2,
-            examples: [
-              "report uid-7k3m9q2x4t final.txt",
-              "nested/report uid-9m4k2q7x1v final.txt",
-            ],
+            examples: ["report uid-7k3m9q2x4t final.txt", "nested/report uid-9m4k2q7x1v final.txt"],
           },
           {
             pattern: "report-{date}-final.txt",
             count: 2,
-            examples: [
-              "report 2026-03-02 final.txt",
-              "nested/report 2026-03-03 final.txt",
-            ],
+            examples: ["report 2026-03-02 final.txt", "nested/report 2026-03-03 final.txt"],
           },
         ],
       },
@@ -488,18 +484,12 @@ describe("interactive rename routing", () => {
           {
             pattern: "report-{uid}-final.txt",
             count: 2,
-            examples: [
-              "report uid-7k3m9q2x4t final.txt",
-              "nested/report uid-9m4k2q7x1v final.txt",
-            ],
+            examples: ["report uid-7k3m9q2x4t final.txt", "nested/report uid-9m4k2q7x1v final.txt"],
           },
           {
             pattern: "report-{date}-final.txt",
             count: 2,
-            examples: [
-              "report 2026-03-02 final.txt",
-              "nested/report 2026-03-03 final.txt",
-            ],
+            examples: ["report 2026-03-02 final.txt", "nested/report 2026-03-03 final.txt"],
           },
         ],
       },
@@ -536,10 +526,7 @@ describe("interactive rename routing", () => {
             {
               pattern: "report-{date}-final.txt",
               count: 2,
-              examples: [
-                "report 2026-03-02 final.txt",
-                "nested/report 2026-03-03 final.txt",
-              ],
+              examples: ["report 2026-03-02 final.txt", "nested/report 2026-03-03 final.txt"],
             },
           ],
         },
@@ -803,7 +790,9 @@ describe("interactive rename routing", () => {
       kind: "confirm",
       message: "Keep cleanup analysis report CSV?",
     });
-    expect(result.stdout).toContain("Cleanup analysis report removed: reports/cleanup-analysis.csv");
+    expect(result.stdout).toContain(
+      "Cleanup analysis report removed: reports/cleanup-analysis.csv",
+    );
     expect(result.stdout).not.toContain("Cleanup plan CSV removed:");
   });
 

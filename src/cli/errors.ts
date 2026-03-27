@@ -18,4 +18,3 @@ export function toCliError(error: unknown): CliError {
   const message = error instanceof Error ? error.message : String(error);
   return new CliError(message);
 }
-

@@ -35,10 +35,5 @@
     "builtin": true
   },
   "globals": {},
-  "ignorePatterns": [
-    "dist/**",
-    "coverage/**",
-    "examples/playground/**",
-    "node_modules/**"
-  ]
+  "ignorePatterns": ["dist/**", "coverage/**", "examples/playground/**", "node_modules/**"]
 }

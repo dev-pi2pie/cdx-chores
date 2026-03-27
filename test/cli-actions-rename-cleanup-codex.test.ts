@@ -10,12 +10,7 @@ const SAMPLE_EVIDENCE: RenameCleanupAnalyzerEvidence = {
   targetPath: "/tmp/cleanup-dir",
   totalCandidateCount: 12,
   sampledCount: 4,
-  sampleNames: [
-    "app-00001.log",
-    "app-00002.log",
-    "app-00003.log",
-    "nested/app-00004.log",
-  ],
+  sampleNames: ["app-00001.log", "app-00002.log", "app-00003.log", "nested/app-00004.log"],
   groupedPatterns: [
     {
       pattern: "app-{serial}.log",

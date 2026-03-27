@@ -114,9 +114,7 @@ function moveToParentPathSegmentValue(value: string): string | undefined {
   return value.slice(0, lastSeparatorIndex + 1);
 }
 
-export async function promptPathInlineGhost(
-  options: InlinePathPromptOptions,
-): Promise<string> {
+export async function promptPathInlineGhost(options: InlinePathPromptOptions): Promise<string> {
   if (!supportsRawSessionIO(options.stdin, options.stdout)) {
     throw new Error("Inline path prompt requires TTY stdin/stdout with raw mode support");
   }

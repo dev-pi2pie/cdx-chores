@@ -4,7 +4,9 @@ import type { DataQueryInputFormat } from "../duckdb/query";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
 
-export function isDuckDbExtensionUnavailableError(error: unknown): error is CliError | { code: string } {
+export function isDuckDbExtensionUnavailableError(
+  error: unknown,
+): error is CliError | { code: string } {
   return (
     (error instanceof CliError && error.code === "DUCKDB_EXTENSION_UNAVAILABLE") ||
     (typeof error === "object" &&
@@ -46,7 +48,9 @@ export function maybeRenderDuckDbExtensionRemediationCommand(
   if (
     isDuckDbExtensionUnavailableError(error) &&
     formatSupportsManagedDuckDbExtensionInstall(format) &&
-    canSuggestManagedDuckDbExtensionInstall(error instanceof Error ? error : new Error(String(error)))
+    canSuggestManagedDuckDbExtensionInstall(
+      error instanceof Error ? error : new Error(String(error)),
+    )
   ) {
     renderDuckDbExtensionRemediationCommand(runtime, format);
   }

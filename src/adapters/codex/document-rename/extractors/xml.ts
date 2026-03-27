@@ -4,7 +4,10 @@ import type { DocumentTitleEvidence } from "../types";
 import { MAX_TITLE_CANDIDATES } from "../types";
 import { extractHtmlTextLines, firstParagraph, stripHtmlTags, toSingleLine } from "./shared";
 
-export function extractXmlEvidence(path: string, content: string): DocumentTitleEvidence | { reason: string } {
+export function extractXmlEvidence(
+  path: string,
+  content: string,
+): DocumentTitleEvidence | { reason: string } {
   const titleCandidates: string[] = [];
   const warnings: string[] = [];
 

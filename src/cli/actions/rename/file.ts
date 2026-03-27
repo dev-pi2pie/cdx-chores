@@ -1,4 +1,7 @@
-import { resolveAutoCodexFlagsForFilePath, resolveCodexFlagsFromCliOptions } from "../../rename-interactive-router";
+import {
+  resolveAutoCodexFlagsForFilePath,
+  resolveCodexFlagsFromCliOptions,
+} from "../../rename-interactive-router";
 import {
   type RenameSerialOrder,
   type RenameSerialScope,
@@ -13,10 +16,7 @@ import {
   printRenameFileCodexSummary,
   runRenameCodexAnalysis,
 } from "./codex";
-import {
-  resolveEffectivePattern,
-  writeSingleRenameDryRunPlanCsv,
-} from "./plan-output";
+import { resolveEffectivePattern, writeSingleRenameDryRunPlanCsv } from "./plan-output";
 import {
   printRenameFileApplyFooter,
   printRenameFileDryRunFooter,

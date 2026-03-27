@@ -91,7 +91,10 @@ export function printRenameBatchDryRunFooter(
 ): void {
   printLine(runtime.stdout);
   if (options.truncated) {
-    printLine(runtime.stdout, "Full review: use the generated plan CSV for the complete rename list.");
+    printLine(
+      runtime.stdout,
+      "Full review: use the generated plan CSV for the complete rename list.",
+    );
   }
   printLine(runtime.stdout, `Plan CSV: ${displayPath(runtime, options.planCsvPath)}`);
   printLine(runtime.stdout, "Dry run only. No files were renamed.");

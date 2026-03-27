@@ -6,7 +6,12 @@ import { describe, expect, test } from "bun:test";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
-import { REPO_ROOT, runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import {
+  REPO_ROOT,
+  runCli,
+  toRepoRelativePath,
+  withTempFixtureDir,
+} from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
@@ -21,10 +26,9 @@ async function createHeaderSuggestionStub(options: {
   workingDirectory: string;
 }): Promise<string> {
   const stubPath = join(options.workingDirectory, "header-suggest-stub.mjs");
-  const promptWrite =
-    options.promptPath
-      ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
-      : "";
+  const promptWrite = options.promptPath
+    ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
+    : "";
   const script = `#!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 
@@ -149,22 +153,26 @@ describe("CLI data extract command", () => {
       const outputPath = join(fixtureDir, "messy.clean.csv");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -511,7 +519,9 @@ process.stdout.write(JSON.stringify({
     ]);
 
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("--codex-suggest-shape cannot be used together with --header-row");
+    expect(result.stderr).toContain(
+      "--codex-suggest-shape cannot be used together with --header-row",
+    );
   });
 
   test("reuses an accepted header-mapping artifact end to end", async () => {
@@ -522,21 +532,25 @@ process.stdout.write(JSON.stringify({
       await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "csv",
-            path: toRepoRelativePath(inputPath),
+        `${JSON.stringify(
+          {
+            input: {
+              format: "csv",
+              path: toRepoRelativePath(inputPath),
+            },
+            mappings: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "status" },
+            ],
+            metadata: {
+              artifactType: "data-header-mapping",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            version: 1,
           },
-          mappings: [
-            { from: "column_1", to: "id" },
-            { from: "column_2", to: "status" },
-          ],
-          metadata: {
-            artifactType: "data-header-mapping",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -570,22 +584,26 @@ process.stdout.write(JSON.stringify({
       const outputPath = join(fixtureDir, "messy.clean.csv");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 

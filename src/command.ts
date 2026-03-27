@@ -93,7 +93,11 @@ export async function runCli(
     .showHelpAfterError()
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
     .option("--no-color", "Disable ANSI colors", false)
-    .version(getFormattedVersionLabel(cliRuntime.colorEnabled), "-v, --version", "Show version information");
+    .version(
+      getFormattedVersionLabel(cliRuntime.colorEnabled),
+      "-v, --version",
+      "Show version information",
+    );
 
   registerCliCommands(program, cliRuntime);
 

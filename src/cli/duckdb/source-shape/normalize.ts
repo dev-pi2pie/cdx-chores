@@ -17,21 +17,15 @@ export {
   normalizeOptionalPositiveInteger,
 } from "../header-mapping/normalize";
 
-export function ensureKnownSourceShapeInputFormat(
-  value: unknown,
-  context: string,
-): "excel" {
+export function ensureKnownSourceShapeInputFormat(value: unknown, context: string): "excel" {
   const normalized = ensureNonEmptyString(value, context);
   if (normalized === "excel") {
     return normalized;
   }
-  throw new CliError(
-    `Invalid source shape artifact: ${context} must be excel.`,
-    {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    },
-  );
+  throw new CliError(`Invalid source shape artifact: ${context} must be excel.`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
 }
 
 export function throwUnsupportedSourceShapeVersion(
@@ -51,7 +45,9 @@ export function createSourceShapeInputReference(options: {
   inputPath: string;
   source: string;
 }): DataSourceShapeInputReference {
-  const normalizedRelativePath = normalizeArtifactPath(relative(options.cwd, options.inputPath) || ".");
+  const normalizedRelativePath = normalizeArtifactPath(
+    relative(options.cwd, options.inputPath) || ".",
+  );
   return {
     format: options.format,
     path: normalizedRelativePath,

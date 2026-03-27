@@ -27,8 +27,8 @@ export function normalizeAndValidateAcceptedHeaderMappings(options: {
 }): DataHeaderMappingEntry[] {
   const availableColumns = new Set(options.availableColumns);
   const usedTargets = new Set(
-    options.availableColumns.filter((column) =>
-      !options.mappings.some((mapping) => mapping.from === column),
+    options.availableColumns.filter(
+      (column) => !options.mappings.some((mapping) => mapping.from === column),
     ),
   );
   const seenFrom = new Set<string>();
@@ -40,10 +40,13 @@ export function normalizeAndValidateAcceptedHeaderMappings(options: {
       ensureNonEmptyString(mapping.to, "mappings[].to"),
     );
     if (!normalizedTarget) {
-      throw new CliError("Invalid header mapping: mappings[].to must normalize to a non-empty identifier.", {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
+      throw new CliError(
+        "Invalid header mapping: mappings[].to must normalize to a non-empty identifier.",
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
     }
     if (!availableColumns.has(from)) {
       throw new CliError(`Unknown header mapping source column: ${from}.`, {
@@ -200,10 +203,13 @@ function parseDataHeaderMappingArtifact(
   });
 
   if (mappings.some((mapping) => mapping.to.length === 0)) {
-    throw new CliError("Invalid header mapping artifact: mappings[].to must normalize to a non-empty identifier.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "Invalid header mapping artifact: mappings[].to must normalize to a non-empty identifier.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   return {
@@ -219,7 +225,9 @@ function parseDataHeaderMappingArtifact(
   };
 }
 
-export async function readDataHeaderMappingArtifact(path: string): Promise<DataHeaderMappingArtifact> {
+export async function readDataHeaderMappingArtifact(
+  path: string,
+): Promise<DataHeaderMappingArtifact> {
   let raw: string;
   try {
     raw = await readFile(path, "utf8");
@@ -253,7 +261,9 @@ function mergeDataHeaderMappingArtifacts(
     throwUnsupportedHeaderMappingVersion(existing.version, { rewriting: true });
   }
 
-  const existingMappingsByFrom = new Map(existing.mappings.map((mapping) => [mapping.from, mapping]));
+  const existingMappingsByFrom = new Map(
+    existing.mappings.map((mapping) => [mapping.from, mapping]),
+  );
 
   return {
     ...existing,
@@ -334,10 +344,13 @@ export function resolveReusableHeaderMappings(options: {
     actual.range === expected.range;
 
   if (!exactMatch) {
-    throw new CliError("Header mapping artifact does not match the current input context exactly.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "Header mapping artifact does not match the current input context exactly.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   return options.artifact.mappings.map((mapping) => ({ ...mapping }));

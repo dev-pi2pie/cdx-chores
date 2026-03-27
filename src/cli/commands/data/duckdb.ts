@@ -1,12 +1,17 @@
 import type { Command } from "commander";
 
 import { actionDataDuckDbDoctor, actionDataDuckDbExtensionInstall } from "../../actions";
-import { DUCKDB_MANAGED_EXTENSION_NAMES, type DuckDbManagedExtensionName } from "../../duckdb/extensions";
+import {
+  DUCKDB_MANAGED_EXTENSION_NAMES,
+  type DuckDbManagedExtensionName,
+} from "../../duckdb/extensions";
 import { parseDuckDbManagedExtensionOption } from "../../options/parsers";
 import type { CliRuntime } from "../../types";
 
 export function registerDataDuckDbCommands(dataCommand: Command, runtime: CliRuntime): void {
-  const duckdbCommand = dataCommand.command("duckdb").description("DuckDB extension inspection and setup utilities");
+  const duckdbCommand = dataCommand
+    .command("duckdb")
+    .description("DuckDB extension inspection and setup utilities");
 
   duckdbCommand
     .command("doctor")
@@ -23,7 +28,11 @@ export function registerDataDuckDbCommands(dataCommand: Command, runtime: CliRun
   duckdbExtensionCommand
     .command("install")
     .description("Install a managed DuckDB extension for the current runtime")
-    .argument("[name]", `Extension name (${DUCKDB_MANAGED_EXTENSION_NAMES.join(", ")})`, parseDuckDbManagedExtensionOption)
+    .argument(
+      "[name]",
+      `Extension name (${DUCKDB_MANAGED_EXTENSION_NAMES.join(", ")})`,
+      parseDuckDbManagedExtensionOption,
+    )
     .option("--all-supported", "Install all managed DuckDB extensions", false)
     .action(
       async (

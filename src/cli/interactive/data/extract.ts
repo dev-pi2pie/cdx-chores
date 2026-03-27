@@ -14,10 +14,7 @@ import {
   promptOptionalSourceSelection,
   reviewInteractiveHeaderMappings,
 } from "../data-query";
-import {
-  formatDefaultOutputPathHint,
-  promptRequiredPathWithConfig,
-} from "../../prompts/path";
+import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { InteractivePathPromptContext } from "../shared";
 
 type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";
@@ -82,7 +79,10 @@ function renderInteractiveExtractWriteSummary(
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Extraction write summary");
   printLine(runtime.stderr, "");
-  printLine(runtime.stderr, `- input: ${displayPath(runtime, resolveFromCwd(runtime, options.inputPath))}`);
+  printLine(
+    runtime.stderr,
+    `- input: ${displayPath(runtime, resolveFromCwd(runtime, options.inputPath))}`,
+  );
   if (options.selectedSource) {
     printLine(runtime.stderr, `- source: ${options.selectedSource}`);
   }
@@ -104,7 +104,10 @@ function renderInteractiveExtractWriteSummary(
     }`,
   );
   printLine(runtime.stderr, `- output format: ${options.outputFormat.toUpperCase()}`);
-  printLine(runtime.stderr, `- output: ${displayPath(runtime, resolveFromCwd(runtime, options.outputPath))}`);
+  printLine(
+    runtime.stderr,
+    `- output: ${displayPath(runtime, resolveFromCwd(runtime, options.outputPath))}`,
+  );
   printLine(runtime.stderr, `- overwrite: ${options.overwrite ? "yes" : "no"}`);
 }
 
@@ -121,7 +124,11 @@ async function confirmInteractiveExtractWrite(
   },
 ): Promise<InteractiveExtractWritePlan | undefined> {
   while (true) {
-    const outputPlan = await promptInteractiveExtractOutput(runtime, options.inputPath, pathPromptContext);
+    const outputPlan = await promptInteractiveExtractOutput(
+      runtime,
+      options.inputPath,
+      pathPromptContext,
+    );
     renderInteractiveExtractWriteSummary(runtime, {
       ...options,
       outputPath: outputPlan.output,
@@ -213,8 +220,12 @@ export async function runInteractiveDataExtract(
       ...(sourceShape.selectedNoHeader ? { noHeader: true } : {}),
       output: outputOptions.output,
       overwrite: outputOptions.overwrite,
-      ...(sourceShape.selectedBodyStartRow !== undefined ? { bodyStartRow: sourceShape.selectedBodyStartRow } : {}),
-      ...(sourceShape.selectedHeaderRow !== undefined ? { headerRow: sourceShape.selectedHeaderRow } : {}),
+      ...(sourceShape.selectedBodyStartRow !== undefined
+        ? { bodyStartRow: sourceShape.selectedBodyStartRow }
+        : {}),
+      ...(sourceShape.selectedHeaderRow !== undefined
+        ? { headerRow: sourceShape.selectedHeaderRow }
+        : {}),
       ...(sourceShape.selectedRange ? { range: sourceShape.selectedRange } : {}),
       ...(selectedSource ? { source: selectedSource } : {}),
     });

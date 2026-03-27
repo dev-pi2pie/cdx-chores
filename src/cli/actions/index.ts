@@ -5,10 +5,7 @@ export type { DataPreviewOptions } from "./data-preview";
 export { actionDataParquetPreview } from "./data-parquet-preview";
 export type { DataParquetPreviewOptions } from "./data-parquet-preview";
 export { actionDataDuckDbDoctor, actionDataDuckDbExtensionInstall } from "./data-duckdb";
-export type {
-  DataDuckDbDoctorOptions,
-  DataDuckDbExtensionInstallOptions,
-} from "./data-duckdb";
+export type { DataDuckDbDoctorOptions, DataDuckDbExtensionInstallOptions } from "./data-duckdb";
 export { actionDataExtract } from "./data-extract";
 export type { DataExtractOptions } from "./data-extract";
 export { actionDataQuery } from "./data-query";

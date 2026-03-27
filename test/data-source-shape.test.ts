@@ -39,25 +39,29 @@ describe("data source shape artifacts", () => {
       const artifactPath = join(fixtureDir, "data-source-shape-test.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          extraTopLevel: "preserve-me",
-          input: {
-            extraInputField: "keep-me",
-            format: "excel",
-            path: "examples/playground/data-extract/messy.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            extraTopLevel: "preserve-me",
+            input: {
+              extraInputField: "keep-me",
+              format: "excel",
+              path: "examples/playground/data-extract/messy.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              extraMetadata: "preserve-metadata",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              note: "keep-this-too",
+              range: "B7:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            extraMetadata: "preserve-metadata",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            note: "keep-this-too",
-            range: "B7:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -77,7 +81,9 @@ describe("data source shape artifacts", () => {
 
       const rewritten = JSON.parse(await readFile(artifactPath, "utf8")) as Record<string, unknown>;
       expect(rewritten.extraTopLevel).toBe("preserve-me");
-      expect((rewritten.metadata as Record<string, unknown>).extraMetadata).toBe("preserve-metadata");
+      expect((rewritten.metadata as Record<string, unknown>).extraMetadata).toBe(
+        "preserve-metadata",
+      );
       expect((rewritten.input as Record<string, unknown>).extraInputField).toBe("keep-me");
       expect((rewritten.shape as Record<string, unknown>).note).toBe("keep-this-too");
       expect((rewritten.shape as Record<string, unknown>).range).toBe("C7:F11");
@@ -89,22 +95,26 @@ describe("data source shape artifacts", () => {
       const artifactPath = join(fixtureDir, "data-source-shape-test.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "examples/playground/data-extract/messy.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "examples/playground/data-extract/messy.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B7:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B7:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -132,21 +142,25 @@ describe("data source shape artifacts", () => {
       const artifactPath = join(fixtureDir, "data-source-shape-test.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "examples/playground/data-extract/stacked-merged-band.xlsx",
-            source: "Sheet1",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "examples/playground/data-extract/stacked-merged-band.xlsx",
+              source: "Sheet1",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-19T00:00:00.000Z",
+            },
+            shape: {
+              bodyStartRow: 10,
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-19T00:00:00.000Z",
-          },
-          shape: {
-            bodyStartRow: 10,
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -202,7 +216,8 @@ describe("data source shape artifacts", () => {
             body_start_row: null,
             header_row: null,
             range: "A1:B3",
-            reasoning_summary: "The range is sufficient, and the automatic header row is acceptable.",
+            reasoning_summary:
+              "The range is sufficient, and the automatic header row is acceptable.",
           }),
         workingDirectory: REPO_ROOT,
       }),
@@ -253,12 +268,14 @@ describe("data source shape artifacts", () => {
             body_start_row: 10,
             header_row: null,
             range: null,
-            reasoning_summary: "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
+            reasoning_summary:
+              "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
           }),
         workingDirectory: REPO_ROOT,
       }),
     ).resolves.toEqual({
-      reasoningSummary: "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
+      reasoningSummary:
+        "The existing rectangle and header row are fine, but the logical body starts at worksheet row 10.",
       shape: {
         bodyStartRow: 10,
       },
@@ -351,7 +368,9 @@ describe("data source shape artifacts", () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(CliError);
-      expect((error as CliError).message).toContain("does not match the current input context exactly");
+      expect((error as CliError).message).toContain(
+        "does not match the current input context exactly",
+      );
     }
   });
 

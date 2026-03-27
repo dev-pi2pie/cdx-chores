@@ -47,7 +47,11 @@ describe("cli action modules: rename cleanup analyzer evidence", () => {
       await writeFile(join(dirPath, "report uid-abcd2345jk final.txt"), "c", "utf8");
       await writeFile(join(dirPath, "ignore-me.txt"), "d", "utf8");
       await writeFile(join(nestedPath, "app-00003.log"), "e", "utf8");
-      await writeFile(join(nestedPath, "rename-plan-20260303T070111Z-07e91641.csv"), "plan", "utf8");
+      await writeFile(
+        join(nestedPath, "rename-plan-20260303T070111Z-07e91641.csv"),
+        "plan",
+        "utf8",
+      );
 
       const evidence = await collectRenameCleanupAnalyzerEvidence(runtime, {
         path: "cleanup-dir",
@@ -166,7 +170,11 @@ describe("cli action modules: rename cleanup analyzer evidence", () => {
       expectNoOutput();
       expect(evidence.totalCandidateCount).toBe(5);
       expect(evidence.sampledCount).toBe(3);
-      expect(evidence.sampleNames).toEqual(["a-nested/a-1.log", "a-nested/a-2.log", "b-nested/b-1.log"]);
+      expect(evidence.sampleNames).toEqual([
+        "a-nested/a-1.log",
+        "a-nested/a-2.log",
+        "b-nested/b-1.log",
+      ]);
     });
   });
 });

@@ -4,7 +4,10 @@ import { parseTomlFrontmatter } from "../../../../markdown/toml-simple";
 import type { DocumentTitleEvidence } from "../types";
 import { extractStructuredObjectEvidence } from "./shared";
 
-export function extractJsonEvidence(path: string, content: string): DocumentTitleEvidence | { reason: string } {
+export function extractJsonEvidence(
+  path: string,
+  content: string,
+): DocumentTitleEvidence | { reason: string } {
   try {
     const parsed = JSON.parse(content) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -20,7 +23,10 @@ export function extractJsonEvidence(path: string, content: string): DocumentTitl
   }
 }
 
-export function extractYamlEvidence(path: string, content: string): DocumentTitleEvidence | { reason: string } {
+export function extractYamlEvidence(
+  path: string,
+  content: string,
+): DocumentTitleEvidence | { reason: string } {
   try {
     const doc = parseYamlDocument(content, { prettyErrors: false });
     if (doc.errors.length > 0) {
@@ -40,7 +46,10 @@ export function extractYamlEvidence(path: string, content: string): DocumentTitl
   }
 }
 
-export function extractTomlEvidence(path: string, content: string): DocumentTitleEvidence | { reason: string } {
+export function extractTomlEvidence(
+  path: string,
+  content: string,
+): DocumentTitleEvidence | { reason: string } {
   try {
     const parsed = parseTomlFrontmatter(content);
     if (!parsed) {

@@ -2,9 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import {
-  type DuckDbManagedExtensionName,
-} from "../extensions";
+import { type DuckDbManagedExtensionName } from "../extensions";
 import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "./types";
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {

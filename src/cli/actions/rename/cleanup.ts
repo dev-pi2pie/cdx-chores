@@ -99,9 +99,7 @@ function normalizeCleanupConflictStrategy(
     return "skip";
   }
 
-  if (
-    (RENAME_CLEANUP_CONFLICT_STRATEGY_VALUES as readonly string[]).includes(strategy)
-  ) {
+  if ((RENAME_CLEANUP_CONFLICT_STRATEGY_VALUES as readonly string[]).includes(strategy)) {
     return strategy;
   }
 

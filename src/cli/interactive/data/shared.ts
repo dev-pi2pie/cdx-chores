@@ -50,8 +50,12 @@ export async function promptLightweightDataOutput(options: {
   message: string;
   pathPromptContext: InteractivePathPromptContext;
   runtime: CliRuntime;
-}): Promise<string> {
-  const outputHint = formatDefaultOutputPathHint(options.runtime, options.inputPath, options.extension);
+}): Promise<string | undefined> {
+  const outputHint = formatDefaultOutputPathHint(
+    options.runtime,
+    options.inputPath,
+    options.extension,
+  );
   return await promptOptionalOutputPathChoice({
     message: options.message,
     defaultHint: outputHint,

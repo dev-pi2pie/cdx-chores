@@ -5,7 +5,10 @@ import type { DocumentTitleEvidence } from "../types";
 import { MAX_HEADINGS, MAX_TITLE_CANDIDATES } from "../types";
 import { firstParagraph, getStringCandidate, toSingleLine } from "./shared";
 
-export function extractMarkdownEvidence(path: string, content: string): DocumentTitleEvidence | { reason: string } {
+export function extractMarkdownEvidence(
+  path: string,
+  content: string,
+): DocumentTitleEvidence | { reason: string } {
   const parsed = parseMarkdown(content);
   const titleCandidates: string[] = [];
   const headings: string[] = [];

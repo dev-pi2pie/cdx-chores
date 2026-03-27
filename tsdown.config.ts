@@ -10,7 +10,7 @@ export default defineConfig([
     dts: true,
     clean: true,
     platform: "node",
-    target: "node20",
+    target: "node22",
     fixedExtension: true,
     deps: {
       onlyBundle: ["picocolors"],
@@ -26,7 +26,7 @@ export default defineConfig([
     clean: false,
     sourcemap: true,
     platform: "node",
-    target: "node20",
+    target: "node22",
     hash: false,
     fixedExtension: true,
     deps: {
@@ -43,7 +43,7 @@ export default defineConfig([
     dts: false,
     clean: false,
     platform: "node",
-    target: "node20",
+    target: "node22",
     fixedExtension: true,
     deps: {
       onlyBundle: ["picocolors"],

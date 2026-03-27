@@ -5,7 +5,11 @@ import { CliError } from "../../errors";
 import { probeDuckDbManagedExtension, type DuckDbExtensionProbe } from "../extensions";
 import { createDuckDbConnection, toErrorMessage } from "./formats";
 import { prepareDataQuerySource } from "./prepare-source";
-import type { DataQueryInputFormat, DataQuerySourceIntrospection, DataQuerySourceShape } from "./types";
+import type {
+  DataQueryInputFormat,
+  DataQuerySourceIntrospection,
+  DataQuerySourceShape,
+} from "./types";
 
 export async function collectDataQuerySourceIntrospection(
   connection: DuckDBConnection,
@@ -35,11 +39,13 @@ export async function collectDataQuerySourceIntrospection(
     const columnNames = reader.deduplicatedColumnNames();
     const columnTypes = reader.columnTypes();
     const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
-    const visibleRows = allRows.slice(0, sampleRowLimit).map((row) =>
-      Object.fromEntries(
-        columnNames.map((column) => [column, stringifyPreviewValue(row[column])]),
-      ),
-    );
+    const visibleRows = allRows
+      .slice(0, sampleRowLimit)
+      .map((row) =>
+        Object.fromEntries(
+          columnNames.map((column) => [column, stringifyPreviewValue(row[column])]),
+        ),
+      );
 
     return {
       columns: columnNames.map((name, index) => ({

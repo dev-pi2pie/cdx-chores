@@ -14,11 +14,7 @@ describe("codex shared adapter helpers", () => {
   });
 
   test("chunkItems groups arrays by chunk size", () => {
-    expect(chunkItems([1, 2, 3, 4, 5], 2)).toEqual([
-      [1, 2],
-      [3, 4],
-      [5],
-    ]);
+    expect(chunkItems([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
     expect(chunkItems([1, 2, 3], 0)).toEqual([[1, 2, 3]]);
   });
 

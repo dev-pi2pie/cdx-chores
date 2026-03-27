@@ -12,7 +12,10 @@ export function isSourceShapeFormat(format: DataQueryInputFormat): format is "ex
   return format === "excel";
 }
 
-export function classifySourceShapeSuggestionFailure(message: string): { code: string; prefix: string } {
+export function classifySourceShapeSuggestionFailure(message: string): {
+  code: string;
+  prefix: string;
+} {
   if (
     /codex exec exited/i.test(message) ||
     /missing optional dependency/i.test(message) ||
@@ -34,7 +37,11 @@ export function classifySourceShapeSuggestionFailure(message: string): { code: s
   };
 }
 
-export function formatSourceShapeFlags(shape: { bodyStartRow?: number; headerRow?: number; range?: string }): string {
+export function formatSourceShapeFlags(shape: {
+  bodyStartRow?: number;
+  headerRow?: number;
+  range?: string;
+}): string {
   return [
     ...(shape.range ? [`--range ${shape.range}`] : []),
     ...(shape.bodyStartRow !== undefined ? [`--body-start-row ${shape.bodyStartRow}`] : []),

@@ -23,7 +23,10 @@ export async function promptInteractiveInputFormat(
   }
 
   if (!detected) {
-    printLine(runtime.stdout, "Automatic format detection could not determine the query input type.");
+    printLine(
+      runtime.stdout,
+      "Automatic format detection could not determine the query input type.",
+    );
     return await select<DataQueryInputFormat>({
       message: "Input format",
       choices: DATA_QUERY_INPUT_FORMAT_VALUES.map((format) => ({

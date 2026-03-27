@@ -60,7 +60,11 @@ export function parseTomlFrontmatter(frontmatter: string): Record<string, unknow
       return null;
     }
 
-    const tripleDelimiter = valueRaw.startsWith('"""') ? '"""' : valueRaw.startsWith("'''") ? "'''" : null;
+    const tripleDelimiter = valueRaw.startsWith('"""')
+      ? '"""'
+      : valueRaw.startsWith("'''")
+        ? "'''"
+        : null;
     if (tripleDelimiter) {
       const closingIndex = valueRaw.indexOf(tripleDelimiter, tripleDelimiter.length);
       if (closingIndex !== -1) {
@@ -69,21 +73,21 @@ export function parseTomlFrontmatter(frontmatter: string): Record<string, unknow
         valueRaw = `${valueRaw.slice(0, closingIndex + tripleDelimiter.length)}${strippedAfter}`;
       } else {
         const delimiter = tripleDelimiter;
-      let combined = valueRaw;
-      let closed = false;
-      while (index + 1 < lines.length) {
-        index += 1;
-        const nextLine = lines[index] ?? "";
-        combined += `\n${nextLine}`;
-        if (new RegExp(`${delimiter}\\s*$`).test(nextLine)) {
-          closed = true;
-          break;
+        let combined = valueRaw;
+        let closed = false;
+        while (index + 1 < lines.length) {
+          index += 1;
+          const nextLine = lines[index] ?? "";
+          combined += `\n${nextLine}`;
+          if (new RegExp(`${delimiter}\\s*$`).test(nextLine)) {
+            closed = true;
+            break;
+          }
         }
-      }
-      if (!closed) {
-        return null;
-      }
-      valueRaw = combined;
+        if (!closed) {
+          return null;
+        }
+        valueRaw = combined;
       }
     }
 

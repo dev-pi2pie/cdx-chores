@@ -141,8 +141,10 @@ async function extractPdfEvidence(path: string): Promise<SpikeResult> {
   let pdfDocument: any;
   try {
     const fileBytes = await readFile(path);
-    const standardFontDataUrl = new URL("../../node_modules/pdfjs-dist/standard_fonts/", import.meta.url)
-      .href;
+    const standardFontDataUrl = new URL(
+      "../../node_modules/pdfjs-dist/standard_fonts/",
+      import.meta.url,
+    ).href;
     const loadingTask = pdfjs.getDocument({
       data: new Uint8Array(fileBytes),
       // Keep spike simple and local; worker-less mode is sufficient for extraction.
@@ -251,7 +253,9 @@ async function extractPdfEvidence(path: string): Promise<SpikeResult> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const targets =
-    args.length > 0 ? args : ["examples/playground/docs/tt.docx", "examples/playground/docs/xxx.pdf"];
+    args.length > 0
+      ? args
+      : ["examples/playground/docs/tt.docx", "examples/playground/docs/xxx.pdf"];
 
   const results: SpikeResult[] = [];
   for (const target of targets) {

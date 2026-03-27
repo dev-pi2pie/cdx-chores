@@ -79,7 +79,10 @@ export function formatPlannedRenamePreviewLine(plan: PlannedRename): string {
   return plan.changed ? `- ${fromName} -> ${toName}` : `- ${fromName} (unchanged)`;
 }
 
-export function formatSkippedRenamePreviewLine(runtime: CliRuntime, item: SkippedRenameItem): string {
+export function formatSkippedRenamePreviewLine(
+  runtime: CliRuntime,
+  item: SkippedRenameItem,
+): string {
   return `- ${formatPathForDisplay(runtime, item.path)} (skipped: ${item.reason})`;
 }
 
@@ -154,7 +157,10 @@ export function resolveRenamePreviewBudget(runtime: CliRuntime): RenamePreviewBu
   if (typeof stream.rows === "number" && Number.isFinite(stream.rows)) {
     rowCount = Math.min(
       DEFAULT_RENAME_PREVIEW_MAX_ROWS,
-      Math.max(DEFAULT_RENAME_PREVIEW_MIN_ROWS, Math.floor(stream.rows) - DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS),
+      Math.max(
+        DEFAULT_RENAME_PREVIEW_MIN_ROWS,
+        Math.floor(stream.rows) - DEFAULT_RENAME_PREVIEW_RESERVED_TERMINAL_ROWS,
+      ),
     );
   }
 
@@ -269,10 +275,16 @@ export function composeCompactRenameBatchPreviewData(
   });
 
   const renameLines: string[] = [];
-  appendAll(renameLines, renameSlice.head.map((row) => row.line));
+  appendAll(
+    renameLines,
+    renameSlice.head.map((row) => row.line),
+  );
   if (renameSlice.truncated) {
     renameLines.push("...");
-    appendAll(renameLines, renameSlice.tail.map((row) => row.line));
+    appendAll(
+      renameLines,
+      renameSlice.tail.map((row) => row.line),
+    );
   }
 
   return {
@@ -325,10 +337,16 @@ export function composeDetailedSkippedPreviewData(
   });
 
   const skippedLines: string[] = [];
-  appendAll(skippedLines, slice.head.map((row) => row.line));
+  appendAll(
+    skippedLines,
+    slice.head.map((row) => row.line),
+  );
   if (slice.truncated) {
     skippedLines.push("...");
-    appendAll(skippedLines, slice.tail.map((row) => row.line));
+    appendAll(
+      skippedLines,
+      slice.tail.map((row) => row.line),
+    );
   }
 
   return {

@@ -33,4 +33,3 @@ declare module "papaparse" {
   const Papa: PapaStatic;
   export default Papa;
 }
-

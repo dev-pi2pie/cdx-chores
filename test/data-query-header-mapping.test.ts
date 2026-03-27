@@ -60,24 +60,28 @@ describe("data header mapping artifacts", () => {
       const artifactPath = join(fixtureDir, "data-header-mapping-test.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          extraTopLevel: "preserve-me",
-          input: {
-            extraInputField: "keep-me",
-            format: "csv",
-            path: "examples/playground/data.csv",
+        `${JSON.stringify(
+          {
+            extraTopLevel: "preserve-me",
+            input: {
+              extraInputField: "keep-me",
+              format: "csv",
+              path: "examples/playground/data.csv",
+            },
+            mappings: [
+              { confidence: 0.92, from: "column_1", to: "id" },
+              { note: "keep-this-too", from: "column_2", to: "name" },
+            ],
+            metadata: {
+              artifactType: "data-header-mapping",
+              extraMetadata: "preserve-metadata",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            version: 1,
           },
-          mappings: [
-            { confidence: 0.92, from: "column_1", to: "id" },
-            { note: "keep-this-too", from: "column_2", to: "name" },
-          ],
-          metadata: {
-            artifactType: "data-header-mapping",
-            extraMetadata: "preserve-metadata",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -97,7 +101,9 @@ describe("data header mapping artifacts", () => {
 
       const rewritten = JSON.parse(await readFile(artifactPath, "utf8")) as Record<string, unknown>;
       expect(rewritten.extraTopLevel).toBe("preserve-me");
-      expect((rewritten.metadata as Record<string, unknown>).extraMetadata).toBe("preserve-metadata");
+      expect((rewritten.metadata as Record<string, unknown>).extraMetadata).toBe(
+        "preserve-metadata",
+      );
       expect((rewritten.input as Record<string, unknown>).extraInputField).toBe("keep-me");
       expect((rewritten.mappings as Array<Record<string, unknown>>)[0]?.confidence).toBe(0.92);
       expect((rewritten.mappings as Array<Record<string, unknown>>)[1]?.note).toBe("keep-this-too");
@@ -178,7 +184,9 @@ describe("data header mapping artifacts", () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(CliError);
-      expect((error as CliError).message).toContain("does not match the current input context exactly");
+      expect((error as CliError).message).toContain(
+        "does not match the current input context exactly",
+      );
     }
   });
 

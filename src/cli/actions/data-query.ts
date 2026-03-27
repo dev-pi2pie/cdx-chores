@@ -88,17 +88,23 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
   }
 
   if (options.codexSuggestHeaders && options.output) {
-    throw new CliError("--codex-suggest-headers stops after writing a header mapping artifact and cannot be used with --output.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--codex-suggest-headers stops after writing a header mapping artifact and cannot be used with --output.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   if (options.codexSuggestHeaders && options.json) {
-    throw new CliError("--codex-suggest-headers stops before SQL execution and cannot be used with --json.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--codex-suggest-headers stops before SQL execution and cannot be used with --json.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   if (options.writeHeaderMapping && !options.codexSuggestHeaders) {
@@ -109,31 +115,43 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
   }
 
   if (options.sourceShape?.trim() && options.source?.trim()) {
-    throw new CliError("--source-shape cannot be used together with --source in the current replay flow.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--source-shape cannot be used together with --source in the current replay flow.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   if (options.sourceShape?.trim() && options.range?.trim()) {
-    throw new CliError("--source-shape cannot be used together with --range in the current replay flow.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--source-shape cannot be used together with --range in the current replay flow.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   if (options.sourceShape?.trim() && options.headerRow !== undefined) {
-    throw new CliError("--source-shape cannot be used together with --header-row in the current replay flow.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--source-shape cannot be used together with --header-row in the current replay flow.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   if (options.sourceShape?.trim() && options.bodyStartRow !== undefined) {
-    throw new CliError("--source-shape cannot be used together with --body-start-row in the current replay flow.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "--source-shape cannot be used together with --body-start-row in the current replay flow.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 }
 
@@ -146,7 +164,9 @@ function normalizeSql(sql: string): string {
   return value.endsWith(";") ? value : value;
 }
 
-function normalizeCsvExportRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+function normalizeCsvExportRows(
+  rows: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
   return rows.map((row) =>
     Object.fromEntries(
       Object.entries(row).map(([key, value]) => {
@@ -162,13 +182,18 @@ function normalizeCsvExportRows(rows: Array<Record<string, unknown>>): Array<Rec
   );
 }
 
-export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOptions): Promise<void> {
+export async function actionDataQuery(
+  runtime: CliRuntime,
+  options: DataQueryOptions,
+): Promise<void> {
   validateDataQueryOptions(options);
 
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
   await ensureFileExists(inputPath, "Input");
 
-  const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
+  const outputPath = options.output?.trim()
+    ? resolveFromCwd(runtime, options.output.trim())
+    : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
@@ -297,7 +322,10 @@ export async function actionDataQuery(runtime: CliRuntime, options: DataQueryOpt
 
     if (options.json) {
       const result = await executeDataQueryForAllRows(connection, sql);
-      printLine(runtime.stdout, `${JSON.stringify(result.rows, null, options.pretty ? 2 : 0)}\n`.trimEnd());
+      printLine(
+        runtime.stdout,
+        `${JSON.stringify(result.rows, null, options.pretty ? 2 : 0)}\n`.trimEnd(),
+      );
       return;
     }
 

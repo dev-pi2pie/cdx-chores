@@ -68,7 +68,9 @@ export function parseDocxCoreProperties(xml: string): DocxCoreMetadata | undefin
   }
 }
 
-export function parseDocxExtendedPropertiesApplication(xml: string | undefined): string | undefined {
+export function parseDocxExtendedPropertiesApplication(
+  xml: string | undefined,
+): string | undefined {
   if (!xml) {
     return undefined;
   }

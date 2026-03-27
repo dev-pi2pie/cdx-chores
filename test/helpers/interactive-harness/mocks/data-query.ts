@@ -89,8 +89,7 @@ function buildCodexTemplate(options: {
   intent?: unknown;
 }): string {
   const schema =
-    Array.isArray(options.introspection?.columns) &&
-    options.introspection.columns.length > 0
+    Array.isArray(options.introspection?.columns) && options.introspection.columns.length > 0
       ? options.introspection.columns
           .slice(0, 8)
           .map((column) => `${column.name} (${column.type})`)
@@ -142,14 +141,15 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
       }
       return parsed;
     },
-    normalizeExcelRange: (value: unknown) => String(value ?? "").trim().toUpperCase(),
-    quoteSqlIdentifier: (value: unknown) =>
-      `"${String(value ?? "").replaceAll('"', '""')}"`,
+    normalizeExcelRange: (value: unknown) =>
+      String(value ?? "")
+        .trim()
+        .toUpperCase(),
+    quoteSqlIdentifier: (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`,
     createDuckDbConnection: async () => ({
       closeSync() {},
     }),
-    detectDataQueryInputFormat: () =>
-      context.scenario.dataQueryDetectedFormat ?? "csv",
+    detectDataQueryInputFormat: () => context.scenario.dataQueryDetectedFormat ?? "csv",
     listDataQuerySources: async () => context.scenario.dataQuerySources,
     collectDataQuerySourceIntrospection: async (
       _connection: unknown,
@@ -260,15 +260,11 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
       (mappings ?? [])
         .map((mapping) => ({
           ...mapping,
-          from:
-            String(mapping.from ?? "").trim() ||
-            String(availableColumns?.[0] ?? "column_1"),
+          from: String(mapping.from ?? "").trim() || String(availableColumns?.[0] ?? "column_1"),
           to: String(mapping.to ?? "").trim() || "edited_header",
         }))
         .filter((mapping) => mapping.to !== mapping.from),
-    suggestDataHeaderMappingsWithCodex: async (
-      options: HeaderSuggestionOptions,
-    ) => {
+    suggestDataHeaderMappingsWithCodex: async (options: HeaderSuggestionOptions) => {
       context.recordAction("data:query:header-suggest", {
         format: options.format,
         ...(options.introspection?.selectedHeaderRow !== undefined
@@ -302,9 +298,7 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
   }));
 
   mock.module(sourceShapeModuleUrl, () => ({
-    suggestDataSourceShapeWithCodex: async (
-      options: SourceShapeSuggestionOptions,
-    ) => {
+    suggestDataSourceShapeWithCodex: async (options: SourceShapeSuggestionOptions) => {
       context.recordAction("data:source-shape-suggest", {
         ...(options.currentHeaderRow !== undefined
           ? { currentHeaderRow: options.currentHeaderRow }
@@ -320,12 +314,14 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
         };
       }
 
-      return context.scenario.dataSourceShapeSuggestion ?? {
-        reasoningSummary: "The table starts at A1 and spans two columns.",
-        shape: {
-          range: "A1:B3",
-        },
-      };
+      return (
+        context.scenario.dataSourceShapeSuggestion ?? {
+          reasoningSummary: "The table starts at A1 and spans two columns.",
+          shape: {
+            range: "A1:B3",
+          },
+        }
+      );
     },
   }));
 }

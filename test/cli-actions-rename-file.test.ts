@@ -359,5 +359,4 @@ describe("cli action modules: rename file", () => {
       expect(csvText).toContain("project goal outline");
     });
   });
-
 });

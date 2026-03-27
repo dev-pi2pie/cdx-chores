@@ -25,7 +25,10 @@ function getDelimitedLabel(format: DelimitedFormat): string {
   return format.toUpperCase();
 }
 
-export function stringifyDelimitedRecords(rows: DelimitedRecord[], format: DelimitedFormat): string {
+export function stringifyDelimitedRecords(
+  rows: DelimitedRecord[],
+  format: DelimitedFormat,
+): string {
   if (rows.length === 0) {
     return "";
   }
@@ -38,7 +41,10 @@ export function stringifyDelimitedRecords(rows: DelimitedRecord[], format: Delim
   return withTrailingNewline(text);
 }
 
-export function stringifyDelimitedRows(rows: readonly (readonly unknown[])[], format: DelimitedFormat): string {
+export function stringifyDelimitedRows(
+  rows: readonly (readonly unknown[])[],
+  format: DelimitedFormat,
+): string {
   if (rows.length === 0) {
     return "";
   }
@@ -69,7 +75,9 @@ export function parseDelimited(text: string, format: DelimitedFormat): string[][
   }
 
   return parsed.data.map((row) =>
-    Array.isArray(row) ? row.map((cell) => (cell === null || cell === undefined ? "" : String(cell))) : [],
+    Array.isArray(row)
+      ? row.map((cell) => (cell === null || cell === undefined ? "" : String(cell)))
+      : [],
   );
 }
 

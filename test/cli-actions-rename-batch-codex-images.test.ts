@@ -3,7 +3,12 @@ import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
-import { createCapturedRuntime, createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  createTempFixtureDir,
+  REPO_ROOT,
+  toRepoRelativePath,
+} from "./helpers/cli-test-utils";
 import {
   captureRenamePlanCsvSnapshot,
   cleanupRenamePlanCsvSinceSnapshot,
@@ -51,7 +56,9 @@ describe("cli action modules: rename batch codex images", () => {
       expect(result.totalCount).toBe(1);
       expect(result.changedCount).toBe(1);
       expect(stdout.text).toContain("Codex: analyzing 1 image file(s)...");
-      expect(stdout.text).toContain("Codex image titles: 0/1 image file(s) suggested (fallback used for others)");
+      expect(stdout.text).toContain(
+        "Codex image titles: 0/1 image file(s) suggested (fallback used for others)",
+      );
       expect(stdout.text).toContain("Codex note: Codex unavailable in test");
       expect(stdout.text).toContain("- a.png -> img-");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");

@@ -230,10 +230,9 @@ function buildHyperlinkParagraph(text, relationshipId) {
 
 function buildDocxFiles(options) {
   const coreXml = buildCorePropertiesXml(options.metadata);
-  const appXml = options.includeAppProperties === false ? undefined : buildAppPropertiesXml(options.application);
-  const paragraphStyles = options.paragraphs
-    .map((paragraph) => paragraph.styleId)
-    .filter(Boolean);
+  const appXml =
+    options.includeAppProperties === false ? undefined : buildAppPropertiesXml(options.application);
+  const paragraphStyles = options.paragraphs.map((paragraph) => paragraph.styleId).filter(Boolean);
   const relationshipEntries = [
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>',
   ];
@@ -290,7 +289,9 @@ function buildMetadataRichDocxFiles() {
     paragraphs: [
       { styleId: "Heading1", text: "Goal" },
       { text: title },
-      { text: "This fixture exists to validate OOXML core metadata extraction and rename title ranking." },
+      {
+        text: "This fixture exists to validate OOXML core metadata extraction and rename title ranking.",
+      },
       { text: "It intentionally combines a weak generic heading with a stronger metadata title." },
     ],
   });
@@ -323,7 +324,8 @@ function buildHyperlinkHeavyDocxFiles() {
     ],
     extraBodyXml: `${buildHyperlinkParagraph("Pricing Portal", "rIdHyper1")}${buildHyperlinkParagraph("Onboarding Checklist", "rIdHyper2")}${buildHyperlinkParagraph("Support Escalation Guide", "rIdHyper3")}`,
     additionalFiles: {
-      "word/_rels/document.xml.rels": '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdHyper1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/pricing" TargetMode="External"/><Relationship Id="rIdHyper2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/onboarding" TargetMode="External"/><Relationship Id="rIdHyper3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/support" TargetMode="External"/></Relationships>',
+      "word/_rels/document.xml.rels":
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdHyper1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/pricing" TargetMode="External"/><Relationship Id="rIdHyper2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/onboarding" TargetMode="External"/><Relationship Id="rIdHyper3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/support" TargetMode="External"/></Relationships>',
     },
   });
 }

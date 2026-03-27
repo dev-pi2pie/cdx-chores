@@ -51,8 +51,7 @@ function renderWaitingStatusLine(
 ): void {
   const pc = createColors(colorEnabled);
   const normalizedMessage = normalizeAnalyzerStatusMessage(message);
-  const dots =
-    ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
+  const dots = ANALYZER_WAITING_FRAMES[tick % ANALYZER_WAITING_FRAMES.length] ?? "...";
   const content = ` ${pc.dim("Codex")} ${pc.white("Thinking")} ${pc.dim(normalizedMessage)} ${pc.gray(dots)} `;
   stream.write(`\r\x1b[2K${pc.bgBlack(content)}`);
 }
@@ -91,26 +90,26 @@ export function createInteractiveAnalyzerStatus(
   };
 
   return {
-      start(message) {
-        stopTimer();
-        currentMessage = message;
-        renderStatusLine(stream, currentMessage, colorEnabled);
-      },
-      update(message) {
-        stopTimer();
-        currentMessage = message;
-        renderStatusLine(stream, currentMessage, colorEnabled);
-      },
-      wait(message) {
-        stopTimer();
-        currentMessage = message;
-        tick = 0;
+    start(message) {
+      stopTimer();
+      currentMessage = message;
+      renderStatusLine(stream, currentMessage, colorEnabled);
+    },
+    update(message) {
+      stopTimer();
+      currentMessage = message;
+      renderStatusLine(stream, currentMessage, colorEnabled);
+    },
+    wait(message) {
+      stopTimer();
+      currentMessage = message;
+      tick = 0;
+      renderWaitingStatusLine(stream, currentMessage, tick, colorEnabled);
+      timer = setInterval(() => {
+        tick += 1;
         renderWaitingStatusLine(stream, currentMessage, tick, colorEnabled);
-        timer = setInterval(() => {
-          tick += 1;
-          renderWaitingStatusLine(stream, currentMessage, tick, colorEnabled);
-        }, ANALYZER_WAITING_INTERVAL_MS);
-      },
+      }, ANALYZER_WAITING_INTERVAL_MS);
+    },
     stop() {
       stopTimer();
       clearStatusLine(stream);

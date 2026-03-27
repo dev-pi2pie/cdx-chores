@@ -1,75 +1,75 @@
 @page {
-    size: A4 landscape;
-    margin: 12mm;
+  size: A4 landscape;
+  margin: 12mm;
 }
 
 @page {
-    margin: 16mm;
+  margin: 16mm;
 }
 
 body {
-    font-family: serif;
-    font-size: 11pt;
-    line-height: 1.35;
+  font-family: serif;
+  font-size: 11pt;
+  line-height: 1.35;
 }
 
 main,
 article,
 section {
-    display: block;
-    margin: 0;
-    padding: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
-    margin: 0.6em 0;
-    font-size: 9.5pt;
-    line-height: 1.25;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  margin: 0.6em 0;
+  font-size: 9.5pt;
+  line-height: 1.25;
 }
 
 th,
 td {
-    border: 1px solid #ccc;
-    padding: 4px 6px;
-    vertical-align: top;
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    /* legacy alias, safe */
-    word-break: normal;
-    hyphens: auto;
+  border: 1px solid #ccc;
+  padding: 4px 6px;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  /* legacy alias, safe */
+  word-break: normal;
+  hyphens: auto;
 }
 
 thead {
-    display: table-header-group;
+  display: table-header-group;
 }
 
 tr,
 th,
 td {
-    break-inside: avoid;
-    page-break-inside: avoid;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 pre,
 code {
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 td code,
 th code {
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    font-size: 0.92em;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-size: 0.92em;
 }
 
 img {
-    max-width: 100%;
-    height: auto;
+  max-width: 100%;
+  height: auto;
 }

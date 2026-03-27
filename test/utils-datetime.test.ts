@@ -18,9 +18,7 @@ function formatExpectedLocalOffset(date: Date): string {
 
 describe("datetime formatting helpers", () => {
   test("formatUtcFileDateTimeISO produces compact UTC ISO with Z", () => {
-    expect(formatUtcFileDateTimeISO(new Date("2026-03-01T09:15:30.000Z"))).toBe(
-      "20260301T091530Z",
-    );
+    expect(formatUtcFileDateTimeISO(new Date("2026-03-01T09:15:30.000Z"))).toBe("20260301T091530Z");
   });
 
   test("formatLocalFileDateTimeISO appends a numeric local offset", () => {

@@ -8,4 +8,3 @@ export function defaultOutputPath(inputPath: string, nextExtension: string): str
   }
   return `${inputPath.slice(0, -currentExt.length)}${extension}`;
 }
-

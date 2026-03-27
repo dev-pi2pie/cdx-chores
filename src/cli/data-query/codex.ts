@@ -56,7 +56,10 @@ function normalizePromptSampleRows(rows: readonly Record<string, string>[]): str
 
   return rows.map((row, index) => {
     const safeRow = Object.fromEntries(
-      Object.entries(row).map(([key, value]) => [key, truncateForPrompt(value, DATA_QUERY_CODEX_MAX_SAMPLE_VALUE_CHARS)]),
+      Object.entries(row).map(([key, value]) => [
+        key,
+        truncateForPrompt(value, DATA_QUERY_CODEX_MAX_SAMPLE_VALUE_CHARS),
+      ]),
     );
     return `${index + 1}. ${JSON.stringify(safeRow)}`;
   });
@@ -146,7 +149,9 @@ export function buildDataQueryCodexPrompt(options: {
 }): string {
   const schemaLines =
     options.introspection.columns.length > 0
-      ? options.introspection.columns.map((column, index) => `${index + 1}. ${column.name}: ${column.type}`)
+      ? options.introspection.columns.map(
+          (column, index) => `${index + 1}. ${column.name}: ${column.type}`,
+        )
       : ["(no columns available)"];
   const sampleLines = normalizePromptSampleRows(options.introspection.sampleRows);
 
@@ -268,16 +273,19 @@ export function renderDataQueryCodexDraft(options: {
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
       : []),
     ...(options.introspection.selectedBodyStartRow !== undefined
-      ? [`${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`]
+      ? [
+          `${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`,
+        ]
       : []),
     ...(options.introspection.selectedHeaderRow !== undefined
-      ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]
+      ? [
+          `${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`,
+        ]
       : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0
       ? options.introspection.columns.map(
-          (column) =>
-            `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
+          (column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
         )
       : [`- ${pc.dim("(no columns available)")}`]),
     `${pc.bold(pc.cyan("Sample Rows"))}:`,

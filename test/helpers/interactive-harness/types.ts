@@ -43,7 +43,10 @@ export interface InteractiveHarnessResult {
     defaultValue?: string;
     postfix?: string;
   }>;
-  selectChoicesByMessage: Record<string, Array<{ name: string; value: string; description?: string }>>;
+  selectChoicesByMessage: Record<
+    string,
+    Array<{ name: string; value: string; description?: string }>
+  >;
   validationCalls: Array<{ kind: "input"; message: string; value: string; error: string }>;
   pathCalls: Array<{
     kind: "required" | "optional" | "hint";

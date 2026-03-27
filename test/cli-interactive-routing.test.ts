@@ -31,7 +31,9 @@ describe("interactive mode routing", () => {
       value: "data",
       description: "Preview and convert tabular data",
     });
-    expect(result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value)).toEqual([
+    expect(
+      result.selectChoicesByMessage["Choose a data command"]?.map((choice) => choice.value),
+    ).toEqual([
       "data:preview",
       "data:extract",
       "data:query",
@@ -465,7 +467,7 @@ describe("interactive mode routing", () => {
         confirmQueue: [true, true],
         dataQueryActionErrorCode: "DUCKDB_EXTENSION_UNAVAILABLE",
         dataQueryActionErrorMessage:
-          'Excel query requires the DuckDB excel extension, and it is not installed in the current environment. Install it explicitly in DuckDB, then retry.',
+          "Excel query requires the DuckDB excel extension, and it is not installed in the current environment. Install it explicitly in DuckDB, then retry.",
         dataQueryDetectedFormat: "excel",
         dataQuerySources: ["Summary"],
         dataQueryIntrospection: {
@@ -536,7 +538,9 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "input:Excel range (required, e.g. A1:Z99)",
     );
-    expect(result.stderr).toContain("Sheet shape warning: current Excel sheet shape looks suspicious.");
+    expect(result.stderr).toContain(
+      "Sheet shape warning: current Excel sheet shape looks suspicious.",
+    );
     expect(result.stderr).toContain("Accepted source shape: --range A1:B3");
     expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
   });
@@ -666,7 +670,9 @@ describe("interactive mode routing", () => {
     });
 
     expect(
-      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Choose how to continue"),
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Choose how to continue",
+      ),
     ).toHaveLength(2);
     expect(result.stderr).toContain("Codex source-shape suggestion failed: schema rejected");
     expect(result.actionCalls).toEqual([
@@ -745,7 +751,9 @@ describe("interactive mode routing", () => {
       "select:Header suggestion review",
     );
     expect(result.stdout).toContain("Waiting for Codex header suggestions");
-    expect(result.stderr).toContain("Accepted header mappings. Re-inspecting shaped source before SQL authoring.");
+    expect(result.stderr).toContain(
+      "Accepted header mappings. Re-inspecting shaped source before SQL authoring.",
+    );
   });
 
   test("supports editing one interactive header suggestion before acceptance", () => {
@@ -914,7 +922,9 @@ describe("interactive mode routing", () => {
     expect(editorPrompt?.defaultValue).toContain("# Format: csv");
     expect(editorPrompt?.defaultValue).toContain("# Schema:");
     expect(editorPrompt?.defaultValue).toContain("# Sample rows:");
-    expect(editorPrompt?.defaultValue).toContain("# Write plain intent below. Comment lines starting with # are ignored.");
+    expect(editorPrompt?.defaultValue).toContain(
+      "# Write plain intent below. Comment lines starting with # are ignored.",
+    );
     expect(result.stderr).toContain("Intent: count rows by status");
   });
 
@@ -938,7 +948,9 @@ describe("interactive mode routing", () => {
     expect(result.stdout).toBe('[{"status":"active","row_count":1}]\n');
     expect(result.stderr).toContain("Intent: count rows by status");
     expect(result.stderr).toContain("SQL:");
-    expect(result.stderr).toContain('select "status", count(*) as row_count from file group by "status"');
+    expect(result.stderr).toContain(
+      'select "status", count(*) as row_count from file group by "status"',
+    );
   });
 
   test("reopens the multiline editor until the cleaned intent is confirmed", () => {
@@ -959,7 +971,9 @@ describe("interactive mode routing", () => {
     });
 
     expect(
-      result.promptCalls.filter((call) => call.kind === "editor" && call.message === "Describe the query intent:"),
+      result.promptCalls.filter(
+        (call) => call.kind === "editor" && call.message === "Describe the query intent:",
+      ),
     ).toHaveLength(2);
     expect(result.actionCalls).toContainEqual({
       name: "data:query:codex-draft",
@@ -987,7 +1001,9 @@ describe("interactive mode routing", () => {
     });
 
     expect(
-      result.pathCalls.filter((call) => call.kind === "required" && call.message === "Output file path"),
+      result.pathCalls.filter(
+        (call) => call.kind === "required" && call.message === "Output file path",
+      ),
     ).toHaveLength(2);
     expect(result.stderr).toContain("Output file already exists:");
     expect(result.actionCalls).toHaveLength(2);
@@ -1278,7 +1294,7 @@ describe("interactive mode routing", () => {
       kind: "input",
       message: "Contains filter (column:keyword, optional)",
       value: "status",
-      error: 'Invalid --contains value "status": missing \':\' separator.',
+      error: "Invalid --contains value \"status\": missing ':' separator.",
     });
   });
 

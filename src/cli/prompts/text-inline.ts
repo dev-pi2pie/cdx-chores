@@ -44,11 +44,10 @@ function createPromptAbortError(): Error {
   return error;
 }
 
-function buildPromptLine(options: {
-  message: string;
-  value: string;
-  ghostText: string;
-}): { line: string; cursorBackCount: number } {
+function buildPromptLine(options: { message: string; value: string; ghostText: string }): {
+  line: string;
+  cursorBackCount: number;
+} {
   const showGhost = options.ghostText.length > 0;
   const renderedGhost = showGhost ? dim(options.ghostText) : "";
   const line = `${options.message} ${options.value}${renderedGhost}`;
@@ -286,9 +285,8 @@ export async function promptTextInlineGhost(options: {
             return false;
           }
 
-          const currentIndex = templateCycleState?.scopeKey === completion.scopeKey
-            ? templateCycleState.index
-            : 0;
+          const currentIndex =
+            templateCycleState?.scopeKey === completion.scopeKey ? templateCycleState.index : 0;
           const delta = direction === "down" ? 1 : -1;
           const nextIndex =
             (currentIndex + delta + completion.candidates.length) % completion.candidates.length;
@@ -306,8 +304,10 @@ export async function promptTextInlineGhost(options: {
             return;
           }
 
-          if ((parsed.direction === "up" || parsed.direction === "down") &&
-            cycleTemplateCandidates(parsed.direction)) {
+          if (
+            (parsed.direction === "up" || parsed.direction === "down") &&
+            cycleTemplateCandidates(parsed.direction)
+          ) {
             return;
           }
 

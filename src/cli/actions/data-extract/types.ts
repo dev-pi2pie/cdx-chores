@@ -1,5 +1,8 @@
 import type { DelimitedFormat } from "../../../utils/delimited";
-import type { DataHeaderMappingEntry, DataHeaderSuggestionRunner } from "../../duckdb/header-mapping";
+import type {
+  DataHeaderMappingEntry,
+  DataHeaderSuggestionRunner,
+} from "../../duckdb/header-mapping";
 import type { DataQueryInputFormat } from "../../duckdb/query";
 import type { DataSourceShapeSuggestionRunner } from "../../duckdb/source-shape";
 

@@ -185,20 +185,16 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
       }
 
       return {
-        suggestion:
-          context.scenario.cleanupAnalyzerSuggestion ?? {
-            recommendedHints: ["serial"],
-            recommendedStyle: "slug",
-            confidence: 0.86,
-            reasoningSummary:
-              "Most sampled names differ only by trailing counters.",
-          },
+        suggestion: context.scenario.cleanupAnalyzerSuggestion ?? {
+          recommendedHints: ["serial"],
+          recommendedStyle: "slug",
+          confidence: 0.86,
+          reasoningSummary: "Most sampled names differ only by trailing counters.",
+        },
       };
     },
     writeRenameCleanupAnalysisCsv: async () => {
-      const csvPath =
-        context.scenario.cleanupAnalysisReportPath ??
-        "reports/cleanup-analysis.csv";
+      const csvPath = context.scenario.cleanupAnalysisReportPath ?? "reports/cleanup-analysis.csv";
       context.recordAction("rename:cleanup:analysis-report", { csvPath });
       return csvPath;
     },

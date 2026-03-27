@@ -131,7 +131,9 @@ function decodeXmlEntities(value: string): string {
 
 function extractXmlAttribute(attributes: string, attributeName: string): string | undefined {
   const escapedName = attributeName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`(?:^|\\s)${escapedName}\\s*=\\s*(['"])([\\s\\S]*?)\\1`).exec(attributes);
+  const match = new RegExp(`(?:^|\\s)${escapedName}\\s*=\\s*(['"])([\\s\\S]*?)\\1`).exec(
+    attributes,
+  );
   return typeof match?.[2] === "string" ? decodeXmlEntities(match[2]) : undefined;
 }
 
@@ -231,7 +233,10 @@ function listWorkbookSheetEntries(pkg: XlsxWorkbookPackage): XlsxWorkbookSheetEn
     targetPath: targetByRelationshipId.get(sheet.relationshipId) ?? "",
   }));
 
-  if (resolvedSheets.length === 0 || resolvedSheets.some((sheet) => sheet.targetPath.length === 0)) {
+  if (
+    resolvedSheets.length === 0 ||
+    resolvedSheets.some((sheet) => sheet.targetPath.length === 0)
+  ) {
     throw new CliError("Invalid .xlsx file: failed to resolve worksheet metadata.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -280,9 +285,7 @@ function extractCellValue(options: {
 
   if (options.type === "s") {
     const index = Number(rawValue);
-    return Number.isInteger(index) && index >= 0
-      ? options.sharedStrings[index]
-      : undefined;
+    return Number.isInteger(index) && index >= 0 ? options.sharedStrings[index] : undefined;
   }
 
   const decoded = decodeXmlEntities(rawValue);
@@ -319,10 +322,13 @@ export async function listXlsxSheetNames(inputPath: string): Promise<string[]> {
     if (error instanceof CliError) {
       throw error;
     }
-    throw new CliError(`Invalid .xlsx file: failed to read workbook metadata (${toErrorMessage(error)}).`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `Invalid .xlsx file: failed to read workbook metadata (${toErrorMessage(error)}).`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 }
 
@@ -394,8 +400,10 @@ export async function collectXlsxSheetSnapshot(
           rowMap.set(rowNumber, [cell]);
         }
 
-        minColumnNumber = minColumnNumber === undefined ? columnNumber : Math.min(minColumnNumber, columnNumber);
-        maxColumnNumber = maxColumnNumber === undefined ? columnNumber : Math.max(maxColumnNumber, columnNumber);
+        minColumnNumber =
+          minColumnNumber === undefined ? columnNumber : Math.min(minColumnNumber, columnNumber);
+        maxColumnNumber =
+          maxColumnNumber === undefined ? columnNumber : Math.max(maxColumnNumber, columnNumber);
         minRowNumber = minRowNumber === undefined ? rowNumber : Math.min(minRowNumber, rowNumber);
         maxRowNumber = maxRowNumber === undefined ? rowNumber : Math.max(maxRowNumber, rowNumber);
         nonEmptyCellCount += 1;
@@ -444,9 +452,12 @@ export async function collectXlsxSheetSnapshot(
     if (error instanceof CliError) {
       throw error;
     }
-    throw new CliError(`Invalid .xlsx file: failed to inspect worksheet data (${toErrorMessage(error)}).`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `Invalid .xlsx file: failed to inspect worksheet data (${toErrorMessage(error)}).`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 }

@@ -56,7 +56,10 @@ async function actionJsonToDelimited(
   targetFormat: DelimitedFormat,
 ): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
-  const outputPath = resolveFromCwd(runtime, options.output?.trim() || defaultOutputPath(inputPath, `.${targetFormat}`));
+  const outputPath = resolveFromCwd(
+    runtime,
+    options.output?.trim() || defaultOutputPath(inputPath, `.${targetFormat}`),
+  );
   await ensureFileExists(inputPath, "Input");
 
   const raw = await readTextFileRequired(inputPath);
@@ -72,7 +75,10 @@ async function actionJsonToDelimited(
   const text = stringifyDelimitedRecords(rows, targetFormat);
   await writeTextFileSafe(outputPath, text, { overwrite: options.overwrite });
 
-  printLine(runtime.stdout, `Wrote ${getDelimitedDisplayLabel(targetFormat)}: ${displayPath(runtime, outputPath)}`);
+  printLine(
+    runtime.stdout,
+    `Wrote ${getDelimitedDisplayLabel(targetFormat)}: ${displayPath(runtime, outputPath)}`,
+  );
   printLine(runtime.stdout, `Rows: ${rows.length}`);
 }
 
@@ -82,7 +88,10 @@ async function actionDelimitedToJson(
   sourceFormat: DelimitedFormat,
 ): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
-  const outputPath = resolveFromCwd(runtime, options.output?.trim() || defaultOutputPath(inputPath, ".json"));
+  const outputPath = resolveFromCwd(
+    runtime,
+    options.output?.trim() || defaultOutputPath(inputPath, ".json"),
+  );
   await ensureFileExists(inputPath, "Input");
 
   const raw = await readTextFileRequired(inputPath);
@@ -102,7 +111,10 @@ async function actionDelimitedToDelimited(
   targetFormat: DelimitedFormat,
 ): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
-  const outputPath = resolveFromCwd(runtime, options.output?.trim() || defaultOutputPath(inputPath, `.${targetFormat}`));
+  const outputPath = resolveFromCwd(
+    runtime,
+    options.output?.trim() || defaultOutputPath(inputPath, `.${targetFormat}`),
+  );
   await ensureFileExists(inputPath, "Input");
 
   const raw = await readTextFileRequired(inputPath);
@@ -110,23 +122,38 @@ async function actionDelimitedToDelimited(
   const text = stringifyDelimitedRows(rows, targetFormat);
   await writeTextFileSafe(outputPath, text, { overwrite: options.overwrite });
 
-  printLine(runtime.stdout, `Wrote ${getDelimitedDisplayLabel(targetFormat)}: ${displayPath(runtime, outputPath)}`);
+  printLine(
+    runtime.stdout,
+    `Wrote ${getDelimitedDisplayLabel(targetFormat)}: ${displayPath(runtime, outputPath)}`,
+  );
   printLine(runtime.stdout, `Rows: ${countDelimitedDataRows(rows)}`);
 }
 
-export async function actionJsonToCsv(runtime: CliRuntime, options: JsonToCsvOptions): Promise<void> {
+export async function actionJsonToCsv(
+  runtime: CliRuntime,
+  options: JsonToCsvOptions,
+): Promise<void> {
   await actionJsonToDelimited(runtime, options, "csv");
 }
 
-export async function actionJsonToTsv(runtime: CliRuntime, options: JsonToTsvOptions): Promise<void> {
+export async function actionJsonToTsv(
+  runtime: CliRuntime,
+  options: JsonToTsvOptions,
+): Promise<void> {
   await actionJsonToDelimited(runtime, options, "tsv");
 }
 
-export async function actionCsvToJson(runtime: CliRuntime, options: CsvToJsonOptions): Promise<void> {
+export async function actionCsvToJson(
+  runtime: CliRuntime,
+  options: CsvToJsonOptions,
+): Promise<void> {
   await actionDelimitedToJson(runtime, options, "csv");
 }
 
-export async function actionTsvToJson(runtime: CliRuntime, options: TsvToJsonOptions): Promise<void> {
+export async function actionTsvToJson(
+  runtime: CliRuntime,
+  options: TsvToJsonOptions,
+): Promise<void> {
   await actionDelimitedToJson(runtime, options, "tsv");
 }
 

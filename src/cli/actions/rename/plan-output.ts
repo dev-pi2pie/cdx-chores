@@ -1,10 +1,7 @@
 import { basename, extname } from "node:path";
 
 import { slugifyName } from "../../../utils/slug";
-import {
-  createRenamePlanCsvRows,
-  writeRenamePlanCsv,
-} from "../../rename-plan-csv";
+import { createRenamePlanCsvRows, writeRenamePlanCsv } from "../../rename-plan-csv";
 import {
   rewriteTimestampPlaceholder,
   templateContainsLegacyTimestamp,

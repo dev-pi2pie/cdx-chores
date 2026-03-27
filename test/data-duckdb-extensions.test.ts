@@ -69,7 +69,10 @@ class FakeDuckDbConnection {
         getRowObjectsJson: () => [{ duckdb_version: this.version }],
       };
     }
-    if (normalized === "select extension_name, install_path, installed, loaded from duckdb_extensions()") {
+    if (
+      normalized ===
+      "select extension_name, install_path, installed, loaded from duckdb_extensions()"
+    ) {
       return {
         getRowObjectsJson: () => [
           {
@@ -110,7 +113,9 @@ class FakeDuckDbConnection {
       );
     }
     if (this.extensions[name].broken) {
-      throw new Error(`IO Error: Failed to load extension "${name}" because the cached binary is incompatible.`);
+      throw new Error(
+        `IO Error: Failed to load extension "${name}" because the cached binary is incompatible.`,
+      );
     }
     this.extensions[name].loaded = true;
   }
@@ -134,10 +139,13 @@ describe("DuckDB extension lifecycle helpers", () => {
   test("installs and loads an installable missing extension", async () => {
     const connection = new FakeDuckDbConnection({
       extensions: {
-        excel: createFakeExtensionState("/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension", {
-          installed: false,
-          loaded: false,
-        }),
+        excel: createFakeExtensionState(
+          "/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension",
+          {
+            installed: false,
+            loaded: false,
+          },
+        ),
         sqlite_scanner: createFakeExtensionState(
           "/tmp/fake-duckdb/v1.5.0/osx_arm64/sqlite_scanner.duckdb_extension",
           {
@@ -167,10 +175,13 @@ describe("DuckDB extension lifecycle helpers", () => {
   test("reports already-present extensions without reinstalling", async () => {
     const connection = new FakeDuckDbConnection({
       extensions: {
-        excel: createFakeExtensionState("/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension", {
-          installed: true,
-          loaded: true,
-        }),
+        excel: createFakeExtensionState(
+          "/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension",
+          {
+            installed: true,
+            loaded: true,
+          },
+        ),
         sqlite_scanner: createFakeExtensionState(
           "/tmp/fake-duckdb/v1.5.0/osx_arm64/sqlite_scanner.duckdb_extension",
           {
@@ -197,10 +208,13 @@ describe("DuckDB extension lifecycle helpers", () => {
   test("surfaces install failures with a dedicated CLI error", async () => {
     const connection = new FakeDuckDbConnection({
       extensions: {
-        excel: createFakeExtensionState("/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension", {
-          installed: false,
-          loaded: false,
-        }),
+        excel: createFakeExtensionState(
+          "/tmp/fake-duckdb/v1.5.0/osx_arm64/excel.duckdb_extension",
+          {
+            installed: false,
+            loaded: false,
+          },
+        ),
         sqlite_scanner: createFakeExtensionState(
           "/tmp/fake-duckdb/v1.5.0/osx_arm64/sqlite_scanner.duckdb_extension",
           {
@@ -216,11 +230,9 @@ describe("DuckDB extension lifecycle helpers", () => {
     const statusStream = createStatusStream();
 
     try {
-      await installDuckDbManagedExtension(
-        connection as unknown as DuckDBConnection,
-        "sqlite",
-        { statusStream: statusStream as unknown as NodeJS.WritableStream },
-      );
+      await installDuckDbManagedExtension(connection as unknown as DuckDBConnection, "sqlite", {
+        statusStream: statusStream as unknown as NodeJS.WritableStream,
+      });
       throw new Error("Expected installDuckDbManagedExtension to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(CliError);

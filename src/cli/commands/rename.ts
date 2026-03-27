@@ -19,11 +19,7 @@ import {
   parseRenameCleanupTimestampActionOption,
 } from "../options/parsers";
 import type { CliRuntime } from "../types";
-import type {
-  RenameSerialOrder,
-  RenameSerialScope,
-  TimestampTimezone,
-} from "../rename-template";
+import type { RenameSerialOrder, RenameSerialScope, TimestampTimezone } from "../rename-template";
 
 function configureRenameFileCommand(command: Command): Command {
   return applyRenameTemplateOptions(
@@ -44,8 +40,10 @@ function configureRenameFileCommand(command: Command): Command {
         "Codex image-title generation timeout per request in milliseconds",
         (value) => Number(value),
       )
-      .option("--codex-images-retries <count>", "Retry failed Codex image-title requests", (value) =>
-        Number(value),
+      .option(
+        "--codex-images-retries <count>",
+        "Retry failed Codex image-title requests",
+        (value) => Number(value),
       )
       .option(
         "--codex-images-batch-size <count>",
@@ -62,8 +60,10 @@ function configureRenameFileCommand(command: Command): Command {
         "Codex document-title generation timeout per request in milliseconds",
         (value) => Number(value),
       )
-      .option("--codex-docs-retries <count>", "Retry failed Codex document-title requests", (value) =>
-        Number(value),
+      .option(
+        "--codex-docs-retries <count>",
+        "Retry failed Codex document-title requests",
+        (value) => Number(value),
       )
       .option(
         "--codex-docs-batch-size <count>",
@@ -253,14 +253,9 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
 
   configureRenameBatchLikeCommand(
     renameCommand.command("batch").description("Batch rename files in a directory"),
-  ).action(
-    async (
-      directory: string,
-      options: Parameters<typeof handleRenameBatchAction>[2],
-    ) => {
-      await handleRenameBatchAction(runtime, directory, options);
-    },
-  );
+  ).action(async (directory: string, options: Parameters<typeof handleRenameBatchAction>[2]) => {
+    await handleRenameBatchAction(runtime, directory, options);
+  });
 
   renameCommand
     .command("cleanup")
@@ -359,12 +354,7 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
 
   configureRenameBatchLikeCommand(
     program.command("batch-rename").description("Alias for `rename batch`"),
-  ).action(
-    async (
-      directory: string,
-      options: Parameters<typeof handleRenameBatchAction>[2],
-    ) => {
-      await handleRenameBatchAction(runtime, directory, options);
-    },
-  );
+  ).action(async (directory: string, options: Parameters<typeof handleRenameBatchAction>[2]) => {
+    await handleRenameBatchAction(runtime, directory, options);
+  });
 }

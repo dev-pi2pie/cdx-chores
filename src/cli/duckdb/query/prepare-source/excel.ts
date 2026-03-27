@@ -10,7 +10,9 @@ import { buildExcelImportModes, buildRelationSql } from "./sql";
 
 export function isRetryableExcelImportError(error: unknown): boolean {
   const message = toErrorMessage(error);
-  return /read_xlsx/i.test(message) && /Failed to parse cell|Could not convert string/i.test(message);
+  return (
+    /read_xlsx/i.test(message) && /Failed to parse cell|Could not convert string/i.test(message)
+  );
 }
 
 export async function createExcelTempViewWithRetries(options: {
@@ -166,10 +168,14 @@ export async function createSplitHeaderBodyExcelSourceView(options: {
     viewName: "file_source_body_raw",
   });
 
-  const bodyColumns = await collectQueryRelationColumns(options.connection, "file_source_body_raw", {
-    format: "excel",
-    inputPath: options.inputPath,
-  });
+  const bodyColumns = await collectQueryRelationColumns(
+    options.connection,
+    "file_source_body_raw",
+    {
+      format: "excel",
+      inputPath: options.inputPath,
+    },
+  );
   const headerReader = await options.connection.runAndReadAll(
     `select * from ${quoteSqlIdentifier("file_source_header_raw")} limit 1`,
   );
@@ -180,16 +186,19 @@ export async function createSplitHeaderBodyExcelSourceView(options: {
     bodyColumns,
   );
 
-  const selectedColumns = (bodyColumns.filter((column) => {
-    const headerName = normalizeHeaderCellName(headerRow[column.sourceName]);
-    return headerName !== undefined || nonEmptyBodyColumns.has(column.sourceName);
-  }) || bodyColumns).map((column) => ({
+  const selectedColumns = (
+    bodyColumns.filter((column) => {
+      const headerName = normalizeHeaderCellName(headerRow[column.sourceName]);
+      return headerName !== undefined || nonEmptyBodyColumns.has(column.sourceName);
+    }) || bodyColumns
+  ).map((column) => ({
     aliasBase: normalizeHeaderCellName(headerRow[column.sourceName]) ?? column.name,
     column,
   }));
-  const effectiveSelectedColumns = selectedColumns.length > 0
-    ? selectedColumns
-    : bodyColumns.map((column) => ({ aliasBase: column.name, column }));
+  const effectiveSelectedColumns =
+    selectedColumns.length > 0
+      ? selectedColumns
+      : bodyColumns.map((column) => ({ aliasBase: column.name, column }));
   const deduplicatedNames = deduplicateSelectedColumnNames(
     effectiveSelectedColumns.map((column) => column.aliasBase),
   );

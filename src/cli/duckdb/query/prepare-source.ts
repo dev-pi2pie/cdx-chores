@@ -3,7 +3,12 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { ensureDuckDbManagedExtensionLoaded } from "../extensions";
 import { normalizeAndValidateAcceptedHeaderMappings } from "../header-mapping";
 import { CliError } from "../../errors";
-import { normalizeExcelBodyStartRow, normalizeExcelHeaderRow, normalizeExcelRange, buildExcelRange } from "./excel-range";
+import {
+  normalizeExcelBodyStartRow,
+  normalizeExcelHeaderRow,
+  normalizeExcelRange,
+  buildExcelRange,
+} from "./excel-range";
 import { getDuckDbManagedExtensionNameForFormat, toErrorMessage } from "./formats";
 import { resolveMultiObjectSource } from "./source-resolution";
 import type { DataQueryInputFormat, DataQuerySourceShape, PreparedDataQuerySource } from "./types";
@@ -97,7 +102,8 @@ export async function prepareDataQuerySource(
 
       if (
         selectedHeaderRow !== undefined &&
-        (selectedHeaderRow < boundaryRange.parts.startRow || selectedHeaderRow > boundaryRange.parts.endRow)
+        (selectedHeaderRow < boundaryRange.parts.startRow ||
+          selectedHeaderRow > boundaryRange.parts.endRow)
       ) {
         throw new CliError(
           `--header-row must fall within the ${selectedRange ? "selected Excel range" : "detected Excel sheet used range"} ${boundaryRange.range}.`,
@@ -127,10 +133,13 @@ export async function prepareDataQuerySource(
         selectedBodyStartRow !== undefined &&
         selectedBodyStartRow <= selectedHeaderRow
       ) {
-        throw new CliError("--body-start-row must be greater than --header-row when both are provided.", {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-        });
+        throw new CliError(
+          "--body-start-row must be greater than --header-row when both are provided.",
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          },
+        );
       }
 
       if (selectedBodyStartRow !== undefined && selectedHeaderRow === undefined) {

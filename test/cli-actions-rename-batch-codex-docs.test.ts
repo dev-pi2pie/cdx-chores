@@ -3,7 +3,11 @@ import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionRenameBatch } from "../src/cli/actions";
-import { createCapturedRuntime, createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  createTempFixtureDir,
+  toRepoRelativePath,
+} from "./helpers/cli-test-utils";
 import {
   captureRenamePlanCsvSnapshot,
   cleanupRenamePlanCsvSinceSnapshot,
@@ -122,7 +126,11 @@ describe("cli action modules: rename batch codex docs", () => {
       const dirPath = join(fixtureDir, "rename-codex-docs-textlike");
       await mkdir(dirPath, { recursive: true });
 
-      await writeFile(join(dirPath, "meta.json"), '{ "title": "Release Plan", "author": "Ada" }\n', "utf8");
+      await writeFile(
+        join(dirPath, "meta.json"),
+        '{ "title": "Release Plan", "author": "Ada" }\n',
+        "utf8",
+      );
       await writeFile(join(dirPath, "guide.yaml"), 'title: "Ops Runbook"\nauthor: "Lin"\n', "utf8");
       await writeFile(join(dirPath, "site.toml"), 'title = "Landing Page"\n', "utf8");
       await writeFile(

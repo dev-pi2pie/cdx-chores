@@ -16,19 +16,27 @@ import {
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 import { normalizeOutputFormat, stringifyMaterializedRows } from "./data-extract/materialize";
 import { runCodexSourceShapeSuggestionFlow } from "./data-extract/source-shape";
-import { DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS, type DataExtractOptions } from "./data-extract/types";
+import {
+  DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS,
+  type DataExtractOptions,
+} from "./data-extract/types";
 import { validateDataExtractOptions } from "./data-extract/validate";
 import { CliError } from "../errors";
 
 export type { DataExtractOptions } from "./data-extract/types";
 
-export async function actionDataExtract(runtime: CliRuntime, options: DataExtractOptions): Promise<void> {
+export async function actionDataExtract(
+  runtime: CliRuntime,
+  options: DataExtractOptions,
+): Promise<void> {
   validateDataExtractOptions(options);
 
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
   await ensureFileExists(inputPath, "Input");
 
-  const outputPath = options.output?.trim() ? resolveFromCwd(runtime, options.output.trim()) : undefined;
+  const outputPath = options.output?.trim()
+    ? resolveFromCwd(runtime, options.output.trim())
+    : undefined;
   const format = detectDataQueryInputFormat(inputPath, options.inputFormat);
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
@@ -134,19 +142,14 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
   let connection;
   try {
     connection = await createDuckDbConnection();
-    await prepareDataQuerySource(
-      connection,
-      inputPath,
-      format,
-      {
-        bodyStartRow: effectiveBodyStartRow,
-        headerMappings: resolvedHeaderMappings,
-        headerRow: effectiveHeaderRow,
-        noHeader,
-        range,
-        source,
-      },
-    );
+    await prepareDataQuerySource(connection, inputPath, format, {
+      bodyStartRow: effectiveBodyStartRow,
+      headerMappings: resolvedHeaderMappings,
+      headerRow: effectiveHeaderRow,
+      noHeader,
+      range,
+      source,
+    });
 
     const result = await executeDataQueryForAllRows(connection, "select * from file");
     const normalizedOutputPath = assertNonEmpty(outputPath, "Output path");
@@ -158,7 +161,10 @@ export async function actionDataExtract(runtime: CliRuntime, options: DataExtrac
     });
 
     await writeTextFileSafe(normalizedOutputPath, text, { overwrite: options.overwrite });
-    printLine(runtime.stderr, `Wrote ${outputFormat.toUpperCase()}: ${displayPath(runtime, normalizedOutputPath)}`);
+    printLine(
+      runtime.stderr,
+      `Wrote ${outputFormat.toUpperCase()}: ${displayPath(runtime, normalizedOutputPath)}`,
+    );
     printLine(runtime.stderr, `Rows: ${result.rows.length}`);
   } finally {
     connection?.closeSync();

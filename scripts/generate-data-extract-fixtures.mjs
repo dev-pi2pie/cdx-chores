@@ -59,7 +59,12 @@ function stringifyDelimitedRows(rows, delimiter) {
   const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
   const escapeCell = (value) => {
     const text = value === null || value === undefined ? "" : String(value);
-    if (text.includes('"') || text.includes("\n") || text.includes("\r") || text.includes(delimiter)) {
+    if (
+      text.includes('"') ||
+      text.includes("\n") ||
+      text.includes("\r") ||
+      text.includes(delimiter)
+    ) {
       return `"${text.replaceAll('"', '""')}"`;
     }
     return text;
@@ -199,7 +204,9 @@ function buildStoredZip(entries) {
 
   for (const [fileName, rawContent] of entries) {
     const fileNameBuffer = Buffer.from(fileName, "utf8");
-    const contentBuffer = Buffer.isBuffer(rawContent) ? rawContent : Buffer.from(rawContent, "utf8");
+    const contentBuffer = Buffer.isBuffer(rawContent)
+      ? rawContent
+      : Buffer.from(rawContent, "utf8");
     const checksum = crc32(contentBuffer);
 
     const localHeader = Buffer.alloc(30);
@@ -332,7 +339,9 @@ async function writeSimpleWorkbook(outputDir) {
       ],
     },
   ]);
-  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  const zipBuffer = buildStoredZip(
+    Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)),
+  );
   await writeFile(join(outputDir, "multi.xlsx"), zipBuffer);
 }
 
@@ -364,7 +373,9 @@ async function writeMessyWorkbook(outputDir) {
       ],
     },
   ]);
-  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  const zipBuffer = buildStoredZip(
+    Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)),
+  );
   await writeFile(join(outputDir, "messy.xlsx"), zipBuffer);
 }
 
@@ -385,7 +396,9 @@ async function writeCollapsedMergedWorkbook(outputDir) {
       ],
     },
   ]);
-  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  const zipBuffer = buildStoredZip(
+    Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)),
+  );
   await writeFile(join(outputDir, "collapsed-merged.xlsx"), zipBuffer);
 }
 
@@ -410,7 +423,9 @@ async function writeHeaderBandWorkbook(outputDir) {
       ],
     },
   ]);
-  const zipBuffer = buildStoredZip(Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)));
+  const zipBuffer = buildStoredZip(
+    Object.entries(workbook).sort(([left], [right]) => left.localeCompare(right)),
+  );
   await writeFile(join(outputDir, "header-band.xlsx"), zipBuffer);
 }
 

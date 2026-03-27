@@ -63,7 +63,7 @@ function parseArray(raw: string): Array<string | number | boolean> | null {
         continue;
       }
 
-      if (inString === "double" && char === "\"") {
+      if (inString === "double" && char === '"') {
         inString = null;
       } else if (inString === "single" && char === "'") {
         inString = null;
@@ -71,7 +71,7 @@ function parseArray(raw: string): Array<string | number | boolean> | null {
       continue;
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       inString = "double";
       current += char;
       continue;
@@ -138,7 +138,7 @@ function parseInlineTable(raw: string): Record<string, TomlValue> | null {
         continue;
       }
 
-      if (inString === "double" && char === "\"") {
+      if (inString === "double" && char === '"') {
         inString = null;
       } else if (inString === "single" && char === "'") {
         inString = null;
@@ -146,7 +146,7 @@ function parseInlineTable(raw: string): Record<string, TomlValue> | null {
       continue;
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       inString = "double";
       current += char;
       continue;

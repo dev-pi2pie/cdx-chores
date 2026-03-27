@@ -32,7 +32,9 @@ function extractPdfTitleAndSignals(options: {
   );
   const dedupedTitles = [...new Set(titleCandidates)].slice(0, MAX_TITLE_CANDIDATES);
   const dedupedOutline = [...new Set(options.outlineTitles)].slice(0, MAX_HEADINGS);
-  const leadText = options.firstPageText ? options.firstPageText.slice(0, MAX_LEAD_TEXT_CHARS) : undefined;
+  const leadText = options.firstPageText
+    ? options.firstPageText.slice(0, MAX_LEAD_TEXT_CHARS)
+    : undefined;
 
   if (dedupedTitles.length === 0 && !metadataAuthor && !leadText && dedupedOutline.length === 0) {
     return { reason: options.firstPageText ? "pdf_no_title_signal" : "pdf_no_text" };
@@ -58,7 +60,9 @@ function extractPdfTitleAndSignals(options: {
   };
 }
 
-export async function extractPdfEvidence(path: string): Promise<DocumentTitleEvidence | { reason: string }> {
+export async function extractPdfEvidence(
+  path: string,
+): Promise<DocumentTitleEvidence | { reason: string }> {
   let pdfDocument: any;
   try {
     const fileBytes = await readFile(path);

@@ -6,10 +6,12 @@ export function isNoColorEnvSet(env: NodeJS.ProcessEnv = process.env): boolean {
   return Object.prototype.hasOwnProperty.call(env, "NO_COLOR");
 }
 
-export function resolveCliColorEnabled(options: {
-  env?: NodeJS.ProcessEnv;
-  noColorFlag?: boolean;
-} = {}): boolean {
+export function resolveCliColorEnabled(
+  options: {
+    env?: NodeJS.ProcessEnv;
+    noColorFlag?: boolean;
+  } = {},
+): boolean {
   if (options.noColorFlag) {
     return false;
   }

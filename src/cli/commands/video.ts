@@ -1,10 +1,7 @@
 import type { Command } from "commander";
 
 import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
-import {
-  parsePositiveIntegerOption,
-  parsePositiveNumberOption,
-} from "../options/parsers";
+import { parsePositiveIntegerOption, parsePositiveNumberOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
 
 export function registerVideoCommands(program: Command, runtime: CliRuntime): void {

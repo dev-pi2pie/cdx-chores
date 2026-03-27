@@ -5,10 +5,7 @@ import type {
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "../actions/rename";
-import {
-  DATA_QUERY_INPUT_FORMAT_VALUES,
-  type DataQueryInputFormat,
-} from "../duckdb/query";
+import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "../duckdb/query";
 import {
   DUCKDB_MANAGED_EXTENSION_NAMES,
   type DuckDbManagedExtensionName,
@@ -114,7 +111,9 @@ export function parseRenameCleanupStyleOption(value: string): RenameCleanupStyle
   throw new InvalidArgumentError("--style must be one of: preserve, slug.");
 }
 
-export function parseRenameCleanupTimestampActionOption(value: string): RenameCleanupTimestampAction {
+export function parseRenameCleanupTimestampActionOption(
+  value: string,
+): RenameCleanupTimestampAction {
   const normalized = value.trim().toLowerCase();
   if (normalized === "keep" || normalized === "remove") {
     return normalized;
@@ -122,7 +121,9 @@ export function parseRenameCleanupTimestampActionOption(value: string): RenameCl
   throw new InvalidArgumentError("--timestamp-action must be one of: keep, remove.");
 }
 
-export function parseRenameCleanupConflictStrategyOption(value: string): RenameCleanupConflictStrategy {
+export function parseRenameCleanupConflictStrategyOption(
+  value: string,
+): RenameCleanupConflictStrategy {
   const normalized = value.trim().toLowerCase();
   if (normalized === "skip" || normalized === "number" || normalized === "uid-suffix") {
     return normalized;

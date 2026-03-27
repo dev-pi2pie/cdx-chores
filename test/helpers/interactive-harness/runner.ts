@@ -1,14 +1,8 @@
 import { createHarnessRunnerContext } from "./context";
-import {
-  interactiveDataUrl,
-  interactiveIndexUrl,
-} from "./module-urls";
+import { interactiveDataUrl, interactiveIndexUrl } from "./module-urls";
 import { installHarnessMocks } from "./mocks";
 import { createHarnessRuntime } from "./runtime";
-import type {
-  InteractiveHarnessResult,
-  InteractiveHarnessScenario,
-} from "./types";
+import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
 
 function parseScenarioArg(argv: string[]): InteractiveHarnessScenario {
   const rawScenario = argv[2];

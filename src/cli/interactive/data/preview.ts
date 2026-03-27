@@ -61,7 +61,10 @@ async function promptContainsFilters(
   });
 
   const contains = firstContainsInput.trim() ? [firstContainsInput.trim()] : [];
-  while (contains.length > 0 && await confirm({ message: "Add another contains filter?", default: false })) {
+  while (
+    contains.length > 0 &&
+    (await confirm({ message: "Add another contains filter?", default: false }))
+  ) {
     const nextContainsInput = await input({
       message: "Another contains filter (column:keyword)",
       default: "",

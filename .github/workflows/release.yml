@@ -215,8 +215,33 @@ jobs:
             contents: write
         steps:
             - name: Create GitHub release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ needs.notes.outputs.tag }}
-                  body: ${{ needs.notes.outputs.release_notes }}
-                  prerelease: ${{ needs.notes.outputs.prerelease == 'true' }}
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  TAG_NAME: ${{ needs.notes.outputs.tag }}
+                  IS_PRERELEASE: ${{ needs.notes.outputs.prerelease }}
+                  RELEASE_NOTES: ${{ needs.notes.outputs.release_notes }}
+              run: |
+                  NOTES_FILE="$(mktemp)"
+                  trap 'rm -f "$NOTES_FILE"' EXIT
+                  printf '%s\n' "$RELEASE_NOTES" > "$NOTES_FILE"
+
+                  if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+                    gh release edit "$TAG_NAME" \
+                      --title "$TAG_NAME" \
+                      --notes-file "$NOTES_FILE"
+                    exit 0
+                  fi
+
+                  GH_ARGS=(
+                    release
+                    create
+                    "$TAG_NAME"
+                    --title "$TAG_NAME"
+                    --notes-file "$NOTES_FILE"
+                  )
+
+                  if [ "$IS_PRERELEASE" = "true" ]; then
+                    GH_ARGS+=(--prerelease)
+                  fi
+
+                  gh "${GH_ARGS[@]}"

@@ -8,7 +8,9 @@ import { registerDataPreviewCommands } from "./data/preview";
 import { registerDataQueryCommands } from "./data/query";
 
 export function registerDataCommands(program: Command, runtime: CliRuntime): void {
-  const dataCommand = program.command("data").description("Data preview, extract, query, and conversion utilities");
+  const dataCommand = program
+    .command("data")
+    .description("Data preview, extract, query, and conversion utilities");
 
   registerDataConversionCommands(dataCommand, runtime);
   registerDataPreviewCommands(dataCommand, runtime);

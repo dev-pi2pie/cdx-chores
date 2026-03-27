@@ -128,10 +128,15 @@ function resolveVisibleColumns(
     consumed += separatorWidth + width;
   }
 
-  return visible.length > 0 ? visible : [{ name: columns[0] ?? "value", width: Math.max(1, budget) }];
+  return visible.length > 0
+    ? visible
+    : [{ name: columns[0] ?? "value", width: Math.max(1, budget) }];
 }
 
-function formatColumnSummary(allColumns: readonly string[], visibleColumns: readonly VisibleColumn[]): string {
+function formatColumnSummary(
+  allColumns: readonly string[],
+  visibleColumns: readonly VisibleColumn[],
+): string {
   if (visibleColumns.length === 0) {
     return "(none)";
   }
@@ -154,7 +159,9 @@ function formatWindowLabel(offset: number, rowCount: number, totalRows: number):
   return `${start}-${end} of ${totalRows}`;
 }
 
-function resolveContainsFilterColumns(filters: readonly DataPreviewContainsFilter[] | undefined): string[] {
+function resolveContainsFilterColumns(
+  filters: readonly DataPreviewContainsFilter[] | undefined,
+): string[] {
   if (!filters || filters.length === 0) {
     return [];
   }
@@ -232,7 +239,10 @@ export function renderDataPreview(
   const selectedColumns = resolveRequestedColumns(source, options.columns);
   const rows = source.getWindow(options.offset, options.rowCount);
   const visibleColumns = resolveVisibleColumns(selectedColumns, rows, widthBudget);
-  const hiddenContainsColumns = resolveHiddenContainsColumns(options.containsFilters, visibleColumns);
+  const hiddenContainsColumns = resolveHiddenContainsColumns(
+    options.containsFilters,
+    visibleColumns,
+  );
 
   const lines = [
     `${pc.bold(pc.cyan("Input"))}: ${formatPathForDisplay(runtime, options.inputPath)}`,
@@ -241,7 +251,9 @@ export function renderDataPreview(
     `${pc.bold(pc.cyan("Window"))}: ${formatWindowLabel(options.offset, rows.length, source.totalRows)}`,
     `${pc.bold(pc.cyan("Visible columns"))}: ${formatColumnSummary(selectedColumns, visibleColumns)}`,
     ...(hiddenContainsColumns.length > 0
-      ? [`${pc.bold(pc.cyan("Contains highlight"))}: ${formatHiddenContainsNote(hiddenContainsColumns)}`]
+      ? [
+          `${pc.bold(pc.cyan("Contains highlight"))}: ${formatHiddenContainsNote(hiddenContainsColumns)}`,
+        ]
       : []),
     "",
     ...renderTable(runtime, visibleColumns, rows, { containsFilters: options.containsFilters }),

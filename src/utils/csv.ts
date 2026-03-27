@@ -1,8 +1,4 @@
-import {
-  delimitedRowsToObjects,
-  parseDelimited,
-  stringifyDelimitedRecords,
-} from "./delimited";
+import { delimitedRowsToObjects, parseDelimited, stringifyDelimitedRecords } from "./delimited";
 
 type CsvRecord = Record<string, unknown>;
 

@@ -133,7 +133,12 @@ describe("CLI UX flags and path output", () => {
   });
 
   test("data parquet preview renders relative input paths by default", () => {
-    const result = runCli(["data", "parquet", "preview", "test/fixtures/parquet-preview/basic.parquet"]);
+    const result = runCli([
+      "data",
+      "parquet",
+      "preview",
+      "test/fixtures/parquet-preview/basic.parquet",
+    ]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -224,14 +229,30 @@ describe("CLI UX flags and path output", () => {
   });
 
   test("data query rejects invalid input-format values at CLI parsing time", () => {
-    const result = runCli(["data", "query", "sample.csv", "--sql", "select * from file", "--input-format", "json"]);
+    const result = runCli([
+      "data",
+      "query",
+      "sample.csv",
+      "--sql",
+      "select * from file",
+      "--input-format",
+      "json",
+    ]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--input-format must be one of:");
   });
 
   test("data extract rejects invalid input-format values at CLI parsing time", () => {
-    const result = runCli(["data", "extract", "sample.csv", "--output", "sample.json", "--input-format", "json"]);
+    const result = runCli([
+      "data",
+      "extract",
+      "sample.csv",
+      "--output",
+      "sample.json",
+      "--input-format",
+      "json",
+    ]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--input-format must be one of:");
@@ -313,7 +334,13 @@ describe("CLI UX flags and path output", () => {
       const inputPath = join(fixtureDir, "sample.csv");
       await writeFile(inputPath, "name,age\nAda,36\n", "utf8");
 
-      const result = runCli(["data", "preview", toRepoRelativePath(inputPath), "--contains", "name"]);
+      const result = runCli([
+        "data",
+        "preview",
+        toRepoRelativePath(inputPath),
+        "--contains",
+        "name",
+      ]);
 
       expect(result.exitCode).toBe(2);
       expect(result.stderr).toContain("Invalid --contains value");
@@ -357,14 +384,32 @@ describe("CLI UX flags and path output", () => {
   });
 
   test("video resize accepts scale-only flags and reaches input validation", () => {
-    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--scale", "0.5"]);
+    const result = runCli([
+      "video",
+      "resize",
+      "-i",
+      "missing.mp4",
+      "-o",
+      "out.mp4",
+      "--scale",
+      "0.5",
+    ]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("Input file not found:");
   });
 
   test("video resize rejects incomplete explicit dimensions with a clear error", () => {
-    const result = runCli(["video", "resize", "-i", "missing.mp4", "-o", "out.mp4", "--width", "640"]);
+    const result = runCli([
+      "video",
+      "resize",
+      "-i",
+      "missing.mp4",
+      "-o",
+      "out.mp4",
+      "--width",
+      "640",
+    ]);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("Width and height must be provided together.");
@@ -374,7 +419,9 @@ describe("CLI UX flags and path output", () => {
     const result = runCli(["rename", "file", "dummy.txt", "--serial-order", "time_asc"]);
 
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.");
+    expect(result.stderr).toContain(
+      "--serial-order must be one of: path_asc, path_desc, mtime_asc, mtime_desc.",
+    );
   });
 
   test("rename batch honors embedded serial start when no CLI override is provided", async () => {

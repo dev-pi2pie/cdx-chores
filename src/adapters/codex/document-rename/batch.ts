@@ -29,14 +29,16 @@ import { extractDocxEvidence } from "./extractors/docx";
 import { extractHtmlEvidence } from "./extractors/html";
 import { extractMarkdownEvidence } from "./extractors/markdown";
 import { extractPdfEvidence } from "./extractors/pdf";
-import { extractJsonEvidence, extractTomlEvidence, extractYamlEvidence } from "./extractors/structured";
+import {
+  extractJsonEvidence,
+  extractTomlEvidence,
+  extractYamlEvidence,
+} from "./extractors/structured";
 import { extractPlainTextEvidence } from "./extractors/text";
 import { extractXmlEvidence } from "./extractors/xml";
 import { buildDocumentPrompt, createPromptEvidenceItems } from "./prompt";
 
-async function extractEvidenceForPath(
-  path: string,
-): Promise<ExtractedDocumentTitleEvidence> {
+async function extractEvidenceForPath(path: string): Promise<ExtractedDocumentTitleEvidence> {
   const ext = extname(path).toLowerCase();
 
   if (DOC_PDF_EXTENSIONS.has(ext)) {
@@ -105,13 +107,18 @@ async function suggestSingleBatch(options: {
 
   const thread = startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run(
-    [{
-      type: "text",
-      text: buildDocumentPrompt({
-        evidences: options.evidences.map((item) => ({ path: item.path, evidence: item.evidence })),
-        workingDirectory: options.workingDirectory,
-      }),
-    }],
+    [
+      {
+        type: "text",
+        text: buildDocumentPrompt({
+          evidences: options.evidences.map((item) => ({
+            path: item.path,
+            evidence: item.evidence,
+          })),
+          workingDirectory: options.workingDirectory,
+        }),
+      },
+    ],
     {
       outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
       signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),

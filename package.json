@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.0.9",
+  "version": "0.1.0-canary.1",
   "keywords": [
     "automation",
     "cli",
@@ -47,9 +47,9 @@
     "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
-    "@duckdb/node-api": "^1.5.0-r.1",
+    "@duckdb/node-api": "^1.5.1-r.1",
     "@inquirer/prompts": "^8.3.2",
-    "@openai/codex-sdk": "^0.116.0",
+    "@openai/codex-sdk": "^0.117.0",
     "commander": "^14.0.3",
     "fast-xml-parser": "^5.5.7",
     "mammoth": "^1.12.0",
@@ -61,11 +61,11 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^25.5.0",
-    "oxfmt": "^0.41.0",
+    "oxfmt": "^0.42.0",
     "oxlint": "^1.56.0",
     "picocolors": "^1.1.1",
     "tsdown": "^0.21.4",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "engines": {
     "node": ">=22.5.0"

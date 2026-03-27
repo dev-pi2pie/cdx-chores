@@ -1,13 +1,25 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
-import type { RenameCleanupHint, RenameCleanupStyle, RenameCleanupTimestampAction } from "./cleanup-contract";
+import type {
+  RenameCleanupHint,
+  RenameCleanupStyle,
+  RenameCleanupTimestampAction,
+} from "./cleanup-contract";
 import {
   RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS,
   type RenameCleanupAnalyzerEvidence,
 } from "./cleanup-analyzer";
 
-const CLEANUP_HINT_VALUES = ["date", "timestamp", "serial", "uid"] as const satisfies readonly RenameCleanupHint[];
+const CLEANUP_HINT_VALUES = [
+  "date",
+  "timestamp",
+  "serial",
+  "uid",
+] as const satisfies readonly RenameCleanupHint[];
 const CLEANUP_STYLE_VALUES = ["preserve", "slug"] as const satisfies readonly RenameCleanupStyle[];
-const CLEANUP_TIMESTAMP_ACTION_VALUES = ["keep", "remove"] as const satisfies readonly RenameCleanupTimestampAction[];
+const CLEANUP_TIMESTAMP_ACTION_VALUES = [
+  "keep",
+  "remove",
+] as const satisfies readonly RenameCleanupTimestampAction[];
 const RENAME_CLEANUP_CODEX_PROMPT_LIMITS = {
   maxSampleLines: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.sampleLimit,
   maxGroupedLines: RENAME_CLEANUP_ANALYZER_EVIDENCE_LIMITS.groupLimit,
@@ -108,7 +120,13 @@ function parseRenameCleanupSuggestion(finalResponse: string): RenameCleanupCodex
   };
 
   const recommendedHints = Array.isArray(parsed.recommended_hints)
-    ? [...new Set(parsed.recommended_hints.filter((item): item is RenameCleanupHint => typeof item === "string" && isCleanupHint(item)))]
+    ? [
+        ...new Set(
+          parsed.recommended_hints.filter(
+            (item): item is RenameCleanupHint => typeof item === "string" && isCleanupHint(item),
+          ),
+        ),
+      ]
     : [];
   if (recommendedHints.length === 0) {
     throw new Error("Codex cleanup suggestion did not include any supported hints.");
@@ -124,7 +142,9 @@ function parseRenameCleanupSuggestion(finalResponse: string): RenameCleanupCodex
       : "none";
   if (recommendedHints.includes("timestamp")) {
     if (!isCleanupTimestampAction(timestampValue)) {
-      throw new Error("Codex cleanup suggestion must include a timestamp action for timestamp hints.");
+      throw new Error(
+        "Codex cleanup suggestion must include a timestamp action for timestamp hints.",
+      );
     }
   } else if (timestampValue !== "none" && !isCleanupTimestampAction(timestampValue)) {
     throw new Error("Codex cleanup suggestion returned an unsupported timestamp action.");
@@ -161,11 +181,17 @@ function truncateForPrompt(value: string, maxChars: number): { value: string; tr
 }
 
 function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): string {
-  const promptSampleNames = evidence.sampleNames.slice(0, RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleLines);
+  const promptSampleNames = evidence.sampleNames.slice(
+    0,
+    RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleLines,
+  );
   const sampleLines =
     promptSampleNames.length > 0
       ? promptSampleNames.map((name, index) => {
-          const truncated = truncateForPrompt(name, RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleNameChars);
+          const truncated = truncateForPrompt(
+            name,
+            RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxSampleNameChars,
+          );
           return `${index + 1}. ${truncated.value}`;
         })
       : ["(no sampled names)"];
@@ -189,7 +215,8 @@ function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): st
       RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxGroupedExamplesChars,
     );
     const nextLine = `${index + 1}. pattern=${group.pattern}; count=${group.count}; examples=${truncatedExamples.value}`;
-    const projectedChars = groupedSectionChars + (groupedLines.length > 0 ? 1 : 0) + nextLine.length;
+    const projectedChars =
+      groupedSectionChars + (groupedLines.length > 0 ? 1 : 0) + nextLine.length;
     if (projectedChars > RENAME_CLEANUP_CODEX_PROMPT_LIMITS.maxGroupedSectionChars) {
       break;
     }
@@ -200,7 +227,10 @@ function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): st
   if (groupedLines.length === 0) {
     groupedLines.push("(no grouped patterns)");
   }
-  const omittedByLineLimit = Math.max(0, evidence.groupedPatterns.length - promptGroupedPatterns.length);
+  const omittedByLineLimit = Math.max(
+    0,
+    evidence.groupedPatterns.length - promptGroupedPatterns.length,
+  );
   const omittedBySectionCap = Math.max(0, promptGroupedPatterns.length - groupedLines.length);
   const omittedGroupedCount = omittedByLineLimit + omittedBySectionCap;
   if (omittedGroupedCount > 0) {

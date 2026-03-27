@@ -26,6 +26,4 @@ export {
   writeDataSourceShapeArtifact,
 } from "./source-shape/artifact";
 
-export {
-  suggestDataSourceShapeWithCodex,
-} from "./source-shape/suggestions";
+export { suggestDataSourceShapeWithCodex } from "./source-shape/suggestions";

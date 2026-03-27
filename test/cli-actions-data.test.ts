@@ -183,10 +183,11 @@ describe("cli action modules: data failure modes", () => {
       await writeFile(inputPath, '{"name": "Ada"\n', "utf8");
 
       const relativeInput = toRepoRelativePath(inputPath);
-      await expectCliError(
-        () => actionJsonToCsv(runtime, { input: relativeInput }),
-        { code: "INVALID_JSON", exitCode: 2, messageIncludes: "Invalid JSON:" },
-      );
+      await expectCliError(() => actionJsonToCsv(runtime, { input: relativeInput }), {
+        code: "INVALID_JSON",
+        exitCode: 2,
+        messageIncludes: "Invalid JSON:",
+      });
 
       expectNoOutput();
     } finally {
