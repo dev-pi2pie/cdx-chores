@@ -17,12 +17,13 @@ Reduce CI runtime drift around the GitHub Actions Node 20 deprecation and align 
 - Updated `.github/workflows/publish-github-packages.yml` to use Node `24.14.1`.
 - Replaced `softprops/action-gh-release@v2` in `.github/workflows/release.yml` with a `gh release create` step to avoid the deprecated Node 20 JavaScript action runtime.
 - Made the release workflow rerun-safe by checking for an existing release first and updating it with `gh release edit` instead of failing on duplicate tag creation.
+- Added `actions/checkout@v6` plus explicit `--repo` arguments in the `release` job so the GitHub CLI has repository context during manual reruns and tag-based runs.
 - Updated `tsdown.config.ts` build targets from `node20` to `node22` to better match the package engine floor in `package.json`.
 
 ## Verification
 
 - `bun run build`
-- Manual workflow review of the `release` job branch for `gh release view` -> `gh release edit/create`
+- Manual workflow review of the `release` job branch for `checkout` + `gh release view/edit/create --repo`
 
 ## Outcome
 
