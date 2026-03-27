@@ -38,10 +38,7 @@ export function installPathPromptMocks(context: HarnessRunnerContext): void {
         `optional:${message}`,
       );
     },
-    promptRequiredPathWithConfig: async (
-      message: unknown,
-      options: RequiredPathPromptOptions,
-    ) => {
+    promptRequiredPathWithConfig: async (message: unknown, options: RequiredPathPromptOptions) => {
       const resolvedMessage = String(message ?? "");
       context.result.pathCalls.push({
         kind: "required",

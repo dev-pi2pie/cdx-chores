@@ -11,7 +11,11 @@ import { CliError } from "../../errors";
 import { createInteractiveAnalyzerStatus } from "../../interactive/analyzer-status";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
-import { collectDataQuerySourceIntrospection, createDuckDbConnection, type DataQueryInputFormat } from "../../duckdb/query";
+import {
+  collectDataQuerySourceIntrospection,
+  createDuckDbConnection,
+  type DataQueryInputFormat,
+} from "../../duckdb/query";
 import { collectXlsxSheetSnapshot } from "../../duckdb/xlsx-sources";
 import {
   createDataSourceShapeArtifact,
@@ -22,7 +26,10 @@ import {
   writeDataSourceShapeArtifact,
 } from "../../duckdb/source-shape";
 import { assertNonEmpty, displayPath, printLine } from "../shared";
-import { DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS, DATA_EXTRACT_SOURCE_SHAPE_SNAPSHOT_ROWS } from "./types";
+import {
+  DATA_EXTRACT_HEADER_SUGGESTION_SAMPLE_ROWS,
+  DATA_EXTRACT_SOURCE_SHAPE_SNAPSHOT_ROWS,
+} from "./types";
 
 export async function runCodexSourceShapeSuggestionFlow(
   runtime: CliRuntime,
@@ -78,14 +85,21 @@ export async function runCodexSourceShapeSuggestionFlow(
     });
     status.stop();
 
-    if (suggestionResult.errorMessage || !suggestionResult.shape || !suggestionResult.reasoningSummary) {
+    if (
+      suggestionResult.errorMessage ||
+      !suggestionResult.shape ||
+      !suggestionResult.reasoningSummary
+    ) {
       const failure = classifySourceShapeSuggestionFailure(
         suggestionResult.errorMessage ?? "Codex did not return a valid source-shape suggestion.",
       );
-      throw new CliError(`${failure.prefix}: ${suggestionResult.errorMessage ?? "Codex did not return a valid source-shape suggestion."}`, {
-        code: failure.code,
-        exitCode: 2,
-      });
+      throw new CliError(
+        `${failure.prefix}: ${suggestionResult.errorMessage ?? "Codex did not return a valid source-shape suggestion."}`,
+        {
+          code: failure.code,
+          exitCode: 2,
+        },
+      );
     }
 
     const artifact = createDataSourceShapeArtifact({

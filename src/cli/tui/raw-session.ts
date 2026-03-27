@@ -35,8 +35,8 @@ export function supportsRawSessionIO(
   const stdoutWithTTY = stdout as NodeJS.WritableStream & { isTTY?: boolean };
   return Boolean(
     stdin.isTTY &&
-      stdoutWithTTY.isTTY &&
-      typeof (stdin as Partial<RawModeReadStream>).setRawMode === "function",
+    stdoutWithTTY.isTTY &&
+    typeof (stdin as Partial<RawModeReadStream>).setRawMode === "function",
   );
 }
 

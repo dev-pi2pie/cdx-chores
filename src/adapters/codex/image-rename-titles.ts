@@ -56,7 +56,7 @@ async function suggestSingleBatch(
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,
-    ...options.imagePaths.map((path) => ({ type: "local_image", path } as const)),
+    ...options.imagePaths.map((path) => ({ type: "local_image", path }) as const),
   ];
 
   const turn = await thread.run(input, {

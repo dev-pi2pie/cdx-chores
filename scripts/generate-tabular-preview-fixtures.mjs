@@ -125,7 +125,10 @@ async function seedFixtures(largeRows) {
   await writeFixture("wide.json", `${JSON.stringify(wideRows, null, 2)}\n`);
   await writeFixture("wide.csv", rowsToCsv(wideRows));
   await writeFixture("wide.tsv", rowsToTsv(wideRows));
-  await writeFixture("scalar-array.json", `${JSON.stringify(["Ada", 36, true, { nested: "value" }], null, 2)}\n`);
+  await writeFixture(
+    "scalar-array.json",
+    `${JSON.stringify(["Ada", 36, true, { nested: "value" }], null, 2)}\n`,
+  );
   await writeFixture("large.json", `${JSON.stringify(largeData, null, 2)}\n`);
   await writeFixture("large.csv", rowsToCsv(largeData));
   await writeFixture("large.tsv", rowsToTsv(largeData));

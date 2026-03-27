@@ -25,9 +25,7 @@ export function clearInteractionState(): InlinePromptInteractionState {
   return {};
 }
 
-export function clearCycleState(
-  state: InlinePromptInteractionState,
-): InlinePromptInteractionState {
+export function clearCycleState(state: InlinePromptInteractionState): InlinePromptInteractionState {
   if (!state.cycleState) {
     return state;
   }

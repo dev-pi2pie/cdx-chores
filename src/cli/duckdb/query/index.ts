@@ -14,26 +14,12 @@ export {
   normalizeExcelBodyStartRow,
 } from "./excel-range";
 
-export {
-  quoteSqlIdentifier,
-  detectDataQueryInputFormat,
-  createDuckDbConnection,
-} from "./formats";
+export { quoteSqlIdentifier, detectDataQueryInputFormat, createDuckDbConnection } from "./formats";
 
-export {
-  listDataQuerySources,
-} from "./source-resolution";
+export { listDataQuerySources } from "./source-resolution";
 
-export {
-  prepareDataQuerySource,
-} from "./prepare-source";
+export { prepareDataQuerySource } from "./prepare-source";
 
-export {
-  executeDataQueryForTable,
-  executeDataQueryForAllRows,
-} from "./execute";
+export { executeDataQueryForTable, executeDataQueryForAllRows } from "./execute";
 
-export {
-  collectDataQuerySourceIntrospection,
-  inspectDataQueryExtensions,
-} from "./introspection";
+export { collectDataQuerySourceIntrospection, inspectDataQueryExtensions } from "./introspection";

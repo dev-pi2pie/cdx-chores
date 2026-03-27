@@ -18,17 +18,31 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
-    .option("--source-shape <path>", "Reuse an accepted JSON source-shape artifact for Excel query replay")
-    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
-    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
-      parsePositiveIntegerOption(value, "--body-start-row"),
+    .option(
+      "--source-shape <path>",
+      "Reuse an accepted JSON source-shape artifact for Excel query replay",
     )
-    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
-      parsePositiveIntegerOption(value, "--header-row"),
+    .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
+    .option(
+      "--body-start-row <value>",
+      "Excel worksheet row number where logical body rows begin",
+      (value: string) => parsePositiveIntegerOption(value, "--body-start-row"),
+    )
+    .option(
+      "--header-row <value>",
+      "Excel worksheet row number to treat as the header row",
+      (value: string) => parsePositiveIntegerOption(value, "--header-row"),
     )
     .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
-    .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
-    .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
+    .option(
+      "--codex-suggest-headers",
+      "Ask Codex to suggest semantic header mappings and stop after writing the review artifact",
+      false,
+    )
+    .option(
+      "--write-header-mapping <path>",
+      "Write the suggested header-mapping artifact to an explicit path",
+    )
     .option(
       "--install-missing-extension",
       "Attempt one DuckDB extension install-and-retry for sqlite/excel inputs",
@@ -100,11 +114,15 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
-    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
-      parsePositiveIntegerOption(value, "--body-start-row"),
+    .option(
+      "--body-start-row <value>",
+      "Excel worksheet row number where logical body rows begin",
+      (value: string) => parsePositiveIntegerOption(value, "--body-start-row"),
     )
-    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
-      parsePositiveIntegerOption(value, "--header-row"),
+    .option(
+      "--header-row <value>",
+      "Excel worksheet row number to treat as the header row",
+      (value: string) => parsePositiveIntegerOption(value, "--header-row"),
     )
     .option("--print-sql", "Write drafted SQL only to stdout", false)
     .action(

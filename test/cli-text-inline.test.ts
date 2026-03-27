@@ -317,6 +317,8 @@ describe("text inline prompt controller", () => {
     expect(result).toBe("{date}-{stem}");
     expect(calls).toEqual(["Template"]);
     expect(stdout.text).toContain("Custom filename template\n");
-    expect(stdout.text).toContain("Template suggestion (Right arrow to accept): {timestamp}-{stem}");
+    expect(stdout.text).toContain(
+      "Template suggestion (Right arrow to accept): {timestamp}-{stem}",
+    );
   });
 });

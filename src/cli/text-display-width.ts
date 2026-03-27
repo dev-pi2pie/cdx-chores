@@ -20,11 +20,10 @@ function isZeroWidthCodePoint(codePoint: number): boolean {
 function isFullWidthCodePoint(codePoint: number): boolean {
   return (
     codePoint >= 0x1100 &&
-    (
-      codePoint <= 0x115f ||
+    (codePoint <= 0x115f ||
       codePoint === 0x2329 ||
       codePoint === 0x232a ||
-      ((codePoint >= 0x2e80 && codePoint <= 0x3247) && codePoint !== 0x303f) ||
+      (codePoint >= 0x2e80 && codePoint <= 0x3247 && codePoint !== 0x303f) ||
       (codePoint >= 0x3250 && codePoint <= 0x4dbf) ||
       (codePoint >= 0x4e00 && codePoint <= 0xa4c6) ||
       (codePoint >= 0xa960 && codePoint <= 0xa97c) ||
@@ -36,8 +35,7 @@ function isFullWidthCodePoint(codePoint: number): boolean {
       (codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
       (codePoint >= 0x1b000 && codePoint <= 0x1b001) ||
       (codePoint >= 0x1f200 && codePoint <= 0x1f251) ||
-      (codePoint >= 0x20000 && codePoint <= 0x3fffd)
-    )
+      (codePoint >= 0x20000 && codePoint <= 0x3fffd))
   );
 }
 

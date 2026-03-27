@@ -273,8 +273,7 @@ function createCodexDocumentTextTitleAnalyzer(options: {
   const titleSuggester = options.titleSuggester ?? suggestDocumentRenameTitlesWithCodex;
   return {
     summaryLabel: "Codex doc titles",
-    progressLabelForCount: (eligibleCount) =>
-      `Codex: analyzing ${eligibleCount} document file(s)`,
+    progressLabelForCount: (eligibleCount) => `Codex: analyzing ${eligibleCount} document file(s)`,
     selectCandidates: selectCodexDocumentTextCandidates,
     suggestTitles: async ({ paths, workingDirectory, timeoutMs, retries, batchSize }) => {
       const result = await titleSuggester({

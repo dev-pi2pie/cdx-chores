@@ -69,7 +69,9 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("sqlite: detected support=");
     expect(stdout.text).toContain("ready-to-draft=");
     expect(stdout.text).not.toContain("csv: detected support=");
-    expect(stdout.text).not.toContain("csv: detected support=yes, loadability=yes, installability=unknown");
+    expect(stdout.text).not.toContain(
+      "csv: detected support=yes, loadability=yes, installability=unknown",
+    );
   });
 
   test("actionDataDuckDbDoctor emits human-readable DuckDB extension report", async () => {
@@ -88,14 +90,11 @@ describe("cli action modules: doctor", () => {
   test("actionDataDuckDbExtensionInstall requires an extension name unless --all-supported is used", async () => {
     const { runtime, expectNoOutput } = createActionTestRuntime();
 
-    await expectCliError(
-      () => actionDataDuckDbExtensionInstall(runtime, {}),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "Extension name is required unless --all-supported is used",
-      },
-    );
+    await expectCliError(() => actionDataDuckDbExtensionInstall(runtime, {}), {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+      messageIncludes: "Extension name is required unless --all-supported is used",
+    });
 
     expectNoOutput();
   });
@@ -143,10 +142,11 @@ describe("cli action modules: markdown/video failure paths", () => {
       const { runtime, expectNoOutput } = createActionTestRuntime();
       const missing = join(fixtureDir, "missing.md");
 
-      await expectCliError(
-        () => actionMdToDocx(runtime, { input: toRepoRelativePath(missing) }),
-        { code: "FILE_NOT_FOUND", exitCode: 2, messageIncludes: "Input file not found:" },
-      );
+      await expectCliError(() => actionMdToDocx(runtime, { input: toRepoRelativePath(missing) }), {
+        code: "FILE_NOT_FOUND",
+        exitCode: 2,
+        messageIncludes: "Input file not found:",
+      });
 
       expectNoOutput();
     });
@@ -158,10 +158,11 @@ describe("cli action modules: markdown/video failure paths", () => {
       const missing = join(fixtureDir, "missing.mp4");
 
       await expectCliError(
-        () => actionVideoConvert(runtime, {
-          input: toRepoRelativePath(missing),
-          output: toRepoRelativePath(join(fixtureDir, "out.mov")),
-        }),
+        () =>
+          actionVideoConvert(runtime, {
+            input: toRepoRelativePath(missing),
+            output: toRepoRelativePath(join(fixtureDir, "out.mov")),
+          }),
         { code: "FILE_NOT_FOUND", exitCode: 2, messageIncludes: "Input file not found:" },
       );
 
@@ -190,12 +191,13 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-          width: 0,
-          height: 320,
-        }),
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+            width: 0,
+            height: 320,
+          }),
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Width must be a positive number." },
       );
 
@@ -210,11 +212,12 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-          scale: 0,
-        }),
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+            scale: 0,
+          }),
         { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Scale must be a positive number." },
       );
 
@@ -229,13 +232,18 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-          width: 320,
-          height: 0,
-        }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Height must be a positive number." },
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+            width: 320,
+            height: 0,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Height must be a positive number.",
+        },
       );
 
       expectNoOutput();
@@ -249,10 +257,11 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-        }),
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+          }),
         {
           code: "INVALID_INPUT",
           exitCode: 2,
@@ -271,13 +280,14 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-          scale: 0.5,
-          width: 640,
-          height: 360,
-        }),
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+            scale: 0.5,
+            width: 640,
+            height: 360,
+          }),
         {
           code: "INVALID_INPUT",
           exitCode: 2,
@@ -296,11 +306,12 @@ describe("cli action modules: markdown/video failure paths", () => {
       await writeFile(inputPath, "fake", "utf8");
 
       await expectCliError(
-        () => actionVideoResize(runtime, {
-          input: toRepoRelativePath(inputPath),
-          output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
-          width: 640,
-        }),
+        () =>
+          actionVideoResize(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(join(fixtureDir, "out.mp4")),
+            width: 640,
+          }),
         {
           code: "INVALID_INPUT",
           exitCode: 2,

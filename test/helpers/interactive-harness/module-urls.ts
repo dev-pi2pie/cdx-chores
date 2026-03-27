@@ -7,12 +7,8 @@ export const interactiveHarnessRunnerPath = resolve(
   REPO_ROOT,
   "test/helpers/interactive-harness/runner.ts",
 );
-export const actionsModuleUrl = pathToFileURL(
-  resolve(REPO_ROOT, "src/cli/actions/index.ts"),
-).href;
-export const pathModuleUrl = pathToFileURL(
-  resolve(REPO_ROOT, "src/cli/prompts/path.ts"),
-).href;
+export const actionsModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/actions/index.ts")).href;
+export const pathModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path.ts")).href;
 export const pathConfigModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/prompts/path-config.ts"),
 ).href;

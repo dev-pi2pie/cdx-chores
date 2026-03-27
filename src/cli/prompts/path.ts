@@ -102,9 +102,10 @@ function isPromptCancelError(error: unknown): boolean {
   );
 }
 
-function pathKindToSuggestionFilter(
-  kind: PathPromptKind | undefined,
-): { targetKind: "any" | "directory"; fileExtensions?: string[] } {
+function pathKindToSuggestionFilter(kind: PathPromptKind | undefined): {
+  targetKind: "any" | "directory";
+  fileExtensions?: string[];
+} {
   if (kind === "directory") {
     return { targetKind: "directory" };
   }
@@ -150,7 +151,10 @@ async function promptPathSimple(options: PromptPathOptions): Promise<string> {
   });
 }
 
-export async function promptRequiredPath(message: string, kind: PathPromptKind = "path"): Promise<string> {
+export async function promptRequiredPath(
+  message: string,
+  kind: PathPromptKind = "path",
+): Promise<string> {
   return await promptPath({ message, kind });
 }
 

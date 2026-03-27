@@ -88,7 +88,10 @@ export async function reviewInteractiveHeaderMappings(options: {
     };
   }
 
-  const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+  const status = createInteractiveAnalyzerStatus(
+    options.runtime.stdout,
+    options.runtime.colorEnabled,
+  );
   let suggestionResult;
   try {
     status.wait("Waiting for Codex header suggestions");
@@ -102,7 +105,10 @@ export async function reviewInteractiveHeaderMappings(options: {
   }
 
   if (suggestionResult.errorMessage) {
-    printLine(options.runtime.stderr, `Codex header suggestions failed: ${suggestionResult.errorMessage}`);
+    printLine(
+      options.runtime.stderr,
+      `Codex header suggestions failed: ${suggestionResult.errorMessage}`,
+    );
     printLine(options.runtime.stderr, "Keeping current headers.");
     return {
       introspection: options.introspection,
@@ -110,7 +116,10 @@ export async function reviewInteractiveHeaderMappings(options: {
   }
 
   if (suggestionResult.mappings.length === 0) {
-    printLine(options.runtime.stderr, "No semantic header changes were suggested. Keeping current headers.");
+    printLine(
+      options.runtime.stderr,
+      "No semantic header changes were suggested. Keeping current headers.",
+    );
     return {
       introspection: options.introspection,
     };
@@ -153,7 +162,10 @@ export async function reviewInteractiveHeaderMappings(options: {
         availableColumns,
         mappings: workingMappings,
       });
-      printLine(options.runtime.stderr, `Accepted header mappings. Re-inspecting shaped source before ${labels.continuationLabel}.`);
+      printLine(
+        options.runtime.stderr,
+        `Accepted header mappings. Re-inspecting shaped source before ${labels.continuationLabel}.`,
+      );
       const introspection = await collectDataQuerySourceIntrospection(
         options.connection,
         options.inputPath,

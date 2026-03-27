@@ -16,7 +16,9 @@ export interface KeypressParser {
 }
 
 const DEFAULT_ESCAPE_ABORT_DELAY_MS = 120;
-const POTENTIAL_ESCAPE_SEQUENCE_BUFFER_PATTERN = new RegExp(String.raw`^\u001B(?:\[[0-9;?]*|O[0-9;?]*)$`);
+const POTENTIAL_ESCAPE_SEQUENCE_BUFFER_PATTERN = new RegExp(
+  String.raw`^\u001B(?:\[[0-9;?]*|O[0-9;?]*)$`,
+);
 
 function normalizeKeypressChunk(str: string | undefined, key: RawSessionKeypressInfo): string {
   if (typeof str === "string") {
@@ -32,9 +34,7 @@ function isPotentialEscapeSequenceBuffer(value: string): boolean {
   return POTENTIAL_ESCAPE_SEQUENCE_BUFFER_PATTERN.test(value);
 }
 
-function parseSpecialEscapeSequence(
-  value: string,
-): ParsedKeypressEvent | undefined {
+function parseSpecialEscapeSequence(value: string): ParsedKeypressEvent | undefined {
   if (value === "\x1b[C") {
     return { kind: "arrow", direction: "right" };
   }
@@ -99,7 +99,12 @@ export function createKeypressParser(options: CreateKeypressParserOptions = {}):
       if (escapeSequenceBuffer.length > 0 && key.name !== "escape") {
         escapeSequenceBuffer += chunk;
 
-        if (key.name === "right" || key.name === "left" || key.name === "up" || key.name === "down") {
+        if (
+          key.name === "right" ||
+          key.name === "left" ||
+          key.name === "up" ||
+          key.name === "down"
+        ) {
           resetEscapeState();
           return {
             kind: "arrow",

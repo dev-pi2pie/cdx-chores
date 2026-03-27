@@ -130,7 +130,9 @@ function buildLogFileContent(fileIndex) {
     lines.push(buildLogLine(baseTimeMs, lineIndex));
   }
 
-  lines.push(`${new Date(baseTimeMs).toISOString()} INFO [fixture] file marker for sample ${padNumber(fileIndex, 4)}.`);
+  lines.push(
+    `${new Date(baseTimeMs).toISOString()} INFO [fixture] file marker for sample ${padNumber(fileIndex, 4)}.`,
+  );
   return `${lines.join("\n")}\n`;
 }
 

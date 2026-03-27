@@ -5,16 +5,10 @@ export function createMiscActionMocks(context: HarnessRunnerContext) {
     actionDoctor: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("doctor", options);
     },
-    actionDataPreview: async (
-      _runtime: unknown,
-      options: Record<string, unknown>,
-    ) => {
+    actionDataPreview: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("data:preview", options);
     },
-    actionDataParquetPreview: async (
-      _runtime: unknown,
-      options: Record<string, unknown>,
-    ) => {
+    actionDataParquetPreview: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("data:parquet-preview", options);
     },
     loadDataPreviewSource: async (_runtime: unknown, input: unknown) => ({
@@ -51,10 +45,7 @@ export function createMiscActionMocks(context: HarnessRunnerContext) {
     actionMdToDocx: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("md:to-docx", options);
     },
-    actionMdFrontmatterToJson: async (
-      _runtime: unknown,
-      options: Record<string, unknown>,
-    ) => {
+    actionMdFrontmatterToJson: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("md:frontmatter-to-json", options);
     },
     actionVideoConvert: async (_runtime: unknown, options: Record<string, unknown>) => {

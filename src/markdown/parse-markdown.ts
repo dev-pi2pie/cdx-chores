@@ -24,7 +24,10 @@ function getFenceType(line: string): FrontmatterType | null {
   return FENCE_TO_TYPE[match[1] ?? ""] ?? null;
 }
 
-function parseFrontmatter(frontmatter: string, type: FrontmatterType | null): Record<string, unknown> | null {
+function parseFrontmatter(
+  frontmatter: string,
+  type: FrontmatterType | null,
+): Record<string, unknown> | null {
   if (!type) {
     return null;
   }
@@ -56,7 +59,10 @@ function parseFrontmatter(frontmatter: string, type: FrontmatterType | null): Re
   return null;
 }
 
-function extractJsonBlock(text: string, startIndex: number): { jsonText: string; endIndex: number } | null {
+function extractJsonBlock(
+  text: string,
+  startIndex: number,
+): { jsonText: string; endIndex: number } | null {
   let depth = 0;
   let inString = false;
   let escaped = false;
@@ -75,14 +81,14 @@ function extractJsonBlock(text: string, startIndex: number): { jsonText: string;
         continue;
       }
 
-      if (char === "\"") {
+      if (char === '"') {
         inString = false;
       }
 
       continue;
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       inString = true;
       continue;
     }
@@ -119,12 +125,22 @@ export function parseMarkdown(input: string): ParsedMarkdown {
     const leadingWhitespace = normalizedWithoutBom.match(/^[\t \n]*/)?.[0] ?? "";
     const jsonStart = leadingWhitespace.length;
     if (normalizedWithoutBom[jsonStart] !== "{") {
-      return { frontmatter: null, content: normalizedWithoutBom, data: null, frontmatterType: null };
+      return {
+        frontmatter: null,
+        content: normalizedWithoutBom,
+        data: null,
+        frontmatterType: null,
+      };
     }
 
     const jsonBlock = extractJsonBlock(normalizedWithoutBom, jsonStart);
     if (!jsonBlock) {
-      return { frontmatter: null, content: normalizedWithoutBom, data: null, frontmatterType: null };
+      return {
+        frontmatter: null,
+        content: normalizedWithoutBom,
+        data: null,
+        frontmatterType: null,
+      };
     }
 
     const frontmatter = jsonBlock.jsonText;
@@ -134,7 +150,12 @@ export function parseMarkdown(input: string): ParsedMarkdown {
     }
     const data = parseFrontmatter(frontmatter, "json");
     if (!data) {
-      return { frontmatter: null, content: normalizedWithoutBom, data: null, frontmatterType: null };
+      return {
+        frontmatter: null,
+        content: normalizedWithoutBom,
+        data: null,
+        frontmatterType: null,
+      };
     }
 
     return {

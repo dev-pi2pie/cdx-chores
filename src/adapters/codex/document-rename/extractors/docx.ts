@@ -14,7 +14,9 @@ import {
   toSingleLine,
 } from "./shared";
 
-export async function extractDocxEvidence(path: string): Promise<DocumentTitleEvidence | { reason: string }> {
+export async function extractDocxEvidence(
+  path: string,
+): Promise<DocumentTitleEvidence | { reason: string }> {
   try {
     const buffer = await readFile(path);
     const [metadataResult, htmlResult, rawTextResult] = await Promise.all([
@@ -31,7 +33,13 @@ export async function extractDocxEvidence(path: string): Promise<DocumentTitleEv
     const warnings: string[] =
       "reason" in metadataResult
         ? ["docx_metadata_unavailable"]
-        : [...new Set(metadataResult.warnings.filter((warning): warning is string => typeof warning === "string"))];
+        : [
+            ...new Set(
+              metadataResult.warnings.filter(
+                (warning): warning is string => typeof warning === "string",
+              ),
+            ),
+          ];
     const metadata = "reason" in metadataResult ? undefined : metadataResult.metadata;
 
     for (const match of html.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)) {
@@ -49,7 +57,9 @@ export async function extractDocxEvidence(path: string): Promise<DocumentTitleEv
       .map((line: string) => toSingleLine(line))
       .filter(Boolean);
     const headings = headingSignals.map((heading) => heading.text);
-    const h1Headings = headingSignals.filter((heading) => heading.level === 1).map((heading) => heading.text);
+    const h1Headings = headingSignals
+      .filter((heading) => heading.level === 1)
+      .map((heading) => heading.text);
     const strongEarlyHeadings = headingSignals
       .filter((heading, index) => index < 4 && heading.level <= 2)
       .map((heading) => heading.text);

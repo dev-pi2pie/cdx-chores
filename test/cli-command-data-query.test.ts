@@ -6,7 +6,12 @@ import { describe, expect, test } from "bun:test";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
-import { REPO_ROOT, runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import {
+  REPO_ROOT,
+  runCli,
+  toRepoRelativePath,
+  withTempFixtureDir,
+} from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
@@ -22,10 +27,9 @@ async function createHeaderSuggestionStub(options: {
   workingDirectory: string;
 }): Promise<string> {
   const stubPath = join(options.workingDirectory, "header-suggest-stub.mjs");
-  const promptWrite =
-    options.promptPath
-      ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
-      : "";
+  const promptWrite = options.promptPath
+    ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
+    : "";
   const script = `#!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 
@@ -350,22 +354,26 @@ describe("CLI data query command", () => {
       const artifactPath = join(fixtureDir, "shape.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -587,21 +595,25 @@ describe("CLI data query command", () => {
       const artifactPath = join(fixtureDir, "shape.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "examples/playground/other.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "examples/playground/other.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -616,7 +628,9 @@ describe("CLI data query command", () => {
       ]);
 
       expect(result.exitCode).toBe(2);
-      expect(result.stderr).toContain("Source shape artifact does not match the current input context exactly");
+      expect(result.stderr).toContain(
+        "Source shape artifact does not match the current input context exactly",
+      );
     });
   });
 });
@@ -638,8 +652,6 @@ describe("CLI DuckDB lifecycle commands", () => {
     const result = runCli(["data", "duckdb", "extension", "install"]);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain(
-      "Extension name is required unless --all-supported is used",
-    );
+    expect(result.stderr).toContain("Extension name is required unless --all-supported is used");
   });
 });

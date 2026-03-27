@@ -18,10 +18,9 @@ async function createCodexStub(options: {
   workingDirectory: string;
 }): Promise<string> {
   const stubPath = join(options.workingDirectory, "codex-stub.mjs");
-  const promptWrite =
-    options.promptPath
-      ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
-      : "";
+  const promptWrite = options.promptPath
+    ? `await writeFile(${JSON.stringify(options.promptPath)}, prompt, "utf8");`
+    : "";
   const script = `#!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 

@@ -27,11 +27,7 @@ const TIMESTAMP_TEMPLATE_CANDIDATES = [
   "{timestamp_utc_12h}",
 ] as const;
 
-const DATE_TEMPLATE_CANDIDATES = [
-  "{date}",
-  "{date_local}",
-  "{date_utc}",
-] as const;
+const DATE_TEMPLATE_CANDIDATES = ["{date}", "{date_local}", "{date_utc}"] as const;
 
 function resolveTemplateCandidateScope(fragment: string): TemplateCandidateScope {
   if (fragment.startsWith("{timestamp")) {
@@ -66,7 +62,9 @@ export function resolveTemplateCompletionMatch(value: string): TemplateCompletio
   }
 
   const scope = resolveTemplateCandidateScope(fragment);
-  const candidates = getCandidatesForScope(scope).filter((candidate) => candidate.startsWith(fragment));
+  const candidates = getCandidatesForScope(scope).filter((candidate) =>
+    candidate.startsWith(fragment),
+  );
   if (candidates.length === 0) {
     return undefined;
   }

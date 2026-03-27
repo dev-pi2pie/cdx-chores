@@ -137,7 +137,11 @@ describe("cli action modules: data query", () => {
   test("actionDataQuery keeps mixed English and CJK table output aligned by display width", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "people.csv");
-      await writeFile(inputPath, "word,meaning_zh\nstructure,結構；架構\nhierarchy,階層；等級制度\n", "utf8");
+      await writeFile(
+        inputPath,
+        "word,meaning_zh\nstructure,結構；架構\nhierarchy,階層；等級制度\n",
+        "utf8",
+      );
 
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
       await actionDataQuery(runtime, {
@@ -547,21 +551,25 @@ describe("cli action modules: data query", () => {
       await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "csv",
-            path: toRepoRelativePath(inputPath),
+        `${JSON.stringify(
+          {
+            input: {
+              format: "csv",
+              path: toRepoRelativePath(inputPath),
+            },
+            mappings: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "status" },
+            ],
+            metadata: {
+              artifactType: "data-header-mapping",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            version: 1,
           },
-          mappings: [
-            { from: "column_1", to: "id" },
-            { from: "column_2", to: "status" },
-          ],
-          metadata: {
-            artifactType: "data-header-mapping",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -591,22 +599,26 @@ describe("cli action modules: data query", () => {
       const artifactPath = join(fixtureDir, "shape.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -706,7 +718,8 @@ describe("cli action modules: data query failure modes", () => {
         {
           code: "INVALID_INPUT",
           exitCode: 2,
-          messageIncludes: "--install-missing-extension is only valid for extension-backed query formats",
+          messageIncludes:
+            "--install-missing-extension is only valid for extension-backed query formats",
         },
       );
 
@@ -765,7 +778,11 @@ describe("cli action modules: data query failure modes", () => {
             range: "A1:B2",
             sql: "select * from file",
           }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--range is only valid for Excel query inputs" },
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--range is only valid for Excel query inputs",
+        },
       );
 
       expectNoOutput();
@@ -779,21 +796,25 @@ describe("cli action modules: data query failure modes", () => {
       await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "test/fixtures/data-query/multi.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "test/fixtures/data-query/multi.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              range: "A1:B3",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            range: "A1:B3",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -805,7 +826,11 @@ describe("cli action modules: data query failure modes", () => {
             sourceShape: toRepoRelativePath(artifactPath),
             sql: "select * from file",
           }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source-shape is only valid for Excel query inputs" },
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--source-shape is only valid for Excel query inputs",
+        },
       );
 
       expectNoOutput();
@@ -840,18 +865,22 @@ describe("cli action modules: data query failure modes", () => {
       await writeFile(inputPath, "column_1,column_2\n1001,active\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "csv",
-            path: "examples/playground/other.csv",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "csv",
+              path: "examples/playground/other.csv",
+            },
+            mappings: [{ from: "column_1", to: "id" }],
+            metadata: {
+              artifactType: "data-header-mapping",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            version: 1,
           },
-          mappings: [{ from: "column_1", to: "id" }],
-          metadata: {
-            artifactType: "data-header-mapping",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -885,21 +914,25 @@ describe("cli action modules: data query failure modes", () => {
       const artifactPath = join(fixtureDir, "shape.json");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "examples/playground/other.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "examples/playground/other.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 

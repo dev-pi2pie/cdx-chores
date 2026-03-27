@@ -210,7 +210,10 @@ export function parseContainsFilterValue(value: string): DataPreviewContainsFilt
   for (const character of value) {
     if (escaped) {
       if (character !== ":" && character !== "\\") {
-        throw createContainsFilterError(value, `invalid escape sequence \\${character}. Use \\: for ':' or \\\\ for '\\'.`);
+        throw createContainsFilterError(
+          value,
+          `invalid escape sequence \\${character}. Use \\: for ':' or \\\\ for '\\'.`,
+        );
       }
 
       if (seenSeparator) {
@@ -240,7 +243,10 @@ export function parseContainsFilterValue(value: string): DataPreviewContainsFilt
   }
 
   if (escaped) {
-    throw createContainsFilterError(value, "trailing escape sequence. Use \\: for ':' or \\\\ for '\\'.");
+    throw createContainsFilterError(
+      value,
+      "trailing escape sequence. Use \\: for ':' or \\\\ for '\\'.",
+    );
   }
 
   if (!seenSeparator) {
@@ -264,7 +270,9 @@ export function parseContainsFilterValue(value: string): DataPreviewContainsFilt
   };
 }
 
-export function parseContainsFilterValues(values: readonly string[] | undefined): DataPreviewContainsFilter[] {
+export function parseContainsFilterValues(
+  values: readonly string[] | undefined,
+): DataPreviewContainsFilter[] {
   if (!values || values.length === 0) {
     return [];
   }
@@ -326,8 +334,11 @@ export function createDataPreviewSource(
     return createJsonPreviewSource(text);
   }
 
-  throw new CliError(`Unsupported preview file type: ${extension || "(none)"}. Expected .csv, .tsv, or .json.`, {
-    code: "INVALID_INPUT",
-    exitCode: 2,
-  });
+  throw new CliError(
+    `Unsupported preview file type: ${extension || "(none)"}. Expected .csv, .tsv, or .json.`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
 }

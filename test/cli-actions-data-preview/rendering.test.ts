@@ -248,8 +248,7 @@ describe("cli action modules: data preview", () => {
 
   test("actionDataPreview keeps mixed English and CJK columns aligned by display width", async () => {
     await withDataPreviewFixture({
-      content:
-        "Word\tMeaning (Chinese)\nstructure\t結構；架構\nhierarchy\t階層；等級制度\n",
+      content: "Word\tMeaning (Chinese)\nstructure\t結構；架構\nhierarchy\t階層；等級制度\n",
       fileName: "mixed-width.tsv",
       run: async ({ expectNoStderr, stdout, ...context }) => {
         await runDataPreview(context);

@@ -59,10 +59,7 @@ function buildDuckDbDoctorPayload(
   };
 }
 
-function renderDuckDbProbe(
-  runtime: CliRuntime,
-  probe: DuckDbManagedExtensionProbe,
-): void {
+function renderDuckDbProbe(runtime: CliRuntime, probe: DuckDbManagedExtensionProbe): void {
   const pc = getCliColors(runtime);
   printLine(
     runtime.stdout,
@@ -70,7 +67,10 @@ function renderDuckDbProbe(
   );
 
   if (probe.cacheFilePath) {
-    printLine(runtime.stdout, `  ${pc.dim(`Cache: ${sanitizeDuckDbPathForDisplay(probe.cacheFilePath)}`)}`);
+    printLine(
+      runtime.stdout,
+      `  ${pc.dim(`Cache: ${sanitizeDuckDbPathForDisplay(probe.cacheFilePath)}`)}`,
+    );
   } else if (probe.cacheDirectory) {
     printLine(
       runtime.stdout,
@@ -99,7 +99,9 @@ export async function actionDataDuckDbDoctor(
     connection = await createDuckDbConnection();
     const activeConnection = connection;
     const probes = await Promise.all(
-      DUCKDB_MANAGED_EXTENSION_NAMES.map((name) => probeDuckDbManagedExtension(activeConnection, name)),
+      DUCKDB_MANAGED_EXTENSION_NAMES.map((name) =>
+        probeDuckDbManagedExtension(activeConnection, name),
+      ),
     );
 
     if (options.json) {

@@ -17,8 +17,7 @@ import type { CliRuntime } from "../../types";
 import type { DataInteractiveActionKey } from "../menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "../shared";
 
-type DirectDataConversionAction =
-  (typeof DIRECT_DATA_CONVERSION_ACTIONS)[number];
+type DirectDataConversionAction = (typeof DIRECT_DATA_CONVERSION_ACTIONS)[number];
 
 export const DIRECT_DATA_CONVERSION_ACTIONS = [
   "data:json-to-csv",

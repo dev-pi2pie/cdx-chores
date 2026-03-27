@@ -3,7 +3,10 @@ import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
 import type { DataQuerySourceIntrospection } from "../../duckdb/query";
 
 export type DataQueryInteractiveMode = "manual" | "formal-guide" | "Codex Assistant";
-export type OutputPromptSelection = Pick<DataQueryOptions, "json" | "output" | "overwrite" | "pretty" | "rows">;
+export type OutputPromptSelection = Pick<
+  DataQueryOptions,
+  "json" | "output" | "overwrite" | "pretty" | "rows"
+>;
 export type FormalGuideFilterOperator = "=" | "!=" | ">" | ">=" | "<" | "<=" | "contains";
 export type FormalGuideAggregateKind = "none" | "count" | "sum" | "avg" | "min" | "max";
 

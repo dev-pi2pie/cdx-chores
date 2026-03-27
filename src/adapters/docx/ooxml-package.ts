@@ -47,10 +47,22 @@ function detectXmlEncoding(buffer: Buffer): XmlTextEncoding {
   if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
     return "utf-16be";
   }
-  if (buffer.length >= 4 && buffer[0] === 0x3c && buffer[1] === 0x00 && buffer[2] === 0x3f && buffer[3] === 0x00) {
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x3c &&
+    buffer[1] === 0x00 &&
+    buffer[2] === 0x3f &&
+    buffer[3] === 0x00
+  ) {
     return "utf-16le";
   }
-  if (buffer.length >= 4 && buffer[0] === 0x00 && buffer[1] === 0x3c && buffer[2] === 0x00 && buffer[3] === 0x3f) {
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x00 &&
+    buffer[1] === 0x3c &&
+    buffer[2] === 0x00 &&
+    buffer[3] === 0x3f
+  ) {
     return "utf-16be";
   }
 

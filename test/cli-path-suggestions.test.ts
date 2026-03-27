@@ -95,7 +95,9 @@ describe("path suggestion engine", () => {
       });
 
       expect(currentDirSuggestions.some((item) => item.replacement === "./child/")).toBe(true);
-      expect(currentDirSuggestions.some((item) => item.replacement === "./root-file.txt")).toBe(true);
+      expect(currentDirSuggestions.some((item) => item.replacement === "./root-file.txt")).toBe(
+        true,
+      );
       expect(parentDirSuggestions.map((item) => item.replacement)).toEqual(["../root-file.txt"]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -164,7 +166,11 @@ describe("path suggestion engine", () => {
     try {
       await mkdir(join(fixtureDir, "alpha-dir"));
       for (let index = 0; index < 80; index += 1) {
-        await writeFile(join(fixtureDir, `alpha-file-${String(index).padStart(2, "0")}.txt`), "x", "utf8");
+        await writeFile(
+          join(fixtureDir, `alpha-file-${String(index).padStart(2, "0")}.txt`),
+          "x",
+          "utf8",
+        );
       }
 
       const suggestions = await resolvePathSuggestions({

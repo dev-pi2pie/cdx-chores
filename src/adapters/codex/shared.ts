@@ -162,7 +162,10 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
   return { suggestions, batchErrors };
 }
 
-export function summarizeBatchErrors(batchErrors: string[], hasSuggestions: boolean): string | undefined {
+export function summarizeBatchErrors(
+  batchErrors: string[],
+  hasSuggestions: boolean,
+): string | undefined {
   if (batchErrors.length === 0) {
     return undefined;
   }

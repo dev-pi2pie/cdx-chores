@@ -2,10 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 
 import { CliError } from "../../errors";
 import { ensureDuckDbManagedExtensionLoaded } from "../extensions";
-import {
-  escapeSqlStringLiteral,
-  getDuckDbManagedExtensionNameForFormat,
-} from "./formats";
+import { escapeSqlStringLiteral, getDuckDbManagedExtensionNameForFormat } from "./formats";
 import type { DataQueryInputFormat } from "./types";
 import { listXlsxSheetNames } from "../xlsx-sources";
 
@@ -13,7 +10,10 @@ function formatAvailableSources(sources: readonly string[]): string {
   return sources.join(", ");
 }
 
-async function listSQLiteSources(connection: DuckDBConnection, inputPath: string): Promise<string[]> {
+async function listSQLiteSources(
+  connection: DuckDBConnection,
+  inputPath: string,
+): Promise<string[]> {
   const reader = await connection.runAndReadAll(
     `select name from sqlite_scan(${escapeSqlStringLiteral(inputPath)}, 'sqlite_master') where type in ('table', 'view') and name not like 'sqlite_%' order by name`,
   );
@@ -55,10 +55,13 @@ export async function resolveMultiObjectSource(
 ): Promise<string> {
   const sources = await listDataQuerySources(connection, inputPath, format);
   if (!sources || sources.length === 0) {
-    throw new CliError(`No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   const normalizedSource = source?.trim();

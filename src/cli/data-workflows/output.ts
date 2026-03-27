@@ -30,8 +30,7 @@ export async function promptFileOutputTarget(options: {
         ...options.pathPromptContext,
         customMessage: options.customMessage,
       });
-      outputPath =
-        chosenOutputPath ?? fallbackOutputPath;
+      outputPath = chosenOutputPath ?? fallbackOutputPath;
     } else {
       outputPath = await promptRequiredPathWithConfig(options.message, {
         kind: "file",

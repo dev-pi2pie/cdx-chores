@@ -41,7 +41,10 @@ export async function createTempFixtureDir(prefix: string): Promise<string> {
   return await mkdtemp(join(TMP_ROOT, `${prefix}-`));
 }
 
-export async function withTempFixtureDir<T>(prefix: string, run: (fixtureDir: string) => Promise<T>): Promise<T> {
+export async function withTempFixtureDir<T>(
+  prefix: string,
+  run: (fixtureDir: string) => Promise<T>,
+): Promise<T> {
   const fixtureDir = await createTempFixtureDir(prefix);
   try {
     return await run(fixtureDir);

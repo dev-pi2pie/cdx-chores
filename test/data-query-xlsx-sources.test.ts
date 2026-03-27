@@ -26,7 +26,13 @@ async function createWorkbookWithReorderedMetadataAttributes(outputPath: string)
     await mkdir(unpackDir, { recursive: true });
 
     const unzipProc = spawnSync({
-      cmd: ["unzip", "-qq", join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"), "-d", unpackDir],
+      cmd: [
+        "unzip",
+        "-qq",
+        join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"),
+        "-d",
+        unpackDir,
+      ],
       stderr: "pipe",
       stdout: "pipe",
     });
@@ -72,7 +78,10 @@ async function createWorkbookWithReorderedMetadataAttributes(outputPath: string)
 
 describe("xlsx source discovery", () => {
   test("collectXlsxSheetSnapshot summarizes non-empty rows and used range for a simple workbook", async () => {
-    const snapshot = await collectXlsxSheetSnapshot("test/fixtures/data-query/multi.xlsx", "Summary");
+    const snapshot = await collectXlsxSheetSnapshot(
+      "test/fixtures/data-query/multi.xlsx",
+      "Summary",
+    );
 
     expect(snapshot.sheetName).toBe("Summary");
     expect(snapshot.usedRange).toBe("A1:C3");
@@ -95,14 +104,11 @@ describe("xlsx source discovery", () => {
       const workbookPath = join(fixtureDir, "broken.xlsx");
       await writeFile(workbookPath, createWorkbookWithInvalidCentralDirectoryOffset());
 
-      await expectCliError(
-        () => listXlsxSheetNames(workbookPath),
-        {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-          messageIncludes: "failed to read workbook metadata",
-        },
-      );
+      await expectCliError(() => listXlsxSheetNames(workbookPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "failed to read workbook metadata",
+      });
     });
   });
 

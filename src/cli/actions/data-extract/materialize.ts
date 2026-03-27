@@ -19,9 +19,7 @@ function orderMaterializedRows(
   columns: readonly string[],
   rows: ReadonlyArray<Record<string, unknown>>,
 ): Array<Record<string, unknown>> {
-  return rows.map((row) =>
-    Object.fromEntries(columns.map((column) => [column, row[column]])),
-  );
+  return rows.map((row) => Object.fromEntries(columns.map((column) => [column, row[column]])));
 }
 
 function stringifyDelimitedCell(value: unknown): string {

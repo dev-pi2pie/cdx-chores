@@ -10,7 +10,10 @@ export interface DoctorOptions {
   json?: boolean;
 }
 
-export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions = {}): Promise<void> {
+export async function actionDoctor(
+  runtime: CliRuntime,
+  options: DoctorOptions = {},
+): Promise<void> {
   const pc = getCliColors(runtime);
   const [pandoc, ffmpeg, queryExtensions, codexEnvironment] = await Promise.all([
     inspectCommand("pandoc", runtime.platform),
@@ -56,8 +59,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
       codexEnvironment.authSessionAvailable &&
       queryExtensions.available,
     detail:
-      codexEnvironment.detail ??
-      (queryExtensions.available ? undefined : queryExtensions.detail),
+      codexEnvironment.detail ?? (queryExtensions.available ? undefined : queryExtensions.detail),
   };
 
   const capabilities = {
@@ -101,10 +103,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     const statusText = item.available
       ? pc.green(`available (${item.version ?? "unknown version"})`)
       : pc.red("missing");
-    printLine(
-      runtime.stdout,
-      `- ${pc.bold(item.name)}: ${statusText}`,
-    );
+    printLine(runtime.stdout, `- ${pc.bold(item.name)}: ${statusText}`);
     if (!item.available) {
       printLine(runtime.stdout, `  ${pc.yellow("Install suggestion:")} ${item.installHint}`);
     }
@@ -146,11 +145,7 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     }
 
     const installability =
-      state.installability === null
-        ? "unknown"
-        : state.installability
-          ? "yes"
-          : "no";
+      state.installability === null ? "unknown" : state.installability ? "yes" : "no";
     printLine(
       runtime.stdout,
       `- ${pc.bold(format)}: detected support=${state.detectedSupport ? "yes" : "no"}, loadability=${state.loadability ? "yes" : "no"}, installability=${installability}`,
@@ -158,7 +153,11 @@ export async function actionDoctor(runtime: CliRuntime, options: DoctorOptions =
     if (state.detail) {
       printLine(runtime.stdout, `  ${pc.dim(state.detail)}`);
     }
-    if (!state.loadability && state.installability === true && (format === "sqlite" || format === "excel")) {
+    if (
+      !state.loadability &&
+      state.installability === true &&
+      (format === "sqlite" || format === "excel")
+    ) {
       printLine(
         runtime.stdout,
         `  ${pc.yellow(`Try: ${createDuckDbExtensionInstallCommand(format)}`)}`,

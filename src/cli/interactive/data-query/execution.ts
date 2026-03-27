@@ -21,10 +21,8 @@ function isDataQuerySqlExecutionError(error: unknown): boolean {
 }
 
 function isOutputExistsError(error: unknown): boolean {
-  return (
-    error instanceof CliError ||
+  return error instanceof CliError ||
     (typeof error === "object" && error !== null && "code" in error)
-  )
     ? (error as { code?: unknown }).code === "OUTPUT_EXISTS"
     : false;
 }
@@ -94,9 +92,10 @@ async function promptOutputSelection(
     invalidExtensionMessage: "Output file must end with .json or .csv.",
   });
 
-  const pretty = target.extension === ".json"
-    ? await confirm({ message: "Pretty-print JSON?", default: true })
-    : undefined;
+  const pretty =
+    target.extension === ".json"
+      ? await confirm({ message: "Pretty-print JSON?", default: true })
+      : undefined;
 
   return {
     output: target.output,
@@ -138,8 +137,12 @@ export async function executeInteractiveCandidate(
         pretty: outputOptions.pretty,
         rows: outputOptions.rows,
         ...(options.headerMappings ? { headerMappings: options.headerMappings } : {}),
-        ...(options.selectedBodyStartRow !== undefined ? { bodyStartRow: options.selectedBodyStartRow } : {}),
-        ...(options.selectedHeaderRow !== undefined ? { headerRow: options.selectedHeaderRow } : {}),
+        ...(options.selectedBodyStartRow !== undefined
+          ? { bodyStartRow: options.selectedBodyStartRow }
+          : {}),
+        ...(options.selectedHeaderRow !== undefined
+          ? { headerRow: options.selectedHeaderRow }
+          : {}),
         ...(options.selectedNoHeader ? { noHeader: true } : {}),
         ...(options.selectedRange ? { range: options.selectedRange } : {}),
         ...(options.selectedSource ? { source: options.selectedSource } : {}),

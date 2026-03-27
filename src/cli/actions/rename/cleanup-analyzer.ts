@@ -37,11 +37,10 @@ export interface RenameCleanupAnalyzerEvidence {
   groupedPatterns: RenameCleanupAnalyzerGroup[];
 }
 
-export interface RenameCleanupAnalyzerEvidenceOptions
-  extends Pick<
-    RenameCleanupOptions,
-    "path" | "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
-  > {
+export interface RenameCleanupAnalyzerEvidenceOptions extends Pick<
+  RenameCleanupOptions,
+  "path" | "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
+> {
   sampleLimit?: number;
   groupLimit?: number;
   examplesPerGroup?: number;

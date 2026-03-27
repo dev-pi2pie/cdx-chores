@@ -1,7 +1,7 @@
 function stripKeyQuotes(key: string): string {
   const trimmed = key.trim();
   if (
-    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'"))
   ) {
     return trimmed.slice(1, -1);
@@ -16,7 +16,7 @@ export function normalizeKeyPath(key: string): string | null {
   }
 
   if (
-    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'"))
   ) {
     const unquoted = stripKeyQuotes(trimmed);

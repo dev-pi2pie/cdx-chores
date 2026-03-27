@@ -39,17 +39,12 @@ describe("cli tui raw-session", () => {
 
     expect(supportsRawSessionIO(stdin, stdout)).toBe(true);
     expect(
-      supportsRawSessionIO(
-        stdin,
-        { write: () => true, isTTY: false } as unknown as NodeJS.WritableStream,
-      ),
+      supportsRawSessionIO(stdin, {
+        write: () => true,
+        isTTY: false,
+      } as unknown as NodeJS.WritableStream),
     ).toBe(false);
-    expect(
-      supportsRawSessionIO(
-        { isTTY: true } as NodeJS.ReadStream,
-        stdout,
-      ),
-    ).toBe(false);
+    expect(supportsRawSessionIO({ isTTY: true } as NodeJS.ReadStream, stdout)).toBe(false);
   });
 
   test("startRawSession manages raw mode, keypress listeners, and teardown", () => {

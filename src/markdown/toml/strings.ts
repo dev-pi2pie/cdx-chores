@@ -16,7 +16,7 @@ export function stripInlineComment(line: string): string {
         continue;
       }
 
-      if (inString === "double" && char === "\"") {
+      if (inString === "double" && char === '"') {
         inString = null;
         continue;
       }
@@ -29,7 +29,7 @@ export function stripInlineComment(line: string): string {
       continue;
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       inString = "double";
       continue;
     }
@@ -50,7 +50,7 @@ export function stripInlineComment(line: string): string {
 function unescapeBasic(input: string): string {
   return input
     .replace(/\\\\/g, "\\")
-    .replace(/\\"/g, "\"")
+    .replace(/\\"/g, '"')
     .replace(/\\n/g, "\n")
     .replace(/\\t/g, "\t")
     .replace(/\\r/g, "\r");
@@ -66,7 +66,7 @@ export function parseStringLiteral(value: string): string | null {
     return value.slice(3, -3);
   }
 
-  if (value.startsWith("\"") && value.endsWith("\"")) {
+  if (value.startsWith('"') && value.endsWith('"')) {
     return unescapeBasic(value.slice(1, -1));
   }
 

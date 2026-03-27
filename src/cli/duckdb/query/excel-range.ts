@@ -24,10 +24,7 @@ export function normalizeExcelRange(value: string): string {
   const endColumn = (match[3] ?? "").toUpperCase();
   const endRow = Number(match[4] ?? "");
 
-  if (
-    columnNameToNumber(startColumn) > columnNameToNumber(endColumn) ||
-    startRow > endRow
-  ) {
+  if (columnNameToNumber(startColumn) > columnNameToNumber(endColumn) || startRow > endRow) {
     throw new CliError("--range must start at the top-left cell of the selected rectangle.", {
       code: "INVALID_INPUT",
       exitCode: 2,

@@ -8,7 +8,13 @@ import { execFileSync } from "node:child_process";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const defaultOutputDir = join(repoRoot, "examples", "playground", "data-extract");
-const sourceWorkbook = join(repoRoot, "examples", "playground", "issue-data", "big_multi_merged_cells.xlsx");
+const sourceWorkbook = join(
+  repoRoot,
+  "examples",
+  "playground",
+  "issue-data",
+  "big_multi_merged_cells.xlsx",
+);
 const fixtureFileName = "stacked-merged-band.xlsx";
 
 const sharedStrings = [
@@ -86,10 +92,7 @@ function parseArgs(argv) {
 }
 
 function escapeXmlText(value) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function buildSharedStringsXml() {
@@ -155,7 +158,9 @@ async function main() {
   if (parsed.command === "reset") {
     await cleanFixture(parsed.outputDir);
     await writeFixture(parsed.outputDir);
-    console.log(`Reset ${join(parsed.outputDir, fixtureFileName)} with the public stacked merged-band fixture`);
+    console.log(
+      `Reset ${join(parsed.outputDir, fixtureFileName)} with the public stacked merged-band fixture`,
+    );
     return;
   }
 

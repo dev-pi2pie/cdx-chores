@@ -18,7 +18,9 @@ function runGenerator(outputDir: string): { exitCode: number; stdout: string; st
   };
 }
 
-async function snapshotDirectory(outputDir: string): Promise<Array<{ hash: string; name: string }>> {
+async function snapshotDirectory(
+  outputDir: string,
+): Promise<Array<{ hash: string; name: string }>> {
   const names = (await readdir(outputDir)).sort();
   const entries = [];
   for (const name of names) {

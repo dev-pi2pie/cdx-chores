@@ -213,8 +213,7 @@ describe("docx OOXML metadata helper", () => {
       application: "Microsoft Office Word",
       created: "2026-03-17T00:00:00Z",
       creator: "Fixture Generator",
-      description:
-        "Deterministic DOCX fixture with weak heading text and stronger metadata title.",
+      description: "Deterministic DOCX fixture with weak heading text and stronger metadata title.",
       lastModifiedBy: "Fixture Generator",
       modified: "2026-03-17T00:00:00Z",
       subject: "DOCX metadata extraction fixture",

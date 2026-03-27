@@ -44,7 +44,9 @@ function describeSuspiciousExcelIntrospection(
     const generatedCellValues = introspection.sampleRows.flatMap((row) =>
       generatedColumns.map((column) => row[column] ?? ""),
     );
-    const blankGeneratedCells = generatedCellValues.filter((value) => value.trim().length === 0).length;
+    const blankGeneratedCells = generatedCellValues.filter(
+      (value) => value.trim().length === 0,
+    ).length;
     if (
       generatedColumns.length >= Math.ceil(introspection.columns.length / 2) &&
       blankGeneratedCells / generatedCellValues.length >= 0.7
@@ -69,7 +71,8 @@ function describeSuspiciousExcelIntrospection(
     const startColumn = (match?.[1] ?? "").toUpperCase();
     const endColumn = (match?.[2] ?? "").toUpperCase();
     const hasWideUsedRange = Boolean(startColumn && endColumn && startColumn !== endColumn);
-    const hasTitleLikeSingleColumnHeader = onlyColumnName.length >= 16 && /[_\s]/.test(onlyColumnName);
+    const hasTitleLikeSingleColumnHeader =
+      onlyColumnName.length >= 16 && /[_\s]/.test(onlyColumnName);
     if (hasWideUsedRange || hasTitleLikeSingleColumnHeader) {
       reasons.push(
         "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
@@ -141,7 +144,10 @@ async function promptOptionalExcelHeaderRow(defaultValue = ""): Promise<number |
   return trimmed.length > 0 ? normalizeExcelHeaderRow(Number(trimmed)) : undefined;
 }
 
-function validateExcelBodyStartRowInput(value: string, options: { required: boolean }): true | string {
+function validateExcelBodyStartRowInput(
+  value: string,
+  options: { required: boolean },
+): true | string {
   const trimmed = value.trim();
   if (!trimmed) {
     return options.required ? "Enter a positive worksheet row number." : true;
@@ -167,11 +173,13 @@ async function promptOptionalExcelBodyStartRow(defaultValue = ""): Promise<numbe
   return trimmed.length > 0 ? normalizeExcelBodyStartRow(Number(trimmed)) : undefined;
 }
 
-async function promptRequiredSourceShapeState(defaultShape: {
-  bodyStartRow?: number;
-  headerRow?: number;
-  range?: string;
-} = {}): Promise<InteractiveSourceShapeState> {
+async function promptRequiredSourceShapeState(
+  defaultShape: {
+    bodyStartRow?: number;
+    headerRow?: number;
+    range?: string;
+  } = {},
+): Promise<InteractiveSourceShapeState> {
   while (true) {
     const selectedRange = await promptOptionalExcelRange(defaultShape.range ?? "");
     const selectedBodyStartRow = await promptOptionalExcelBodyStartRow(
@@ -209,14 +217,20 @@ export function renderIntrospectionSummary(
       ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
       : []),
     ...(options.introspection.selectedBodyStartRow !== undefined
-      ? [`${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`]
+      ? [
+          `${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`,
+        ]
       : []),
     ...(options.introspection.selectedHeaderRow !== undefined
-      ? [`${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`]
+      ? [
+          `${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`,
+        ]
       : []),
     `${pc.bold(pc.cyan("Schema"))}:`,
     ...(options.introspection.columns.length > 0
-      ? options.introspection.columns.map((column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`)
+      ? options.introspection.columns.map(
+          (column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
+        )
       : [`- ${pc.dim("(no columns available)")}`]),
     `${pc.bold(pc.cyan("Sample Rows"))}:`,
     ...(options.introspection.sampleRows.length > 0
@@ -239,12 +253,19 @@ export async function collectInteractiveIntrospection(options: {
   labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
   selectedSource?: string;
-}): Promise<{ introspection: DataQuerySourceIntrospection; sourceShape: InteractiveSourceShapeState }> {
+}): Promise<{
+  introspection: DataQuerySourceIntrospection;
+  sourceShape: InteractiveSourceShapeState;
+}> {
   const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
-  let sourceShape: InteractiveSourceShapeState = options.initialNoHeader ? { selectedNoHeader: true } : {};
+  let sourceShape: InteractiveSourceShapeState = options.initialNoHeader
+    ? { selectedNoHeader: true }
+    : {};
   let cachedSheetSnapshot: Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined;
 
-  const getSheetSnapshot = async (): Promise<Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined> => {
+  const getSheetSnapshot = async (): Promise<
+    Awaited<ReturnType<typeof collectXlsxSheetSnapshot>> | undefined
+  > => {
     const selectedSource = options.selectedSource?.trim();
     if (!selectedSource) {
       return undefined;
@@ -288,8 +309,7 @@ export async function collectInteractiveIntrospection(options: {
       return { introspection, sourceShape };
     }
 
-    const sheetSnapshot =
-      introspection.columns.length === 1 ? await getSheetSnapshot() : undefined;
+    const sheetSnapshot = introspection.columns.length === 1 ? await getSheetSnapshot() : undefined;
     const warningReasons = describeSuspiciousExcelIntrospection(introspection, {
       mergedRangeCount: sheetSnapshot?.mergedRanges.length,
       usedRange: sheetSnapshot?.usedRange,
@@ -299,7 +319,10 @@ export async function collectInteractiveIntrospection(options: {
     }
 
     printLine(options.runtime.stderr, "");
-    printLine(options.runtime.stderr, "Sheet shape warning: current Excel sheet shape looks suspicious.");
+    printLine(
+      options.runtime.stderr,
+      "Sheet shape warning: current Excel sheet shape looks suspicious.",
+    );
     printLine(
       options.runtime.stderr,
       `This step changes how the source is interpreted as a table. You are not writing ${labels.notWritingLabel}.`,
@@ -343,7 +366,10 @@ export async function collectInteractiveIntrospection(options: {
           range: sourceShape.selectedRange,
         })}`,
       );
-      printLine(options.runtime.stderr, `Re-inspecting shaped source before ${labels.continuationLabel}.`);
+      printLine(
+        options.runtime.stderr,
+        `Re-inspecting shaped source before ${labels.continuationLabel}.`,
+      );
       continue;
     }
 
@@ -352,12 +378,16 @@ export async function collectInteractiveIntrospection(options: {
       return { introspection, sourceShape };
     }
 
-    const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+    const status = createInteractiveAnalyzerStatus(
+      options.runtime.stdout,
+      options.runtime.colorEnabled,
+    );
     let suggestionResult;
     try {
       status.start("Inspecting worksheet structure");
       const sheetSnapshot =
-        (await getSheetSnapshot()) ?? (await collectXlsxSheetSnapshot(options.inputPath, selectedSource));
+        (await getSheetSnapshot()) ??
+        (await collectXlsxSheetSnapshot(options.inputPath, selectedSource));
       status.wait("Waiting for Codex source-shape suggestions");
       suggestionResult = await suggestDataSourceShapeWithCodex({
         context: {
@@ -373,7 +403,11 @@ export async function collectInteractiveIntrospection(options: {
       status.stop();
     }
 
-    if (suggestionResult.errorMessage || !suggestionResult.shape || !suggestionResult.reasoningSummary) {
+    if (
+      suggestionResult.errorMessage ||
+      !suggestionResult.shape ||
+      !suggestionResult.reasoningSummary
+    ) {
       printLine(
         options.runtime.stderr,
         `Codex source-shape suggestion failed: ${suggestionResult.errorMessage ?? "Codex did not return a valid source shape."}`,
@@ -429,7 +463,9 @@ export async function collectInteractiveIntrospection(options: {
             ...(suggestionResult.shape.headerRow !== undefined
               ? { selectedHeaderRow: suggestionResult.shape.headerRow }
               : {}),
-            ...(suggestionResult.shape.range ? { selectedRange: suggestionResult.shape.range } : {}),
+            ...(suggestionResult.shape.range
+              ? { selectedRange: suggestionResult.shape.range }
+              : {}),
           };
     printLine(
       options.runtime.stderr,
@@ -439,6 +475,9 @@ export async function collectInteractiveIntrospection(options: {
         range: sourceShape.selectedRange,
       })}`,
     );
-    printLine(options.runtime.stderr, `Re-inspecting shaped source before ${labels.continuationLabel}.`);
+    printLine(
+      options.runtime.stderr,
+      `Re-inspecting shaped source before ${labels.continuationLabel}.`,
+    );
   }
 }

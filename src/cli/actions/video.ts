@@ -34,14 +34,20 @@ async function runFfmpeg(runtime: CliRuntime, args: string[]): Promise<void> {
   await requireCommandAvailable("ffmpeg", runtime.platform);
   const result = await execCommand("ffmpeg", args, { cwd: runtime.cwd });
   if (!result.ok) {
-    throw new CliError(`ffmpeg failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`.trim(), {
-      code: "PROCESS_FAILED",
-      exitCode: 1,
-    });
+    throw new CliError(
+      `ffmpeg failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`.trim(),
+      {
+        code: "PROCESS_FAILED",
+        exitCode: 1,
+      },
+    );
   }
 }
 
-export async function actionVideoConvert(runtime: CliRuntime, options: VideoConvertOptions): Promise<void> {
+export async function actionVideoConvert(
+  runtime: CliRuntime,
+  options: VideoConvertOptions,
+): Promise<void> {
   const inputPath = resolve(runtime.cwd, assertNonEmpty(options.input, "Input path"));
   const outputPath = resolve(runtime.cwd, assertNonEmpty(options.output, "Output path"));
   await ensureFileExists(inputPath, "Input");
@@ -51,7 +57,10 @@ export async function actionVideoConvert(runtime: CliRuntime, options: VideoConv
   printLine(runtime.stdout, `Wrote video: ${displayPath(runtime, outputPath)}`);
 }
 
-export async function actionVideoResize(runtime: CliRuntime, options: VideoResizeOptions): Promise<void> {
+export async function actionVideoResize(
+  runtime: CliRuntime,
+  options: VideoResizeOptions,
+): Promise<void> {
   const inputPath = resolve(runtime.cwd, assertNonEmpty(options.input, "Input path"));
   const outputPath = resolve(runtime.cwd, assertNonEmpty(options.output, "Output path"));
   const hasScale = options.scale !== undefined;
@@ -91,14 +100,7 @@ export async function actionVideoResize(runtime: CliRuntime, options: VideoResiz
     ? `scale=trunc(iw*${options.scale!}/2)*2:trunc(ih*${options.scale!}/2)*2`
     : `scale=${Math.trunc(options.width!)}:${Math.trunc(options.height!)}`;
 
-  const args = [
-    options.overwrite ? "-y" : "-n",
-    "-i",
-    inputPath,
-    "-vf",
-    videoFilter,
-    outputPath,
-  ];
+  const args = [options.overwrite ? "-y" : "-n", "-i", inputPath, "-vf", videoFilter, outputPath];
   await runFfmpeg(runtime, args);
   printLine(runtime.stdout, `Wrote resized video: ${displayPath(runtime, outputPath)}`);
 }
@@ -111,8 +113,10 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
   );
   await ensureFileExists(inputPath, "Input");
 
-  const fps = Number.isFinite(options.fps) && (options.fps ?? 0) > 0 ? Math.trunc(options.fps!) : 10;
-  const width = Number.isFinite(options.width) && (options.width ?? 0) > 0 ? Math.trunc(options.width!) : 480;
+  const fps =
+    Number.isFinite(options.fps) && (options.fps ?? 0) > 0 ? Math.trunc(options.fps!) : 10;
+  const width =
+    Number.isFinite(options.width) && (options.width ?? 0) > 0 ? Math.trunc(options.width!) : 480;
 
   const args = [
     options.overwrite ? "-y" : "-n",

@@ -3,11 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdFrontmatterToJson } from "../src/cli/actions";
-import {
-  runCli,
-  toRepoRelativePath,
-  withTempFixtureDir,
-} from "./helpers/cli-test-utils";
+import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 
 describe("cli action modules: md frontmatter-to-json", () => {
@@ -88,15 +84,9 @@ describe("cli action modules: md frontmatter-to-json", () => {
       const inputPath = join(fixtureDir, "sample.md");
       await writeFile(
         inputPath,
-        [
-          "+++",
-          'title = "Release Notes"',
-          'category = "docs"',
-          "+++",
-          "",
-          "# Changelog",
-          "",
-        ].join("\n"),
+        ["+++", 'title = "Release Notes"', 'category = "docs"', "+++", "", "# Changelog", ""].join(
+          "\n",
+        ),
         "utf8",
       );
 
@@ -121,7 +111,7 @@ describe("cli action modules: md frontmatter-to-json", () => {
       const inputPath = join(fixtureDir, "notes.md");
       await writeFile(
         inputPath,
-        [';;;', '{"title":"Release Notes","draft":false}', ';;;', "", "# Changelog", ""].join("\n"),
+        [";;;", '{"title":"Release Notes","draft":false}', ";;;", "", "# Changelog", ""].join("\n"),
         "utf8",
       );
 
@@ -197,7 +187,10 @@ describe("cli command: md frontmatter-to-json", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe("");
 
-      const payload = JSON.parse(result.stdout) as { frontmatterType: string; data: Record<string, unknown> };
+      const payload = JSON.parse(result.stdout) as {
+        frontmatterType: string;
+        data: Record<string, unknown>;
+      };
       expect(payload.frontmatterType).toBe("yaml");
       expect(payload.data).toMatchObject({ title: "Release Notes", draft: false });
     });

@@ -29,10 +29,13 @@ export function createDataSourceShapeArtifact(options: {
   shape: DataSourceShapeSelection;
 }): DataSourceShapeArtifact {
   if (!isValidReviewedSourceShape(options.shape)) {
-    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   return {
@@ -114,21 +117,29 @@ function parseDataSourceShapeArtifact(
     });
   }
 
-  const normalizedBodyStartRow = normalizeOptionalPositiveInteger(shape.bodyStartRow, "shape.bodyStartRow");
+  const normalizedBodyStartRow = normalizeOptionalPositiveInteger(
+    shape.bodyStartRow,
+    "shape.bodyStartRow",
+  );
   const normalizedHeaderRow = normalizeOptionalPositiveInteger(shape.headerRow, "shape.headerRow");
   const normalizedShape: DataSourceShapeArtifact["shape"] = {
     ...shape,
-    ...(normalizedBodyStartRow !== undefined ? { bodyStartRow: normalizeExcelBodyStartRow(normalizedBodyStartRow) } : {}),
+    ...(normalizedBodyStartRow !== undefined
+      ? { bodyStartRow: normalizeExcelBodyStartRow(normalizedBodyStartRow) }
+      : {}),
     ...(typeof shape.range === "string" && shape.range.trim().length > 0
       ? { range: normalizeExcelRange(shape.range) }
       : {}),
     ...(normalizedHeaderRow !== undefined ? { headerRow: normalizedHeaderRow } : {}),
   };
   if (!isValidReviewedSourceShape(normalizedShape)) {
-    throw new CliError("Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      "Invalid source shape artifact: shape must include range, headerRow, bodyStartRow, or a valid combination of them.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   return {

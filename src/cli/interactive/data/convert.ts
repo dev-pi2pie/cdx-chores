@@ -71,9 +71,10 @@ export async function runInteractiveDataConvert(
     ...pathPromptContext,
     customMessage: `Custom ${targetFormat.toUpperCase()} output path`,
   });
-  const pretty = targetFormat === "json"
-    ? await confirm({ message: "Pretty-print JSON?", default: true })
-    : undefined;
+  const pretty =
+    targetFormat === "json"
+      ? await confirm({ message: "Pretty-print JSON?", default: true })
+      : undefined;
   const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
 
   if (sourceFormat === "json" && targetFormat === "csv") {

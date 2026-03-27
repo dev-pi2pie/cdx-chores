@@ -62,7 +62,10 @@ function buildSourceShapeSuggestionPrompt(options: {
     options.context.sheetSnapshot.rows.length > 0
       ? options.context.sheetSnapshot.rows.map((row) => {
           const cellPreview = row.cells
-            .map((cell) => `${cell.ref}=${JSON.stringify(truncateForPrompt(cell.value, DATA_SOURCE_SHAPE_MAX_CELL_VALUE_CHARS))}`)
+            .map(
+              (cell) =>
+                `${cell.ref}=${JSON.stringify(truncateForPrompt(cell.value, DATA_SOURCE_SHAPE_MAX_CELL_VALUE_CHARS))}`,
+            )
             .join(", ");
           return `- row ${row.rowNumber}: ${row.firstRef}..${row.lastRef} (${row.cellCount} non-empty cells) ${cellPreview}`;
         })
@@ -92,7 +95,9 @@ function buildSourceShapeSuggestionPrompt(options: {
     `Selected sheet: ${options.context.sheetSnapshot.sheetName}`,
     `Current range: ${options.currentRange ?? "(whole sheet)"}`,
     `Current header row: ${
-      options.currentHeaderRow !== undefined ? String(options.currentHeaderRow) : "(auto or first row)"
+      options.currentHeaderRow !== undefined
+        ? String(options.currentHeaderRow)
+        : "(auto or first row)"
     }`,
     `Current body start row: ${
       options.currentBodyStartRow !== undefined ? String(options.currentBodyStartRow) : "(not set)"
@@ -131,23 +136,24 @@ function parseSourceShapeSuggestionResponse(finalResponse: string): {
     reasoning_summary?: unknown;
   };
 
-  const range = typeof parsed.range === "string" && parsed.range.trim().length > 0
-    ? normalizeExcelRange(parsed.range)
-    : undefined;
-  const bodyStartRow = parsed.body_start_row !== undefined && parsed.body_start_row !== null
-    ? normalizeExcelBodyStartRow(
-        typeof parsed.body_start_row === "number"
-          ? parsed.body_start_row
-          : Number(parsed.body_start_row),
-      )
-    : undefined;
-  const headerRow = parsed.header_row !== undefined && parsed.header_row !== null
-    ? normalizeExcelHeaderRow(
-        typeof parsed.header_row === "number"
-          ? parsed.header_row
-          : Number(parsed.header_row),
-      )
-    : undefined;
+  const range =
+    typeof parsed.range === "string" && parsed.range.trim().length > 0
+      ? normalizeExcelRange(parsed.range)
+      : undefined;
+  const bodyStartRow =
+    parsed.body_start_row !== undefined && parsed.body_start_row !== null
+      ? normalizeExcelBodyStartRow(
+          typeof parsed.body_start_row === "number"
+            ? parsed.body_start_row
+            : Number(parsed.body_start_row),
+        )
+      : undefined;
+  const headerRow =
+    parsed.header_row !== undefined && parsed.header_row !== null
+      ? normalizeExcelHeaderRow(
+          typeof parsed.header_row === "number" ? parsed.header_row : Number(parsed.header_row),
+        )
+      : undefined;
   const reasoningSummary =
     typeof parsed.reasoning_summary === "string" ? parsed.reasoning_summary.trim() : "";
 
@@ -155,7 +161,9 @@ function parseSourceShapeSuggestionResponse(finalResponse: string): {
     throw new Error("Codex source-shape response did not include reasoning_summary.");
   }
   if (!range && bodyStartRow === undefined && headerRow === undefined) {
-    throw new Error("Codex source-shape response must include range, header_row, body_start_row, or a valid combination of them.");
+    throw new Error(
+      "Codex source-shape response must include range, header_row, body_start_row, or a valid combination of them.",
+    );
   }
 
   return {

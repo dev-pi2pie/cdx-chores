@@ -18,18 +18,36 @@ export function registerDataExtractCommand(dataCommand: Command, runtime: CliRun
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
-    .option("--body-start-row <value>", "Excel worksheet row number where logical body rows begin", (value: string) =>
-      parsePositiveIntegerOption(value, "--body-start-row"),
+    .option(
+      "--body-start-row <value>",
+      "Excel worksheet row number where logical body rows begin",
+      (value: string) => parsePositiveIntegerOption(value, "--body-start-row"),
     )
-    .option("--header-row <value>", "Excel worksheet row number to treat as the header row", (value: string) =>
-      parsePositiveIntegerOption(value, "--header-row"),
+    .option(
+      "--header-row <value>",
+      "Excel worksheet row number to treat as the header row",
+      (value: string) => parsePositiveIntegerOption(value, "--header-row"),
     )
     .option("--source-shape <path>", "Reuse an accepted JSON source-shape artifact")
-    .option("--codex-suggest-shape", "Ask Codex to suggest an explicit Excel source shape and stop after writing the review artifact", false)
-    .option("--write-source-shape <path>", "Write the suggested source-shape artifact to an explicit path")
+    .option(
+      "--codex-suggest-shape",
+      "Ask Codex to suggest an explicit Excel source shape and stop after writing the review artifact",
+      false,
+    )
+    .option(
+      "--write-source-shape <path>",
+      "Write the suggested source-shape artifact to an explicit path",
+    )
     .option("--header-mapping <path>", "Reuse an accepted JSON header-mapping artifact")
-    .option("--codex-suggest-headers", "Ask Codex to suggest semantic header mappings and stop after writing the review artifact", false)
-    .option("--write-header-mapping <path>", "Write the suggested header-mapping artifact to an explicit path")
+    .option(
+      "--codex-suggest-headers",
+      "Ask Codex to suggest semantic header mappings and stop after writing the review artifact",
+      false,
+    )
+    .option(
+      "--write-header-mapping <path>",
+      "Write the suggested header-mapping artifact to an explicit path",
+    )
     .option("-o, --output <path>", "Write the shaped table to a .csv, .tsv, or .json file")
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .action(

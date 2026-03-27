@@ -87,10 +87,15 @@ function resolveVisibleColumns(
     consumed += separatorWidth + width;
   }
 
-  return visible.length > 0 ? visible : [{ name: columns[0] ?? "value", width: Math.max(1, budget) }];
+  return visible.length > 0
+    ? visible
+    : [{ name: columns[0] ?? "value", width: Math.max(1, budget) }];
 }
 
-function formatColumnSummary(allColumns: readonly string[], visibleColumns: readonly VisibleColumn[]): string {
+function formatColumnSummary(
+  allColumns: readonly string[],
+  visibleColumns: readonly VisibleColumn[],
+): string {
   if (visibleColumns.length === 0) {
     return "(none)";
   }
@@ -145,12 +150,8 @@ export function renderDataQuery(
   const lines = [
     `${pc.bold(pc.cyan("Input"))}: ${formatPathForDisplay(runtime, options.inputPath)}`,
     `${pc.bold(pc.cyan("Format"))}: ${options.format}`,
-    ...(options.source
-      ? [`${pc.bold(pc.cyan("Source"))}: ${options.source}`]
-      : []),
-    ...(options.range
-      ? [`${pc.bold(pc.cyan("Range"))}: ${options.range}`]
-      : []),
+    ...(options.source ? [`${pc.bold(pc.cyan("Source"))}: ${options.source}`] : []),
+    ...(options.range ? [`${pc.bold(pc.cyan("Range"))}: ${options.range}`] : []),
     ...(options.bodyStartRow !== undefined
       ? [`${pc.bold(pc.cyan("Body start row"))}: ${options.bodyStartRow}`]
       : []),

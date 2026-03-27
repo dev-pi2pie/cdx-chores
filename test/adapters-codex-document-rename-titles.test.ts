@@ -115,10 +115,17 @@ describe("codex document rename title extractor", () => {
   });
 
   test("extracts usable signals from hyperlink-heavy and table-heavy docx fixtures", async () => {
-    const hyperlinkFixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "hyperlink-heavy.docx");
+    const hyperlinkFixturePath = join(
+      REPO_ROOT,
+      "test",
+      "fixtures",
+      "docs",
+      "hyperlink-heavy.docx",
+    );
     const tableFixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "table-heavy.docx");
 
-    const hyperlinkResult = await __testOnlyExtractDocumentTitleEvidenceForPath(hyperlinkFixturePath);
+    const hyperlinkResult =
+      await __testOnlyExtractDocumentTitleEvidenceForPath(hyperlinkFixturePath);
     const tableResult = await __testOnlyExtractDocumentTitleEvidenceForPath(tableFixturePath);
 
     expect(hyperlinkResult.reason).toBeUndefined();

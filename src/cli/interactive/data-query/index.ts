@@ -1,17 +1,18 @@
 import { select } from "@inquirer/prompts";
 
 import { maybeRenderDuckDbExtensionRemediationCommand } from "../../data-workflows/duckdb-remediation";
-import {
-  createDuckDbConnection,
-  listDataQuerySources,
-} from "../../duckdb/query";
+import { createDuckDbConnection, listDataQuerySources } from "../../duckdb/query";
 import { resolveFromCwd } from "../../path-utils";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import { reviewInteractiveHeaderMappings } from "./header-review";
 import { collectInteractiveIntrospection } from "./source-shape";
-import { promptDelimitedHeaderMode, promptInteractiveInputFormat, promptOptionalSourceSelection } from "./source-selection";
+import {
+  promptDelimitedHeaderMode,
+  promptInteractiveInputFormat,
+  promptOptionalSourceSelection,
+} from "./source-selection";
 import { runCodexInteractiveQuery } from "./sql/codex";
 import { runFormalGuideInteractiveQuery } from "./sql/formal-guide";
 import { runManualInteractiveQuery } from "./sql/manual";

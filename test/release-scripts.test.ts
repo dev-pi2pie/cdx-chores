@@ -14,7 +14,11 @@ type RunResult = {
 function stripBenignGitWarnings(stderr: string): string {
   return stderr
     .split("\n")
-    .filter((line) => line !== "git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead")
+    .filter(
+      (line) =>
+        line !==
+        "git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead",
+    )
     .join("\n")
     .trim();
 }
@@ -152,7 +156,7 @@ describe("stable release notes script", () => {
           "set -euo pipefail",
           'url="${@: -1}"',
           'if [[ "$url" == *"/repos/example/project/commits/"*"/pulls" ]]; then',
-          "  printf '%s' '[{\"number\":77,\"title\":\"fix(parser): release-safe title\",\"user\":{\"login\":\"alice\"}}]'",
+          '  printf \'%s\' \'[{"number":77,"title":"fix(parser): release-safe title","user":{"login":"alice"}}]\'',
           "else",
           "  printf '%s' '{}'",
           "fi",

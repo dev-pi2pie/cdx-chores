@@ -26,10 +26,13 @@ export interface DataWorkflowHeaderMappingShape {
   source?: string;
 }
 
-export function classifyHeaderSuggestionFailure(message: string, options: {
-  failureCode: string;
-  failurePrefix: string;
-}): { code: string; prefix: string } {
+export function classifyHeaderSuggestionFailure(
+  message: string,
+  options: {
+    failureCode: string;
+    failurePrefix: string;
+  },
+): { code: string; prefix: string } {
   if (
     /codex exec exited/i.test(message) ||
     /missing optional dependency/i.test(message) ||
@@ -142,7 +145,10 @@ export async function runCodexHeaderSuggestionFlow(options: {
   const artifactPath = options.writeHeaderMapping?.trim()
     ? resolveFromCwd(options.runtime, options.writeHeaderMapping.trim())
     : join(options.runtime.cwd, generateDataHeaderMappingFileName());
-  const status = createInteractiveAnalyzerStatus(options.runtime.stdout, options.runtime.colorEnabled);
+  const status = createInteractiveAnalyzerStatus(
+    options.runtime.stdout,
+    options.runtime.colorEnabled,
+  );
   let suggestionResult;
   try {
     status.start("Inspecting shaped source");
@@ -184,7 +190,10 @@ export async function runCodexHeaderSuggestionFlow(options: {
   });
 
   renderHeaderSuggestionSummary(options.runtime, suggestionResult.mappings);
-  printLine(options.runtime.stderr, `Wrote header mapping: ${displayPath(options.runtime, artifactPath)}`);
+  printLine(
+    options.runtime.stderr,
+    `Wrote header mapping: ${displayPath(options.runtime, artifactPath)}`,
+  );
   printLine(options.runtime.stderr, options.reviewMessage);
   printLine(
     options.runtime.stderr,

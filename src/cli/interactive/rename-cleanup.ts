@@ -146,7 +146,10 @@ function narrowCleanupAnalyzerEvidence(
   };
 }
 
-function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: RenameCleanupAnalyzerEvidence): void {
+function printCleanupAnalyzerGroupedReview(
+  runtime: CliRuntime,
+  evidence: RenameCleanupAnalyzerEvidence,
+): void {
   const truncate = (value: string, maxChars: number): { value: string; truncated: boolean } => {
     if (value.length <= maxChars) {
       return { value, truncated: false };
@@ -163,7 +166,10 @@ function printCleanupAnalyzerGroupedReview(runtime: CliRuntime, evidence: Rename
     return;
   }
 
-  const groupedPatterns = evidence.groupedPatterns.slice(0, CLEANUP_GROUPED_REVIEW_LIMITS.maxGroupsToPrint);
+  const groupedPatterns = evidence.groupedPatterns.slice(
+    0,
+    CLEANUP_GROUPED_REVIEW_LIMITS.maxGroupsToPrint,
+  );
   const hiddenGroupCount = Math.max(0, evidence.groupedPatterns.length - groupedPatterns.length);
   let truncatedExamplesGroupCount = 0;
   for (const group of groupedPatterns) {
@@ -240,7 +246,9 @@ async function promptManualCleanupSettings(): Promise<{
   return { hints, style, timestampAction };
 }
 
-async function promptCleanupScopeOptions(pathKind: "file" | "directory"): Promise<
+async function promptCleanupScopeOptions(
+  pathKind: "file" | "directory",
+): Promise<
   Pick<
     RenameCleanupOptions,
     "recursive" | "maxDepth" | "matchRegex" | "skipRegex" | "ext" | "skipExt"
@@ -503,9 +511,7 @@ export async function runInteractiveRenameCleanup(
     message: "Suggest cleanup hints with Codex?",
     default: false,
   });
-  const analyzerFamilies = suggestWithCodex
-    ? await promptCleanupAnalyzerFamilies()
-    : undefined;
+  const analyzerFamilies = suggestWithCodex ? await promptCleanupAnalyzerFamilies() : undefined;
   const suggestionResult = suggestWithCodex
     ? await promptCleanupSettingsFromSuggestion(runtime, {
         path,
@@ -572,7 +578,10 @@ export async function runInteractiveRenameCleanup(
 
     if (!keepDryRunPlanCsv) {
       await rm(result.planCsvPath, { force: true });
-      printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+      printLine(
+        runtime.stdout,
+        `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`,
+      );
     }
     if (analysisReportPath && !keepAnalysisReportCsv) {
       await rm(analysisReportPath, { force: true });
@@ -598,7 +607,10 @@ export async function runInteractiveRenameCleanup(
 
   if (!keepAppliedPlanCsv) {
     await rm(result.planCsvPath, { force: true });
-    printLine(runtime.stdout, `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`);
+    printLine(
+      runtime.stdout,
+      `Cleanup plan CSV removed: ${displayPath(runtime, result.planCsvPath)}`,
+    );
   }
   if (analysisReportPath && !keepAnalysisReportCsv) {
     await rm(analysisReportPath, { force: true });

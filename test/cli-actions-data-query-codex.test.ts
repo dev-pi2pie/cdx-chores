@@ -46,8 +46,12 @@ describe("cli action modules: data query codex", () => {
     expect(stdout.text).toContain("Schema:");
     expect(stdout.text).toContain("- id: BIGINT");
     expect(stdout.text).toContain("Sample Rows:");
-    expect(stdout.text).toContain('{"id":"1","name":"Ada","status":"active","created_at":"2026-03-01"}');
-    expect(stdout.text).toContain("Codex Summary: Projects the requested columns and keeps a stable ordering.");
+    expect(stdout.text).toContain(
+      '{"id":"1","name":"Ada","status":"active","created_at":"2026-03-01"}',
+    );
+    expect(stdout.text).toContain(
+      "Codex Summary: Projects the requested columns and keeps a stable ordering.",
+    );
     expect(stdout.text).toContain("SQL:\nselect id, name from file order by id");
   });
 
@@ -61,7 +65,8 @@ describe("cli action modules: data query codex", () => {
       runner: async () =>
         JSON.stringify({
           sql: "select\n  *\nfrom file\nwhere note = 'A  B'\norder by id",
-          reasoning_summary: "Returns the full file table in id order while preserving literal spacing.",
+          reasoning_summary:
+            "Returns the full file table in id order while preserving literal spacing.",
         }),
     });
 
@@ -197,7 +202,9 @@ describe("cli action modules: data query codex", () => {
     expect(template).toContain("# Source: users");
     expect(template).toContain("# Schema: id (BIGINT), status (VARCHAR)");
     expect(template).toContain('# 1. {"id":"1","status":"active"}');
-    expect(template).toContain("# Write plain intent below. Comment lines starting with # are ignored.");
+    expect(template).toContain(
+      "# Write plain intent below. Comment lines starting with # are ignored.",
+    );
   });
 
   test("buildDataQueryCodexIntentEditorTemplate includes the selected range when present", () => {

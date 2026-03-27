@@ -58,8 +58,7 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
       const choices = (options.choices ?? []).map((choice) => ({
         name: String(choice.name ?? ""),
         value: String(choice.value ?? ""),
-        description:
-          choice.description === undefined ? undefined : String(choice.description),
+        description: choice.description === undefined ? undefined : String(choice.description),
       }));
 
       context.result.promptCalls.push({
@@ -68,34 +67,24 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
       });
       context.result.selectChoicesByMessage[message] = choices;
 
-      return context.shiftQueueValue(
-        context.scenario.selectQueue ?? [],
-        `select:${message}`,
-      );
+      return context.shiftQueueValue(context.scenario.selectQueue ?? [], `select:${message}`);
     },
     checkbox: async (options: BooleanPromptOptions) => {
       const message = String(options.message ?? "");
       context.result.promptCalls.push({ kind: "checkbox", message });
-      return context.shiftQueueValue(
-        context.scenario.checkboxQueue ?? [],
-        `checkbox:${message}`,
-      );
+      return context.shiftQueueValue(context.scenario.checkboxQueue ?? [], `checkbox:${message}`);
     },
     confirm: async (options: BooleanPromptOptions) => {
       const message = String(options.message ?? "");
       context.result.promptCalls.push({ kind: "confirm", message });
-      return context.shiftQueueValue(
-        context.scenario.confirmQueue ?? [],
-        `confirm:${message}`,
-      );
+      return context.shiftQueueValue(context.scenario.confirmQueue ?? [], `confirm:${message}`);
     },
     input: async (options: TextPromptOptions) => {
       const message = String(options.message ?? "");
       context.result.promptCalls.push({
         kind: "input",
         message,
-        defaultValue:
-          typeof options.default === "string" ? options.default : undefined,
+        defaultValue: typeof options.default === "string" ? options.default : undefined,
       });
 
       return await resolveValidatedValue(
@@ -111,10 +100,8 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
       context.result.promptCalls.push({
         kind: "editor",
         message,
-        defaultValue:
-          typeof options.default === "string" ? options.default : undefined,
-        postfix:
-          typeof options.postfix === "string" ? options.postfix : undefined,
+        defaultValue: typeof options.default === "string" ? options.default : undefined,
+        postfix: typeof options.postfix === "string" ? options.postfix : undefined,
       });
 
       return await resolveValidatedValue(

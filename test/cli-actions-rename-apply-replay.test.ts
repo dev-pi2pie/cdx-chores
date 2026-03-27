@@ -86,7 +86,8 @@ describe("cli action modules: rename apply replay", () => {
       expect(planCsvPath).toBeDefined();
 
       const planBeforeApply = await readFile(planCsvPath!, "utf8");
-      const rowLine = planBeforeApply.split("\n").find((line) => line.includes("zeta image.png")) ?? "";
+      const rowLine =
+        planBeforeApply.split("\n").find((line) => line.includes("zeta image.png")) ?? "";
       expect(rowLine).not.toBe("");
       const csvCells = rowLine.split(",");
       const newName = csvCells[1] ?? "";

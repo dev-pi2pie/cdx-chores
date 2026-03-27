@@ -202,9 +202,7 @@ function buildTimestampCleanupStem(
   }
   parts.push(match.suffix);
   return {
-    nextStem: normalizeIntermediateCleanupStem(
-      parts.filter((part) => part.length > 0).join(" "),
-    ),
+    nextStem: normalizeIntermediateCleanupStem(parts.filter((part) => part.length > 0).join(" ")),
   };
 }
 

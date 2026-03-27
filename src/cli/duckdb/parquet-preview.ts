@@ -71,13 +71,24 @@ async function createDuckDbConnection(): Promise<DuckDBConnection> {
   }
 }
 
-async function readParquetColumns(connection: DuckDBConnection, inputPath: string): Promise<string[]> {
-  const reader = await connection.runAndReadAll("select * from read_parquet(?) limit 0", [inputPath]);
+async function readParquetColumns(
+  connection: DuckDBConnection,
+  inputPath: string,
+): Promise<string[]> {
+  const reader = await connection.runAndReadAll("select * from read_parquet(?) limit 0", [
+    inputPath,
+  ]);
   return reader.columnNames();
 }
 
-async function readParquetTotalRows(connection: DuckDBConnection, inputPath: string): Promise<number> {
-  const reader = await connection.runAndReadAll("select count(*) as total_rows from read_parquet(?)", [inputPath]);
+async function readParquetTotalRows(
+  connection: DuckDBConnection,
+  inputPath: string,
+): Promise<number> {
+  const reader = await connection.runAndReadAll(
+    "select count(*) as total_rows from read_parquet(?)",
+    [inputPath],
+  );
   const rows = reader.getRowObjectsJson();
   return Number(rows[0]?.total_rows ?? 0);
 }

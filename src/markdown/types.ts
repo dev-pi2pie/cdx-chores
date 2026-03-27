@@ -7,13 +7,7 @@ export interface ParsedMarkdown {
   frontmatterType: FrontmatterType | null;
 }
 
-export type SectionMode =
-  | "all"
-  | "split"
-  | "frontmatter"
-  | "content"
-  | "per-key"
-  | "split-per-key";
+export type SectionMode = "all" | "split" | "frontmatter" | "content" | "per-key" | "split-per-key";
 
 // Placeholder shape until/if a dedicated word-count module is reintroduced.
 export type SectionWordCountResult = Record<string, unknown>;

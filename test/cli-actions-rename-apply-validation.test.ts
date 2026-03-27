@@ -46,14 +46,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "missing required column: status",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "missing required column: status",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -75,14 +72,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "row 2 missing required field: status",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "row 2 missing required field: status",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -104,14 +98,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "row 2 missing required field: plan_id",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "row 2 missing required field: plan_id",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -133,14 +124,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "row 2 missing required field: planned_at",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "row 2 missing required field: planned_at",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -162,14 +150,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "Invalid rename plan status 'queued'",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "Invalid rename plan status 'queued'",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -194,14 +179,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "duplicate executable old_path",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "duplicate executable old_path",
+      });
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
       expect(await stat(targetAPath).catch(() => null)).toBeNull();
@@ -231,14 +213,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "duplicate executable new_path",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "duplicate executable new_path",
+      });
 
       expect(await stat(sourceAPath).catch(() => null)).not.toBeNull();
       expect(await stat(sourceBPath).catch(() => null)).not.toBeNull();
@@ -257,18 +236,17 @@ describe("cli action modules: rename apply validation", () => {
 
       await writeFile(
         csvPath,
-        createRenamePlanCsvText(RENAME_PLAN_HEADERS, [createRenamePlanRow("../escape.txt", newPath)]),
+        createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
+          createRenamePlanRow("../escape.txt", newPath),
+        ]),
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "old_path escaped current working directory",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "old_path escaped current working directory",
+      });
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -287,7 +265,10 @@ describe("cli action modules: rename apply validation", () => {
       await writeFile(
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
-          createRenamePlanRow(toRepoRelativePath(sourcePath), toRepoRelativePath(join(fixtureDir, "beta.txt"))),
+          createRenamePlanRow(
+            toRepoRelativePath(sourcePath),
+            toRepoRelativePath(join(fixtureDir, "beta.txt")),
+          ),
           createRenamePlanRow(toRepoRelativePath(skippedPath), toRepoRelativePath(skippedPath), {
             status: "skipped",
             reason: "unchanged",
@@ -297,14 +278,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "inconsistent plan_id",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "inconsistent plan_id",
+      });
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
     } finally {
@@ -325,7 +303,10 @@ describe("cli action modules: rename apply validation", () => {
       await writeFile(
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
-          createRenamePlanRow(toRepoRelativePath(sourcePath), toRepoRelativePath(join(fixtureDir, "beta.txt"))),
+          createRenamePlanRow(
+            toRepoRelativePath(sourcePath),
+            toRepoRelativePath(join(fixtureDir, "beta.txt")),
+          ),
           createRenamePlanRow(toRepoRelativePath(skippedPath), toRepoRelativePath(skippedPath), {
             status: "skipped",
             reason: "unchanged",
@@ -335,14 +316,11 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(
-        () => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }),
-        {
-          code: "INVALID_RENAME_PLAN",
-          exitCode: 2,
-          messageIncludes: "inconsistent planned_at",
-        },
-      );
+      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+        messageIncludes: "inconsistent planned_at",
+      });
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
     } finally {

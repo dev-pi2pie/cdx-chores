@@ -1,6 +1,11 @@
 import type { DataHeaderMappingEntry } from "../../header-mapping";
 import { escapeSqlStringLiteral, quoteSqlIdentifier } from "../formats";
-import type { DataQueryInputFormat, DataQuerySourceShape, ExcelImportMode, QueryRelationColumn } from "../types";
+import type {
+  DataQueryInputFormat,
+  DataQuerySourceShape,
+  ExcelImportMode,
+  QueryRelationColumn,
+} from "../types";
 
 export function buildRelationSql(
   inputPath: string,

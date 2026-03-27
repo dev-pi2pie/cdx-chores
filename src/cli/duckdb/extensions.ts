@@ -189,32 +189,47 @@ export async function probeDuckDbManagedExtension(
   const catalog = await readDuckDbExtensionCatalog(connection);
   const initial = catalog[definition.statusName];
   if (initial?.loaded) {
-    return withDuckDbCacheLocation(definition, runtimeVersion, {
-      installed: Boolean(initial.installed),
-      installable: Boolean(initial.installed),
-      loadable: true,
-      loaded: true,
-    }, initial.install_path);
+    return withDuckDbCacheLocation(
+      definition,
+      runtimeVersion,
+      {
+        installed: Boolean(initial.installed),
+        installable: Boolean(initial.installed),
+        loadable: true,
+        loaded: true,
+      },
+      initial.install_path,
+    );
   }
 
   try {
     await connection.run(`load ${definition.loadName}`);
     const refreshed = (await readDuckDbExtensionCatalog(connection))[definition.statusName];
-    return withDuckDbCacheLocation(definition, runtimeVersion, {
-      installed: Boolean(refreshed?.installed ?? initial?.installed),
-      installable: true,
-      loadable: true,
-      loaded: true,
-    }, refreshed?.install_path ?? initial?.install_path);
+    return withDuckDbCacheLocation(
+      definition,
+      runtimeVersion,
+      {
+        installed: Boolean(refreshed?.installed ?? initial?.installed),
+        installable: true,
+        loadable: true,
+        loaded: true,
+      },
+      refreshed?.install_path ?? initial?.install_path,
+    );
   } catch (error) {
     const detail = toErrorMessage(error);
-    return withDuckDbCacheLocation(definition, runtimeVersion, {
-      detail,
-      installed: Boolean(initial?.installed),
-      installable: inferInstallability(Boolean(initial?.installed), detail),
-      loadable: false,
-      loaded: false,
-    }, initial?.install_path);
+    return withDuckDbCacheLocation(
+      definition,
+      runtimeVersion,
+      {
+        detail,
+        installed: Boolean(initial?.installed),
+        installable: inferInstallability(Boolean(initial?.installed), detail),
+        loadable: false,
+        loaded: false,
+      },
+      initial?.install_path,
+    );
   }
 }
 
@@ -293,9 +308,7 @@ export async function installDuckDbManagedExtension(
 
   try {
     await connection.run(
-      before.installed
-        ? `force install ${definition.loadName}`
-        : `install ${definition.loadName}`,
+      before.installed ? `force install ${definition.loadName}` : `install ${definition.loadName}`,
     );
   } catch (error) {
     throw new CliError(

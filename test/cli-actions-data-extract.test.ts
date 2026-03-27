@@ -44,7 +44,9 @@ describe("cli action modules: data extract", () => {
       expect(stdout.text).toBe("");
       expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
       expect(stderr.text).toContain("Rows: 2");
-      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,active\n2,Bob,paused\n");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id,name,status\n1,Ada,active\n2,Bob,paused\n",
+      );
     });
   });
 
@@ -83,7 +85,9 @@ describe("cli action modules: data extract", () => {
 
       expectNoStdout();
       expect(stderr.text).toContain(`Wrote TSV: ${toRepoRelativePath(outputPath)}`);
-      expect(await readFile(outputPath, "utf8")).toBe("id\tname\tstatus\n1\tAda\tactive\n2\tBob\tpaused\n");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id\tname\tstatus\n1\tAda\tactive\n2\tBob\tpaused\n",
+      );
     });
   });
 
@@ -374,7 +378,8 @@ describe("cli action modules: data extract", () => {
             body_start_row: 10,
             header_row: 7,
             range: "B7:BR20",
-            reasoning_summary: "The logical table uses row 7 for headers and row 10 for the first true body records.",
+            reasoning_summary:
+              "The logical table uses row 7 for headers and row 10 for the first true body records.",
           });
         },
         writeSourceShape: toRepoRelativePath(artifactPath),
@@ -419,7 +424,8 @@ describe("cli action modules: data extract", () => {
             body_start_row: 10,
             header_row: null,
             range: null,
-            reasoning_summary: "The current sheet selection is fine; only the logical body boundary needs to move to worksheet row 10.",
+            reasoning_summary:
+              "The current sheet selection is fine; only the logical body boundary needs to move to worksheet row 10.",
           }),
         writeSourceShape: toRepoRelativePath(artifactPath),
       });
@@ -449,21 +455,25 @@ describe("cli action modules: data extract", () => {
       await writeFile(inputPath, "column_1,column_2\n1001,active\n1002,paused\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "csv",
-            path: toRepoRelativePath(inputPath),
+        `${JSON.stringify(
+          {
+            input: {
+              format: "csv",
+              path: toRepoRelativePath(inputPath),
+            },
+            mappings: [
+              { from: "column_1", to: "id" },
+              { from: "column_2", to: "status" },
+            ],
+            metadata: {
+              artifactType: "data-header-mapping",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            version: 1,
           },
-          mappings: [
-            { from: "column_1", to: "id" },
-            { from: "column_2", to: "status" },
-          ],
-          metadata: {
-            artifactType: "data-header-mapping",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -493,22 +503,26 @@ describe("cli action modules: data extract", () => {
       const outputPath = join(fixtureDir, "messy.clean.csv");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              headerRow: 7,
+              range: "B2:E11",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            headerRow: 7,
-            range: "B2:E11",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -569,21 +583,25 @@ describe("cli action modules: data extract", () => {
       const outputPath = join(fixtureDir, "stacked-merged-band.body-only.csv");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: toRepoRelativePath(inputPath),
-            source: "Sheet1",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: toRepoRelativePath(inputPath),
+              source: "Sheet1",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-20T00:00:00.000Z",
+            },
+            shape: {
+              bodyStartRow: 10,
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-20T00:00:00.000Z",
-          },
-          shape: {
-            bodyStartRow: 10,
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 
@@ -713,21 +731,25 @@ describe("cli action modules: data extract failure modes", () => {
       await writeFile(inputPath, "id,name\n1,Ada\n", "utf8");
       await writeFile(
         artifactPath,
-        `${JSON.stringify({
-          input: {
-            format: "excel",
-            path: "test/fixtures/data-query/multi.xlsx",
-            source: "Summary",
+        `${JSON.stringify(
+          {
+            input: {
+              format: "excel",
+              path: "test/fixtures/data-query/multi.xlsx",
+              source: "Summary",
+            },
+            metadata: {
+              artifactType: "data-source-shape",
+              issuedAt: "2026-03-18T00:00:00.000Z",
+            },
+            shape: {
+              range: "A1:B3",
+            },
+            version: 1,
           },
-          metadata: {
-            artifactType: "data-source-shape",
-            issuedAt: "2026-03-18T00:00:00.000Z",
-          },
-          shape: {
-            range: "A1:B3",
-          },
-          version: 1,
-        }, null, 2)}\n`,
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 

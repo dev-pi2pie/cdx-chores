@@ -4,7 +4,13 @@ import { REPO_ROOT } from "./cli-test-utils";
 
 export function seedStackedMergedBandFixture(outputDir: string): void {
   const proc = Bun.spawnSync({
-    cmd: ["node", "scripts/generate-stacked-merged-band-fixture.mjs", "reset", "--output-dir", outputDir],
+    cmd: [
+      "node",
+      "scripts/generate-stacked-merged-band-fixture.mjs",
+      "reset",
+      "--output-dir",
+      outputDir,
+    ],
     cwd: REPO_ROOT,
     stdout: "pipe",
     stderr: "pipe",

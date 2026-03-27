@@ -42,11 +42,7 @@ export function stringifyPreviewValue(value: unknown): string {
   if (typeof value === "string") {
     return value;
   }
-  if (
-    typeof value === "number" ||
-    typeof value === "bigint" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
     return String(value);
   }
   if (Array.isArray(value) || typeof value === "object") {

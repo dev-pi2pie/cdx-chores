@@ -1,7 +1,5 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
-import {
-  normalizeHeaderMappingTargetName,
-} from "./normalize";
+import { normalizeHeaderMappingTargetName } from "./normalize";
 import type {
   DataHeaderMappingEntry,
   DataHeaderSuggestionEvidence,

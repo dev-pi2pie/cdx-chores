@@ -124,7 +124,9 @@ describe("cli action modules: rename cleanup analysis report csv", () => {
       expect(csvText).toContain("timestamp,serial");
 
       const entries = await readdir(fixtureDir);
-      expect(entries.filter((entry) => entry.startsWith("rename-cleanup-analysis-"))).toHaveLength(1);
+      expect(entries.filter((entry) => entry.startsWith("rename-cleanup-analysis-"))).toHaveLength(
+        1,
+      );
       expect(entries.filter((entry) => entry.startsWith("rename-plan-"))).toHaveLength(0);
 
       await removeIfPresent(csvPath);

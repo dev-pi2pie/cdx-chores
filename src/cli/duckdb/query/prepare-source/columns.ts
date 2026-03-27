@@ -18,15 +18,18 @@ function normalizeGeneratedQueryColumnName(name: string): string {
 }
 
 function isGeneratedQueryPlaceholderSequence(names: readonly string[]): boolean {
-  return names.length > 0 && names.every((name, index) => {
-    const match = /^column(\d+)$/i.exec(name.trim());
-    if (!match) {
-      return false;
-    }
+  return (
+    names.length > 0 &&
+    names.every((name, index) => {
+      const match = /^column(\d+)$/i.exec(name.trim());
+      if (!match) {
+        return false;
+      }
 
-    const detectedIndex = Number(match[1] ?? "");
-    return Number.isInteger(detectedIndex) && detectedIndex === index;
-  });
+      const detectedIndex = Number(match[1] ?? "");
+      return Number.isInteger(detectedIndex) && detectedIndex === index;
+    })
+  );
 }
 
 async function shouldNormalizeGeneratedQueryColumnNames(

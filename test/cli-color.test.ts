@@ -3,7 +3,11 @@ import { join } from "node:path";
 import { rm, writeFile } from "node:fs/promises";
 
 import { runCli as runCliInProcess } from "../src/command";
-import { createTempFixtureDir, toRepoRelativePath, createCapturedRuntime } from "./helpers/cli-test-utils";
+import {
+  createTempFixtureDir,
+  toRepoRelativePath,
+  createCapturedRuntime,
+} from "./helpers/cli-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 
@@ -23,7 +27,14 @@ describe("CLI color controls", () => {
       enableTty(runtime.stdout, 80);
 
       await runCliInProcess(
-        [process.execPath, "src/bin.ts", "data", "preview", toRepoRelativePath(inputPath), "--no-color"],
+        [
+          process.execPath,
+          "src/bin.ts",
+          "data",
+          "preview",
+          toRepoRelativePath(inputPath),
+          "--no-color",
+        ],
         runtime,
       );
 

@@ -64,7 +64,10 @@ export function pushUniqueTitleCandidate(candidates: string[], value: string | u
   candidates.push(normalized);
 }
 
-export function getStringCandidate(data: Record<string, unknown> | null, keys: string[]): string | undefined {
+export function getStringCandidate(
+  data: Record<string, unknown> | null,
+  keys: string[],
+): string | undefined {
   if (!data) {
     return undefined;
   }

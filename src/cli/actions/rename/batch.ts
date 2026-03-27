@@ -1,5 +1,8 @@
 import { CliError } from "../../errors";
-import { resolveAutoCodexFlagsForPaths, resolveCodexFlagsFromCliOptions } from "../../rename-interactive-router";
+import {
+  resolveAutoCodexFlagsForPaths,
+  resolveCodexFlagsFromCliOptions,
+} from "../../rename-interactive-router";
 import {
   type RenameSerialOrder,
   type RenameSerialScope,
@@ -14,14 +17,8 @@ import {
   printRenameBatchCodexSummary,
   runRenameCodexAnalysis,
 } from "./codex";
-import {
-  createRenameBatchFileFilter,
-  normalizeRenameBatchMaxDepth,
-} from "./filters";
-import {
-  resolveEffectivePattern,
-  writeBatchRenameDryRunPlanCsv,
-} from "./plan-output";
+import { createRenameBatchFileFilter, normalizeRenameBatchMaxDepth } from "./filters";
+import { resolveEffectivePattern, writeBatchRenameDryRunPlanCsv } from "./plan-output";
 import {
   printRenameBatchApplyFooter,
   printRenameBatchDryRunFooter,

@@ -1,11 +1,20 @@
 import { confirm, input, select } from "@inquirer/prompts";
 
 import type { DataHeaderMappingEntry } from "../../../duckdb/header-mapping";
-import { quoteSqlIdentifier, type DataQueryInputFormat, type DataQuerySourceIntrospection } from "../../../duckdb/query";
+import {
+  quoteSqlIdentifier,
+  type DataQueryInputFormat,
+  type DataQuerySourceIntrospection,
+} from "../../../duckdb/query";
 import type { CliRuntime } from "../../../types";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
-import type { FormalGuideAnswers, FormalGuideAggregateKind, FormalGuideFilterOperator, OrderBySpec } from "../types";
+import type {
+  FormalGuideAnswers,
+  FormalGuideAggregateKind,
+  FormalGuideFilterOperator,
+  OrderBySpec,
+} from "../types";
 
 function escapeSqlString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
@@ -35,7 +44,10 @@ function validateKnownColumns(value: string, allowedColumns: readonly string[]):
 
 function parseOrderBySpecs(value: string, allowedColumns: readonly string[]): OrderBySpec[] {
   const specs: OrderBySpec[] = [];
-  for (const rawToken of value.split(",").map((item) => item.trim()).filter((item) => item.length > 0)) {
+  for (const rawToken of value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)) {
     const parts = rawToken.split(":").map((part) => part.trim());
     const column = parts[0] ?? "";
     if (!allowedColumns.includes(column)) {
@@ -101,7 +113,9 @@ function buildFormalGuideSql(answers: FormalGuideAnswers): string {
   }
 
   if (answers.aggregateKind !== "none" && answers.groupByColumns.length > 0) {
-    statements.push(`group by ${answers.groupByColumns.map((column) => quoteSqlIdentifier(column)).join(", ")}`);
+    statements.push(
+      `group by ${answers.groupByColumns.map((column) => quoteSqlIdentifier(column)).join(", ")}`,
+    );
   }
 
   if (answers.orderBySpecs.length > 0) {
@@ -230,7 +244,8 @@ async function promptFormalGuideAnswers(
       orderByInput.trim().length > 0 ? parseOrderBySpecs(orderByInput, allowedOrderByColumns) : [],
     selectedColumns,
     selectAllColumns:
-      selectedColumnsInput.trim().length === 0 || selectedColumnsInput.trim().toLowerCase() === "all",
+      selectedColumnsInput.trim().length === 0 ||
+      selectedColumnsInput.trim().toLowerCase() === "all",
   };
 }
 

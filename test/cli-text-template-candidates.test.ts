@@ -37,10 +37,7 @@ describe("text template candidates", () => {
 
   test("narrows into the date family after the family prefix is typed", () => {
     expect(resolveTemplateCompletionMatch("{date_")).toEqual({
-      candidates: [
-        "{date_local}",
-        "{date_utc}",
-      ],
+      candidates: ["{date_local}", "{date_utc}"],
       fragment: "{date_",
       fragmentStart: 0,
       scope: "date",

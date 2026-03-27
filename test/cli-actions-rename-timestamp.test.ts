@@ -98,7 +98,11 @@ describe("cli action modules: rename timestamp behavior", () => {
     test("rewrites legacy {timestamp} to local time and records local metadata", async () => {
       await withTimezone("Asia/Taipei", async () => {
         await withActionWorkspace(async (fixtureDir, trackPlanCsv) => {
-          const { dirPath, fixedTime } = await createRenameFixture(fixtureDir, "batch-legacy", "note.txt");
+          const { dirPath, fixedTime } = await createRenameFixture(
+            fixtureDir,
+            "batch-legacy",
+            "note.txt",
+          );
           const { runtime, stderr } = createCapturedRuntime();
 
           const result = await actionRenameBatch(runtime, {
@@ -186,7 +190,11 @@ describe("cli action modules: rename timestamp behavior", () => {
     test("rewrites spaced legacy placeholders before planning", async () => {
       await withTimezone("Asia/Taipei", async () => {
         await withActionWorkspace(async (fixtureDir, trackPlanCsv) => {
-          const { filePath, fixedTime } = await createRenameFixture(fixtureDir, "file-spaced", "memo.txt");
+          const { filePath, fixedTime } = await createRenameFixture(
+            fixtureDir,
+            "file-spaced",
+            "memo.txt",
+          );
           const { runtime, stderr } = createCapturedRuntime();
 
           const result = await actionRenameFile(runtime, {
@@ -202,7 +210,9 @@ describe("cli action modules: rename timestamp behavior", () => {
 
           const dataLine = await readPlanCsvLine(result.planCsvPath!, "memo.txt");
           expectTimestampTz(dataLine, "local");
-          expect(dataLine.split(",")[1] ?? "").toBe(`doc-${formatLocalFileDateTime(fixedTime)}-memo.txt`);
+          expect(dataLine.split(",")[1] ?? "").toBe(
+            `doc-${formatLocalFileDateTime(fixedTime)}-memo.txt`,
+          );
         });
       });
     });

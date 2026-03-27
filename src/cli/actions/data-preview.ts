@@ -37,7 +37,10 @@ export async function loadDataPreviewSource(
   };
 }
 
-export async function actionDataPreview(runtime: CliRuntime, options: DataPreviewOptions): Promise<void> {
+export async function actionDataPreview(
+  runtime: CliRuntime,
+  options: DataPreviewOptions,
+): Promise<void> {
   const { inputPath, source: loadedSource } = await loadDataPreviewSource(runtime, options.input, {
     noHeader: options.noHeader,
   });

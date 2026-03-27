@@ -51,6 +51,9 @@ export interface DataHeaderSuggestionEvidence {
   sample?: string;
 }
 
-export type DataHeaderMappingShape = Pick<DataQuerySourceShape, "bodyStartRow" | "headerRow" | "noHeader" | "range" | "source">;
+export type DataHeaderMappingShape = Pick<
+  DataQuerySourceShape,
+  "bodyStartRow" | "headerRow" | "noHeader" | "range" | "source"
+>;
 export type DataHeaderSuggestionIntrospection = DataQuerySourceIntrospection;
 export type DataHeaderMappingFormat = DataQueryInputFormat;
