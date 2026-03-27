@@ -1,6 +1,7 @@
 ---
 title: "Dependency upgrade verification for March 2026 outdated packages"
 created-date: 2026-03-27
+modified-date: 2026-03-27
 status: completed
 agent: codex
 ---
@@ -41,21 +42,23 @@ Verify whether the currently outdated direct dependencies should be upgraded:
 - Because `oxfmt` is only used in repo formatting scripts, the main risk is formatting churn rather than runtime or compile behavior.
 - In a temp verification copy, upgrading this package did not break `bun run build` or `bun test`.
 
-### 4. TypeScript 6.0.2 is not blocked by a new regression, but it should still be a separate upgrade
+### 4. TypeScript 6.0.2 now looks safe to upgrade on the current branch
 
-- TypeScript 6.0 introduces meaningful defaults and deprecations, including `types: []` by default and other config-level changes.[^ts6-rc]
-- For this repo specifically, `bun run build` still succeeded after upgrading to `typescript@6.0.2`.
-- Direct `tsc --noEmit -p tsconfig.json` reported the same two errors under both `typescript@5.9.3` and `typescript@6.0.2`:
-  - `src/cli/interactive/data.ts:44`
-  - `src/cli/interactive/data/shared.ts:55`
-- That means TypeScript 6 did not introduce a new typecheck failure here. The repo already has a baseline gap between "build passes" and "`tsc --noEmit` passes".
+- The official TypeScript 6.0 release post was published on 2026-03-23 and confirms the main transition points from 5.9 toward 7.0, including `rootDir` defaulting to `.`, `types` defaulting to `[]`, and deprecations around older module-resolution and import-assertion behavior.[^ts6-final]
+- The same post also notes a few final changes since beta/RC, including stricter type-checking for some generic function-expression calls, import-assertion deprecation extended to `import()` calls, and updated DOM and Temporal types.[^ts6-final]
+- This repo is already relatively aligned with the official guidance because `tsconfig.json` explicitly sets `module: "Preserve"`, `moduleResolution: "bundler"`, `target: "ESNext"`, and `strict: true`.
+- After fixing the two baseline `tsc --noEmit` errors in the interactive data flow, the current branch now verifies cleanly with `typescript@6.0.2` in a temp copy:
+  - `bun run build` passed
+  - `bun test` passed with `550` passing tests
+  - `./node_modules/.bin/tsc --noEmit -p tsconfig.json` passed
+- I did not find a repo-specific issue triggered by the final 6.0 release notes.
 
 ## Implications or Recommendations
 
 1. Upgrade `@duckdb/node-api`, `@openai/codex-sdk`, and `oxfmt` in the next dependency-maintenance pass.
 2. Keep the `oxfmt` bump isolated from unrelated formatting sweeps unless formatting churn is intentionally part of the change.
-3. Treat `typescript@6.0.2` as a separate PR or commit from the smaller dependency bumps.
-4. If TypeScript 6 is upgraded, decide explicitly whether this repo wants to start enforcing `tsc --noEmit`; if yes, fix the two existing errors in the same change or immediately after it.
+3. TypeScript 6.0.2 can now be upgraded on this branch without waiting for more type-fix work.
+4. If TypeScript 6 is upgraded, it is now reasonable to treat `tsc --noEmit` as part of the normal verification path because it passes on the current branch state.
 
 ## Verification
 
@@ -80,9 +83,27 @@ Observed results:
 - after `@duckdb/node-api`, `@openai/codex-sdk`, and `oxfmt` upgrades: `bun test` passed with `550` passing tests; `bun run build` passed
 - after `typescript@6.0.2`: `bun run build` still passed; `tsc --noEmit` reported the same two errors already present under `typescript@5.9.3`
 
+Follow-up verification after the interactive data type fixes:
+
+```bash
+rsync -a --delete --exclude .git --exclude node_modules ./ /tmp/cdx-chores-ts6-review
+cd /tmp/cdx-chores-ts6-review
+bun install --frozen-lockfile
+./node_modules/.bin/tsc --noEmit -p tsconfig.json
+bun add -d typescript@6.0.2
+bun run build
+bun test
+./node_modules/.bin/tsc --noEmit -p tsconfig.json
+```
+
+Observed results:
+
+- on the current branch with `typescript@5.9.3`: `tsc --noEmit` passed
+- after upgrading only to `typescript@6.0.2` in the temp copy: `bun run build` passed, `bun test` passed with `550` passing tests, and `tsc --noEmit` passed
+
 ## References
 
 [^duckdb-release]: [DuckDB v1.5.1 bugfix release](https://github.com/duckdb/duckdb/releases)
 [^codex-release]: [openai/codex 0.117.0 release notes](https://github.com/openai/codex/releases)
 [^oxc-release]: [oxlint v1.57.0 and oxfmt v0.42.0 release notes](https://github.com/oxc-project/oxc/releases)
-[^ts6-rc]: [Announcing TypeScript 6.0 RC](https://devblogs.microsoft.com/typescript/announcing-typescript-6-0-rc/)
+[^ts6-final]: [Announcing TypeScript 6.0](https://devblogs.microsoft.com/typescript/announcing-typescript-6-0/)
