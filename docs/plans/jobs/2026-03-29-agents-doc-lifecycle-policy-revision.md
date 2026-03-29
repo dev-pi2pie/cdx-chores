@@ -1,6 +1,7 @@
 ---
 title: "Revise AGENTS doc lifecycle and archive policy"
 created-date: 2026-03-29
+modified-date: 2026-03-29
 status: completed
 agent: codex
 ---
@@ -18,6 +19,7 @@ Update `AGENTS.md` so documentation lifecycle, archive scope, and status selecti
 - expanded plan, research, and job status sets to cover `blocked`, `cancelled`, and `superseded` where appropriate
 - clarified that new research docs should default to `draft` unless they backfill already-finished research
 - clarified that research `completed` means the research is finished, not necessarily implemented
+- clarified that moving a `completed` research or plan doc into archive requires a separate later review rather than happening automatically at completion time
 - preserved the existing `Writing Guidelines` and `Philosophy` sections
 
 ## Files

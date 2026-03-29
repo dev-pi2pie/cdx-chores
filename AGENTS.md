@@ -111,7 +111,8 @@ Plan archive guidance:
 - move a plan into `docs/plans/archive/` when its status is `cancelled` or `superseded`
 - keep `draft`, `active`, and `blocked` plans in `docs/plans/`
 - keep `completed` plans in `docs/plans/` while they still serve as useful current references
-- do not archive a completed plan automatically; archive it only when it has clearly become historical and the main plan list benefits from the cleanup
+- marking a plan `completed` does not by itself move it to `docs/plans/archive/`
+- archive a completed plan only after a separate later review confirms it is mature enough to stop being a primary working reference
 
 ---
 
@@ -160,13 +161,16 @@ Important rule:
 - `completed` for research means the research is finished
 - `completed` for research does not require implementation to exist
 - if implementation is deferred or never happens, the research may still remain `completed` if the question itself was answered
+- marking a research doc `completed` does not by itself move it to `docs/researches/archive/`
+- archive a completed research doc only after a separate later review confirms it is mature enough to stop being a primary working reference
 
 Research archive guidance:
 
 - move a research doc into `docs/researches/archive/` when its status is `cancelled` or `superseded`
 - keep `draft`, `in-progress`, and `blocked` research docs in `docs/researches/`
 - keep `completed` research docs in `docs/researches/` while they still serve as primary or current references
-- do not archive a completed research doc only because implementation landed; archive it only when it is no longer a primary working reference and the main folder would benefit from reduced clutter
+- do not archive a completed research doc only because implementation landed
+- archive it only after a separate later review confirms it is no longer a primary working reference
 
 Suggested sections:
 
