@@ -2,10 +2,9 @@ import { input } from "@inquirer/prompts";
 
 import {
   beep,
-  clearCurrentLine,
   createKeypressParser,
+  createInlinePromptRenderer,
   dim,
-  moveCursorLeft,
   startRawSession,
   supportsRawSessionIO,
   type RawSession,
@@ -42,19 +41,6 @@ function createPromptAbortError(): Error {
   const error = new Error("User aborted prompt");
   error.name = "ExitPromptError";
   return error;
-}
-
-function buildPromptLine(options: { message: string; value: string; ghostText: string }): {
-  line: string;
-  cursorBackCount: number;
-} {
-  const showGhost = options.ghostText.length > 0;
-  const renderedGhost = showGhost ? dim(options.ghostText) : "";
-  const line = `${options.message} ${options.value}${renderedGhost}`;
-  return {
-    line,
-    cursorBackCount: showGhost ? options.ghostText.length : 0,
-  };
 }
 
 function isPrintableInput(str: string | undefined, key: KeypressInfo): boolean {
@@ -151,6 +137,7 @@ export async function promptTextInlineGhost(options: {
   let ghostText = "";
   let closed = false;
   let renderScheduled = false;
+  const inlineRenderer = createInlinePromptRenderer(stdout);
   let templateCompletion: TemplateCompletionMatch | undefined;
   let templateCycleState:
     | {
@@ -189,14 +176,10 @@ export async function promptTextInlineGhost(options: {
     if (closed) {
       return;
     }
-    clearCurrentLine(stdout);
-    const { line, cursorBackCount } = buildPromptLine({
-      message: options.message,
-      value,
+    inlineRenderer.render({
+      prefixText: `${options.message} ${value}`,
       ghostText,
     });
-    stdout.write(line);
-    moveCursorLeft(stdout, cursorBackCount);
   };
 
   const scheduleRender = (): void => {
@@ -240,7 +223,7 @@ export async function promptTextInlineGhost(options: {
       settled = true;
       closed = true;
       cleanup();
-      clearCurrentLine(stdout);
+      inlineRenderer.clear();
       stdout.write(`${options.message} ${result}\n`);
       resolve(result);
     };
@@ -252,7 +235,7 @@ export async function promptTextInlineGhost(options: {
       settled = true;
       closed = true;
       cleanup();
-      clearCurrentLine(stdout);
+      inlineRenderer.clear();
       stdout.write("\n");
       reject(error);
     };

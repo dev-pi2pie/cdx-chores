@@ -1,9 +1,8 @@
 import {
   beep,
-  clearCurrentLine,
   createKeypressParser,
+  createInlinePromptRenderer,
   dim,
-  moveCursorLeft,
   startRawSession,
   supportsRawSessionIO,
   type RawSession,
@@ -57,21 +56,6 @@ function createPromptAbortError(): Error {
   const error = new Error("User aborted prompt");
   error.name = "ExitPromptError";
   return error;
-}
-
-function buildPromptLine(options: {
-  message: string;
-  value: string;
-  ghostSuffix: string;
-  showGhost: boolean;
-}): { line: string; cursorBackCount: number } {
-  const ghostText = options.showGhost ? options.ghostSuffix : "";
-  const renderedGhost = ghostText.length > 0 ? dim(ghostText) : "";
-  const line = `${options.message} ${options.value}${renderedGhost}`;
-  return {
-    line,
-    cursorBackCount: ghostText.length,
-  };
 }
 
 function isPrintableInput(str: string | undefined, key: KeypressInfo): boolean {
@@ -130,20 +114,16 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   let needsRefreshAgain = false;
   let activeRefreshSeq = 0;
   let closed = false;
+  const inlineRenderer = createInlinePromptRenderer(stdout);
 
   const render = (): void => {
     if (closed) {
       return;
     }
-    clearCurrentLine(stdout);
-    const { line, cursorBackCount } = buildPromptLine({
-      message: options.message,
-      value,
-      ghostSuffix,
-      showGhost: true,
+    inlineRenderer.render({
+      prefixText: `${options.message} ${value}`,
+      ghostText: ghostSuffix,
     });
-    stdout.write(line);
-    moveCursorLeft(stdout, cursorBackCount);
   };
 
   const scheduleRender = (): void => {
@@ -378,7 +358,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
       closed = true;
       activeRefreshSeq += 1;
       cleanup();
-      clearCurrentLine(stdout);
+      inlineRenderer.clear();
       stdout.write(`${options.message} ${result}\n`);
       resolve(result);
     };
@@ -391,7 +371,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
       closed = true;
       activeRefreshSeq += 1;
       cleanup();
-      clearCurrentLine(stdout);
+      inlineRenderer.clear();
       stdout.write("\n");
       reject(error);
     };
