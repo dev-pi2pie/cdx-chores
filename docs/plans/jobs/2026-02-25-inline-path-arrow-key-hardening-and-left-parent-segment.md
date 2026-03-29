@@ -36,4 +36,4 @@ Harden the inline ghost-hint path prompt for non-right arrow keys and add a usef
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

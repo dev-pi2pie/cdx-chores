@@ -39,4 +39,4 @@ Fix two issues found in the new inline ghost-hint path prompt:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

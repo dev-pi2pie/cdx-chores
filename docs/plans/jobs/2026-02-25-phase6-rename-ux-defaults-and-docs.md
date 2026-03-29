@@ -11,7 +11,7 @@ Complete Phase 6 of the image rename pattern/audit workflow plan by documenting 
 
 ## What Changed
 
-- Updated `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- Updated `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
   - marked Phase 6 checklist items completed
   - marked overall plan status as `completed`
   - documented Codex confirmation UX decisions (preview-first, interactive apply confirmation, no `--auto`)
@@ -30,4 +30,4 @@ Complete Phase 6 of the image rename pattern/audit workflow plan by documenting 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

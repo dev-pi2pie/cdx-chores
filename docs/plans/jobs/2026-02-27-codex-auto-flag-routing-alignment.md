@@ -33,7 +33,7 @@ Align non-interactive rename flags with the interactive smart-router model by ad
   - `README.md`
   - `docs/guides/rename-common-usage.md`
   - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- Completed plan tracking in `docs/plans/plan-2026-02-27-codex-auto-flag-routing-alignment.md`
+- Completed plan tracking in `docs/plans/archive/plan-2026-02-27-codex-auto-flag-routing-alignment.md`
 
 ## Verification
 
@@ -56,9 +56,9 @@ Focused smoke check run and passed:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-27-codex-auto-flag-routing-alignment.md`
+- `docs/plans/archive/plan-2026-02-27-codex-auto-flag-routing-alignment.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`

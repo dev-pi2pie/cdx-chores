@@ -279,13 +279,13 @@ Reason:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
+- `docs/plans/archive/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 - `docs/plans/jobs/2026-02-26-docx-pdf-rename-analyzer-pdf-first-phase.md`
 - `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
+- `docs/researches/archive/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/research-2026-03-17-package-upgrade-risk-inquirer-mammoth.md`
 
 ## References

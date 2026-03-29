@@ -160,12 +160,12 @@ Current recommendation:
 ## Related Plans
 
 - `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
-- `docs/plans/plan-2026-03-02-interactive-module-folder-refactor.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-03-02-interactive-module-folder-refactor.md`
 
 ## References
 
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
-- `docs/plans/plan-2026-03-02-interactive-module-folder-refactor.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-03-02-interactive-module-folder-refactor.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`

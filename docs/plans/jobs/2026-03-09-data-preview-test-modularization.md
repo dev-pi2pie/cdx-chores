@@ -33,8 +33,8 @@ Split `test/cli-actions-data-preview.test.ts` into smaller focused modules witho
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

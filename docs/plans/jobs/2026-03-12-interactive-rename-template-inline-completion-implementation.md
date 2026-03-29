@@ -48,8 +48,8 @@ Implement trailing-token inline completion for interactive rename custom templat
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-12-interactive-rename-template-inline-completion.md`
+- `docs/plans/archive/plan-2026-03-12-interactive-rename-template-inline-completion.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-12-interactive-template-inline-completion-audit.md`
+- `docs/researches/archive/research-2026-03-12-interactive-template-inline-completion-audit.md`

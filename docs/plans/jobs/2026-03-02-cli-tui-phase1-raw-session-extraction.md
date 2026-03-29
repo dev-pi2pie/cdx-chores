@@ -68,4 +68,4 @@ Implement Phase 1 of the CLI TUI foundation plan by extracting the raw terminal 
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`

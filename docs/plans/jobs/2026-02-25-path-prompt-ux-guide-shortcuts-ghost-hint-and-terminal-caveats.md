@@ -28,4 +28,4 @@ Finish the final documentation task for the interactive path prompt UX plan by a
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

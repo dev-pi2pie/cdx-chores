@@ -21,7 +21,7 @@ Land the first implementation slice of the new interactive rename UX plan by:
 - `src/cli/actions/rename/index.ts`
 - `src/cli/actions/rename/cleanup.ts`
 - `test/cli-interactive-rename.test.ts`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Implemented
 
@@ -60,9 +60,9 @@ Land the first implementation slice of the new interactive rename UX plan by:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
-- `docs/researches/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`

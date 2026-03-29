@@ -14,7 +14,7 @@ Refresh living documentation after the rename action modularization so current g
 
 - `docs/guides/cli-action-tool-integration-guide.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Implemented
 
@@ -30,8 +30,8 @@ Refresh living documentation after the rename action modularization so current g
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

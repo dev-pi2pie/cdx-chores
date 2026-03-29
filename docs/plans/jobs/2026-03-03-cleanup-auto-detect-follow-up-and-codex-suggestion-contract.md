@@ -20,7 +20,7 @@ Advance Phase 2.1 and Phase 2.2 of the interactive cleanup plan by:
 - `src/cli/actions/rename/cleanup-target.ts`
 - `src/cli/interactive/rename.ts`
 - `test/cli-interactive-rename.test.ts`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
 ## Implemented
@@ -54,9 +54,9 @@ Advance Phase 2.1 and Phase 2.2 of the interactive cleanup plan by:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Related Research
 
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

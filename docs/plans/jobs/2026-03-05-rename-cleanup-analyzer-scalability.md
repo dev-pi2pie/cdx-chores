@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement `docs/plans/plan-2026-03-05-rename-cleanup-analyzer-scalability.md` through Phase 1 to Phase 6.
+Implement `docs/plans/archive/plan-2026-03-05-rename-cleanup-analyzer-scalability.md` through Phase 1 to Phase 6.
 
 ## Scope Covered
 
@@ -71,10 +71,10 @@ Implement `docs/plans/plan-2026-03-05-rename-cleanup-analyzer-scalability.md` th
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-05-rename-cleanup-analyzer-scalability.md`
+- `docs/plans/archive/plan-2026-03-05-rename-cleanup-analyzer-scalability.md`
 
 ## Related Research
 
 - `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- `docs/researches/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
+- `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`

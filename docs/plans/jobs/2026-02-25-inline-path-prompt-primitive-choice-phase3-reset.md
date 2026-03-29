@@ -32,8 +32,8 @@ Reset the interactive path prompt UI approach after the list-first prototype pro
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/researches/archive/research-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

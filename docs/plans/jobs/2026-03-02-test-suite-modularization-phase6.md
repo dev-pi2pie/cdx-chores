@@ -12,11 +12,11 @@ Finish the modularization plan with final verification, documentation cleanup, a
 
 ## Scope
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`
 - `docs/guides/cli-action-tool-integration-guide.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
 - `test/cli-actions-rename-apply-validation.test.ts`
 - `test/cli-actions-rename-batch-core.test.ts`
 
@@ -43,8 +43,8 @@ Finish the modularization plan with final verification, documentation cleanup, a
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

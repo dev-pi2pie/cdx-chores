@@ -32,4 +32,4 @@ The formatter and planner already accepted the new placeholders, but the CSV met
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`

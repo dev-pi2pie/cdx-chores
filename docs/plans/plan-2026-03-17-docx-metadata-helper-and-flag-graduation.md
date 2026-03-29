@@ -31,9 +31,9 @@ This plan turns that opening into a concrete execution sequence.
 
 Primary references:
 
-- `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
+- `docs/researches/archive/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
-- `docs/plans/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
+- `docs/plans/archive/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 
 Implementation baseline at plan start:
 
@@ -251,5 +251,5 @@ This plan is successful if:
 
 ## Related Research
 
-- `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
+- `docs/researches/archive/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`

@@ -19,15 +19,15 @@ Address the review findings on the `data preview contains filter` plan so the im
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
 
 ## Verification
 
 - reviewed current summary behavior in `src/cli/data-preview/render.ts`
 - reviewed current in-memory row-source contract in `src/cli/data-preview/source.ts`
-- reviewed completed interactive preview scope in `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
+- reviewed completed interactive preview scope in `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
-- `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`

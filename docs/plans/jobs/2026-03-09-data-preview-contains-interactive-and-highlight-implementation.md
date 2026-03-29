@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Implement the `data preview` follow-up from `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`.
+Implement the `data preview` follow-up from `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`.
 
 ## What Changed
 
@@ -44,7 +44,7 @@ Implement the `data preview` follow-up from `docs/plans/plan-2026-03-09-data-pre
 - `test/cli-interactive-routing.test.ts`
 - `test/helpers/interactive-harness.ts`
 - `docs/guides/data-preview-usage.md`
-- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
 
 ## Verification
 
@@ -57,9 +57,9 @@ Implement the `data preview` follow-up from `docs/plans/plan-2026-03-09-data-pre
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

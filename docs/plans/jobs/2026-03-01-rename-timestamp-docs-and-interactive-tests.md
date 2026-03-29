@@ -56,4 +56,4 @@ agent: codex, copilot
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-timezone-and-plan-csv-naming.md` — Phase 6 and Phase 7
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-timezone-and-plan-csv-naming.md` — Phase 6 and Phase 7

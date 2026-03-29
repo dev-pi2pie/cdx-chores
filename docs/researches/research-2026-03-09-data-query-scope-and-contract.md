@@ -1,8 +1,8 @@
 ---
 title: "Data query scope and contract"
 created-date: 2026-03-09
-modified-date: 2026-03-10
-status: draft
+modified-date: 2026-03-29
+status: completed
 agent: codex
 ---
 
@@ -701,4 +701,4 @@ No remaining contract-level open questions.
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

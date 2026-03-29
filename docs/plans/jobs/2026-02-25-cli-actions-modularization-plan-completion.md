@@ -20,7 +20,7 @@ Finish the remaining checklist items in the CLI actions modularization plan by a
   - `actionVideoGif` missing-input failure path
   - `actionVideoResize` width/height validation paths
 - Added `src/wc/types.ts` with a minimal `WordCounterResult` interface to resolve the missing module import referenced by `src/markdown/types.ts`
-- Updated `docs/plans/plan-2026-02-25-cli-actions-modularization.md`:
+- Updated `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`:
   - added checkbox-based execution tracking (earlier in the plan)
   - marked all remaining tasks complete
   - set plan status to `completed`
@@ -33,5 +33,5 @@ Finish the remaining checklist items in the CLI actions modularization plan by a
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
 

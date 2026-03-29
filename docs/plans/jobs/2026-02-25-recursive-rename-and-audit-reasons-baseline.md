@@ -46,4 +46,4 @@ Implement Phase 4 traversal/symlink policy behavior and a Phase 5 audit baseline
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

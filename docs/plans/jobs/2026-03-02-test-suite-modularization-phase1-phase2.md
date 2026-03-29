@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 1 and the first high-value Phase 2 split from `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by turning the rename batch test inventory into a literal keep/move/remove matrix and then splitting `test/cli-actions-rename-batch-core.test.ts` into focused files.
+Execute Phase 1 and the first high-value Phase 2 split from `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by turning the rename batch test inventory into a literal keep/move/remove matrix and then splitting `test/cli-actions-rename-batch-core.test.ts` into focused files.
 
 ## Scope
 
@@ -80,8 +80,8 @@ Execute Phase 1 and the first high-value Phase 2 split from `docs/plans/plan-202
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

@@ -1,6 +1,7 @@
 ---
 title: "Rename Timestamp Format Matrix"
 created-date: 2026-03-01
+modified-date: 2026-03-29
 status: draft
 agent: codex
 ---
@@ -60,10 +61,10 @@ Assume:
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
 
-## Related Research
+## Historical Research
 
-- `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+- `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

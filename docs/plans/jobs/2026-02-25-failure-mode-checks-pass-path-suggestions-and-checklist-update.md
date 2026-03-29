@@ -28,4 +28,4 @@ Work through the plan's `Failure-mode checks` section and verify which items can
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

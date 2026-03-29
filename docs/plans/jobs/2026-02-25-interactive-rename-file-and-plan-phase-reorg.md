@@ -18,8 +18,8 @@ Expose the new `rename file` workflow in interactive mode and reorganize rename-
   - dry-run toggle
   - optional apply-now confirmation using generated CSV snapshot
 - Reorganized checklist items in:
-  - `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
-  - `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+  - `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+  - `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
 - Marked the Codex integration plan as completed and documented the `doctor` item as evaluated/no-op for current MVP.
 - Grouped remaining pattern/audit work into phased sections to distinguish current implementation work from deferred design phases.
 
@@ -30,5 +30,5 @@ Expose the new `rename file` workflow in interactive mode and reorganize rename-
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

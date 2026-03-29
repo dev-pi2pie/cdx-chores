@@ -37,5 +37,5 @@ Close the UX gap where interactive `rename file` did not ask about Codex assista
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`

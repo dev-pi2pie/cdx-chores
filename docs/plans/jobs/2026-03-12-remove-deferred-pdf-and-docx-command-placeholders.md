@@ -33,4 +33,4 @@ Remove public CLI command entries that only advertised deferred behavior, so hel
 ## Related Plans
 
 - `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md`
-- `docs/plans/plan-2026-02-25-initial-launch-lightweight-implementation.md`
+- `docs/plans/archive/plan-2026-02-25-initial-launch-lightweight-implementation.md`

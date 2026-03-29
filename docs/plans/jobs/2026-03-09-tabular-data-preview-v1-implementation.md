@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement the first pass of `data preview` from `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`.
+Implement the first pass of `data preview` from `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`.
 
 ## Phase Slice
 
@@ -65,8 +65,8 @@ Implement the first pass of `data preview` from `docs/plans/plan-2026-03-09-tabu
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

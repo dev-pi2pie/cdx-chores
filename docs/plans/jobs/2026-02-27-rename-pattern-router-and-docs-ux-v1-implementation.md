@@ -33,7 +33,7 @@ Finish the v1 implementation for rename template flexibility, interactive smart 
   - rename help text now marks `--prefix` as optional
   - regression tests were added for prefix-less rename behavior
 - Completed plan tracking updates:
-  - `docs/plans/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`
+  - `docs/plans/archive/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`
   - all phase checklist items checked
   - plan status moved to `completed`
 
@@ -53,8 +53,8 @@ Focused smoke check run and passed:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`
+- `docs/plans/archive/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`

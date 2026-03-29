@@ -13,7 +13,7 @@ Close the final remaining checklist item in the `rename cleanup` v1 plan by addi
 
 - `src/cli/actions/rename/cleanup.ts`
 - `test/cli-actions-rename-cleanup-matchers.test.ts`
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Implemented
 
@@ -35,8 +35,8 @@ Close the final remaining checklist item in the `rename cleanup` v1 plan by addi
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

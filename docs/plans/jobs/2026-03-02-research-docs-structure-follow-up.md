@@ -12,7 +12,7 @@ Check non-completed research documents after the rename modularization and updat
 
 ## Scope
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
 
 ## Review Outcome
 
@@ -32,8 +32,8 @@ Check non-completed research documents after the rename modularization and updat
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

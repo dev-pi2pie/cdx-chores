@@ -60,7 +60,7 @@ Manual smoke checks:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
 
 ## Related Research
 

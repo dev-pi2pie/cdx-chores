@@ -12,7 +12,7 @@ Implement the folder-based split of `src/cli/interactive.ts` so interactive menu
 
 ## Scope
 
-- `docs/plans/plan-2026-03-02-interactive-module-folder-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-interactive-module-folder-refactor.md`
 - `src/cli/interactive/index.ts`
 - `src/cli/interactive/menu.ts`
 - `src/cli/interactive/shared.ts`
@@ -52,4 +52,4 @@ Implement the folder-based split of `src/cli/interactive.ts` so interactive menu
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-interactive-module-folder-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-interactive-module-folder-refactor.md`

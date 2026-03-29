@@ -48,4 +48,4 @@ Implement Phase 3 of the interactive path hints/autocomplete UX plan:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

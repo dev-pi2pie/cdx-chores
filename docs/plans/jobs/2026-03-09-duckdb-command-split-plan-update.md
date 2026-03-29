@@ -18,7 +18,7 @@ Update the DuckDB follow-up docs so they stop treating Parquet as an implicit `d
 
 ## Files
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Verification
@@ -30,8 +30,8 @@ Update the DuckDB follow-up docs so they stop treating Parquet as an implicit `d
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
-- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement Phase 1 through Phase 8 of `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
+Implement Phase 1 through Phase 8 of `docs/plans/archive/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`.
 
 ## Phase Slice
 
@@ -84,7 +84,7 @@ Implement Phase 1 through Phase 8 of `docs/plans/plan-2026-03-05-partial-analyze
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
+- `docs/plans/archive/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
 
 ## Related Research
 

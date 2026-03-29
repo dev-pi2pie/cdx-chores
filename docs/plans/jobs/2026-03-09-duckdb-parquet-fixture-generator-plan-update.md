@@ -29,4 +29,4 @@ Update the DuckDB plan so Parquet smoke testing depends on a repeatable fixture-
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
-- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`

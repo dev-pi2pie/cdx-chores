@@ -26,7 +26,7 @@ Set a narrow first-pass design that:
 ## Related Plans
 
 - `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Related Job Record
 
@@ -172,11 +172,11 @@ Recommended first-pass non-goals:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## References
 
 - `src/cli/actions/rename/cleanup.ts`
 - `src/cli/actions/rename/codex.ts`
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

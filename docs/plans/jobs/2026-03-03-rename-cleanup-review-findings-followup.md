@@ -35,7 +35,7 @@ Address the follow-up review findings in the `rename cleanup` implementation aro
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 

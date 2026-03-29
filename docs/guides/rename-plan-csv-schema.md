@@ -1,7 +1,7 @@
 ---
 title: "Rename Plan CSV Schema"
 created-date: 2026-02-25
-modified-date: 2026-03-01
+modified-date: 2026-03-29
 status: draft
 agent: codex
 ---
@@ -153,7 +153,7 @@ Non-goals for this phase:
   - `planned_at`
 - Reporting and audit metadata should remain non-blocking unless a future phase explicitly promotes a field into the strict replay contract
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`

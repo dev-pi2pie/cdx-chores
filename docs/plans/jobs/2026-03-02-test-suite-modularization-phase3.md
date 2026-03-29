@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 3 from `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by splitting `test/cli-actions-rename-apply.test.ts` into replay-focused and validation-focused files without changing behavior.
+Execute Phase 3 from `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by splitting `test/cli-actions-rename-apply.test.ts` into replay-focused and validation-focused files without changing behavior.
 
 ## Scope
 
@@ -66,8 +66,8 @@ Execute Phase 3 from `docs/plans/plan-2026-03-02-test-suite-modularization-and-r
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

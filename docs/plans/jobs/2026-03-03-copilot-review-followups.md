@@ -35,7 +35,7 @@ Address the Copilot review follow-ups for interactive cleanup validation, test h
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 

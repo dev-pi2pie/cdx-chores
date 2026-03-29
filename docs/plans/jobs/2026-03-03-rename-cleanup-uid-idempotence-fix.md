@@ -29,8 +29,8 @@ Address the `rename cleanup --style uid` review finding so rerunning cleanup on 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

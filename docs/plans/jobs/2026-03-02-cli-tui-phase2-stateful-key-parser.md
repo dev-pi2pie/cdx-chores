@@ -30,7 +30,7 @@ Implement Phase 2 of the CLI TUI foundation plan by extracting the escape-sequen
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
 
 ## Summary
 

@@ -495,4 +495,4 @@ Recommended prompt flow:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-initial-launch-lightweight-implementation.md`
+- `docs/plans/archive/plan-2026-02-25-initial-launch-lightweight-implementation.md`

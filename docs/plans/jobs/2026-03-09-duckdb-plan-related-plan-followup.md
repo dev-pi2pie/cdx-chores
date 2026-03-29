@@ -11,7 +11,7 @@ Update the DuckDB Parquet preview integration plan so its related-plan section r
 
 ## What Changed
 
-- added `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md` to the related plans list in `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- added `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md` to the related plans list in `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Files
 
@@ -24,4 +24,4 @@ Update the DuckDB Parquet preview integration plan so its related-plan section r
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
-- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`

@@ -18,8 +18,8 @@ Review the rename documentation set before the larger refactor and align the doc
 - `README.md`
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## What Changed
 
@@ -36,8 +36,8 @@ Review the rename documentation set before the larger refactor and align the doc
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`

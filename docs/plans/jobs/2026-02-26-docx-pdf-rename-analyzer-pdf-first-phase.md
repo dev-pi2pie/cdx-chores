@@ -95,11 +95,11 @@ Decision on DOCX metadata supplement:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-document-text-rename-analyzer-milestone.md`
-- `docs/plans/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
-- `docs/plans/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
+- `docs/plans/archive/plan-2026-02-26-document-text-rename-analyzer-milestone.md`
+- `docs/plans/archive/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
+- `docs/plans/archive/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
-- `docs/researches/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
+- `docs/researches/archive/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
+- `docs/researches/archive/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
