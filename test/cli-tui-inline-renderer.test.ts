@@ -110,4 +110,24 @@ describe("cli tui inline renderer", () => {
 
     expect(terminal.getVisibleLines()).toEqual(["short"]);
   });
+
+  test("repainting after an exact-width prefix with ghost text clears correctly", () => {
+    const stdout = new CaptureWriteStream(20);
+    const renderer = createInlinePromptRenderer(stdout as unknown as NodeJS.WritableStream);
+
+    renderer.render({
+      prefixText: "12345678901234567890",
+      ghostText: ".csv",
+    });
+
+    renderer.render({
+      prefixText: "short",
+      ghostText: ".csv",
+    });
+
+    const terminal = new VirtualTerminal(stdout.columns);
+    terminal.write(stdout.text);
+
+    expect(terminal.getVisibleLines()).toEqual(["short.csv"]);
+  });
 });

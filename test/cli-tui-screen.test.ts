@@ -8,6 +8,8 @@ import {
   moveCursorDown,
   moveCursorLeft,
   moveCursorUp,
+  restoreCursor,
+  saveCursor,
   showCursor,
 } from "../src/cli/tui";
 
@@ -36,6 +38,8 @@ describe("cli tui screen", () => {
     clearCurrentLine(stdout as unknown as NodeJS.WritableStream);
     moveCursorLeft(stdout as unknown as NodeJS.WritableStream, 3);
     moveCursorLeft(stdout as unknown as NodeJS.WritableStream, 0);
+    saveCursor(stdout as unknown as NodeJS.WritableStream);
+    restoreCursor(stdout as unknown as NodeJS.WritableStream);
     moveCursorUp(stdout as unknown as NodeJS.WritableStream, 2);
     moveCursorUp(stdout as unknown as NodeJS.WritableStream, 0);
     moveCursorDown(stdout as unknown as NodeJS.WritableStream, 1);
@@ -44,6 +48,6 @@ describe("cli tui screen", () => {
     hideCursor(stdout as unknown as NodeJS.WritableStream);
     showCursor(stdout as unknown as NodeJS.WritableStream);
 
-    expect(stdout.text).toBe("\r\x1b[2K\x1b[3D\x1b[2A\x1b[1B\x07\x1b[?25l\x1b[?25h");
+    expect(stdout.text).toBe("\r\x1b[2K\x1b[3D\x1b7\x1b8\x1b[2A\x1b[1B\x07\x1b[?25l\x1b[?25h");
   });
 });

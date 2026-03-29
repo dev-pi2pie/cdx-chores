@@ -7,6 +7,13 @@ export class VirtualTerminal {
   private row = 0;
   private column = 0;
   private pendingWrap = false;
+  private savedState:
+    | {
+        row: number;
+        column: number;
+        pendingWrap: boolean;
+      }
+    | undefined;
 
   constructor(columns: number, rows = 24) {
     this.columns = columns;
@@ -17,6 +24,24 @@ export class VirtualTerminal {
     for (let index = 0; index < text.length; index += 1) {
       const next = text[index];
       if (typeof next !== "string") {
+        continue;
+      }
+      if (next === "\x1b" && text[index + 1] === "7") {
+        this.savedState = {
+          row: this.row,
+          column: this.column,
+          pendingWrap: this.pendingWrap,
+        };
+        index += 1;
+        continue;
+      }
+      if (next === "\x1b" && text[index + 1] === "8") {
+        if (this.savedState) {
+          this.row = this.savedState.row;
+          this.column = this.savedState.column;
+          this.pendingWrap = this.savedState.pendingWrap;
+        }
+        index += 1;
         continue;
       }
       if (next === "\x1b") {
@@ -87,16 +112,7 @@ export class VirtualTerminal {
       return;
     }
     if (code === "D") {
-      let remaining = count;
-      while (remaining > 0) {
-        if (this.column > 0) {
-          this.column -= 1;
-        } else if (this.row > 0) {
-          this.row -= 1;
-          this.column = this.columns - 1;
-        }
-        remaining -= 1;
-      }
+      this.column = Math.max(0, this.column - count);
       return;
     }
     if (code === "K" && params === "2") {

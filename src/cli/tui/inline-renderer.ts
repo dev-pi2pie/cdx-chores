@@ -3,8 +3,9 @@ import {
   clearCurrentLine,
   dim,
   moveCursorDown,
-  moveCursorLeft,
   moveCursorUp,
+  restoreCursor,
+  saveCursor,
 } from "./screen";
 
 interface InlinePromptRenderState {
@@ -84,18 +85,22 @@ function renderInlinePromptFrame(options: {
   clearInlinePromptFrame(options.stdout, options.previousState);
 
   const columns = getTerminalColumns(options.stdout);
-  const cursorBackColumns = getDisplayWidth(options.ghostText);
   const displayText = `${options.prefixText}${options.ghostText}`;
   const renderedGhost = options.ghostText.length > 0 ? dim(options.ghostText) : "";
 
-  options.stdout.write(`${options.prefixText}${renderedGhost}`);
-  moveCursorLeft(options.stdout, cursorBackColumns);
+  options.stdout.write(options.prefixText);
+  saveCursor(options.stdout);
+  if (renderedGhost.length > 0) {
+    options.stdout.write(renderedGhost);
+  }
+  restoreCursor(options.stdout);
 
   const displayWidth = getDisplayWidth(displayText);
+  const prefixWidth = getDisplayWidth(options.prefixText);
 
   return {
     renderedRows: getRenderedRows(displayWidth, columns),
-    cursorRow: getCursorRow(displayWidth, cursorBackColumns, columns),
+    cursorRow: getCursorRow(prefixWidth, 0, columns),
   };
 }
 

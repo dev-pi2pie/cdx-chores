@@ -297,8 +297,9 @@ describe("text inline prompt controller", () => {
     });
 
     await nextRenderTick();
-    expect(stdout.text).toContain("\x1b[10D");
-    expect(stdout.text).not.toContain("\x1b[8D");
+    expect(stdout.text).toContain("\x1b7");
+    expect(stdout.text).toContain("\x1b8");
+    expect(stdout.text).toContain("\x1b[2m資料😀.csv\x1b[22m");
 
     stdin.emit("keypress", "\x1b", { name: "escape" });
     await expect(prompt).rejects.toMatchObject({

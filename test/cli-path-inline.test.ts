@@ -100,6 +100,7 @@ describe("path inline prompt controller", () => {
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
       await nextRenderTick();
+      await nextRenderTick();
 
       expect(stdout.text).toContain("Path ./d");
       expect(stdout.text).toContain("\x1b[2mocs/\x1b[22m");
@@ -142,6 +143,7 @@ describe("path inline prompt controller", () => {
       stdin.emit("keypress", ".", { name: "." });
       stdin.emit("keypress", "/", { name: "/" });
       stdin.emit("keypress", "d", { name: "d" });
+      await nextRenderTick();
       await nextRenderTick();
       stdin.emit("keypress", "", { name: "right" });
       stdin.emit("keypress", "\r", { name: "return" });
