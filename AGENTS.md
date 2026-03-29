@@ -30,11 +30,15 @@ All meaningful agent work SHOULD be documented.
 ### Date Policy
 
 - Use `created-date` for when the document first begins.
-- Use `modified-date` only when a later update is made.
+- Use `modified-date` only when a later substantive update is made.
 - Keep `created-date` unchanged after initial creation.
 - All dates are UTC calendar dates in `YYYY-MM-DD`.
 - Do not include time-of-day or timezone suffix in front-matter date fields.
 - When local and UTC dates differ, use the UTC date.
+- `modified-date` records the last meaningful content revision, not routine file movement.
+- Moving a doc into `archive/` does not by itself require changing `modified-date`.
+- Link rewrites made only because a doc moved into `archive/` do not by themselves require changing `modified-date`.
+- If an archive pass also changes the document's substance, such as status guidance, conclusions, recommendations, or other reader-facing content, then update `modified-date`.
 
 ### Documentation Lifecycle Policy
 
@@ -76,6 +80,7 @@ Archive link-handling rules:
 - internal historical docs, including job records and related research/plan sections, may link to archived docs directly
 - guide docs and other user-facing reference docs should prefer non-archived current docs over archived ones
 - if a guide doc still mentions an archived doc, label it clearly as historical context or historical reference
+- historical labeling is required only for guide docs and other user-facing reference docs, not for archived docs or job-record traceability links
 - when a doc is archived because it is `superseded`, add a short status note that points readers to the newer primary doc when applicable
 
 ### Plan Documents
