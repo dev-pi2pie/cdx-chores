@@ -1,8 +1,8 @@
 ---
 title: "Partial analyzer-assisted cleanup scope"
 created-date: 2026-03-04
-modified-date: 2026-03-05
-status: in-progress
+modified-date: 2026-03-29
+status: completed
 agent: codex
 ---
 

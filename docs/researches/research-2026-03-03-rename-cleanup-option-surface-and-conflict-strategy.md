@@ -1,7 +1,8 @@
 ---
 title: "Rename cleanup option surface and conflict strategy"
 created-date: 2026-03-03
-status: in-progress
+modified-date: 2026-03-29
+status: completed
 agent: codex
 ---
 

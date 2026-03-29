@@ -1,8 +1,8 @@
 ---
 title: "Rename cleanup subcommand and pattern hints"
 created-date: 2026-03-02
-modified-date: 2026-03-03
-status: draft
+modified-date: 2026-03-29
+status: completed
 agent: codex
 ---
 

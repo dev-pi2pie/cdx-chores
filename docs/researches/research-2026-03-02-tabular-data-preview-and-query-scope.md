@@ -1,8 +1,8 @@
 ---
 title: "Tabular preview, SQL, and Parquet scope"
 created-date: 2026-03-02
-modified-date: 2026-03-09
-status: in-progress
+modified-date: 2026-03-29
+status: completed
 agent: codex
 ---
 
