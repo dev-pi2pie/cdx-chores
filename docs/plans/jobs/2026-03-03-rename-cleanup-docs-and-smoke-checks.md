@@ -14,7 +14,7 @@ Finish the remaining user-facing documentation and manual verification items for
 - `README.md`
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 - `docs/plans/jobs/2026-03-03-rename-cleanup-phase3.md`
 - `examples/playground/rename-cleanup-smoke/`
 - `src/cli/actions/rename/cleanup.ts`
@@ -71,8 +71,8 @@ Observed results:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

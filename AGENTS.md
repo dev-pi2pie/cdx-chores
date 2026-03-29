@@ -69,6 +69,15 @@ Archive scope rules:
 - do not create `docs/plans/archive/jobs/` in the first documentation reorganization pass
 - revisit job-record archiving only if the active job list becomes meaningfully hard to work with
 
+Archive link-handling rules:
+
+- do not leave broken repository-relative links when moving a doc into `archive/`
+- update all affected links to the new archive path
+- internal historical docs, including job records and related research/plan sections, may link to archived docs directly
+- guide docs and other user-facing reference docs should prefer non-archived current docs over archived ones
+- if a guide doc still mentions an archived doc, label it clearly as historical context or historical reference
+- when a doc is archived because it is `superseded`, add a short status note that points readers to the newer primary doc when applicable
+
 ### Plan Documents
 
 Location:

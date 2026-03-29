@@ -25,7 +25,7 @@ Complete Phase 3 naming/template decisions by implementing EXIF-first timestamp 
   - filename pattern/template rendering unchanged
   - collision suffix handling unchanged
   - parse failures never block rename flow
-- Documented Phase 3 decisions in `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`:
+- Documented Phase 3 decisions in `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`:
   - default prefix remains `file`
   - EXIF wall-clock timestamps are used as-is in filenames
   - `mtime` fallback keeps current UTC formatting
@@ -44,4 +44,4 @@ Complete Phase 3 naming/template decisions by implementing EXIF-first timestamp 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

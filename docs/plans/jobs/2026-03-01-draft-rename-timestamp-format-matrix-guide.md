@@ -34,13 +34,13 @@ The Route A plan explicitly calls for a dedicated matrix-oriented guide. Draftin
 ## Verification
 
 - Reviewed the new guide for consistency with:
-  - `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
-  - `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+  - `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+  - `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+- `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

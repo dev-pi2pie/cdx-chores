@@ -17,7 +17,7 @@ Complete the Phase 3 cleanup engine slice for `rename cleanup` by implementing t
 - `test/cli-actions-rename-cleanup-single.test.ts`
 - `test/cli-actions-rename-cleanup-directory.test.ts`
 - `test/cli-actions-rename-cleanup-uid.test.ts`
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Implemented
 
@@ -65,8 +65,8 @@ Complete the Phase 3 cleanup engine slice for `rename cleanup` by implementing t
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`

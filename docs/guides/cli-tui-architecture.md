@@ -1,6 +1,7 @@
 ---
 title: "CLI TUI Architecture Guide"
 created-date: 2026-03-02
+modified-date: 2026-03-29
 status: completed
 agent: codex
 ---
@@ -103,12 +104,12 @@ before introducing any new generic TUI abstraction.
 - Do not move filesystem/path suggestion logic into `src/cli/tui/`
 - Do not add `src/cli/tui/viewport.ts` until a real preview/table consumer needs it
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
-- `docs/plans/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
 
-## Related Research
+## Historical Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
-- `docs/researches/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`

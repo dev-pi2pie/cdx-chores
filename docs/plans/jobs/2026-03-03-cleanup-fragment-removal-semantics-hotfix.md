@@ -30,7 +30,7 @@ Align `rename cleanup` with the intended fragment-removal contract for `serial` 
 - `README.md`
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Verification
 

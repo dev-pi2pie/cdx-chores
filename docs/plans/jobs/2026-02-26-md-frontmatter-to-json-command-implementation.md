@@ -62,4 +62,4 @@ Implement `md frontmatter-to-json` in both flag mode and interactive mode, using
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-md-frontmatter-to-json-command.md`
+- `docs/plans/archive/plan-2026-02-26-md-frontmatter-to-json-command.md`

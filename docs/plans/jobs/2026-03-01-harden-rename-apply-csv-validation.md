@@ -26,7 +26,7 @@ agent: codex
   - added direct `readRenamePlanCsv` coverage proving inspection-style reads stay lenient for empty `plan_id` / `planned_at` while keeping `status` strict
 - `docs/guides/rename-plan-csv-schema.md`
   - documented the read vs apply validation boundary (previously committed in `85af345`; refined in this change to clarify the two-layer contract)
-- `docs/plans/plan-2026-03-01-rename-timestamp-timezone-and-plan-csv-naming.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-timezone-and-plan-csv-naming.md`
   - marked Phase 5 complete and updated related checklist items based on implemented validation and verification
 
 ## Verification

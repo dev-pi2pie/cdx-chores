@@ -1,6 +1,7 @@
 ---
 title: "MD Frontmatter to JSON Output Contract"
 created-date: 2026-02-26
+modified-date: 2026-03-29
 status: draft
 agent: codex
 ---
@@ -114,7 +115,6 @@ Expected behavior:
 - `--data-only` is supported for pipeline-heavy usage (`jq`, shell scripts).
 - Future metadata fields may be added to the wrapper output; scripts that require only parsed fields should prefer `--data-only`.
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-02-26-md-frontmatter-to-json-command.md`
-
+- `docs/plans/archive/plan-2026-02-26-md-frontmatter-to-json-command.md`

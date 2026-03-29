@@ -54,5 +54,5 @@ Manual CLI checks:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
 

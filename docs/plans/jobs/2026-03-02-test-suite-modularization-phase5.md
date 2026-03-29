@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Complete Phase 5 from `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by reducing controller-level duplication in `test/cli-path-inline.test.ts` while preserving the prompt wiring behaviors that still need end-to-end coverage.
+Complete Phase 5 from `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by reducing controller-level duplication in `test/cli-path-inline.test.ts` while preserving the prompt wiring behaviors that still need end-to-end coverage.
 
 ## Scope
 
@@ -66,8 +66,8 @@ Lower-level tests already owned:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

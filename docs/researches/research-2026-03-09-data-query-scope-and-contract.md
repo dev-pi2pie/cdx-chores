@@ -701,4 +701,4 @@ No remaining contract-level open questions.
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

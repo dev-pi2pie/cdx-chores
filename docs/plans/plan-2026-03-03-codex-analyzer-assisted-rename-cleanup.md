@@ -187,12 +187,12 @@ Start with the narrowest useful path:
 ## Related Research
 
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- `docs/researches/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
+- `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
 - `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Related Job Record
 

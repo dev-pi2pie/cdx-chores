@@ -17,8 +17,8 @@ Complete the remaining manual `Failure-mode checks` for the interactive path pro
 ## Plan Updates
 
 - Marked the final two `Failure-mode checks` as completed in:
-  - `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+  - `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

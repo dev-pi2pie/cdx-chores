@@ -49,4 +49,4 @@ Implement the interactive command menu refactor so the first layer shows top-lev
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
+- `docs/plans/archive/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`

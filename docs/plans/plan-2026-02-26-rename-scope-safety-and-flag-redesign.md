@@ -190,9 +190,9 @@ Rename redesign documentation should prioritize:
 ## Related Research
 
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
-- `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
+- `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`

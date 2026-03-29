@@ -11,11 +11,11 @@ Finalize the Phase 1 contract decisions for the Route A rename timestamp-format 
 
 ## What Changed
 
-- Updated `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`:
+- Updated `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`:
   - set plan status to `active`
   - renamed the placeholder section from candidate wording to final Route A wording
   - marked all Phase 1 checklist items complete
-- Reconciled `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md` with the current decisions:
+- Reconciled `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md` with the current decisions:
   - local ISO now explicitly includes numeric offset in the preferred Route A direction
   - Route A remains additive while preserving current behavior
 
@@ -40,14 +40,14 @@ Phase 2 implementation depends on the placeholder set and output contracts being
 ## Verification
 
 - Reviewed for consistency across:
-  - `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
-  - `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+  - `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+  - `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
   - `docs/guides/rename-timestamp-format-matrix.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+- `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

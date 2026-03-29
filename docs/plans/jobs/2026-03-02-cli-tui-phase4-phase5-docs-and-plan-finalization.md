@@ -21,7 +21,7 @@ Finish the remaining documentation and plan-state work for the CLI TUI foundatio
   - documents current `src/cli/tui/` responsibilities
   - records the deferred viewport boundary for future table/preview work
   - clarifies module placement rules for future agents
-- Updated `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- Updated `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
   - marked Phase 4 tasks/deliverable complete
   - marked Phase 5 tasks/deliverable complete
   - marked the overall plan completed
@@ -33,4 +33,4 @@ Finish the remaining documentation and plan-state work for the CLI TUI foundatio
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`

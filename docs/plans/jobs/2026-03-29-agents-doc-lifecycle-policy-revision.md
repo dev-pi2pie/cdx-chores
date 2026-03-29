@@ -20,6 +20,7 @@ Update `AGENTS.md` so documentation lifecycle, archive scope, and status selecti
 - clarified that new research docs should default to `draft` unless they backfill already-finished research
 - clarified that research `completed` means the research is finished, not necessarily implemented
 - clarified that moving a `completed` research or plan doc into archive requires a separate later review rather than happening automatically at completion time
+- added archive link-handling guidance so internal historical docs can keep archive links while guides should prefer current non-archived references
 - preserved the existing `Writing Guidelines` and `Philosophy` sections
 
 ## Files

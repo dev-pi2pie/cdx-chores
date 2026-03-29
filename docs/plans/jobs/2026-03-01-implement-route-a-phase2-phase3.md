@@ -52,8 +52,8 @@ Implement the Route A timestamp-format formatter/template changes and the minima
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+- `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Complete Phase 4 from `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by replacing the old rename hotspot with a folder-based `src/cli/actions/rename/` module that separates batch flow, file flow, apply flow, and shared helpers.
+Complete Phase 4 from `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md` by replacing the old rename hotspot with a folder-based `src/cli/actions/rename/` module that separates batch flow, file flow, apply flow, and shared helpers.
 
 ## Scope
 
@@ -122,8 +122,8 @@ These boundaries were chosen to end with a folder-based module layout instead of
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-test-suite-audit.md`
+- `docs/researches/archive/research-2026-03-02-test-suite-audit.md`

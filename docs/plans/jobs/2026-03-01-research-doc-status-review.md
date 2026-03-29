@@ -11,8 +11,8 @@ Review current `docs/researches/` status for the recent interactive rename UX to
 
 ## Reviewed
 
-- `docs/researches/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
-- `docs/researches/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
+- `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
+- `docs/researches/archive/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
 
 ## Findings
 
@@ -24,7 +24,7 @@ Review current `docs/researches/` status for the recent interactive rename UX to
 ## Verification
 
 - Confirmed the large-preview implementation trail is completed in:
-  - `docs/plans/plan-2026-02-28-interactive-large-rename-preview-ux-implementation.md`
+  - `docs/plans/archive/plan-2026-02-28-interactive-large-rename-preview-ux-implementation.md`
   - `docs/plans/jobs/2026-03-01-large-rename-preview-manual-qa-and-smoke-checks.md`
 - Confirmed current prompt behavior still lacks the researched sibling-navigation feature in:
   - `src/cli/prompts/path-inline.ts`

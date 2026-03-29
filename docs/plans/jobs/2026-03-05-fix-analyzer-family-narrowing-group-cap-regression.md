@@ -29,8 +29,8 @@ Fix the interactive `rename cleanup` regression where selected analyzer families
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
-- `docs/plans/plan-2026-03-05-rename-cleanup-analyzer-scalability.md`
+- `docs/plans/archive/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
+- `docs/plans/archive/plan-2026-03-05-rename-cleanup-analyzer-scalability.md`
 
 ## Related Research
 

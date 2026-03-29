@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-03-02
+modified-date: 2026-03-29
 status: draft
 agent: codex
 ---
@@ -116,7 +116,7 @@ See also:
 
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
-- `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
+- `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
 
 ## Designing a New Chore Command (Checklist)
 
@@ -156,13 +156,13 @@ Example:
   - CLI tests validate wiring/flags/end-to-end behavior
   - action tests validate orchestration and failure handling faster
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
-- `docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
 - `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
-## Related Research
+## Historical Research
 
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
-- `docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
+- `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`

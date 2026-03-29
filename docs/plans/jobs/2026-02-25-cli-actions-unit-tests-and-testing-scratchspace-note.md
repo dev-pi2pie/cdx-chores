@@ -38,7 +38,7 @@ Add unit-level regression tests for the extracted CLI action modules (`data` and
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-cli-actions-modularization.md`
+- `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
 
 ## Follow-up Jobs
 

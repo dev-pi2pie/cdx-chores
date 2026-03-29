@@ -26,7 +26,7 @@ Close the remaining unchecked items in the verification plan for the CLI TUI fou
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
 
 ## Summary
 
@@ -49,7 +49,7 @@ Close the remaining unchecked items in the verification plan for the CLI TUI fou
   - added small prompt-implementation injection hooks so fallback routing can be tested without depending on live Inquirer I/O
 - `src/cli/prompts/path-inline.ts`
   - exported `InlinePathPromptOptions` for cleaner test typing alignment
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
   - marked the remaining functional verification items complete
 
 ## Verification

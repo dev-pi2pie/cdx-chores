@@ -19,7 +19,7 @@ Address review findings on the `data preview` contains interactive/highlight fol
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
 
 ## Verification
 
@@ -28,5 +28,5 @@ Address review findings on the `data preview` contains interactive/highlight fol
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-interactive-and-highlight.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`

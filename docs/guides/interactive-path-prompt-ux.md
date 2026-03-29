@@ -1,7 +1,7 @@
 ---
 title: "Interactive Path Prompt UX Guide"
 created-date: 2026-02-25
-modified-date: 2026-03-18
+modified-date: 2026-03-29
 status: completed
 agent: codex
 ---
@@ -99,10 +99,10 @@ Path prompt behavior can be tuned with environment variables:
 - If a terminal/plugin sends unusual key sequences and behavior feels unstable, use:
   - `CDX_CHORES_PATH_PROMPT_MODE=simple`
 
-## Related Plans
+## Historical Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
 
-## Related Research
+## Historical Research
 
-- `docs/researches/research-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/researches/archive/research-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

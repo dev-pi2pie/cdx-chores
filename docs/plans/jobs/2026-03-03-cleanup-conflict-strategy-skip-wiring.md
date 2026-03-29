@@ -28,7 +28,7 @@ Implement the first explicit `rename cleanup` conflict-policy surface with `skip
 - `test/cli-actions-rename-cleanup-single.test.ts`
 - `test/cli-actions-rename-cleanup-directory.test.ts`
 - `test/cli-interactive-rename.test.ts`
-- `docs/plans/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 
 ## Verification
 

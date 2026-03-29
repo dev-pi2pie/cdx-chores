@@ -881,7 +881,7 @@ This keeps design and contract discussion focused on the data shape instead of e
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`

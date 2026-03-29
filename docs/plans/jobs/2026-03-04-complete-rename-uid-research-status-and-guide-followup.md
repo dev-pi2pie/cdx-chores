@@ -14,7 +14,7 @@ Close the remaining documentation follow-up after `{uid}` pattern support landed
 
 ## Scope
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
 - `docs/guides/rename-common-usage.md`
 
 ## What Changed
@@ -33,8 +33,8 @@ Close the remaining documentation follow-up after `{uid}` pattern support landed
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-04-rename-uid-pattern-placeholder.md`
+- `docs/plans/archive/plan-2026-03-04-rename-uid-pattern-placeholder.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`

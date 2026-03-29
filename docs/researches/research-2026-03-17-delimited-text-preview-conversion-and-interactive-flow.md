@@ -296,5 +296,5 @@ Implication:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
 - `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`

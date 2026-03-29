@@ -25,4 +25,4 @@ Refactored `test/helpers/interactive-harness.ts` into a folder-backed helper whi
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`
+- `docs/plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md`

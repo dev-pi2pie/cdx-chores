@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Implement the `data preview` contains-filter follow-up from `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`.
+Implement the `data preview` contains-filter follow-up from `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`.
 
 ## What Changed
 
@@ -36,7 +36,7 @@ Implement the `data preview` contains-filter follow-up from `docs/plans/plan-202
 - `test/cli-actions-data-preview.test.ts`
 - `test/cli-ux.test.ts`
 - `docs/guides/data-preview-usage.md`
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
 
 ## Verification
 
@@ -47,8 +47,8 @@ Implement the `data preview` contains-filter follow-up from `docs/plans/plan-202
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-data-preview-contains-filter.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

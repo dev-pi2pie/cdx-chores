@@ -50,4 +50,4 @@ Implement Phase 2 (logic-only) for interactive path autocomplete UX:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
+- `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`

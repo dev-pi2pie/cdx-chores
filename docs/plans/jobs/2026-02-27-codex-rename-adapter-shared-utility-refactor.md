@@ -45,4 +45,4 @@ Automated checks run and passed:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-27-sleep-utility-modulization-refactor.md`
+- `docs/plans/archive/plan-2026-02-27-sleep-utility-modulization-refactor.md`

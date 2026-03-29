@@ -40,4 +40,4 @@ Implement custom rename filename templates for `rename file` and `rename batch` 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement the follow-up `data preview` improvements from `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`.
+Implement the follow-up `data preview` improvements from `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`.
 
 ## Phase Slice
 
@@ -67,9 +67,9 @@ Implement the follow-up `data preview` improvements from `docs/plans/plan-2026-0
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
-- `docs/plans/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
+- `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-02-tabular-data-preview-and-query-scope.md`
+- `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`

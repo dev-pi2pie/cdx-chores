@@ -39,4 +39,4 @@ Add a dedicated single-file rename command (`rename file <path>`) that reuses th
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
+- `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

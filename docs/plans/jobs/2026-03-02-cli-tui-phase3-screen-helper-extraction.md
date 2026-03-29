@@ -30,7 +30,7 @@ Implement Phase 3 of the CLI TUI foundation plan by extracting reusable terminal
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
+- `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
 
 ## Summary
 

@@ -23,7 +23,7 @@ Implement `{uid}` support in `rename file` and `rename batch` `--pattern` templa
 - `README.md`
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/plans/plan-2026-03-04-rename-uid-pattern-placeholder.md`
+- `docs/plans/archive/plan-2026-03-04-rename-uid-pattern-placeholder.md`
 
 ## What Changed
 
@@ -49,8 +49,8 @@ Implement `{uid}` support in `rename file` and `rename batch` `--pattern` templa
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-04-rename-uid-pattern-placeholder.md`
+- `docs/plans/archive/plan-2026-03-04-rename-uid-pattern-placeholder.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`
+- `docs/researches/archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md`

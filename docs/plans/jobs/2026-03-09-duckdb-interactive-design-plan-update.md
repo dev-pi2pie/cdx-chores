@@ -24,10 +24,10 @@ Upgrade the DuckDB split-action plan so it includes an explicit first-pass inter
 ## Verification
 
 - reviewed the current interactive preview prompt flow in `src/cli/interactive/data.ts`
-- reviewed the completed interactive preview plan in `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
+- reviewed the completed interactive preview plan in `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
 - reviewed the updated DuckDB split-action plan for consistency across scope, wiring, docs, and tests
 
 ## Related Plans
 
 - `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
-- `docs/plans/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
+- `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`

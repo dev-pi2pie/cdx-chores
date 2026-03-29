@@ -24,7 +24,7 @@ Finish the remaining documentation and verification tasks for the Route A rename
   - added Route A examples
   - added migration wording
   - linked the timestamp matrix guide
-- Updated `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`:
+- Updated `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`:
   - marked the remaining Phase 4 and Phase 5 items complete
   - set plan status to `completed`
 
@@ -55,8 +55,8 @@ Observed outputs confirmed:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
+- `docs/plans/archive/plan-2026-03-01-rename-timestamp-format-route-a-and-guides.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
+- `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`
