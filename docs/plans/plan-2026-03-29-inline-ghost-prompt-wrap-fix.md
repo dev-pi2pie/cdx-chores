@@ -1,8 +1,8 @@
 ---
 title: "Inline ghost prompt wrap fix"
 created-date: 2026-03-29
-modified-date: 2026-03-29
-status: draft
+modified-date: 2026-03-30
+status: active
 agent: codex
 ---
 
@@ -46,7 +46,13 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 
 - add focused tests for repeated redraws of wrapped prompts
 - cover both ASCII and display-width-sensitive content
-- include one manual narrow-terminal smoke check
+- treat terminal compatibility as an explicit verification dimension, not only terminal width
+- include two manual narrow-terminal smoke checks:
+  - one with a long ASCII multi-folder path
+  - one with display-width-sensitive content
+- include terminal-matrix verification for at least:
+  - iTerm2
+  - Ghostty
 
 ## Non-Goals
 
@@ -68,42 +74,50 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 
 ### Phase 1: Renderer contract freeze
 
-- [ ] freeze `src/cli/tui/` as the canonical home for the shared renderer
-- [ ] freeze the renderer contract around:
-  - [ ] full clearing of previously occupied visual rows before repaint
-  - [ ] display-width-based cursor-back movement
-  - [ ] display-width-based wrap counting
-- [ ] freeze the rule that `path-inline` and `text-inline` both consume the same repaint primitive
+- [x] freeze `src/cli/tui/` as the canonical home for the shared renderer
+- [x] freeze the renderer contract around:
+  - [x] full clearing of previously occupied visual rows before repaint
+  - [x] display-width-based cursor-back movement
+  - [x] display-width-based wrap counting
+- [x] freeze the rule that `path-inline` and `text-inline` both consume the same repaint primitive
 
 ### Phase 2: Shared renderer implementation
 
-- [ ] implement the shared wrap-aware renderer in `src/cli/tui/`
-- [ ] track the previous rendered visual row count
-- [ ] clear all previously occupied visual rows before each repaint
-- [ ] keep the existing one-line case behavior clean and simple
+- [x] implement the shared wrap-aware renderer in `src/cli/tui/`
+- [x] track the previous rendered visual row count
+- [x] clear all previously occupied visual rows before each repaint
+- [x] keep the existing one-line case behavior clean and simple
 
 ### Phase 3: Prompt integration
 
-- [ ] update `src/cli/prompts/path-inline.ts` to use the shared renderer
-- [ ] update `src/cli/prompts/text-inline.ts` to use the shared renderer
-- [ ] preserve existing prompt semantics for:
-  - [ ] ghost suffix rendering
-  - [ ] arrow-key acceptance behavior
-  - [ ] sibling preview behavior
-  - [ ] template-completion behavior
+- [x] update `src/cli/prompts/path-inline.ts` to use the shared renderer
+- [x] update `src/cli/prompts/text-inline.ts` to use the shared renderer
+- [x] preserve existing prompt semantics for:
+  - [x] ghost suffix rendering
+  - [x] arrow-key acceptance behavior
+  - [x] sibling preview behavior
+  - [x] template-completion behavior
 
 ### Phase 4: Tests
 
-- [ ] add focused automated coverage for narrow-terminal wrapped redraw behavior
-- [ ] add ASCII long-path coverage
-- [ ] add display-width-sensitive coverage such as CJK or emoji-containing input
-- [ ] verify repeated redraws do not leave stale rows behind
-- [ ] verify both prompt variants use the same wrap-aware behavior
+- [x] add focused automated coverage for narrow-terminal wrapped redraw behavior
+- [x] add ASCII long-path coverage
+- [x] add display-width-sensitive coverage such as CJK or emoji-containing input
+- [x] verify repeated redraws do not leave stale rows behind
+- [x] verify both prompt variants use the same wrap-aware behavior
 
 ### Phase 5: Manual verification and docs alignment
 
 - [ ] run one manual narrow-terminal smoke check with a long ASCII multi-folder path
 - [ ] run one manual narrow-terminal smoke check with display-width-sensitive content
+- [ ] run terminal-matrix verification in iTerm2 and record the result
+- [ ] run terminal-matrix verification in Ghostty and record the result
+- [ ] capture environment notes alongside manual verification:
+  - [ ] terminal app
+  - [ ] `TERM`
+  - [ ] approximate terminal width
+  - [ ] whether the issue reproduces on `Backspace`, `Right Arrow`, or both
+- [ ] update issue `#31` and related docs if the remaining gap is confirmed to be terminal-specific rather than generic
 - [ ] update related docs if implementation details change from the current research and issue framing
 
 ## Success Criteria
@@ -115,11 +129,13 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 - manual narrow-terminal smoke checks pass for:
   - a long ASCII multi-folder path
   - a display-width-sensitive example such as CJK or emoji-containing input
+- manual verification clearly records terminal-specific outcomes, including the current iTerm2 pass and Ghostty reproduction signal, until both terminals pass or the issue is re-scoped as terminal-specific
 
 ## Verification
 
 - targeted prompt and TUI tests under `test/`
 - manual interactive smoke checks in a narrow terminal
+- manual terminal-matrix verification across iTerm2 and Ghostty with environment notes
 
 ## Related Research
 

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 
 import { promptTextInlineGhost, promptTextWithGhost } from "../src/cli/prompts/text-inline";
+import { VirtualTerminal, wrapAscii } from "./helpers/virtual-terminal";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;
@@ -24,6 +25,7 @@ class FakePromptReadStream extends EventEmitter {
 
 class FakePromptWriteStream {
   isTTY = true;
+  columns = 80;
   writes: string[] = [];
 
   write(chunk: string | Uint8Array): boolean {
@@ -281,6 +283,86 @@ describe("text inline prompt controller", () => {
     });
     expect(stdin.rawModeCalls).toEqual([true, false]);
     expect(stdout.text).toContain("\x1b[?25h");
+  });
+
+  test("promptTextInlineGhost uses display width for non-ASCII ghost cursor positioning", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "資料😀.csv",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[10D");
+    expect(stdout.text).not.toContain("\x1b[8D");
+
+    stdin.emit("keypress", "\x1b", { name: "escape" });
+    await expect(prompt).rejects.toMatchObject({
+      name: "ExitPromptError",
+      message: "User aborted prompt",
+    });
+  });
+
+  test("promptTextInlineGhost clears wrapped rows on Esc", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    stdout.columns = 20;
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}-{uid}-very-long-placeholder",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "\x1b", { name: "escape" });
+
+    await expect(prompt).rejects.toMatchObject({
+      name: "ExitPromptError",
+      message: "User aborted prompt",
+    });
+
+    const terminal = new VirtualTerminal(stdout.columns);
+    terminal.write(stdout.text);
+    expect(terminal.getVisibleLines()).toEqual([]);
+  });
+
+  test("promptTextInlineGhost clears wrapped rows while shrinking with backspace", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    stdout.columns = 20;
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+    const longInput = "very-long-template-name-with-many-segments";
+    const submitted = "very-long";
+
+    await nextRenderTick();
+    for (const character of longInput) {
+      stdin.emit("keypress", character, { name: character });
+    }
+    await nextRenderTick();
+    const backspaceCount = longInput.length - submitted.length;
+    for (let index = 0; index < backspaceCount; index += 1) {
+      stdin.emit("keypress", "\b", { name: "backspace" });
+    }
+    await nextRenderTick();
+    stdin.emit("keypress", "\r", { name: "return" });
+
+    await expect(prompt).resolves.toBe(submitted);
+
+    const terminal = new VirtualTerminal(stdout.columns);
+    terminal.write(stdout.text);
+    expect(terminal.getVisibleLines()).toEqual(wrapAscii(`Template ${submitted}`, stdout.columns));
   });
 
   test("promptTextWithGhost falls back to simple input when advanced prompt fails", async () => {

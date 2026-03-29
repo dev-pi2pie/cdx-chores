@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { promptPathInlineGhost } from "../src/cli/prompts/path-inline";
 import { createTempFixtureDir } from "./helpers/cli-test-utils";
+import { VirtualTerminal, wrapAscii } from "./helpers/virtual-terminal";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;
@@ -27,6 +28,7 @@ class FakePromptReadStream extends EventEmitter {
 
 class FakePromptWriteStream {
   isTTY = true;
+  columns = 80;
   writes: string[] = [];
 
   write(chunk: string | Uint8Array): boolean {
@@ -45,6 +47,7 @@ async function nextRenderTick(): Promise<void> {
 
 async function createPromptHarness(options?: {
   fixtureName?: string;
+  columns?: number;
   setup?: (fixtureDir: string) => Promise<void>;
   resolveSuggestions?: Parameters<typeof promptPathInlineGhost>[0]["resolveSuggestions"];
 }): Promise<{
@@ -60,6 +63,7 @@ async function createPromptHarness(options?: {
 
   const stdin = new FakePromptReadStream();
   const stdout = new FakePromptWriteStream();
+  stdout.columns = options?.columns ?? 80;
   const prompt = promptPathInlineGhost({
     message: "Path",
     cwd: fixtureDir,
@@ -239,6 +243,33 @@ describe("path inline prompt controller", () => {
     }
   });
 
+  test("promptPathInlineGhost clears wrapped rows on Esc in a narrow terminal", async () => {
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      columns: 20,
+    });
+    const longInput = "./multi-folder-sample/reports/2026/03/Field Report 2026-03-05.csv";
+
+    try {
+      for (const character of longInput) {
+        stdin.emit("keypress", character, { name: character });
+      }
+      await nextRenderTick();
+      stdin.emit("keypress", "\x1b", { name: "escape" });
+
+      await expect(prompt).rejects.toMatchObject({
+        name: "ExitPromptError",
+        message: "User aborted prompt",
+      });
+
+      const terminal = new VirtualTerminal(stdout.columns);
+      terminal.write(stdout.text);
+
+      expect(terminal.getVisibleLines()).toEqual([]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("promptPathInlineGhost does not repaint after settling when a late async suggestion resolves", async () => {
     let releaseSuggestions: (() => void) | undefined;
     const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
@@ -265,6 +296,68 @@ describe("path inline prompt controller", () => {
       await nextRenderTick();
 
       expect(stdout.text).toBe(outputAfterSettle);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("promptPathInlineGhost clears wrapped rows before submitting in a narrow terminal", async () => {
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      columns: 20,
+    });
+    const longInput = "./multi-folder-sample/reports/2026/03/Field Report 2026-03-05.csv";
+    const submitted = "./multi-folder";
+
+    try {
+      for (const character of longInput) {
+        stdin.emit("keypress", character, { name: character });
+      }
+      await nextRenderTick();
+      const backspaceCount = longInput.length - submitted.length;
+      for (let index = 0; index < backspaceCount; index += 1) {
+        stdin.emit("keypress", "\b", { name: "backspace" });
+      }
+      await nextRenderTick();
+      stdin.emit("keypress", "\r", { name: "return" });
+
+      await expect(prompt).resolves.toBe(submitted);
+
+      const terminal = new VirtualTerminal(stdout.columns);
+      terminal.write(stdout.text);
+
+      expect(terminal.getVisibleLines()).toEqual(wrapAscii(`Path ${submitted}`, stdout.columns));
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("promptPathInlineGhost accepts a wrapped ghost completion and clears rows on submit", async () => {
+    const fullPath = "./multi-folder-sample/reports/2026/03/Field Report 2026-03-05.csv";
+    const typedPrefix = "./multi-folder-sample/reports/2026/03/Field Rep";
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      columns: 20,
+      setup: async (dir) => {
+        const targetDir = join(dir, "multi-folder-sample", "reports", "2026", "03");
+        await mkdir(targetDir, { recursive: true });
+        await writeFile(join(targetDir, "Field Report 2026-03-05.csv"), "id,name\n1,Ada\n", "utf8");
+      },
+    });
+
+    try {
+      for (const character of typedPrefix) {
+        stdin.emit("keypress", character, { name: character });
+      }
+      await nextRenderTick();
+      stdin.emit("keypress", "", { name: "right" });
+      await nextRenderTick();
+      stdin.emit("keypress", "\r", { name: "return" });
+
+      await expect(prompt).resolves.toBe(fullPath);
+
+      const terminal = new VirtualTerminal(stdout.columns);
+      terminal.write(stdout.text);
+
+      expect(terminal.getVisibleLines()).toEqual(wrapAscii(`Path ${fullPath}`, stdout.columns));
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
