@@ -2,7 +2,7 @@
 title: "Inline ghost prompt wrap bug investigation"
 created-date: 2026-03-29
 modified-date: 2026-03-30
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -149,6 +149,7 @@ The issue wording uses an ordinary multi-folder path example and describes the v
 - observed: a renderer fix should count visible terminal columns rather than raw JavaScript string length, or non-ASCII paths may still misrender after the ASCII wrap case is fixed
 - observed on 2026-03-30: the latest renderer changes work in iTerm2 but the ghost-row issue still reproduces in Ghostty, which means terminal compatibility now needs to be treated as an explicit verification dimension rather than assuming one TTY model
 - observed on 2026-03-30: in Ghostty, `TERM` reports `xterm-256color`, so the remaining gap is not explained by an unusual `TERM` value alone
+- observed on 2026-03-30: switching the ghost rendering path from left-move cursor restoration to save/restore cursor rendering resolved the remaining Ghostty-specific reproduction
 
 ## Recommended Solution Shape
 
@@ -157,6 +158,7 @@ The issue wording uses an ordinary multi-folder path example and describes the v
 - use display width for ghost-suffix cursor movement and for any wrap-related row counting inside that renderer
 - keep regression coverage for narrow-terminal wrapped repainting and extend it to include display-width-sensitive content
 - expand manual verification to include a terminal matrix, starting with iTerm2 and Ghostty, and record terminal-specific environment details when the remaining gap reproduces
+- use terminal save/restore cursor control for ghost rendering so the terminal, rather than prompt-side cursor-back math, remains authoritative for the live prompt cursor position across wrapped frames
 
 ## Related Plans
 

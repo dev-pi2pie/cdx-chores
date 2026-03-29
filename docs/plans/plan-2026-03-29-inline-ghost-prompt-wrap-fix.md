@@ -2,7 +2,7 @@
 title: "Inline ghost prompt wrap fix"
 created-date: 2026-03-29
 modified-date: 2026-03-30
-status: active
+status: completed
 agent: codex
 ---
 
@@ -108,17 +108,17 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 
 ### Phase 5: Manual verification and docs alignment
 
-- [ ] run one manual narrow-terminal smoke check with a long ASCII multi-folder path
-- [ ] run one manual narrow-terminal smoke check with display-width-sensitive content
-- [ ] run terminal-matrix verification in iTerm2 and record the result
-- [ ] run terminal-matrix verification in Ghostty and record the result
-- [ ] capture environment notes alongside manual verification:
-  - [ ] terminal app
-  - [ ] `TERM`
-  - [ ] approximate terminal width
-  - [ ] whether the issue reproduces on `Backspace`, `Right Arrow`, or both
-- [ ] update issue `#31` and related docs if the remaining gap is confirmed to be terminal-specific rather than generic
-- [ ] update related docs if implementation details change from the current research and issue framing
+- [x] run one manual narrow-terminal smoke check with a long ASCII multi-folder path
+- [x] run one manual narrow-terminal smoke check with display-width-sensitive content
+- [x] run terminal-matrix verification in iTerm2 and record the result
+- [x] run terminal-matrix verification in Ghostty and record the result
+- [x] capture environment notes alongside manual verification:
+  - [x] terminal app
+  - [x] `TERM`
+  - [x] approximate terminal width
+  - [x] whether the issue reproduces on `Backspace`, `Right Arrow`, or both
+- [x] update issue `#31` and related docs as the terminal-compatibility understanding changed during verification
+- [x] update related docs if implementation details change from the current research and issue framing
 
 ## Success Criteria
 
@@ -129,7 +129,7 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 - manual narrow-terminal smoke checks pass for:
   - a long ASCII multi-folder path
   - a display-width-sensitive example such as CJK or emoji-containing input
-- manual verification clearly records terminal-specific outcomes, including the current iTerm2 pass and Ghostty reproduction signal, until both terminals pass or the issue is re-scoped as terminal-specific
+- manual verification clearly records terminal-specific outcomes, including the final iTerm2 pass and the final Ghostty pass with `TERM=xterm-256color`
 
 ## Verification
 
