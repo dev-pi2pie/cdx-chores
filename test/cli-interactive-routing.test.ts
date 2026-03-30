@@ -291,7 +291,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
-      inputQueue: ["all", "status", "status:asc", "5"],
+      inputQueue: ["all", "status", "status:asc", "", "5"],
       confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
@@ -358,7 +358,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
-      inputQueue: ["all", "", "status:asc", "row_count:desc", "5"],
+      inputQueue: ["all", "", "status:asc", "row_count:desc", "", "5"],
       confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
@@ -385,6 +385,61 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+  });
+
+  test("routes formal-guide filter operators and optional SQL limit without prompting for value-less filters", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:query",
+        "formal-guide",
+        "name",
+        "starts-with",
+        "deleted_at",
+        "is-null",
+        "none",
+        "table",
+      ],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "Ad", "", "25", "10"],
+      confirmQueue: [true, false, true, true, false, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+          { name: "deleted_at", type: "TIMESTAMP" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada", deleted_at: "" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: undefined,
+          sql: `select *
+from file
+where lower(cast("name" as varchar)) like lower('Ad') || '%' and "deleted_at" is null
+limit 25`,
+        },
+      },
+    ]);
+    expect(result.promptCalls.filter((call) => call.kind === "input" && call.message === "Filter value"))
+      .toHaveLength(1);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Maximum result rows (optional)",
+    );
   });
 
   test("routes Codex Assistant through the default single-line intent prompt", () => {

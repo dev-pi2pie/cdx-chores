@@ -1,7 +1,8 @@
 ---
 title: "Interactive data query follow-up implementation"
 created-date: 2026-03-30
-status: draft
+modified-date: 2026-03-30
+status: active
 agent: codex
 ---
 
@@ -163,29 +164,29 @@ This work is best handled as a follow-up plan instead of being folded back into 
 
 ### Phase 1: Freeze follow-up UX contract
 
-- [ ] freeze the optional SQL-level `limit` prompt and wording
-- [ ] freeze the first-pass guided-filter operator set
-- [ ] freeze SQL-review versus output-review wording for SQL limit and table preview bounds
-- [ ] freeze width-tier abort notice wording and cutoffs
-- [ ] freeze the checkpoint locations and shared action ordering across modes
+- [x] freeze the optional SQL-level `limit` prompt and wording
+- [x] freeze the first-pass guided-filter operator set
+- [x] freeze SQL-review versus output-review wording for SQL limit and table preview bounds
+- [x] freeze width-tier abort notice wording and cutoffs
+- [x] freeze the checkpoint locations and shared action ordering across modes
 
 ### Phase 2: Implement `formal-guide` limit and guided filters
 
-- [ ] add `Maximum result rows (optional)` to `formal-guide`
-- [ ] compile the accepted value into SQL as `limit n`
-- [ ] keep current behavior unchanged when the prompt is left blank
-- [ ] add the guided-filter operator set:
-  - [ ] `contains`
-  - [ ] `starts with`
-  - [ ] `ends with`
-  - [ ] `is null`
-  - [ ] `is not null`
-  - [ ] `is true`
-  - [ ] `is false`
-  - [ ] `is empty`
-  - [ ] `is not empty`
-- [ ] keep operator availability aligned with usable column-type information where possible
-- [ ] preserve deterministic SQL generation for the resulting structured answers
+- [x] add `Maximum result rows (optional)` to `formal-guide`
+- [x] compile the accepted value into SQL as `limit n`
+- [x] keep current behavior unchanged when the prompt is left blank
+- [x] add the guided-filter operator set:
+  - [x] `contains`
+  - [x] `starts with`
+  - [x] `ends with`
+  - [x] `is null`
+  - [x] `is not null`
+  - [x] `is true`
+  - [x] `is false`
+  - [x] `is empty`
+  - [x] `is not empty`
+- [x] keep operator availability aligned with usable column-type information where possible
+- [x] preserve deterministic SQL generation for the resulting structured answers
 
 ### Phase 3: Implement review wording and checkpoint backtracking
 
@@ -207,8 +208,8 @@ This work is best handled as a follow-up plan instead of being folded back into 
 ### Phase 5: Verification and docs
 
 - [ ] add focused tests for:
-  - [ ] optional SQL `limit` generation in `formal-guide`
-  - [ ] new filter operator SQL generation
+  - [x] optional SQL `limit` generation in `formal-guide`
+  - [x] new filter operator SQL generation
   - [ ] SQL-review and output-review wording
   - [ ] checkpoint backtracking across all three modes
   - [ ] width-aware abort notice variants

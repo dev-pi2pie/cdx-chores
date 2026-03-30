@@ -7,13 +7,28 @@ export type OutputPromptSelection = Pick<
   DataQueryOptions,
   "json" | "output" | "overwrite" | "pretty" | "rows"
 >;
-export type FormalGuideFilterOperator = "=" | "!=" | ">" | ">=" | "<" | "<=" | "contains";
+export type FormalGuideFilterOperator =
+  | "="
+  | "!="
+  | ">"
+  | ">="
+  | "<"
+  | "<="
+  | "contains"
+  | "starts-with"
+  | "ends-with"
+  | "is-null"
+  | "is-not-null"
+  | "is-true"
+  | "is-false"
+  | "is-empty"
+  | "is-not-empty";
 export type FormalGuideAggregateKind = "none" | "count" | "sum" | "avg" | "min" | "max";
 
 export interface FormalGuideFilter {
   column: string;
   operator: FormalGuideFilterOperator;
-  value: string;
+  value?: string;
 }
 
 export interface FormalGuideAnswers {
@@ -21,6 +36,7 @@ export interface FormalGuideAnswers {
   aggregateKind: FormalGuideAggregateKind;
   filters: FormalGuideFilter[];
   groupByColumns: string[];
+  limit?: number;
   orderBySpecs: OrderBySpec[];
   selectAllColumns: boolean;
   selectedColumns: string[];
