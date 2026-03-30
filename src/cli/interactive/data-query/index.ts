@@ -5,7 +5,7 @@ import { createDuckDbConnection, listDataQuerySources } from "../../duckdb/query
 import { resolveFromCwd } from "../../path-utils";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
-import { getInteractiveAbortNotice } from "../notice";
+import { writeInteractiveAbortNotice } from "../notice";
 import type { InteractivePathPromptContext } from "../shared";
 import { reviewInteractiveHeaderMappings } from "./header-review";
 import { collectInteractiveIntrospection } from "./source-shape";
@@ -39,10 +39,7 @@ export async function runInteractiveDataQuery(
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
   const noHeader = await promptDelimitedHeaderMode(format);
-  const abortNotice = getInteractiveAbortNotice(runtime);
-  if (abortNotice) {
-    runtime.stderr.write(`${abortNotice}\n`);
-  }
+  writeInteractiveAbortNotice(runtime);
 
   let connection;
   try {

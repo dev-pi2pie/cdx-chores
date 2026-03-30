@@ -1,7 +1,8 @@
 ---
 title: "Shared interactive UX consistency follow-up"
 created-date: 2026-03-30
-status: draft
+modified-date: 2026-03-30
+status: completed
 agent: codex
 ---
 
@@ -217,45 +218,56 @@ Treat the shared/global UX helper contract as established for this plan when all
 - interactive tests under `test/`
 - interactive usage guides under `docs/guides/`
 
+## Implementation Notes
+
+- shared abort notices now live behind the opt-in helper in `src/cli/interactive/notice.ts`
+- the shared helper is intentionally narrow for this rollout:
+  - `data query`
+  - `data extract`
+  - `data preview`
+- review-stage checkpoint helpers remain command-specific for now:
+  - `data query` keeps its SQL-review and output-review checkpoint helpers
+  - `data extract` keeps its extraction-review and write-boundary checkpoint helpers
+
 ## Phase Checklist
 
 ### Phase 1: Freeze adoption criteria and target commands
 
-- [ ] freeze the initial abort-notice rollout set:
-  - [ ] `data:extract`
-  - [ ] `data:preview`
-- [ ] freeze the initial checkpoint-backtracking rollout set:
-  - [ ] `data:extract`
-- [ ] freeze the first-pass exclusion list
-- [ ] freeze the shared action-ordering rule for checkpoint review menus
-- [ ] freeze the guide-wording rules for shared/global interactive UX descriptions
+- [x] freeze the initial abort-notice rollout set:
+  - [x] `data:extract`
+  - [x] `data:preview`
+- [x] freeze the initial checkpoint-backtracking rollout set:
+  - [x] `data:extract`
+- [x] freeze the first-pass exclusion list
+- [x] freeze the shared action-ordering rule for checkpoint review menus
+- [x] freeze the guide-wording rules for shared/global interactive UX descriptions
 
 ### Phase 2: Shared/global helper extraction
 
-- [ ] extract or standardize the width-aware abort notice helper for wider reuse
-- [ ] document the helper boundary so commands can opt in selectively
-- [ ] freeze which review-stage helpers stay `data query`-specific and which become shared
+- [x] extract or standardize the width-aware abort notice helper for wider reuse
+- [x] document the helper boundary so commands can opt in selectively
+- [x] freeze which review-stage helpers stay `data query`-specific and which become shared
 
 ### Phase 3: First non-query command adoption
 
-- [ ] implement `data:extract` adoption using the shared/global UX rules
-- [ ] add checkpoint-backtracking to `data:extract`
-- [ ] keep `data:extract` prompt wording aligned with the shared action-ordering contract
-- [ ] add the shared abort notice to `data:extract`
-- [ ] add the shared abort notice to `data:preview`
+- [x] implement `data:extract` adoption using the shared/global UX rules
+- [x] add checkpoint-backtracking to `data:extract`
+- [x] keep `data:extract` prompt wording aligned with the shared action-ordering contract
+- [x] add the shared abort notice to `data:extract`
+- [x] add the shared abort notice to `data:preview`
 
 ### Phase 4: Guide consistency pass
 
-- [ ] update affected interactive guides after behavior lands
-- [ ] remove stale version-specific framing where the guide is meant to describe current behavior
-- [ ] verify that guide wording matches shipped prompt behavior
+- [x] update affected interactive guides after behavior lands
+- [x] remove stale version-specific framing where the guide is meant to describe current behavior
+- [x] verify that guide wording matches shipped prompt behavior
 
 ### Phase 5: Verification
 
-- [ ] add focused tests for shared/global abort notice adoption where applicable
-- [ ] add focused tests for `data:extract` checkpoint-backtracking flow
-- [ ] verify that completed local `data query` behavior remains unchanged unless explicitly intended
-- [ ] verify the shared helper acceptance criteria are met
+- [x] add focused tests for shared/global abort notice adoption where applicable
+- [x] add focused tests for `data:extract` checkpoint-backtracking flow
+- [x] verify that completed local `data query` behavior remains unchanged unless explicitly intended
+- [x] verify the shared helper acceptance criteria are met
 
 ## Related Research
 

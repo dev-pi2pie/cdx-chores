@@ -4,7 +4,7 @@
 
 Today, this command is most valuable for source-shaping work, especially Excel-oriented cleanup before materialization. It remains format-general at the input level, but its distinctive shaping controls are currently centered on Excel.
 
-As of `v0.0.9`, this guide reflects the shipped split where `data extract` owns direct shaped-table materialization and reviewed source-shape generation, while `data query` is the SQL lane that can later replay an accepted reviewed shape.
+This guide reflects the current shipped split where `data extract` owns direct shaped-table materialization and reviewed source-shape generation, while `data query` is the SQL lane that can later replay an accepted reviewed shape.
 
 For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`.
@@ -183,21 +183,35 @@ Current interactive flow:
    - ask Codex to suggest shaping
 7. after accepted source-shape changes, re-inspect
 8. when generated placeholder headers remain, optionally review semantic header suggestions
-9. choose output format:
+9. review the extraction setup:
+   - source interpretation choices
+   - accepted semantic header choices
+10. explicitly continue to output setup or revise before choosing a destination
+11. choose output format:
    - CSV
    - TSV
    - JSON
-10. choose destination style:
+12. choose destination style:
    - use default output path
    - custom output path
-11. review the final write summary
-12. explicitly confirm materialization
+13. review the final write summary
+14. at the final write boundary, choose one of:
+   - write now
+   - go back to extraction review
+   - change destination
+   - cancel
 
 Interactive review persistence:
 
 - interactive reviewed source-shape and semantic header decisions are in-memory only for the current session
 - interactive mode does not currently write source-shape or header-mapping JSON artifacts
 - use direct CLI `--codex-suggest-shape` or `--codex-suggest-headers` when you want reusable reviewed artifacts
+
+Interactive session notice:
+
+- interactive `data extract` shows a short abort notice near the start of the flow when interactive output is running in a TTY
+- the wording adapts to terminal width, but the meaning stays the same:
+  - `Ctrl+C` aborts the current interactive session
 
 ### Output rules
 
@@ -207,6 +221,7 @@ Interactive review persistence:
 - materialization status lines are written to stderr
 - suggestion runs write the mapping summary to stdout and artifact status lines to stderr
 - interactive extract defaults to the input path with the extension replaced by the selected output format
+- interactive extraction review covers source interpretation and any accepted semantic header choices before output setup begins
 
 ### Smoke fixtures
 

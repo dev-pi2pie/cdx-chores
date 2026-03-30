@@ -2,7 +2,7 @@
 
 `data preview` is the first read-only tabular inspection command in `cdx-chores`.
 
-Current v1 boundary:
+Current boundary:
 
 - input formats: `.csv`, `.tsv`, `.json`
 - output: terminal table only
@@ -74,6 +74,12 @@ Blank optional answers map to the CLI defaults:
 - blank columns => no filter
 - blank first contains filter => no contains filter
 
+Interactive session notice:
+
+- interactive `data preview` shows a short abort notice near the start of the flow when interactive output is running in a TTY
+- the wording adapts to terminal width, but the meaning stays the same:
+  - `Ctrl+C` aborts the current interactive session
+
 Interactive headerless note:
 
 - the prompt appears only for `.csv` and `.tsv`
@@ -110,7 +116,7 @@ cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contai
 
 ### Rendering behavior
 
-The v1 renderer is intentionally conservative:
+The renderer is intentionally conservative:
 
 - adapts column widths to terminal width when stdout is a TTY
 - truncates long cells instead of wrapping aggressively

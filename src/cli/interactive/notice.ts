@@ -24,3 +24,12 @@ export function getInteractiveAbortNotice(runtime: CliRuntime): string | undefin
   }
   return "Press Ctrl+C to abort this session.";
 }
+
+// Interactive flows opt into this shared TTY-only notice when the extra guidance
+// is useful; non-TTY runs stay quiet.
+export function writeInteractiveAbortNotice(runtime: CliRuntime): void {
+  const notice = getInteractiveAbortNotice(runtime);
+  if (notice) {
+    runtime.stderr.write(`${notice}\n`);
+  }
+}

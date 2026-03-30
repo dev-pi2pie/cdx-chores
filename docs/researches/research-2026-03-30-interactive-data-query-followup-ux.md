@@ -2,7 +2,7 @@
 title: "Interactive data query follow-up UX"
 created-date: 2026-03-30
 modified-date: 2026-03-30
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,12 @@ agent: codex
 
 Refine the next interactive `data query` UX direction around `formal-guide` result limiting, filter guidance, and safer session-exit guidance, while keeping the current flow intentionally smaller than a full query wizard.
 
-This research remains in progress because the bounded `data query` follow-up slice is now implemented, and the broader shared/global interactive UX consistency work is now the active next implementation track.
+This research is now complete because both of the implementation tracks it directly informed have landed:
+
+- the bounded interactive `data query` follow-up slice
+- the first shared/global interactive UX consistency rollout
+
+The remaining work after this doc was written was implementation, not unanswered research.
 
 ## Key Findings
 
@@ -358,11 +363,20 @@ Wording caution:
 - avoid vague stability wording such as `stable version` when the guide really means `current shipped behavior`
 - prefer explicit wording such as `Current interactive flow` or `As of vX.Y.Z` only when tied to the actual released behavior
 
-## Remaining Open Questions
+## Resolved Follow-Up Questions
 
-- Which commands should form the first shared/global abort-notice rollout after `data query`?
-- Should checkpoint backtracking expand first into interactive `data extract` only, or should another review-stage command join the first rollout?
-- What should count as “shared/global UX complete enough” to move this research from `in-progress` to `completed`?
+- First shared/global abort-notice rollout after `data query`:
+  - `data:extract`
+  - `data:preview`
+- First checkpoint-backtracking expansion after `data query`:
+  - interactive `data extract` only
+- Shared/global UX was complete enough to close this research once all of the following were true:
+  - the shared abort-notice behavior was reused by:
+    - `data:query`
+    - `data:extract`
+    - `data:preview`
+  - `data:extract` adopted coarse checkpoint backtracking at its major review stages
+  - the affected guides were updated to describe shipped behavior accurately
 
 ## Related Research
 
