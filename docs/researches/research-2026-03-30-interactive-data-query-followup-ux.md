@@ -1,6 +1,7 @@
 ---
 title: "Interactive data query follow-up UX"
 created-date: 2026-03-30
+modified-date: 2026-03-30
 status: draft
 agent: codex
 ---
@@ -8,6 +9,8 @@ agent: codex
 ## Goal
 
 Refine the next interactive `data query` UX direction around `formal-guide` result limiting, filter guidance, and safer session-exit guidance, while keeping the current flow intentionally smaller than a full query wizard.
+
+This research draft records the currently preferred direction, but implementation planning and execution are still pending.
 
 ## Key Findings
 
@@ -158,7 +161,7 @@ Implication:
 
 - `formal-guide` should not silently inject a SQL `limit` just because table mode is bounded
 - the bounded table preview remains an execution/output behavior
-- JSON stdout should not ask for an output file path, because it remains distinct from file output
+- JSON stdout should remain separate from file output and should not prompt for a destination path
 
 Recommended wording split:
 
@@ -174,6 +177,15 @@ Reason:
 
 - before output mode is chosen, the CLI should not imply that all outputs are preview-bounded
 - after table mode is chosen, the preview-style bounded behavior should be made explicit
+
+Decision:
+
+- keep `Table preview rows: default bounded`
+
+Why:
+
+- it is the clearest and least ambiguous wording
+- it makes the bounded table-preview contract visible without implying a SQL-level limit
 
 #### 2. Filter improvements should ship as one coherent follow-up slice
 
@@ -273,7 +285,8 @@ Recommended first-pass scope:
 
 - apply the checkpoint model to all three query authoring modes
 - keep the checkpoint locations shared
-- keep the per-mode revise action labels mode-specific
+- keep one consistent action layout across modes
+- keep the action labels mode-specific where needed
 
 Suggested mode-specific review actions:
 
@@ -295,6 +308,33 @@ Reason:
 
 - users should not need to learn a different backtracking model per mode
 - the shared checkpoint structure provides consistency without forcing identical mode internals
+
+Decision:
+
+- keep both `Revise intent` and `Regenerate SQL` for `Codex Assistant`
+
+Why:
+
+- they represent different user intents
+- the distinction already fits the current `Codex Assistant` interaction model
+- combining them into one action would remove a useful recovery path
+
+Decision:
+
+- use one standardized checkpoint-review layout across all three `data query` interactive modes
+
+Recommended layout rule:
+
+- primary revise action first
+- secondary mode-specific recovery action second when applicable
+- `Change mode` next
+- `Cancel` last
+
+Why:
+
+- the user should not need to relearn navigation behavior after switching between `manual`, `formal-guide`, and `Codex Assistant`
+- consistent ordering improves scan speed and trust during revision flows
+- shared structure still allows each mode to keep the action names that best match its authoring model
 
 ### Suggested prompt wording
 
@@ -320,8 +360,7 @@ Wording caution:
 
 ## Remaining Open Questions
 
-- Should the table-output summary say `Table preview rows: default bounded` exactly, or would a friendlier phrase such as `Table preview rows: default` be clearer while still explicit enough?
-- Should `Codex Assistant` expose both `Revise intent` and `Regenerate SQL` at the SQL review checkpoint in the first pass, or keep `Regenerate SQL` only in its existing dedicated recovery step?
+- none for this follow-up draft
 
 ## Related Research
 
