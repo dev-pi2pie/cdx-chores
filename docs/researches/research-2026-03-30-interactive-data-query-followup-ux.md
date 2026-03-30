@@ -10,7 +10,7 @@ agent: codex
 
 Refine the next interactive `data query` UX direction around `formal-guide` result limiting, filter guidance, and safer session-exit guidance, while keeping the current flow intentionally smaller than a full query wizard.
 
-This research draft records the currently preferred direction, but implementation planning and execution are still pending.
+This research remains in progress because the bounded `data query` follow-up slice is now implemented, and the broader shared/global interactive UX consistency work is now the active next implementation track.
 
 ## Key Findings
 
@@ -360,7 +360,9 @@ Wording caution:
 
 ## Remaining Open Questions
 
-- none for this follow-up draft
+- Which commands should form the first shared/global abort-notice rollout after `data query`?
+- Should checkpoint backtracking expand first into interactive `data extract` only, or should another review-stage command join the first rollout?
+- What should count as “shared/global UX complete enough” to move this research from `in-progress` to `completed`?
 
 ## Related Research
 
@@ -370,6 +372,7 @@ Wording caution:
 ## Related Plans
 
 - `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
+- `docs/plans/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
 
 ## References
 

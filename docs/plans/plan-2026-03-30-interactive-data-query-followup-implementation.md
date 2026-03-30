@@ -225,3 +225,4 @@ This work is best handled as a follow-up plan instead of being folded back into 
 ## Related Plans
 
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
