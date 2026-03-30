@@ -12,6 +12,8 @@ export interface InteractiveHarnessScenario {
   dataExtractActionErrorCode?: string;
   dataExtractActionStderr?: string;
   dataExtractActionStdout?: string;
+  stdoutColumns?: number;
+  stdoutIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;
   dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;

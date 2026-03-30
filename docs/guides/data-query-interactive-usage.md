@@ -4,7 +4,7 @@ Use interactive mode when you want the CLI to inspect the input first, then help
 
 This is the interactive lane to prefer when `data extract` is too narrow for the transformation you need and you want output control without dropping to raw CLI flags immediately.
 
-As of `v0.0.9`, the interactive flow mirrors the same shipped product split as the direct CLI: in-session shaping and header review can happen before SQL authoring, but reusable reviewed source-shape and header-mapping artifacts are still produced by the direct CLI reviewed flows.
+The current interactive flow mirrors the same shipped product split as the direct CLI: in-session shaping and header review can happen before SQL authoring, but reusable reviewed source-shape and header-mapping artifacts are still produced by the direct CLI reviewed flows.
 
 For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
 For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`.
@@ -40,10 +40,16 @@ Current interactive flow:
    - `Codex Assistant`
 11. review the generated SQL
 12. explicitly confirm execution
-13. choose one output mode:
+13. if execution is declined or fails, choose the next step at SQL review:
+   - revise within the current mode
+   - use a mode-specific recovery action when available
+   - change mode
+   - cancel
+14. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
+15. from output selection, either continue with the selected output, go back to SQL review, or cancel
 
 ### Mode behavior
 
@@ -51,11 +57,35 @@ Current interactive flow:
 
 - asks for one SQL string directly
 - first pass stays single-line
+- SQL review actions use:
+  - `Edit SQL`
+  - `Change mode`
+  - `Cancel`
 
 `formal-guide`
 
-- asks for columns, simple filters, optional aggregate summary intent, and optional ordering
+- asks for columns, guided filters, optional aggregate summary intent, optional ordering, and optional SQL-level result limit
 - builds deterministic SQL for the logical table `file`
+- current guided filter set includes:
+  - text matching:
+    - `contains`
+    - `starts with`
+    - `ends with`
+  - null checks:
+    - `is null`
+    - `is not null`
+  - boolean-specialized checks:
+    - `is true`
+    - `is false`
+  - emptiness checks:
+    - `is empty`
+    - `is not empty`
+- `Maximum result rows (optional)` compiles to SQL `limit n`
+- `Rows to show (optional)` remains separate and only bounds terminal table output
+- SQL review actions use:
+  - `Edit formal-guide answers`
+  - `Change mode`
+  - `Cancel`
 
 `Codex Assistant`
 
@@ -69,6 +99,11 @@ Current interactive flow:
   - small sample rows summary
 - comment lines that start with `#` are ignored when the editor content is submitted
 - the cleaned intent is shown back before Codex drafting, and drafting only continues after explicit confirmation
+- SQL review actions use:
+  - `Revise intent`
+  - `Regenerate SQL`
+  - `Change mode`
+  - `Cancel`
 
 ### Source binding
 
@@ -117,9 +152,25 @@ Interactive output choices map directly to the non-interactive `data query` cont
 - JSON stdout reuses `--json` with optional pretty printing
 - file output reuses `--output <path>` with `.json` or `.csv`
 - JSON stdout and file output are mutually exclusive
+- when no SQL `limit` is set, table output still uses bounded preview-style execution
+- output review wording distinguishes:
+  - SQL-level limit
+  - table-preview rows
+
+### Session notice
+
+Interactive `data query` now shows a short abort notice near the start of the flow when running in a TTY.
+
+The notice wording adapts to terminal width, but the meaning stays the same:
+
+- `Ctrl+C` aborts the current interactive session
 
 ### Notes
 
 - SQL is always shown before execution
 - `Codex Assistant` remains advisory only; it never executes SQL automatically
-- SQL execution failures return you to revise or regenerate instead of silently retrying
+- checkpoint backtracking currently starts at:
+  - mode selection
+  - SQL review
+  - output selection
+- SQL execution failures return you to the shared SQL-review checkpoint instead of silently retrying

@@ -132,6 +132,85 @@ describe("interactive mode routing", () => {
     ]);
   });
 
+  test("supports checkpoint change-mode from manual sql review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:query",
+        "manual",
+        "change-mode",
+        "formal-guide",
+        "count",
+        "table",
+      ],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file", "all", "", "", "", "5"],
+      confirmQueue: [true, false, false, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 5,
+          source: undefined,
+          sql: "select count(*) as row_count\nfrom file",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Choose mode"),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+    expect(result.stderr).toContain("Table preview rows:");
+    expect(result.stderr).toContain("5");
+  });
+
+  test("writes the tty abort notice for interactive data query startup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, false, false],
+      dataQueryDetectedFormat: "csv",
+      stdoutColumns: 20,
+      stdoutIsTTY: true,
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Ctrl+C to abort.");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+  });
+
+  test("supports cancel from sql review without executing the query", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, false, false],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+  });
+
   test("routes interactive data extract through shared extraction execution", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -442,6 +521,59 @@ limit 25`,
     );
   });
 
+  test("supports checkpoint backtracking from output selection to sql review in formal-guide", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "none", "back", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "", "25", ""],
+      confirmQueue: [true, false, false, true, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: undefined,
+          source: undefined,
+          sql: "select *\nfrom file\nlimit 25",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "confirm" && call.message === "Execute this SQL?"),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(2);
+    expect(result.stderr).toContain("SQL limit:");
+    expect(result.stderr).toContain("Table preview rows:");
+    expect(result.stderr).toContain("default bounded");
+  });
+
+  test("supports cancel from output selection without executing the query", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "none", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "", "", ""],
+      confirmQueue: [true, false, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(1);
+  });
+
   test("routes Codex Assistant through the default single-line intent prompt", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -485,6 +617,46 @@ limit 25`,
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "input:Describe the query intent:",
+    );
+  });
+
+  test("supports checkpoint regenerate from codex sql review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "regenerate", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, false, false, true],
+      editorQueue: ["unused editor content"],
+      inputQueue: ["count rows by status", "10"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(
+      result.actionCalls.filter((call) => call.name === "data:query:codex-draft"),
+    ).toHaveLength(2);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        rows: 10,
+        source: undefined,
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+      },
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "editor:Describe the query intent:",
     );
   });
 

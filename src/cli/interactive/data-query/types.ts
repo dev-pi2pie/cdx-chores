@@ -3,10 +3,26 @@ import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
 import type { DataQuerySourceIntrospection } from "../../duckdb/query";
 
 export type DataQueryInteractiveMode = "manual" | "formal-guide" | "Codex Assistant";
-export type OutputPromptSelection = Pick<
-  DataQueryOptions,
-  "json" | "output" | "overwrite" | "pretty" | "rows"
->;
+export type DataQueryReviewMode = "manual" | "formal-guide" | "codex";
+export type InteractiveQueryRunResult = "executed" | "change-mode" | "cancel";
+export type ExecuteInteractiveCandidateResult =
+  | "executed"
+  | "revise"
+  | "regenerate"
+  | "change-mode"
+  | "cancel";
+export type OutputPromptSelection =
+  | ({
+      kind: "table";
+    } & Pick<DataQueryOptions, "rows">)
+  | ({
+      kind: "json";
+    } & Pick<DataQueryOptions, "json" | "pretty">)
+  | ({
+      kind: "file";
+    } & Pick<DataQueryOptions, "output" | "overwrite" | "pretty">)
+  | { kind: "back" }
+  | { kind: "cancel" };
 export type FormalGuideFilterOperator =
   | "="
   | "!="

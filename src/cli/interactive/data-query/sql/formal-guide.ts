@@ -13,6 +13,7 @@ import type {
   FormalGuideAnswers,
   FormalGuideAggregateKind,
   FormalGuideFilterOperator,
+  InteractiveQueryRunResult,
   OrderBySpec,
 } from "../types";
 
@@ -469,7 +470,7 @@ export async function runFormalGuideInteractiveQuery(
     selectedRange?: string;
     selectedSource?: string;
   },
-): Promise<void> {
+): Promise<InteractiveQueryRunResult> {
   while (true) {
     const answers = await promptFormalGuideAnswers(options.introspection);
     const sql = buildFormalGuideSql(answers);
@@ -477,15 +478,23 @@ export async function runFormalGuideInteractiveQuery(
       format: options.format,
       headerMappings: options.headerMappings,
       input: options.input,
+      reviewMode: "formal-guide",
       selectedBodyStartRow: options.selectedBodyStartRow,
       selectedHeaderRow: options.selectedHeaderRow,
       selectedNoHeader: options.selectedNoHeader,
       selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,
       sql,
+      sqlLimit: answers.limit,
     });
     if (result === "executed") {
-      return;
+      return "executed";
+    }
+    if (result === "change-mode") {
+      return "change-mode";
+    }
+    if (result === "cancel") {
+      return "cancel";
     }
   }
 }

@@ -2,7 +2,7 @@
 title: "Interactive data query follow-up UX"
 created-date: 2026-03-30
 modified-date: 2026-03-30
-status: draft
+status: in-progress
 agent: codex
 ---
 

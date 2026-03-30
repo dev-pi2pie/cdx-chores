@@ -2,7 +2,7 @@
 title: "Interactive data query follow-up implementation"
 created-date: 2026-03-30
 modified-date: 2026-03-30
-status: active
+status: completed
 agent: codex
 ---
 
@@ -190,31 +190,31 @@ This work is best handled as a follow-up plan instead of being folded back into 
 
 ### Phase 3: Implement review wording and checkpoint backtracking
 
-- [ ] add SQL-review display for `SQL limit: <n>` when present
-- [ ] add output-review wording for `Table preview rows: default bounded`
-- [ ] add output-review wording for explicit preview-row overrides
-- [ ] implement checkpoint backtracking for `manual`
-- [ ] implement checkpoint backtracking for `formal-guide`
-- [ ] implement checkpoint backtracking for `Codex Assistant`
-- [ ] keep one consistent action ordering across all three modes
+- [x] add SQL-review display for `SQL limit: <n>` when present
+- [x] add output-review wording for `Table preview rows: default bounded`
+- [x] add output-review wording for explicit preview-row overrides
+- [x] implement checkpoint backtracking for `manual`
+- [x] implement checkpoint backtracking for `formal-guide`
+- [x] implement checkpoint backtracking for `Codex Assistant`
+- [x] keep one consistent action ordering across all three modes
 
 ### Phase 4: Implement width-aware abort notice
 
-- [ ] add the early interactive abort notice to `data query`
-- [ ] wire the notice to TTY-width detection
-- [ ] keep non-TTY behavior quiet or deterministic as appropriate
-- [ ] isolate the helper enough for later reuse by other interactive flows
+- [x] add the early interactive abort notice to `data query`
+- [x] wire the notice to TTY-width detection
+- [x] keep non-TTY behavior quiet or deterministic as appropriate
+- [x] isolate the helper enough for later reuse by other interactive flows
 
 ### Phase 5: Verification and docs
 
-- [ ] add focused tests for:
+- [x] add focused tests for:
   - [x] optional SQL `limit` generation in `formal-guide`
   - [x] new filter operator SQL generation
-  - [ ] SQL-review and output-review wording
-  - [ ] checkpoint backtracking across all three modes
-  - [ ] width-aware abort notice variants
-- [ ] update `docs/guides/data-query-interactive-usage.md`
-- [ ] verify the guide describes only shipped behavior
+  - [x] SQL-review and output-review wording
+  - [x] checkpoint backtracking across all three modes
+  - [x] width-aware abort notice variants
+- [x] update `docs/guides/data-query-interactive-usage.md`
+- [x] verify the guide describes only shipped behavior
 
 ## Related Research
 

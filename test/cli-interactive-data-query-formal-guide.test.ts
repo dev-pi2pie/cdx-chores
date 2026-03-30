@@ -29,6 +29,29 @@ describe("interactive data query formal-guide helpers", () => {
     ]);
   });
 
+  test("returns comparison-only menus for numeric and temporal columns", () => {
+    expect(getFormalGuideFilterOperatorChoices("BIGINT")).toEqual([
+      { name: "=", value: "=", requiresValue: true },
+      { name: "!=", value: "!=", requiresValue: true },
+      { name: ">", value: ">", requiresValue: true },
+      { name: ">=", value: ">=", requiresValue: true },
+      { name: "<", value: "<", requiresValue: true },
+      { name: "<=", value: "<=", requiresValue: true },
+      { name: "is null", value: "is-null", requiresValue: false },
+      { name: "is not null", value: "is-not-null", requiresValue: false },
+    ]);
+    expect(getFormalGuideFilterOperatorChoices("TIMESTAMP")).toEqual([
+      { name: "=", value: "=", requiresValue: true },
+      { name: "!=", value: "!=", requiresValue: true },
+      { name: ">", value: ">", requiresValue: true },
+      { name: ">=", value: ">=", requiresValue: true },
+      { name: "<", value: "<", requiresValue: true },
+      { name: "<=", value: "<=", requiresValue: true },
+      { name: "is null", value: "is-null", requiresValue: false },
+      { name: "is not null", value: "is-not-null", requiresValue: false },
+    ]);
+  });
+
   test("adds sql limit after order by when present", () => {
     expect(
       buildFormalGuideSql({
@@ -62,5 +85,23 @@ describe("interactive data query formal-guide helpers", () => {
     ).toBe(`select *
 from file
 where lower(cast("name" as varchar)) like lower('Ad') || '%' and lower(cast("name" as varchar)) like '%' || lower('da') and cast("notes" as varchar) = '' and "deleted_at" is null and "is_pro" is true`);
+  });
+
+  test("renders remaining special filter operators deterministically", () => {
+    expect(
+      buildFormalGuideSql({
+        aggregateKind: "none",
+        filters: [
+          { column: "title", operator: "is-not-empty" },
+          { column: "is_pro", operator: "is-false" },
+        ],
+        groupByColumns: [],
+        orderBySpecs: [],
+        selectAllColumns: true,
+        selectedColumns: [],
+      }),
+    ).toBe(`select *
+from file
+where cast("title" as varchar) <> '' and "is_pro" is false`);
   });
 });

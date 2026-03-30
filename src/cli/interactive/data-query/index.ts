@@ -5,6 +5,7 @@ import { createDuckDbConnection, listDataQuerySources } from "../../duckdb/query
 import { resolveFromCwd } from "../../path-utils";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
+import { getInteractiveAbortNotice } from "../notice";
 import type { InteractivePathPromptContext } from "../shared";
 import { reviewInteractiveHeaderMappings } from "./header-review";
 import { collectInteractiveIntrospection } from "./source-shape";
@@ -38,6 +39,10 @@ export async function runInteractiveDataQuery(
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
   const noHeader = await promptDelimitedHeaderMode(format);
+  const abortNotice = getInteractiveAbortNotice(runtime);
+  if (abortNotice) {
+    runtime.stderr.write(`${abortNotice}\n`);
+  }
 
   let connection;
   try {
@@ -67,55 +72,57 @@ export async function runInteractiveDataQuery(
       selectedSource,
     });
 
-    const mode = await select<DataQueryInteractiveMode>({
-      message: "Choose mode",
-      choices: [
-        { name: "manual", value: "manual" },
-        { name: "formal-guide", value: "formal-guide" },
-        { name: "Codex Assistant", value: "Codex Assistant" },
-      ],
-    });
-
-    if (mode === "manual") {
-      await runManualInteractiveQuery(runtime, pathPromptContext, {
-        format,
-        headerMappings: reviewedHeaders.headerMappings,
-        input,
-        selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-        selectedHeaderRow: sourceShape.selectedHeaderRow,
-        selectedNoHeader: sourceShape.selectedNoHeader,
-        selectedRange: sourceShape.selectedRange,
-        selectedSource,
+    while (true) {
+      const mode = await select<DataQueryInteractiveMode>({
+        message: "Choose mode",
+        choices: [
+          { name: "manual", value: "manual" },
+          { name: "formal-guide", value: "formal-guide" },
+          { name: "Codex Assistant", value: "Codex Assistant" },
+        ],
       });
+
+      const result =
+        mode === "manual"
+          ? await runManualInteractiveQuery(runtime, pathPromptContext, {
+              format,
+              headerMappings: reviewedHeaders.headerMappings,
+              input,
+              selectedBodyStartRow: sourceShape.selectedBodyStartRow,
+              selectedHeaderRow: sourceShape.selectedHeaderRow,
+              selectedNoHeader: sourceShape.selectedNoHeader,
+              selectedRange: sourceShape.selectedRange,
+              selectedSource,
+            })
+          : mode === "formal-guide"
+            ? await runFormalGuideInteractiveQuery(runtime, pathPromptContext, {
+                format,
+                input,
+                introspection: reviewedHeaders.introspection,
+                headerMappings: reviewedHeaders.headerMappings,
+                selectedBodyStartRow: sourceShape.selectedBodyStartRow,
+                selectedHeaderRow: sourceShape.selectedHeaderRow,
+                selectedNoHeader: sourceShape.selectedNoHeader,
+                selectedRange: sourceShape.selectedRange,
+                selectedSource,
+              })
+            : await runCodexInteractiveQuery(runtime, pathPromptContext, {
+                format,
+                input,
+                introspection: reviewedHeaders.introspection,
+                headerMappings: reviewedHeaders.headerMappings,
+                selectedBodyStartRow: sourceShape.selectedBodyStartRow,
+                selectedHeaderRow: sourceShape.selectedHeaderRow,
+                selectedNoHeader: sourceShape.selectedNoHeader,
+                selectedRange: sourceShape.selectedRange,
+                selectedSource,
+              });
+
+      if (result === "change-mode") {
+        continue;
+      }
       return;
     }
-
-    if (mode === "formal-guide") {
-      await runFormalGuideInteractiveQuery(runtime, pathPromptContext, {
-        format,
-        input,
-        introspection: reviewedHeaders.introspection,
-        headerMappings: reviewedHeaders.headerMappings,
-        selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-        selectedHeaderRow: sourceShape.selectedHeaderRow,
-        selectedNoHeader: sourceShape.selectedNoHeader,
-        selectedRange: sourceShape.selectedRange,
-        selectedSource,
-      });
-      return;
-    }
-
-    await runCodexInteractiveQuery(runtime, pathPromptContext, {
-      format,
-      input,
-      introspection: reviewedHeaders.introspection,
-      headerMappings: reviewedHeaders.headerMappings,
-      selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-      selectedHeaderRow: sourceShape.selectedHeaderRow,
-      selectedNoHeader: sourceShape.selectedNoHeader,
-      selectedRange: sourceShape.selectedRange,
-      selectedSource,
-    });
   } catch (error) {
     maybeRenderDuckDbExtensionRemediationCommand(runtime, format, error);
     throw error;

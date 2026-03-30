@@ -1,5 +1,7 @@
 export class CaptureStream {
   public text = "";
+  public columns?: number;
+  public isTTY?: boolean;
 
   public write(chunk: string | Uint8Array): boolean {
     this.text += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
@@ -7,9 +9,11 @@ export class CaptureStream {
   }
 }
 
-export function createHarnessRuntime() {
+export function createHarnessRuntime(options: { stdoutColumns?: number; stdoutIsTTY?: boolean } = {}) {
   const stdout = new CaptureStream();
   const stderr = new CaptureStream();
+  stdout.columns = options.stdoutColumns;
+  stdout.isTTY = options.stdoutIsTTY;
   const runtime = {
     cwd: process.cwd(),
     colorEnabled: true,
