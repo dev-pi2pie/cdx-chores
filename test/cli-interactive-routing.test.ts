@@ -226,6 +226,45 @@ describe("interactive mode routing", () => {
     );
   });
 
+  test("returns to the current sql review from output selection without reopening sql entry", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "back", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file", "10"],
+      confirmQueue: [true, false, true, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: undefined,
+          sql: "select id from file",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "input" && call.message === "SQL query"),
+    ).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Execute this SQL?",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(2);
+  });
+
   test("routes interactive data extract through shared extraction execution", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -874,6 +913,47 @@ limit 25`,
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
       "editor:Describe the query intent:",
+    );
+  });
+
+  test("reopens codex intent entry directly when sql review chooses revise", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "revise", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, false, false, false, true],
+      inputQueue: ["count rows by status", "count rows by status", "10"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(
+      result.actionCalls.filter((call) => call.name === "data:query:codex-draft"),
+    ).toHaveLength(2);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        rows: 10,
+        source: undefined,
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+      },
+    });
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "input" && call.message === "Describe the query intent:",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "select:Codex Assistant next step",
     );
   });
 

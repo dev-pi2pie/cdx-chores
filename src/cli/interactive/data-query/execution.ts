@@ -15,6 +15,11 @@ import type {
   OutputPromptSelection,
 } from "./types";
 
+type OutputSelectionLoopResult =
+  | "executed"
+  | "review"
+  | Exclude<ExecuteInteractiveCandidateResult, "executed">;
+
 function isDataQuerySqlExecutionError(error: unknown): boolean {
   return (
     error instanceof CliError &&
@@ -209,11 +214,11 @@ async function runOutputSelectionLoop(
     sqlLimit?: number;
     reviewMode: DataQueryReviewMode;
   },
-): Promise<ExecuteInteractiveCandidateResult> {
+): Promise<OutputSelectionLoopResult> {
   while (true) {
     const outputOptions = await promptOutputSelection(runtime, pathPromptContext);
     if (outputOptions.kind === "back") {
-      return "revise";
+      return "review";
     }
     if (outputOptions.kind === "cancel") {
       return "cancel";
@@ -290,7 +295,7 @@ export async function executeInteractiveCandidate(
     }
 
     const executionOutcome = await runOutputSelectionLoop(runtime, pathPromptContext, options);
-    if (executionOutcome === "revise") {
+    if (executionOutcome === "review") {
       continue;
     }
     return executionOutcome;

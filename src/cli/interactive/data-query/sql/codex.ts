@@ -133,6 +133,9 @@ export async function runCodexInteractiveQuery(
           if (executionResult === "regenerate") {
             continue;
           }
+          if (executionResult === "revise") {
+            break;
+          }
         }
       } finally {
         status.stop();
