@@ -2,13 +2,20 @@
 title: "Interactive contextual tip usage for data query and data extract"
 created-date: 2026-03-30
 modified-date: 2026-03-30
-status: draft
+status: completed
 agent: codex
 ---
 
 ## Goal
 
 Evaluate how interactive `data query` and interactive `data extract` should expand beyond one abort tip into a small tip channel, including whether the product should prefer one shared randomized tip slot or a deterministic checkpoint-driven layer.
+
+This research is now complete because the preferred follow-up direction has been implemented:
+
+- one visible tip at a time
+- the existing flow-entry tip slot
+- a small randomized command-scoped pool
+- no later checkpoint tip blocks
 
 ## Key Findings
 

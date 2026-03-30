@@ -20,6 +20,7 @@ async function runHarnessScenario(
   installHarnessMocks(context);
 
   const { runtime, stdout, stderr } = createHarnessRuntime({
+    nowIsoString: scenario.nowIsoString,
     stdoutColumns: scenario.stdoutColumns,
     stdoutIsTTY: scenario.stdoutIsTTY,
   });

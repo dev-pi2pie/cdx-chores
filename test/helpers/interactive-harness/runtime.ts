@@ -9,7 +9,9 @@ export class CaptureStream {
   }
 }
 
-export function createHarnessRuntime(options: { stdoutColumns?: number; stdoutIsTTY?: boolean } = {}) {
+export function createHarnessRuntime(
+  options: { nowIsoString?: string; stdoutColumns?: number; stdoutIsTTY?: boolean } = {},
+) {
   const stdout = new CaptureStream();
   const stderr = new CaptureStream();
   stdout.columns = options.stdoutColumns;
@@ -17,7 +19,7 @@ export function createHarnessRuntime(options: { stdoutColumns?: number; stdoutIs
   const runtime = {
     cwd: process.cwd(),
     colorEnabled: true,
-    now: () => new Date("2026-02-25T00:00:00.000Z"),
+    now: () => new Date(options.nowIsoString ?? "2026-02-25T00:00:00.000Z"),
     platform: process.platform,
     stdout,
     stderr,

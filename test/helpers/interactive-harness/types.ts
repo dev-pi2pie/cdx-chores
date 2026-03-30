@@ -1,6 +1,7 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
+  nowIsoString?: string;
   checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
   editorQueue?: string[];

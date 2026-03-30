@@ -2,13 +2,13 @@
 title: "Interactive contextual tip follow-up"
 created-date: 2026-03-30
 modified-date: 2026-03-30
-status: active
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Implement the contextual-tip direction for interactive `data query` and interactive `data extract`, while tracking the newly preferred follow-up that replaces the current layered checkpoint tips with one randomized flow-entry tip slot.
+Implement the contextual-tip direction for interactive `data query` and interactive `data extract`, including the later follow-up that replaces the initial layered checkpoint tips with one randomized flow-entry tip slot.
 
 ## Why This Plan
 
@@ -24,28 +24,21 @@ The next useful slice is therefore narrower than “tip system everywhere”:
 - add one contextual tip only at selected major checkpoints
 - keep the selection deterministic so the interactive surface stays testable and documentation-friendly
 
-This plan now has two slices:
+This plan now records both slices:
 
-- the completed first pass that shipped deterministic checkpoint tips
-- a new follow-up phase to revise that model after product review
+- the earlier first pass that shipped deterministic checkpoint tips
+- the completed follow-up that replaced that model after product review
 
 ## Current State
 
-- interactive `data query` shows the styled abort tip near flow entry
-- interactive `data extract` shows the styled abort tip near flow entry
+- interactive `data query` now shows one randomized flow-entry tip from a small command-scoped pool
+- interactive `data extract` now shows one randomized flow-entry tip from a small command-scoped pool
 - interactive `data preview` no longer shows the tip
-- interactive `data query` now also shows deterministic checkpoint tips at:
-  - mode selection
-  - SQL review
-  - output selection
-- interactive `data extract` now also shows deterministic checkpoint tips at:
-  - extraction review
-  - write boundary
-- the checkpoint-aware tip resolver now lives in:
+- the randomized flow-entry tip resolver now lives in:
   - `src/cli/interactive/contextual-tip.ts`
 - the current research direction is recorded in:
   - `docs/researches/research-2026-03-30-interactive-contextual-tip-usage.md`
-- product feedback now prefers a different follow-up direction:
+- the later follow-up direction is now the shipped direction:
   - one visible tip at a time
   - the current flow-entry tip slot
   - randomized selection from a small command-scoped pool
@@ -189,21 +182,13 @@ The first pass should keep visual noise down:
 
 ## Implementation Notes
 
-- the shipped first pass keeps the current abort tip as the flow-entry baseline
-- deterministic checkpoint tips now land later in the flow for:
-  - `data query`
-    - mode selection
-    - SQL review
-    - output selection
-  - `data extract`
-    - extraction review
-    - write boundary
-- interactive `data preview` remains tip-free
-- the tip resolver stays checkpoint-driven rather than mode-specific
-- product follow-up now prefers replacing this layered model with:
+- the earlier first pass kept the current abort tip as the flow-entry baseline and added deterministic checkpoint tips later in the flow
+- the current shipped behavior replaces that layered model with:
   - one shared tip slot at flow entry
   - one visible tip at a time
   - a small randomized pool per command
+- interactive `data preview` remains tip-free
+- the current tip pools stay command-scoped rather than mode-specific
 
 ## Phase Checklist
 
@@ -240,16 +225,16 @@ The first pass should keep visual noise down:
 
 ### Phase 5: Single-slot randomized tip follow-up
 
-- [ ] replace the current layered checkpoint-tip behavior with one shared flow-entry tip slot
-- [ ] define small randomized tip pools for:
-  - [ ] `data:query`
-  - [ ] `data:extract`
-- [ ] include the abort tip as one possible random tip rather than an always-on line
-- [ ] remove later checkpoint tip rendering from `data query`
-- [ ] remove later checkpoint tip rendering from `data extract`
-- [ ] keep `data preview` tip-free
-- [ ] update tests for bounded random tip pools and single-slot behavior
-- [ ] update guides to describe the revised randomized flow-entry tip model
+- [x] replace the current layered checkpoint-tip behavior with one shared flow-entry tip slot
+- [x] define small randomized tip pools for:
+  - [x] `data:query`
+  - [x] `data:extract`
+- [x] include the abort tip as one possible random tip rather than an always-on line
+- [x] remove later checkpoint tip rendering from `data query`
+- [x] remove later checkpoint tip rendering from `data extract`
+- [x] keep `data preview` tip-free
+- [x] update tests for bounded random tip pools and single-slot behavior
+- [x] update guides to describe the revised randomized flow-entry tip model
 
 ## Related Research
 

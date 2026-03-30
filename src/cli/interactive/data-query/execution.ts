@@ -8,7 +8,6 @@ import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
 import type { DataQueryInputFormat } from "../../duckdb/query";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
-import { writeInteractiveContextualTip } from "../contextual-tip";
 import type { InteractivePathPromptContext } from "../shared";
 import type {
   DataQueryReviewMode,
@@ -61,7 +60,6 @@ async function promptCandidateReviewOutcome(
     sqlLimit?: number;
   },
 ): Promise<Exclude<ExecuteInteractiveCandidateResult, "executed"> | "confirm"> {
-  writeInteractiveContextualTip(runtime, "data-query:sql-review");
   renderCandidateSql(runtime, options.sql, options.sqlLimit);
   const confirmed = await confirm({ message: "Execute this SQL?", default: true });
   if (confirmed) {
@@ -110,7 +108,6 @@ async function promptOutputSelection(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<OutputPromptSelection> {
-  writeInteractiveContextualTip(runtime, "data-query:output-selection");
   const selection = await select<"table" | "json" | "file" | "back" | "cancel">({
     message: "Output mode",
     choices: [

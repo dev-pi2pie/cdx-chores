@@ -88,6 +88,9 @@ describe("interactive mode routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:query", "users", "manual", "table"],
+      nowIsoString: "2026-03-30T00:00:00.300Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.sqlite"],
       inputQueue: ["select id, name from file order by id", "10"],
       confirmQueue: [true, true],
@@ -122,14 +125,12 @@ describe("interactive mode routing", () => {
     ]);
     const plainStderr = stripAnsi(result.stderr);
     expect(plainStderr).toContain("Tip: Manual is best for joins or custom SQL.");
-    expect(plainStderr).toContain("Tip: SQL limit and preview rows are separate controls.");
-    expect(plainStderr).toContain("Tip: Rows to show only affects terminal preview.");
-    expect(plainStderr.match(/Tip: Manual is best for joins or custom SQL\./g)).toHaveLength(1);
-    expect(plainStderr.indexOf("Tip: Manual is best for joins or custom SQL.")).toBeLessThan(
-      plainStderr.indexOf("Tip: SQL limit and preview rows are separate controls."),
+    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(plainStderr.trimStart().startsWith("Tip: Manual is best for joins or custom SQL.")).toBe(
+      true,
     );
-    expect(plainStderr.indexOf("Tip: SQL limit and preview rows are separate controls.")).toBeLessThan(
-      plainStderr.indexOf("Tip: Rows to show only affects terminal preview."),
+    expect(plainStderr.indexOf("Tip: Manual is best for joins or custom SQL.")).toBeLessThan(
+      plainStderr.indexOf("Input:"),
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
@@ -192,6 +193,7 @@ describe("interactive mode routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:query", "manual", "cancel"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["select id from file"],
       confirmQueue: [true, false, false],
@@ -202,7 +204,7 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
-    expect(stripAnsi(result.stderr)).toContain("Tip: Manual is best for joins or custom SQL.");
+    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:SQL review next step",
     );
@@ -228,6 +230,9 @@ describe("interactive mode routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:extract", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined],
       confirmQueue: [true, false, true, true],
@@ -263,14 +268,14 @@ describe("interactive mode routing", () => {
         kind: "file",
       }),
     });
-    expect(plainStderr).toContain("Tip: Source interpretation is reviewed before output setup.");
     expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
+    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
     expect(
-      plainStderr.match(/Tip: Source interpretation is reviewed before output setup\./g),
-    ).toHaveLength(1);
-    expect(
-      plainStderr.match(/Tip: Change destination keeps the current extraction setup\./g),
-    ).toHaveLength(1);
+      plainStderr.trimStart().startsWith("Tip: Change destination keeps the current extraction setup."),
+    ).toBe(true);
+    expect(plainStderr.indexOf("Tip: Change destination keeps the current extraction setup.")).toBeLessThan(
+      plainStderr.indexOf("Input:"),
+    );
     expect(plainStderr).toContain("Extraction write summary");
     expect(plainStderr).toContain("Extraction review");
     expect(plainStderr).toContain("- output format: JSON");
@@ -367,6 +372,9 @@ describe("interactive mode routing", () => {
         "Summary",
         "json",
       ],
+      nowIsoString: "2026-03-30T00:00:00.400Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: ["", ""],
       optionalPathQueue: [undefined, undefined],
@@ -401,12 +409,17 @@ describe("interactive mode routing", () => {
         (call) => call.kind === "select" && call.message === "Choose an Excel sheet",
       ),
     ).toHaveLength(2);
+    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(stripAnsi(result.stderr).indexOf("Tip:")).toBeLessThan(stripAnsi(result.stderr).indexOf("Input:"));
   });
 
   test("reopens destination selection without re-running extraction setup", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:extract", "csv", "destination", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined, undefined],
       confirmQueue: [true, false, true, false, true],
@@ -441,15 +454,21 @@ describe("interactive mode routing", () => {
     expect(
       result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output format"),
     ).toHaveLength(2);
+    expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
+    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
     expect(
-      plainStderr.match(/Tip: Change destination keeps the current extraction setup\./g),
-    ).toHaveLength(2);
+      plainStderr.trimStart().startsWith("Tip: Change destination keeps the current extraction setup."),
+    ).toBe(true);
+    expect(plainStderr.indexOf("Tip: Change destination keeps the current extraction setup.")).toBeLessThan(
+      plainStderr.indexOf("Input:"),
+    );
   });
 
   test("writes the tty abort notice for interactive data extract startup", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:extract", "cancel"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
       requiredPathQueue: ["fixtures/query.csv"],
       confirmQueue: [true, false, false],
       dataQueryDetectedFormat: "csv",
@@ -467,6 +486,7 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
+    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Extraction review next step",
     );
@@ -1493,6 +1513,7 @@ limit 25`,
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:preview"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
       requiredPathQueue: ["fixtures/table.csv"],
       confirmQueue: [false],
       inputQueue: ["", "", "", ""],
@@ -1521,6 +1542,7 @@ limit 25`,
       {
         mode: "run",
         selectQueue: ["data", "data:preview"],
+        nowIsoString: "2026-03-30T00:00:00.000Z",
         requiredPathQueue: ["fixtures/table.txt"],
         stdoutColumns: 80,
         stdoutIsTTY: true,

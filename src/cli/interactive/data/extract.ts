@@ -15,8 +15,7 @@ import {
   reviewInteractiveHeaderMappings,
 } from "../data-query";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
-import { writeInteractiveContextualTip } from "../contextual-tip";
-import { writeInteractiveAbortNotice } from "../notice";
+import { writeInteractiveFlowTip } from "../contextual-tip";
 import type { InteractivePathPromptContext } from "../shared";
 
 type InteractiveExtractOutputFormat = "csv" | "tsv" | "json";
@@ -140,7 +139,6 @@ async function confirmInteractiveExtractReview(
     selectedSource?: string;
   },
 ): Promise<InteractiveExtractReviewOutcome> {
-  writeInteractiveContextualTip(runtime, "data-extract:review");
   renderInteractiveExtractReviewSummary(runtime, options);
   const confirmed = await confirm({ message: "Continue to output setup?", default: true });
   if (confirmed) {
@@ -239,7 +237,6 @@ async function confirmInteractiveExtractWrite(
       options.inputPath,
       pathPromptContext,
     );
-    writeInteractiveContextualTip(runtime, "data-extract:write-boundary");
     renderInteractiveExtractWriteSummary(runtime, {
       ...options,
       outputPath: outputPlan.output,
@@ -372,7 +369,7 @@ export async function runInteractiveDataExtract(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<void> {
-  writeInteractiveAbortNotice(runtime);
+  writeInteractiveFlowTip(runtime, "data-extract");
   const input = await promptRequiredPathWithConfig("Input data file", {
     kind: "file",
     ...pathPromptContext,
