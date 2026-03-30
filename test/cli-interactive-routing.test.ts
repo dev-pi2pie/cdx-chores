@@ -125,7 +125,7 @@ describe("interactive mode routing", () => {
     ]);
     const plainStderr = stripAnsi(result.stderr);
     expect(plainStderr).toContain("Tip: Manual is best for joins or custom SQL.");
-    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
     expect(plainStderr.trimStart().startsWith("Tip: Manual is best for joins or custom SQL.")).toBe(
       true,
     );
@@ -204,7 +204,7 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
-    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:SQL review next step",
     );
@@ -308,13 +308,15 @@ describe("interactive mode routing", () => {
       }),
     });
     expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
-    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
     expect(
-      plainStderr.trimStart().startsWith("Tip: Change destination keeps the current extraction setup."),
+      plainStderr
+        .trimStart()
+        .startsWith("Tip: Change destination keeps the current extraction setup."),
     ).toBe(true);
-    expect(plainStderr.indexOf("Tip: Change destination keeps the current extraction setup.")).toBeLessThan(
-      plainStderr.indexOf("Input:"),
-    );
+    expect(
+      plainStderr.indexOf("Tip: Change destination keeps the current extraction setup."),
+    ).toBeLessThan(plainStderr.indexOf("Input:"));
     expect(plainStderr).toContain("Extraction write summary");
     expect(plainStderr).toContain("Extraction review");
     expect(plainStderr).toContain("- output format: JSON");
@@ -394,8 +396,9 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Extraction write next step",
     );
-    expect(result.selectChoicesByMessage["Extraction write next step"]?.map((choice) => choice.value))
-      .toEqual(["review", "destination", "cancel"]);
+    expect(
+      result.selectChoicesByMessage["Extraction write next step"]?.map((choice) => choice.value),
+    ).toEqual(["review", "destination", "cancel"]);
   });
 
   test("re-selects the source after revising extraction setup in a multi-source flow", () => {
@@ -448,8 +451,10 @@ describe("interactive mode routing", () => {
         (call) => call.kind === "select" && call.message === "Choose an Excel sheet",
       ),
     ).toHaveLength(2);
-    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
-    expect(stripAnsi(result.stderr).indexOf("Tip:")).toBeLessThan(stripAnsi(result.stderr).indexOf("Input:"));
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(stripAnsi(result.stderr).indexOf("Tip:")).toBeLessThan(
+      stripAnsi(result.stderr).indexOf("Input:"),
+    );
   });
 
   test("reopens destination selection without re-running extraction setup", () => {
@@ -491,16 +496,20 @@ describe("interactive mode routing", () => {
       ),
     ).toHaveLength(1);
     expect(
-      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output format"),
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Output format",
+      ),
     ).toHaveLength(2);
     expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
-    expect((plainStderr.match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
     expect(
-      plainStderr.trimStart().startsWith("Tip: Change destination keeps the current extraction setup."),
+      plainStderr
+        .trimStart()
+        .startsWith("Tip: Change destination keeps the current extraction setup."),
     ).toBe(true);
-    expect(plainStderr.indexOf("Tip: Change destination keeps the current extraction setup.")).toBeLessThan(
-      plainStderr.indexOf("Input:"),
-    );
+    expect(
+      plainStderr.indexOf("Tip: Change destination keeps the current extraction setup."),
+    ).toBeLessThan(plainStderr.indexOf("Input:"));
   });
 
   test("writes the tty abort notice for interactive data extract startup", () => {
@@ -525,7 +534,7 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
-    expect((stripAnsi(result.stderr).match(/Tip:/g) ?? [])).toHaveLength(1);
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Extraction review next step",
     );
@@ -770,8 +779,9 @@ limit 25`,
         },
       },
     ]);
-    expect(result.promptCalls.filter((call) => call.kind === "input" && call.message === "Filter value"))
-      .toHaveLength(1);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "input" && call.message === "Filter value"),
+    ).toHaveLength(1);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "input:Maximum result rows (optional)",
     );
@@ -804,7 +814,9 @@ limit 25`,
       },
     ]);
     expect(
-      result.promptCalls.filter((call) => call.kind === "confirm" && call.message === "Execute this SQL?"),
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Execute this SQL?",
+      ),
     ).toHaveLength(2);
     expect(
       result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
@@ -1564,7 +1576,6 @@ limit 25`,
       inputQueue: ["15", "", "id,status", ""],
     });
 
-    const plainStderr = stripAnsi(result.stderr);
     expect(result.actionCalls).toEqual([
       {
         name: "data:preview",

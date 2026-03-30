@@ -49,7 +49,9 @@ describe("interactive flow tip pools", () => {
   });
 
   test("builds the expected randomized pool for data query", () => {
-    expect(buildInteractiveFlowTipPool("data-query", "Press Ctrl+C to abort this session.")).toEqual([
+    expect(
+      buildInteractiveFlowTipPool("data-query", "Press Ctrl+C to abort this session."),
+    ).toEqual([
       "Press Ctrl+C to abort this session.",
       "Manual is best for joins or custom SQL.",
       "SQL limit and preview rows are separate controls.",
@@ -58,7 +60,9 @@ describe("interactive flow tip pools", () => {
   });
 
   test("builds the expected randomized pool for data extract", () => {
-    expect(buildInteractiveFlowTipPool("data-extract", "Press Ctrl+C to abort this session.")).toEqual([
+    expect(
+      buildInteractiveFlowTipPool("data-extract", "Press Ctrl+C to abort this session."),
+    ).toEqual([
       "Press Ctrl+C to abort this session.",
       "Source interpretation is reviewed before output setup.",
       "Change destination keeps the current extraction setup.",
@@ -76,9 +80,9 @@ describe("interactive flow tip selection", () => {
   });
 
   test("selects the expected query tip for a deterministic random value", () => {
-    expect(getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-query", 0.3)).toBe(
-      "Manual is best for joins or custom SQL.",
-    );
+    expect(
+      getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-query", 0.3),
+    ).toBe("Manual is best for joins or custom SQL.");
   });
 
   test("selects the expected extract tip for a deterministic random value", () => {

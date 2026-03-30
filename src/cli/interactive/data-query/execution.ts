@@ -45,7 +45,10 @@ function renderCandidateSql(runtime: CliRuntime, sql: string, sqlLimit?: number)
   }
 }
 
-function renderOutputReview(runtime: CliRuntime, options: { rows?: number; sqlLimit?: number }): void {
+function renderOutputReview(
+  runtime: CliRuntime,
+  options: { rows?: number; sqlLimit?: number },
+): void {
   const pc = getCliColors(runtime);
   printLine(runtime.stderr, "");
   printLine(
@@ -246,7 +249,9 @@ async function runOutputSelectionLoop(
         ...(options.selectedBodyStartRow !== undefined
           ? { bodyStartRow: options.selectedBodyStartRow }
           : {}),
-        ...(options.selectedHeaderRow !== undefined ? { headerRow: options.selectedHeaderRow } : {}),
+        ...(options.selectedHeaderRow !== undefined
+          ? { headerRow: options.selectedHeaderRow }
+          : {}),
         ...(options.selectedNoHeader ? { noHeader: true } : {}),
         ...(options.selectedRange ? { range: options.selectedRange } : {}),
         ...(options.selectedSource ? { source: options.selectedSource } : {}),

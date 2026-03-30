@@ -65,17 +65,20 @@ const FORMAL_GUIDE_OPERATOR_SPECS: Record<FormalGuideFilterOperator, FormalGuide
   contains: {
     label: "contains",
     requiresValue: true,
-    render: (column, value) => `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"}) || '%'`,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"}) || '%'`,
   },
   "starts-with": {
     label: "starts with",
     requiresValue: true,
-    render: (column, value) => `lower(cast(${column} as varchar)) like lower(${value ?? "''"}) || '%'`,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like lower(${value ?? "''"}) || '%'`,
   },
   "ends-with": {
     label: "ends with",
     requiresValue: true,
-    render: (column, value) => `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"})`,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"})`,
   },
   "is-null": {
     label: "is null",

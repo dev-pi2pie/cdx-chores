@@ -19,9 +19,7 @@ const INTERACTIVE_FLOW_STATIC_TIPS: Record<InteractiveFlowTipScope, readonly str
   ],
 };
 
-export function getInteractiveFlowStaticTips(
-  scope: InteractiveFlowTipScope,
-): readonly string[] {
+export function getInteractiveFlowStaticTips(scope: InteractiveFlowTipScope): readonly string[] {
   return INTERACTIVE_FLOW_STATIC_TIPS[scope];
 }
 
