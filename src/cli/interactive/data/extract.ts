@@ -15,6 +15,7 @@ import {
   reviewInteractiveHeaderMappings,
 } from "../data-query";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
+import { writeInteractiveContextualTip } from "../contextual-tip";
 import { writeInteractiveAbortNotice } from "../notice";
 import type { InteractivePathPromptContext } from "../shared";
 
@@ -26,8 +27,25 @@ interface InteractiveExtractWritePlan {
   outputFormat: InteractiveExtractOutputFormat;
 }
 
+interface InteractiveExtractSessionState {
+  headerMappingCount: number;
+  headerMappings?: Awaited<ReturnType<typeof reviewInteractiveHeaderMappings>>["headerMappings"];
+  selectedBodyStartRow?: number;
+  selectedHeaderRow?: number;
+  selectedNoHeader?: boolean;
+  selectedRange?: string;
+  selectedSource?: string;
+}
+
 type InteractiveExtractReviewOutcome = "continue" | "revise" | "cancel";
-type ConfirmInteractiveExtractWriteResult = InteractiveExtractWritePlan | "review" | undefined;
+type InteractiveExtractWriteOutcome =
+  | { kind: "confirm"; plan: InteractiveExtractWritePlan }
+  | { kind: "review" }
+  | { kind: "cancel" };
+type InteractiveExtractCheckpointOutcome =
+  | { kind: "restart-setup" }
+  | { kind: "cancel" }
+  | { kind: "execute"; plan: InteractiveExtractWritePlan };
 
 const EXTRACT_CONTINUATION_LABELS = {
   continuationLabel: "extraction",
@@ -78,7 +96,6 @@ function renderInteractiveExtractReviewSummary(
     selectedSource?: string;
   },
 ): void {
-  printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Extraction review");
   printLine(runtime.stderr, "");
   printLine(
@@ -123,6 +140,7 @@ async function confirmInteractiveExtractReview(
     selectedSource?: string;
   },
 ): Promise<InteractiveExtractReviewOutcome> {
+  writeInteractiveContextualTip(runtime, "data-extract:review");
   renderInteractiveExtractReviewSummary(runtime, options);
   const confirmed = await confirm({ message: "Continue to output setup?", default: true });
   if (confirmed) {
@@ -165,7 +183,6 @@ function renderInteractiveExtractWriteSummary(
     selectedSource?: string;
   },
 ): void {
-  printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Extraction write summary");
   printLine(runtime.stderr, "");
   printLine(
@@ -215,13 +232,14 @@ async function confirmInteractiveExtractWrite(
     selectedRange?: string;
     selectedSource?: string;
   },
-): Promise<ConfirmInteractiveExtractWriteResult> {
+): Promise<InteractiveExtractWriteOutcome> {
   while (true) {
     const outputPlan = await promptInteractiveExtractOutput(
       runtime,
       options.inputPath,
       pathPromptContext,
     );
+    writeInteractiveContextualTip(runtime, "data-extract:write-boundary");
     renderInteractiveExtractWriteSummary(runtime, {
       ...options,
       outputPath: outputPlan.output,
@@ -230,7 +248,7 @@ async function confirmInteractiveExtractWrite(
     });
     const confirmed = await confirm({ message: "Write extracted output now?", default: true });
     if (confirmed) {
-      return outputPlan;
+      return { kind: "confirm", plan: outputPlan };
     }
 
     const nextStep = await select<"review" | "destination" | "cancel">({
@@ -254,12 +272,99 @@ async function confirmInteractiveExtractWrite(
       ],
     });
     if (nextStep === "review") {
-      return "review";
+      return { kind: "review" };
     }
     if (nextStep === "cancel") {
       renderSkippedInteractiveExtractWrite(runtime);
-      return undefined;
+      return { kind: "cancel" };
     }
+  }
+}
+
+async function collectInteractiveExtractSessionState(options: {
+  connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
+  format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
+  input: string;
+  inputPath: string;
+  runtime: CliRuntime;
+  sources: Awaited<ReturnType<typeof listDataQuerySources>>;
+}): Promise<InteractiveExtractSessionState> {
+  const noHeader = await promptDelimitedHeaderMode(options.format);
+  const selectedSource = await promptOptionalSourceSelection(options.format, options.sources);
+  const { introspection, sourceShape } = await collectInteractiveIntrospection({
+    connection: options.connection,
+    format: options.format,
+    initialNoHeader: noHeader,
+    inputPath: options.inputPath,
+    labels: EXTRACT_CONTINUATION_LABELS,
+    runtime: options.runtime,
+    selectedSource,
+  });
+  const reviewedHeaders = await reviewInteractiveHeaderMappings({
+    connection: options.connection,
+    format: options.format,
+    inputPath: options.inputPath,
+    introspection,
+    labels: EXTRACT_CONTINUATION_LABELS,
+    runtime: options.runtime,
+    selectedBodyStartRow: sourceShape.selectedBodyStartRow,
+    selectedHeaderRow: sourceShape.selectedHeaderRow,
+    selectedNoHeader: sourceShape.selectedNoHeader,
+    selectedRange: sourceShape.selectedRange,
+    selectedSource,
+  });
+
+  return {
+    headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
+    ...(reviewedHeaders.headerMappings ? { headerMappings: reviewedHeaders.headerMappings } : {}),
+    selectedBodyStartRow: sourceShape.selectedBodyStartRow,
+    selectedHeaderRow: sourceShape.selectedHeaderRow,
+    selectedNoHeader: sourceShape.selectedNoHeader,
+    selectedRange: sourceShape.selectedRange,
+    selectedSource,
+  };
+}
+
+async function runInteractiveExtractCheckpointFlow(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  input: string,
+  state: InteractiveExtractSessionState,
+): Promise<InteractiveExtractCheckpointOutcome> {
+  while (true) {
+    const reviewOutcome = await confirmInteractiveExtractReview(runtime, {
+      headerMappingCount: state.headerMappingCount,
+      inputPath: input,
+      selectedBodyStartRow: state.selectedBodyStartRow,
+      selectedHeaderRow: state.selectedHeaderRow,
+      selectedNoHeader: state.selectedNoHeader,
+      selectedRange: state.selectedRange,
+      selectedSource: state.selectedSource,
+    });
+    if (reviewOutcome === "cancel") {
+      renderSkippedInteractiveExtractWrite(runtime);
+      return { kind: "cancel" };
+    }
+    if (reviewOutcome === "revise") {
+      return { kind: "restart-setup" };
+    }
+
+    const outputOutcome = await confirmInteractiveExtractWrite(runtime, pathPromptContext, {
+      headerMappingCount: state.headerMappingCount,
+      inputPath: input,
+      selectedBodyStartRow: state.selectedBodyStartRow,
+      selectedHeaderRow: state.selectedHeaderRow,
+      selectedNoHeader: state.selectedNoHeader,
+      selectedRange: state.selectedRange,
+      selectedSource: state.selectedSource,
+    });
+    if (outputOutcome.kind === "review") {
+      continue;
+    }
+    if (outputOutcome.kind === "cancel") {
+      return { kind: "cancel" };
+    }
+    return { kind: "execute", plan: outputOutcome.plan };
   }
 }
 
@@ -280,84 +385,42 @@ export async function runInteractiveDataExtract(
     connection = await createDuckDbConnection();
     const sources = await listDataQuerySources(connection, inputPath, format);
     while (true) {
-      const noHeader = await promptDelimitedHeaderMode(format);
-      const selectedSource = await promptOptionalSourceSelection(format, sources);
-      const { introspection, sourceShape } = await collectInteractiveIntrospection({
+      const state = await collectInteractiveExtractSessionState({
         connection,
         format,
-        initialNoHeader: noHeader,
+        input,
         inputPath,
-        labels: EXTRACT_CONTINUATION_LABELS,
         runtime,
-        selectedSource,
+        sources,
       });
-      const reviewedHeaders = await reviewInteractiveHeaderMappings({
-        connection,
-        format,
-        inputPath,
-        introspection,
-        labels: EXTRACT_CONTINUATION_LABELS,
+      const checkpointOutcome = await runInteractiveExtractCheckpointFlow(
         runtime,
-        selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-        selectedHeaderRow: sourceShape.selectedHeaderRow,
-        selectedNoHeader: sourceShape.selectedNoHeader,
-        selectedRange: sourceShape.selectedRange,
-        selectedSource,
-      });
-      while (true) {
-        const reviewOutcome = await confirmInteractiveExtractReview(runtime, {
-          headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
-          inputPath: input,
-          selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-          selectedHeaderRow: sourceShape.selectedHeaderRow,
-          selectedNoHeader: sourceShape.selectedNoHeader,
-          selectedRange: sourceShape.selectedRange,
-          selectedSource,
-        });
-        if (reviewOutcome === "cancel") {
-          renderSkippedInteractiveExtractWrite(runtime);
-          return;
-        }
-        if (reviewOutcome === "revise") {
-          break;
-        }
-
-        const outputOptions = await confirmInteractiveExtractWrite(runtime, pathPromptContext, {
-          headerMappingCount: reviewedHeaders.headerMappings?.length ?? 0,
-          inputPath: input,
-          selectedBodyStartRow: sourceShape.selectedBodyStartRow,
-          selectedHeaderRow: sourceShape.selectedHeaderRow,
-          selectedNoHeader: sourceShape.selectedNoHeader,
-          selectedRange: sourceShape.selectedRange,
-          selectedSource,
-        });
-        if (!outputOptions) {
-          return;
-        }
-        if (outputOptions === "review") {
-          continue;
-        }
-
-        await actionDataExtract(runtime, {
-          ...(reviewedHeaders.headerMappings
-            ? { headerMappings: reviewedHeaders.headerMappings }
-            : {}),
-          input,
-          inputFormat: format,
-          ...(sourceShape.selectedNoHeader ? { noHeader: true } : {}),
-          output: outputOptions.output,
-          overwrite: outputOptions.overwrite,
-          ...(sourceShape.selectedBodyStartRow !== undefined
-            ? { bodyStartRow: sourceShape.selectedBodyStartRow }
-            : {}),
-          ...(sourceShape.selectedHeaderRow !== undefined
-            ? { headerRow: sourceShape.selectedHeaderRow }
-            : {}),
-          ...(sourceShape.selectedRange ? { range: sourceShape.selectedRange } : {}),
-          ...(selectedSource ? { source: selectedSource } : {}),
-        });
+        pathPromptContext,
+        input,
+        state,
+      );
+      if (checkpointOutcome.kind === "restart-setup") {
+        continue;
+      }
+      if (checkpointOutcome.kind === "cancel") {
         return;
       }
+
+      await actionDataExtract(runtime, {
+        ...(state.headerMappings ? { headerMappings: state.headerMappings } : {}),
+        input,
+        inputFormat: format,
+        ...(state.selectedNoHeader ? { noHeader: true } : {}),
+        output: checkpointOutcome.plan.output,
+        overwrite: checkpointOutcome.plan.overwrite,
+        ...(state.selectedBodyStartRow !== undefined
+          ? { bodyStartRow: state.selectedBodyStartRow }
+          : {}),
+        ...(state.selectedHeaderRow !== undefined ? { headerRow: state.selectedHeaderRow } : {}),
+        ...(state.selectedRange ? { range: state.selectedRange } : {}),
+        ...(state.selectedSource ? { source: state.selectedSource } : {}),
+      });
+      return;
     }
   } catch (error) {
     maybeRenderDuckDbExtensionRemediationCommand(runtime, format, error);

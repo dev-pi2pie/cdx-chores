@@ -157,13 +157,25 @@ Interactive output choices map directly to the non-interactive `data query` cont
   - SQL-level limit
   - table-preview rows
 
-### Session notice
+### Session tips
 
-Interactive `data query` now shows a short abort notice near the start of the flow when running in a TTY.
+Interactive `data query` now uses two deterministic tip moments in TTY runs:
 
-The notice wording adapts to terminal width, but the meaning stays the same:
+- a flow-entry abort tip
+- later checkpoint tips at:
+  - mode selection
+  - SQL review
+  - output selection
+
+The flow-entry abort tip adapts to terminal width, but the meaning stays the same:
 
 - `Ctrl+C` aborts the current interactive session
+
+Checkpoint tips stay deterministic rather than random:
+
+- mode selection can remind the user that `manual` is the better lane for joins or custom SQL
+- SQL review can remind the user that SQL `limit` and preview rows are separate controls
+- output selection can remind the user that `Rows to show` affects only terminal preview
 
 ### Notes
 

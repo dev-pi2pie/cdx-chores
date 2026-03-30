@@ -120,6 +120,17 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+    const plainStderr = stripAnsi(result.stderr);
+    expect(plainStderr).toContain("Tip: Manual is best for joins or custom SQL.");
+    expect(plainStderr).toContain("Tip: SQL limit and preview rows are separate controls.");
+    expect(plainStderr).toContain("Tip: Rows to show only affects terminal preview.");
+    expect(plainStderr.match(/Tip: Manual is best for joins or custom SQL\./g)).toHaveLength(1);
+    expect(plainStderr.indexOf("Tip: Manual is best for joins or custom SQL.")).toBeLessThan(
+      plainStderr.indexOf("Tip: SQL limit and preview rows are separate controls."),
+    );
+    expect(plainStderr.indexOf("Tip: SQL limit and preview rows are separate controls.")).toBeLessThan(
+      plainStderr.indexOf("Tip: Rows to show only affects terminal preview."),
+    );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
       "select:Choose a data command",
@@ -191,6 +202,7 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
+    expect(stripAnsi(result.stderr)).toContain("Tip: Manual is best for joins or custom SQL.");
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:SQL review next step",
     );
@@ -229,6 +241,7 @@ describe("interactive mode routing", () => {
         truncated: false,
       },
     });
+    const plainStderr = stripAnsi(result.stderr);
 
     expect(result.actionCalls).toEqual([
       {
@@ -250,9 +263,17 @@ describe("interactive mode routing", () => {
         kind: "file",
       }),
     });
-    expect(result.stderr).toContain("Extraction write summary");
-    expect(result.stderr).toContain("Extraction review");
-    expect(result.stderr).toContain("- output format: JSON");
+    expect(plainStderr).toContain("Tip: Source interpretation is reviewed before output setup.");
+    expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
+    expect(
+      plainStderr.match(/Tip: Source interpretation is reviewed before output setup\./g),
+    ).toHaveLength(1);
+    expect(
+      plainStderr.match(/Tip: Change destination keeps the current extraction setup\./g),
+    ).toHaveLength(1);
+    expect(plainStderr).toContain("Extraction write summary");
+    expect(plainStderr).toContain("Extraction review");
+    expect(plainStderr).toContain("- output format: JSON");
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Continue to output setup?",
     );
@@ -411,6 +432,7 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+    const plainStderr = stripAnsi(result.stderr);
     expect(
       result.promptCalls.filter(
         (call) => call.kind === "confirm" && call.message === "Treat CSV/TSV input as headerless?",
@@ -418,6 +440,9 @@ describe("interactive mode routing", () => {
     ).toHaveLength(1);
     expect(
       result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output format"),
+    ).toHaveLength(2);
+    expect(
+      plainStderr.match(/Tip: Change destination keeps the current extraction setup\./g),
     ).toHaveLength(2);
   });
 

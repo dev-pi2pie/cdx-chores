@@ -5,6 +5,7 @@ import { createDuckDbConnection, listDataQuerySources } from "../../duckdb/query
 import { resolveFromCwd } from "../../path-utils";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
+import { writeInteractiveContextualTip } from "../contextual-tip";
 import { writeInteractiveAbortNotice } from "../notice";
 import type { InteractivePathPromptContext } from "../shared";
 import { reviewInteractiveHeaderMappings } from "./header-review";
@@ -70,6 +71,7 @@ export async function runInteractiveDataQuery(
     });
 
     while (true) {
+      writeInteractiveContextualTip(runtime, "data-query:mode-selection");
       const mode = await select<DataQueryInteractiveMode>({
         message: "Choose mode",
         choices: [

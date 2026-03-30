@@ -8,6 +8,7 @@ import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
 import type { DataQueryInputFormat } from "../../duckdb/query";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
+import { writeInteractiveContextualTip } from "../contextual-tip";
 import type { InteractivePathPromptContext } from "../shared";
 import type {
   DataQueryReviewMode,
@@ -33,7 +34,6 @@ function isOutputExistsError(error: unknown): boolean {
 
 function renderCandidateSql(runtime: CliRuntime, sql: string, sqlLimit?: number): void {
   const pc = getCliColors(runtime);
-  printLine(runtime.stderr, "");
   printLine(runtime.stderr, `${pc.bold(pc.green("SQL"))}:`);
   printLine(runtime.stderr, pc.yellow(sql));
   if (sqlLimit !== undefined) {
@@ -61,6 +61,7 @@ async function promptCandidateReviewOutcome(
     sqlLimit?: number;
   },
 ): Promise<Exclude<ExecuteInteractiveCandidateResult, "executed"> | "confirm"> {
+  writeInteractiveContextualTip(runtime, "data-query:sql-review");
   renderCandidateSql(runtime, options.sql, options.sqlLimit);
   const confirmed = await confirm({ message: "Execute this SQL?", default: true });
   if (confirmed) {
@@ -109,6 +110,7 @@ async function promptOutputSelection(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<OutputPromptSelection> {
+  writeInteractiveContextualTip(runtime, "data-query:output-selection");
   const selection = await select<"table" | "json" | "file" | "back" | "cancel">({
     message: "Output mode",
     choices: [

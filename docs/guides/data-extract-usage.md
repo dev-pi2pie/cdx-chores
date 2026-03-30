@@ -207,11 +207,17 @@ Interactive review persistence:
 - interactive mode does not currently write source-shape or header-mapping JSON artifacts
 - use direct CLI `--codex-suggest-shape` or `--codex-suggest-headers` when you want reusable reviewed artifacts
 
-Interactive session notice:
+Interactive session tips:
 
-- interactive `data extract` shows a short abort notice near the start of the flow when interactive output is running in a TTY
-- the wording adapts to terminal width, but the meaning stays the same:
+- interactive `data extract` shows a short abort tip near flow entry when interactive output is running in a TTY
+- the flow-entry wording adapts to terminal width, but the meaning stays the same:
   - `Ctrl+C` aborts the current interactive session
+- later deterministic checkpoint tips can also appear at:
+  - extraction review
+  - the final write boundary
+- those later tips stay checkpoint-specific rather than random:
+  - extraction review can remind the user that source interpretation is reviewed before output setup
+  - the write boundary can remind the user that `Change destination` keeps the current extraction setup
 
 ### Output rules
 
