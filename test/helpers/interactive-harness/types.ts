@@ -1,6 +1,7 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   selectQueue?: unknown[];
+  nowIsoString?: string;
   checkboxQueue?: unknown[];
   confirmQueue?: boolean[];
   editorQueue?: string[];
@@ -12,6 +13,8 @@ export interface InteractiveHarnessScenario {
   dataExtractActionErrorCode?: string;
   dataExtractActionStderr?: string;
   dataExtractActionStdout?: string;
+  stdoutColumns?: number;
+  stdoutIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;
   dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;

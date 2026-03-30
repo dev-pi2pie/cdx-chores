@@ -13,8 +13,117 @@ import type {
   FormalGuideAnswers,
   FormalGuideAggregateKind,
   FormalGuideFilterOperator,
+  InteractiveQueryRunResult,
   OrderBySpec,
 } from "../types";
+
+interface FormalGuideOperatorChoice {
+  name: string;
+  requiresValue: boolean;
+  value: FormalGuideFilterOperator;
+}
+
+type FormalGuideColumnKind = "boolean" | "numeric" | "temporal" | "text" | "unknown";
+
+interface FormalGuideOperatorSpec {
+  label: string;
+  requiresValue: boolean;
+  render: (column: string, value?: string) => string;
+}
+
+const FORMAL_GUIDE_OPERATOR_SPECS: Record<FormalGuideFilterOperator, FormalGuideOperatorSpec> = {
+  "=": {
+    label: "=",
+    requiresValue: true,
+    render: (column, value) => `${column} = ${value ?? "''"}`,
+  },
+  "!=": {
+    label: "!=",
+    requiresValue: true,
+    render: (column, value) => `${column} != ${value ?? "''"}`,
+  },
+  ">": {
+    label: ">",
+    requiresValue: true,
+    render: (column, value) => `${column} > ${value ?? "''"}`,
+  },
+  ">=": {
+    label: ">=",
+    requiresValue: true,
+    render: (column, value) => `${column} >= ${value ?? "''"}`,
+  },
+  "<": {
+    label: "<",
+    requiresValue: true,
+    render: (column, value) => `${column} < ${value ?? "''"}`,
+  },
+  "<=": {
+    label: "<=",
+    requiresValue: true,
+    render: (column, value) => `${column} <= ${value ?? "''"}`,
+  },
+  contains: {
+    label: "contains",
+    requiresValue: true,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"}) || '%'`,
+  },
+  "starts-with": {
+    label: "starts with",
+    requiresValue: true,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like lower(${value ?? "''"}) || '%'`,
+  },
+  "ends-with": {
+    label: "ends with",
+    requiresValue: true,
+    render: (column, value) =>
+      `lower(cast(${column} as varchar)) like '%' || lower(${value ?? "''"})`,
+  },
+  "is-null": {
+    label: "is null",
+    requiresValue: false,
+    render: (column) => `${column} is null`,
+  },
+  "is-not-null": {
+    label: "is not null",
+    requiresValue: false,
+    render: (column) => `${column} is not null`,
+  },
+  "is-true": {
+    label: "is true",
+    requiresValue: false,
+    render: (column) => `${column} is true`,
+  },
+  "is-false": {
+    label: "is false",
+    requiresValue: false,
+    render: (column) => `${column} is false`,
+  },
+  "is-empty": {
+    label: "is empty",
+    requiresValue: false,
+    render: (column) => `cast(${column} as varchar) = ''`,
+  },
+  "is-not-empty": {
+    label: "is not empty",
+    requiresValue: false,
+    render: (column) => `cast(${column} as varchar) <> ''`,
+  },
+};
+
+function buildFormalGuideOperatorChoices(
+  values: FormalGuideFilterOperator[],
+): FormalGuideOperatorChoice[] {
+  return values.map((value) => {
+    const spec = FORMAL_GUIDE_OPERATOR_SPECS[value];
+    return {
+      name: spec.label,
+      requiresValue: spec.requiresValue,
+      value,
+    };
+  });
+}
 
 function escapeSqlString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
@@ -68,6 +177,91 @@ function parseOrderBySpecs(value: string, allowedColumns: readonly string[]): Or
   return specs;
 }
 
+function classifyFormalGuideColumnKind(typeName: string | undefined): FormalGuideColumnKind {
+  const normalized = typeName?.trim().toLowerCase() ?? "";
+  if (!normalized) {
+    return "unknown";
+  }
+
+  if (normalized.includes("bool")) {
+    return "boolean";
+  }
+
+  if (
+    normalized.includes("date") ||
+    normalized.includes("time") ||
+    normalized.includes("interval")
+  ) {
+    return "temporal";
+  }
+
+  if (
+    normalized.includes("int") ||
+    normalized.includes("dec") ||
+    normalized.includes("num") ||
+    normalized.includes("double") ||
+    normalized.includes("real") ||
+    normalized.includes("float")
+  ) {
+    return "numeric";
+  }
+
+  if (
+    normalized.includes("char") ||
+    normalized.includes("text") ||
+    normalized.includes("string") ||
+    normalized.includes("json") ||
+    normalized.includes("uuid")
+  ) {
+    return "text";
+  }
+
+  return "unknown";
+}
+
+export function getFormalGuideFilterOperatorChoices(
+  columnType: string | undefined,
+): FormalGuideOperatorChoice[] {
+  const columnKind = classifyFormalGuideColumnKind(columnType);
+  const nullOperators: FormalGuideFilterOperator[] = ["is-null", "is-not-null"];
+
+  if (columnKind === "boolean") {
+    return buildFormalGuideOperatorChoices(["is-true", "is-false", ...nullOperators]);
+  }
+
+  if (columnKind === "text") {
+    return buildFormalGuideOperatorChoices([
+      "=",
+      "!=",
+      "contains",
+      "starts-with",
+      "ends-with",
+      "is-empty",
+      "is-not-empty",
+      ...nullOperators,
+    ]);
+  }
+
+  if (columnKind === "numeric" || columnKind === "temporal") {
+    return buildFormalGuideOperatorChoices(["=", "!=", ">", ">=", "<", "<=", ...nullOperators]);
+  }
+
+  return buildFormalGuideOperatorChoices([
+    "=",
+    "!=",
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "contains",
+    "starts-with",
+    "ends-with",
+    "is-empty",
+    "is-not-empty",
+    ...nullOperators,
+  ]);
+}
+
 function getFormalGuideOrderableColumns(
   knownColumns: readonly string[],
   answers: Pick<FormalGuideAnswers, "aggregateKind" | "groupByColumns">,
@@ -80,7 +274,7 @@ function getFormalGuideOrderableColumns(
   return [...new Set([...answers.groupByColumns, aggregateAlias])];
 }
 
-function buildFormalGuideSql(answers: FormalGuideAnswers): string {
+export function buildFormalGuideSql(answers: FormalGuideAnswers): string {
   const statements: string[] = [];
   if (answers.aggregateKind === "none") {
     const selectClause = answers.selectAllColumns
@@ -102,11 +296,8 @@ function buildFormalGuideSql(answers: FormalGuideAnswers): string {
     const whereClause = answers.filters
       .map((filter) => {
         const column = quoteSqlIdentifier(filter.column);
-        const value = escapeSqlString(filter.value);
-        if (filter.operator === "contains") {
-          return `lower(cast(${column} as varchar)) like '%' || lower(${value}) || '%'`;
-        }
-        return `${column} ${filter.operator} ${value}`;
+        const value = filter.value === undefined ? undefined : escapeSqlString(filter.value);
+        return FORMAL_GUIDE_OPERATOR_SPECS[filter.operator].render(column, value);
       })
       .join(" and ");
     statements.push(`where ${whereClause}`);
@@ -126,13 +317,19 @@ function buildFormalGuideSql(answers: FormalGuideAnswers): string {
     );
   }
 
+  if (answers.limit !== undefined) {
+    statements.push(`limit ${answers.limit}`);
+  }
+
   return statements.join("\n");
 }
 
 async function promptFormalGuideAnswers(
   introspection: DataQuerySourceIntrospection,
 ): Promise<FormalGuideAnswers> {
-  const knownColumns = introspection.columns.map((column) => column.name);
+  const columns = introspection.columns;
+  const knownColumns = columns.map((column) => column.name);
+  const columnTypes = new Map(columns.map((column) => [column.name, column.type]));
   const selectedColumnsInput = await input({
     message: "Columns to select (`all` or comma-separated)",
     default: "all",
@@ -150,28 +347,27 @@ async function promptFormalGuideAnswers(
   while (addAnotherFilter) {
     const column = await select<string>({
       message: "Filter column",
-      choices: knownColumns.map((name) => ({ name, value: name })),
+      choices: columns.map((entry) => ({
+        name: `${entry.name} (${entry.type})`,
+        value: entry.name,
+      })),
     });
+    const operatorChoices = getFormalGuideFilterOperatorChoices(columnTypes.get(column));
     const operator = await select<FormalGuideFilterOperator>({
       message: "Filter operator",
-      choices: [
-        { name: "=", value: "=" },
-        { name: "!=", value: "!=" },
-        { name: ">", value: ">" },
-        { name: ">=", value: ">=" },
-        { name: "<", value: "<" },
-        { name: "<=", value: "<=" },
-        { name: "contains", value: "contains" },
-      ],
+      choices: operatorChoices.map((choice) => ({ name: choice.name, value: choice.value })),
     });
-    const value = await input({
-      message: "Filter value",
-      validate: (nextValue) => (nextValue.trim().length > 0 ? true : "Enter a filter value."),
-    });
+    const selectedOperator = operatorChoices.find((choice) => choice.value === operator);
+    const value = selectedOperator?.requiresValue
+      ? await input({
+          message: "Filter value",
+          validate: (nextValue) => (nextValue.trim().length > 0 ? true : "Enter a filter value."),
+        })
+      : undefined;
     filters.push({
       column,
       operator,
-      value: value.trim(),
+      ...(value !== undefined ? { value: value.trim() } : {}),
     });
     addAnotherFilter = await confirm({ message: "Add another filter?", default: false });
   }
@@ -234,12 +430,26 @@ async function promptFormalGuideAnswers(
     },
   });
 
+  const limitInput = await input({
+    message: "Maximum result rows (optional)",
+    default: "",
+    validate: (value) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return true;
+      }
+      const parsed = Number(trimmed);
+      return Number.isInteger(parsed) && parsed > 0 ? true : "Enter a positive integer.";
+    },
+  });
+
   const selectedColumns = parseCommaSeparatedColumns(selectedColumnsInput);
   return {
     aggregateColumn,
     aggregateKind,
     filters,
     groupByColumns,
+    limit: limitInput.trim().length > 0 ? Number(limitInput) : undefined,
     orderBySpecs:
       orderByInput.trim().length > 0 ? parseOrderBySpecs(orderByInput, allowedOrderByColumns) : [],
     selectedColumns,
@@ -263,7 +473,7 @@ export async function runFormalGuideInteractiveQuery(
     selectedRange?: string;
     selectedSource?: string;
   },
-): Promise<void> {
+): Promise<InteractiveQueryRunResult> {
   while (true) {
     const answers = await promptFormalGuideAnswers(options.introspection);
     const sql = buildFormalGuideSql(answers);
@@ -271,15 +481,23 @@ export async function runFormalGuideInteractiveQuery(
       format: options.format,
       headerMappings: options.headerMappings,
       input: options.input,
+      reviewMode: "formal-guide",
       selectedBodyStartRow: options.selectedBodyStartRow,
       selectedHeaderRow: options.selectedHeaderRow,
       selectedNoHeader: options.selectedNoHeader,
       selectedRange: options.selectedRange,
       selectedSource: options.selectedSource,
       sql,
+      sqlLimit: answers.limit,
     });
     if (result === "executed") {
-      return;
+      return "executed";
+    }
+    if (result === "change-mode") {
+      return "change-mode";
+    }
+    if (result === "cancel") {
+      return "cancel";
     }
   }
 }

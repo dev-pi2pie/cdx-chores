@@ -2,7 +2,7 @@
 
 `data preview` is the first read-only tabular inspection command in `cdx-chores`.
 
-Current v1 boundary:
+Current boundary:
 
 - input formats: `.csv`, `.tsv`, `.json`
 - output: terminal table only
@@ -110,7 +110,7 @@ cdx-chores data preview ./examples/playground/tabular-preview/basic.csv --contai
 
 ### Rendering behavior
 
-The v1 renderer is intentionally conservative:
+The renderer is intentionally conservative:
 
 - adapts column widths to terminal width when stdout is a TTY
 - truncates long cells instead of wrapping aggressively

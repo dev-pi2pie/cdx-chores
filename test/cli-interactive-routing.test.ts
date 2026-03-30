@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { REPO_ROOT } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./helpers/interactive-harness";
+import { stripAnsi } from "./cli-actions-data-preview/helpers";
 
 describe("interactive mode routing", () => {
   test("routes the doctor flow from the root menu", () => {
@@ -87,6 +88,9 @@ describe("interactive mode routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:query", "users", "manual", "table"],
+      nowIsoString: "2026-03-30T00:00:00.300Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.sqlite"],
       inputQueue: ["select id, name from file order by id", "10"],
       confirmQueue: [true, true],
@@ -119,6 +123,15 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+    const plainStderr = stripAnsi(result.stderr);
+    expect(plainStderr).toContain("Tip: Manual is best for joins or custom SQL.");
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(plainStderr.trimStart().startsWith("Tip: Manual is best for joins or custom SQL.")).toBe(
+      true,
+    );
+    expect(plainStderr.indexOf("Tip: Manual is best for joins or custom SQL.")).toBeLessThan(
+      plainStderr.indexOf("Input:"),
+    );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
       "select:Choose a data command",
@@ -132,13 +145,328 @@ describe("interactive mode routing", () => {
     ]);
   });
 
+  test("supports checkpoint change-mode from manual sql review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:query",
+        "manual",
+        "change-mode",
+        "formal-guide",
+        "count",
+        "table",
+      ],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file", "all", "", "", "", "5"],
+      confirmQueue: [true, false, false, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 5,
+          source: undefined,
+          sql: "select count(*) as row_count\nfrom file",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Choose mode"),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+    expect(result.stderr).toContain("Table preview rows:");
+    expect(result.stderr).toContain("5");
+  });
+
+  test("writes the tty abort notice for interactive data query startup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "cancel"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, false, false],
+      dataQueryDetectedFormat: "csv",
+      stdoutColumns: 20,
+      stdoutIsTTY: true,
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+  });
+
+  test("supports cancel from sql review without executing the query", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file"],
+      confirmQueue: [true, false, false],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+  });
+
+  test("returns to the current sql review from output selection without reopening sql entry", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "manual", "back", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file", "10"],
+      confirmQueue: [true, false, true, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: undefined,
+          sql: "select id from file",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "input" && call.message === "SQL query"),
+    ).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Execute this SQL?",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(2);
+  });
+
   test("routes interactive data extract through shared extraction execution", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:extract", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, false, true],
+      confirmQueue: [true, false, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          output: "fixtures/query.json",
+          overwrite: false,
+        },
+      },
+    ]);
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom JSON output path",
+        defaultHint: "fixtures/query.csv.json",
+        kind: "file",
+      }),
+    });
+    expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(
+      plainStderr
+        .trimStart()
+        .startsWith("Tip: Change destination keeps the current extraction setup."),
+    ).toBe(true);
+    expect(
+      plainStderr.indexOf("Tip: Change destination keeps the current extraction setup."),
+    ).toBeLessThan(plainStderr.indexOf("Input:"));
+    expect(plainStderr).toContain("Extraction write summary");
+    expect(plainStderr).toContain("Extraction review");
+    expect(plainStderr).toContain("- output format: JSON");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Continue to output setup?",
+    );
+  });
+
+  test("lets interactive data extract stop before materialization at the final write boundary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "csv", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, false, true, false],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("Skipped extraction write.");
+  });
+
+  test("supports checkpoint backtracking from the extraction write boundary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "json", "review", "revise", "json"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [true, false, true, false, false, true, false, true, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospectionQueue: [
+        {
+          columns: [
+            { name: "id", type: "BIGINT" },
+            { name: "name", type: "VARCHAR" },
+          ],
+          sampleRows: [{ id: "1", name: "Ada" }],
+          truncated: false,
+        },
+        {
+          columns: [
+            { name: "column_1", type: "VARCHAR" },
+            { name: "column_2", type: "VARCHAR" },
+          ],
+          sampleRows: [{ column_1: "id", column_2: "name" }],
+          truncated: false,
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          noHeader: true,
+          output: "fixtures/query.json",
+          overwrite: false,
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Treat CSV/TSV input as headerless?",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Extraction write next step",
+    );
+    expect(
+      result.selectChoicesByMessage["Extraction write next step"]?.map((choice) => choice.value),
+    ).toEqual(["review", "destination", "cancel"]);
+  });
+
+  test("re-selects the source after revising extraction setup in a multi-source flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:extract",
+        "Summary",
+        "json",
+        "review",
+        "revise",
+        "Summary",
+        "json",
+      ],
+      nowIsoString: "2026-03-30T00:00:00.400Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["fixtures/query.xlsx"],
+      inputQueue: ["", ""],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [true, true, false, false, true, true],
+      dataQueryDetectedFormat: "excel",
+      dataQuerySources: ["Summary", "Archive"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada" }],
+        selectedSource: "Summary",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.xlsx",
+          inputFormat: "excel",
+          output: "fixtures/query.json",
+          overwrite: false,
+          source: "Summary",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Choose an Excel sheet",
+      ),
+    ).toHaveLength(2);
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(stripAnsi(result.stderr).indexOf("Tip:")).toBeLessThan(
+      stripAnsi(result.stderr).indexOf("Input:"),
+    );
+  });
+
+  test("reopens destination selection without re-running extraction setup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "csv", "destination", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["fixtures/query.csv"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [true, false, true, false, true],
       dataQueryDetectedFormat: "csv",
       dataQueryIntrospection: {
         columns: [
@@ -161,27 +489,39 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
-    expect(result.pathCalls).toContainEqual({
-      kind: "optional",
-      message: "Output JSON file",
-      options: expect.objectContaining({
-        customMessage: "Custom JSON output path",
-        defaultHint: "fixtures/query.csv.json",
-        kind: "file",
-      }),
-    });
-    expect(result.stderr).toContain("Extraction write summary");
-    expect(result.stderr).toContain("- output format: JSON");
+    const plainStderr = stripAnsi(result.stderr);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Treat CSV/TSV input as headerless?",
+      ),
+    ).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Output format",
+      ),
+    ).toHaveLength(2);
+    expect(plainStderr).toContain("Tip: Change destination keeps the current extraction setup.");
+    expect(plainStderr.match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(
+      plainStderr
+        .trimStart()
+        .startsWith("Tip: Change destination keeps the current extraction setup."),
+    ).toBe(true);
+    expect(
+      plainStderr.indexOf("Tip: Change destination keeps the current extraction setup."),
+    ).toBeLessThan(plainStderr.indexOf("Input:"));
   });
 
-  test("lets interactive data extract stop before materialization at the final write boundary", () => {
+  test("writes the tty abort notice for interactive data extract startup", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:extract", "csv", "cancel"],
+      selectQueue: ["data", "data:extract", "cancel"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
       requiredPathQueue: ["fixtures/query.csv"],
-      optionalPathQueue: [undefined],
       confirmQueue: [true, false, false],
       dataQueryDetectedFormat: "csv",
+      stdoutColumns: 20,
+      stdoutIsTTY: true,
       dataQueryIntrospection: {
         columns: [
           { name: "id", type: "BIGINT" },
@@ -193,8 +533,11 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
-    expect(result.stderr).toContain("Extraction write summary");
-    expect(result.stderr).toContain("Skipped extraction write.");
+    expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
+    expect(stripAnsi(result.stderr).match(/Tip:/g) ?? []).toHaveLength(1);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Extraction review next step",
+    );
   });
 
   test("routes interactive data extract in explicit headerless mode for CSV input", () => {
@@ -203,7 +546,7 @@ describe("interactive mode routing", () => {
       selectQueue: ["data", "data:extract", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, true, false, true],
+      confirmQueue: [true, true, false, true, true],
       dataQueryDetectedFormat: "csv",
       dataQueryIntrospection: {
         columns: [
@@ -230,6 +573,7 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Treat CSV/TSV input as headerless?",
     );
+    expect(result.stderr).toContain("header mode: treat CSV/TSV input as headerless");
   });
 
   test("prompts for Excel range before SQL authoring and carries it into execution", () => {
@@ -291,7 +635,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
-      inputQueue: ["all", "status", "status:asc", "5"],
+      inputQueue: ["all", "status", "status:asc", "", "5"],
       confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
@@ -358,7 +702,7 @@ describe("interactive mode routing", () => {
       mode: "run",
       selectQueue: ["data", "data:query", "formal-guide", "count", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
-      inputQueue: ["all", "", "status:asc", "row_count:desc", "5"],
+      inputQueue: ["all", "", "status:asc", "row_count:desc", "", "5"],
       confirmQueue: [true, false, false, true],
       dataQueryDetectedFormat: "csv",
     });
@@ -385,6 +729,117 @@ describe("interactive mode routing", () => {
         },
       },
     ]);
+  });
+
+  test("routes formal-guide filter operators and optional SQL limit without prompting for value-less filters", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:query",
+        "formal-guide",
+        "name",
+        "starts-with",
+        "deleted_at",
+        "is-null",
+        "none",
+        "table",
+      ],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "Ad", "", "25", "10"],
+      confirmQueue: [true, false, true, true, false, true],
+      dataQueryDetectedFormat: "csv",
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "BIGINT" },
+          { name: "name", type: "VARCHAR" },
+          { name: "deleted_at", type: "TIMESTAMP" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada", deleted_at: "" }],
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: undefined,
+          sql: `select *
+from file
+where lower(cast("name" as varchar)) like lower('Ad') || '%' and "deleted_at" is null
+limit 25`,
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "input" && call.message === "Filter value"),
+    ).toHaveLength(1);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "input:Maximum result rows (optional)",
+    );
+  });
+
+  test("supports checkpoint backtracking from output selection to sql review in formal-guide", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "none", "back", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "", "25", ""],
+      confirmQueue: [true, false, false, true, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.csv",
+          inputFormat: "csv",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: undefined,
+          source: undefined,
+          sql: "select *\nfrom file\nlimit 25",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "confirm" && call.message === "Execute this SQL?",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(2);
+    expect(result.stderr).toContain("SQL limit:");
+    expect(result.stderr).toContain("Table preview rows:");
+    expect(result.stderr).toContain("default bounded");
+  });
+
+  test("supports cancel from output selection without executing the query", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "formal-guide", "none", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["all", "", "", ""],
+      confirmQueue: [true, false, false, true],
+      dataQueryDetectedFormat: "csv",
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(
+      result.promptCalls.filter((call) => call.kind === "select" && call.message === "Output mode"),
+    ).toHaveLength(1);
   });
 
   test("routes Codex Assistant through the default single-line intent prompt", () => {
@@ -430,6 +885,87 @@ describe("interactive mode routing", () => {
     );
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "input:Describe the query intent:",
+    );
+  });
+
+  test("supports checkpoint regenerate from codex sql review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "regenerate", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, false, false, true],
+      editorQueue: ["unused editor content"],
+      inputQueue: ["count rows by status", "10"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(
+      result.actionCalls.filter((call) => call.name === "data:query:codex-draft"),
+    ).toHaveLength(2);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        rows: 10,
+        source: undefined,
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+      },
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:SQL review next step",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "editor:Describe the query intent:",
+    );
+  });
+
+  test("reopens codex intent entry directly when sql review chooses revise", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "Codex Assistant", "revise", "table"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, false, false, false, true],
+      inputQueue: ["count rows by status", "count rows by status", "10"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexDraft: {
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+        reasoningSummary: "Counts rows by status.",
+      },
+    });
+
+    expect(
+      result.actionCalls.filter((call) => call.name === "data:query:codex-draft"),
+    ).toHaveLength(2);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:query",
+      options: {
+        input: "fixtures/query.csv",
+        inputFormat: "csv",
+        json: undefined,
+        output: undefined,
+        overwrite: undefined,
+        pretty: undefined,
+        rows: 10,
+        source: undefined,
+        sql: 'select "status", count(*) as row_count from file group by "status"',
+      },
+    });
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "input" && call.message === "Describe the query intent:",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "select:Codex Assistant next step",
     );
   });
 
@@ -622,7 +1158,7 @@ describe("interactive mode routing", () => {
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: [""],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, false],
+      confirmQueue: [true, true, false],
       dataQueryDetectedFormat: "excel",
       dataQueryIntrospection: {
         columns: [{ name: "Hello_This_Is_the_merged", type: "VARCHAR" }],
@@ -657,7 +1193,7 @@ describe("interactive mode routing", () => {
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: [""],
       optionalPathQueue: [undefined],
-      confirmQueue: [true, false],
+      confirmQueue: [true, true, false],
       dataQueryDetectedFormat: "excel",
       dataQueryIntrospection: {
         columns: [{ name: "RAW_TITLE", type: "DOUBLE" }],
@@ -1062,6 +1598,55 @@ describe("interactive mode routing", () => {
       "input:Contains filter (column:keyword, optional)",
     ]);
     expect(result.validationCalls).toEqual([]);
+  });
+
+  test("does not show the abort tip for the lightweight preview flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:preview"],
+      nowIsoString: "2026-03-30T00:00:00.000Z",
+      requiredPathQueue: ["fixtures/table.csv"],
+      confirmQueue: [false],
+      inputQueue: ["", "", "", ""],
+      stdoutColumns: 30,
+      stdoutIsTTY: true,
+    });
+
+    const plainStderr = stripAnsi(result.stderr);
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:preview",
+        options: {
+          input: "fixtures/table.csv",
+          rows: undefined,
+          offset: undefined,
+          columns: undefined,
+          contains: undefined,
+        },
+      },
+    ]);
+    expect(plainStderr).not.toContain("Tip:");
+  });
+
+  test("does not show the abort tip for lightweight preview input errors", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:preview"],
+        nowIsoString: "2026-03-30T00:00:00.000Z",
+        requiredPathQueue: ["fixtures/table.txt"],
+        stdoutColumns: 80,
+        stdoutIsTTY: true,
+      },
+      { allowFailure: true },
+    );
+
+    const plainStderr = stripAnsi(result.stderr);
+    expect(result.error).toContain("Unsupported lightweight data file type: .txt");
+    expect(plainStderr).not.toContain("Tip:");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "confirm:Treat CSV/TSV input as headerless?",
+    );
   });
 
   test("routes data preview in headerless mode for CSV input", () => {

@@ -13,6 +13,7 @@ import type { CliRuntime } from "../../../types";
 import { createInteractiveAnalyzerStatus } from "../../analyzer-status";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
+import type { InteractiveQueryRunResult } from "../types";
 
 function renderCodexIntentPreview(runtime: CliRuntime, intent: string): void {
   printLine(runtime.stderr, "");
@@ -33,7 +34,7 @@ export async function runCodexInteractiveQuery(
     selectedRange?: string;
     selectedSource?: string;
   },
-): Promise<void> {
+): Promise<InteractiveQueryRunResult> {
   let lastIntent = "";
   let preferMultilineEditor = false;
 
@@ -112,6 +113,7 @@ export async function runCodexInteractiveQuery(
             format: options.format,
             headerMappings: options.headerMappings,
             input: options.input,
+            reviewMode: "codex",
             selectedBodyStartRow: options.selectedBodyStartRow,
             selectedHeaderRow: options.selectedHeaderRow,
             selectedNoHeader: options.selectedNoHeader,
@@ -120,7 +122,19 @@ export async function runCodexInteractiveQuery(
             sql: draftResult.draft.sql,
           });
           if (executionResult === "executed") {
-            return;
+            return "executed";
+          }
+          if (executionResult === "change-mode") {
+            return "change-mode";
+          }
+          if (executionResult === "cancel") {
+            return "cancel";
+          }
+          if (executionResult === "regenerate") {
+            continue;
+          }
+          if (executionResult === "revise") {
+            break;
           }
         }
       } finally {
@@ -139,7 +153,7 @@ export async function runCodexInteractiveQuery(
         continue;
       }
       if (nextStep === "cancel") {
-        return;
+        return "cancel";
       }
       break;
     }

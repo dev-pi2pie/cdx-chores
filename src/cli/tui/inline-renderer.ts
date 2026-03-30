@@ -104,9 +104,7 @@ function renderInlinePromptFrame(options: {
   };
 }
 
-export function createInlinePromptRenderer(
-  stdout: NodeJS.WritableStream,
-): InlinePromptRenderer {
+export function createInlinePromptRenderer(stdout: NodeJS.WritableStream): InlinePromptRenderer {
   let renderState: InlinePromptRenderState | undefined;
 
   return {

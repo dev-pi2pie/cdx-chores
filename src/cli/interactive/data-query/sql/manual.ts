@@ -5,6 +5,7 @@ import type { DataQueryInputFormat } from "../../../duckdb/query";
 import type { CliRuntime } from "../../../types";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
+import type { InteractiveQueryRunResult } from "../types";
 
 export async function runManualInteractiveQuery(
   runtime: CliRuntime,
@@ -19,7 +20,7 @@ export async function runManualInteractiveQuery(
     selectedRange?: string;
     selectedSource?: string;
   },
-): Promise<void> {
+): Promise<InteractiveQueryRunResult> {
   let lastSql = "";
   while (true) {
     const sql = await input({
@@ -30,10 +31,17 @@ export async function runManualInteractiveQuery(
     lastSql = sql.trim();
     const result = await executeInteractiveCandidate(runtime, pathPromptContext, {
       ...options,
+      reviewMode: "manual",
       sql: lastSql,
     });
     if (result === "executed") {
-      return;
+      return "executed";
+    }
+    if (result === "change-mode") {
+      return "change-mode";
+    }
+    if (result === "cancel") {
+      return "cancel";
     }
   }
 }
