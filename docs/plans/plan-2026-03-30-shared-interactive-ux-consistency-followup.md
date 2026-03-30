@@ -221,10 +221,14 @@ Treat the shared/global UX helper contract as established for this plan when all
 ## Implementation Notes
 
 - shared abort notices now live behind the opt-in helper in `src/cli/interactive/notice.ts`
-- the shared helper is intentionally narrow for this rollout:
+- the initial rollout helper adoption covered:
   - `data query`
   - `data extract`
   - `data preview`
+- a same-day follow-up later narrowed the shipped tip behavior to the longer flows only:
+  - `data query`
+  - `data extract`
+  - interactive `data preview` no longer shows the tip because the extra line felt visually heavy for the lightweight flow
 - review-stage checkpoint helpers remain command-specific for now:
   - `data query` keeps its SQL-review and output-review checkpoint helpers
   - `data extract` keeps its extraction-review and write-boundary checkpoint helpers

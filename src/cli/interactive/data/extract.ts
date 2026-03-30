@@ -267,13 +267,13 @@ export async function runInteractiveDataExtract(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<void> {
+  writeInteractiveAbortNotice(runtime);
   const input = await promptRequiredPathWithConfig("Input data file", {
     kind: "file",
     ...pathPromptContext,
   });
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
-  writeInteractiveAbortNotice(runtime);
 
   let connection;
   try {

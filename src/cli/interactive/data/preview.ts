@@ -9,7 +9,6 @@ import {
 } from "../../data-preview/source";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
-import { writeInteractiveAbortNotice } from "../notice";
 import type { InteractivePathPromptContext } from "../shared";
 import { detectInteractiveDataFormat } from "./shared";
 
@@ -146,7 +145,6 @@ export async function runInteractiveDataPreview(
     kind: "file",
     ...pathPromptContext,
   });
-  writeInteractiveAbortNotice(runtime);
   const noHeader = await promptPreviewHeaderMode(inputPath);
   const windowInputs = await promptWindowInputs();
   const contains = await promptContainsFilters(runtime, inputPath, { noHeader });

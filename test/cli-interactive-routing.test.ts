@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { REPO_ROOT } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./helpers/interactive-harness";
+import { stripAnsi } from "./cli-actions-data-preview/helpers";
 
 describe("interactive mode routing", () => {
   test("routes the doctor flow from the root menu", () => {
@@ -189,7 +190,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
-    expect(result.stderr).toContain("Ctrl+C to abort.");
+    expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:SQL review next step",
     );
@@ -440,7 +441,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
-    expect(result.stderr).toContain("Ctrl+C to abort.");
+    expect(stripAnsi(result.stderr)).toContain("Tip: Ctrl+C to abort.");
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Extraction review next step",
     );
@@ -1438,6 +1439,7 @@ limit 25`,
       inputQueue: ["15", "", "id,status", ""],
     });
 
+    const plainStderr = stripAnsi(result.stderr);
     expect(result.actionCalls).toEqual([
       {
         name: "data:preview",
@@ -1462,7 +1464,7 @@ limit 25`,
     expect(result.validationCalls).toEqual([]);
   });
 
-  test("writes the tty abort notice for interactive data preview startup", () => {
+  test("does not show the abort tip for the lightweight preview flow", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:preview"],
@@ -1473,6 +1475,7 @@ limit 25`,
       stdoutIsTTY: true,
     });
 
+    const plainStderr = stripAnsi(result.stderr);
     expect(result.actionCalls).toEqual([
       {
         name: "data:preview",
@@ -1485,7 +1488,27 @@ limit 25`,
         },
       },
     ]);
-    expect(result.stderr).toContain("Press Ctrl+C to abort.");
+    expect(plainStderr).not.toContain("Tip:");
+  });
+
+  test("does not show the abort tip for lightweight preview input errors", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:preview"],
+        requiredPathQueue: ["fixtures/table.txt"],
+        stdoutColumns: 80,
+        stdoutIsTTY: true,
+      },
+      { allowFailure: true },
+    );
+
+    const plainStderr = stripAnsi(result.stderr);
+    expect(result.error).toContain("Unsupported lightweight data file type: .txt");
+    expect(plainStderr).not.toContain("Tip:");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "confirm:Treat CSV/TSV input as headerless?",
+    );
   });
 
   test("routes data preview in headerless mode for CSV input", () => {

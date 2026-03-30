@@ -74,12 +74,6 @@ Blank optional answers map to the CLI defaults:
 - blank columns => no filter
 - blank first contains filter => no contains filter
 
-Interactive session notice:
-
-- interactive `data preview` shows a short abort notice near the start of the flow when interactive output is running in a TTY
-- the wording adapts to terminal width, but the meaning stays the same:
-  - `Ctrl+C` aborts the current interactive session
-
 Interactive headerless note:
 
 - the prompt appears only for `.csv` and `.tsv`

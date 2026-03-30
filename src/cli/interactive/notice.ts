@@ -1,3 +1,5 @@
+import { printLine } from "../actions/shared";
+import { getCliColors } from "../colors";
 import type { CliRuntime } from "../types";
 
 export function resolveInteractiveNoticeWidth(runtime: CliRuntime): number | undefined {
@@ -30,6 +32,9 @@ export function getInteractiveAbortNotice(runtime: CliRuntime): string | undefin
 export function writeInteractiveAbortNotice(runtime: CliRuntime): void {
   const notice = getInteractiveAbortNotice(runtime);
   if (notice) {
-    runtime.stderr.write(`${notice}\n`);
+    const pc = getCliColors(runtime);
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, `${pc.cyan("Tip:")} ${pc.dim(notice)}`);
+    printLine(runtime.stderr, "");
   }
 }

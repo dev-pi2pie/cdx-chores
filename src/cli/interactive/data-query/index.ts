@@ -32,6 +32,7 @@ export async function runInteractiveDataQuery(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<void> {
+  writeInteractiveAbortNotice(runtime);
   const input = await promptRequiredPathWithConfig("Input data file", {
     kind: "file",
     ...pathPromptContext,
@@ -39,7 +40,6 @@ export async function runInteractiveDataQuery(
   const inputPath = resolveFromCwd(runtime, input);
   const format = await promptInteractiveInputFormat(runtime, inputPath);
   const noHeader = await promptDelimitedHeaderMode(format);
-  writeInteractiveAbortNotice(runtime);
 
   let connection;
   try {
