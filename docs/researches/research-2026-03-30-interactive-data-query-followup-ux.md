@@ -367,6 +367,10 @@ Wording caution:
 - `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
 - `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
 
+## Related Plans
+
+- `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
+
 ## References
 
 - `src/cli/interactive/data-query/index.ts`
