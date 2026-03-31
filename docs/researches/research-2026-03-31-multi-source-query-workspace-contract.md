@@ -249,10 +249,16 @@ Recommended direction:
 - continue treating generic `.db` files as ambiguous in direct CLI too, requiring an explicit `--input-format` such as `sqlite` or future `duckdb`
 - keep interactive mode aligned with the same rule: when a selected path is ambiguous such as `*.db`, skip format auto-confirmation and ask the user to choose the format explicitly instead
 - do not add DuckDB-file support first under a one-selected-object-only mental model unless the team is willing to revise it again soon after
+- prefer DuckDB-file as the first post-SQLite workspace backend because it matches the same relation-binding model without introducing Excel-style per-relation shaping complexity
+- plan DuckDB-file fixture generation and smoke coverage around real catalog behavior, including:
+  - multiple tables
+  - at least one non-default schema
+  - joinable relations
+  - at least one case that protects the reserved `file` alias rule
 
 Implication:
 
-- the next implementation plan can decide whether DuckDB-file support lands in the first multi-source phase or a closely following phase
+- the next follow-up phase after SQLite should target DuckDB-file workspace support before Excel multi-relation shaping
 - the likely direct-CLI first step is recognizing `.duckdb`, not claiming that `.duckdb` is the only valid DuckDB database filename
 - direct CLI and interactive mode can preserve one stable product rule: ambiguous extensions require explicit format selection
 - either way, the contract should be frozen once for both concerns rather than drift in two separate passes
@@ -271,12 +277,12 @@ Those controls do not scale cleanly across several sheets in one invocation with
 Recommended first-pass scope:
 
 - first multi-source SQL phase should prioritize SQLite
-- DuckDB file may join that phase if the source-resolution surface is ready
+- DuckDB-file should be treated as the next follow-up backend on the same workspace contract once the SQLite slice is stable
 - Excel multi-source binding should remain out of the first pass unless relation-specific shaping is designed explicitly
 
 Implication:
 
-- the next plan can unlock real join authoring quickly without forcing a premature redesign of Excel shaping artifacts and prompts
+- the next follow-up can unlock real multi-schema and multi-table catalog coverage quickly without forcing a premature redesign of Excel shaping artifacts and prompts
 
 ### 10. `data query codex` should draft against workspace relations, not against a renamed singular `file`
 

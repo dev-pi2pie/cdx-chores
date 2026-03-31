@@ -88,7 +88,7 @@ Explicitly deferred:
 Practical reading:
 
 - this plan implements the workspace model for SQLite
-- this plan should keep shared APIs, docs, and validation wording compatible with a later DuckDB-file follow-up
+- this plan should keep shared APIs, docs, and validation wording compatible with a near-term DuckDB-file follow-up
 - DuckDB-file execution support itself remains follow-up work rather than a required deliverable in this plan
 
 ### Interactive contract
@@ -197,6 +197,22 @@ Practical reading:
   - Codex workspace prompt shaping
   - interactive workspace binding and execution routing
 
+### Follow-up direction
+
+The next preferred backend follow-up after the current SQLite slice is DuckDB-file workspace support, not Excel multi-relation shaping.
+
+That follow-up should cover:
+
+- `duckdb` input-format support and `.duckdb` extension detection
+- continued explicit `--input-format` selection for ambiguous `*.db` paths
+- relation binding against DuckDB-file catalogs
+- schema-qualified selectors where needed
+- generated DuckDB smoke fixtures that include:
+  - multiple tables
+  - at least one non-default schema
+  - joinable relations
+  - a reserved-`file` alias protection case
+
 ## Non-Goals
 
 - multi-file relation assembly
@@ -294,6 +310,26 @@ Practical reading:
 - [ ] update the query, Codex, and interactive guides
 - [ ] add a guide support table covering SQLite, Excel, DuckDB-file, and deferred multi-file assembly behavior
 - [ ] clarify in docs that multi-file relation assembly remains a separate future area
+
+### Phase 6: DuckDB-file workspace follow-up
+
+- [ ] add `duckdb` input-format support to `data query`
+- [ ] detect `.duckdb` inputs while keeping generic `*.db` explicit-only through `--input-format`
+- [ ] extend workspace relation binding to DuckDB-file catalogs
+- [ ] support schema-qualified selectors where the DuckDB catalog requires them
+- [ ] generate a stable `multi.duckdb` smoke fixture with:
+  - [ ] multiple tables
+  - [ ] at least one non-default schema
+  - [ ] joinable relations
+  - [ ] a reserved-`file` alias protection case
+- [ ] add direct CLI, Codex drafting, and source-listing coverage for DuckDB-file workspace inputs
+
+### Phase 7: Excel multi-relation shaping follow-up
+
+- [ ] design a per-relation shaping contract for workbook workspace mode
+- [ ] define how sheet-specific `range`, `header-row`, and `body-start-row` state is represented
+- [ ] decide how reviewed shape artifacts should scale across multiple bound sheets
+- [ ] only then consider Excel workspace execution support
 
 ## Related Research
 
