@@ -8,7 +8,10 @@ import {
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
-import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
+import {
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+} from "./helpers/data-query-duckdb-fixture-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
@@ -158,6 +161,36 @@ describe("cli action modules: data query codex", () => {
       expect(stderr.text).toBe("");
       expect(stdout.text).toContain("Source: analytics.events");
       expect(stdout.text).toContain("Projects analytics events from the selected DuckDB source.");
+    });
+  });
+
+  test("actionDataQueryCodex infers the only DuckDB source when the file has one table", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+      await actionDataQueryCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "list users ordered by id",
+        runner: async ({ prompt }) => {
+          expect(prompt).toContain("Selected source: users");
+          expect(prompt).toContain("1. id: INTEGER");
+          return JSON.stringify({
+            sql: "select id, name from file order by id",
+            reasoning_summary: "Projects the only DuckDB source.",
+          });
+        },
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Format: duckdb");
+      expect(stdout.text).toContain("Source: users");
+      expect(stdout.text).toContain("Projects the only DuckDB source.");
     });
   });
 

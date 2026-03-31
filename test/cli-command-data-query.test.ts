@@ -5,7 +5,11 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
-import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
+import {
+  seedAmbiguousDuckDbSourceFixture,
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+} from "./helpers/data-query-duckdb-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 import {
   REPO_ROOT,
@@ -335,6 +339,31 @@ describe("CLI data query command", () => {
     });
   });
 
+  test("infers the only DuckDB source when the file has one table", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--sql",
+        "select id, name from file order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Source: users");
+      expect(result.stdout).toContain("1   | Ada");
+      expect(result.stdout).toContain("2   | Bob");
+    });
+  });
+
   test("queries the main-schema DuckDB file table directly", async () => {
     if (!duckdbReady) {
       return;
@@ -385,6 +414,31 @@ describe("CLI data query command", () => {
       expect(result.stdout).toContain("Format: duckdb");
       expect(result.stdout).toContain("Relations: users, events");
       expect(result.stdout).toContain("Ada  | login");
+    });
+  });
+
+  test("selects quoted main-table DuckDB sources without colliding with schema selectors", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedAmbiguousDuckDbSourceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        '"analytics.events"',
+        "--sql",
+        "select id, scope from file",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain('Source: "analytics.events"');
+      expect(result.stdout).toContain("1   | main-table");
     });
   });
 

@@ -4,10 +4,18 @@ import { join } from "node:path";
 
 import { actionDataQuery } from "../src/cli/actions";
 import { getDisplayWidth } from "../src/cli/text-display-width";
-import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
+import {
+  createDuckDbConnection,
+  inspectDataQueryExtensions,
+  listDataQuerySources,
+} from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
-import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
+import {
+  seedAmbiguousDuckDbSourceFixture,
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+} from "./helpers/data-query-duckdb-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
@@ -119,6 +127,29 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery infers the only DuckDB source when the file has one table", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
+
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        sql: "select id, name from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Format: duckdb");
+      expect(stdout.text).toContain("Source: users");
+      expect(stdout.text).toContain("1   | Ada");
+      expect(stdout.text).toContain("2   | Bob");
+    });
+  });
+
   test("actionDataQuery supports schema-qualified DuckDB sources", async () => {
     if (!duckdbReady) {
       return;
@@ -166,6 +197,43 @@ describe("cli action modules: data query", () => {
       expect(stdout.text).toContain("Relations: users, events");
       expect(stdout.text).toContain("Ada  | login");
       expect(stdout.text).toContain("Ada  | export");
+    });
+  });
+
+  test("actionDataQuery keeps dotted DuckDB source names selectable without collisions", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedAmbiguousDuckDbSourceFixture(fixtureDir);
+      const connection = await createDuckDbConnection();
+      try {
+        const sources = await listDataQuerySources(connection, inputPath, "duckdb");
+        expect(sources).toEqual(["analytics.events", '"analytics.events"']);
+      } finally {
+        connection.closeSync();
+      }
+
+      const mainSourceRun = createActionTestRuntime();
+      await actionDataQuery(mainSourceRun.runtime, {
+        input: toRepoRelativePath(inputPath),
+        source: '"analytics.events"',
+        sql: "select id, scope from file",
+      });
+      mainSourceRun.expectNoStderr();
+      expect(mainSourceRun.stdout.text).toContain('"analytics.events"');
+      expect(mainSourceRun.stdout.text).toContain("1   | main-table");
+
+      const schemaSourceRun = createActionTestRuntime();
+      await actionDataQuery(schemaSourceRun.runtime, {
+        input: toRepoRelativePath(inputPath),
+        source: "analytics.events",
+        sql: "select id, scope from file",
+      });
+      schemaSourceRun.expectNoStderr();
+      expect(schemaSourceRun.stdout.text).toContain("Source: analytics.events");
+      expect(schemaSourceRun.stdout.text).toContain("2   | schema-table");
     });
   });
 

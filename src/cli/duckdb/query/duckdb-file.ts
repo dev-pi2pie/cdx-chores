@@ -20,14 +20,20 @@ export interface DuckDbSourceEntry {
   tableName: string;
 }
 
+const SIMPLE_SELECTOR_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function formatDuckDbSelectorIdentifier(name: string): string {
+  return SIMPLE_SELECTOR_IDENTIFIER_PATTERN.test(name) ? name : quoteSqlIdentifier(name);
+}
+
 function formatDuckDbSourceSelector(
   schemaName: string,
   tableName: string,
   tableNameCounts: ReadonlyMap<string, number>,
 ): string {
   return schemaName === "main" && (tableNameCounts.get(tableName) ?? 0) === 1
-    ? tableName
-    : `${schemaName}.${tableName}`;
+    ? formatDuckDbSelectorIdentifier(tableName)
+    : `${formatDuckDbSelectorIdentifier(schemaName)}.${formatDuckDbSelectorIdentifier(tableName)}`;
 }
 
 export async function ensureDuckDbFileAttached(

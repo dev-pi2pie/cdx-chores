@@ -129,6 +129,9 @@ export async function resolveDuckDbFileSource(
 
   const normalizedSource = source?.trim();
   if (!normalizedSource) {
+    if (entries.length === 1) {
+      return entries[0]!;
+    }
     throw new CliError(
       `--source is required for ${getMultiObjectSourceDisplayLabel("duckdb")} query inputs. Available sources: ${formatAvailableSources(entries.map((entry) => entry.selector))}.`,
       {

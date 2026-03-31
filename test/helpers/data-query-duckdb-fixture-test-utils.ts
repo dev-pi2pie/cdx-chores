@@ -41,3 +41,48 @@ export async function seedDuckDbWorkspaceFixture(outputDir: string): Promise<str
 
   return outputPath;
 }
+
+export async function seedSingleTableDuckDbFixture(outputDir: string): Promise<string> {
+  const { DuckDBConnection } = await import("@duckdb/node-api");
+
+  const outputPath = join(outputDir, "single.duckdb");
+  await rm(outputPath, { force: true });
+
+  const connection = await DuckDBConnection.create();
+  try {
+    await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture`);
+    await connection.run("create table fixture.main.users(id integer, name varchar)");
+    await connection.run("insert into fixture.main.users values (1, 'Ada'), (2, 'Bob')");
+    await connection.run("checkpoint");
+    await connection.run("detach fixture");
+  } finally {
+    connection.closeSync();
+  }
+
+  return outputPath;
+}
+
+export async function seedAmbiguousDuckDbSourceFixture(outputDir: string): Promise<string> {
+  const { DuckDBConnection } = await import("@duckdb/node-api");
+
+  const outputPath = join(outputDir, "ambiguous.duckdb");
+  await rm(outputPath, { force: true });
+
+  const connection = await DuckDBConnection.create();
+  try {
+    await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture`);
+    await connection.run("create schema fixture.analytics");
+    await connection.run('create table fixture.main."analytics.events"(id integer, scope varchar)');
+    await connection.run(
+      'insert into fixture.main."analytics.events" values (1, \'main-table\')',
+    );
+    await connection.run("create table fixture.analytics.events(id integer, scope varchar)");
+    await connection.run("insert into fixture.analytics.events values (2, 'schema-table')");
+    await connection.run("checkpoint");
+    await connection.run("detach fixture");
+  } finally {
+    connection.closeSync();
+  }
+
+  return outputPath;
+}

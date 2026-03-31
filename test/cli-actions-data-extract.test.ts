@@ -6,7 +6,10 @@ import { actionDataExtract } from "../src/cli/actions";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
-import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
+import {
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+} from "./helpers/data-query-duckdb-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
@@ -188,6 +191,31 @@ describe("cli action modules: data extract", () => {
       expect(await readFile(outputPath, "utf8")).toBe(
         "id,user_id,event_type\n10,1,login\n11,1,export\n12,2,login\n",
       );
+    });
+  });
+
+  test("actionDataExtract infers the only DuckDB source when the file has one table", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
+      const outputPath = join(fixtureDir, "users.clean.json");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote JSON: ${toRepoRelativePath(outputPath)}`);
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: 1, name: "Ada" },
+        { id: 2, name: "Bob" },
+      ]);
     });
   });
 
