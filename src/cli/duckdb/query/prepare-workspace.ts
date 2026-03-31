@@ -9,7 +9,11 @@ import {
   quoteSqlIdentifier,
 } from "./formats";
 import { buildRelationSql } from "./prepare-source/sql";
-import { listDataQuerySources, resolveDuckDbFileSource } from "./source-resolution";
+import {
+  listDataQuerySources,
+  resolveAvailableDataQuerySourceName,
+  resolveDuckDbFileSource,
+} from "./source-resolution";
 import type {
   DataQueryInputFormat,
   DataQueryRelationBinding,
@@ -93,7 +97,8 @@ export async function prepareDataQueryWorkspace(
   }
 
   for (const relation of relations) {
-    if (!availableSources.includes(relation.source)) {
+    const resolvedSource = resolveAvailableDataQuerySourceName(relation.source, availableSources);
+    if (!resolvedSource) {
       throw new CliError(
         `Unknown ${getMultiObjectSourceDisplayLabel(format)} source for --relation ${relation.alias}=${relation.source}. Available sources: ${formatAvailableSources(availableSources)}.`,
         {
@@ -107,12 +112,12 @@ export async function prepareDataQueryWorkspace(
       `create or replace temp view ${quoteSqlIdentifier(relation.alias)} as ${
         format === "duckdb"
           ? buildDuckDbFileRelationSql(
-              await resolveDuckDbFileSource(connection, inputPath, relation.source, {
+              await resolveDuckDbFileSource(connection, inputPath, resolvedSource, {
                 entries: availableDuckDbEntries,
               }),
             )
           : buildRelationSql(inputPath, format, {
-              source: relation.source,
+              source: resolvedSource,
             })
       }`,
     );

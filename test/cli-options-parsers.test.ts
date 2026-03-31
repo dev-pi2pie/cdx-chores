@@ -21,6 +21,18 @@ describe("cli option parsers", () => {
     ]);
   });
 
+  test("preserves commas inside quoted source selectors", () => {
+    expect(parseDataQueryRelationBindingOptionValues('sales="sales,2024"')).toEqual([
+      { alias: "sales", source: '"sales,2024"' },
+    ]);
+  });
+
+  test("unescapes commas inside one source name", () => {
+    expect(parseDataQueryRelationBindingOptionValues(String.raw`sales=sales\,2024`)).toEqual([
+      { alias: "sales", source: "sales,2024" },
+    ]);
+  });
+
   test("collects comma-separated --relation bundles across repeated flags", () => {
     expect(
       collectDataQueryRelationBindingOption("users,events=analytics.events", [
@@ -40,8 +52,8 @@ describe("cli option parsers", () => {
   });
 
   test("rejects malformed aliases inside comma-separated --relation bundles", () => {
-    expect(() => parseDataQueryRelationBindingOptionValues("users,1events=analytics.events")).toThrow(
-      "--relation alias must be a simple SQL identifier",
-    );
+    expect(() =>
+      parseDataQueryRelationBindingOptionValues("users,1events=analytics.events"),
+    ).toThrow("--relation alias must be a simple SQL identifier");
   });
 });

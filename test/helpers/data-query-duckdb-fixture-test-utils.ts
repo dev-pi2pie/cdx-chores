@@ -73,11 +73,31 @@ export async function seedAmbiguousDuckDbSourceFixture(outputDir: string): Promi
     await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture`);
     await connection.run("create schema fixture.analytics");
     await connection.run('create table fixture.main."analytics.events"(id integer, scope varchar)');
-    await connection.run(
-      'insert into fixture.main."analytics.events" values (1, \'main-table\')',
-    );
+    await connection.run("insert into fixture.main.\"analytics.events\" values (1, 'main-table')");
     await connection.run("create table fixture.analytics.events(id integer, scope varchar)");
     await connection.run("insert into fixture.analytics.events values (2, 'schema-table')");
+    await connection.run("checkpoint");
+    await connection.run("detach fixture");
+  } finally {
+    connection.closeSync();
+  }
+
+  return outputPath;
+}
+
+export async function seedDuckDbQuotedCommaSourceFixture(outputDir: string): Promise<string> {
+  const { DuckDBConnection } = await import("@duckdb/node-api");
+
+  const outputPath = join(outputDir, "quoted-comma.duckdb");
+  await rm(outputPath, { force: true });
+
+  const connection = await DuckDBConnection.create();
+  try {
+    await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture`);
+    await connection.run('create table fixture.main."sales,2024"(id integer, team varchar)');
+    await connection.run(
+      "insert into fixture.main.\"sales,2024\" values (1, 'Core'), (2, 'Infra')",
+    );
     await connection.run("checkpoint");
     await connection.run("detach fixture");
   } finally {

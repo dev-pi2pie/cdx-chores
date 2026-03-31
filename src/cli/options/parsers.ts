@@ -38,7 +38,7 @@ export function collectRepeatedOption(value: string, previous: string[] = []): s
 const DATA_QUERY_RELATION_ALIAS_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 export function parseDataQueryRelationBindingOptionValue(value: string): DataQueryRelationBinding {
-  const trimmed = value.trim();
+  const trimmed = unescapeDataQueryRelationBindingToken(value.trim());
   if (!trimmed) {
     throw new InvalidArgumentError("--relation requires a non-empty binding.");
   }
@@ -63,10 +63,71 @@ export function parseDataQueryRelationBindingOptionValue(value: string): DataQue
   };
 }
 
+function splitDataQueryRelationBindingBundle(value: string): string[] {
+  const bindings: string[] = [];
+  let current = "";
+  let inDoubleQuotes = false;
+  let isEscaped = false;
+
+  for (const character of value) {
+    if (isEscaped) {
+      current += character;
+      isEscaped = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      current += character;
+      isEscaped = true;
+      continue;
+    }
+
+    if (character === '"') {
+      inDoubleQuotes = !inDoubleQuotes;
+      current += character;
+      continue;
+    }
+
+    if (character === "," && !inDoubleQuotes) {
+      bindings.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += character;
+  }
+
+  bindings.push(current.trim());
+  return bindings;
+}
+
+function unescapeDataQueryRelationBindingToken(value: string): string {
+  let normalized = "";
+  let isEscaped = false;
+
+  for (const character of value) {
+    if (isEscaped) {
+      normalized +=
+        character === "," || character === "\\" || character === '"' ? character : `\\${character}`;
+      isEscaped = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      isEscaped = true;
+      continue;
+    }
+
+    normalized += character;
+  }
+
+  return isEscaped ? `${normalized}\\` : normalized;
+}
+
 export function parseDataQueryRelationBindingOptionValues(
   value: string,
 ): DataQueryRelationBinding[] {
-  const bindings = value.split(",").map((item) => item.trim());
+  const bindings = splitDataQueryRelationBindingBundle(value);
 
   if (bindings.some((binding) => binding.length === 0)) {
     throw new InvalidArgumentError(

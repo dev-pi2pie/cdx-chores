@@ -7,6 +7,7 @@ import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import {
   seedAmbiguousDuckDbSourceFixture,
+  seedDuckDbQuotedCommaSourceFixture,
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
 } from "./helpers/data-query-duckdb-fixture-test-utils";
@@ -484,6 +485,32 @@ describe("CLI data query command", () => {
       expect(result.stdout).toContain("Format: duckdb");
       expect(result.stdout).toContain("Relations: file");
       expect(result.stdout).toContain("1       | welcome");
+    });
+  });
+
+  test("accepts quoted DuckDB relation sources that contain commas", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbQuotedCommaSourceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        'sales="sales,2024"',
+        "--sql",
+        "select id, team from sales order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: sales");
+      expect(result.stdout).toContain("1   | Core");
     });
   });
 

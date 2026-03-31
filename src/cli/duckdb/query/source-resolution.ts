@@ -15,6 +15,33 @@ function formatAvailableSources(sources: readonly string[]): string {
   return sources.join(", ");
 }
 
+function unwrapQuotedSourceName(value: string): string | undefined {
+  return value.length >= 2 && value.startsWith('"') && value.endsWith('"')
+    ? value.slice(1, -1).replaceAll('""', '"')
+    : undefined;
+}
+
+export function resolveAvailableDataQuerySourceName(
+  source: string | undefined,
+  availableSources: readonly string[],
+): string | undefined {
+  const normalizedSource = source?.trim();
+  if (!normalizedSource) {
+    return undefined;
+  }
+
+  if (availableSources.includes(normalizedSource)) {
+    return normalizedSource;
+  }
+
+  const unwrappedSource = unwrapQuotedSourceName(normalizedSource);
+  if (unwrappedSource && availableSources.includes(unwrappedSource)) {
+    return unwrappedSource;
+  }
+
+  return undefined;
+}
+
 async function listSQLiteSources(
   connection: DuckDBConnection,
   inputPath: string,
@@ -93,7 +120,8 @@ export async function resolveMultiObjectSource(
     );
   }
 
-  if (!sources.includes(normalizedSource)) {
+  const resolvedSource = resolveAvailableDataQuerySourceName(normalizedSource, sources);
+  if (!resolvedSource) {
     throw new CliError(
       `Unknown ${getMultiObjectSourceDisplayLabel(format)} source: ${normalizedSource}. Available sources: ${formatAvailableSources(sources)}.`,
       {
@@ -103,7 +131,7 @@ export async function resolveMultiObjectSource(
     );
   }
 
-  return normalizedSource;
+  return resolvedSource;
 }
 
 export async function resolveDuckDbFileSource(
@@ -141,7 +169,13 @@ export async function resolveDuckDbFileSource(
     );
   }
 
-  const entry = entries.find((candidate) => candidate.selector === normalizedSource);
+  const resolvedSource = resolveAvailableDataQuerySourceName(
+    normalizedSource,
+    entries.map((entry) => entry.selector),
+  );
+  const entry = resolvedSource
+    ? entries.find((candidate) => candidate.selector === resolvedSource)
+    : undefined;
   if (!entry) {
     throw new CliError(
       `Unknown ${getMultiObjectSourceDisplayLabel("duckdb")} source: ${normalizedSource}. Available sources: ${formatAvailableSources(entries.map((candidate) => candidate.selector))}.`,
