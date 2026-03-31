@@ -218,7 +218,7 @@ That follow-up should cover:
 - multi-file relation assembly
 - file lists, glob patterns, `union_by_name`, or filename-provenance controls
 - Excel multi-relation shaping
-- DuckDB-file execution support in the current implementation slice
+- DuckDB-file execution support before the dedicated follow-up phase
 - connection-backed database support
 - workspace-mode `formal-guide`
 - extending `data extract` into a multi-relation workspace command
@@ -324,12 +324,17 @@ That follow-up should cover:
   - [ ] a reserved-`file` alias protection case
 - [ ] add direct CLI, Codex drafting, and source-listing coverage for DuckDB-file workspace inputs
 
-### Phase 7: Excel multi-relation shaping follow-up
+## Deferred Follow-up Area
 
-- [ ] design a per-relation shaping contract for workbook workspace mode
-- [ ] define how sheet-specific `range`, `header-row`, and `body-start-row` state is represented
-- [ ] decide how reviewed shape artifacts should scale across multiple bound sheets
-- [ ] only then consider Excel workspace execution support
+Excel workspace support should not be treated as a numbered implementation phase in this plan.
+
+It remains a separate deferred area that first requires dedicated research for:
+
+- per-relation workbook shaping
+- sheet-specific `range`, `header-row`, and `body-start-row` state
+- how reviewed shape artifacts scale across multiple bound sheets
+
+Only after that research is frozen should a separate Excel-workspace implementation plan be created.
 
 ## Related Research
 
