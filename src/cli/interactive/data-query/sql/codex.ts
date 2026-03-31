@@ -4,16 +4,17 @@ import { printLine } from "../../../actions/shared";
 import {
   buildDataQueryCodexIntentEditorTemplate,
   draftDataQueryWithCodex,
+  type DataQueryCodexIntrospection,
   normalizeDataQueryCodexEditorIntent,
   normalizeDataQueryCodexIntent,
 } from "../../../data-query/codex";
 import type { DataHeaderMappingEntry } from "../../../duckdb/header-mapping";
-import type { DataQueryInputFormat, DataQuerySourceIntrospection } from "../../../duckdb/query";
+import type { DataQueryInputFormat, DataQueryRelationBinding } from "../../../duckdb/query";
 import type { CliRuntime } from "../../../types";
 import { createInteractiveAnalyzerStatus } from "../../analyzer-status";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
-import type { InteractiveQueryRunResult } from "../types";
+import type { DataQueryInteractiveScope, InteractiveQueryRunResult } from "../types";
 
 function renderCodexIntentPreview(runtime: CliRuntime, intent: string): void {
   printLine(runtime.stderr, "");
@@ -27,7 +28,9 @@ export async function runCodexInteractiveQuery(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
-    introspection: DataQuerySourceIntrospection;
+    introspection: DataQueryCodexIntrospection;
+    mode: DataQueryInteractiveScope;
+    relations?: DataQueryRelationBinding[];
     selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedNoHeader?: boolean;
@@ -113,10 +116,12 @@ export async function runCodexInteractiveQuery(
             format: options.format,
             headerMappings: options.headerMappings,
             input: options.input,
+            mode: options.mode,
             reviewMode: "codex",
             selectedBodyStartRow: options.selectedBodyStartRow,
             selectedHeaderRow: options.selectedHeaderRow,
             selectedNoHeader: options.selectedNoHeader,
+            relations: options.relations,
             selectedRange: options.selectedRange,
             selectedSource: options.selectedSource,
             sql: draftResult.draft.sql,

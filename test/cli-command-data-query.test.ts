@@ -5,6 +5,12 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import {
+  seedAmbiguousDuckDbSourceFixture,
+  seedDuckDbQuotedCommaSourceFixture,
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+} from "./helpers/data-query-duckdb-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 import {
   REPO_ROOT,
@@ -14,6 +20,7 @@ import {
 } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
@@ -260,6 +267,278 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
+  test("queries SQLite workspace relations end to end when the extension is ready", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "entries=time_entries",
+      "--sql",
+      "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Format: sqlite");
+    expect(result.stdout).toContain("Relations: users, entries");
+    expect(result.stdout).toContain("Ada  | 8");
+    expect(result.stdout).toContain("Bob  | 5");
+  });
+
+  test("treats one explicit --relation binding as workspace mode when the extension is ready", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "people=users",
+      "--sql",
+      "select id, name from people order by id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: people");
+    expect(result.stdout).not.toContain("Source: users");
+    expect(result.stdout).toContain("1   | Ada");
+  });
+
+  test("allows explicit file aliases in workspace mode", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "file=users",
+      "--sql",
+      "select id, name from file order by id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: file");
+    expect(result.stdout).not.toContain("Source: users");
+    expect(result.stdout).toContain("1   | Ada");
+  });
+
+  test("accepts comma-separated --relation bundles", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,entries=time_entries",
+      "--sql",
+      "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: users, entries");
+    expect(result.stdout).toContain("Ada  | 8");
+    expect(result.stdout).toContain("Bob  | 5");
+  });
+
+  test("queries DuckDB-file input end to end", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "users",
+        "--sql",
+        "select id, name from file order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Source: users");
+      expect(result.stdout).toContain("1   | Ada");
+    });
+  });
+
+  test("infers the only DuckDB source when the file has one table", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--sql",
+        "select id, name from file order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Source: users");
+      expect(result.stdout).toContain("1   | Ada");
+      expect(result.stdout).toContain("2   | Bob");
+    });
+  });
+
+  test("queries the main-schema DuckDB file table directly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "file",
+        "--sql",
+        "select user_id, note from file order by user_id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Source: file");
+      expect(result.stdout).toContain("1       | welcome");
+    });
+  });
+
+  test("queries DuckDB workspace relations end to end", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        "users",
+        "--relation",
+        "events=analytics.events",
+        "--sql",
+        "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: users, events");
+      expect(result.stdout).toContain("Ada  | login");
+    });
+  });
+
+  test("allows bare file bindings in DuckDB workspace mode", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        "file",
+        "--sql",
+        "select user_id, note from file order by user_id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: file");
+      expect(result.stdout).toContain("1       | welcome");
+    });
+  });
+
+  test("accepts quoted DuckDB relation sources that contain commas", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbQuotedCommaSourceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        'sales="sales,2024"',
+        "--sql",
+        "select id, team from sales order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: sales");
+      expect(result.stdout).toContain("1   | Core");
+    });
+  });
+
+  test("selects quoted main-table DuckDB sources without colliding with schema selectors", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedAmbiguousDuckDbSourceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        '"analytics.events"',
+        "--sql",
+        "select id, scope from file",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain('Source: "analytics.events"');
+      expect(result.stdout).toContain("1   | main-table");
+    });
+  });
+
   test("queries Excel input end to end when the extension is ready", () => {
     if (!excelReady) {
       return;
@@ -485,6 +764,169 @@ describe("CLI data query command", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("--source is required for SQLite");
     expect(result.stderr).toContain("Available sources: active_users, time_entries, users");
+  });
+
+  test("lists available DuckDB sources when source is missing", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--sql",
+        "select * from file",
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("--source is required for DuckDB");
+      expect(result.stderr).toContain("analytics.events");
+      expect(result.stderr).toContain("file");
+      expect(result.stderr).toContain("time_entries");
+      expect(result.stderr).toContain("users");
+    });
+  });
+
+  test("reports unknown DuckDB sources clearly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "analytics.missing",
+        "--sql",
+        "select * from file",
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("Unknown DuckDB source: analytics.missing");
+      expect(result.stderr).toContain("Available sources:");
+      expect(result.stderr).toContain("analytics.events");
+    });
+  });
+
+  test("rejects --source together with --relation", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--source",
+      "users",
+      "--relation",
+      "entries=time_entries",
+      "--sql",
+      "select * from file",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("--relation cannot be used together with --source");
+  });
+
+  test("rejects duplicate relation aliases in workspace mode", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "users=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects duplicate relation aliases inside one comma-separated bundle", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,users=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects duplicate relation aliases across repeated and bundled flags", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "entries=time_entries,users=active_users",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects --relation for non-workspace query inputs", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("basic.csv"),
+      "--relation",
+      "people",
+      "--sql",
+      "select * from people",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain(
+      "--relation is currently only supported for SQLite and DuckDB query inputs",
+    );
+  });
+
+  test("rejects malformed relation aliases at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "1bad=users",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--relation alias must be a simple SQL identifier");
+  });
+
+  test("rejects empty entries in comma-separated relation bundles at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,,entries=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--relation bundle cannot contain empty bindings");
   });
 
   test("lists available Excel sources when source is missing", () => {

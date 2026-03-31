@@ -3,6 +3,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { ensureDuckDbManagedExtensionLoaded } from "../extensions";
 import { normalizeAndValidateAcceptedHeaderMappings } from "../header-mapping";
 import { CliError } from "../../errors";
+import { buildDuckDbFileRelationSql, type DuckDbSourceEntry } from "./duckdb-file";
 import {
   normalizeExcelBodyStartRow,
   normalizeExcelHeaderRow,
@@ -10,8 +11,8 @@ import {
   buildExcelRange,
 } from "./excel-range";
 import { getDuckDbManagedExtensionNameForFormat, toErrorMessage } from "./formats";
-import { resolveMultiObjectSource } from "./source-resolution";
-import type { DataQueryInputFormat, DataQuerySourceShape, PreparedDataQuerySource } from "./types";
+import { resolveDuckDbFileSource, resolveMultiObjectSource } from "./source-resolution";
+import type { DataQueryInputFormat, DataQuerySourceShape, PreparedDataQueryContext } from "./types";
 import { collectQueryRelationColumns } from "./prepare-source/columns";
 import {
   createSplitHeaderBodyExcelSourceView,
@@ -34,8 +35,9 @@ export async function prepareDataQuerySource(
     installMissingExtension?: boolean;
     statusStream?: NodeJS.WritableStream;
   } = {},
-): Promise<PreparedDataQuerySource> {
+): Promise<PreparedDataQueryContext> {
   let selectedSource = shape.source?.trim();
+  let selectedDuckDbSource: DuckDbSourceEntry | undefined;
   const selectedBodyStartRow =
     shape.bodyStartRow !== undefined ? normalizeExcelBodyStartRow(shape.bodyStartRow) : undefined;
   const selectedRange = shape.range?.trim() ? normalizeExcelRange(shape.range) : undefined;
@@ -80,6 +82,28 @@ export async function prepareDataQuerySource(
       },
     );
     selectedSource = await resolveMultiObjectSource(connection, inputPath, "sqlite", shape.source);
+  }
+  if (format === "duckdb") {
+    if (selectedRange) {
+      throw new CliError("--range is only valid for Excel query inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (selectedHeaderRow !== undefined) {
+      throw new CliError("--header-row is only valid for Excel inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (selectedBodyStartRow !== undefined) {
+      throw new CliError("--body-start-row is only valid for Excel inputs.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    selectedDuckDbSource = await resolveDuckDbFileSource(connection, inputPath, shape.source);
+    selectedSource = selectedDuckDbSource.selector;
   }
   if (format === "excel") {
     await ensureDuckDbManagedExtensionLoaded(
@@ -200,6 +224,8 @@ export async function prepareDataQuerySource(
         )}`,
       );
       return {
+        mode: "single-source",
+        relationAliases: undefined,
         selectedBodyStartRow,
         selectedHeaderRow,
         selectedRange,
@@ -219,19 +245,26 @@ export async function prepareDataQuerySource(
     const excelImportMode = excelImportModes[index] ?? "default";
     try {
       await connection.run(
-        `create or replace temp view file_source as ${buildRelationSql(
-          inputPath,
-          format,
-          {
-            noHeader,
-            range: effectiveRange,
-            source: selectedSource,
-          },
-          {
-            excelHeader: selectedHeaderRow !== undefined,
-            excelImportMode,
-          },
-        )}`,
+        `create or replace temp view file_source as ${
+          format === "duckdb"
+            ? buildDuckDbFileRelationSql(
+                selectedDuckDbSource ??
+                  (await resolveDuckDbFileSource(connection, inputPath, selectedSource ?? "")),
+              )
+            : buildRelationSql(
+                inputPath,
+                format,
+                {
+                  noHeader,
+                  range: effectiveRange,
+                  source: selectedSource,
+                },
+                {
+                  excelHeader: selectedHeaderRow !== undefined,
+                  excelImportMode,
+                },
+              )
+        }`,
       );
       const relationColumns = await collectQueryRelationColumns(connection, "file_source", {
         format,
@@ -252,6 +285,8 @@ export async function prepareDataQuerySource(
         )}`,
       );
       return {
+        mode: "single-source",
+        relationAliases: undefined,
         selectedBodyStartRow,
         selectedHeaderRow,
         selectedRange,

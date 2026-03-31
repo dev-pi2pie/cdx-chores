@@ -1,6 +1,9 @@
 ## `data query`
 
-`data query` is the direct DuckDB-backed SQL lane for querying one local input file through the logical table name `file`.
+`data query` is the direct DuckDB-backed SQL lane for querying one local input file.
+
+Single-source runs expose the logical table name `file`.
+Workspace runs expose one or more explicit relation bindings instead.
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 
@@ -15,8 +18,10 @@ Current boundary:
 
 - one input file per invocation
 - SQL is required through `--sql`
-- built-in inputs: `.csv`, `.tsv`, `.parquet`
+- built-in inputs: `.csv`, `.tsv`, `.parquet`, `.duckdb`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
+- workspace relation binding is available through repeatable or comma-separated `--relation <binding>`
+- workspace mode is currently supported for SQLite and DuckDB-file inputs
 - explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
@@ -28,6 +33,21 @@ Current boundary:
 - machine-readable stdout: `--json`
 - file output: `--output <path>` with `.json` or `.csv`
 - interactive mode is available through `cdx-chores interactive`; see `docs/guides/data-query-interactive-usage.md`
+
+### Support matrix
+
+| Input family | Single-source query | Workspace query | Notes |
+| --- | --- | --- | --- |
+| CSV / TSV | yes | no | one logical table only |
+| Parquet | yes | no | one logical table only |
+| SQLite | yes | yes | `--source` or repeatable `--relation` |
+| DuckDB-file | yes | yes | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
+| Excel | yes | no | workbook workspace support remains deferred |
+
+Important distinction:
+
+- workspace relation binding is not the same feature as multi-file relation assembly
+- lists, globs, and `union_by_name`-style multi-file scans remain a separate future area
 
 Current intent:
 
@@ -79,7 +99,7 @@ choose output mode
 ### Command shape
 
 ```bash
-cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--source-shape <path>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
+cdx-chores data query <input> --sql "<query>" [--input-format <format>] [--source <name>] [--relation <binding>] [--range <A1:Z99>] [--source-shape <path>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--header-mapping <path>] [--install-missing-extension] [--rows <n>] [--json] [--pretty] [--output <path>] [--overwrite]
 cdx-chores data query <input> --codex-suggest-headers [--write-header-mapping <path>] [--input-format <format>] [--source <name>] [--range <A1:Z99>] [--source-shape <path>] [--no-header] [--body-start-row <n>] [--header-row <n>] [--overwrite]
 ```
 
@@ -89,6 +109,7 @@ Supported `--input-format` values:
 - `tsv`
 - `parquet`
 - `sqlite`
+- `duckdb`
 - `excel`
 
 Examples:
@@ -100,6 +121,10 @@ cdx-chores data query ./examples/playground/data-query-probe/auto-headerless.csv
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select id, name from file order by id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select user_id, note from file order by user_id"
 cdx-chores data query ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --sql "select ID, item, status from file order by ID"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
@@ -111,7 +136,19 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 `--source` is required for multi-object formats:
 
 - SQLite: table or view name
+- DuckDB-file: table or view selector, using `schema.table` where needed
 - Excel: sheet name
+
+`--relation` enters workspace mode and is currently valid only for SQLite and DuckDB-file inputs:
+
+- bare `--relation users` means `users=users`
+- one flag may also bundle multiple bindings, such as `--relation users,entries=time_entries`
+- `--relation alias=source` binds a source under an explicit SQL relation name
+- workspace mode starts as soon as one explicit `--relation` is present, even if only one relation is bound
+- once any `--relation` is present, SQL must target the bound relation names instead of the implicit `file` alias
+- single-source mode keeps the implicit compatibility table name `file`
+- workspace mode does not inject `file` implicitly, but it does allow `file` as an explicit alias when you bind it yourself
+- that means `--relation file` and `--relation file=users` are both valid workspace bindings
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
 Other input formats reject `--range`.
@@ -146,6 +183,10 @@ Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
@@ -241,10 +282,13 @@ Use `cdx-chores doctor` to inspect current `data query` capability by format.
 The report distinguishes:
 
 - built-in formats that are queryable when DuckDB is available
+- built-in formats that work when DuckDB itself is available
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
 
 For extension-backed formats, `detected support=yes` does not mean the format is queryable right now. The capability line turns green only when the required DuckDB extension is currently loadable.
+
+DuckDB-file is reported as built-in DuckDB support and does not require a managed extension.
 
 ### DuckDB extension troubleshooting
 

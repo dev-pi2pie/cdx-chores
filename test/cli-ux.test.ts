@@ -190,6 +190,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("--sql <query>");
     expect(result.stdout).toContain("--input-format <format>");
+    expect(result.stdout).toContain("--relation <binding>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
     expect(result.stdout).toContain("--source-shape <path>");
@@ -265,6 +266,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--input-format <format>");
+    expect(result.stdout).toContain("--relation <binding>");
     expect(result.stdout).toContain("--source <name>");
     expect(result.stdout).toContain("--range <A1:Z99>");
     expect(result.stdout).toContain("--body-start-row <value>");

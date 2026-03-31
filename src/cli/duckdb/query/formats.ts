@@ -11,6 +11,7 @@ const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
   ".parquet": "parquet",
   ".sqlite": "sqlite",
   ".sqlite3": "sqlite",
+  ".duckdb": "duckdb",
   ".xlsx": "excel",
 };
 
@@ -40,7 +41,7 @@ export function detectDataQueryInputFormat(
   }
 
   throw new CliError(
-    `Unsupported query file type: ${inputPath}. Supported inputs: .csv, .tsv, .parquet, .sqlite, .sqlite3, .xlsx.`,
+    `Unsupported query file type: ${inputPath}. Supported inputs: .csv, .tsv, .parquet, .sqlite, .sqlite3, .duckdb, .xlsx.`,
     {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -64,6 +65,16 @@ export function getDuckDbManagedExtensionNameForFormat(
   format: "sqlite" | "excel",
 ): DuckDbManagedExtensionName {
   return format;
+}
+
+export function getMultiObjectSourceDisplayLabel(format: "sqlite" | "duckdb" | "excel"): string {
+  if (format === "sqlite") {
+    return "SQLite";
+  }
+  if (format === "duckdb") {
+    return "DuckDB";
+  }
+  return "Excel";
 }
 
 export function escapeSqlStringLiteral(value: string): string {

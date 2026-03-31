@@ -16,7 +16,7 @@ Current boundary:
 - one input file per invocation
 - one shaped logical table per invocation
 - no SQL in this lane
-- built-in inputs: `.csv`, `.tsv`, `.parquet`
+- built-in inputs: `.csv`, `.tsv`, `.parquet`, `.duckdb`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
 - explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
@@ -29,6 +29,16 @@ Current boundary:
 - materialization runs require `--output <path>`
 - output format is inferred from `.csv`, `.tsv`, or `.json`
 - extracted table content is written to the output artifact, not mixed into stdout
+
+### Support matrix
+
+| Input family | Direct extract support | Notes |
+| --- | --- | --- |
+| CSV / TSV | yes | one implicit source |
+| Parquet | yes | one implicit source |
+| SQLite | yes | requires `--source` for multi-object inputs |
+| DuckDB-file | yes | requires `--source`; uses `schema.table` where needed |
+| Excel | yes | supports current shaping controls |
 
 Current intent:
 
@@ -51,6 +61,7 @@ Supported `--input-format` values:
 - `tsv`
 - `parquet`
 - `sqlite`
+- `duckdb`
 - `excel`
 
 Examples:
@@ -59,6 +70,7 @@ Examples:
 cdx-chores data extract ./examples/playground/data-query/basic.csv --output ./examples/playground/.tmp-tests/basic.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/basic.tsv --output ./examples/playground/.tmp-tests/basic.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query-probe/auto-headerless.csv --no-header --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
+cdx-chores data extract ./examples/playground/data-query/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.tsv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
@@ -76,6 +88,7 @@ That does not mean every tricky case belongs in `data extract`. The current desi
 `--source` is required for multi-object formats:
 
 - SQLite: table or view name
+- DuckDB-file: table or view selector, using `schema.table` where needed
 - Excel: sheet name
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before the shaped table is materialized.
@@ -129,6 +142,7 @@ Examples:
 
 ```bash
 cdx-chores data extract ./examples/playground/data-query/multi.sqlite --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
+cdx-chores data extract ./examples/playground/data-query/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/header-band.xlsx --source Summary --range B7:E12 --header-row 7 --output ./examples/playground/.tmp-tests/header-band.clean.csv --overwrite

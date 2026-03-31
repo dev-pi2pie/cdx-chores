@@ -27,11 +27,16 @@ interface DataQueryIntrospection {
 interface DataQueryCodexDraftOptions {
   format?: unknown;
   intent?: unknown;
-  introspection?: {
-    selectedHeaderRow?: unknown;
-    selectedRange?: unknown;
-    selectedSource?: unknown;
-  };
+  introspection?:
+    | {
+        selectedHeaderRow?: unknown;
+        selectedRange?: unknown;
+        selectedSource?: unknown;
+      }
+    | {
+        kind?: unknown;
+        relations?: Array<{ alias?: unknown; source?: unknown }>;
+      };
 }
 
 interface HeaderSuggestionOptions {
@@ -41,6 +46,14 @@ interface HeaderSuggestionOptions {
     selectedRange?: unknown;
     selectedSource?: unknown;
   };
+}
+
+interface DataQueryWorkspaceRelationScenario {
+  alias?: unknown;
+  columns?: DataQueryIntrospectionColumn[];
+  sampleRows?: Record<string, unknown>[];
+  source?: unknown;
+  truncated?: boolean;
 }
 
 interface SourceShapeSuggestionOptions {
@@ -83,14 +96,141 @@ function getScenarioIntrospection(
   };
 }
 
+function buildDefaultWorkspaceRelation(relation: {
+  alias?: unknown;
+  source?: unknown;
+}): DataQueryWorkspaceRelationScenario {
+  const alias = String(relation.alias ?? "");
+  const source = String(relation.source ?? "");
+  const key = `${alias}:${source}`.toLowerCase();
+
+  if (key.includes("entry")) {
+    return {
+      alias,
+      columns: [
+        { name: "entry_id", type: "BIGINT" },
+        { name: "hours", type: "DOUBLE" },
+      ],
+      sampleRows: [{ entry_id: "1", hours: "7.5" }],
+      source,
+      truncated: false,
+    };
+  }
+
+  if (key.includes("active")) {
+    return {
+      alias,
+      columns: [
+        { name: "id", type: "BIGINT" },
+        { name: "name", type: "VARCHAR" },
+        { name: "is_active", type: "BOOLEAN" },
+      ],
+      sampleRows: [{ id: "1", name: "Ada", is_active: "true" }],
+      source,
+      truncated: false,
+    };
+  }
+
+  return {
+    alias,
+    columns: [
+      { name: "id", type: "BIGINT" },
+      { name: "name", type: "VARCHAR" },
+    ],
+    sampleRows: [{ id: "1", name: "Ada" }],
+    source,
+    truncated: false,
+  };
+}
+
+function getScenarioWorkspaceIntrospection(
+  context: HarnessRunnerContext,
+  relations: Array<{ alias?: unknown; source?: unknown }>,
+): Record<string, unknown> {
+  const nextIntrospection = context.scenario.dataQueryWorkspaceIntrospectionQueue?.shift();
+  if (nextIntrospection) {
+    return nextIntrospection;
+  }
+
+  const configuredRelations = Array.isArray(
+    context.scenario.dataQueryWorkspaceIntrospection?.relations,
+  )
+    ? (context.scenario.dataQueryWorkspaceIntrospection
+        ?.relations as DataQueryWorkspaceRelationScenario[])
+    : [];
+
+  return {
+    kind: "workspace",
+    relations: relations.map((relation, index) => {
+      const configured = configuredRelations[index];
+      const fallback = buildDefaultWorkspaceRelation(relation);
+      return {
+        alias: String(configured?.alias ?? relation.alias ?? ""),
+        columns: configured?.columns ?? fallback.columns ?? [],
+        sampleRows: configured?.sampleRows ?? fallback.sampleRows ?? [],
+        source: String(configured?.source ?? relation.source ?? ""),
+        truncated: Boolean(configured?.truncated ?? fallback.truncated),
+      };
+    }),
+  };
+}
+
 function buildCodexTemplate(options: {
   format?: unknown;
-  introspection?: DataQueryIntrospection;
+  introspection?:
+    | DataQueryIntrospection
+    | { kind?: unknown; relations?: Array<Record<string, unknown>> };
   intent?: unknown;
 }): string {
+  if (
+    typeof options.introspection === "object" &&
+    options.introspection !== null &&
+    (options.introspection as { kind?: unknown }).kind === "workspace"
+  ) {
+    const relations = Array.isArray((options.introspection as { relations?: unknown[] }).relations)
+      ? ((options.introspection as { relations?: Array<Record<string, unknown>> }).relations ?? [])
+      : [];
+    return [
+      "# Query context for Codex drafting.",
+      "# Workspace relations:",
+      ...relations.map(
+        (relation) =>
+          `# - ${String(relation.alias ?? "")} (source: ${String(relation.source ?? "")})`,
+      ),
+      `# Format: ${String(options.format ?? "")}`,
+      `# Schema: ${relations
+        .map((relation) => {
+          const columns = Array.isArray(relation.columns)
+            ? relation.columns.map(
+                (column) => `${String(column.name ?? "")} (${String(column.type ?? "")})`,
+              )
+            : [];
+          return `${String(relation.alias ?? "")}: ${columns.length > 0 ? columns.join(", ") : "(no columns available)"}`;
+        })
+        .join(" | ")}`,
+      "# Sample rows:",
+      ...relations.flatMap((relation) => {
+        const sampleRows = Array.isArray(relation.sampleRows)
+          ? relation.sampleRows.slice(0, 3)
+          : [];
+        return [
+          `# ${String(relation.alias ?? "")}:`,
+          ...(sampleRows.length > 0
+            ? sampleRows.map((row, index) => `#   ${index + 1}. ${JSON.stringify(row)}`)
+            : ["#   (no sample rows available)"]),
+        ];
+      }),
+      "#",
+      "# Write plain intent below. Comment lines starting with # are ignored.",
+      "",
+      String(options.intent ?? "").trim(),
+    ].join("\n");
+  }
+
   const schema =
-    Array.isArray(options.introspection?.columns) && options.introspection.columns.length > 0
-      ? options.introspection.columns
+    Array.isArray((options.introspection as DataQueryIntrospection | undefined)?.columns) &&
+    (options.introspection as DataQueryIntrospection).columns.length > 0
+      ? (options.introspection as DataQueryIntrospection).columns
           .slice(0, 8)
           .map((column) => `${column.name} (${column.type})`)
           .join(", ")
@@ -162,6 +302,12 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
         source?: unknown;
       },
     ) => getScenarioIntrospection(context, shape),
+    collectDataQueryWorkspaceIntrospection: async (
+      _connection: unknown,
+      _input: unknown,
+      _format: unknown,
+      relations: Array<{ alias?: unknown; source?: unknown }>,
+    ) => getScenarioWorkspaceIntrospection(context, relations),
   }));
 
   mock.module(xlsxSourcesModuleUrl, () => ({
@@ -220,13 +366,49 @@ export function installDataQueryMocks(context: HarnessRunnerContext): void {
       context.recordAction("data:query:codex-draft", {
         format: options.format,
         intent: options.intent,
-        ...(options.introspection?.selectedHeaderRow !== undefined
+        ...(typeof options.introspection === "object" &&
+        options.introspection !== null &&
+        "selectedHeaderRow" in options.introspection &&
+        options.introspection.selectedHeaderRow !== undefined
           ? { selectedHeaderRow: options.introspection.selectedHeaderRow }
           : {}),
-        ...(options.introspection?.selectedRange
+        ...(typeof options.introspection === "object" &&
+        options.introspection !== null &&
+        "selectedRange" in options.introspection &&
+        options.introspection.selectedRange
           ? { selectedRange: options.introspection.selectedRange }
           : {}),
-        selectedSource: options.introspection?.selectedSource,
+        ...(typeof options.introspection === "object" &&
+        options.introspection !== null &&
+        "selectedSource" in options.introspection
+          ? { selectedSource: options.introspection.selectedSource }
+          : {}),
+        ...(typeof options.introspection === "object" &&
+        options.introspection !== null &&
+        "relations" in options.introspection
+          ? {
+              relations: Array.isArray(options.introspection.relations)
+                ? options.introspection.relations.map((relation) => ({
+                    alias: relation.alias,
+                    columns:
+                      Array.isArray((relation as { columns?: unknown[] }).columns) &&
+                      (relation as { columns?: unknown[] }).columns
+                        ? (relation as { columns?: unknown[] }).columns
+                        : undefined,
+                    sampleRows:
+                      Array.isArray((relation as { sampleRows?: unknown[] }).sampleRows) &&
+                      (relation as { sampleRows?: unknown[] }).sampleRows
+                        ? (relation as { sampleRows?: unknown[] }).sampleRows
+                        : undefined,
+                    source: relation.source,
+                    truncated:
+                      "truncated" in relation
+                        ? (relation as { truncated?: unknown }).truncated
+                        : undefined,
+                  }))
+                : undefined,
+            }
+          : {}),
       });
 
       if (context.scenario.dataQueryCodexErrorMessage) {

@@ -1,7 +1,7 @@
 import { input } from "@inquirer/prompts";
 
 import type { DataHeaderMappingEntry } from "../../../duckdb/header-mapping";
-import type { DataQueryInputFormat } from "../../../duckdb/query";
+import type { DataQueryInputFormat, DataQueryRelationBinding } from "../../../duckdb/query";
 import type { CliRuntime } from "../../../types";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
@@ -18,6 +18,7 @@ export async function runManualInteractiveQuery(
     selectedHeaderRow?: number;
     selectedNoHeader?: boolean;
     selectedRange?: string;
+    relations?: DataQueryRelationBinding[];
     selectedSource?: string;
   },
 ): Promise<InteractiveQueryRunResult> {

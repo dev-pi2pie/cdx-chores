@@ -2,10 +2,21 @@ import { Command } from "commander";
 
 import { actionDataQuery, actionDataQueryCodex } from "../../actions";
 import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "../../duckdb/query";
-import { parseDataQueryInputFormatOption, parsePositiveIntegerOption } from "../../options/parsers";
+import {
+  collectDataQueryRelationBindingOption,
+  parseDataQueryInputFormatOption,
+  parsePositiveIntegerOption,
+} from "../../options/parsers";
 import type { CliRuntime } from "../../types";
 
 export function registerDataQueryCommands(dataCommand: Command, runtime: CliRuntime): void {
+  function resolveCommandRelationBindings(
+    localRelations: Array<{ alias: string; source: string }> | undefined,
+    parentRelations: Array<{ alias: string; source: string }> | undefined,
+  ): Array<{ alias: string; source: string }> {
+    return [...(parentRelations ?? []), ...(localRelations ?? [])];
+  }
+
   const queryCommand = dataCommand
     .command("query")
     .description("Run a DuckDB-backed SQL query against one input file")
@@ -16,7 +27,16 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
       parseDataQueryInputFormatOption,
     )
-    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--relation <binding>",
+      "Bind workspace relations for SQLite or DuckDB inputs (repeatable or comma-separated; use <name> or <alias>=<source>)",
+      collectDataQueryRelationBindingOption,
+      [],
+    )
+    .option(
+      "--source <name>",
+      "Source object name for SQLite or DuckDB tables/views, or Excel sheets",
+    )
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
       "--source-shape <path>",
@@ -72,6 +92,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           overwrite?: boolean;
           pretty?: boolean;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           rows?: number;
           sourceShape?: string;
           source?: string;
@@ -93,6 +114,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           overwrite: options.overwrite,
           pretty: options.pretty,
           range: options.range,
+          relations: options.relation,
           rows: options.rows,
           sourceShape: options.sourceShape,
           source: options.source,
@@ -112,7 +134,16 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
       parseDataQueryInputFormatOption,
     )
-    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--relation <binding>",
+      "Bind workspace relations for SQLite or DuckDB inputs (repeatable or comma-separated; use <name> or <alias>=<source>)",
+      collectDataQueryRelationBindingOption,
+      [],
+    )
+    .option(
+      "--source <name>",
+      "Source object name for SQLite or DuckDB tables/views, or Excel sheets",
+    )
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
       "--body-start-row <value>",
@@ -135,6 +166,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           headerRow?: number;
           printSql?: boolean;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           source?: string;
         },
         command: Command,
@@ -144,16 +176,20 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           source?: string;
         }>();
+        const relations = resolveCommandRelationBindings(options.relation, parentOptions?.relation);
         await actionDataQueryCodex(runtime, {
           bodyStartRow: options.bodyStartRow ?? parentOptions?.bodyStartRow,
           headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,
           inputFormat: options.inputFormat ?? parentOptions?.inputFormat,
           intent: options.intent,
+          mode: relations.length > 0 ? "workspace" : "single-source",
           printSql: options.printSql,
           range: options.range ?? parentOptions?.range,
+          relations,
           source: options.source ?? parentOptions?.source,
         });
       },

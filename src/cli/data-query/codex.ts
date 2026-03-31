@@ -2,7 +2,11 @@ import { getCliColors } from "../colors";
 import type { CliRuntime } from "../types";
 import { printLine } from "../actions/shared";
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
-import type { DataQueryInputFormat, DataQuerySourceIntrospection } from "../duckdb/query";
+import type {
+  DataQueryInputFormat,
+  DataQuerySourceIntrospection,
+  DataQueryWorkspaceIntrospection,
+} from "../duckdb/query";
 
 const DATA_QUERY_CODEX_OUTPUT_SCHEMA = {
   type: "object",
@@ -22,6 +26,10 @@ const DATA_QUERY_CODEX_TIMEOUT_MS = 30_000;
 const DATA_QUERY_CODEX_MAX_SAMPLE_VALUE_CHARS = 120;
 const DATA_QUERY_CODEX_EDITOR_SCHEMA_COLUMNS = 8;
 const DATA_QUERY_CODEX_EDITOR_SAMPLE_ROWS = 3;
+
+export type DataQueryCodexIntrospection =
+  | DataQuerySourceIntrospection
+  | DataQueryWorkspaceIntrospection;
 
 export interface DataQueryCodexDraft {
   reasoningSummary: string;
@@ -65,18 +73,171 @@ function normalizePromptSampleRows(rows: readonly Record<string, string>[]): str
   });
 }
 
-function summarizeEditorSchema(introspection: DataQuerySourceIntrospection): string {
-  if (introspection.columns.length === 0) {
+function isWorkspaceIntrospection(
+  introspection: DataQueryCodexIntrospection,
+): introspection is DataQueryWorkspaceIntrospection {
+  return introspection.kind === "workspace";
+}
+
+interface DataQueryCodexRelationContext {
+  alias: string;
+  columns: ReadonlyArray<{ name: string; type: string }>;
+  sampleRows: readonly Record<string, string>[];
+  source?: string;
+  truncated: boolean;
+}
+
+function getCodexRelationContexts(
+  introspection: DataQueryCodexIntrospection,
+): DataQueryCodexRelationContext[] {
+  if (isWorkspaceIntrospection(introspection)) {
+    return introspection.relations.map((relation) => ({
+      alias: relation.alias,
+      columns: relation.columns,
+      sampleRows: relation.sampleRows,
+      source: relation.source,
+      truncated: relation.truncated,
+    }));
+  }
+
+  return [
+    {
+      alias: "file",
+      columns: introspection.columns,
+      sampleRows: introspection.sampleRows,
+      source: introspection.selectedSource,
+      truncated: introspection.truncated,
+    },
+  ];
+}
+
+function summarizeRelationSchema(relation: DataQueryCodexRelationContext): string {
+  if (relation.columns.length === 0) {
     return "(no columns available)";
   }
 
-  const visibleColumns = introspection.columns
+  const visibleColumns = relation.columns
     .slice(0, DATA_QUERY_CODEX_EDITOR_SCHEMA_COLUMNS)
     .map((column) => `${column.name} (${column.type})`);
-  const remainingColumns = introspection.columns.length - visibleColumns.length;
+  const remainingColumns = relation.columns.length - visibleColumns.length;
   return remainingColumns > 0
     ? `${visibleColumns.join(", ")}, +${remainingColumns} more`
     : visibleColumns.join(", ");
+}
+
+function summarizeEditorSchema(introspection: DataQueryCodexIntrospection): string {
+  const relations = getCodexRelationContexts(introspection);
+  if (relations.length === 0) {
+    return "(no relations available)";
+  }
+
+  return isWorkspaceIntrospection(introspection)
+    ? relations
+        .map((relation) => `${relation.alias}: ${summarizeRelationSchema(relation)}`)
+        .join(" | ")
+    : summarizeRelationSchema(relations[0]);
+}
+
+function buildSingleSourceEditorContextLines(
+  introspection: Exclude<DataQueryCodexIntrospection, DataQueryWorkspaceIntrospection>,
+): string[] {
+  return [
+    "# Logical table: file",
+    ...(introspection.selectedSource ? [`# Source: ${introspection.selectedSource}`] : []),
+    ...(introspection.selectedRange ? [`# Range: ${introspection.selectedRange}`] : []),
+    ...(introspection.selectedBodyStartRow !== undefined
+      ? [`# Body start row: ${introspection.selectedBodyStartRow}`]
+      : []),
+    ...(introspection.selectedHeaderRow !== undefined
+      ? [`# Header row: ${introspection.selectedHeaderRow}`]
+      : []),
+  ];
+}
+
+interface DataQueryCodexIntrospectionView {
+  editorContextLines: string[];
+  mode: "single-source" | "workspace";
+  promptContextLines: string[];
+  promptRuleLine: string;
+  promptTargetLine: string;
+  relations: DataQueryCodexRelationContext[];
+  renderContextLines: (options: {
+    format: DataQueryInputFormat;
+    intent: string;
+    pc: ReturnType<typeof getCliColors>;
+  }) => string[];
+}
+
+function buildCodexIntrospectionView(
+  introspection: DataQueryCodexIntrospection,
+): DataQueryCodexIntrospectionView {
+  const relations = getCodexRelationContexts(introspection);
+  if (isWorkspaceIntrospection(introspection)) {
+    return {
+      editorContextLines: [
+        "# Workspace relations:",
+        ...relations.map((relation) => `# - ${relation.alias} (source: ${relation.source})`),
+      ],
+      mode: "workspace",
+      promptContextLines: ["Workspace relations:"],
+      promptRuleLine: `- Use only these relation names: ${relations
+        .map((relation) => relation.alias)
+        .join(", ")}.`,
+      promptTargetLine: `Draft one DuckDB SQL query for the workspace relations ${relations
+        .map((relation) => `\`${relation.alias}\``)
+        .join(", ")}.`,
+      relations,
+      renderContextLines: ({ format, intent, pc }) => [
+        `${pc.bold(pc.cyan("Intent"))}: ${pc.white(intent)}`,
+        `${pc.bold(pc.cyan("Format"))}: ${pc.white(format)}`,
+        `${pc.bold(pc.cyan("Relations"))}: ${pc.white(
+          relations.map((relation) => relation.alias).join(", "),
+        )}`,
+      ],
+    };
+  }
+
+  return {
+    editorContextLines: buildSingleSourceEditorContextLines(introspection),
+    mode: "single-source",
+    promptContextLines: [
+      `Selected source: ${introspection.selectedSource ?? "(implicit single source)"}`,
+      `Selected range: ${introspection.selectedRange ?? "(whole source)"}`,
+      `Selected body start row: ${
+        introspection.selectedBodyStartRow !== undefined
+          ? String(introspection.selectedBodyStartRow)
+          : "(not set)"
+      }`,
+      `Selected header row: ${
+        introspection.selectedHeaderRow !== undefined
+          ? String(introspection.selectedHeaderRow)
+          : "(auto or first row)"
+      }`,
+    ],
+    promptRuleLine: "- Use only the table name `file`.",
+    promptTargetLine: "Draft one DuckDB SQL query for the logical table `file`.",
+    relations,
+    renderContextLines: ({ format, intent, pc }) => [
+      `${pc.bold(pc.cyan("Intent"))}: ${pc.white(intent)}`,
+      `${pc.bold(pc.cyan("Format"))}: ${pc.white(format)}`,
+      ...(introspection.selectedSource
+        ? [`${pc.bold(pc.cyan("Source"))}: ${pc.white(introspection.selectedSource)}`]
+        : []),
+      ...(introspection.selectedRange
+        ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(introspection.selectedRange)}`]
+        : []),
+      ...(introspection.selectedBodyStartRow !== undefined
+        ? [
+            `${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(introspection.selectedBodyStartRow))}`,
+          ]
+        : []),
+      ...(introspection.selectedHeaderRow !== undefined
+        ? [
+            `${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(introspection.selectedHeaderRow))}`,
+          ]
+        : []),
+    ],
+  };
 }
 
 export function normalizeDataQueryCodexIntent(intent: string): string {
@@ -102,39 +263,42 @@ export function normalizeDataQueryCodexEditorIntent(intent: string): string {
 export function buildDataQueryCodexIntentEditorTemplate(options: {
   format: DataQueryInputFormat;
   intent?: string;
-  introspection: DataQuerySourceIntrospection;
+  introspection: DataQueryCodexIntrospection;
 }): string {
-  const sampleLines = normalizePromptSampleRows(
-    options.introspection.sampleRows.slice(0, DATA_QUERY_CODEX_EDITOR_SAMPLE_ROWS),
-  );
-  const remainingSampleRows = options.introspection.sampleRows.length - sampleLines.length;
-  const sampleOverflowLine =
-    remainingSampleRows > 0
-      ? `# ... +${remainingSampleRows} more sampled rows`
-      : options.introspection.truncated
-        ? "# ... additional sampled rows omitted"
-        : undefined;
+  const view = buildCodexIntrospectionView(options.introspection);
+  const sampleSections = view.relations.flatMap((relation) => {
+    const sampleLines = normalizePromptSampleRows(
+      relation.sampleRows.slice(0, DATA_QUERY_CODEX_EDITOR_SAMPLE_ROWS),
+    );
+    const remainingSampleRows = relation.sampleRows.length - sampleLines.length;
+    const sampleOverflowLine =
+      remainingSampleRows > 0
+        ? `${view.mode === "workspace" ? "#   " : "# "}... +${remainingSampleRows} more sampled rows`
+        : relation.truncated
+          ? `${view.mode === "workspace" ? "#   " : "# "}... additional sampled rows omitted`
+          : undefined;
+
+    if (view.mode === "workspace") {
+      return [
+        `# ${relation.alias}:`,
+        ...sampleLines.map((line) => `#   ${line}`),
+        ...(sampleOverflowLine ? [sampleOverflowLine] : []),
+      ];
+    }
+
+    return [
+      ...sampleLines.map((line) => `# ${line}`),
+      ...(sampleOverflowLine ? [sampleOverflowLine] : []),
+    ];
+  });
 
   return [
     "# Query context for Codex drafting.",
-    "# Logical table: file",
+    ...view.editorContextLines,
     `# Format: ${options.format}`,
-    ...(options.introspection.selectedSource
-      ? [`# Source: ${options.introspection.selectedSource}`]
-      : []),
-    ...(options.introspection.selectedRange
-      ? [`# Range: ${options.introspection.selectedRange}`]
-      : []),
-    ...(options.introspection.selectedBodyStartRow !== undefined
-      ? [`# Body start row: ${options.introspection.selectedBodyStartRow}`]
-      : []),
-    ...(options.introspection.selectedHeaderRow !== undefined
-      ? [`# Header row: ${options.introspection.selectedHeaderRow}`]
-      : []),
     `# Schema: ${summarizeEditorSchema(options.introspection)}`,
     "# Sample rows:",
-    ...sampleLines.map((line) => `# ${line}`),
-    ...(sampleOverflowLine ? [sampleOverflowLine] : []),
+    ...sampleSections,
     "#",
     "# Write plain intent below. Comment lines starting with # are ignored.",
     "",
@@ -145,22 +309,16 @@ export function buildDataQueryCodexIntentEditorTemplate(options: {
 export function buildDataQueryCodexPrompt(options: {
   format: DataQueryInputFormat;
   intent: string;
-  introspection: DataQuerySourceIntrospection;
+  introspection: DataQueryCodexIntrospection;
 }): string {
-  const schemaLines =
-    options.introspection.columns.length > 0
-      ? options.introspection.columns.map(
-          (column, index) => `${index + 1}. ${column.name}: ${column.type}`,
-        )
-      : ["(no columns available)"];
-  const sampleLines = normalizePromptSampleRows(options.introspection.sampleRows);
+  const view = buildCodexIntrospectionView(options.introspection);
 
   return [
-    "Draft one DuckDB SQL query for the logical table `file`.",
+    view.promptTargetLine,
     "Return JSON only following the provided schema.",
     "",
     "Rules:",
-    "- Use only the table name `file`.",
+    view.promptRuleLine,
     "- Draft SQL only; do not execute it.",
     "- Keep the SQL readable and explicit.",
     "- Prefer named columns instead of `select *` when the intent does not require every column.",
@@ -168,24 +326,27 @@ export function buildDataQueryCodexPrompt(options: {
     "",
     `User intent: ${options.intent}`,
     `Detected format: ${options.format}`,
-    `Selected source: ${options.introspection.selectedSource ?? "(implicit single source)"}`,
-    `Selected range: ${options.introspection.selectedRange ?? "(whole source)"}`,
-    `Selected body start row: ${
-      options.introspection.selectedBodyStartRow !== undefined
-        ? String(options.introspection.selectedBodyStartRow)
-        : "(not set)"
-    }`,
-    `Selected header row: ${
-      options.introspection.selectedHeaderRow !== undefined
-        ? String(options.introspection.selectedHeaderRow)
-        : "(auto or first row)"
-    }`,
+    ...view.promptContextLines,
     "",
-    `Schema (${options.introspection.columns.length} columns):`,
-    ...schemaLines,
-    "",
-    `Sample rows (showing ${options.introspection.sampleRows.length}${options.introspection.truncated ? "+" : ""}):`,
-    ...sampleLines,
+    ...view.relations.flatMap((relation, relationIndex) => {
+      const schemaLines =
+        relation.columns.length > 0
+          ? relation.columns.map((column, index) => `${index + 1}. ${column.name}: ${column.type}`)
+          : ["(no columns available)"];
+      const sampleLines = normalizePromptSampleRows(relation.sampleRows);
+      return [
+        ...(view.mode === "workspace" && relationIndex === 0 ? ["Workspace relations:"] : []),
+        view.mode === "workspace"
+          ? `Relation ${relation.alias} (source: ${relation.source})`
+          : `Schema (${relation.columns.length} columns):`,
+        ...(view.mode === "workspace" ? [`Schema (${relation.columns.length} columns):`] : []),
+        ...schemaLines,
+        "",
+        `Sample rows (showing ${relation.sampleRows.length}${relation.truncated ? "+" : ""}):`,
+        ...sampleLines,
+        "",
+      ];
+    }),
   ].join("\n");
 }
 
@@ -228,7 +389,7 @@ async function runDataQueryCodexPrompt(options: {
 export async function draftDataQueryWithCodex(options: {
   format: DataQueryInputFormat;
   intent: string;
-  introspection: DataQuerySourceIntrospection;
+  introspection: DataQueryCodexIntrospection;
   runner?: DataQueryCodexRunner;
   timeoutMs?: number;
   workingDirectory: string;
@@ -259,41 +420,50 @@ export function renderDataQueryCodexDraft(options: {
   draft: DataQueryCodexDraft;
   format: DataQueryInputFormat;
   intent: string;
-  introspection: DataQuerySourceIntrospection;
+  introspection: DataQueryCodexIntrospection;
   runtime: CliRuntime;
 }): void {
   const pc = getCliColors(options.runtime);
+  const view = buildCodexIntrospectionView(options.introspection);
+
   const lines = [
-    `${pc.bold(pc.cyan("Intent"))}: ${pc.white(options.intent)}`,
-    `${pc.bold(pc.cyan("Format"))}: ${pc.white(options.format)}`,
-    ...(options.introspection.selectedSource
-      ? [`${pc.bold(pc.cyan("Source"))}: ${pc.white(options.introspection.selectedSource)}`]
-      : []),
-    ...(options.introspection.selectedRange
-      ? [`${pc.bold(pc.cyan("Range"))}: ${pc.white(options.introspection.selectedRange)}`]
-      : []),
-    ...(options.introspection.selectedBodyStartRow !== undefined
-      ? [
-          `${pc.bold(pc.cyan("Body start row"))}: ${pc.white(String(options.introspection.selectedBodyStartRow))}`,
-        ]
-      : []),
-    ...(options.introspection.selectedHeaderRow !== undefined
-      ? [
-          `${pc.bold(pc.cyan("Header row"))}: ${pc.white(String(options.introspection.selectedHeaderRow))}`,
-        ]
-      : []),
+    ...view.renderContextLines({
+      format: options.format,
+      intent: options.intent,
+      pc,
+    }),
     `${pc.bold(pc.cyan("Schema"))}:`,
-    ...(options.introspection.columns.length > 0
-      ? options.introspection.columns.map(
-          (column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
-        )
-      : [`- ${pc.dim("(no columns available)")}`]),
+    ...view.relations.flatMap((relation) =>
+      view.mode === "workspace"
+        ? [
+            `- ${pc.bold(relation.alias)} ${pc.dim(`(source: ${relation.source})`)}`,
+            ...(relation.columns.length > 0
+              ? relation.columns.map(
+                  (column) => `  - ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
+                )
+              : [`  - ${pc.dim("(no columns available)")}`]),
+          ]
+        : relation.columns.length > 0
+          ? relation.columns.map((column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`)
+          : [`- ${pc.dim("(no columns available)")}`],
+    ),
     `${pc.bold(pc.cyan("Sample Rows"))}:`,
-    ...(options.introspection.sampleRows.length > 0
-      ? options.introspection.sampleRows.map(
-          (row, index) => `- ${pc.dim(`${index + 1}.`)} ${pc.white(JSON.stringify(row))}`,
-        )
-      : [`- ${pc.dim("(no sample rows available)")}`]),
+    ...view.relations.flatMap((relation) =>
+      view.mode === "workspace"
+        ? [
+            `- ${pc.bold(relation.alias)}:`,
+            ...(relation.sampleRows.length > 0
+              ? relation.sampleRows.map(
+                  (row, index) => `  - ${pc.dim(`${index + 1}.`)} ${pc.white(JSON.stringify(row))}`,
+                )
+              : [`  - ${pc.dim("(no sample rows available)")}`]),
+          ]
+        : relation.sampleRows.length > 0
+          ? relation.sampleRows.map(
+              (row, index) => `- ${pc.dim(`${index + 1}.`)} ${pc.white(JSON.stringify(row))}`,
+            )
+          : [`- ${pc.dim("(no sample rows available)")}`],
+    ),
     `${pc.bold(pc.cyan("Codex Summary"))}: ${pc.white(options.draft.reasoningSummary)}`,
     "",
     `${pc.bold(pc.green("SQL"))}:`,

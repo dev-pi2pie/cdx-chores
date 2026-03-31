@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, unlink, utimes, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +16,7 @@ const sourceWorkbook = join(
   "big_multi_merged_cells.xlsx",
 );
 const fixtureFileName = "stacked-merged-band.xlsx";
+const FIXTURE_TIMESTAMP = new Date("2026-03-19T00:00:00.000Z");
 
 const sharedStrings = [
   "RAW_TITLE",
@@ -116,6 +117,37 @@ async function cleanFixture(outputDir) {
   await unlink(outputPath);
 }
 
+async function collectRelativeFilePaths(rootDir, currentDir = rootDir) {
+  const entries = await readdir(currentDir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const nextPath = join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectRelativeFilePaths(rootDir, nextPath)));
+      continue;
+    }
+    if (entry.isFile()) {
+      files.push(nextPath.slice(rootDir.length + 1));
+    }
+  }
+  return files;
+}
+
+async function normalizeFixtureTimes(rootDir, currentDir = rootDir) {
+  const entries = await readdir(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const nextPath = join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      await normalizeFixtureTimes(rootDir, nextPath);
+      await utimes(nextPath, FIXTURE_TIMESTAMP, FIXTURE_TIMESTAMP);
+      continue;
+    }
+    if (entry.isFile()) {
+      await utimes(nextPath, FIXTURE_TIMESTAMP, FIXTURE_TIMESTAMP);
+    }
+  }
+}
+
 async function writeFixture(outputDir) {
   await ensureOutputDir(outputDir);
 
@@ -126,7 +158,11 @@ async function writeFixture(outputDir) {
   try {
     execFileSync("unzip", ["-qq", sourceWorkbook, "-d", unpackDir]);
     await writeFile(join(unpackDir, "xl", "sharedStrings.xml"), buildSharedStringsXml(), "utf8");
-    execFileSync("zip", ["-qr", join(outputDir, fixtureFileName), "."], { cwd: unpackDir });
+    await normalizeFixtureTimes(unpackDir);
+    const relativeFiles = await collectRelativeFilePaths(unpackDir);
+    execFileSync("zip", ["-qX", join(outputDir, fixtureFileName), ...relativeFiles], {
+      cwd: unpackDir,
+    });
   } finally {
     await rm(workspace, { recursive: true, force: true });
   }
