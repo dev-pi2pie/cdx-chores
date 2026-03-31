@@ -2,7 +2,9 @@ export {
   DATA_QUERY_INPUT_FORMAT_VALUES,
   type DataQueryInputFormat,
   type DataQueryIntrospectionColumn,
+  type DataQueryRelationBinding,
   type DataQueryResultSet,
+  type PreparedDataQueryContext,
   type DataQuerySourceIntrospection,
   type DataQuerySourceShape,
   type DataQueryTableResult,
@@ -19,6 +21,8 @@ export { quoteSqlIdentifier, detectDataQueryInputFormat, createDuckDbConnection 
 export { listDataQuerySources } from "./source-resolution";
 
 export { prepareDataQuerySource } from "./prepare-source";
+
+export { prepareDataQueryWorkspace } from "./prepare-workspace";
 
 export { executeDataQueryForTable, executeDataQueryForAllRows } from "./execute";
 

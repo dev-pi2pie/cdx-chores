@@ -5,6 +5,11 @@ export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite"
 
 export type DataQueryInputFormat = (typeof DATA_QUERY_INPUT_FORMAT_VALUES)[number];
 
+export interface DataQueryRelationBinding {
+  alias: string;
+  source: string;
+}
+
 export interface DataQueryTableResult {
   columns: string[];
   rows: DataPreviewRow[];
@@ -37,10 +42,13 @@ export interface DataQuerySourceShape {
   headerRow?: number;
   noHeader?: boolean;
   range?: string;
+  relations?: DataQueryRelationBinding[];
   source?: string;
 }
 
-export interface PreparedDataQuerySource {
+export interface PreparedDataQueryContext {
+  mode: "single-source" | "workspace";
+  relationAliases?: string[];
   selectedBodyStartRow?: number;
   selectedHeaderRow?: number;
   selectedSource?: string;

@@ -27,20 +27,27 @@ export async function listDataQuerySources(
   connection: DuckDBConnection,
   inputPath: string,
   format: DataQueryInputFormat,
+  options: {
+    ensureExtensionLoaded?: boolean;
+  } = {},
 ): Promise<string[] | undefined> {
   if (format === "sqlite") {
-    await ensureDuckDbManagedExtensionLoaded(
-      connection,
-      getDuckDbManagedExtensionNameForFormat("sqlite"),
-    );
+    if (options.ensureExtensionLoaded !== false) {
+      await ensureDuckDbManagedExtensionLoaded(
+        connection,
+        getDuckDbManagedExtensionNameForFormat("sqlite"),
+      );
+    }
     return await listSQLiteSources(connection, inputPath);
   }
 
   if (format === "excel") {
-    await ensureDuckDbManagedExtensionLoaded(
-      connection,
-      getDuckDbManagedExtensionNameForFormat("excel"),
-    );
+    if (options.ensureExtensionLoaded !== false) {
+      await ensureDuckDbManagedExtensionLoaded(
+        connection,
+        getDuckDbManagedExtensionNameForFormat("excel"),
+      );
+    }
     return await listXlsxSheetNames(inputPath);
   }
 

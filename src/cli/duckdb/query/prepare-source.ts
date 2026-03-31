@@ -11,7 +11,7 @@ import {
 } from "./excel-range";
 import { getDuckDbManagedExtensionNameForFormat, toErrorMessage } from "./formats";
 import { resolveMultiObjectSource } from "./source-resolution";
-import type { DataQueryInputFormat, DataQuerySourceShape, PreparedDataQuerySource } from "./types";
+import type { DataQueryInputFormat, DataQuerySourceShape, PreparedDataQueryContext } from "./types";
 import { collectQueryRelationColumns } from "./prepare-source/columns";
 import {
   createSplitHeaderBodyExcelSourceView,
@@ -34,7 +34,7 @@ export async function prepareDataQuerySource(
     installMissingExtension?: boolean;
     statusStream?: NodeJS.WritableStream;
   } = {},
-): Promise<PreparedDataQuerySource> {
+): Promise<PreparedDataQueryContext> {
   let selectedSource = shape.source?.trim();
   const selectedBodyStartRow =
     shape.bodyStartRow !== undefined ? normalizeExcelBodyStartRow(shape.bodyStartRow) : undefined;
@@ -200,6 +200,8 @@ export async function prepareDataQuerySource(
         )}`,
       );
       return {
+        mode: "single-source",
+        relationAliases: undefined,
         selectedBodyStartRow,
         selectedHeaderRow,
         selectedRange,
@@ -252,6 +254,8 @@ export async function prepareDataQuerySource(
         )}`,
       );
       return {
+        mode: "single-source",
+        relationAliases: undefined,
         selectedBodyStartRow,
         selectedHeaderRow,
         selectedRange,

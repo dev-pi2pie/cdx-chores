@@ -11,6 +11,7 @@ export interface RenderDataQueryOptions {
   headerRow?: number;
   inputPath: string;
   range?: string;
+  relations?: string[];
   rows: DataPreviewRow[];
   source?: string;
   truncated: boolean;
@@ -150,6 +151,9 @@ export function renderDataQuery(
   const lines = [
     `${pc.bold(pc.cyan("Input"))}: ${formatPathForDisplay(runtime, options.inputPath)}`,
     `${pc.bold(pc.cyan("Format"))}: ${options.format}`,
+    ...(options.relations && options.relations.length > 0
+      ? [`${pc.bold(pc.cyan("Relations"))}: ${options.relations.join(", ")}`]
+      : []),
     ...(options.source ? [`${pc.bold(pc.cyan("Source"))}: ${options.source}`] : []),
     ...(options.range ? [`${pc.bold(pc.cyan("Range"))}: ${options.range}`] : []),
     ...(options.bodyStartRow !== undefined

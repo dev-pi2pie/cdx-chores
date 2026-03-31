@@ -15,11 +15,13 @@ import type { CliRuntime } from "../types";
 import {
   collectDataQuerySourceIntrospection,
   type DataQueryInputFormat,
+  type DataQueryRelationBinding,
   createDuckDbConnection,
   detectDataQueryInputFormat,
   executeDataQueryForAllRows,
   executeDataQueryForTable,
   prepareDataQuerySource,
+  prepareDataQueryWorkspace,
 } from "../duckdb/query";
 import {
   type DataHeaderMappingEntry,
@@ -42,6 +44,7 @@ export interface DataQueryOptions {
   overwrite?: boolean;
   pretty?: boolean;
   range?: string;
+  relations?: DataQueryRelationBinding[];
   rows?: number;
   sourceIntrospectionCollector?: typeof collectDataQuerySourceIntrospection;
   sourceShape?: string;
@@ -109,6 +112,55 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
 
   if (options.writeHeaderMapping && !options.codexSuggestHeaders) {
     throw new CliError("--write-header-mapping requires --codex-suggest-headers.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.source?.trim()) {
+    throw new CliError("--relation cannot be used together with --source.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.sourceShape?.trim()) {
+    throw new CliError("--relation cannot be used together with --source-shape.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.headerMapping?.trim()) {
+    throw new CliError("--relation cannot be used together with --header-mapping.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.codexSuggestHeaders) {
+    throw new CliError("--relation cannot be used together with --codex-suggest-headers.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.range?.trim()) {
+    throw new CliError("--relation cannot be used together with --range.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.headerRow !== undefined) {
+    throw new CliError("--relation cannot be used together with --header-row.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.bodyStartRow !== undefined) {
+    throw new CliError("--relation cannot be used together with --body-start-row.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
@@ -215,6 +267,7 @@ export async function actionDataQuery(
   }
   const explicitRange = options.range?.trim() || undefined;
   const explicitSource = options.source?.trim() || undefined;
+  const relationBindings = options.relations ?? [];
   const resolvedSourceShape = options.sourceShape?.trim()
     ? await resolveReusableSourceShapeForDataFlow({
         commandName: "query",
@@ -302,23 +355,29 @@ export async function actionDataQuery(
   let connection;
   try {
     connection = await createDuckDbConnection();
-    const preparedSource = await prepareDataQuerySource(
-      connection,
-      inputPath,
-      format,
-      {
-        bodyStartRow: effectiveBodyStartRow,
-        headerMappings: resolvedHeaderMappings,
-        headerRow: effectiveHeaderRow,
-        noHeader,
-        range,
-        source,
-      },
-      {
-        installMissingExtension: options.installMissingExtension,
-        statusStream: runtime.stderr,
-      },
-    );
+    const preparedContext =
+      relationBindings.length > 0
+        ? await prepareDataQueryWorkspace(connection, inputPath, format, relationBindings, {
+            installMissingExtension: options.installMissingExtension,
+            statusStream: runtime.stderr,
+          })
+        : await prepareDataQuerySource(
+            connection,
+            inputPath,
+            format,
+            {
+              bodyStartRow: effectiveBodyStartRow,
+              headerMappings: resolvedHeaderMappings,
+              headerRow: effectiveHeaderRow,
+              noHeader,
+              range,
+              source,
+            },
+            {
+              installMissingExtension: options.installMissingExtension,
+              statusStream: runtime.stderr,
+            },
+          );
 
     if (options.json) {
       const result = await executeDataQueryForAllRows(connection, sql);
@@ -351,12 +410,13 @@ export async function actionDataQuery(
     const rendered = renderDataQuery(runtime, {
       columns: table.columns,
       format,
-      bodyStartRow: preparedSource.selectedBodyStartRow,
+      bodyStartRow: preparedContext.selectedBodyStartRow,
       inputPath,
-      range: preparedSource.selectedRange,
-      headerRow: preparedSource.selectedHeaderRow,
+      range: preparedContext.selectedRange,
+      headerRow: preparedContext.selectedHeaderRow,
+      relations: preparedContext.relationAliases,
       rows: table.rows,
-      source: preparedSource.selectedSource,
+      source: preparedContext.selectedSource,
       truncated: table.truncated,
     });
 

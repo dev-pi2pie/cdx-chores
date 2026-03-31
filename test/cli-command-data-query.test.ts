@@ -260,6 +260,53 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
+  test("queries SQLite workspace relations end to end when the extension is ready", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "entries=time_entries",
+      "--sql",
+      "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Format: sqlite");
+    expect(result.stdout).toContain("Relations: users, entries");
+    expect(result.stdout).toContain("Ada  | 8");
+    expect(result.stdout).toContain("Bob  | 5");
+  });
+
+  test("treats one explicit --relation binding as workspace mode when the extension is ready", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "people=users",
+      "--sql",
+      "select id, name from people order by id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: people");
+    expect(result.stdout).not.toContain("Source: users");
+    expect(result.stdout).toContain("1   | Ada");
+  });
+
   test("queries Excel input end to end when the extension is ready", () => {
     if (!excelReady) {
       return;
@@ -485,6 +532,87 @@ describe("CLI data query command", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("--source is required for SQLite");
     expect(result.stderr).toContain("Available sources: active_users, time_entries, users");
+  });
+
+  test("rejects --source together with --relation", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--source",
+      "users",
+      "--relation",
+      "entries=time_entries",
+      "--sql",
+      "select * from file",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("--relation cannot be used together with --source");
+  });
+
+  test("rejects reserved file alias in workspace mode", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "file=users",
+      "--sql",
+      "select * from file",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("relation alias `file` is reserved in workspace mode");
+  });
+
+  test("rejects duplicate relation aliases in workspace mode", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "users=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects --relation for non-SQLite query inputs", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("basic.csv"),
+      "--relation",
+      "people",
+      "--sql",
+      "select * from people",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain(
+      "--relation is currently only supported for SQLite query inputs",
+    );
+  });
+
+  test("rejects malformed relation aliases at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "1bad=users",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--relation alias must be a simple SQL identifier");
   });
 
   test("lists available Excel sources when source is missing", () => {

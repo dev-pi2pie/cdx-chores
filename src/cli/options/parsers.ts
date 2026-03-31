@@ -5,7 +5,11 @@ import type {
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
 } from "../actions/rename";
-import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "../duckdb/query";
+import {
+  DATA_QUERY_INPUT_FORMAT_VALUES,
+  type DataQueryInputFormat,
+  type DataQueryRelationBinding,
+} from "../duckdb/query";
 import {
   DUCKDB_MANAGED_EXTENSION_NAMES,
   type DuckDbManagedExtensionName,
@@ -29,6 +33,41 @@ export function collectCsvListOption(value: string, previous: string[] = []): st
 
 export function collectRepeatedOption(value: string, previous: string[] = []): string[] {
   return [...previous, value];
+}
+
+const DATA_QUERY_RELATION_ALIAS_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function parseDataQueryRelationBinding(value: string): DataQueryRelationBinding {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new InvalidArgumentError("--relation requires a non-empty binding.");
+  }
+
+  const separatorIndex = trimmed.indexOf("=");
+  const alias = (separatorIndex >= 0 ? trimmed.slice(0, separatorIndex) : trimmed).trim();
+  const source = (separatorIndex >= 0 ? trimmed.slice(separatorIndex + 1) : trimmed).trim();
+
+  if (!alias || !source) {
+    throw new InvalidArgumentError("--relation must use either <name> or <alias>=<source> syntax.");
+  }
+
+  if (!DATA_QUERY_RELATION_ALIAS_PATTERN.test(alias)) {
+    throw new InvalidArgumentError(
+      "--relation alias must be a simple SQL identifier (letters, numbers, underscore; cannot start with a number).",
+    );
+  }
+
+  return {
+    alias,
+    source,
+  };
+}
+
+export function collectDataQueryRelationBindingOption(
+  value: string,
+  previous: DataQueryRelationBinding[] = [],
+): DataQueryRelationBinding[] {
+  return [...previous, parseDataQueryRelationBinding(value)];
 }
 
 export function parseNonNegativeIntegerOption(value: string, label: string): number {

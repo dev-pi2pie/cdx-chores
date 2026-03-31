@@ -51,6 +51,48 @@ describe("cli action modules: data query", () => {
     });
   });
 
+  test("actionDataQuery renders bounded table output for SQLite workspace relations", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+    await actionDataQuery(runtime, {
+      input: toRepoRelativePath(dataQueryFixturePath("multi.sqlite")),
+      relations: [
+        { alias: "users", source: "users" },
+        { alias: "entries", source: "time_entries" },
+      ],
+      sql: "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    });
+
+    expectNoStderr();
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Format: sqlite");
+    expect(stdout.text).toContain("Relations: users, entries");
+    expect(stdout.text).toContain("Ada  | 8");
+    expect(stdout.text).toContain("Bob  | 5");
+  });
+
+  test("actionDataQuery treats one explicit relation binding as workspace mode", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+    await actionDataQuery(runtime, {
+      input: toRepoRelativePath(dataQueryFixturePath("multi.sqlite")),
+      relations: [{ alias: "people", source: "users" }],
+      sql: "select id, name from people order by id",
+    });
+
+    expectNoStderr();
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Relations: people");
+    expect(stdout.text).not.toContain("Source: users");
+    expect(stdout.text).toContain("1   | Ada");
+  });
+
   test("actionDataQuery honors --input-format override for TSV-like input", async () => {
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "people.data");
@@ -85,6 +127,64 @@ describe("cli action modules: data query", () => {
       { id: "2", name: "Bob" },
       { id: "3", name: "Cyd" },
     ]);
+  });
+
+  test("actionDataQuery rejects --source together with --relation before query execution", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: "test/fixtures/data-query/multi.sqlite",
+          relations: [{ alias: "entries", source: "time_entries" }],
+          source: "users",
+          sql: "select * from file",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--relation cannot be used together with --source",
+      },
+    );
+  });
+
+  test("actionDataQuery rejects reserved file alias in workspace mode", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: "test/fixtures/data-query/multi.sqlite",
+          relations: [{ alias: "file", source: "users" }],
+          sql: "select * from file",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "relation alias `file` is reserved in workspace mode",
+      },
+    );
+  });
+
+  test("actionDataQuery rejects duplicate relation aliases in workspace mode", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: "test/fixtures/data-query/multi.sqlite",
+          relations: [
+            { alias: "users", source: "users" },
+            { alias: "users", source: "time_entries" },
+          ],
+          sql: "select * from users",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Duplicate workspace relation alias: users",
+      },
+    );
   });
 
   test("actionDataQuery writes JSON output to file and reports to stderr", async () => {

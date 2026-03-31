@@ -2,7 +2,11 @@ import { Command } from "commander";
 
 import { actionDataQuery, actionDataQueryCodex } from "../../actions";
 import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "../../duckdb/query";
-import { parseDataQueryInputFormatOption, parsePositiveIntegerOption } from "../../options/parsers";
+import {
+  collectDataQueryRelationBindingOption,
+  parseDataQueryInputFormatOption,
+  parsePositiveIntegerOption,
+} from "../../options/parsers";
 import type { CliRuntime } from "../../types";
 
 export function registerDataQueryCommands(dataCommand: Command, runtime: CliRuntime): void {
@@ -15,6 +19,12 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
       "--input-format <format>",
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
       parseDataQueryInputFormatOption,
+    )
+    .option(
+      "--relation <binding>",
+      "Bind a workspace relation for SQLite inputs (repeatable; use <name> or <alias>=<source>)",
+      collectDataQueryRelationBindingOption,
+      [],
     )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
@@ -72,6 +82,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           overwrite?: boolean;
           pretty?: boolean;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           rows?: number;
           sourceShape?: string;
           source?: string;
@@ -93,6 +104,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           overwrite: options.overwrite,
           pretty: options.pretty,
           range: options.range,
+          relations: options.relation,
           rows: options.rows,
           sourceShape: options.sourceShape,
           source: options.source,

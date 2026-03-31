@@ -2,7 +2,7 @@
 title: "Data query workspace implementation"
 created-date: 2026-03-31
 modified-date: 2026-03-31
-status: draft
+status: active
 agent: codex
 ---
 
@@ -251,26 +251,26 @@ Practical reading:
 
 ### Phase 1: Freeze relation-binding API
 
-- [ ] freeze repeatable `--relation <binding>` syntax
-- [ ] freeze bare binding semantics as `name=name`
-- [ ] freeze alias syntax as `alias=object`
-- [ ] freeze workspace-entry rule for any explicit `--relation`
-- [ ] freeze reserved `file` behavior in workspace mode
-- [ ] freeze coexistence rules for `--source` versus `--relation`
+- [x] freeze repeatable `--relation <binding>` syntax
+- [x] freeze bare binding semantics as `name=name`
+- [x] freeze alias syntax as `alias=object`
+- [x] freeze workspace-entry rule for any explicit `--relation`
+- [x] freeze reserved `file` behavior in workspace mode
+- [x] freeze coexistence rules for `--source` versus `--relation`
 
 ### Phase 2: Shared workspace binding foundation
 
-- [ ] introduce workspace-aware query preparation helpers
-- [ ] preserve the current single-source `file` preparation path
-- [ ] implement multi-binding support for SQLite source containers
-- [ ] validate relation aliases and backend object selection deterministically
-- [ ] reject reserved `file` alias usage in workspace mode
+- [x] introduce workspace-aware query preparation helpers
+- [x] preserve the current single-source `file` preparation path
+- [x] implement multi-binding support for SQLite source containers
+- [x] validate relation aliases and backend object selection deterministically
+- [x] reject reserved `file` alias usage in workspace mode
 
 ### Phase 3: Direct CLI execution and Codex drafting
 
-- [ ] add `--relation` support to direct `data query`
+- [x] add `--relation` support to direct `data query`
 - [ ] add `--relation` support to `data query codex`
-- [ ] keep current single-source behavior unchanged when `--relation` is absent
+- [x] keep current single-source behavior unchanged when `--relation` is absent
 - [ ] add workspace-aware introspection payloads for Codex drafting
 - [ ] split single-source and workspace prompt construction in `data-query/codex.ts`
 
