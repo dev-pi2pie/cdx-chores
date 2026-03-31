@@ -32,6 +32,11 @@ Reduce the next-stage query expansion into an implementation-ready contract that
 - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
 
+Status note:
+
+- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md` reflects the first shipped workspace implementation, including the earlier decision to reserve `file` in workspace mode.
+- the later follow-up alias decision that frees explicit workspace `file` bindings is tracked separately in `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
+
 ## Expansion Families
 
 The broader query family can expand in two different directions, and they should not be conflated:
@@ -119,7 +124,7 @@ Implication:
 
 - future public docs and flags should describe relation bindings and workspaces rather than stretching the current single-source `file` wording past its natural limit
 
-### 4. The safest compatibility rule is: implicit `file` only when exactly one relation is bound
+### 4. The compatibility rule should be: implicit `file` only in single-source mode, explicit `file` allowed in workspace mode
 
 The main aliasing risk is not the existence of a backend table actually named `file`. The real risk is letting the command inject a compatibility alias named `file` in cases where multiple logical relations are already present.
 
@@ -127,14 +132,14 @@ Recommended rule:
 
 - single-source shorthand may continue to expose one compatibility alias named `file`
 - multi-source mode should not inject any implicit `file` alias
-- multi-source mode should reserve `file` as unavailable for explicit relation aliases too
-- in multi-source mode, all SQL-visible names should come only from explicit non-`file` relation bindings
+- multi-source mode may allow `file` as an explicit relation alias when the user binds it deliberately
+- in multi-source mode, all SQL-visible names should come only from explicit relation bindings, whether that explicit name is `file` or another alias
 
 Implication:
 
 - the current direct CLI shape can remain stable for one-source workflows
 - multi-source mode avoids the ambiguity of asking which bound relation `file` should mean
-- a backend object really named `file` is still supportable in multi-source mode, but only through a different explicit alias such as `f=file`
+- a backend object really named `file` remains directly usable in multi-source mode without forced renaming, as long as the product documents that workspace `file` is explicit rather than implicit
 
 ### 5. Backend object names and SQL relation names must stay separate concepts
 
@@ -145,7 +150,7 @@ A source may legitimately contain backend objects named `file`, `users`, and `bo
 
 Recommended direction:
 
-- treat relation bindings as explicit alias maps, such as `users`, `bookmarks`, or `f=file`
+- treat relation bindings as explicit alias maps, such as `users`, `bookmarks`, `file`, or `events=analytics.events`
 - avoid a tolerant contract that sometimes exposes raw backend object names and sometimes rewrites them silently
 
 Example:
@@ -154,14 +159,14 @@ Example:
 source: app.sqlite
 backend objects: file, users, bookmarks
 workspace bindings:
-- f=file
+- file=file
 - users=users
 - bookmarks=bookmarks
 ```
 
 Implication:
 
-- the command can support a real backend object named `file` without conflicting with the old single-source shorthand, as long as multi-source mode reserves `file` and requires a different explicit alias
+- the command can support a real backend object named `file` without conflicting with the old single-source shorthand, as long as docs and prompts distinguish implicit single-source `file` from explicit workspace `file`
 
 ### 6. The next public CLI should expand around repeatable relation bindings, not around a more complex `--source`
 
@@ -181,12 +186,15 @@ Recommended command-shape direction:
 - add an explicit repeatable relation-binding surface for multi-source work:
   - `--relation users`
   - `--relation bookmarks`
-  - `--relation f=file`
+  - `--relation file`
+  - `--relation events=analytics.events`
 
 The bare form should mean "bind a relation with the same SQL name and backend object name". In other words:
 
 - `--relation users` expands to `users=users`
-- `--relation f=file` keeps the alias explicit when the SQL name should differ from the backend object name
+- `--relation file` expands to `file=file`
+- `--relation events=analytics.events` keeps the alias explicit when the SQL name should differ from the backend object name
+- a future small UX extension may also allow comma-separated bundles under one flag value, such as `--relation users,file`
 
 Recommended workspace-entry rule:
 
@@ -414,8 +422,8 @@ Implication:
 ### Alias rule
 
 - `file` is implicit only when exactly one logical relation is bound.
-- When multiple relations are bound, `file` has no implicit meaning and should be reserved from explicit alias use.
-- A backend object really named `file` should be bound under a different explicit alias such as `f=file`.
+- When multiple relations are bound, `file` has no implicit meaning unless the user binds it explicitly.
+- A backend object really named `file` may be bound directly in workspace mode through `--relation file`.
 
 ### CLI direction
 
@@ -426,7 +434,7 @@ Keep:
 
 Add later:
 
-- repeatable `--relation <binding>` for multi-source workspaces, where the bare form binds `name=name` and `alias=object` syntax stays available for explicit renames
+- repeatable `--relation <binding>` for multi-source workspaces, where the bare form binds `name=name`, explicit `alias=object` syntax stays available for renames, and a future small UX extension may allow comma-separated binding bundles under the same flag
 - optional future connection-oriented source entry such as `--connect <profile-or-dsn>`
 
 ### Scope sequencing
