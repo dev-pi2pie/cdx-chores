@@ -29,11 +29,14 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option(
       "--relation <binding>",
-      "Bind a workspace relation for SQLite inputs (repeatable; use <name> or <alias>=<source>)",
+      "Bind a workspace relation for SQLite or DuckDB inputs (repeatable; use <name> or <alias>=<source>)",
       collectDataQueryRelationBindingOption,
       [],
     )
-    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--source <name>",
+      "Source object name for SQLite or DuckDB tables/views, or Excel sheets",
+    )
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
       "--source-shape <path>",
@@ -133,11 +136,14 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option(
       "--relation <binding>",
-      "Bind a workspace relation for SQLite inputs (repeatable; use <name> or <alias>=<source>)",
+      "Bind a workspace relation for SQLite or DuckDB inputs (repeatable; use <name> or <alias>=<source>)",
       collectDataQueryRelationBindingOption,
       [],
     )
-    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--source <name>",
+      "Source object name for SQLite or DuckDB tables/views, or Excel sheets",
+    )
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
       "--body-start-row <value>",

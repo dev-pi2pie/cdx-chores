@@ -18,7 +18,12 @@ export {
   normalizeExcelBodyStartRow,
 } from "./excel-range";
 
-export { quoteSqlIdentifier, detectDataQueryInputFormat, createDuckDbConnection } from "./formats";
+export {
+  quoteSqlIdentifier,
+  detectDataQueryInputFormat,
+  createDuckDbConnection,
+  getMultiObjectSourceDisplayLabel,
+} from "./formats";
 
 export { listDataQuerySources } from "./source-resolution";
 

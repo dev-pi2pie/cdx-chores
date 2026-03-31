@@ -6,6 +6,7 @@ import { actionDataExtract } from "../src/cli/actions";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
@@ -24,6 +25,7 @@ class TtyCaptureStream {
 }
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
 describe("cli action modules: data extract", () => {
@@ -134,6 +136,86 @@ describe("cli action modules: data extract", () => {
       expectNoStdout();
       expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
       expect(await readFile(outputPath, "utf8")).toBe("id,name\n1,Ada\n2,Bob\n");
+    });
+  });
+
+  test("actionDataExtract materializes a DuckDB-file source", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const outputPath = join(fixtureDir, "users.clean.json");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+        source: "users",
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote JSON: ${toRepoRelativePath(outputPath)}`);
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: 1, name: "Ada", status: "active" },
+        { id: 2, name: "Bob", status: "paused" },
+        { id: 3, name: "Cyd", status: "active" },
+      ]);
+    });
+  });
+
+  test("actionDataExtract materializes a schema-qualified DuckDB source", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const outputPath = join(fixtureDir, "events.clean.csv");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataExtract(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+        source: "analytics.events",
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id,user_id,event_type\n10,1,login\n11,1,export\n12,2,login\n",
+      );
+    });
+  });
+
+  test("actionDataExtract requires --source for multi-object DuckDB inputs", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const outputPath = join(fixtureDir, "users.clean.json");
+      const { runtime, expectNoStdout } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataExtract(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--source is required for DuckDB query inputs",
+        },
+      );
+
+      expectNoStdout();
     });
   });
 
@@ -619,6 +701,33 @@ describe("cli action modules: data extract", () => {
       expect(output).toContain("B,C,D,E");
       expect(output).toContain("Does the customer need a follow-up call after the outage review?");
       expect(output).toContain("callback");
+    });
+  });
+
+  test("actionDataExtract reports unknown DuckDB sources clearly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-extract", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const outputPath = join(fixtureDir, "missing.clean.json");
+      const { runtime } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataExtract(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            overwrite: true,
+            source: "analytics.missing",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Unknown DuckDB source: analytics.missing",
+        },
+      );
     });
   });
 });

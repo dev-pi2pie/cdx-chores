@@ -32,6 +32,7 @@ describe("cli action modules: doctor", () => {
     expect(Object.hasOwn(payload.capabilities, "md.to-docx")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "video.gif")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.csv")).toBe(true);
+    expect(Object.hasOwn(payload.capabilities, "data.query.duckdb")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.codex")).toBe(true);
     expect(payload.query).toBeDefined();
     expect(typeof payload.query.available).toBe("boolean");
@@ -39,9 +40,12 @@ describe("cli action modules: doctor", () => {
       expect(typeof payload.query.runtimeVersion).toBe("string");
     }
     expect(payload.query.formats).toHaveProperty("csv");
+    expect(payload.query.formats).toHaveProperty("duckdb");
     expect(payload.query.formats).toHaveProperty("sqlite");
     expect(payload.query.formats.csv.kind).toBe("core");
+    expect(payload.query.formats.duckdb.kind).toBe("core");
     expect(typeof payload.query.formats.csv.detectedSupport).toBe("boolean");
+    expect(typeof payload.query.formats.duckdb.detectedSupport).toBe("boolean");
     expect(Object.hasOwn(payload.query.formats.csv, "loadability")).toBe(false);
     expect(payload.query.formats.sqlite.kind).toBe("extension");
     expect(typeof payload.query.formats.sqlite.loadability).toBe("boolean");
@@ -66,6 +70,7 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("Data query formats:");
     expect(stdout.text).toContain("Data query Codex:");
     expect(stdout.text).toContain("csv: built-in DuckDB support=");
+    expect(stdout.text).toContain("duckdb: built-in DuckDB support=");
     expect(stdout.text).toContain("sqlite: detected support=");
     expect(stdout.text).toContain("ready-to-draft=");
     expect(stdout.text).not.toContain("csv: detected support=");

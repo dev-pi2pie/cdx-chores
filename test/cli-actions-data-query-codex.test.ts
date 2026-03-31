@@ -8,9 +8,11 @@ import {
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 const ANSI_ESCAPE_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
@@ -90,6 +92,99 @@ describe("cli action modules: data query codex", () => {
     expect(stdout.text).toContain(
       "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
     );
+  });
+
+  test("actionDataQueryCodex renders workspace assistant output for DuckDB-file relations", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+      await actionDataQueryCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "join users with analytics events",
+        relations: [
+          { alias: "users", source: "users" },
+          { alias: "events", source: "analytics.events" },
+        ],
+        runner: async ({ prompt }) => {
+          expect(prompt).toContain("Detected format: duckdb");
+          expect(prompt).toContain("Relation users (source: users)");
+          expect(prompt).toContain("Relation events (source: analytics.events)");
+
+          return JSON.stringify({
+            sql: "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id",
+            reasoning_summary: "Joins the bound DuckDB-file relations on user_id.",
+          });
+        },
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Format: duckdb");
+      expect(stdout.text).toContain("Relations: users, events");
+      expect(stdout.text).toContain("Joins the bound DuckDB-file relations on user_id.");
+    });
+  });
+
+  test("actionDataQueryCodex supports schema-qualified DuckDB single-source drafting", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+      await actionDataQueryCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "list analytics events ordered by id",
+        source: "analytics.events",
+        runner: async ({ prompt }) => {
+          expect(prompt).toContain("Selected source: analytics.events");
+          expect(prompt).toContain("1. id: INTEGER");
+          expect(prompt).toContain('"event_type":"login"');
+          return JSON.stringify({
+            sql: "select id, event_type from file order by id",
+            reasoning_summary: "Projects analytics events from the selected DuckDB source.",
+          });
+        },
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Source: analytics.events");
+      expect(stdout.text).toContain("Projects analytics events from the selected DuckDB source.");
+    });
+  });
+
+  test("actionDataQueryCodex requires --source for multi-object DuckDB single-source drafting", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataQueryCodex(runtime, {
+            input: toRepoRelativePath(inputPath),
+            intent: "list rows",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--source is required for DuckDB query inputs",
+        },
+      );
+
+      expectNoOutput();
+    });
   });
 
   test("actionDataQueryCodex prints SQL only with --print-sql", async () => {

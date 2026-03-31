@@ -2,7 +2,12 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 
 import { CliError } from "../../errors";
 import { ensureDuckDbManagedExtensionLoaded } from "../extensions";
-import { escapeSqlStringLiteral, getDuckDbManagedExtensionNameForFormat } from "./formats";
+import { listDuckDbFileSourceEntries, type DuckDbSourceEntry } from "./duckdb-file";
+import {
+  escapeSqlStringLiteral,
+  getDuckDbManagedExtensionNameForFormat,
+  getMultiObjectSourceDisplayLabel,
+} from "./formats";
 import type { DataQueryInputFormat } from "./types";
 import { listXlsxSheetNames } from "../xlsx-sources";
 
@@ -51,6 +56,12 @@ export async function listDataQuerySources(
     return await listXlsxSheetNames(inputPath);
   }
 
+  if (format === "duckdb") {
+    return (await listDuckDbFileSourceEntries(connection, inputPath)).map(
+      (entry) => entry.selector,
+    );
+  }
+
   return undefined;
 }
 
@@ -63,7 +74,7 @@ export async function resolveMultiObjectSource(
   const sources = await listDataQuerySources(connection, inputPath, format);
   if (!sources || sources.length === 0) {
     throw new CliError(
-      `No queryable ${format === "sqlite" ? "SQLite" : "Excel"} sources were found.`,
+      `No queryable ${getMultiObjectSourceDisplayLabel(format)} sources were found.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -74,7 +85,7 @@ export async function resolveMultiObjectSource(
   const normalizedSource = source?.trim();
   if (!normalizedSource) {
     throw new CliError(
-      `--source is required for ${format === "sqlite" ? "SQLite" : "Excel"} query inputs. Available sources: ${formatAvailableSources(sources)}.`,
+      `--source is required for ${getMultiObjectSourceDisplayLabel(format)} query inputs. Available sources: ${formatAvailableSources(sources)}.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -84,7 +95,7 @@ export async function resolveMultiObjectSource(
 
   if (!sources.includes(normalizedSource)) {
     throw new CliError(
-      `Unknown ${format === "sqlite" ? "SQLite" : "Excel"} source: ${normalizedSource}. Available sources: ${formatAvailableSources(sources)}.`,
+      `Unknown ${getMultiObjectSourceDisplayLabel(format)} source: ${normalizedSource}. Available sources: ${formatAvailableSources(sources)}.`,
       {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -93,4 +104,50 @@ export async function resolveMultiObjectSource(
   }
 
   return normalizedSource;
+}
+
+export async function resolveDuckDbFileSource(
+  connection: DuckDBConnection,
+  inputPath: string,
+  source?: string,
+  options: {
+    entries?: readonly DuckDbSourceEntry[];
+  } = {},
+): Promise<DuckDbSourceEntry> {
+  const entries = options.entries
+    ? [...options.entries]
+    : await listDuckDbFileSourceEntries(connection, inputPath);
+  if (entries.length === 0) {
+    throw new CliError(
+      `No queryable ${getMultiObjectSourceDisplayLabel("duckdb")} sources were found.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  const normalizedSource = source?.trim();
+  if (!normalizedSource) {
+    throw new CliError(
+      `--source is required for ${getMultiObjectSourceDisplayLabel("duckdb")} query inputs. Available sources: ${formatAvailableSources(entries.map((entry) => entry.selector))}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  const entry = entries.find((candidate) => candidate.selector === normalizedSource);
+  if (!entry) {
+    throw new CliError(
+      `Unknown ${getMultiObjectSourceDisplayLabel("duckdb")} source: ${normalizedSource}. Available sources: ${formatAvailableSources(entries.map((candidate) => candidate.selector))}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return entry;
 }

@@ -197,6 +197,93 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain("Workspace relations: users, active");
   });
 
+  test("routes interactive DuckDB workspace manual mode through shared query execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "workspace", "manual", "table"],
+      checkboxQueue: [["users", "analytics.events"]],
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      inputQueue: [
+        "users",
+        "events",
+        "select users.id, events.event_type from users join events on users.id = events.user_id order by events.id",
+        "10",
+      ],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.duckdb",
+          inputFormat: "duckdb",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          relations: [
+            { alias: "users", source: "users" },
+            { alias: "events", source: "analytics.events" },
+          ],
+          rows: 10,
+          sql: "select users.id, events.event_type from users join events on users.id = events.user_id order by events.id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "checkbox:Choose DuckDB relations for the workspace",
+    );
+    expect(result.stderr).toContain("Workspace relations: users, events");
+  });
+
+  test("routes interactive DuckDB single-source manual mode through shared query execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:query", "single-source", "analytics.events", "manual", "table"],
+      nowIsoString: "2026-03-30T00:00:00.300Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      inputQueue: ["select id, event_type from file order by id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "INTEGER" },
+          { name: "user_id", type: "INTEGER" },
+          { name: "event_type", type: "VARCHAR" },
+        ],
+        sampleRows: [{ event_type: "login", id: "10", user_id: "1" }],
+        selectedSource: "analytics.events",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.duckdb",
+          inputFormat: "duckdb",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          rows: 10,
+          source: "analytics.events",
+          sql: "select id, event_type from file order by id",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose a DuckDB source",
+    );
+  });
+
   test("re-prompts reserved workspace alias names before continuing", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -432,6 +519,49 @@ describe("interactive mode routing", () => {
     );
   });
 
+  test("routes interactive DuckDB data extract through shared extraction execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "users", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, true, true],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "INTEGER" },
+          { name: "name", type: "VARCHAR" },
+          { name: "status", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada", status: "active" }],
+        selectedSource: "users",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.duckdb",
+          inputFormat: "duckdb",
+          output: "fixtures/query.json",
+          overwrite: false,
+          source: "users",
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Choose a DuckDB source",
+    );
+    expect(stripAnsi(result.stderr)).toContain("Extraction review");
+    expect(stripAnsi(result.stderr)).toContain("- source: users");
+  });
+
   test("lets interactive data extract stop before materialization at the final write boundary", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -453,6 +583,35 @@ describe("interactive mode routing", () => {
     expect(result.actionCalls).toEqual([]);
     expect(result.stderr).toContain("Extraction write summary");
     expect(result.stderr).toContain("Skipped extraction write.");
+  });
+
+  test("lets interactive DuckDB data extract stop before materialization at the final write boundary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "users", "json", "cancel"],
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [true, true, false],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "INTEGER" },
+          { name: "name", type: "VARCHAR" },
+          { name: "status", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada", status: "active" }],
+        selectedSource: "users",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Extraction write summary");
+    expect(result.stderr).toContain("Skipped extraction write.");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Extraction write next step",
+    );
   });
 
   test("supports checkpoint backtracking from the extraction write boundary", () => {
@@ -562,6 +721,49 @@ describe("interactive mode routing", () => {
     expect(stripAnsi(result.stderr).indexOf("Tip:")).toBeLessThan(
       stripAnsi(result.stderr).indexOf("Input:"),
     );
+  });
+
+  test("re-selects the DuckDB source after revising extraction setup in a multi-source flow", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:extract", "users", "json", "review", "revise", "users", "json"],
+      nowIsoString: "2026-03-30T00:00:00.400Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [true, true, false, false, true, true],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
+      dataQueryIntrospection: {
+        columns: [
+          { name: "id", type: "INTEGER" },
+          { name: "name", type: "VARCHAR" },
+          { name: "status", type: "VARCHAR" },
+        ],
+        sampleRows: [{ id: "1", name: "Ada", status: "active" }],
+        selectedSource: "users",
+        truncated: false,
+      },
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:extract",
+        options: {
+          input: "fixtures/query.duckdb",
+          inputFormat: "duckdb",
+          output: "fixtures/query.json",
+          overwrite: false,
+          source: "users",
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Choose a DuckDB source",
+      ),
+    ).toHaveLength(2);
   });
 
   test("reopens destination selection without re-running extraction setup", () => {

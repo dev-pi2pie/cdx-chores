@@ -7,6 +7,7 @@ import { getDisplayWidth } from "../src/cli/text-display-width";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
@@ -25,6 +26,7 @@ class TtyCaptureStream {
 }
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
@@ -91,6 +93,80 @@ describe("cli action modules: data query", () => {
     expect(stdout.text).toContain("Relations: people");
     expect(stdout.text).not.toContain("Source: users");
     expect(stdout.text).toContain("1   | Ada");
+  });
+
+  test("actionDataQuery renders bounded table output for DuckDB-file inputs", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        source: "users",
+        sql: "select id, name from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Format: duckdb");
+      expect(stdout.text).toContain("Source: users");
+      expect(stdout.text).toContain("1   | Ada");
+      expect(stdout.text).toContain("2   | Bob");
+    });
+  });
+
+  test("actionDataQuery supports schema-qualified DuckDB sources", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        source: "analytics.events",
+        sql: "select id, event_type from file order by id",
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Source: analytics.events");
+      expect(stdout.text).toContain("10  | login");
+      expect(stdout.text).toContain("11  | export");
+    });
+  });
+
+  test("actionDataQuery renders bounded table output for DuckDB workspace relations", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+      await actionDataQuery(runtime, {
+        input: toRepoRelativePath(inputPath),
+        relations: [
+          { alias: "users", source: "users" },
+          { alias: "events", source: "analytics.events" },
+        ],
+        sql: "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id",
+      });
+
+      expectNoStderr();
+      expect(stderr.text).toBe("");
+      expect(stdout.text).toContain("Format: duckdb");
+      expect(stdout.text).toContain("Relations: users, events");
+      expect(stdout.text).toContain("Ada  | login");
+      expect(stdout.text).toContain("Ada  | export");
+    });
   });
 
   test("actionDataQuery honors --input-format override for TSV-like input", async () => {
@@ -256,6 +332,31 @@ describe("cli action modules: data query", () => {
       expect(tableLines).toHaveLength(4);
       const widths = tableLines.map((line) => getDisplayWidth(line));
       expect(new Set(widths).size).toBe(1);
+    });
+  });
+
+  test("actionDataQuery reports unknown DuckDB sources clearly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("data-query", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const { runtime } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionDataQuery(runtime, {
+            input: toRepoRelativePath(inputPath),
+            source: "analytics.missing",
+            sql: "select * from file",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Unknown DuckDB source: analytics.missing",
+        },
+      );
     });
   });
 

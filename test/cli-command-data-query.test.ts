@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
 import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 import {
   REPO_ROOT,
@@ -14,6 +15,7 @@ import {
 } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
@@ -307,6 +309,85 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
+  test("queries DuckDB-file input end to end", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "users",
+        "--sql",
+        "select id, name from file order by id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Source: users");
+      expect(result.stdout).toContain("1   | Ada");
+    });
+  });
+
+  test("queries the main-schema DuckDB file table directly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "file",
+        "--sql",
+        "select user_id, note from file order by user_id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Source: file");
+      expect(result.stdout).toContain("1       | welcome");
+    });
+  });
+
+  test("queries DuckDB workspace relations end to end", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        "users",
+        "--relation",
+        "events=analytics.events",
+        "--sql",
+        "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: users, events");
+      expect(result.stdout).toContain("Ada  | login");
+    });
+  });
+
   test("queries Excel input end to end when the extension is ready", () => {
     if (!excelReady) {
       return;
@@ -534,6 +615,56 @@ describe("CLI data query command", () => {
     expect(result.stderr).toContain("Available sources: active_users, time_entries, users");
   });
 
+  test("lists available DuckDB sources when source is missing", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--sql",
+        "select * from file",
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("--source is required for DuckDB");
+      expect(result.stderr).toContain("analytics.events");
+      expect(result.stderr).toContain("file");
+      expect(result.stderr).toContain("time_entries");
+      expect(result.stderr).toContain("users");
+    });
+  });
+
+  test("reports unknown DuckDB sources clearly", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--source",
+        "analytics.missing",
+        "--sql",
+        "select * from file",
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("Unknown DuckDB source: analytics.missing");
+      expect(result.stderr).toContain("Available sources:");
+      expect(result.stderr).toContain("analytics.events");
+    });
+  });
+
   test("rejects --source together with --relation", () => {
     const result = runCli([
       "data",
@@ -583,7 +714,7 @@ describe("CLI data query command", () => {
     expect(result.stderr).toContain("Duplicate workspace relation alias: users");
   });
 
-  test("rejects --relation for non-SQLite query inputs", () => {
+  test("rejects --relation for non-workspace query inputs", () => {
     const result = runCli([
       "data",
       "query",
@@ -596,7 +727,7 @@ describe("CLI data query command", () => {
 
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain(
-      "--relation is currently only supported for SQLite query inputs",
+      "--relation is currently only supported for SQLite and DuckDB query inputs",
     );
   });
 

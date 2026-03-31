@@ -15,7 +15,10 @@ export function registerDataExtractCommand(dataCommand: Command, runtime: CliRun
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
       parseDataQueryInputFormatOption,
     )
-    .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
+    .option(
+      "--source <name>",
+      "Source object name for SQLite or DuckDB tables/views, or Excel sheets",
+    )
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option("--no-header", "Treat CSV or TSV input as headerless and generate column_n names")
     .option(

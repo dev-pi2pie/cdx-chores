@@ -7,6 +7,7 @@ import {
   type DataQueryInputFormat,
   type DataQueryRelationBinding,
 } from "../../duckdb/query";
+import { getMultiObjectSourceDisplayLabel } from "../../duckdb/query/formats";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import type { DataQueryInteractiveScope } from "./types";
@@ -63,8 +64,13 @@ export async function promptOptionalSourceSelection(
     return undefined;
   }
 
+  const sourcePromptMessage =
+    format === "excel"
+      ? "Choose an Excel sheet"
+      : `Choose a ${getMultiObjectSourceDisplayLabel(format)} source`;
+
   return await select<string>({
-    message: format === "sqlite" ? "Choose a SQLite source" : "Choose an Excel sheet",
+    message: sourcePromptMessage,
     choices: sources.map((source) => ({
       name: source,
       value: source,
@@ -76,7 +82,7 @@ export async function promptInteractiveQueryScope(
   format: DataQueryInputFormat,
   sources: readonly string[] | undefined,
 ): Promise<DataQueryInteractiveScope> {
-  if (format !== "sqlite" || !sources || sources.length < 2) {
+  if ((format !== "sqlite" && format !== "duckdb") || !sources || sources.length < 2) {
     return "single-source";
   }
 
@@ -86,12 +92,12 @@ export async function promptInteractiveQueryScope(
       {
         name: "single-source",
         value: "single-source",
-        description: "Bind one SQLite source and keep the `file` shorthand",
+        description: `Bind one ${getMultiObjectSourceDisplayLabel(format)} source and keep the \`file\` shorthand`,
       },
       {
         name: "workspace",
         value: "workspace",
-        description: "Bind one or more SQLite relations with explicit names",
+        description: `Bind one or more ${getMultiObjectSourceDisplayLabel(format)} relations with explicit names`,
       },
     ],
   });
@@ -115,7 +121,7 @@ export async function promptWorkspaceRelationBindings(
   format: DataQueryInputFormat,
   sources: readonly string[] | undefined,
 ): Promise<DataQueryRelationBinding[]> {
-  if (format !== "sqlite") {
+  if (format !== "sqlite" && format !== "duckdb") {
     return [];
   }
   if (!sources || sources.length === 0) {
@@ -123,7 +129,7 @@ export async function promptWorkspaceRelationBindings(
   }
 
   const selectedSources = await checkbox<string>({
-    message: "Choose SQLite relations for the workspace",
+    message: `Choose ${getMultiObjectSourceDisplayLabel(format)} relations for the workspace`,
     choices: sources.map((source) => ({
       name: source,
       value: source,

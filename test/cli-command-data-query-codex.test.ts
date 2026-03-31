@@ -5,9 +5,11 @@ import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "./helpers/data-query-duckdb-fixture-test-utils";
 import { runCli, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const queryExtensions = await inspectDataQueryExtensions();
+const duckdbReady = queryExtensions.available;
 const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
 
@@ -245,6 +247,117 @@ describe("CLI data query codex command", () => {
       const prompt = await readFile(promptPath, "utf8");
       expect(prompt).toContain("Use only these relation names: users, entries.");
       expect(prompt).toContain("Relation entries (source: time_entries)");
+    });
+  });
+
+  test("accepts DuckDB workspace relations on the codex lane", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const promptPath = join(fixtureDir, "duckdb-workspace-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id",
+        summary: "Uses DuckDB workspace relations.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          inputPath,
+          "--relation",
+          "users",
+          "--relation",
+          "events=analytics.events",
+          "--intent",
+          "join users with analytics events",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: users, events");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Detected format: duckdb");
+      expect(prompt).toContain("Relation events (source: analytics.events)");
+    });
+  });
+
+  test("accepts DuckDB single-source drafting on the codex lane", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const promptPath = join(fixtureDir, "duckdb-source-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select id, event_type from file order by id",
+        summary: "Uses the selected schema-qualified DuckDB source.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          inputPath,
+          "--source",
+          "analytics.events",
+          "--intent",
+          "list analytics events ordered by id",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Source: analytics.events");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Selected source: analytics.events");
+      expect(prompt).toContain("1. id: INTEGER");
+      expect(prompt).toContain('"event_type":"login"');
+    });
+  });
+
+  test("requires --source for multi-object DuckDB codex single-source runs", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+      const stubPath = await createCodexStub({
+        sql: "select * from file",
+        summary: "unused",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        ["data", "query", "codex", inputPath, "--intent", "list rows"],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("--source is required for DuckDB query inputs");
+      expect(result.stderr).toContain("analytics.events, file, time_entries, users");
     });
   });
 

@@ -25,31 +25,49 @@ Current interactive flow:
 1. prompt for the input file
 2. detect the input format, with override support when needed
 3. for CSV and TSV, decide whether the input should be treated as headerless
-4. select a SQLite table or Excel sheet when the input has multiple logical sources
-5. for Excel, optionally enter a `range` before schema inspection
-6. inspect schema and sample rows from the current shaped source
-7. when a raw whole-sheet Excel schema looks strongly suspicious, choose how to continue:
+4. when SQLite or DuckDB-file exposes multiple logical sources, choose query scope:
+   - single-source
+   - workspace
+   - selecting workspace and binding even one relation still uses workspace aliasing; SQL review must target the chosen relation name rather than `file`
+5. in single-source mode, select a SQLite table, DuckDB source, or Excel sheet when required
+6. for Excel, optionally enter a `range` before schema inspection
+7. inspect schema and sample rows from the current shaped source
+8. when a raw whole-sheet Excel schema looks strongly suspicious, choose how to continue:
    - keep as-is
    - enter a range manually
    - ask Codex to suggest shaping
-8. after accepted source-shape changes, re-inspect before SQL authoring
-9. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
-10. choose one mode:
-   - `manual`
-   - `formal-guide`
-   - `Codex Assistant`
-11. review the generated SQL
-12. explicitly confirm execution
-13. if execution is declined or fails, choose the next step at SQL review:
+9. after accepted source-shape changes, re-inspect before SQL authoring
+10. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
+11. choose one mode:
+   - single-source:
+     - `manual`
+     - `formal-guide`
+     - `Codex Assistant`
+   - workspace:
+     - `manual`
+     - `Codex Assistant`
+12. review the generated SQL
+13. explicitly confirm execution
+14. if execution is declined or fails, choose the next step at SQL review:
    - revise within the current mode
    - use a mode-specific recovery action when available
    - change mode
    - cancel
-14. choose one output mode:
+15. choose one output mode:
    - terminal table
    - JSON stdout
    - file output
-15. from output selection, either continue with the selected output, go back to SQL review, or cancel
+16. from output selection, either continue with the selected output, go back to SQL review, or cancel
+
+### Support matrix
+
+| Input family | Single-source interactive query | Workspace interactive query | Notes |
+| --- | --- | --- | --- |
+| CSV / TSV | yes | no | one logical table only |
+| Parquet | yes | no | one logical table only |
+| SQLite | yes | yes | scope chooser appears when multiple sources exist |
+| DuckDB-file | yes | yes | scope chooser appears when multiple sources exist |
+| Excel | yes | no | workbook workspace support remains deferred |
 
 ### Mode behavior
 
@@ -57,6 +75,8 @@ Current interactive flow:
 
 - asks for one SQL string directly
 - first pass stays single-line
+- in workspace mode, SQL must target explicit relation names rather than `file`
+- selecting one relation in workspace mode still counts as workspace mode; SQL must use that alias
 - SQL review actions use:
   - `Edit SQL`
   - `Change mode`
@@ -86,17 +106,23 @@ Current interactive flow:
   - `Edit formal-guide answers`
   - `Change mode`
   - `Cancel`
+- this mode is currently single-source only
 
 `Codex Assistant`
 
-- captures natural-language intent and drafts SQL against the logical table `file`
+- captures natural-language intent and drafts SQL against the current single-source table or workspace relations
 - first asks `Use multiline editor?`
 - if `No`, it uses a normal single-line prompt and `Enter` submits
 - if `Yes`, it opens an editor seeded with compact query context comments:
-  - logical table name
-  - detected format and selected source when relevant
-  - schema summary
-  - small sample rows summary
+  - single-source mode:
+    - logical table name
+    - detected format and selected source when relevant
+    - schema summary
+    - small sample rows summary
+  - workspace mode:
+    - bound relation names
+    - per-relation schema summary
+    - per-relation small sample rows summary
 - comment lines that start with `#` are ignored when the editor content is submitted
 - the cleaned intent is shown back before Codex drafting, and drafting only continues after explicit confirmation
 - SQL review actions use:
@@ -112,12 +138,17 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - CSV, TSV, and Parquet use one implicit source
 - CSV and TSV can also switch into explicit headerless mode before SQL authoring
 - SQLite requires choosing a table or view
+- DuckDB-file requires choosing a table or view selector in single-source mode
+- SQLite and DuckDB-file can switch into workspace mode when multiple sources are available
 - Excel requires choosing a sheet
 - Excel also supports optional `range` shaping before SQL authoring
 - if whole-sheet Excel introspection looks structurally suspicious, the flow can keep the current shape, accept a manual range, or ask Codex to suggest shaping before continuing
 - reviewed source-shape suggestions can now include `body-start-row` when a merged header band needs an explicit body boundary
 - merged-sheet whole-sheet views that collapse into one visible column can also trigger reviewed shaping before SQL authoring
-- the selected source is always exposed to SQL as the logical table `file`
+- in single-source mode, the selected source is exposed to SQL as the logical table `file`
+- in workspace mode, SQL must target the explicit relation bindings chosen during workspace setup
+
+Workspace relation binding remains distinct from multi-file relation assembly. File lists, globs, and `union_by_name`-style multi-file scans are still a separate future area.
 
 ### Interactive Header Review
 

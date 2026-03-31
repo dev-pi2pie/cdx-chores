@@ -2,7 +2,7 @@
 title: "Data query workspace implementation"
 created-date: 2026-03-31
 modified-date: 2026-03-31
-status: active
+status: completed
 agent: codex
 ---
 
@@ -75,7 +75,7 @@ First implementation focus:
 
 - SQLite as the first file-backed catalog source for workspace bindings
 
-Covered by the same public contract, but not implemented by this plan:
+Implemented by this plan after the initial SQLite-first slice:
 
 - DuckDB database files
 
@@ -87,9 +87,9 @@ Explicitly deferred:
 
 Practical reading:
 
-- this plan implements the workspace model for SQLite
-- this plan should keep shared APIs, docs, and validation wording compatible with a near-term DuckDB-file follow-up
-- DuckDB-file execution support itself remains follow-up work rather than a required deliverable in this plan
+- this plan delivered the workspace model for SQLite first and then extended it to DuckDB-file
+- the shared APIs, docs, and validation wording now cover both file-backed catalog backends
+- Excel workspace support remains deferred outside this plan
 
 ### Interactive contract
 
@@ -218,7 +218,6 @@ That follow-up should cover:
 - multi-file relation assembly
 - file lists, glob patterns, `union_by_name`, or filename-provenance controls
 - Excel multi-relation shaping
-- DuckDB-file execution support before the dedicated follow-up phase
 - connection-backed database support
 - workspace-mode `formal-guide`
 - extending `data extract` into a multi-relation workspace command
@@ -303,26 +302,26 @@ That follow-up should cover:
 
 ### Phase 5: Fixtures, tests, and docs
 
-- [ ] extend fixture generation for workspace scenarios
-- [ ] add stable tests for direct CLI workspace behavior
-- [ ] add stable tests for Codex workspace drafting behavior
-- [ ] add interactive coverage for workspace selection and binding
-- [ ] update the query, Codex, and interactive guides
-- [ ] add a guide support table covering SQLite, Excel, DuckDB-file, and deferred multi-file assembly behavior
-- [ ] clarify in docs that multi-file relation assembly remains a separate future area
+- [x] extend fixture generation for workspace scenarios
+- [x] add stable tests for direct CLI workspace behavior
+- [x] add stable tests for Codex workspace drafting behavior
+- [x] add interactive coverage for workspace selection and binding
+- [x] update the query, Codex, and interactive guides
+- [x] add a guide support table covering SQLite, Excel, DuckDB-file, and deferred multi-file assembly behavior
+- [x] clarify in docs that multi-file relation assembly remains a separate future area
 
 ### Phase 6: DuckDB-file workspace follow-up
 
-- [ ] add `duckdb` input-format support to `data query`
-- [ ] detect `.duckdb` inputs while keeping generic `*.db` explicit-only through `--input-format`
-- [ ] extend workspace relation binding to DuckDB-file catalogs
-- [ ] support schema-qualified selectors where the DuckDB catalog requires them
-- [ ] generate a stable `multi.duckdb` smoke fixture with:
-  - [ ] multiple tables
-  - [ ] at least one non-default schema
-  - [ ] joinable relations
-  - [ ] a reserved-`file` alias protection case
-- [ ] add direct CLI, Codex drafting, and source-listing coverage for DuckDB-file workspace inputs
+- [x] add `duckdb` input-format support to `data query`
+- [x] detect `.duckdb` inputs while keeping generic `*.db` explicit-only through `--input-format`
+- [x] extend workspace relation binding to DuckDB-file catalogs
+- [x] support schema-qualified selectors where the DuckDB catalog requires them
+- [x] generate a stable `multi.duckdb` smoke fixture with:
+  - [x] multiple tables
+  - [x] at least one non-default schema
+  - [x] joinable relations
+  - [x] a reserved-`file` alias protection case
+- [x] add direct CLI, Codex drafting, and source-listing coverage for DuckDB-file workspace inputs
 
 ## Deferred Follow-up Area
 

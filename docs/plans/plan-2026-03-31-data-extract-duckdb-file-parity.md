@@ -1,7 +1,8 @@
 ---
 title: "Data extract DuckDB-file parity"
 created-date: 2026-03-31
-status: draft
+modified-date: 2026-03-31
+status: completed
 agent: codex
 ---
 
@@ -36,13 +37,13 @@ This work should therefore live in its own plan because it needs to preserve the
 - this plan should follow the existing `data extract` materialization and shaping contracts rather than redefining them
 - shared source detection, source listing, and catalog selection helpers should be reused across `data query` and `data extract` where practical
 
-## Current State
+## Outcome
 
-- `data extract` already supports file-like inputs including SQLite and Excel
-- `data extract` remains intentionally single-table-oriented
-- DuckDB-file is not currently supported as an extract input family
-- the current plan for `data query` treats DuckDB-file as a near-term follow-up for workspace-capable catalog inputs
-- generic `*.db` paths are already treated as ambiguous at the product-contract level
+- `data extract` now supports DuckDB-file as a direct input family
+- the command remains intentionally single-table-oriented
+- `.duckdb` detection and explicit `duckdb` format selection now align with the broader data command family
+- generic `*.db` paths remain explicit-only through `--input-format`
+- the shipped extract lane now stays aligned with the query lane on DuckDB source-family behavior without inheriting workspace semantics
 
 ## Design Contract
 
@@ -163,30 +164,30 @@ The extract-specific suite should only materialize one selected relation at a ti
 
 ### Phase 1: Freeze DuckDB extract contract
 
-- [ ] add `duckdb` as an explicit `data extract` input format
-- [ ] freeze `.duckdb` detection behavior
-- [ ] freeze ambiguous `*.db` behavior as explicit-only through `--input-format`
-- [ ] freeze one-source-only behavior for DuckDB-file extract runs
+- [x] add `duckdb` as an explicit `data extract` input format
+- [x] freeze `.duckdb` detection behavior
+- [x] freeze ambiguous `*.db` behavior as explicit-only through `--input-format`
+- [x] freeze one-source-only behavior for DuckDB-file extract runs
 
 ### Phase 2: Shared catalog support
 
-- [ ] extend shared source listing to understand DuckDB-file catalogs
-- [ ] support direct extract source selection against DuckDB tables and views
-- [ ] keep the helper boundary reusable by future DuckDB-file query work
+- [x] extend shared source listing to understand DuckDB-file catalogs
+- [x] support direct extract source selection against DuckDB tables and views
+- [x] keep the helper boundary reusable by future DuckDB-file query work
 
 ### Phase 3: Interactive extract parity
 
-- [ ] support DuckDB-file format selection in interactive extract flow
-- [ ] support DuckDB-file source selection in interactive extract flow
-- [ ] keep interactive ambiguous `*.db` behavior aligned with direct CLI
+- [x] support DuckDB-file format selection in interactive extract flow
+- [x] support DuckDB-file source selection in interactive extract flow
+- [x] keep interactive ambiguous `*.db` behavior aligned with direct CLI
 
 ### Phase 4: Fixtures, tests, and docs
 
-- [ ] generate a stable DuckDB extract smoke fixture family
-- [ ] add direct CLI and action coverage for DuckDB-file extraction
-- [ ] add interactive extract coverage for DuckDB-file selection and extraction
-- [ ] update the extract guide support matrix and usage docs
-- [ ] clarify that DuckDB-file workspace behavior belongs to `data query`, not `data extract`
+- [x] generate a stable DuckDB extract smoke fixture family
+- [x] add direct CLI and action coverage for DuckDB-file extraction
+- [x] add interactive extract coverage for DuckDB-file selection and extraction
+- [x] update the extract guide support matrix and usage docs
+- [x] clarify that DuckDB-file workspace behavior belongs to `data query`, not `data extract`
 
 ## Related Research
 

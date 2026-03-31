@@ -35,6 +35,10 @@ export async function actionDoctor(
       kind: "core" as const,
       detectedSupport: queryExtensions.available,
     },
+    duckdb: {
+      kind: "core" as const,
+      detectedSupport: queryExtensions.available,
+    },
     sqlite: {
       kind: "extension" as const,
       detectedSupport: queryExtensions.available,
@@ -70,6 +74,7 @@ export async function actionDoctor(
     "data.query.csv": queryFormats.csv.detectedSupport,
     "data.query.tsv": queryFormats.tsv.detectedSupport,
     "data.query.parquet": queryFormats.parquet.detectedSupport,
+    "data.query.duckdb": queryFormats.duckdb.detectedSupport,
     "data.query.sqlite": queryFormats.sqlite.loadability,
     "data.query.excel": queryFormats.excel.loadability,
     "data.query.codex": queryCodex.readyToDraft,

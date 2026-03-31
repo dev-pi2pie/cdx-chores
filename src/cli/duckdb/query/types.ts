@@ -1,7 +1,14 @@
 import type { DataPreviewRow } from "../../data-preview/source";
 import type { DataHeaderMappingEntry } from "../header-mapping";
 
-export const DATA_QUERY_INPUT_FORMAT_VALUES = ["csv", "tsv", "parquet", "sqlite", "excel"] as const;
+export const DATA_QUERY_INPUT_FORMAT_VALUES = [
+  "csv",
+  "tsv",
+  "parquet",
+  "sqlite",
+  "duckdb",
+  "excel",
+] as const;
 
 export type DataQueryInputFormat = (typeof DATA_QUERY_INPUT_FORMAT_VALUES)[number];
 

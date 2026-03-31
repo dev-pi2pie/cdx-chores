@@ -208,7 +208,7 @@ function validateDataQueryOptions(options: DataQueryOptions): void {
 }
 
 function isDuckDbBuiltInQueryFormat(format: DataQueryInputFormat): boolean {
-  return format === "csv" || format === "tsv" || format === "parquet";
+  return format === "csv" || format === "tsv" || format === "parquet" || format === "duckdb";
 }
 
 function normalizeSql(sql: string): string {

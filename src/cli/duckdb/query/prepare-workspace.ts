@@ -2,9 +2,14 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 
 import { CliError } from "../../errors";
 import { ensureDuckDbManagedExtensionLoaded } from "../extensions";
-import { getDuckDbManagedExtensionNameForFormat, quoteSqlIdentifier } from "./formats";
+import { buildDuckDbFileRelationSql, listDuckDbFileSourceEntries } from "./duckdb-file";
+import {
+  getDuckDbManagedExtensionNameForFormat,
+  getMultiObjectSourceDisplayLabel,
+  quoteSqlIdentifier,
+} from "./formats";
 import { buildRelationSql } from "./prepare-source/sql";
-import { listDataQuerySources } from "./source-resolution";
+import { listDataQuerySources, resolveDuckDbFileSource } from "./source-resolution";
 import type {
   DataQueryInputFormat,
   DataQueryRelationBinding,
@@ -56,38 +61,51 @@ export async function prepareDataQueryWorkspace(
     statusStream?: NodeJS.WritableStream;
   } = {},
 ): Promise<PreparedDataQueryContext> {
-  if (format !== "sqlite") {
-    throw new CliError("--relation is currently only supported for SQLite query inputs.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+  if (format !== "sqlite" && format !== "duckdb") {
+    throw new CliError(
+      "--relation is currently only supported for SQLite and DuckDB query inputs.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   validateWorkspaceRelationBindings(relations);
 
-  await ensureDuckDbManagedExtensionLoaded(
-    connection,
-    getDuckDbManagedExtensionNameForFormat("sqlite"),
-    {
-      installIfMissing: options.installMissingExtension,
-      statusStream: options.statusStream,
-    },
-  );
+  if (format === "sqlite") {
+    await ensureDuckDbManagedExtensionLoaded(
+      connection,
+      getDuckDbManagedExtensionNameForFormat("sqlite"),
+      {
+        installIfMissing: options.installMissingExtension,
+        statusStream: options.statusStream,
+      },
+    );
+  }
 
-  const availableSources = await listDataQuerySources(connection, inputPath, format, {
-    ensureExtensionLoaded: false,
-  });
+  const availableDuckDbEntries =
+    format === "duckdb" ? await listDuckDbFileSourceEntries(connection, inputPath) : undefined;
+  const availableSources =
+    format === "duckdb"
+      ? availableDuckDbEntries.map((entry) => entry.selector)
+      : await listDataQuerySources(connection, inputPath, format, {
+          ensureExtensionLoaded: false,
+        });
   if (!availableSources || availableSources.length === 0) {
-    throw new CliError("No queryable SQLite sources were found.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `No queryable ${getMultiObjectSourceDisplayLabel(format)} sources were found.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   for (const relation of relations) {
     if (!availableSources.includes(relation.source)) {
       throw new CliError(
-        `Unknown SQLite source for --relation ${relation.alias}=${relation.source}. Available sources: ${formatAvailableSources(availableSources)}.`,
+        `Unknown ${getMultiObjectSourceDisplayLabel(format)} source for --relation ${relation.alias}=${relation.source}. Available sources: ${formatAvailableSources(availableSources)}.`,
         {
           code: "INVALID_INPUT",
           exitCode: 2,
@@ -96,13 +114,17 @@ export async function prepareDataQueryWorkspace(
     }
 
     await connection.run(
-      `create or replace temp view ${quoteSqlIdentifier(relation.alias)} as ${buildRelationSql(
-        inputPath,
-        format,
-        {
-          source: relation.source,
-        },
-      )}`,
+      `create or replace temp view ${quoteSqlIdentifier(relation.alias)} as ${
+        format === "duckdb"
+          ? buildDuckDbFileRelationSql(
+              await resolveDuckDbFileSource(connection, inputPath, relation.source, {
+                entries: availableDuckDbEntries,
+              }),
+            )
+          : buildRelationSql(inputPath, format, {
+              source: relation.source,
+            })
+      }`,
     );
   }
 
