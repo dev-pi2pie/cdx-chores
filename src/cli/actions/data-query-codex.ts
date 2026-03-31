@@ -3,9 +3,11 @@ import type { CliRuntime } from "../types";
 import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
 import {
   collectDataQuerySourceIntrospection,
+  collectDataQueryWorkspaceIntrospection,
   createDuckDbConnection,
   detectDataQueryInputFormat,
   type DataQueryInputFormat,
+  type DataQueryRelationBinding,
 } from "../duckdb/query";
 import {
   draftDataQueryWithCodex,
@@ -24,8 +26,10 @@ export interface DataQueryCodexOptions {
   input: string;
   inputFormat?: DataQueryInputFormat;
   intent: string;
+  mode?: "single-source" | "workspace";
   printSql?: boolean;
   range?: string;
+  relations?: DataQueryRelationBinding[];
   runner?: DataQueryCodexRunner;
   source?: string;
   timeoutMs?: number;
@@ -53,10 +57,41 @@ function classifyCodexDraftingFailure(message: string): { code: string; prefix: 
   };
 }
 
+function validateDataQueryCodexOptions(options: DataQueryCodexOptions): void {
+  if ((options.relations?.length ?? 0) > 0 && options.source?.trim()) {
+    throw new CliError("--relation cannot be used together with --source.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.range?.trim()) {
+    throw new CliError("--relation cannot be used together with --range.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.headerRow !== undefined) {
+    throw new CliError("--relation cannot be used together with --header-row.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if ((options.relations?.length ?? 0) > 0 && options.bodyStartRow !== undefined) {
+    throw new CliError("--relation cannot be used together with --body-start-row.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+}
+
 export async function actionDataQueryCodex(
   runtime: CliRuntime,
   options: DataQueryCodexOptions,
 ): Promise<void> {
+  validateDataQueryCodexOptions(options);
   const input = assertNonEmpty(options.input, "Input path");
   const inputPath = resolveFromCwd(runtime, input);
   await ensureFileExists(inputPath, "Input");
@@ -66,6 +101,8 @@ export async function actionDataQueryCodex(
   const bodyStartRow = options.bodyStartRow;
   const headerRow = options.headerRow;
   const range = options.range?.trim() || undefined;
+  const relations = options.relations ?? [];
+  const mode = options.mode ?? (relations.length > 0 ? "workspace" : "single-source");
   const source = options.source?.trim() || undefined;
   const statusStream = runtime.stdout as NodeJS.WritableStream & { isTTY?: boolean };
   const status = statusStream.isTTY
@@ -81,18 +118,27 @@ export async function actionDataQueryCodex(
   try {
     connection = await createDuckDbConnection();
     status.start("Introspecting data source...");
-    const introspection = await collectDataQuerySourceIntrospection(
-      connection,
-      inputPath,
-      format,
-      {
-        bodyStartRow,
-        headerRow,
-        range,
-        source,
-      },
-      DATA_QUERY_CODEX_SAMPLE_ROWS,
-    );
+    const introspection =
+      mode === "workspace"
+        ? await collectDataQueryWorkspaceIntrospection(
+            connection,
+            inputPath,
+            format,
+            relations,
+            DATA_QUERY_CODEX_SAMPLE_ROWS,
+          )
+        : await collectDataQuerySourceIntrospection(
+            connection,
+            inputPath,
+            format,
+            {
+              bodyStartRow,
+              headerRow,
+              range,
+              source,
+            },
+            DATA_QUERY_CODEX_SAMPLE_ROWS,
+          );
     status.wait("Drafting SQL with Codex");
     const draftResult = await draftDataQueryWithCodex({
       format,

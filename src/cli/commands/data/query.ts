@@ -10,6 +10,13 @@ import {
 import type { CliRuntime } from "../../types";
 
 export function registerDataQueryCommands(dataCommand: Command, runtime: CliRuntime): void {
+  function resolveCommandRelationBindings(
+    localRelations: Array<{ alias: string; source: string }> | undefined,
+    parentRelations: Array<{ alias: string; source: string }> | undefined,
+  ): Array<{ alias: string; source: string }> {
+    return [...(parentRelations ?? []), ...(localRelations ?? [])];
+  }
+
   const queryCommand = dataCommand
     .command("query")
     .description("Run a DuckDB-backed SQL query against one input file")
@@ -124,6 +131,12 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
       parseDataQueryInputFormatOption,
     )
+    .option(
+      "--relation <binding>",
+      "Bind a workspace relation for SQLite inputs (repeatable; use <name> or <alias>=<source>)",
+      collectDataQueryRelationBindingOption,
+      [],
+    )
     .option("--source <name>", "Source object name for SQLite tables/views or Excel sheets")
     .option("--range <A1:Z99>", "Excel cell range within the selected sheet")
     .option(
@@ -147,6 +160,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           headerRow?: number;
           printSql?: boolean;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           source?: string;
         },
         command: Command,
@@ -156,16 +170,20 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           headerRow?: number;
           inputFormat?: DataQueryInputFormat;
           range?: string;
+          relation?: Array<{ alias: string; source: string }>;
           source?: string;
         }>();
+        const relations = resolveCommandRelationBindings(options.relation, parentOptions?.relation);
         await actionDataQueryCodex(runtime, {
           bodyStartRow: options.bodyStartRow ?? parentOptions?.bodyStartRow,
           headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,
           inputFormat: options.inputFormat ?? parentOptions?.inputFormat,
           intent: options.intent,
+          mode: relations.length > 0 ? "workspace" : "single-source",
           printSql: options.printSql,
           range: options.range ?? parentOptions?.range,
+          relations,
           source: options.source ?? parentOptions?.source,
         });
       },

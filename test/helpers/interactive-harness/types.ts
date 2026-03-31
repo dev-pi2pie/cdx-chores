@@ -26,6 +26,8 @@ export interface InteractiveHarnessScenario {
   dataQueryHeaderSuggestions?: Array<Record<string, unknown>>;
   dataQueryIntrospection?: Record<string, unknown>;
   dataQueryIntrospectionQueue?: Record<string, unknown>[];
+  dataQueryWorkspaceIntrospection?: Record<string, unknown>;
+  dataQueryWorkspaceIntrospectionQueue?: Record<string, unknown>[];
   dataSourceShapeSuggestion?: Record<string, unknown>;
   dataSourceShapeSuggestionErrorMessage?: string;
   dataQuerySources?: string[];

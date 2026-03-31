@@ -55,6 +55,43 @@ describe("cli action modules: data query codex", () => {
     expect(stdout.text).toContain("SQL:\nselect id, name from file order by id");
   });
 
+  test("actionDataQueryCodex renders workspace assistant output for SQLite relations", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+    await actionDataQueryCodex(runtime, {
+      input: "test/fixtures/data-query/multi.sqlite",
+      intent: "join users with time entries",
+      relations: [
+        { alias: "users", source: "users" },
+        { alias: "entries", source: "time_entries" },
+      ],
+      runner: async ({ prompt }) => {
+        expect(prompt).toContain("Use only these relation names: users, entries.");
+        expect(prompt).toContain("Relation users (source: users)");
+        expect(prompt).toContain("Relation entries (source: time_entries)");
+
+        return JSON.stringify({
+          sql: "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+          reasoning_summary: "Joins the two bound relations on the shared identifier.",
+        });
+      },
+    });
+
+    expectNoStderr();
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Relations: users, entries");
+    expect(stdout.text).toContain("- users (source: users)");
+    expect(stdout.text).toContain("- entries (source: time_entries)");
+    expect(stdout.text).toContain("Joins the two bound relations on the shared identifier.");
+    expect(stdout.text).toContain(
+      "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    );
+  });
+
   test("actionDataQueryCodex prints SQL only with --print-sql", async () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
@@ -226,6 +263,27 @@ describe("cli action modules: data query codex", () => {
     expect(template).toContain("# Range: A1:B3");
   });
 
+  test("buildDataQueryCodexIntentEditorTemplate seeds workspace relation context", () => {
+    const template = buildDataQueryCodexIntentEditorTemplate({
+      format: "sqlite",
+      introspection: {
+        kind: "workspace",
+        relations: [
+          {
+            alias: "users",
+            columns: [{ name: "id", type: "BIGINT" }],
+            sampleRows: [{ id: "1" }],
+            source: "users",
+            truncated: false,
+          },
+        ],
+      },
+    });
+
+    expect(template).toContain("# Workspace relations:");
+    expect(template).toContain("# - users (source: users)");
+  });
+
   test("buildDataQueryCodexIntentEditorTemplate includes the selected header row when present", () => {
     const template = buildDataQueryCodexIntentEditorTemplate({
       format: "excel",
@@ -283,6 +341,27 @@ describe("cli action modules: data query codex", () => {
             }),
         }),
       { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is required for SQLite" },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex rejects --relation together with --source", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/fixtures/data-query/multi.sqlite",
+          intent: "list users",
+          relations: [{ alias: "users", source: "users" }],
+          source: "users",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--relation cannot be used together with --source",
+      },
     );
 
     expectNoOutput();

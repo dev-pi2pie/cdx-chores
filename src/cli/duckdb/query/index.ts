@@ -8,6 +8,8 @@ export {
   type DataQuerySourceIntrospection,
   type DataQuerySourceShape,
   type DataQueryTableResult,
+  type DataQueryWorkspaceIntrospection,
+  type DataQueryWorkspaceRelationIntrospection,
 } from "./types";
 
 export {
@@ -26,4 +28,8 @@ export { prepareDataQueryWorkspace } from "./prepare-workspace";
 
 export { executeDataQueryForTable, executeDataQueryForAllRows } from "./execute";
 
-export { collectDataQuerySourceIntrospection, inspectDataQueryExtensions } from "./introspection";
+export {
+  collectDataQuerySourceIntrospection,
+  collectDataQueryWorkspaceIntrospection,
+  inspectDataQueryExtensions,
+} from "./introspection";

@@ -5,11 +5,12 @@ import { printLine } from "../../actions/shared";
 import { getCliColors } from "../../colors";
 import { promptFileOutputTarget } from "../../data-workflows/output";
 import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
-import type { DataQueryInputFormat } from "../../duckdb/query";
+import type { DataQueryInputFormat, DataQueryRelationBinding } from "../../duckdb/query";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import type {
+  DataQueryInteractiveScope,
   DataQueryReviewMode,
   ExecuteInteractiveCandidateResult,
   OutputPromptSelection,
@@ -208,10 +209,12 @@ async function runOutputSelectionLoop(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    mode?: DataQueryInteractiveScope;
     selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedNoHeader?: boolean;
     selectedRange?: string;
+    relations?: DataQueryRelationBinding[];
     selectedSource?: string;
     sql: string;
     sqlLimit?: number;
@@ -253,6 +256,7 @@ async function runOutputSelectionLoop(
           ? { headerRow: options.selectedHeaderRow }
           : {}),
         ...(options.selectedNoHeader ? { noHeader: true } : {}),
+        ...(options.relations ? { relations: options.relations } : {}),
         ...(options.selectedRange ? { range: options.selectedRange } : {}),
         ...(options.selectedSource ? { source: options.selectedSource } : {}),
         sql: options.sql,
@@ -279,11 +283,13 @@ export async function executeInteractiveCandidate(
     format: DataQueryInputFormat;
     headerMappings?: DataHeaderMappingEntry[];
     input: string;
+    mode?: DataQueryInteractiveScope;
     reviewMode: DataQueryReviewMode;
     selectedBodyStartRow?: number;
     selectedHeaderRow?: number;
     selectedNoHeader?: boolean;
     selectedRange?: string;
+    relations?: DataQueryRelationBinding[];
     selectedSource?: string;
     sql: string;
     sqlLimit?: number;

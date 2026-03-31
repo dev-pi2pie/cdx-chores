@@ -37,7 +37,7 @@ export function collectRepeatedOption(value: string, previous: string[] = []): s
 
 const DATA_QUERY_RELATION_ALIAS_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-function parseDataQueryRelationBinding(value: string): DataQueryRelationBinding {
+export function parseDataQueryRelationBindingOptionValue(value: string): DataQueryRelationBinding {
   const trimmed = value.trim();
   if (!trimmed) {
     throw new InvalidArgumentError("--relation requires a non-empty binding.");
@@ -67,7 +67,7 @@ export function collectDataQueryRelationBindingOption(
   value: string,
   previous: DataQueryRelationBinding[] = [],
 ): DataQueryRelationBinding[] {
-  return [...previous, parseDataQueryRelationBinding(value)];
+  return [...previous, parseDataQueryRelationBindingOptionValue(value)];
 }
 
 export function parseNonNegativeIntegerOption(value: string, label: string): number {

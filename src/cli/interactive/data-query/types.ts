@@ -1,8 +1,13 @@
 import type { DataQueryOptions } from "../../actions";
 import type { DataHeaderMappingEntry } from "../../duckdb/header-mapping";
-import type { DataQuerySourceIntrospection } from "../../duckdb/query";
+import type {
+  DataQueryRelationBinding,
+  DataQuerySourceIntrospection,
+  DataQueryWorkspaceIntrospection,
+} from "../../duckdb/query";
 
 export type DataQueryInteractiveMode = "manual" | "formal-guide" | "Codex Assistant";
+export type DataQueryInteractiveScope = "single-source" | "workspace";
 export type DataQueryReviewMode = "manual" | "formal-guide" | "codex";
 export type InteractiveQueryRunResult = "executed" | "change-mode" | "cancel";
 export type ExecuteInteractiveCandidateResult =
@@ -66,6 +71,11 @@ export interface OrderBySpec {
 export interface InteractiveHeaderReviewState {
   headerMappings?: DataHeaderMappingEntry[];
   introspection: DataQuerySourceIntrospection;
+}
+
+export interface InteractiveWorkspaceState {
+  introspection: DataQueryWorkspaceIntrospection;
+  relations: DataQueryRelationBinding[];
 }
 
 export interface InteractiveSourceShapeState {

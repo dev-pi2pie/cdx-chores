@@ -27,6 +27,7 @@ export interface DataQueryIntrospectionColumn {
 }
 
 export interface DataQuerySourceIntrospection {
+  kind?: "single-source";
   selectedBodyStartRow?: number;
   columns: DataQueryIntrospectionColumn[];
   sampleRows: Array<Record<string, string>>;
@@ -34,6 +35,19 @@ export interface DataQuerySourceIntrospection {
   selectedSource?: string;
   selectedRange?: string;
   truncated: boolean;
+}
+
+export interface DataQueryWorkspaceRelationIntrospection {
+  alias: string;
+  columns: DataQueryIntrospectionColumn[];
+  sampleRows: Array<Record<string, string>>;
+  source: string;
+  truncated: boolean;
+}
+
+export interface DataQueryWorkspaceIntrospection {
+  kind: "workspace";
+  relations: DataQueryWorkspaceRelationIntrospection[];
 }
 
 export interface DataQuerySourceShape {

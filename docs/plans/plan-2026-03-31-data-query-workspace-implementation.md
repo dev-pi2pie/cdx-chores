@@ -269,21 +269,21 @@ Practical reading:
 ### Phase 3: Direct CLI execution and Codex drafting
 
 - [x] add `--relation` support to direct `data query`
-- [ ] add `--relation` support to `data query codex`
+- [x] add `--relation` support to `data query codex`
 - [x] keep current single-source behavior unchanged when `--relation` is absent
-- [ ] add workspace-aware introspection payloads for Codex drafting
-- [ ] split single-source and workspace prompt construction in `data-query/codex.ts`
+- [x] add workspace-aware introspection payloads for Codex drafting
+- [x] split single-source and workspace prompt construction in `data-query/codex.ts`
 
 ### Phase 4: Interactive workspace query flow
 
-- [ ] add source-container scope choice:
-  - [ ] single-source query
-  - [ ] workspace query
-- [ ] add workspace relation-binding prompts
-- [ ] route workspace mode through `manual`
-- [ ] route workspace mode through `Codex Assistant`
-- [ ] keep `formal-guide` on the single-source path only
-- [ ] keep SQL review, execution, and output selection aligned with explicit relation names
+- [x] add source-container scope choice:
+  - [x] single-source query
+  - [x] workspace query
+- [x] add workspace relation-binding prompts
+- [x] route workspace mode through `manual`
+- [x] route workspace mode through `Codex Assistant`
+- [x] keep `formal-guide` on the single-source path only
+- [x] keep SQL review, execution, and output selection aligned with explicit relation names
 
 ### Phase 5: Fixtures, tests, and docs
 

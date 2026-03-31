@@ -164,6 +164,229 @@ describe("CLI data query codex command", () => {
     });
   });
 
+  test("accepts --relation on the codex lane for SQLite workspace inputs", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const promptPath = join(fixtureDir, "sqlite-workspace-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+        summary: "Uses the selected SQLite workspace relations.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "users",
+          "--relation",
+          "entries=time_entries",
+          "--intent",
+          "join users with time entries",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Relations: users, entries");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Use only these relation names: users, entries.");
+      expect(prompt).toContain("Relation users (source: users)");
+      expect(prompt).toContain("Relation entries (source: time_entries)");
+      expect(prompt).toContain("1. entry_id: BIGINT");
+      expect(prompt).toContain("3. hours: BIGINT");
+      expect(prompt).toContain('"entry_id":"1"');
+    });
+  });
+
+  test("accepts inline --relation=<binding> syntax on the codex workspace lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const promptPath = join(fixtureDir, "sqlite-inline-workspace-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select users.id, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+        summary: "Uses inline workspace relation bindings.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation=users",
+          "--relation=entries=time_entries",
+          "--intent",
+          "join users with time entries",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Relations: users, entries");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Use only these relation names: users, entries.");
+      expect(prompt).toContain("Relation entries (source: time_entries)");
+    });
+  });
+
+  test("prints SQL only for SQLite workspace codex drafting", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const stubPath = await createCodexStub({
+        sql: "select users.id, entries.hours from users join entries on users.id = entries.entry_id",
+        summary: "unused in print-sql mode",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "users",
+          "--relation",
+          "entries=time_entries",
+          "--intent",
+          "join users with time entries",
+          "--print-sql",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout.trim()).toBe(
+        "select users.id, entries.hours from users join entries on users.id = entries.entry_id",
+      );
+    });
+  });
+
+  test("rejects reserved file alias on the codex workspace lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const stubPath = await createCodexStub({
+        sql: "select 1",
+        summary: "unused",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "file=users",
+          "--intent",
+          "list users",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("The relation alias `file` is reserved in workspace mode.");
+    });
+  });
+
+  test("rejects duplicate workspace aliases on the codex lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const stubPath = await createCodexStub({
+        sql: "select 1",
+        summary: "unused",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "users",
+          "--relation",
+          "users=active_users",
+          "--intent",
+          "list users",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("Duplicate workspace relation alias: users.");
+    });
+  });
+
+  test("rejects malformed workspace aliases on the codex lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const stubPath = await createCodexStub({
+        sql: "select 1",
+        summary: "unused",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "1users=users",
+          "--intent",
+          "list users",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain(
+        "option '--relation <binding>' argument '1users=users' is invalid",
+      );
+      expect(result.stderr).toContain("simple SQL identifier");
+    });
+  });
+
   test("accepts --range on the codex lane for Excel inputs", async () => {
     if (!excelReady) {
       return;
