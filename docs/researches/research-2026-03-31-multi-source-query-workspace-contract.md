@@ -1,6 +1,7 @@
 ---
 title: "Multi-source query workspace contract"
 created-date: 2026-03-31
+modified-date: 2026-03-31
 status: draft
 agent: codex
 ---
@@ -58,7 +59,7 @@ Implication:
 
 ### 3. Multi-source support should be modeled as a query workspace, not as a looser `file` alias
 
-If one invocation exposes multiple source objects to SQL, the command no longer has one obvious logical table. In that world the stable concept is not "the file table" but "the query workspace" containing one or more bound relations.
+If one invocation exposes multiple backend objects from the same source container to SQL, the command no longer has one obvious logical table. In that world the stable concept is not "the file table" but "the query workspace" containing one or more bound relations.
 
 Recommended vocabulary:
 
@@ -143,6 +144,14 @@ The bare form should mean "bind a relation with the same SQL name and backend ob
 
 - `--relation users` expands to `users=users`
 - `--relation f=file` keeps the alias explicit when the SQL name should differ from the backend object name
+
+Recommended workspace-entry rule:
+
+- one positional source path continues to identify one source container per invocation
+- repeatable `--relation` flags bind one or more backend objects from that source container into the workspace
+- any explicit `--relation` flag puts the invocation into workspace mode, even if only one relation is bound
+- the workspace becomes multi-relation once two or more `--relation` flags are present
+- once in workspace mode, SQL should target the explicit relation bindings rather than relying on the old implicit `file` alias
 
 Implication:
 
@@ -297,20 +306,38 @@ Add later:
 Recommended first pass:
 
 - preserve current single-source behavior
-- add workspace-aware multi-source support for SQLite
+- add workspace-aware multi-relation support for SQLite from one source container per invocation
 - update `data query codex` to draft against explicit relation names
 - defer Excel multi-source shaping
 
 Recommended near-follow-up:
 
-- decide whether DuckDB-file support lands in the same implementation slice or the next one
+- keep DuckDB-file support under the same public multi-source contract even if implementation sequencing lands SQLite slightly earlier
 - only after the workspace contract is frozen, expand fixture generators and smoke suites around the new scenario families
 
-## Open Questions
+## Resolved Decisions
 
-- Should the future multi-source direct CLI require at least one `--relation` flag, or allow a mixed shorthand where one positional source path plus one or more `--relation` flags share the same invocation?
-- Should DuckDB-file support ship in the same first multi-source phase as SQLite, or only after the relation-binding API has already stabilized on SQLite?
-- If future connection-backed sources are added, should relation bindings accept schema-qualified selectors directly, or should schema selection be split into separate flags?
+### 1. One source container per invocation, with repeatable `--relation` bindings
+
+The first multi-source direct CLI should keep one positional source path per invocation and use repeatable `--relation` flags to bind multiple backend objects from that source container into the workspace.
+
+Any explicit `--relation` flag should put the invocation into workspace mode, even when it binds only one relation. Two or more `--relation` flags then produce a multi-relation workspace.
+
+This avoids reopening the input model around multi-file or multi-connection joins in the same first pass while still unlocking multi-table SQL authoring inside one source container.
+
+### 2. DuckDB-file support belongs to the same first multi-source contract as SQLite
+
+DuckDB-file support should be treated as part of the same first multi-source public contract because both SQLite and DuckDB files are file-backed catalog sources with natural multi-table behavior.
+
+Implementation sequencing may still land SQLite slightly earlier if that reduces risk, but the public relation-binding model should be frozen once for both instead of redesigned twice.
+
+### 3. Future connection-backed bindings should accept schema-qualified selectors directly
+
+If future connection-backed sources are added, relation bindings should accept backend selectors directly, including schema-qualified names such as `public.users`.
+
+Alias syntax should remain available through forms such as `u=public.users`.
+
+Separate schema flags are not recommended for the core binding contract because direct qualified selectors are simpler, closer to backend reality, and more extensible if future engines support deeper qualification than `schema.table`.
 
 ## References
 
