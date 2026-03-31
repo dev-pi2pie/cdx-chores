@@ -28,7 +28,7 @@ Current interactive flow:
 4. when SQLite or DuckDB-file exposes multiple logical sources, choose query scope:
    - single-source
    - workspace
-   - selecting workspace and binding even one relation still uses workspace aliasing; SQL review must target the chosen relation name rather than `file`
+   - selecting workspace and binding even one relation still uses workspace aliasing; SQL review must target the chosen relation name rather than any implicit `file`
 5. in single-source mode, select a SQLite table, DuckDB source, or Excel sheet when required
 6. for Excel, optionally enter a `range` before schema inspection
 7. inspect schema and sample rows from the current shaped source
@@ -75,7 +75,7 @@ Current interactive flow:
 
 - asks for one SQL string directly
 - first pass stays single-line
-- in workspace mode, SQL must target explicit relation names rather than `file`
+- in workspace mode, SQL must target explicit relation names rather than the implicit single-source `file`
 - selecting one relation in workspace mode still counts as workspace mode; SQL must use that alias
 - SQL review actions use:
   - `Edit SQL`
@@ -147,6 +147,8 @@ Interactive `data query` follows the same source contract as direct CLI query:
 - merged-sheet whole-sheet views that collapse into one visible column can also trigger reviewed shaping before SQL authoring
 - in single-source mode, the selected source is exposed to SQL as the logical table `file`
 - in workspace mode, SQL must target the explicit relation bindings chosen during workspace setup
+- workspace mode does not inject `file` automatically, but interactive alias entry does allow `file` when you deliberately choose it
+- when the selected backend object is literally named `file`, keeping the default workspace relation name `file` is valid
 
 Workspace relation binding remains distinct from multi-file relation assembly. File lists, globs, and `union_by_name`-style multi-file scans are still a separate future area.
 

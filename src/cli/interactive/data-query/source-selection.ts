@@ -111,9 +111,6 @@ function validateWorkspaceAlias(value: string): true | string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)) {
     return "Use a simple SQL identifier (letters, numbers, underscore; cannot start with a number).";
   }
-  if (trimmed.toLowerCase() === "file") {
-    return "The relation name `file` is reserved in workspace mode.";
-  }
   return true;
 }
 

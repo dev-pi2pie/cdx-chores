@@ -313,6 +313,50 @@ describe("CLI data query command", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
+  test("allows explicit file aliases in workspace mode", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "file=users",
+      "--sql",
+      "select id, name from file order by id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: file");
+    expect(result.stdout).not.toContain("Source: users");
+    expect(result.stdout).toContain("1   | Ada");
+  });
+
+  test("accepts comma-separated --relation bundles", () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,entries=time_entries",
+      "--sql",
+      "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Relations: users, entries");
+    expect(result.stdout).toContain("Ada  | 8");
+    expect(result.stdout).toContain("Bob  | 5");
+  });
+
   test("queries DuckDB-file input end to end", async () => {
     if (!duckdbReady) {
       return;
@@ -414,6 +458,32 @@ describe("CLI data query command", () => {
       expect(result.stdout).toContain("Format: duckdb");
       expect(result.stdout).toContain("Relations: users, events");
       expect(result.stdout).toContain("Ada  | login");
+    });
+  });
+
+  test("allows bare file bindings in DuckDB workspace mode", async () => {
+    if (!duckdbReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
+      const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--relation",
+        "file",
+        "--sql",
+        "select user_id, note from file order by user_id",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("Relations: file");
+      expect(result.stdout).toContain("1       | welcome");
     });
   });
 
@@ -736,21 +806,6 @@ describe("CLI data query command", () => {
     expect(result.stderr).toContain("--relation cannot be used together with --source");
   });
 
-  test("rejects reserved file alias in workspace mode", () => {
-    const result = runCli([
-      "data",
-      "query",
-      fixturePath("multi.sqlite"),
-      "--relation",
-      "file=users",
-      "--sql",
-      "select * from file",
-    ]);
-
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("relation alias `file` is reserved in workspace mode");
-  });
-
   test("rejects duplicate relation aliases in workspace mode", () => {
     const result = runCli([
       "data",
@@ -760,6 +815,38 @@ describe("CLI data query command", () => {
       "users",
       "--relation",
       "users=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects duplicate relation aliases inside one comma-separated bundle", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,users=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Duplicate workspace relation alias: users");
+  });
+
+  test("rejects duplicate relation aliases across repeated and bundled flags", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users",
+      "--relation",
+      "entries=time_entries,users=active_users",
       "--sql",
       "select * from users",
     ]);
@@ -798,6 +885,21 @@ describe("CLI data query command", () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--relation alias must be a simple SQL identifier");
+  });
+
+  test("rejects empty entries in comma-separated relation bundles at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "query",
+      fixturePath("multi.sqlite"),
+      "--relation",
+      "users,,entries=time_entries",
+      "--sql",
+      "select * from users",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--relation bundle cannot contain empty bindings");
   });
 
   test("lists available Excel sources when source is missing", () => {

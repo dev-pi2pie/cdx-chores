@@ -36,6 +36,7 @@ Status note:
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md` reflects the first shipped workspace implementation, including the earlier decision to reserve `file` in workspace mode.
 - the later follow-up alias decision that frees explicit workspace `file` bindings is tracked separately in `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
+- that follow-up has now been implemented in `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`, including comma-separated `--relation` bundles while keeping explicit aliasing for dotted selectors
 
 ## Expansion Families
 
@@ -194,7 +195,7 @@ The bare form should mean "bind a relation with the same SQL name and backend ob
 - `--relation users` expands to `users=users`
 - `--relation file` expands to `file=file`
 - `--relation events=analytics.events` keeps the alias explicit when the SQL name should differ from the backend object name
-- a future small UX extension may also allow comma-separated bundles under one flag value, such as `--relation users,file`
+- the same binding surface may also allow comma-separated bundles under one flag value, such as `--relation users,file`
 
 Recommended workspace-entry rule:
 
@@ -263,7 +264,7 @@ Recommended direction:
   - multiple tables
   - at least one non-default schema
   - joinable relations
-  - at least one case that protects the reserved `file` alias rule
+  - at least one case that protects the explicit workspace `file` alias rule
 
 Implication:
 

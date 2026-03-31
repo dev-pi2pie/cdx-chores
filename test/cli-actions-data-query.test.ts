@@ -292,22 +292,22 @@ describe("cli action modules: data query", () => {
     );
   });
 
-  test("actionDataQuery rejects reserved file alias in workspace mode", async () => {
-    const { runtime } = createActionTestRuntime();
+  test("actionDataQuery allows explicit file aliases in workspace mode", async () => {
+    if (!sqliteReady) {
+      return;
+    }
 
-    await expectCliError(
-      () =>
-        actionDataQuery(runtime, {
-          input: "test/fixtures/data-query/multi.sqlite",
-          relations: [{ alias: "file", source: "users" }],
-          sql: "select * from file",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "relation alias `file` is reserved in workspace mode",
-      },
-    );
+    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+    await actionDataQuery(runtime, {
+      input: "test/fixtures/data-query/multi.sqlite",
+      relations: [{ alias: "file", source: "users" }],
+      sql: "select id, name from file order by id",
+    });
+
+    expectNoStderr();
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Relations: file");
+    expect(stdout.text).toContain("1   | Ada");
   });
 
   test("actionDataQuery rejects duplicate relation aliases in workspace mode", async () => {

@@ -63,11 +63,25 @@ export function parseDataQueryRelationBindingOptionValue(value: string): DataQue
   };
 }
 
+export function parseDataQueryRelationBindingOptionValues(
+  value: string,
+): DataQueryRelationBinding[] {
+  const bindings = value.split(",").map((item) => item.trim());
+
+  if (bindings.some((binding) => binding.length === 0)) {
+    throw new InvalidArgumentError(
+      "--relation bundle cannot contain empty bindings. Use comma-separated <name> or <alias>=<source> entries.",
+    );
+  }
+
+  return bindings.map((binding) => parseDataQueryRelationBindingOptionValue(binding));
+}
+
 export function collectDataQueryRelationBindingOption(
   value: string,
   previous: DataQueryRelationBinding[] = [],
 ): DataQueryRelationBinding[] {
-  return [...previous, parseDataQueryRelationBindingOptionValue(value)];
+  return [...previous, ...parseDataQueryRelationBindingOptionValues(value)];
 }
 
 export function parseNonNegativeIntegerOption(value: string, label: string): number {

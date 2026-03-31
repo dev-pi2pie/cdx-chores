@@ -10,7 +10,7 @@ Current boundary:
 - intent is required through `--intent`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`, `.duckdb`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
-- workspace relation binding is available through repeatable `--relation <binding>` for SQLite and DuckDB-file inputs
+- workspace relation binding is available through repeatable or comma-separated `--relation <binding>` for SQLite and DuckDB-file inputs
 - explicit Excel shaping is available through `--range <A1:Z99>`
 - explicit Excel body-start selection is available through `--body-start-row <n>`
 - explicit Excel header selection is available through `--header-row <n>`
@@ -53,6 +53,8 @@ cdx-chores data query codex ./examples/playground/data-query/basic.parquet --int
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list active users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
+cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show status counts by name"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
@@ -84,10 +86,13 @@ If you need SQL against an accepted reviewed source shape, use the current two-s
 `--relation` enters workspace drafting mode and is currently valid only for SQLite and DuckDB-file inputs:
 
 - bare `--relation users` means `users=users`
+- one flag may also bundle multiple bindings, such as `--relation users,entries=time_entries`
 - `--relation alias=source` binds a source under an explicit SQL relation name
 - workspace mode starts as soon as one explicit `--relation` is present, even if only one relation is bound
 - once any `--relation` is present, Codex is instructed to use only those relation names instead of the implicit `file` table
-- `file` is reserved in workspace mode; a real backend object named `file` must be rebound under another alias such as `--relation f=file`
+- single-source mode keeps the implicit compatibility table name `file`
+- workspace mode does not inject `file` implicitly, but it does allow `file` as an explicit alias when you bind it yourself
+- that means `--relation file` and `--relation file=users` are both valid workspace bindings
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before bounded introspection is collected for Codex drafting.
 
@@ -103,6 +108,8 @@ Examples:
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
+cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"

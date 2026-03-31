@@ -29,7 +29,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option(
       "--relation <binding>",
-      "Bind a workspace relation for SQLite or DuckDB inputs (repeatable; use <name> or <alias>=<source>)",
+      "Bind workspace relations for SQLite or DuckDB inputs (repeatable or comma-separated; use <name> or <alias>=<source>)",
       collectDataQueryRelationBindingOption,
       [],
     )
@@ -136,7 +136,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     )
     .option(
       "--relation <binding>",
-      "Bind a workspace relation for SQLite or DuckDB inputs (repeatable; use <name> or <alias>=<source>)",
+      "Bind workspace relations for SQLite or DuckDB inputs (repeatable or comma-separated; use <name> or <alias>=<source>)",
       collectDataQueryRelationBindingOption,
       [],
     )

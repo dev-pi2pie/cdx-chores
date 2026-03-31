@@ -284,25 +284,42 @@ describe("interactive mode routing", () => {
     );
   });
 
-  test("re-prompts reserved workspace alias names before continuing", () => {
+  test("accepts explicit file workspace aliases without re-prompting", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:query", "workspace", "manual", "cancel"],
-      checkboxQueue: [["users"]],
-      requiredPathQueue: ["fixtures/query.sqlite"],
-      inputQueue: ["file", "users", "select users.id from users order by users.id"],
-      confirmQueue: [true, false],
-      dataQueryDetectedFormat: "sqlite",
-      dataQuerySources: ["users", "active_users"],
+      selectQueue: ["data", "data:query", "workspace", "manual", "table"],
+      checkboxQueue: [["file"]],
+      requiredPathQueue: ["fixtures/query.duckdb"],
+      inputQueue: ["file", "select user_id from file order by user_id", "10"],
+      confirmQueue: [true, true],
+      dataQueryDetectedFormat: "duckdb",
+      dataQuerySources: ["users", "time_entries", "file", "analytics.events"],
     });
 
-    expect(result.validationCalls).toContainEqual({
-      kind: "input",
-      message: "Relation name for users",
-      value: "file",
-      error: "The relation name `file` is reserved in workspace mode.",
-    });
-    expect(result.actionCalls).toEqual([]);
+    expect(
+      result.validationCalls.some(
+        (call) =>
+          call.kind === "input" &&
+          call.message === "Relation name for file" &&
+          call.value === "file",
+      ),
+    ).toBe(false);
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:query",
+        options: {
+          input: "fixtures/query.duckdb",
+          inputFormat: "duckdb",
+          json: undefined,
+          output: undefined,
+          overwrite: undefined,
+          pretty: undefined,
+          relations: [{ alias: "file", source: "file" }],
+          rows: 10,
+          sql: "select user_id from file order by user_id",
+        },
+      },
+    ]);
   });
 
   test("re-prompts invalid and duplicate workspace aliases before continuing", () => {

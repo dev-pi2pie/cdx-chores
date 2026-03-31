@@ -250,6 +250,45 @@ describe("CLI data query codex command", () => {
     });
   });
 
+  test("accepts comma-separated --relation bundles on the codex workspace lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const promptPath = join(fixtureDir, "sqlite-bundled-workspace-prompt.txt");
+      const stubPath = await createCodexStub({
+        promptPath,
+        sql: "select users.id, entries.hours from users join entries on users.id = entries.entry_id order by users.id",
+        summary: "Uses bundled workspace relation bindings.",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "users,entries=time_entries",
+          "--intent",
+          "join users with time entries",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Relations: users, entries");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Use only these relation names: users, entries.");
+      expect(prompt).toContain("Relation entries (source: time_entries)");
+    });
+  });
+
   test("accepts DuckDB workspace relations on the codex lane", async () => {
     if (!duckdbReady) {
       return;
@@ -399,15 +438,17 @@ describe("CLI data query codex command", () => {
     });
   });
 
-  test("rejects reserved file alias on the codex workspace lane", async () => {
+  test("allows explicit file aliases on the codex workspace lane", async () => {
     if (!sqliteReady) {
       return;
     }
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const promptPath = join(fixtureDir, "sqlite-file-workspace-prompt.txt");
       const stubPath = await createCodexStub({
-        sql: "select 1",
-        summary: "unused",
+        promptPath,
+        sql: "select id, name from file order by id",
+        summary: "Uses the explicit workspace alias file.",
         workingDirectory: fixtureDir,
       });
 
@@ -426,8 +467,13 @@ describe("CLI data query codex command", () => {
         { CDX_CHORES_CODEX_PATH: stubPath },
       );
 
-      expect(result.exitCode).toBe(2);
-      expect(result.stderr).toContain("The relation alias `file` is reserved in workspace mode.");
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Relations: file");
+
+      const prompt = await readFile(promptPath, "utf8");
+      expect(prompt).toContain("Use only these relation names: file.");
+      expect(prompt).toContain("Relation file (source: users)");
     });
   });
 
@@ -497,6 +543,41 @@ describe("CLI data query codex command", () => {
         "option '--relation <binding>' argument '1users=users' is invalid",
       );
       expect(result.stderr).toContain("simple SQL identifier");
+    });
+  });
+
+  test("rejects empty comma-separated workspace bundles on the codex lane", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
+      const stubPath = await createCodexStub({
+        sql: "select 1",
+        summary: "unused",
+        workingDirectory: fixtureDir,
+      });
+
+      const result = runCli(
+        [
+          "data",
+          "query",
+          "codex",
+          "test/fixtures/data-query/multi.sqlite",
+          "--relation",
+          "users,,entries=time_entries",
+          "--intent",
+          "list users",
+        ],
+        undefined,
+        { CDX_CHORES_CODEX_PATH: stubPath },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain(
+        "option '--relation <binding>' argument 'users,,entries=time_entries' is invalid",
+      );
+      expect(result.stderr).toContain("--relation bundle cannot contain empty bindings");
     });
   });
 

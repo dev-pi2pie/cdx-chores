@@ -26,7 +26,13 @@ Answer one narrow follow-up question without reopening the broader workspace con
 ## Related Plans
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
+- `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`
 - `docs/plans/plan-2026-03-31-data-extract-duckdb-file-parity.md`
+
+Status note:
+
+- the follow-up implementation tracked in `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md` has now landed
+- the shipped result keeps implicit `file` only in single-source mode, allows explicit workspace `file`, keeps `--relation` as the only workspace-binding surface, and supports comma-separated `--relation` bundles
 
 ## Problem
 
@@ -155,11 +161,16 @@ Recommended direction:
 - continue to require explicit aliasing for dotted selectors where the alias must remain a simple SQL identifier
 - consider allowing comma-separated bundles under `--relation` instead of adding a new workspace flag
 
-Possible future extension:
+Deferred future consideration:
 
-- also define how to suggest aliases for dotted selectors such as `analytics.events`
+- if the product later wants less manual workspace setup for dotted selectors such as `analytics.events`, treat alias suggestion as a separate UX slice rather than part of this contract correction
 
-## Open Questions
+## Resolved Follow-up Questions
 
-- Should dotted backend selectors such as `analytics.events` default to a cleaned alias like `events`, or should interactive mode require explicit user choice there too?
-- Should comma-separated `--relation` bundles land now, or should the product keep repeatable-only `--relation` until a later follow-up?
+- Dotted backend selectors such as `analytics.events` should continue to require explicit user choice in interactive mode rather than auto-defaulting to a cleaned alias like `events`.
+  Rationale:
+  keep alias behavior deterministic and avoid introducing a second UX policy change inside the same contract-fix slice.
+
+- Comma-separated `--relation` bundles should land now under the same `--relation` surface rather than waiting for a later flag redesign.
+  Rationale:
+  they expand the existing binding surface without changing the workspace model or introducing a second workspace flag.

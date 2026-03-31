@@ -1,7 +1,8 @@
 ---
 title: "Data query workspace alias follow-up"
 created-date: 2026-03-31
-status: draft
+modified-date: 2026-03-31
+status: completed
 agent: codex
 ---
 
@@ -139,30 +140,30 @@ Equivalent expanded forms:
 
 ### Phase 1: Freeze revised alias contract
 
-- [ ] freeze explicit workspace `file` support
-- [ ] freeze single-source implicit `file` behavior unchanged
-- [ ] freeze no-new-`--workspace` decision
-- [ ] freeze whether comma-separated `--relation` bundles ship in this same slice
+- [x] freeze explicit workspace `file` support
+- [x] freeze single-source implicit `file` behavior unchanged
+- [x] freeze no-new-`--workspace` decision
+- [x] freeze whether comma-separated `--relation` bundles ship in this same slice
 
 ### Phase 2: Parser and workspace validation
 
-- [ ] update `--relation` parsing for the revised alias rule
-- [ ] allow explicit `file` bindings in workspace validation
-- [ ] add comma-separated bundle support if included in Phase 1
-- [ ] keep duplicate-alias and malformed-alias failures deterministic
+- [x] update `--relation` parsing for the revised alias rule
+- [x] allow explicit `file` bindings in workspace validation
+- [x] add comma-separated bundle support if included in Phase 1
+- [x] keep duplicate-alias and malformed-alias failures deterministic
 
 ### Phase 3: Interactive and Codex follow-up
 
-- [ ] allow interactive workspace alias entry for `file`
-- [ ] keep dotted-selector alias handling explicit
-- [ ] ensure workspace Codex introspection and prompts accept explicit `file`
+- [x] allow interactive workspace alias entry for `file`
+- [x] keep dotted-selector alias handling explicit
+- [x] ensure workspace Codex introspection and prompts accept explicit `file`
 
 ### Phase 4: Docs and tests
 
-- [ ] update the query, codex, and interactive guides
-- [ ] replace old reserved-`file` wording
-- [ ] add or update direct CLI, action, and interactive coverage
-- [ ] add parser coverage for comma-separated `--relation` bundles when implemented
+- [x] update the query, codex, and interactive guides
+- [x] replace old reserved-`file` wording
+- [x] add or update direct CLI, action, and interactive coverage
+- [x] add parser coverage for comma-separated `--relation` bundles when implemented
 
 ## Related Research
 

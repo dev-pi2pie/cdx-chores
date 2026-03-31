@@ -20,7 +20,7 @@ Current boundary:
 - SQL is required through `--sql`
 - built-in inputs: `.csv`, `.tsv`, `.parquet`, `.duckdb`
 - extension-backed inputs: `.sqlite`, `.sqlite3`, `.xlsx`
-- workspace relation binding is available through repeatable `--relation <binding>`
+- workspace relation binding is available through repeatable or comma-separated `--relation <binding>`
 - workspace mode is currently supported for SQLite and DuckDB-file inputs
 - explicit headerless CSV and TSV interpretation is available through `--no-header`
 - explicit Excel shaping is available through `--range <A1:Z99>`
@@ -123,6 +123,8 @@ cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select *
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
 cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select id, name from file order by id"
 cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select user_id, note from file order by user_id"
 cdx-chores data query ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --sql "select ID, item, status from file order by ID"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
@@ -140,10 +142,13 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 `--relation` enters workspace mode and is currently valid only for SQLite and DuckDB-file inputs:
 
 - bare `--relation users` means `users=users`
+- one flag may also bundle multiple bindings, such as `--relation users,entries=time_entries`
 - `--relation alias=source` binds a source under an explicit SQL relation name
 - workspace mode starts as soon as one explicit `--relation` is present, even if only one relation is bound
 - once any `--relation` is present, SQL must target the bound relation names instead of the implicit `file` alias
-- `file` is reserved in workspace mode; a real backend object named `file` must be rebound under another alias such as `--relation f=file`
+- single-source mode keeps the implicit compatibility table name `file`
+- workspace mode does not inject `file` implicitly, but it does allow `file` as an explicit alias when you bind it yourself
+- that means `--relation file` and `--relation file=users` are both valid workspace bindings
 
 `--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
 Other input formats reject `--range`.
@@ -180,6 +185,8 @@ Examples:
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
+cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"

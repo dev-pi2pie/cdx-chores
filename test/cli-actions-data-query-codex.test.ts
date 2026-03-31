@@ -97,6 +97,36 @@ describe("cli action modules: data query codex", () => {
     );
   });
 
+  test("actionDataQueryCodex allows explicit file aliases in workspace mode", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+
+    await actionDataQueryCodex(runtime, {
+      input: "test/fixtures/data-query/multi.sqlite",
+      intent: "list users ordered by id",
+      relations: [{ alias: "file", source: "users" }],
+      runner: async ({ prompt }) => {
+        expect(prompt).toContain("Use only these relation names: file.");
+        expect(prompt).toContain("Relation file (source: users)");
+
+        return JSON.stringify({
+          sql: "select id, name from file order by id",
+          reasoning_summary: "Uses the explicit workspace alias file.",
+        });
+      },
+    });
+
+    expectNoStderr();
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Relations: file");
+    expect(stdout.text).toContain("- file (source: users)");
+    expect(stdout.text).toContain("Uses the explicit workspace alias file.");
+    expect(stdout.text).toContain("select id, name from file order by id");
+  });
+
   test("actionDataQueryCodex renders workspace assistant output for DuckDB-file relations", async () => {
     if (!duckdbReady) {
       return;

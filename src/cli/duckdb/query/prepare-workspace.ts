@@ -31,16 +31,6 @@ function validateWorkspaceRelationBindings(relations: readonly DataQueryRelation
   const seenAliases = new Set<string>();
   for (const relation of relations) {
     const normalizedAlias = relation.alias.trim().toLowerCase();
-    if (normalizedAlias === "file") {
-      throw new CliError(
-        "The relation alias `file` is reserved in workspace mode. Choose a different alias, such as `f=file`.",
-        {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-        },
-      );
-    }
-
     if (seenAliases.has(normalizedAlias)) {
       throw new CliError(`Duplicate workspace relation alias: ${relation.alias}.`, {
         code: "INVALID_INPUT",
