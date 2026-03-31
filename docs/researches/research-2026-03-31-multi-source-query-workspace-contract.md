@@ -292,7 +292,76 @@ Implication:
 
 - multi-source SQL drafting becomes a direct extension of the workspace contract rather than a prompt-only hack layered on top of the old alias
 
-### 11. Fixtures and smoke tests should evolve by scenario family, not only by file format
+### 11. Interactive query needs an explicit workspace-binding step
+
+The current interactive `data query` flow is built around one selected source object before SQL authoring. That is still sufficient for the old single-source path and insufficient for workspace mode.
+
+Recommended interactive direction:
+
+- keep one source container per interactive invocation
+- keep the current single-source path available for simple workflows
+- add an explicit scope choice after source-container inspection:
+  - single-source query
+  - workspace query
+- in workspace mode, guide the user through binding one or more relations before SQL authoring begins
+- once workspace mode is active, SQL review and Codex drafting should refer only to explicit relation bindings rather than the implicit `file` alias
+
+Recommended first-pass authoring modes:
+
+- single-source path:
+  - keep `manual`
+  - keep `formal-guide`
+  - keep `Codex Assistant`
+- workspace path:
+  - keep `manual`
+  - keep `Codex Assistant`
+  - defer a workspace-aware `formal-guide` because guided join authoring is materially larger than the current single-relation guided SQL flow
+
+Interactive sketch:
+
+```text
+Interactive: cdx-chores interactive -> data -> query
+
+choose input path
+        |
+        v
+detect format or choose format explicitly
+        |
+        v
+inspect source container
+        |
+        v
+choose query scope
+(single-source | workspace)
+        |
+        +------------------------------+
+        |                              |
+        v                              v
+single-source path                 workspace path
+bind one relation                  bind one or more relations
+compatibility alias: file          aliases: explicit only
+        |                              |
+        v                              v
+optional shaping/review            optional review where supported
+        |                              |
+        v                              v
+SQL authoring                      SQL authoring
+manual | formal-guide |            manual | Codex Assistant
+Codex Assistant                    against explicit relation names
+        |                              |
+        v                              v
+review SQL and confirm             review SQL and confirm
+        |                              |
+        v                              v
+choose output mode                 choose output mode
+```
+
+Implication:
+
+- the interactive contract can stay consistent with the direct CLI workspace model without forcing the current single-source path to disappear
+- the future implementation plan should treat workspace binding as a pre-authoring phase, not as a side effect hidden inside SQL entry
+
+### 12. Fixtures and smoke tests should evolve by scenario family, not only by file format
 
 The current fixture generator for `data query` creates a representative but format-oriented set:
 
@@ -360,6 +429,8 @@ Recommended first pass:
 - preserve current single-source behavior
 - add workspace-aware multi-relation support for SQLite from one source container per invocation
 - update `data query codex` to draft against explicit relation names
+- add an interactive workspace-binding phase before SQL authoring
+- keep interactive `formal-guide` on the single-source path only in the first pass
 - defer Excel multi-source shaping
 
 Recommended near-follow-up:
