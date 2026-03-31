@@ -24,7 +24,6 @@ export default defineConfig([
     dts: false,
     outDir: "dist/esm",
     clean: false,
-    sourcemap: true,
     platform: "node",
     target: "node22",
     hash: false,
