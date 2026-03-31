@@ -31,6 +31,48 @@ Reduce the next-stage query expansion into an implementation-ready contract that
 - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
 
+## Expansion Families
+
+The broader query family can expand in two different directions, and they should not be conflated:
+
+### Multi-file relation assembly
+
+This means assembling one logical relation from multiple files, such as:
+
+- a list of CSV files
+- a glob of Parquet files
+- schema-combination behavior such as DuckDB `union_by_name`
+- optional row-origin fields such as DuckDB `filename`
+
+This is primarily a relation-assembly problem:
+
+- how files are discovered
+- how column layouts are combined
+- how file provenance is retained
+- whether one assembled relation or many relations are exposed to SQL
+
+### Workspace relation binding
+
+This means binding one or more backend objects from one source container into a query workspace, such as:
+
+- multiple tables from one SQLite file
+- multiple tables or schemas from one future DuckDB database file
+- multiple sheets from one Excel workbook once relation-specific shaping exists
+- future schema-qualified selectors from one connection-backed source
+
+This is primarily a workspace-binding problem:
+
+- how backend objects are selected
+- how aliases work
+- how SQL-visible relation names are defined
+- how one-source shorthand coexists with explicit workspace mode
+
+### Scope of this document
+
+This research covers workspace relation binding.
+
+It does not define the CLI contract for multi-file relation assembly, though DuckDB's multi-file capabilities remain relevant background for later research in that separate area.
+
 ## Key Findings
 
 ### 1. The current `file` relation is a product alias, not a DuckDB requirement
@@ -179,6 +221,16 @@ Implication:
 
 - the future contract can remain stable even if the implementation later adds `--connect <profile-or-dsn>` beside file paths
 - product docs can describe one workspace model across both local files and future remote catalogs
+
+### 7A. DuckDB multi-file reads are adjacent background, not the same contract problem
+
+DuckDB's support for lists, globs, `union_by_name`, and `filename` fields across multiple files is useful background, but it belongs to multi-file relation assembly rather than workspace relation binding.[10][11]
+
+Implication:
+
+- this research should not use "multi-source" as a blanket label for both concerns
+- the current doc should keep solving workspace relation binding only
+- later guide docs should explain multi-file relation assembly separately if that feature family is ever added
 
 ### 8. DuckDB database file support belongs to the same design track, but should not be added under the old single-source mental model
 
@@ -350,3 +402,5 @@ Separate schema flags are not recommended for the core binding contract because 
 - [7] `scripts/generate-data-query-fixtures.mjs`
 - [8] `test/data-query-fixture-generator.test.ts`
 - [9] DuckDB Connect docs: `https://duckdb.org/docs/current/connect/overview`
+- [10] DuckDB Multiple Files overview: `https://duckdb.org/docs/current/data/multiple_files/overview`
+- [11] DuckDB Combining Schemas docs: `https://duckdb.org/docs/current/data/multiple_files/combining_schemas`
