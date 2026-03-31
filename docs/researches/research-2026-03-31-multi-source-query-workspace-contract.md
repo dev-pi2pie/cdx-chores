@@ -2,7 +2,7 @@
 title: "Multi-source query workspace contract"
 created-date: 2026-03-31
 modified-date: 2026-03-31
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -28,6 +28,7 @@ Reduce the next-stage query expansion into an implementation-ready contract that
 
 ## Related Plans
 
+- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
 
