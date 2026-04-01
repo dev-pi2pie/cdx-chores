@@ -54,17 +54,17 @@
     "fast-xml-parser": "^5.5.7",
     "mammoth": "^1.12.0",
     "papaparse": "^5.5.3",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^5.6.205",
     "yaml": "^2.8.2",
-    "yauzl": "^3.2.1"
+    "yauzl": "^3.3.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^25.5.0",
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.56.0",
+    "oxfmt": "^0.43.0",
+    "oxlint": "^1.58.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.21.4",
+    "tsdown": "^0.21.7",
     "typescript": "^6.0.2"
   },
   "engines": {
