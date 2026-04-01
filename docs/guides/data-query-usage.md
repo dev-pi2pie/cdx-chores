@@ -36,18 +36,18 @@ Current boundary:
 
 ### Support matrix
 
-| Input family | Single-source query | Workspace query | Notes |
-| --- | --- | --- | --- |
-| CSV / TSV | yes | no | one logical table only |
-| Parquet | yes | no | one logical table only |
-| SQLite | yes | yes | `--source` or repeatable `--relation` |
-| DuckDB-file | yes | yes | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
-| Excel | yes | no | workbook workspace support remains deferred |
+| Input family | Single-source query | Workspace query | Notes                                                     |
+| ------------ | ------------------- | --------------- | --------------------------------------------------------- |
+| CSV / TSV    | yes                 | no              | one logical table only                                    |
+| Parquet      | yes                 | no              | one logical table only                                    |
+| SQLite       | yes                 | yes             | `--source` or repeatable `--relation`                     |
+| DuckDB-file  | yes                 | yes             | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
+| Excel        | yes                 | no              | workbook workspace support remains deferred               |
 
 Important distinction:
 
 - workspace relation binding is not the same feature as multi-file relation assembly
-- lists, globs, and `union_by_name`-style multi-file scans remain a separate future area
+- lists, globs, and `union_by_name` style multi-file scans remain a separate future area
 
 Current intent:
 
