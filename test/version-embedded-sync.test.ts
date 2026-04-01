@@ -8,9 +8,9 @@ import { REPO_ROOT } from "./helpers/cli-test-utils";
 
 describe("embedded version sync", () => {
   test("embedded CLI version matches package.json", () => {
-    const packageJson = JSON.parse(
-      readFileSync(join(REPO_ROOT, "package.json"), "utf8"),
-    ) as { version?: string };
+    const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as {
+      version?: string;
+    };
     const packageVersion = packageJson.version;
 
     expect(typeof packageVersion).toBe("string");
@@ -18,9 +18,9 @@ describe("embedded version sync", () => {
   });
 
   test("build script regenerates the embedded version before bundling", () => {
-    const packageJson = JSON.parse(
-      readFileSync(join(REPO_ROOT, "package.json"), "utf8"),
-    ) as { scripts?: { build?: string } };
+    const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as {
+      scripts?: { build?: string };
+    };
 
     expect(packageJson.scripts?.build).toContain("node scripts/generate-embedded-version.mjs");
     expect(packageJson.scripts?.build).toContain("tsdown");

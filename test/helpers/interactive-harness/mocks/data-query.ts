@@ -234,7 +234,8 @@ function buildCodexTemplate(options: {
       ? (options.introspection as DataQueryIntrospection)
       : undefined;
   const schema =
-    Array.isArray(singleSourceIntrospection?.columns) && singleSourceIntrospection.columns.length > 0
+    Array.isArray(singleSourceIntrospection?.columns) &&
+    singleSourceIntrospection.columns.length > 0
       ? singleSourceIntrospection.columns
           .slice(0, 8)
           .map((column) => `${column.name} (${column.type})`)
