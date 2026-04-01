@@ -22,13 +22,13 @@ Current boundary:
 
 ### Support matrix
 
-| Input family | Single-source drafting | Workspace drafting | Notes |
-| --- | --- | --- | --- |
-| CSV / TSV | yes | no | one logical table only |
-| Parquet | yes | no | one logical table only |
-| SQLite | yes | yes | `--source` or repeatable `--relation` |
-| DuckDB-file | yes | yes | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
-| Excel | yes | no | workbook workspace support remains deferred |
+| Input family | Single-source drafting | Workspace drafting | Notes                                                                           |
+| ------------ | ---------------------- | ------------------ | ------------------------------------------------------------------------------- |
+| CSV / TSV    | yes                    | no                 | one logical table only                                                          |
+| Parquet      | yes                    | no                 | one logical table only                                                          |
+| SQLite       | yes                    | yes                | `--source` or repeatable `--relation`                                           |
+| DuckDB-file  | yes                    | yes                | `.duckdb` auto-detect; generic `*.db` requires explicit `--input-format duckdb` |
+| Excel        | yes                    | no                 | workbook workspace support remains deferred                                     |
 
 ### Command shape
 
@@ -51,10 +51,10 @@ Examples:
 cdx-chores data query codex ./examples/playground/data-query/basic.csv --intent "show id and name ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/basic.parquet --intent "count rows" --print-sql
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list active users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --source users --intent "list users ordered by id"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show status counts by name"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
@@ -106,10 +106,10 @@ Examples:
 
 ```bash
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --source users --intent "list users ordered by id"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
