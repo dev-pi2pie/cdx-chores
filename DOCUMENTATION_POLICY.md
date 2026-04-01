@@ -64,6 +64,20 @@ Archive link-handling rules:
 - historical labeling is required only for guide docs and other user-facing reference docs, not for archived docs or job-record traceability links
 - when a doc is archived because it is `superseded`, add a short status note that points readers to the newer primary doc when applicable
 
+### Archived Follow-Up Rule
+
+When new work is related to an archived doc:
+
+- create a new current doc for the new issue, fix, or follow-up
+- link back to the archived doc as historical context
+- do not reopen the archived doc as the main working document
+- update the archived doc only if a short status note is needed to prevent reader confusion
+- change `modified-date` on the archived doc only when its reader-facing content changes
+
+Archived docs explain what was known then. New current docs explain what is known now.
+
+Use a short `Historical Context` or `Related Historical Docs` section in the new doc when the archived doc is materially relevant.
+
 ### Plan Documents
 
 Location:
