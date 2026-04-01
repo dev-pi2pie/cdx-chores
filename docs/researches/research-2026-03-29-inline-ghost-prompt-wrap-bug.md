@@ -162,7 +162,7 @@ The issue wording uses an ordinary multi-folder path example and describes the v
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-29-inline-ghost-prompt-wrap-fix.md`
+- `docs/plans/archive/plan-2026-03-29-inline-ghost-prompt-wrap-fix.md`
 
 ## Related Research
 

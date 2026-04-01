@@ -380,8 +380,8 @@ Wording caution:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`
 
 ## Related Plans
 

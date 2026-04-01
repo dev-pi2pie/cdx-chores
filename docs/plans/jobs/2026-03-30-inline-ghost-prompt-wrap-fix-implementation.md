@@ -59,7 +59,7 @@ That pointed to a terminal-compatibility gap in the renderer itself. The final i
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-29-inline-ghost-prompt-wrap-fix.md`
+- `docs/plans/archive/plan-2026-03-29-inline-ghost-prompt-wrap-fix.md`
 
 ## Related Research
 

@@ -190,11 +190,11 @@ Those are review-artifact and AI-assistance concerns, not just query or preview 
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`
 
 ## Related Plans
 
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`

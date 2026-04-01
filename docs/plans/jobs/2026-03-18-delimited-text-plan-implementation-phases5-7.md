@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Complete Phase 5 through Phase 7 of `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md` so the lightweight delimited-text expansion is fully implemented, documented, and verified.
+Complete Phase 5 through Phase 7 of `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md` so the lightweight delimited-text expansion is fully implemented, documented, and verified.
 
 ## What Changed
 
@@ -26,7 +26,7 @@ Complete Phase 5 through Phase 7 of `docs/plans/plan-2026-03-17-delimited-text-p
   - the full explicit CSV / TSV / JSON conversion family
   - the grouped interactive `data -> convert` flow
   - the lightweight PapaParse-backed architecture boundary for this track
-- completed the remaining checklist items in `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- completed the remaining checklist items in `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 
 ## Files
 
@@ -39,7 +39,7 @@ Complete Phase 5 through Phase 7 of `docs/plans/plan-2026-03-17-delimited-text-p
 - `README.md`
 - `docs/guides/data-preview-usage.md`
 - `docs/guides/interactive-path-prompt-ux.md`
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 
 ## Verification
 
@@ -59,8 +59,8 @@ Complete Phase 5 through Phase 7 of `docs/plans/plan-2026-03-17-delimited-text-p
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+- `docs/researches/archive/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`

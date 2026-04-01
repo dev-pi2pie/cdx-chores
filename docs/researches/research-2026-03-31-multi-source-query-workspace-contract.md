@@ -23,13 +23,13 @@ Reduce the next-stage query expansion into an implementation-ready contract that
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
-- `docs/researches/research-2026-03-20-data-command-surface-headerless-and-codex-boundaries.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-20-data-command-surface-headerless-and-codex-boundaries.md`
 
 ## Related Plans
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
 
 Status note:
@@ -483,8 +483,8 @@ Separate schema flags are not recommended for the core binding contract because 
 - [1] `src/cli/duckdb/query/prepare-source.ts`
 - [2] `src/cli/commands/data/query.ts`
 - [3] `src/cli/data-query/codex.ts`
-- [4] `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
-- [5] `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- [4] `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
+- [5] `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - [6] `src/cli/duckdb/query/types.ts`
 - [7] `scripts/generate-data-query-fixtures.mjs`
 - [8] `test/data-query-fixture-generator.test.ts`

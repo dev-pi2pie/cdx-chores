@@ -876,19 +876,19 @@ This keeps design and contract discussion focused on the data shape instead of e
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
-- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
 
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 - `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
 

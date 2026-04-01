@@ -310,7 +310,7 @@ Recommended interactive smoke focus:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+- `docs/researches/archive/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
 - `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
 
 ## Related Plans

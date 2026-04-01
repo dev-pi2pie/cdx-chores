@@ -42,4 +42,4 @@ Add visible progress feedback to `data query codex` before result rendering, and
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`

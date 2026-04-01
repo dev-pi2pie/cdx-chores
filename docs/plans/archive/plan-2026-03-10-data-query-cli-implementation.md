@@ -332,7 +332,7 @@ First-pass fixture goals:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 

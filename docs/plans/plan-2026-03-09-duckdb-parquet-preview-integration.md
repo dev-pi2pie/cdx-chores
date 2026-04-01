@@ -319,7 +319,7 @@ Design constraints:
 ## Related Research
 
 - `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 

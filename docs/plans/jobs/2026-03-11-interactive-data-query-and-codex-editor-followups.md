@@ -54,4 +54,4 @@ Land the interactive `data query` flow and the next `Codex Assistant` editor-bac
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`

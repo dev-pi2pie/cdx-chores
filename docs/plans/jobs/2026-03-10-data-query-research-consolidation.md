@@ -38,7 +38,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 
 ## Files
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Verification
 
@@ -58,4 +58,4 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`

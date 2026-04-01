@@ -35,4 +35,4 @@ Fix terminal table misalignment for mixed English and CJK content in `data previ
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`

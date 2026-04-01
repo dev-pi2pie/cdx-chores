@@ -163,13 +163,13 @@ This is the smallest implementation slice that turns the research conclusions in
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
-- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`

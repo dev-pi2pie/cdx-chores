@@ -30,5 +30,5 @@ Address the follow-up review findings in the DuckDB extension lifecycle implemen
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
+- `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
 

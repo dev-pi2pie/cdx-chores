@@ -11,7 +11,7 @@ Address review findings on the delimited-text preview and conversion parity plan
 
 ## What Changed
 
-- updated `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- updated `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 - added `modified-date` to the plan front matter
 - clarified that delimited-to-delimited conversions must stay on a row-array path and preserve blank headers, duplicate headers, and wider-than-header rows
 - clarified that delimited-to-JSON conversions intentionally keep the current lossy object contract for blank headers, duplicate headers, and extra trailing cells
@@ -21,7 +21,7 @@ Address review findings on the delimited-text preview and conversion parity plan
 
 ## Files
 
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 
 ## Verification
 
@@ -31,4 +31,4 @@ Address review findings on the delimited-text preview and conversion parity plan
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
+- `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`

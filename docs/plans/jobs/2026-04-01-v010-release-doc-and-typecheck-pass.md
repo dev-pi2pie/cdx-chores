@@ -1,6 +1,7 @@
 ---
 title: "0.1.0 Release Doc And Typecheck Pass"
 created-date: 2026-04-01
+modified-date: 2026-04-01
 status: completed
 agent: codex
 ---
@@ -25,7 +26,6 @@ Prepare the repository for the `0.1.0` stable release by refreshing release-faci
   - `src/cli/duckdb/query/prepare-workspace.ts`
   - `src/cli/interactive/data-query/source-selection.ts`
   - `test/helpers/interactive-harness/mocks/data-query.ts`
-- drafted the next archive-scope plan in `docs/plans/plan-2026-04-01-v010-release-doc-and-archive-scope.md`
 
 ## Verification
 
@@ -36,9 +36,5 @@ Prepare the repository for the `0.1.0` stable release by refreshing release-faci
 
 ## Follow-Up
 
-- execute the archive plan in a separate pass after status normalization for stale top-level plans and research docs
+- keep release verification green while the separate archive job updates historical docs and links
 - investigate the path-inline test if it shows up as flaky again under full-suite parallel timing, even though the focused rerun passed cleanly during this pass
-
-## Related Plans
-
-- `docs/plans/plan-2026-04-01-v010-release-doc-and-archive-scope.md`
