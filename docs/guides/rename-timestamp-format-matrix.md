@@ -1,18 +1,18 @@
 ---
 title: "Rename Timestamp Format Matrix"
 created-date: 2026-03-01
-modified-date: 2026-03-29
-status: draft
+modified-date: 2026-04-01
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Provide one compact reference for current rename timestamp placeholders and the proposed Route A explicit timestamp-format placeholders.
+Provide one compact reference for the current rename timestamp placeholders and explicit timestamp-format placeholders.
 
 ## Status
 
-This guide is a draft implementation reference.
+This guide documents the stable `v0.1.0` timestamp placeholder contract.
 
 Current behavior is implemented:
 

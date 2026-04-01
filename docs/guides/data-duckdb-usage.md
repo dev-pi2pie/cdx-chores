@@ -2,14 +2,14 @@
 
 `data duckdb` is the explicit DuckDB lifecycle lane for inspecting and installing the DuckDB extensions used by `data query` and `data extract`.
 
-Current first-pass scope:
+Current stable scope:
 
 - read-only DuckDB extension inspection through `doctor`
 - explicit install commands for managed extensions
 - managed extensions:
   - `sqlite`
   - `excel`
-- no uninstall command in the current implementation
+- no uninstall command in `v0.1.0`
 
 ### Commands
 

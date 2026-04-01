@@ -2,9 +2,9 @@
 
 `data query codex` is the natural-language drafting lane for SQL against one local input file. It inspects the selected data source or workspace first, drafts SQL second, and does not execute the drafted SQL automatically.
 
-As of `v0.0.9`, this lane is still intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
+As of `v0.1.0`, this lane remains intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
 
-Current boundary:
+Current stable boundary:
 
 - one input file per invocation
 - intent is required through `--intent`
@@ -18,7 +18,7 @@ Current boundary:
 - no direct `--header-mapping <path>` reuse in this lane
 - default output: human-readable assistant summary plus drafted SQL
 - shell-friendly output: `--print-sql`
-- no `--execute` in the first pass
+- no `--execute` in `v0.1.0`
 
 ### Support matrix
 
@@ -67,7 +67,7 @@ Keep the two lanes separate:
 - `data query` executes SQL you already know
 - `data query codex` drafts SQL from natural-language intent
 
-The first `data query codex` implementation is advisory only. It always shows the drafted SQL and does not run it for you. `--execute` is intentionally not implemented yet.
+The current `data query codex` implementation is advisory only. It always shows the drafted SQL and does not run it for you. `--execute` is intentionally not implemented in `v0.1.0`.
 
 If you need SQL against an accepted reviewed source shape, use the current two-step direct-CLI flow instead:
 

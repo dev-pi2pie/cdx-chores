@@ -127,7 +127,8 @@ function summarizeRelationSchema(relation: DataQueryCodexRelationContext): strin
 
 function summarizeEditorSchema(introspection: DataQueryCodexIntrospection): string {
   const relations = getCodexRelationContexts(introspection);
-  if (relations.length === 0) {
+  const [firstRelation] = relations;
+  if (!firstRelation) {
     return "(no relations available)";
   }
 
@@ -135,7 +136,7 @@ function summarizeEditorSchema(introspection: DataQueryCodexIntrospection): stri
     ? relations
         .map((relation) => `${relation.alias}: ${summarizeRelationSchema(relation)}`)
         .join(" | ")
-    : summarizeRelationSchema(relations[0]);
+    : summarizeRelationSchema(firstRelation);
 }
 
 function buildSingleSourceEditorContextLines(

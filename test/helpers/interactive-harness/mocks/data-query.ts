@@ -227,30 +227,35 @@ function buildCodexTemplate(options: {
     ].join("\n");
   }
 
+  const singleSourceIntrospection =
+    typeof options.introspection === "object" &&
+    options.introspection !== null &&
+    (options.introspection as { kind?: unknown }).kind !== "workspace"
+      ? (options.introspection as DataQueryIntrospection)
+      : undefined;
   const schema =
-    Array.isArray((options.introspection as DataQueryIntrospection | undefined)?.columns) &&
-    (options.introspection as DataQueryIntrospection).columns.length > 0
-      ? (options.introspection as DataQueryIntrospection).columns
+    Array.isArray(singleSourceIntrospection?.columns) && singleSourceIntrospection.columns.length > 0
+      ? singleSourceIntrospection.columns
           .slice(0, 8)
           .map((column) => `${column.name} (${column.type})`)
           .join(", ")
       : "(no columns available)";
-  const sampleRows = Array.isArray(options.introspection?.sampleRows)
-    ? options.introspection.sampleRows.slice(0, 3)
+  const sampleRows: Record<string, unknown>[] = Array.isArray(singleSourceIntrospection?.sampleRows)
+    ? singleSourceIntrospection.sampleRows.slice(0, 3)
     : [];
 
   return [
     "# Query context for Codex drafting.",
     "# Logical table: file",
     `# Format: ${String(options.format ?? "")}`,
-    ...(options.introspection?.selectedSource
-      ? [`# Source: ${String(options.introspection.selectedSource)}`]
+    ...(singleSourceIntrospection?.selectedSource
+      ? [`# Source: ${String(singleSourceIntrospection.selectedSource)}`]
       : []),
-    ...(options.introspection?.selectedRange
-      ? [`# Range: ${String(options.introspection.selectedRange)}`]
+    ...(singleSourceIntrospection?.selectedRange
+      ? [`# Range: ${String(singleSourceIntrospection.selectedRange)}`]
       : []),
-    ...(options.introspection?.selectedHeaderRow !== undefined
-      ? [`# Header row: ${String(options.introspection.selectedHeaderRow)}`]
+    ...(singleSourceIntrospection?.selectedHeaderRow !== undefined
+      ? [`# Header row: ${String(singleSourceIntrospection.selectedHeaderRow)}`]
       : []),
     `# Schema: ${schema}`,
     "# Sample rows:",
