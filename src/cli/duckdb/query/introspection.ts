@@ -13,6 +13,7 @@ import type {
   DataQuerySourceIntrospection,
   DataQuerySourceShape,
   DataQueryWorkspaceIntrospection,
+  DataQueryWorkspaceRelationIntrospection,
 } from "./types";
 
 function buildPreviewPayload(options: {
@@ -118,7 +119,7 @@ export async function collectDataQueryWorkspaceIntrospection(
   );
 
   try {
-    const inspectedRelations = [];
+    const inspectedRelations: DataQueryWorkspaceRelationIntrospection[] = [];
     for (const relation of relations) {
       const reader = await connection.streamAndReadUntil(
         `select * from ${quoteSqlIdentifier(relation.alias)}`,

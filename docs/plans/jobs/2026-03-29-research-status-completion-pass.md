@@ -18,7 +18,7 @@ Align research document front-matter status with the current repo state after re
 ## Files
 
 - `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 - `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
 - `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 - `docs/researches/research-2026-03-03-rename-cleanup-option-surface-and-conflict-strategy.md`

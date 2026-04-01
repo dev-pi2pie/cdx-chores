@@ -9,7 +9,7 @@ import type {
 
 export function buildRelationSql(
   inputPath: string,
-  format: DataQueryInputFormat,
+  format: Exclude<DataQueryInputFormat, "duckdb">,
   shape: DataQuerySourceShape = {},
   options: {
     excelHeader?: boolean;
@@ -44,6 +44,9 @@ export function buildRelationSql(
         ...(options.excelImportMode === "all_varchar" ? ["all_varchar = true"] : []),
       ].join(", ")})`;
   }
+
+  const exhaustiveFormat: never = format;
+  throw new Error(`Unsupported data query input format: ${String(exhaustiveFormat)}`);
 }
 
 export function buildPreparedFileProjectionSql(

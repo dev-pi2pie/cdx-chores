@@ -11,7 +11,7 @@ Address review findings in the DuckDB extension lifecycle follow-up plan so the 
 
 ## Changes
 
-- updated `docs/plans/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
+- updated `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
 - froze install-attempt progress output to stderr so stdout payload contracts remain intact
 - narrowed `--install-missing-extension` to `data query` only for the first implementation
 - removed uninstall from the first-pass command shape and deferred it explicitly
@@ -22,16 +22,16 @@ Address review findings in the DuckDB extension lifecycle follow-up plan so the 
 
 - re-read the lifecycle plan after revision
 - cross-checked the revised scope against:
-  - `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+  - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
   - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
-  - `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+  - `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`

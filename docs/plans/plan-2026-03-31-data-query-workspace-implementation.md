@@ -338,12 +338,12 @@ Only after that research is frozen should a separate Excel-workspace implementat
 ## Related Research
 
 - `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
-- `docs/researches/research-2026-03-20-data-command-surface-headerless-and-codex-boundaries.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-20-data-command-surface-headerless-and-codex-boundaries.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`

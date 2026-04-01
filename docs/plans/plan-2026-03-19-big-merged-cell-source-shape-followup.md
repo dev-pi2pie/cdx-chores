@@ -328,4 +328,4 @@ Documentation result:
 ## Related Research
 
 - `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md`
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

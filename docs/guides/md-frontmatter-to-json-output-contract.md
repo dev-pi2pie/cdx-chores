@@ -1,8 +1,8 @@
 ---
 title: "MD Frontmatter to JSON Output Contract"
 created-date: 2026-02-26
-modified-date: 2026-03-29
-status: draft
+modified-date: 2026-04-01
+status: completed
 agent: codex
 ---
 

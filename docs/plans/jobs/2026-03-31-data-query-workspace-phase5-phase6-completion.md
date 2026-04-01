@@ -56,7 +56,7 @@ Complete the remaining executable work from `docs/plans/plan-2026-03-31-data-que
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/plan-2026-03-31-data-extract-duckdb-file-parity.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Related Research
 

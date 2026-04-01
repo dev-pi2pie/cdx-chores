@@ -58,7 +58,7 @@ This plan therefore rewrites the previous follow-up scope around the real depend
 ## Dependency Note
 
 - this plan should follow:
-  - `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+  - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
   - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
   - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - the new source-shape contract should reuse the same shared introspection engine and shaped-source helpers rather than inventing a second Codex-only parsing path
@@ -397,7 +397,7 @@ The generator should stay public-safe:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
@@ -405,4 +405,4 @@ The generator should stay public-safe:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

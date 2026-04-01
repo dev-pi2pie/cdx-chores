@@ -38,7 +38,7 @@ Land the first direct `data extract` lane so one shaped logical table can be mat
   - suggestion review summaries stay on stdout and artifact status lines stay on stderr
 - added a dedicated `docs/guides/data-extract-usage.md` guide
 - updated the shared schema-and-mapping guide and the query guide so the new extract lane is discoverable
-- completed the checklist in `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- completed the checklist in `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Verification
 
@@ -53,10 +53,10 @@ Land the first direct `data extract` lane so one shaped logical table can be mat
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

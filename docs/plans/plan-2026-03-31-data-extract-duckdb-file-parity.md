@@ -192,10 +192,10 @@ The extract-specific suite should only materialize one selected relation at a ti
 ## Related Research
 
 - `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
-- `docs/researches/research-2026-03-09-data-query-scope-and-contract.md`
+- `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`

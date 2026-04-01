@@ -27,4 +27,4 @@ Remove misleading extension-style `doctor` output for DuckDB core query formats.
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-10-data-query-cli-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`

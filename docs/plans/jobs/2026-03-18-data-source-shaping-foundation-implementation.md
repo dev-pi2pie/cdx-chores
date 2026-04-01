@@ -45,8 +45,8 @@ Land the first deterministic source-shaping slice from the edge-case research so
 
 - `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
-- `docs/plans/plan-2026-03-18-data-extract-shaped-table-materialization.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

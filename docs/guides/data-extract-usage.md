@@ -32,13 +32,13 @@ Current boundary:
 
 ### Support matrix
 
-| Input family | Direct extract support | Notes |
-| --- | --- | --- |
-| CSV / TSV | yes | one implicit source |
-| Parquet | yes | one implicit source |
-| SQLite | yes | requires `--source` for multi-object inputs |
-| DuckDB-file | yes | requires `--source`; uses `schema.table` where needed |
-| Excel | yes | supports current shaping controls |
+| Input family | Direct extract support | Notes                                                 |
+| ------------ | ---------------------- | ----------------------------------------------------- |
+| CSV / TSV    | yes                    | one implicit source                                   |
+| Parquet      | yes                    | one implicit source                                   |
+| SQLite       | yes                    | requires `--source` for multi-object inputs           |
+| DuckDB-file  | yes                    | requires `--source`; uses `schema.table` where needed |
+| Excel        | yes                    | supports current shaping controls                     |
 
 Current intent:
 
@@ -70,7 +70,7 @@ Examples:
 cdx-chores data extract ./examples/playground/data-query/basic.csv --output ./examples/playground/.tmp-tests/basic.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/basic.tsv --output ./examples/playground/.tmp-tests/basic.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query-probe/auto-headerless.csv --no-header --output ./examples/playground/.tmp-tests/no-head.clean.csv --overwrite
-cdx-chores data extract ./examples/playground/data-query/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.clean.json --overwrite
+cdx-chores data extract ./examples/playground/data-query-duckdb/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.clean.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.tsv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --output ./examples/playground/.tmp-tests/stacked.clean.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/messy.xlsx --source Summary --codex-suggest-shape --write-source-shape ./shape.json
@@ -142,7 +142,7 @@ Examples:
 
 ```bash
 cdx-chores data extract ./examples/playground/data-query/multi.sqlite --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
-cdx-chores data extract ./examples/playground/data-query/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
+cdx-chores data extract ./examples/playground/data-query-duckdb/multi.duckdb --source users --output ./examples/playground/.tmp-tests/users.json --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --output ./examples/playground/.tmp-tests/summary.csv --overwrite
 cdx-chores data extract ./examples/playground/data-extract/header-band.xlsx --source Summary --range B7:E12 --header-row 7 --output ./examples/playground/.tmp-tests/header-band.clean.csv --overwrite
@@ -202,18 +202,23 @@ Current interactive flow:
    - accepted semantic header choices
 10. explicitly continue to output setup or revise before choosing a destination
 11. choose output format:
-   - CSV
-   - TSV
-   - JSON
+
+- CSV
+- TSV
+- JSON
+
 12. choose destination style:
-   - use default output path
-   - custom output path
+
+- use default output path
+- custom output path
+
 13. review the final write summary
 14. at the final write boundary, choose one of:
-   - write now
-   - go back to extraction review
-   - change destination
-   - cancel
+
+- write now
+- go back to extraction review
+- change destination
+- cancel
 
 Interactive review persistence:
 

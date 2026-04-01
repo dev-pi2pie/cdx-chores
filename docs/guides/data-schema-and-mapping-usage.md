@@ -4,14 +4,14 @@ Use this guide for the shared header-mapping artifact contract behind reviewed s
 
 Use `docs/guides/data-source-shape-usage.md` for reviewed source-shape artifacts and shape-first Excel workflows.
 
-As of `v0.0.9`, this guide reflects the shipped split where header mappings stay a separate semantic-renaming layer on top of the current shaped source. They are reusable from both `data query` and `data extract`, but they are not a source-shape artifact and they do not change the `data query codex` surface.
+As of `v0.1.0`, this guide reflects the shipped split where header mappings stay a separate semantic-renaming layer on top of the current shaped source. They are reusable from both `data query` and `data extract`, but they are not a source-shape artifact and they do not change the `data query codex` surface.
 
-Current first-pass boundary:
+Current stable contract:
 
 - persisted artifacts are JSON-only
 - artifact family name: `data-header-mapping-<uid>.json`
 - `version` means the artifact schema-contract version, not the CLI app version
-- first-pass reuse is strict exact matching on:
+- reuse is strict exact matching on:
   - `input.path`
   - `input.format`
   - optional `input.noHeader`
@@ -23,7 +23,7 @@ Current first-pass boundary:
 
 ### Artifact shape
 
-Required first-pass fields:
+Required fields:
 
 - `version`
 - `metadata.artifactType`
@@ -33,7 +33,7 @@ Required first-pass fields:
 - `mappings[].from`
 - `mappings[].to`
 
-Conditionally required first-pass fields:
+Conditionally required fields:
 
 - `input.noHeader` when the current reviewed header flow explicitly used `--no-header`
 - `input.source` when the shaped source requires one

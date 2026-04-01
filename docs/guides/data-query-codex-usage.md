@@ -2,9 +2,9 @@
 
 `data query codex` is the natural-language drafting lane for SQL against one local input file. It inspects the selected data source or workspace first, drafts SQL second, and does not execute the drafted SQL automatically.
 
-As of `v0.0.9`, this lane is still intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
+As of `v0.1.0`, this lane remains intentionally narrower than direct `data query`: it accepts explicit shape flags such as `--range`, `--body-start-row`, and `--header-row`, but it does not replay reviewed `--source-shape` artifacts and it does not own semantic header-mapping reuse.
 
-Current boundary:
+Current stable boundary:
 
 - one input file per invocation
 - intent is required through `--intent`
@@ -18,17 +18,17 @@ Current boundary:
 - no direct `--header-mapping <path>` reuse in this lane
 - default output: human-readable assistant summary plus drafted SQL
 - shell-friendly output: `--print-sql`
-- no `--execute` in the first pass
+- no `--execute` in `v0.1.0`
 
 ### Support matrix
 
-| Input family | Single-source drafting | Workspace drafting | Notes |
-| --- | --- | --- | --- |
-| CSV / TSV | yes | no | one logical table only |
-| Parquet | yes | no | one logical table only |
-| SQLite | yes | yes | `--source` or repeatable `--relation` |
-| DuckDB-file | yes | yes | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
-| Excel | yes | no | workbook workspace support remains deferred |
+| Input family | Single-source drafting | Workspace drafting | Notes                                                                           |
+| ------------ | ---------------------- | ------------------ | ------------------------------------------------------------------------------- |
+| CSV / TSV    | yes                    | no                 | one logical table only                                                          |
+| Parquet      | yes                    | no                 | one logical table only                                                          |
+| SQLite       | yes                    | yes                | `--source` or repeatable `--relation`                                           |
+| DuckDB-file  | yes                    | yes                | `.duckdb` auto-detect; generic `*.db` requires explicit `--input-format duckdb` |
+| Excel        | yes                    | no                 | workbook workspace support remains deferred                                     |
 
 ### Command shape
 
@@ -51,10 +51,10 @@ Examples:
 cdx-chores data query codex ./examples/playground/data-query/basic.csv --intent "show id and name ordered by id"
 cdx-chores data query codex ./examples/playground/data-query/basic.parquet --intent "count rows" --print-sql
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list active users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --source users --intent "list users ordered by id"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show status counts by name"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
@@ -67,7 +67,7 @@ Keep the two lanes separate:
 - `data query` executes SQL you already know
 - `data query codex` drafts SQL from natural-language intent
 
-The first `data query codex` implementation is advisory only. It always shows the drafted SQL and does not run it for you. `--execute` is intentionally not implemented yet.
+The current `data query codex` implementation is advisory only. It always shows the drafted SQL and does not run it for you. `--execute` is intentionally not implemented in `v0.1.0`.
 
 If you need SQL against an accepted reviewed source shape, use the current two-step direct-CLI flow instead:
 
@@ -106,10 +106,10 @@ Examples:
 
 ```bash
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --source users --intent "list users ordered by id"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --source users --intent "list users ordered by id"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --intent "join users with analytics events"
 cdx-chores data query codex ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --intent "join users with time entries"
-cdx-chores data query codex ./examples/playground/data-query/multi.duckdb --relation file --intent "show notes from the file table"
+cdx-chores data query codex ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --intent "show notes from the file table"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"

@@ -59,4 +59,4 @@ Implement the Phase 1 contract freeze and Phase 2 shared deterministic Excel hea
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

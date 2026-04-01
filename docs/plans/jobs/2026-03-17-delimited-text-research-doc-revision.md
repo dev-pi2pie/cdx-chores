@@ -29,4 +29,4 @@ Revise the delimited-text research doc so its scope, recommendations, and final 
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`
+- `docs/researches/archive/research-2026-03-17-delimited-text-preview-conversion-and-interactive-flow.md`

@@ -7,14 +7,14 @@ Workspace runs expose one or more explicit relation bindings instead.
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 
-As of `v0.0.9`, this guide reflects the shipped split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation still begins on the `data extract` lane.
+As of `v0.1.0`, this guide documents the stable split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation still begins on the `data extract` lane.
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
 For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
-Current boundary:
+Current stable boundary:
 
 - one input file per invocation
 - SQL is required through `--sql`
@@ -36,20 +36,20 @@ Current boundary:
 
 ### Support matrix
 
-| Input family | Single-source query | Workspace query | Notes |
-| --- | --- | --- | --- |
-| CSV / TSV | yes | no | one logical table only |
-| Parquet | yes | no | one logical table only |
-| SQLite | yes | yes | `--source` or repeatable `--relation` |
-| DuckDB-file | yes | yes | `.duckdb` auto-detect; generic `*.db` stays explicit-only |
-| Excel | yes | no | workbook workspace support remains deferred |
+| Input family | Single-source query | Workspace query | Notes                                                                           |
+| ------------ | ------------------- | --------------- | ------------------------------------------------------------------------------- |
+| CSV / TSV    | yes                 | no              | one logical table only                                                          |
+| Parquet      | yes                 | no              | one logical table only                                                          |
+| SQLite       | yes                 | yes             | `--source` or repeatable `--relation`                                           |
+| DuckDB-file  | yes                 | yes             | `.duckdb` auto-detect; generic `*.db` requires explicit `--input-format duckdb` |
+| Excel        | yes                 | no              | workbook workspace support remains deferred                                     |
 
 Important distinction:
 
 - workspace relation binding is not the same feature as multi-file relation assembly
-- lists, globs, and `union_by_name`-style multi-file scans remain a separate future area
+- lists, globs, and `union_by_name` style multi-file scans remain a separate future area
 
-Current intent:
+Current usage guidance:
 
 - use `data query` when you already know the SQL you want to run
 - use `data query` when `data extract` is too narrow for the transformation you need, even if the input is not Excel
@@ -121,10 +121,10 @@ cdx-chores data query ./examples/playground/data-query-probe/auto-headerless.csv
 cdx-chores data query ./examples/playground/data-query/basic.parquet --sql "select id, name from file order by id" --json
 cdx-chores data query ./examples/playground/data-query/basic.csv --sql "select * from file order by id" --output ./examples/playground/.tmp-tests/data-query-basic.json --pretty --overwrite
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file order by id"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select id, name from file order by id"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.duckdb --source users --sql "select id, name from file order by id"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select user_id, note from file order by user_id"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --sql "select user_id, note from file order by user_id"
 cdx-chores data query ./examples/playground/data-extract/messy.xlsx --source-shape ./shape.json --sql "select ID, item, status from file order by ID"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
 cdx-chores data query ./examples/playground/data-query/generic.csv --codex-suggest-headers --write-header-mapping ./header-map.json
@@ -183,10 +183,10 @@ Examples:
 
 ```bash
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --source users --sql "select * from file limit 20"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --source users --sql "select * from file limit 20"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.duckdb --source users --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.duckdb --relation users --relation events=analytics.events --sql "select users.name, events.event_type from users join events on users.id = events.user_id order by events.id"
 cdx-chores data query ./examples/playground/data-query/multi.sqlite --relation users,entries=time_entries --sql "select users.name, entries.hours from users join entries on users.id = entries.entry_id order by users.id"
-cdx-chores data query ./examples/playground/data-query/multi.duckdb --relation file --sql "select * from file limit 20"
+cdx-chores data query ./examples/playground/data-query-duckdb/multi.db --input-format duckdb --relation file --sql "select * from file limit 20"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --sql "select * from file"
 cdx-chores data query ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --sql "select * from file"
 cdx-chores data query ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --sql "select id, question, status, notes from file order by id"
@@ -222,7 +222,7 @@ Why this is the current direct-CLI pattern:
 - direct `data query` now replays the accepted reviewed shape artifact without making query a second shape-artifact producer
 - explicit CSV or TSV `--no-header` stays a direct query flag today rather than part of the reviewed source-shape artifact layer
 
-Recommended direct-CLI pattern today:
+Current recommended direct-CLI pattern:
 
 ```bash
 cdx-chores data extract ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --codex-suggest-shape --write-source-shape ./stacked.shape.json
@@ -240,7 +240,7 @@ Practical reading:
 - use `data query --source-shape <path>` once you have an accepted reviewed scope and want filtering, projection, aggregation, or SQL-backed output
 - this is the current direct-CLI way to reach the same shape-first outcome that interactive `data query` reaches in one guided flow
 
-Current limitation:
+Known limitation in `v0.1.0`:
 
 - direct `data query codex` still takes explicit shape flags only in this slice
 - direct `data query codex` does not currently accept `--source-shape <path>`
@@ -348,7 +348,7 @@ If `loadability` is still `no` and `installability` flips to `no`, the current e
 
 ### Smoke fixtures
 
-The repo includes a dedicated deterministic fixture generator for `data query`.
+The repo includes a dedicated deterministic fixture generator for the lighter `data query` smoke inputs, plus a separate DuckDB-only generator for the heavier database files.
 
 Reset the manual smoke fixtures under `examples/playground/data-query/`:
 
@@ -356,10 +356,18 @@ Reset the manual smoke fixtures under `examples/playground/data-query/`:
 node scripts/generate-data-query-fixtures.mjs reset
 ```
 
-Reset the checked-in test fixtures under `test/fixtures/data-query/`:
+Reset the DuckDB manual smoke fixtures under `examples/playground/data-query-duckdb/`:
+
+```bash
+node scripts/generate-data-query-duckdb-fixtures.mjs reset
+```
+
+Reset the checked-in lighter test fixtures under `test/fixtures/data-query/`:
 
 ```bash
 node scripts/generate-data-query-fixtures.mjs reset --output-dir test/fixtures/data-query
 ```
 
-The generator is independent from the preview fixture scripts and covers representative CSV, TSV, Parquet, SQLite, and Excel inputs, including multi-object SQLite and Excel fixtures for `--source`.
+The lightweight generator is independent from the preview fixture scripts and covers representative CSV, TSV, Parquet, SQLite, and Excel inputs, including multi-object SQLite and Excel fixtures for `--source`.
+
+The DuckDB-only generator writes the same representative catalog twice as `multi.duckdb` and `multi.db` so manual smoke tests can cover both the preferred extension and the generic-extension path.

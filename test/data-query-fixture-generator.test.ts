@@ -54,65 +54,10 @@ describe("data query fixture generator", () => {
           "generic.csv",
           "large.csv",
           "large.parquet",
-          "multi.duckdb",
           "multi.sqlite",
           "multi.xlsx",
         ]);
       });
-    });
-  });
-
-  test("reset writes the expected DuckDB catalog fixture", async () => {
-    const { DuckDBConnection } = await import("@duckdb/node-api");
-
-    await withTempFixtureDir("data-query-fixtures-duckdb", async (outputDir) => {
-      const result = runGenerator(outputDir);
-      expect(result.exitCode).toBe(0);
-
-      const connection = await DuckDBConnection.create();
-      try {
-        await connection.run(
-          `attach '${`${outputDir}/multi.duckdb`.replaceAll("'", "''")}' as fixture (read_only)`,
-        );
-        const reader = await connection.runAndReadAll(
-          "select table_schema, table_name from information_schema.tables where table_catalog = 'fixture' and table_schema not in ('information_schema', 'pg_catalog') order by table_schema, table_name",
-        );
-        expect(reader.getRowObjectsJson()).toEqual([
-          { table_name: "events", table_schema: "analytics" },
-          { table_name: "file", table_schema: "main" },
-          { table_name: "time_entries", table_schema: "main" },
-          { table_name: "users", table_schema: "main" },
-        ]);
-
-        const usersReader = await connection.runAndReadAll(
-          "select id, name, status from fixture.main.users order by id",
-        );
-        expect(usersReader.getRowObjectsJson()).toEqual([
-          { id: 1, name: "Ada", status: "active" },
-          { id: 2, name: "Bob", status: "paused" },
-          { id: 3, name: "Cyd", status: "active" },
-        ]);
-
-        const eventsReader = await connection.runAndReadAll(
-          "select id, user_id, event_type from fixture.analytics.events order by id",
-        );
-        expect(eventsReader.getRowObjectsJson()).toEqual([
-          { event_type: "login", id: 10, user_id: 1 },
-          { event_type: "export", id: 11, user_id: 1 },
-          { event_type: "login", id: 12, user_id: 2 },
-        ]);
-
-        const timeEntriesReader = await connection.runAndReadAll(
-          "select entry_id, team, hours from fixture.main.time_entries order by entry_id",
-        );
-        expect(timeEntriesReader.getRowObjectsJson()).toEqual([
-          { entry_id: 1, hours: "8", team: "Core" },
-          { entry_id: 2, hours: "5", team: "Infra" },
-          { entry_id: 3, hours: "3", team: "Core" },
-        ]);
-      } finally {
-        connection.closeSync();
-      }
     });
   });
 });

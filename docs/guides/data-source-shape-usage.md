@@ -4,15 +4,15 @@ Use this guide for the reviewed source-shape artifact contract and the current s
 
 Use `docs/guides/data-schema-and-mapping-usage.md` for semantic header-mapping artifacts.
 
-As of `v0.0.9`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
+As of `v0.1.0`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
 
-Current first-pass boundary:
+Current stable contract:
 
 - persisted source-shape artifacts are JSON-only
 - artifact family name: `data-source-shape-<uid>.json`
 - artifact family is currently Excel-only
 - `version` means the artifact schema-contract version, not the CLI app version
-- first-pass reuse is strict exact matching on:
+- reuse is strict exact matching on:
   - `input.path`
   - `input.format`
   - `input.source`
@@ -29,7 +29,7 @@ Important layer split:
 
 ### Artifact Shape
 
-Required first-pass fields:
+Required fields:
 
 - `version`
 - `metadata.artifactType`
@@ -92,7 +92,7 @@ If `--write-source-shape` is omitted, the CLI generates a filename in the shared
 
 `data query` and `data extract` now share the same reviewed source-shape replay contract.
 
-Current shipped behavior:
+Current shipped behavior in `v0.1.0`:
 
 - `data extract` can generate reviewed source-shape artifacts
 - `data extract` can replay `--source-shape <path>`

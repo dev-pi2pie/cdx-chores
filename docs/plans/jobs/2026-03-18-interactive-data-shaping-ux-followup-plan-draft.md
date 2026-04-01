@@ -44,4 +44,4 @@ Capture the next follow-up plan after the first reviewed source-shape implementa
 
 ## Related Research
 
-- `docs/researches/research-2026-03-16-data-preview-query-edge-cases.md`
+- `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`

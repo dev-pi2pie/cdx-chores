@@ -185,7 +185,7 @@ NO_COLOR=1 cdx-chores data preview ./examples/playground/tabular-preview/basic.c
 
 `data parquet preview` is the bounded DuckDB-backed inspection path for `.parquet` files.
 
-Current first-pass boundary:
+Current stable boundary:
 
 - input format: `.parquet`
 - output: terminal table only
@@ -194,7 +194,7 @@ Current first-pass boundary:
   - `--rows`
   - `--offset`
   - `--columns`
-- `--contains` is intentionally not supported in this first pass
+- `--contains` is intentionally not supported in `v0.1.0`
 - SQL is out of scope for this action
 
 Command shape:

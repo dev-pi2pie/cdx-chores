@@ -64,10 +64,16 @@ export async function promptOptionalSourceSelection(
     return undefined;
   }
 
+  const multiObjectFormat =
+    format === "sqlite" || format === "duckdb" || format === "excel" ? format : undefined;
+  if (!multiObjectFormat) {
+    return undefined;
+  }
+
   const sourcePromptMessage =
-    format === "excel"
+    multiObjectFormat === "excel"
       ? "Choose an Excel sheet"
-      : `Choose a ${getMultiObjectSourceDisplayLabel(format)} source`;
+      : `Choose a ${getMultiObjectSourceDisplayLabel(multiObjectFormat)} source`;
 
   return await select<string>({
     message: sourcePromptMessage,

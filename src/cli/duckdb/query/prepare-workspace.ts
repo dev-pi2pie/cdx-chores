@@ -79,7 +79,7 @@ export async function prepareDataQueryWorkspace(
   }
 
   const availableDuckDbEntries =
-    format === "duckdb" ? await listDuckDbFileSourceEntries(connection, inputPath) : undefined;
+    format === "duckdb" ? await listDuckDbFileSourceEntries(connection, inputPath) : [];
   const availableSources =
     format === "duckdb"
       ? availableDuckDbEntries.map((entry) => entry.selector)
