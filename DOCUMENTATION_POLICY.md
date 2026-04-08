@@ -159,8 +159,8 @@ agent: <agent name>
 Research status guidance:
 
 - `draft` — early research, hypothesis collection, or initial analysis that is not yet settled
-- `in-progress` — active investigation is currently underway
-- `completed` — the research question is sufficiently answered and the conclusions are accepted as the current working direction
+- `in-progress` — active investigation is currently underway, or the direction is tentatively chosen but the evidence needed to close the research is not yet recorded
+- `completed` — the research question is sufficiently answered and the evidence needed to support closure is recorded in the doc itself or in linked implementation records
 - `blocked` — the research should continue, but cannot currently proceed because of a dependency, decision, or missing prerequisite
 - `cancelled` — the research direction was intentionally stopped and is not expected to continue
 - `superseded` — a newer research or plan doc replaced this doc as the main reference
@@ -168,8 +168,10 @@ Research status guidance:
 Important rule:
 
 - `completed` for research means the research is finished
-- `completed` for research does not require implementation to exist
-- if implementation is deferred or never happens, the research may still remain `completed` if the question itself was answered
+- do not mark a research doc `completed` only because the open questions are phrased as resolved; the supporting evidence must also be recorded
+- acceptable evidence may live in the research doc itself when it is backfilling already-validated conclusions
+- when the research direction depends on implementation or verification work, link the relevant completed plan or job records before marking the research doc `completed`
+- if the direction is chosen but that supporting evidence is not yet recorded, keep the research doc `in-progress`
 - marking a research doc `completed` does not by itself move it to `docs/researches/archive/`
 - archive a completed research doc only after a separate later review confirms it is mature enough to stop being a primary working reference
 

@@ -131,6 +131,20 @@ describe("path inline prompt controller", () => {
     }
   });
 
+  test("promptPathInlineGhost treats q as literal input after existing text", async () => {
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness();
+    try {
+      stdin.emit("keypress", "a", { name: "a" });
+      stdin.emit("keypress", "q", { name: "q" });
+      stdin.emit("keypress", "\r", { name: "return" });
+
+      await expect(prompt).resolves.toBe("aq");
+      expect(stdout.text).toContain("Path aq");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("promptPathInlineGhost accepts ghost text from a direct right-arrow key event", async () => {
     const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
       setup: async (dir) => {

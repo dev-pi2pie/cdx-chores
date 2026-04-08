@@ -221,6 +221,28 @@ describe("text inline prompt controller", () => {
     expect(stdout.text).toContain("Template ab");
   });
 
+  test("promptTextInlineGhost treats q as literal input after existing text", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "{timestamp}-{stem}",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "a", { name: "a" });
+    await nextRenderTick();
+    stdin.emit("keypress", "q", { name: "q" });
+    await nextRenderTick();
+    stdin.emit("keypress", "\r", { name: "return" });
+
+    await expect(prompt).resolves.toBe("aq");
+    expect(stdout.text).toContain("Template aq");
+  });
+
   test("promptTextInlineGhost renders a dimmed ghost placeholder until typing starts", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();

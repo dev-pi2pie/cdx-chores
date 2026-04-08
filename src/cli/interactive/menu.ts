@@ -1,4 +1,4 @@
-import { select } from "@inquirer/prompts";
+import { selectInteractiveMenuChoice } from "./menu-prompt";
 
 export type InteractiveActionKey =
   | "doctor"
@@ -42,6 +42,12 @@ type InteractiveSubmenuConfig = {
   message: string;
   choices: Array<InteractiveMenuChoice<InteractiveActionKey>>;
 };
+
+interface SelectInteractiveActionOptions {
+  stdin?: NodeJS.ReadStream;
+  stdout?: NodeJS.WritableStream;
+  selectMenuChoiceImpl?: typeof selectInteractiveMenuChoice;
+}
 
 const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
   { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
@@ -89,11 +95,20 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   },
 };
 
-export async function selectInteractiveAction(): Promise<InteractiveActionKey | "cancel"> {
+export async function selectInteractiveAction(
+  options: SelectInteractiveActionOptions = {},
+): Promise<InteractiveActionKey | "cancel"> {
+  const stdin = options.stdin ?? process.stdin;
+  const stdout = options.stdout ?? process.stdout;
+  const selectMenuChoice = options.selectMenuChoiceImpl ?? selectInteractiveMenuChoice;
+
   while (true) {
-    const rootChoice = await select<InteractiveRootChoice>({
+    const rootChoice = await selectMenuChoice<InteractiveRootChoice>({
       message: "Choose a command",
       choices: INTERACTIVE_ROOT_CHOICES,
+      exitValue: "cancel",
+      input: stdin,
+      output: stdout,
     });
 
     if (rootChoice === "cancel") {
@@ -105,13 +120,16 @@ export async function selectInteractiveAction(): Promise<InteractiveActionKey | 
     }
 
     const submenu = INTERACTIVE_SUBMENUS[rootChoice];
-    const submenuChoice = await select<InteractiveSubmenuChoice>({
+    const submenuChoice = await selectMenuChoice<InteractiveSubmenuChoice>({
       message: submenu.message,
       choices: [
         ...submenu.choices,
         { name: "Back", value: "back", description: "Return to the main command menu" },
         { name: "Cancel", value: "cancel", description: "Exit interactive mode" },
       ],
+      exitValue: "cancel",
+      input: stdin,
+      output: stdout,
     });
 
     if (submenuChoice === "back") {

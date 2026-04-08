@@ -10,23 +10,44 @@ import { handleRenameInteractiveAction } from "./rename";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 import { handleVideoInteractiveAction } from "./video";
 
-export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
+interface RunInteractiveModeImpls {
+  selectInteractiveActionImpl?: typeof selectInteractiveAction;
+  confirmImpl?: typeof confirm;
+  actionDoctorImpl?: typeof actionDoctor;
+}
+
+export async function runInteractiveMode(
+  runtime: CliRuntime,
+  impls: RunInteractiveModeImpls = {},
+): Promise<void> {
   const pathPromptContext: InteractivePathPromptContext = {
     runtimeConfig: resolvePathPromptRuntimeConfig(),
     cwd: runtime.cwd,
     stdin: runtime.stdin,
     stdout: runtime.stdout,
   };
-  const action = await selectInteractiveAction();
+  const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
+  const confirmImpl = impls.confirmImpl ?? confirm;
+  const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
+  const action = await selectInteractiveActionImpl({
+    stdin: runtime.stdin,
+    stdout: runtime.stdout,
+  });
 
   if (action === "cancel") {
-    runtime.stdout.write("Cancelled.\n");
+    runtime.stdout.write("\nCancelled.\n");
     return;
   }
 
   if (action === "doctor") {
-    const asJson = await confirm({ message: "Output as JSON?", default: false });
-    await actionDoctor(runtime, { json: asJson });
+    const asJson = await confirmImpl(
+      { message: "Output as JSON?", default: false },
+      {
+        input: runtime.stdin,
+        output: runtime.stdout,
+      },
+    );
+    await actionDoctorImpl(runtime, { json: asJson });
     return;
   }
 
