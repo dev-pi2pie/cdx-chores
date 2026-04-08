@@ -10,17 +10,28 @@ import { handleRenameInteractiveAction } from "./rename";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 import { handleVideoInteractiveAction } from "./video";
 
-export async function runInteractiveMode(runtime: CliRuntime): Promise<void> {
+interface RunInteractiveModeImpls {
+  selectInteractiveActionImpl?: typeof selectInteractiveAction;
+}
+
+export async function runInteractiveMode(
+  runtime: CliRuntime,
+  impls: RunInteractiveModeImpls = {},
+): Promise<void> {
   const pathPromptContext: InteractivePathPromptContext = {
     runtimeConfig: resolvePathPromptRuntimeConfig(),
     cwd: runtime.cwd,
     stdin: runtime.stdin,
     stdout: runtime.stdout,
   };
-  const action = await selectInteractiveAction();
+  const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
+  const action = await selectInteractiveActionImpl({
+    stdin: runtime.stdin,
+    stdout: runtime.stdout,
+  });
 
   if (action === "cancel") {
-    runtime.stdout.write("Cancelled.\n");
+    runtime.stdout.write("\nCancelled.\n");
     return;
   }
 

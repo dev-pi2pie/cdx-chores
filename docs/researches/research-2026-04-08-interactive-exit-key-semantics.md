@@ -2,7 +2,7 @@
 title: "Interactive exit key semantics"
 created-date: 2026-04-08
 modified-date: 2026-04-08
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -10,23 +10,21 @@ agent: codex
 
 Clarify how interactive mode should treat `Esc` and optional `q` quit behavior across menu screens and inline prompts, with a specific focus on avoiding ambiguous "go back" versus "exit" semantics.
 
-This research is still in progress for the current planning scope.
+This research is now complete for the current planning scope.
 
 Version-scoping note:
 
 - this recommendation is scoped to the small pre-release follow-up currently being discussed around `v0.1.1-canary.1`
 - it is not intended to imply a separate tracked milestone beyond that narrow release slice
 
-Current working direction for the current pre-release slice:
+Accepted direction for the current pre-release slice:
 
 - ship menu-level `Esc` as "exit interactive mode"
 - ship menu-level `q` with the same exit behavior
 - keep free-text and path-entry prompts unchanged so literal `q` input still works
 - defer help and tip wording updates to a later follow-up unless implementation work proves they are immediately necessary
 
-Completion note:
-
-- this doc should move to `completed` once the supporting implementation evidence is recorded in the related plan or job docs
+Implementation evidence is now recorded in the related plan and job docs for this slice.
 
 ## Key Findings
 
@@ -185,6 +183,14 @@ Current direction:
 
 - `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
   - historical context for the earlier inline-prompt keyboard contract, including the explicit decision to preserve `Esc` and `Ctrl+C` cancellation behavior during the path-prompt rollout
+
+## Related Plans
+
+- `docs/plans/plan-2026-04-08-interactive-menu-exit-keys.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-08-interactive-menu-exit-keys.md`
 
 ## References
 

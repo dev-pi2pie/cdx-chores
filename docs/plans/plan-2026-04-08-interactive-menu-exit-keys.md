@@ -1,7 +1,8 @@
 ---
 title: "Interactive menu exit keys"
 created-date: 2026-04-08
-status: draft
+modified-date: 2026-04-08
+status: completed
 agent: codex
 ---
 
@@ -142,59 +143,72 @@ The shipped behavior from this slice should stay simple:
 - any minimal shared helper extracted specifically for those command menus
 - test coverage under `test/`
 
+## Implementation Notes
+
+- the first-pass helper is intentionally limited to the root command menu and submenu command menu
+- in-flow `select(...)`, `confirm(...)`, and `checkbox(...)` prompts remain explicitly out of scope for this plan
+- free-entry prompts remain unchanged in this slice:
+  - `promptPathInlineGhost(...)`
+  - `promptTextInlineGhost(...)`
+  - simple `input(...)` prompts
+
 ## Phase Checklist
 
 ### Phase 1: Freeze the exact prompt boundary
 
-- [ ] freeze the first-pass rollout boundary to the root command menu and submenu command menu only
-- [ ] record in the implementation notes that in-flow `select(...)`, `confirm(...)`, and `checkbox(...)` prompts are explicitly excluded from this plan
-- [ ] record that free-entry prompts remain unchanged in this slice
-- [ ] treat any request to widen beyond those boundaries as a separate follow-up rather than incidental implementation drift
+- [x] freeze the first-pass rollout boundary to the root command menu and submenu command menu only
+- [x] record in the implementation notes that in-flow `select(...)`, `confirm(...)`, and `checkbox(...)` prompts are explicitly excluded from this plan
+- [x] record that free-entry prompts remain unchanged in this slice
+- [x] treat any request to widen beyond those boundaries as a separate follow-up rather than incidental implementation drift
 
 ### Phase 2: Introduce a shared menu-exit helper
 
-- [ ] choose a narrow helper boundary that is used only by the root and submenu command menus
-- [ ] ensure the helper enforces both `Esc` and `q` exit behavior consistently for those two menus
-- [ ] keep the helper focused on session exit semantics rather than broader navigation, history, or prompt-type generalization
-- [ ] preserve normal `@inquirer/prompts` behavior when `Esc` or `q` are not invoked
-- [ ] define "Phase 2 done" as one shared command-menu contract that both menus can call without adding new behavior to unrelated prompt types
+- [x] choose a narrow helper boundary that is used only by the root and submenu command menus
+- [x] ensure the helper enforces both `Esc` and `q` exit behavior consistently for those two menus
+- [x] keep the helper focused on session exit semantics rather than broader navigation, history, or prompt-type generalization
+- [x] preserve normal `@inquirer/prompts` behavior when `Esc` or `q` are not invoked
+- [x] define "Phase 2 done" as one shared command-menu contract that both menus can call without adding new behavior to unrelated prompt types
 
 ### Phase 3: Apply the helper across the command menus
 
-- [ ] update the root command menu in `src/cli/interactive/menu.ts`
-- [ ] update submenu command selection in `src/cli/interactive/menu.ts`
-- [ ] verify that exiting from either command menu cleanly leaves interactive mode instead of falling into partial prompt cleanup states
+- [x] update the root command menu in `src/cli/interactive/menu.ts`
+- [x] update submenu command selection in `src/cli/interactive/menu.ts`
+- [x] verify that exiting from either command menu cleanly leaves interactive mode instead of falling into partial prompt cleanup states
 
 ### Phase 4: Protect free-entry prompt behavior
 
-- [ ] verify that inline path prompts still treat typed `q` as literal input
-- [ ] verify that inline text prompts still treat typed `q` as literal input
-- [ ] verify that current inline `Esc` behavior is preserved
-- [ ] confirm that no shared menu helper leaks into free-entry prompt code paths
+- [x] verify that inline path prompts still treat typed `q` as literal input
+- [x] verify that inline text prompts still treat typed `q` as literal input
+- [x] verify that current inline `Esc` behavior is preserved
+- [x] confirm that no shared menu helper leaks into free-entry prompt code paths
 
 ### Phase 5: Tests and closing evidence
 
-- [ ] add focused tests for `Esc` exit on the root and submenu command menus
-- [ ] add focused tests for `q` exit on the root and submenu command menus
-- [ ] add regression coverage that free-entry prompts still accept literal `q`
-- [ ] run the relevant interactive test subset
-- [ ] record implementation evidence in a related completed job or plan doc before marking the related research doc `completed`
+- [x] add focused tests for `Esc` exit on the root and submenu command menus
+- [x] add focused tests for `q` exit on the root and submenu command menus
+- [x] add regression coverage that free-entry prompts still accept literal `q`
+- [x] run the relevant interactive test subset
+- [x] record implementation evidence in a related completed job or plan doc before marking the related research doc `completed`
 
 ## Verification Plan
 
 ### Functional checks
 
-- [ ] root interactive menu exits on `Esc`
-- [ ] root interactive menu exits on `q`
-- [ ] submenu interactive menu exits on `Esc`
-- [ ] submenu interactive menu exits on `q`
-- [ ] free-entry prompts still accept literal `q`
+- [x] root interactive menu exits on `Esc`
+- [x] root interactive menu exits on `q`
+- [x] submenu interactive menu exits on `Esc`
+- [x] submenu interactive menu exits on `q`
+- [x] free-entry prompts still accept literal `q`
 
 ### Quality checks
 
-- [ ] relevant interactive tests pass
-- [ ] `bunx tsc --noEmit`
+- [x] relevant interactive tests pass
+- [x] `bunx tsc --noEmit`
 
 ## Related Research
 
 - `docs/researches/research-2026-04-08-interactive-exit-key-semantics.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-08-interactive-menu-exit-keys.md`
