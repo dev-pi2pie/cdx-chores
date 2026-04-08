@@ -55,8 +55,11 @@ describe("interactive command menu wiring", () => {
   test("selectInteractiveAction passes stdin and stdout to the root command menu helper", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
-    const calls: Array<{ message: string; input: NodeJS.ReadStream; output: NodeJS.WritableStream }> =
-      [];
+    const calls: Array<{
+      message: string;
+      input: NodeJS.ReadStream;
+      output: NodeJS.WritableStream;
+    }> = [];
     const selectMenuChoiceImpl = async <Value extends string>(
       options: SelectInteractiveMenuChoiceOptions<Value>,
     ): Promise<Value> => {
@@ -109,8 +112,10 @@ describe("interactive command menu wiring", () => {
 
   test("runInteractiveMode passes runtime streams into selectInteractiveAction and prints spaced cancellation", async () => {
     const { runtime, stdin, stdout } = createRuntime();
-    const calls: Array<{ input: NodeJS.ReadStream | undefined; output: NodeJS.WritableStream | undefined }> =
-      [];
+    const calls: Array<{
+      input: NodeJS.ReadStream | undefined;
+      output: NodeJS.WritableStream | undefined;
+    }> = [];
 
     await runInteractiveMode(runtime, {
       selectInteractiveActionImpl: async (options) => {
@@ -129,5 +134,32 @@ describe("interactive command menu wiring", () => {
       },
     ]);
     expect(stdout.text).toContain("\nCancelled.\n");
+  });
+
+  test("runInteractiveMode passes runtime streams into the doctor confirm prompt", async () => {
+    const { runtime, stdin, stdout } = createRuntime();
+    const confirmCalls: Array<{
+      input: NodeJS.ReadableStream | undefined;
+      output: NodeJS.WritableStream | undefined;
+    }> = [];
+
+    await runInteractiveMode(runtime, {
+      selectInteractiveActionImpl: async () => "doctor",
+      confirmImpl: async (_options, context) => {
+        confirmCalls.push({
+          input: context?.input,
+          output: context?.output,
+        });
+        return false;
+      },
+      actionDoctorImpl: async () => {},
+    });
+
+    expect(confirmCalls).toEqual([
+      {
+        input: stdin as unknown as NodeJS.ReadStream,
+        output: stdout as unknown as NodeJS.WritableStream,
+      },
+    ]);
   });
 });

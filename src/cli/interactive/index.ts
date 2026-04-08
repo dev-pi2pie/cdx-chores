@@ -12,6 +12,8 @@ import { handleVideoInteractiveAction } from "./video";
 
 interface RunInteractiveModeImpls {
   selectInteractiveActionImpl?: typeof selectInteractiveAction;
+  confirmImpl?: typeof confirm;
+  actionDoctorImpl?: typeof actionDoctor;
 }
 
 export async function runInteractiveMode(
@@ -25,6 +27,8 @@ export async function runInteractiveMode(
     stdout: runtime.stdout,
   };
   const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
+  const confirmImpl = impls.confirmImpl ?? confirm;
+  const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
   const action = await selectInteractiveActionImpl({
     stdin: runtime.stdin,
     stdout: runtime.stdout,
@@ -36,8 +40,14 @@ export async function runInteractiveMode(
   }
 
   if (action === "doctor") {
-    const asJson = await confirm({ message: "Output as JSON?", default: false });
-    await actionDoctor(runtime, { json: asJson });
+    const asJson = await confirmImpl(
+      { message: "Output as JSON?", default: false },
+      {
+        input: runtime.stdin,
+        output: runtime.stdout,
+      },
+    );
+    await actionDoctorImpl(runtime, { json: asJson });
     return;
   }
 

@@ -12,6 +12,30 @@ Clarify how interactive mode should treat `Esc` and optional `q` quit behavior a
 
 This research is now complete for the current planning scope.
 
+## Follow-Up Note
+
+The same-day implementation follow-up revised one part of the original recommendation.
+
+Current shipped behavior after the review follow-up:
+
+- menu-level `Esc` exits interactive mode
+- printable `q` is not intercepted as a menu-exit key
+- free-text and path-entry prompts still keep literal `q` behavior
+- `Cancel` and `Ctrl+C` remain available exit paths
+
+Why the `q` recommendation changed:
+
+- `@inquirer/select` already uses typed characters for prefix search
+- intercepting printable `q` blocked navigation to menu entries such as `query`
+
+`Ctrl+Q` was considered as a possible non-printable alternative, but it is not part of the shipped contract.
+
+Why:
+
+- some terminals and remote sessions still reserve `Ctrl+Q` for XON/XOFF flow control
+- local terminal, tmux, or screen keybindings may intercept it before the CLI sees it
+- that makes it less reliable than `Esc` as a baseline cross-environment exit key
+
 Version-scoping note:
 
 - this recommendation is scoped to the small pre-release follow-up currently being discussed around `v0.1.1-canary.1`
@@ -20,7 +44,8 @@ Version-scoping note:
 Accepted direction for the current pre-release slice:
 
 - ship menu-level `Esc` as "exit interactive mode"
-- ship menu-level `q` with the same exit behavior
+- do not intercept printable `q` as a menu-exit key because it conflicts with `@inquirer/select` prefix search
+- do not adopt `Ctrl+Q` as a primary menu-exit shortcut because terminal-level interception can prevent reliable delivery
 - keep free-text and path-entry prompts unchanged so literal `q` input still works
 - defer help and tip wording updates to a later follow-up unless implementation work proves they are immediately necessary
 
@@ -96,6 +121,12 @@ Why this is the safer first contract:
 - it avoids partial "Back" behavior that works in some places but not others
 
 ### 5. `q` can ship in the same slice, but only with menu-only scope
+
+Follow-up status:
+
+- this recommendation was superseded by the same-day review follow-up
+- printable `q` was removed as a menu-exit shortcut to preserve select-menu prefix search
+- the retained near-term contract is menu-level `Esc` exit plus ordinary `q` search/input behavior
 
 `q` behaves differently from `Esc`.
 
@@ -191,6 +222,7 @@ Current direction:
 ## Related Jobs
 
 - `docs/plans/jobs/2026-04-08-interactive-menu-exit-keys.md`
+- `docs/plans/jobs/2026-04-08-interactive-menu-review-followup.md`
 
 ## References
 

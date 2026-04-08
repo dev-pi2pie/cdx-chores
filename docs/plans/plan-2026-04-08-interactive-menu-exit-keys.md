@@ -10,12 +10,30 @@ agent: codex
 
 Add consistent interactive-mode exit shortcuts so the root and submenu command menus support `Esc` and `q` for quitting the interactive session, while preserving the current behavior of free-text and path-entry prompts.
 
+## Follow-Up Note
+
+The original plan was executed with both `Esc` and printable `q`, but the same-day review follow-up revised the shipped contract.
+
+Current shipped behavior after the follow-up:
+
+- `Esc` exits the root and submenu command menus
+- printable `q` is not intercepted as a menu-exit key
+- free-entry prompts still keep literal `q` behavior
+- `Cancel` and `Ctrl+C` remain available exit paths
+
+Why the plan changed:
+
+- `@inquirer/select` already uses typed characters for prefix search
+- intercepting printable `q` blocked navigation to choices such as `query`
+- `Ctrl+Q` was considered but left out because terminal flow-control and local keybinding interception can prevent it from reaching the CLI reliably
+
 ## Why This Plan
 
 The related research established a clear near-term direction:
 
 - `Esc` should mean "exit interactive mode"
-- `q` should ship in the same slice with the same meaning
+- the initial plan included printable `q`, but the follow-up reverted that shortcut to preserve `@inquirer/select` prefix search
+- the follow-up also rejected `Ctrl+Q` as a primary shortcut because its delivery depends on terminal configuration
 - free-text and path-entry prompts should keep their current behavior so literal `q` input still works
 - layered `Back` navigation is out of scope
 
@@ -212,3 +230,4 @@ The shipped behavior from this slice should stay simple:
 ## Related Jobs
 
 - `docs/plans/jobs/2026-04-08-interactive-menu-exit-keys.md`
+- `docs/plans/jobs/2026-04-08-interactive-menu-review-followup.md`

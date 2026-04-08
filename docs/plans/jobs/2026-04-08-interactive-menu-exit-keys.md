@@ -1,6 +1,7 @@
 ---
 title: "Implement interactive menu exit keys"
 created-date: 2026-04-08
+modified-date: 2026-04-08
 status: completed
 agent: codex
 ---
@@ -9,11 +10,27 @@ agent: codex
 
 Implement the first scoped rollout for interactive command-menu exit keys so the root and submenu command menus support `Esc` and `q` as session-exit shortcuts, while free-entry prompts keep their current behavior.
 
+## Follow-Up Note
+
+The initial rollout shipped menu-level `Esc` and `q`, but a same-day review follow-up reverted printable `q`.
+
+Why:
+
+- `@inquirer/select` already uses typed characters for prefix search
+- intercepting `q` as quit blocked normal menu navigation to entries such as `query`
+
+Current shipped behavior after the follow-up:
+
+- `Esc` exits the root and submenu command menus
+- printable `q` is no longer intercepted as a menu-exit key
+- free-entry prompts still keep literal `q` behavior
+
 ## What Changed
 
 - added a shared command-menu exit helper in `src/cli/interactive/menu-prompt.ts`
   - uses `AbortSignal` with `@inquirer/prompts`
-  - maps standalone `Esc` and typed `q` to interactive-session exit for the command menus only
+  - maps standalone `Esc` to interactive-session exit for the command menus
+  - originally also mapped typed `q`, but that interception was removed in the related follow-up to preserve `@inquirer/select` prefix search
   - guards keypress-event setup so repeated menu visits do not accumulate hidden emitter state
 - updated `src/cli/interactive/menu.ts` so both the root menu and submenu use the shared helper
 - updated `src/cli/interactive/index.ts` so the command-menu path uses the runtime `stdin` and `stdout`
@@ -45,3 +62,7 @@ Implement the first scoped rollout for interactive command-menu exit keys so the
 ## Related Research
 
 - `docs/researches/research-2026-04-08-interactive-exit-key-semantics.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-08-interactive-menu-review-followup.md`

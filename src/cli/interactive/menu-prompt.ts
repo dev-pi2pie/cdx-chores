@@ -28,10 +28,6 @@ export interface SelectInteractiveMenuChoiceOptions<Value extends string> {
   ) => Promise<Value>;
 }
 
-function isOrdinaryQuitKey(str: string, key: { ctrl?: boolean; meta?: boolean; shift?: boolean }): boolean {
-  return str === "q" && !key.ctrl && !key.meta && !key.shift;
-}
-
 function isAbortPromptError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortPromptError";
 }
@@ -56,22 +52,19 @@ export async function selectInteractiveMenuChoice<Value extends string>(
     },
   });
   const selectImpl =
-    options.selectImpl ??
-    ((promptOptions, context) => select<Value>(promptOptions, context));
+    options.selectImpl ?? ((promptOptions, context) => select<Value>(promptOptions, context));
   const input = options.input;
   let abortedByExitKey = false;
 
   ensureKeypressEvents(input);
 
-  const keypressHandler = (str: string | undefined, key: { ctrl?: boolean; meta?: boolean; shift?: boolean; name?: string } = {}): void => {
+  const keypressHandler = (
+    str: string | undefined,
+    key: { ctrl?: boolean; meta?: boolean; shift?: boolean; name?: string } = {},
+  ): void => {
     const parsed = keyParser.handle(str, key);
     if (parsed.kind !== "keypress") {
       return;
-    }
-
-    if (isOrdinaryQuitKey(parsed.str, parsed.key)) {
-      abortedByExitKey = true;
-      controller.abort();
     }
   };
 
