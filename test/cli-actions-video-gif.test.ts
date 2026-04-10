@@ -246,7 +246,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,palettegen=max_colors=256:stats_mode=full:reserve_transparent=1",
         "-frames:v",
         "1",
         String(palettePath),
@@ -258,7 +258,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -309,7 +309,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -391,7 +391,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
         "-frames:v",
         "1",
         String(palettePath),
@@ -403,7 +403,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([
@@ -445,7 +445,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
         "-frames:v",
         "1",
         String(palettePath),
@@ -457,7 +457,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([
@@ -521,7 +521,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=full:reserve_transparent=1",
         "-frames:v",
         "1",
         String(palettePath),
@@ -533,7 +533,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([
@@ -576,7 +576,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
         "-frames:v",
         "1",
         String(palettePath),
@@ -588,7 +588,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgba,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([

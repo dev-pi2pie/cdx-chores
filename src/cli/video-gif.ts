@@ -26,26 +26,26 @@ export interface VideoGifLookFilterConfig {
 
 export const VIDEO_GIF_PROFILE_FILTER_CONFIG: Record<VideoGifProfile, VideoGifProfileFilterConfig> = {
   video: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
+    paletteGen: "palettegen=max_colors=256:stats_mode=full:reserve_transparent=1",
     paletteUse: "paletteuse=dither=sierra2_4a",
   },
   motion: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
     paletteUse: "paletteuse=dither=sierra2_4a:diff_mode=rectangle",
   },
   screen: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
     paletteUse: "paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
   },
 };
 
 export const VIDEO_GIF_LOOK_FILTER_CONFIG: Record<VideoGifLook, VideoGifLookFilterConfig> = {
   faithful: {
-    prePalette: "format=rgb24",
+    prePalette: "format=rgba",
   },
   vibrant: {
     prePalette:
-      "format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98",
+      "format=rgba,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98",
   },
 };
 
