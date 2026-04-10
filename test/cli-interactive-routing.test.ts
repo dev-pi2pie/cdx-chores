@@ -2615,7 +2615,7 @@ limit 25`,
   test("routes a video flow through gif generation", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["video", "video:gif", "quality"],
+      selectQueue: ["video", "video:gif", "quality", "screen"],
       requiredPathQueue: ["fixtures/input.mp4"],
       optionalPathQueue: ["fixtures/output.gif"],
       inputQueue: ["320", "12"],
@@ -2629,6 +2629,7 @@ limit 25`,
           input: "fixtures/input.mp4",
           output: "fixtures/output.gif",
           mode: "quality",
+          gifProfile: "screen",
           width: 320,
           fps: 12,
           overwrite: false,
@@ -2638,6 +2639,10 @@ limit 25`,
     expect(result.promptCalls).toContainEqual({
       kind: "select",
       message: "GIF mode",
+    });
+    expect(result.promptCalls).toContainEqual({
+      kind: "select",
+      message: "GIF profile",
     });
   });
 
@@ -2667,6 +2672,10 @@ limit 25`,
     expect(result.promptCalls).toContainEqual({
       kind: "select",
       message: "GIF mode",
+    });
+    expect(result.promptCalls).not.toContainEqual({
+      kind: "select",
+      message: "GIF profile",
     });
   });
 

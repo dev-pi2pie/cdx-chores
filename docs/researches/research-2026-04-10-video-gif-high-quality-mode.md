@@ -2,7 +2,7 @@
 title: "High-quality mode for video GIF conversion"
 created-date: 2026-04-10
 modified-date: 2026-04-10
-status: in-progress
+status: completed
 agent: codex
 ---
 

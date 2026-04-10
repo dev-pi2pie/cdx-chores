@@ -10,6 +10,13 @@ agent: codex
 
 Implement the new high-quality `video gif` mode from the current research direction while preserving the current compressed CLI default and keeping the shipped UX explicit, readable, and low-risk.
 
+## Current Status
+
+- the base high-quality mode feature is implemented
+- the first public `gif-profile` surface is implemented and documented
+- follow-up tuning is still active because the current profile differences are not yet strong enough on every source
+- this plan remains active until that follow-up direction is either implemented here or split into a separate successor plan
+
 ## Why This Plan
 
 The current research records the main product and UX decisions guiding this feature:
@@ -181,34 +188,41 @@ This work is best handled as a dedicated implementation plan because it crosses 
 - [x] add output/message-order coverage for quality-mode phase messages
 - [x] extend interactive routing coverage for explicit mode selection
 - [x] keep automated tests independent from real checked-in video media
-- [ ] verify the feature manually with a local-only playground video under `examples/playground/video/`
+- [x] verify the feature manually with a local-only playground video under `examples/playground/video/`
 
 ### Phase 5: Update README and add guide
 
-- [ ] update README `video gif` examples
-- [ ] add `docs/guides/video-gif-usage-and-quality-modes.md`
-- [ ] make the guide lead with `compressed`
-- [ ] document `quality` as the higher-fidelity alternative
-- [ ] describe the temp palette as internal and auto-cleaned
-- [ ] include an ASCII workflow sketch for compressed and quality modes
-- [ ] link the new guide from the README video-guides section
+- [x] update README `video gif` examples
+- [x] add `docs/guides/video-gif-usage-and-quality-modes.md`
+- [x] make the guide lead with `compressed`
+- [x] document `quality` as the higher-fidelity alternative
+- [x] describe the temp palette as internal and auto-cleaned
+- [x] include an ASCII workflow sketch for compressed and quality modes
+- [x] link the new guide from the README video-guides section
 
 ### Phase 6: GIF profile and color-tuning follow-up
 
-- [ ] freeze the public `--gif-profile` surface from follow-up research
-- [ ] freeze the interactive contract:
-  - [ ] prompt for `GIF profile` only after `quality` is selected
-  - [ ] do not prompt for `gif-profile` in compressed-mode interactive flows
-- [ ] decide whether the first profile set is:
-  - [ ] `video`, `motion`, `screen`
-  - [ ] or a smaller initial subset
-- [ ] define validation for `--gif-profile` with `--mode compressed|quality`
-  - [ ] reject explicit `--gif-profile` with explicit `--mode compressed`
-- [ ] centralize profile-to-recipe mapping in one helper
-- [ ] implement at least the default `video` recipe tuning for quality mode
-- [ ] add profile-aware tests for argument generation and validation
-- [ ] add interactive tests for conditional `gif-profile` prompting under `quality`
-- [ ] update README and the GIF guide with profile selection guidance if the profile surface lands
+- [x] freeze the public `--gif-profile` surface from follow-up research
+- [x] freeze the interactive contract:
+  - [x] prompt for `GIF profile` only after `quality` is selected
+  - [x] do not prompt for `gif-profile` in compressed-mode interactive flows
+- [x] freeze the first public profile set as `video`, `motion`, `screen`
+- [x] define validation for `--gif-profile` with `--mode compressed|quality`
+  - [x] infer `quality` when `--gif-profile` is provided without `--mode`
+  - [x] reject explicit `--gif-profile` with explicit `--mode compressed`
+- [x] centralize profile-to-recipe mapping in one helper
+- [x] implement at least the default `video` recipe tuning for quality mode
+- [x] add profile-aware tests for argument generation and validation
+- [x] add interactive tests for conditional `gif-profile` prompting under `quality`
+- [x] update README and the GIF guide with profile selection guidance if the profile surface lands
+
+### Phase 7: Reassess profile strength and guide positioning
+
+- [ ] review manual smoke-test output for `video`, `motion`, and `screen` against representative local clips
+- [ ] record where the current profile recipes produce only minor visible differences
+- [ ] decide whether the next public surface should stay source-type-only or add stronger visual-intent presets
+- [ ] update follow-up research with the chosen stronger tuning direction
+- [ ] revise the GIF guide wording once the next profile direction is frozen
 
 ## Related Research
 

@@ -1,13 +1,20 @@
 ---
 title: "GIF profile and color-tuning follow-up for video conversion"
 created-date: 2026-04-10
-status: draft
+modified-date: 2026-04-10
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
 Define the follow-up spec for improving color fidelity in `video gif` quality mode, with a small public surface that stays understandable for typical users.
+
+## Current Status
+
+- the first public `gif-profile` surface is implemented
+- the current `video`, `motion`, and `screen` profiles are useful, but they do not yet create a strong enough visible separation on every source
+- this research remains open because the next tuning pass likely needs stronger recipe separation or additional profile directions beyond the current first-pass set
 
 ## Key Findings
 
@@ -38,21 +45,17 @@ Recommendation:
   - `screen`
 - make `video` the default profile
 
-### 3. `--gif-profile` should be scoped to `quality` mode
+### 3. `--gif-profile` should be scoped to `quality` mode, and profile selection should imply `quality` when mode is omitted
 
 - The compressed one-pass path does not use `palettegen` / `paletteuse`, so a profile flag would either do nothing there or imply hidden behavior that the mode does not actually support.
 - Letting the flag silently do nothing in compressed mode would be confusing.
+- Requiring users to type both `--mode quality` and `--gif-profile ...` every time would add redundant syntax when the profile already implies a palette-based conversion path.
 
 Recommendation:
 
 - document `--gif-profile` as a quality-mode option
-- either:
-  - reject `--gif-profile` when `--mode compressed` is explicit, or
-  - ignore the flag unless `mode === quality` but explain that clearly in help/docs
-
-Preferred direction:
-
-- reject it for explicit `compressed` mode so the contract stays honest
+- when `--gif-profile` is provided without `--mode`, infer `quality`
+- reject explicit `--gif-profile` when `--mode compressed` is explicit
 
 ### 4. Interactive mode should prompt for `gif-profile` only after `quality` is chosen
 
@@ -67,6 +70,7 @@ Recommendation:
   - if the user selects `compressed`, do not ask for `gif-profile`
   - if the user selects `quality`, ask for `GIF profile`
 - keep `video` as the CLI default profile when no profile is provided directly
+- treat direct CLI `--gif-profile <profile>` with no `--mode` as `quality` plus the selected profile
 - reject explicit `--gif-profile` when `--mode compressed` is explicit
 
 ### 5. The first profile set should map to opinionated internal recipes
@@ -75,14 +79,29 @@ Recommended first-pass mapping:
 
 - `video`:
   - intended for normal camera or mixed-content clips
+  - best default for:
+    - camera video
+    - product clips
+    - mixed motion plus natural scenery
+    - general-purpose use when the source type is unclear
   - `palettegen=stats_mode=full:reserve_transparent=0:max_colors=256`
   - `paletteuse=dither=sierra2_4a`
 - `motion`:
   - intended for motion-heavy clips where colors shift frame to frame
+  - best for:
+    - fast-moving gameplay
+    - sports or action clips
+    - clips with frequent scene changes
+    - motion-heavy captures where frame-to-frame color reuse is weak
   - `palettegen=stats_mode=diff:reserve_transparent=0:max_colors=256`
   - `paletteuse=dither=sierra2_4a:diff_mode=rectangle`
 - `screen`:
   - intended for screen recordings, UI demos, and flatter-color assets
+  - best for:
+    - app walkthroughs
+    - product UI demos
+    - terminal captures
+    - screen recordings with text, icons, and flat backgrounds
   - `palettegen=stats_mode=diff:reserve_transparent=0:max_colors=256`
   - `paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle`
 
@@ -108,18 +127,40 @@ Recommendation:
   - `motion` -> better for dynamic scenes
   - `screen` -> better for UI and screen capture
 
+Suggested user-facing framing:
+
+- `video`: best default for most clips
+- `motion`: best for fast movement and rapidly changing scenes
+- `screen`: best for screen recordings, UI, and flatter graphics
+
+### 7. The current profile set should be treated as a first-pass tuning surface, not the final design
+
+- Early manual checks show that `video`, `motion`, and `screen` do not always produce a dramatic visible difference.
+- On some sources, `compressed` can still appear more vivid or punchier even though it is not the more controlled palette path.
+- That does not make the profile feature invalid, but it does mean the tuning story is not finished yet.
+
+Implication:
+
+- documentation should describe the current profiles honestly as source-type presets, not as guaranteed large visual style changes
+- the next tuning pass should investigate whether the public surface needs:
+  - stronger recipe separation
+  - more aggressive preprocessing
+  - additional presets that describe visual intent rather than only source type
+
 ## Implications or Recommendations
 
 Recommended public spec:
 
 1. Add `--gif-profile video|motion|screen`.
 2. Default the profile to `video`.
-3. Apply profiles only when `mode === quality`.
-4. In interactive mode, prompt for `GIF profile` only after `quality` is selected.
-5. Reject explicit `--gif-profile` with explicit `--mode compressed`.
-6. Keep `compressed` as the overall CLI default mode.
-7. Keep profile tuning internal and recipe-based rather than exposing raw palette flags.
-8. Update the GIF guide to explain profile selection by source type and expected output characteristics.
+3. Make `--gif-profile` imply `quality` when `--mode` is omitted.
+4. Apply profiles only when the resolved mode is `quality`.
+5. In interactive mode, prompt for `GIF profile` only after `quality` is selected.
+6. Reject explicit `--gif-profile` with explicit `--mode compressed`.
+7. Keep `compressed` as the overall CLI default mode when neither quality mode nor profile is requested.
+8. Keep profile tuning internal and recipe-based rather than exposing raw palette flags.
+9. Update the GIF guide to explain profile selection by source type and expected output characteristics.
+10. Treat the current public profiles as a first shipped pass while follow-up tuning remains open.
 
 Recommended implementation shape:
 
@@ -128,14 +169,11 @@ Recommended implementation shape:
    - paletteuse flags
 2. Keep the profile lookup separate from command registration so the surface stays centralized.
 3. Add one interactive prompt branch for `GIF profile` only under the `quality` path.
-4. Preserve the existing `quality` mode path shape:
+4. Resolve direct CLI `--gif-profile` input into `quality` plus the selected profile before ffmpeg argument generation.
+5. Preserve the existing `quality` mode path shape:
    - palette generation
    - GIF render from palette
    - temp palette cleanup
-
-## Open Questions
-
-1. Should `motion` ship in the first public slice, or should the first release start with only `video` and `screen`?
 
 ## Related Plans
 

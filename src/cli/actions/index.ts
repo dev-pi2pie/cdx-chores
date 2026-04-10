@@ -67,6 +67,7 @@ export { actionVideoConvert, actionVideoGif, actionVideoResize } from "./video";
 export type {
   VideoConvertOptions,
   VideoGifMode,
+  VideoGifProfile,
   VideoGifOptions,
   VideoResizeOptions,
 } from "./video";

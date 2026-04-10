@@ -218,7 +218,7 @@ describe("actionVideoGif", () => {
     }
   });
 
-  test("runs quality mode as a two-pass ffmpeg invocation and cleans up the palette artifact", async () => {
+  test("runs quality mode with the default video profile and cleans up the palette artifact", async () => {
     const fixtureDir = await createTempFixtureDir("video-gif-action");
     try {
       const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
@@ -248,7 +248,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,palettegen",
+        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
         "-frames:v",
         "1",
         String(palettePath),
@@ -260,7 +260,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse",
+        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -268,6 +268,7 @@ describe("actionVideoGif", () => {
       expect(stdout.text.trim().split("\n")).toEqual([
         "Starting GIF conversion...",
         "Mode: quality",
+        "GIF profile: video",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
         `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
@@ -309,7 +310,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse",
+        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -317,6 +318,7 @@ describe("actionVideoGif", () => {
       expect(stdout.text.trim().split("\n")).toEqual([
         "Starting GIF conversion...",
         "Mode: quality",
+        "GIF profile: video",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
       ]);
@@ -355,8 +357,137 @@ describe("actionVideoGif", () => {
       expect(stdout.text.trim().split("\n")).toEqual([
         "Starting GIF conversion...",
         "Mode: quality",
+        "GIF profile: video",
         "Generating GIF palette...",
       ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("infers quality mode when gifProfile is provided without mode", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        gifProfile: "screen",
+        width: 320,
+        fps: 12,
+      });
+
+      const records = await readFakeFfmpegLog(logPath);
+      const execRecords = getExecRecords(records);
+      const palettePath = execRecords[0]?.outputPath;
+
+      expectNoStderr();
+      expect(execRecords).toHaveLength(2);
+      expect(execRecords[0]?.args).toEqual([
+        "-y",
+        "-i",
+        inputPath,
+        "-vf",
+        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "-frames:v",
+        "1",
+        String(palettePath),
+      ]);
+      expect(execRecords[1]?.args).toEqual([
+        "-n",
+        "-i",
+        inputPath,
+        "-i",
+        String(palettePath),
+        "-lavfi",
+        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+        outputPath,
+      ]);
+      expect(stdout.text.trim().split("\n")).toEqual([
+        "Starting GIF conversion...",
+        "Mode: quality",
+        "GIF profile: screen",
+        "Generating GIF palette...",
+        "Rendering GIF from palette...",
+        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+      ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("uses the motion profile recipe when explicitly requested", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        mode: "quality",
+        gifProfile: "motion",
+        width: 320,
+        fps: 12,
+      });
+
+      const records = await readFakeFfmpegLog(logPath);
+      const execRecords = getExecRecords(records);
+      const palettePath = execRecords[0]?.outputPath;
+
+      expectNoStderr();
+      expect(execRecords[0]?.args).toEqual([
+        "-y",
+        "-i",
+        inputPath,
+        "-vf",
+        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "-frames:v",
+        "1",
+        String(palettePath),
+      ]);
+      expect(execRecords[1]?.args).toEqual([
+        "-n",
+        "-i",
+        inputPath,
+        "-i",
+        String(palettePath),
+        "-lavfi",
+        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+        outputPath,
+      ]);
+      expect(stdout.text.trim().split("\n")).toEqual([
+        "Starting GIF conversion...",
+        "Mode: quality",
+        "GIF profile: motion",
+        "Generating GIF palette...",
+        "Rendering GIF from palette...",
+        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+      ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("rejects gifProfile with explicit compressed mode", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expect(actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        mode: "compressed",
+        gifProfile: "video",
+      })).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+
+      expectNoOutput();
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

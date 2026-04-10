@@ -3,7 +3,12 @@ import type { Command } from "commander";
 import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
 import { parsePositiveIntegerOption, parsePositiveNumberOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
-import { parseVideoGifModeOption, type VideoGifMode } from "../video-gif";
+import {
+  parseVideoGifModeOption,
+  parseVideoGifProfileOption,
+  type VideoGifMode,
+  type VideoGifProfile,
+} from "../video-gif";
 
 export function registerVideoCommands(program: Command, runtime: CliRuntime): void {
   const videoCommand = program.command("video").description("Video utilities (ffmpeg-backed)");
@@ -69,6 +74,11 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
       "GIF mode: compressed (default) or quality",
       parseVideoGifModeOption,
     )
+    .option(
+      "--gif-profile <profile>",
+      "GIF quality profile: video, motion, or screen (implies quality mode)",
+      parseVideoGifProfileOption,
+    )
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .addHelpText(
       "after",
@@ -77,6 +87,11 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
         "GIF modes:",
         "  compressed: one-pass ffmpeg conversion (default)",
         "  quality: two-pass palette workflow for better color fidelity",
+        "",
+        "GIF profiles (quality mode only):",
+        "  video: balanced default for most clips",
+        "  motion: tuned for fast-moving scenes",
+        "  screen: tuned for UI and screen recordings",
       ].join("\n"),
     )
     .action(
@@ -86,6 +101,7 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
         width?: number;
         fps?: number;
         mode?: VideoGifMode;
+        gifProfile?: VideoGifProfile;
         overwrite?: boolean;
       }) => {
         await actionVideoGif(runtime, options);

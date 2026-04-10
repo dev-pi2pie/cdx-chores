@@ -391,9 +391,15 @@ describe("CLI UX flags and path output", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("--mode <mode>");
+    expect(result.stdout).toContain("--gif-profile <profile>");
     expect(result.stdout).toContain("GIF mode: compressed (default) or quality");
+    expect(result.stdout).toContain("GIF quality profile: video, motion, or screen");
+    expect(result.stdout).toContain("(implies quality mode)");
     expect(result.stdout).toContain("compressed: one-pass ffmpeg conversion (default)");
     expect(result.stdout).toContain("quality: two-pass palette workflow for better color fidelity");
+    expect(result.stdout).toContain("video: balanced default for most clips");
+    expect(result.stdout).toContain("motion: tuned for fast-moving scenes");
+    expect(result.stdout).toContain("screen: tuned for UI and screen recordings");
   });
 
   test("video gif rejects invalid mode values at CLI parsing time", () => {
@@ -401,6 +407,29 @@ describe("CLI UX flags and path output", () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("--mode must be one of: compressed, quality.");
+  });
+
+  test("video gif rejects invalid gif-profile values at CLI parsing time", () => {
+    const result = runCli(["video", "gif", "-i", "missing.mp4", "--gif-profile", "invalid"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--gif-profile must be one of: video, motion, screen.");
+  });
+
+  test("video gif rejects gif-profile with explicit compressed mode", () => {
+    const result = runCli([
+      "video",
+      "gif",
+      "-i",
+      "missing.mp4",
+      "--mode",
+      "compressed",
+      "--gif-profile",
+      "screen",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--gif-profile cannot be used with --mode compressed.");
   });
 
   test("video resize accepts scale-only flags and reaches input validation", () => {

@@ -314,6 +314,18 @@ Video to GIF:
 cdx-chores video gif -i ./clip.mp4 -o ./clip.gif --width 480 --fps 10
 ```
 
+Video to GIF with explicit quality mode:
+
+```bash
+cdx-chores video gif -i ./clip.mp4 -o ./clip-quality.gif --mode quality --width 480 --fps 10
+```
+
+Video to GIF with a quality profile:
+
+```bash
+cdx-chores video gif -i ./clip.mp4 -o ./clip-screen.gif --gif-profile screen --width 480 --fps 10
+```
+
 Video resize with aspect-ratio-preserving scale:
 
 ```bash
@@ -345,6 +357,7 @@ Data:
 
 Video:
 
+- `docs/guides/video-gif-usage-and-quality-modes.md`
 - `docs/guides/video-resize-usage-and-ux.md`
 
 ## Local Development
