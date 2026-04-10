@@ -1,7 +1,8 @@
 ---
 title: "Video GIF high-quality mode implementation"
 created-date: 2026-04-10
-status: draft
+modified-date: 2026-04-10
+status: active
 agent: codex
 ---
 
@@ -141,22 +142,22 @@ This work is best handled as a dedicated implementation plan because it crosses 
 
 ### Phase 1: Freeze public contract in code-facing terms
 
-- [ ] add `mode?: "compressed" | "quality"` to `VideoGifOptions`
-- [ ] freeze `compressed` as the direct CLI default when no mode is provided
-- [ ] freeze explicit interactive mode selection on every GIF conversion flow
-- [ ] freeze the processing-phase message sequence for both modes
-- [ ] freeze the temp palette naming and cleanup approach
+- [x] add `mode?: "compressed" | "quality"` to `VideoGifOptions`
+- [x] freeze `compressed` as the direct CLI default when no mode is provided
+- [x] freeze explicit interactive mode selection on every GIF conversion flow
+- [x] freeze the processing-phase message sequence for both modes
+- [x] freeze the temp palette naming and cleanup approach
 
 ### Phase 2: Implement CLI surface and GIF execution
 
-- [ ] add `--mode compressed|quality` to `video gif`
-- [ ] document the mode flag in CLI help text
-- [ ] keep the existing one-pass execution path as compressed mode
-- [ ] implement the two-pass palette workflow for quality mode
-- [ ] generate the temp palette in the system temp directory
-- [ ] use a descriptive temp filename with readable stem plus short per-run random suffix
-- [ ] delete the temp palette in a `finally` block
-- [ ] preserve existing output-path and overwrite behavior
+- [x] add `--mode compressed|quality` to `video gif`
+- [x] document the mode flag in CLI help text
+- [x] keep the existing one-pass execution path as compressed mode
+- [x] implement the two-pass palette workflow for quality mode
+- [x] generate the temp palette in the system temp directory
+- [x] use a descriptive temp filename with readable stem plus short per-run random suffix
+- [x] delete the temp palette in a `finally` block
+- [x] preserve existing output-path and overwrite behavior
 
 ### Phase 3: Implement processing-phase UX and interactive flow
 

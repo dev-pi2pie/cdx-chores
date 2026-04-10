@@ -2,7 +2,7 @@
 title: "High-quality mode for video GIF conversion"
 created-date: 2026-04-10
 modified-date: 2026-04-10
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -173,6 +173,10 @@ Recommended verification scope once implemented:
 5. Compressed-mode tests confirm phase progress messages appear in the expected order.
 6. Quality-mode tests confirm phase progress messages appear in the expected order.
 7. README and the new GIF guide reflect the new mode surface accurately.
+
+## Related Plans
+
+- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
 
 ## References
 

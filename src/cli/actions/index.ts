@@ -64,4 +64,9 @@ export type {
   SuggestRenameCleanupWithCodexOptions,
 } from "./rename/index";
 export { actionVideoConvert, actionVideoGif, actionVideoResize } from "./video";
-export type { VideoConvertOptions, VideoGifOptions, VideoResizeOptions } from "./video";
+export type {
+  VideoConvertOptions,
+  VideoGifMode,
+  VideoGifOptions,
+  VideoResizeOptions,
+} from "./video";

@@ -1,11 +1,18 @@
-import { resolve } from "node:path";
+import { randomBytes } from "node:crypto";
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, extname, join, resolve } from "node:path";
 
 import { requireCommandAvailable } from "../deps";
 import { CliError } from "../errors";
 import { defaultOutputPath } from "../path-utils";
 import { execCommand } from "../process";
 import type { CliRuntime } from "../types";
+import { normalizeVideoGifMode, type VideoGifMode } from "../video-gif";
+import { slugifyName } from "../../utils/slug";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
+
+export type { VideoGifMode } from "../video-gif";
 
 export interface VideoConvertOptions {
   input: string;
@@ -27,6 +34,7 @@ export interface VideoGifOptions {
   output?: string;
   width?: number;
   fps?: number;
+  mode?: VideoGifMode;
   overwrite?: boolean;
 }
 
@@ -41,6 +49,67 @@ async function runFfmpeg(runtime: CliRuntime, args: string[]): Promise<void> {
         exitCode: 1,
       },
     );
+  }
+}
+
+function buildVideoGifFilter(fps: number, width: number): string {
+  return `fps=${fps},scale=${width}:-1:flags=lanczos`;
+}
+
+function buildVideoGifPalettePath(outputPath: string): string {
+  const outputStem = basename(outputPath, extname(outputPath));
+  const readableStem = slugifyName(outputStem, "gif");
+  const suffix = randomBytes(3).toString("hex");
+  return join(tmpdir(), `cdx-chores-video-gif-${readableStem}-palette-${suffix}.png`);
+}
+
+async function removeVideoGifPaletteArtifact(palettePath: string): Promise<void> {
+  await rm(palettePath, { force: true });
+}
+
+async function runCompressedVideoGif(
+  runtime: CliRuntime,
+  inputPath: string,
+  outputPath: string,
+  overwrite: boolean,
+  videoFilter: string,
+): Promise<void> {
+  await runFfmpeg(runtime, [overwrite ? "-y" : "-n", "-i", inputPath, "-vf", videoFilter, outputPath]);
+}
+
+async function runQualityVideoGif(
+  runtime: CliRuntime,
+  inputPath: string,
+  outputPath: string,
+  overwrite: boolean,
+  videoFilter: string,
+): Promise<void> {
+  const palettePath = buildVideoGifPalettePath(outputPath);
+
+  try {
+    await runFfmpeg(runtime, [
+      "-y",
+      "-i",
+      inputPath,
+      "-vf",
+      `${videoFilter},palettegen`,
+      "-frames:v",
+      "1",
+      palettePath,
+    ]);
+
+    await runFfmpeg(runtime, [
+      overwrite ? "-y" : "-n",
+      "-i",
+      inputPath,
+      "-i",
+      palettePath,
+      "-lavfi",
+      `${videoFilter}[x];[x][1:v]paletteuse`,
+      outputPath,
+    ]);
+  } finally {
+    await removeVideoGifPaletteArtifact(palettePath);
   }
 }
 
@@ -117,15 +186,16 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     Number.isFinite(options.fps) && (options.fps ?? 0) > 0 ? Math.trunc(options.fps!) : 10;
   const width =
     Number.isFinite(options.width) && (options.width ?? 0) > 0 ? Math.trunc(options.width!) : 480;
+  const mode = normalizeVideoGifMode(options.mode);
+  const videoFilter = buildVideoGifFilter(fps, width);
 
-  const args = [
-    options.overwrite ? "-y" : "-n",
-    "-i",
-    inputPath,
-    "-vf",
-    `fps=${fps},scale=${width}:-1:flags=lanczos`,
-    outputPath,
-  ];
-  await runFfmpeg(runtime, args);
+  if (mode === "compressed") {
+    await runCompressedVideoGif(runtime, inputPath, outputPath, Boolean(options.overwrite), videoFilter);
+    printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
+    return;
+  }
+
+  await runQualityVideoGif(runtime, inputPath, outputPath, Boolean(options.overwrite), videoFilter);
+
   printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
 }
