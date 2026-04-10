@@ -14,8 +14,9 @@ Implement the new high-quality `video gif` mode from the current research direct
 
 - the base high-quality mode feature is implemented
 - the first public `gif-profile` surface is implemented and documented
-- follow-up tuning is still active because the current profile differences are not yet strong enough on every source
-- this plan remains active until that follow-up direction is either implemented here or split into a separate successor plan
+- the current profile set is now documented as a first shipped pass rather than the final tuning direction
+- stronger visual-intent tuning is now reopened as active follow-up work inside this plan
+- the missing design dimension is a second quality-mode flag for look intent, not more source-type profiles alone
 
 ## Why This Plan
 
@@ -218,11 +219,26 @@ This work is best handled as a dedicated implementation plan because it crosses 
 
 ### Phase 7: Reassess profile strength and guide positioning
 
-- [ ] review manual smoke-test output for `video`, `motion`, and `screen` against representative local clips
-- [ ] record where the current profile recipes produce only minor visible differences
-- [ ] decide whether the next public surface should stay source-type-only or add stronger visual-intent presets
-- [ ] update follow-up research with the chosen stronger tuning direction
-- [ ] revise the GIF guide wording once the next profile direction is frozen
+- [x] review manual smoke-test output for `video`, `motion`, and `screen` against representative local clips
+- [x] record where the current profile recipes produce only minor visible differences
+- [x] decide whether the next public surface should stay source-type-only or add stronger visual-intent presets
+- [x] update follow-up research with the chosen stronger tuning direction
+- [x] revise the GIF guide wording once the next profile direction is frozen
+
+### Phase 8: Add visual-intent look tuning follow-up
+
+- [ ] freeze the second public flag as `--gif-look faithful|vibrant`
+- [ ] define how `gif-look` interacts with `--mode compressed|quality`
+- [ ] define how `gif-look` interacts with `--gif-profile`
+- [ ] decide whether direct CLI `--gif-look` should imply `quality` when `--mode` is omitted
+- [ ] freeze the interactive contract for `GIF look` prompting under `quality`
+- [ ] document best-fit scenarios for:
+  - [ ] `faithful`
+  - [ ] `vibrant`
+- [ ] implement the internal recipe split for look-based tuning
+- [ ] add CLI and action validation coverage for `gif-look`
+- [ ] add interactive routing coverage for conditional `GIF look` prompting
+- [ ] update README and the GIF guide with clear `gif-look` usage examples
 
 ## Related Research
 

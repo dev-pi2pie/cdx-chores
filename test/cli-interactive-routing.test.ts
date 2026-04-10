@@ -2636,14 +2636,15 @@ limit 25`,
         },
       },
     ]);
-    expect(result.promptCalls).toContainEqual({
-      kind: "select",
-      message: "GIF mode",
-    });
-    expect(result.promptCalls).toContainEqual({
-      kind: "select",
-      message: "GIF profile",
-    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a video command",
+      "select:GIF mode",
+      "select:GIF profile",
+      "input:Width in px (optional)",
+      "input:FPS (optional)",
+      "confirm:Overwrite if exists?",
+    ]);
   });
 
   test("routes a video flow through gif generation in compressed mode", () => {
@@ -2669,14 +2670,14 @@ limit 25`,
         },
       },
     ]);
-    expect(result.promptCalls).toContainEqual({
-      kind: "select",
-      message: "GIF mode",
-    });
-    expect(result.promptCalls).not.toContainEqual({
-      kind: "select",
-      message: "GIF profile",
-    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a video command",
+      "select:GIF mode",
+      "input:Width in px (optional)",
+      "input:FPS (optional)",
+      "confirm:Overwrite if exists?",
+    ]);
   });
 
   test("throws when a handler receives an unknown action", () => {

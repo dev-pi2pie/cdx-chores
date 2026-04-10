@@ -14,7 +14,8 @@ Define the follow-up spec for improving color fidelity in `video gif` quality mo
 
 - the first public `gif-profile` surface is implemented
 - the current `video`, `motion`, and `screen` profiles are useful, but they do not yet create a strong enough visible separation on every source
-- this research remains open because the next tuning pass likely needs stronger recipe separation or additional profile directions beyond the current first-pass set
+- this research is open again because the next tuning pass now needs a second public dimension for visual intent
+- stronger tuning should cover both source type and look, rather than only adding more source-type presets
 
 ## Key Findings
 
@@ -137,6 +138,7 @@ Suggested user-facing framing:
 
 - Early manual checks show that `video`, `motion`, and `screen` do not always produce a dramatic visible difference.
 - On some sources, `compressed` can still appear more vivid or punchier even though it is not the more controlled palette path.
+- A local-only smoke pass with the current playground media confirmed that all three quality profiles execute correctly, but their visible separation remains modest enough that users can reasonably expect stronger differentiation in a later pass.
 - That does not make the profile feature invalid, but it does mean the tuning story is not finished yet.
 
 Implication:
@@ -146,6 +148,56 @@ Implication:
   - stronger recipe separation
   - more aggressive preprocessing
   - additional presets that describe visual intent rather than only source type
+
+Recommended next direction:
+
+- keep the current public `video`, `motion`, and `screen` profiles as the shipped first pass
+- treat source-type tuning and look/intensity tuning as separate concerns
+- if a stronger public surface is added later, prefer visual-intent presets such as a more faithful path versus a more vivid path rather than only adding more source-type labels
+
+### 8. Visual-intent tuning should be a second flag, not a profile overload
+
+- `video`, `motion`, and `screen` describe source type.
+- `faithful` and `vibrant` describe desired look.
+- Folding both ideas into one `--gif-profile` surface would make the option set harder to explain and harder to scale.
+
+Recommendation:
+
+- keep `--gif-profile` for source type:
+  - `video`
+  - `motion`
+  - `screen`
+- add a second flag for visual intent:
+  - `--gif-look faithful|vibrant`
+
+Suggested usage:
+
+- `faithful`:
+  - best for:
+    - product demos
+    - UI recordings
+    - brand-sensitive output
+    - docs and walkthroughs where color accuracy matters more than punch
+  - expected outcome:
+    - more restrained color shaping
+    - closer-to-source look
+- `vibrant`:
+  - best for:
+    - promo clips
+    - social sharing
+    - cases where compressed currently feels more attractive than quality
+    - clips where mild color lift is desirable before palette reduction
+  - expected outcome:
+    - more punchy output
+    - mild saturation or contrast shaping before palette generation
+
+Interactive recommendation:
+
+- keep asking for `GIF mode`
+- if `quality` is selected:
+  - ask for `GIF profile`
+  - then ask for `GIF look`
+- default `gif-look` to `faithful` when quality mode is selected and no explicit look is provided
 
 ## Implications or Recommendations
 
@@ -161,6 +213,8 @@ Recommended public spec:
 8. Keep profile tuning internal and recipe-based rather than exposing raw palette flags.
 9. Update the GIF guide to explain profile selection by source type and expected output characteristics.
 10. Treat the current public profiles as a first shipped pass while follow-up tuning remains open.
+11. Add a second public flag for visual intent rather than overloading `--gif-profile`.
+12. Document `faithful` as the closer-to-source path and `vibrant` as the more punchy path.
 
 Recommended implementation shape:
 
@@ -174,6 +228,7 @@ Recommended implementation shape:
    - palette generation
    - GIF render from palette
    - temp palette cleanup
+6. Add a second internal helper or config branch for `gif-look` so source-type tuning and visual-intent tuning remain separate.
 
 ## Related Plans
 

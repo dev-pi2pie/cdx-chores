@@ -125,6 +125,7 @@ Practical note:
 - these profiles are source-type presets, not guaranteed dramatic look presets
 - if you want the simplest and sometimes more visually punchy result, `compressed` can still be the better starting point
 - if you want the more controlled palette-based path, start with `quality` and then try `video`, `motion`, or `screen` based on the source
+- a future follow-up may introduce stronger look-oriented tuning, but that is not part of the current contract
 
 ### CLI rules
 
@@ -232,6 +233,8 @@ Not implemented in the current contract:
 - custom palette output paths
 - a public `--keep-palette` flag
 - real-time parsed `ffmpeg` progress bars
+- stronger visual-intent presets beyond the current first-pass source-type profiles
+- a public `--gif-look faithful|vibrant` flag
 
 ## Related Guides
 

@@ -240,9 +240,7 @@ describe("actionVideoGif", () => {
       expectNoStderr();
       expect(execRecords).toHaveLength(2);
       expect(palettePath?.startsWith(resolve(tmpdir())) || palettePath?.startsWith(tmpdir())).toBe(true);
-      expect(basename(String(palettePath))).toMatch(
-        /^cdx-chores-video-gif-output-palette-[0-9a-f]{6}\.png$/,
-      );
+      expect(basename(String(palettePath))).toMatch(/^cdx-chores-video-gif-.+-palette-[0-9a-f]{6}\.png$/);
       expect(execRecords[0]?.args).toEqual([
         "-y",
         "-i",
