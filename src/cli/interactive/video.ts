@@ -1,4 +1,4 @@
-import { confirm, input } from "@inquirer/prompts";
+import { confirm, input, select } from "@inquirer/prompts";
 
 import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
 import {
@@ -7,6 +7,7 @@ import {
   promptRequiredPathWithConfig,
 } from "../prompts/path";
 import type { CliRuntime } from "../types";
+import type { VideoGifLook, VideoGifMode, VideoGifProfile } from "../video-gif";
 import type { VideoInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
@@ -77,12 +78,71 @@ export async function handleVideoInteractiveAction(
     ...pathPromptContext,
     customMessage: "Custom GIF output path",
   });
+  const mode = await select<VideoGifMode>({
+    message: "GIF mode",
+    choices: [
+      {
+        name: "compressed",
+        value: "compressed",
+        description: "One-pass conversion with the current default behavior",
+      },
+      {
+        name: "quality",
+        value: "quality",
+        description: "Two-pass palette workflow for better color fidelity",
+      },
+    ],
+  });
+  const gifProfile =
+    mode === "quality"
+      ? await select<VideoGifProfile>({
+          message: "GIF profile",
+          choices: [
+            {
+              name: "video",
+              value: "video",
+              description: "Balanced default for most clips",
+            },
+            {
+              name: "motion",
+              value: "motion",
+              description: "Better for fast movement and rapid scene changes",
+            },
+            {
+              name: "screen",
+              value: "screen",
+              description: "Better for UI, text, and screen recordings",
+            },
+          ],
+        })
+      : undefined;
+  const gifLook =
+    mode === "quality"
+      ? await select<VideoGifLook>({
+          message: "GIF look",
+          choices: [
+            {
+              name: "faithful",
+              value: "faithful",
+              description: "Normalized closer-to-source look with restrained shaping",
+            },
+            {
+              name: "vibrant",
+              value: "vibrant",
+              description: "More punchy output with stronger color lift",
+            },
+          ],
+        })
+      : undefined;
   const widthInput = await input({ message: "Width in px (optional)", default: "480" });
   const fpsInput = await input({ message: "FPS (optional)", default: "10" });
   const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
   await actionVideoGif(runtime, {
     input: inputPath,
     output: outputPath,
+    mode,
+    gifProfile,
+    gifLook,
     width: widthInput.trim() ? Number(widthInput) : undefined,
     fps: fpsInput.trim() ? Number(fpsInput) : undefined,
     overwrite,

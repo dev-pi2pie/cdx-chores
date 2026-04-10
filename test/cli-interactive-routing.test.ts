@@ -2615,7 +2615,7 @@ limit 25`,
   test("routes a video flow through gif generation", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["video", "video:gif"],
+      selectQueue: ["video", "video:gif", "quality", "screen", "vibrant"],
       requiredPathQueue: ["fixtures/input.mp4"],
       optionalPathQueue: ["fixtures/output.gif"],
       inputQueue: ["320", "12"],
@@ -2628,11 +2628,57 @@ limit 25`,
         options: {
           input: "fixtures/input.mp4",
           output: "fixtures/output.gif",
+          mode: "quality",
+          gifProfile: "screen",
+          gifLook: "vibrant",
           width: 320,
           fps: 12,
           overwrite: false,
         },
       },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a video command",
+      "select:GIF mode",
+      "select:GIF profile",
+      "select:GIF look",
+      "input:Width in px (optional)",
+      "input:FPS (optional)",
+      "confirm:Overwrite if exists?",
+    ]);
+  });
+
+  test("routes a video flow through gif generation in compressed mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["video", "video:gif", "compressed"],
+      requiredPathQueue: ["fixtures/input.mp4"],
+      optionalPathQueue: ["fixtures/output.gif"],
+      inputQueue: ["320", "12"],
+      confirmQueue: [true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "video:gif",
+        options: {
+          input: "fixtures/input.mp4",
+          output: "fixtures/output.gif",
+          mode: "compressed",
+          width: 320,
+          fps: 12,
+          overwrite: true,
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a video command",
+      "select:GIF mode",
+      "input:Width in px (optional)",
+      "input:FPS (optional)",
+      "confirm:Overwrite if exists?",
     ]);
   });
 
