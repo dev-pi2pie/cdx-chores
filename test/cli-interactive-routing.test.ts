@@ -2615,7 +2615,7 @@ limit 25`,
   test("routes a video flow through gif generation", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["video", "video:gif"],
+      selectQueue: ["video", "video:gif", "quality"],
       requiredPathQueue: ["fixtures/input.mp4"],
       optionalPathQueue: ["fixtures/output.gif"],
       inputQueue: ["320", "12"],
@@ -2628,12 +2628,46 @@ limit 25`,
         options: {
           input: "fixtures/input.mp4",
           output: "fixtures/output.gif",
+          mode: "quality",
           width: 320,
           fps: 12,
           overwrite: false,
         },
       },
     ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "select",
+      message: "GIF mode",
+    });
+  });
+
+  test("routes a video flow through gif generation in compressed mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["video", "video:gif", "compressed"],
+      requiredPathQueue: ["fixtures/input.mp4"],
+      optionalPathQueue: ["fixtures/output.gif"],
+      inputQueue: ["320", "12"],
+      confirmQueue: [true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "video:gif",
+        options: {
+          input: "fixtures/input.mp4",
+          output: "fixtures/output.gif",
+          mode: "compressed",
+          width: 320,
+          fps: 12,
+          overwrite: true,
+        },
+      },
+    ]);
+    expect(result.promptCalls).toContainEqual({
+      kind: "select",
+      message: "GIF mode",
+    });
   });
 
   test("throws when a handler receives an unknown action", () => {

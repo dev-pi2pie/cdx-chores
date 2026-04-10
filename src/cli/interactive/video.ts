@@ -1,4 +1,4 @@
-import { confirm, input } from "@inquirer/prompts";
+import { confirm, input, select } from "@inquirer/prompts";
 
 import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
 import {
@@ -7,6 +7,7 @@ import {
   promptRequiredPathWithConfig,
 } from "../prompts/path";
 import type { CliRuntime } from "../types";
+import type { VideoGifMode } from "../video-gif";
 import type { VideoInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
@@ -77,12 +78,28 @@ export async function handleVideoInteractiveAction(
     ...pathPromptContext,
     customMessage: "Custom GIF output path",
   });
+  const mode = await select<VideoGifMode>({
+    message: "GIF mode",
+    choices: [
+      {
+        name: "compressed",
+        value: "compressed",
+        description: "One-pass conversion with the current default behavior",
+      },
+      {
+        name: "quality",
+        value: "quality",
+        description: "Two-pass palette workflow for better color fidelity",
+      },
+    ],
+  });
   const widthInput = await input({ message: "Width in px (optional)", default: "480" });
   const fpsInput = await input({ message: "FPS (optional)", default: "10" });
   const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
   await actionVideoGif(runtime, {
     input: inputPath,
     output: outputPath,
+    mode,
     width: widthInput.trim() ? Number(widthInput) : undefined,
     fps: fpsInput.trim() ? Number(fpsInput) : undefined,
     overwrite,

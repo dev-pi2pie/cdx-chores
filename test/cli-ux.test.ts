@@ -385,6 +385,24 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("Explicit override: --width 1280 --height 720");
   });
 
+  test("video gif help documents compressed and quality modes", () => {
+    const result = runCli(["video", "gif", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--mode <mode>");
+    expect(result.stdout).toContain("GIF mode: compressed (default) or quality");
+    expect(result.stdout).toContain("compressed: one-pass ffmpeg conversion (default)");
+    expect(result.stdout).toContain("quality: two-pass palette workflow for better color fidelity");
+  });
+
+  test("video gif rejects invalid mode values at CLI parsing time", () => {
+    const result = runCli(["video", "gif", "-i", "missing.mp4", "--mode", "invalid"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--mode must be one of: compressed, quality.");
+  });
+
   test("video resize accepts scale-only flags and reaches input validation", () => {
     const result = runCli([
       "video",

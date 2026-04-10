@@ -8,11 +8,11 @@ agent: codex
 
 ## Goal
 
-Implement the new high-quality `video gif` mode from the settled research direction while preserving the current compressed CLI default and keeping the shipped UX explicit, readable, and low-risk.
+Implement the new high-quality `video gif` mode from the current research direction while preserving the current compressed CLI default and keeping the shipped UX explicit, readable, and low-risk.
 
 ## Why This Plan
 
-The research now freezes the main product and UX decisions for this feature:
+The current research records the main product and UX decisions guiding this feature:
 
 - direct CLI gains `--mode compressed|quality`
 - direct CLI keeps `compressed` as the default/fallback mode
@@ -161,26 +161,26 @@ This work is best handled as a dedicated implementation plan because it crosses 
 
 ### Phase 3: Implement processing-phase UX and interactive flow
 
-- [ ] emit `Starting GIF conversion...` before mode-specific processing
-- [ ] emit `Mode: compressed` or `Mode: quality`
-- [ ] emit `Rendering GIF...` for compressed mode
-- [ ] emit `Generating GIF palette...` for quality mode
-- [ ] emit `Rendering GIF from palette...` for quality mode
-- [ ] keep final success output as `Wrote GIF: ...`
-- [ ] prompt for GIF mode explicitly in interactive `video gif`
-- [ ] thread the selected mode through the interactive action call
+- [x] emit `Starting GIF conversion...` before mode-specific processing
+- [x] emit `Mode: compressed` or `Mode: quality`
+- [x] emit `Rendering GIF...` for compressed mode
+- [x] emit `Generating GIF palette...` for quality mode
+- [x] emit `Rendering GIF from palette...` for quality mode
+- [x] keep final success output as `Wrote GIF: ...`
+- [x] prompt for GIF mode explicitly in interactive `video gif`
+- [x] thread the selected mode through the interactive action call
 
 ### Phase 4: Add focused tests
 
-- [ ] add help-output assertions for `--mode compressed|quality`
-- [ ] add direct action coverage for compressed-mode invocation shape
-- [ ] add direct action coverage for quality-mode two-pass invocation shape
-- [ ] add cleanup coverage for palette deletion after quality-mode execution
-- [ ] add failure-path coverage ensuring palette cleanup still runs when the second phase fails
-- [ ] add output/message-order coverage for compressed-mode phase messages
-- [ ] add output/message-order coverage for quality-mode phase messages
-- [ ] extend interactive routing coverage for explicit mode selection
-- [ ] keep automated tests independent from real checked-in video media
+- [x] add help-output assertions for `--mode compressed|quality`
+- [x] add direct action coverage for compressed-mode invocation shape
+- [x] add direct action coverage for quality-mode two-pass invocation shape
+- [x] add cleanup coverage for palette deletion after quality-mode execution
+- [x] add failure-path coverage ensuring palette cleanup still runs when the second phase fails
+- [x] add output/message-order coverage for compressed-mode phase messages
+- [x] add output/message-order coverage for quality-mode phase messages
+- [x] extend interactive routing coverage for explicit mode selection
+- [x] keep automated tests independent from real checked-in video media
 - [ ] verify the feature manually with a local-only playground video under `examples/playground/video/`
 
 ### Phase 5: Update README and add guide

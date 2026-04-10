@@ -74,6 +74,7 @@ async function runCompressedVideoGif(
   overwrite: boolean,
   videoFilter: string,
 ): Promise<void> {
+  printLine(runtime.stdout, "Rendering GIF...");
   await runFfmpeg(runtime, [overwrite ? "-y" : "-n", "-i", inputPath, "-vf", videoFilter, outputPath]);
 }
 
@@ -87,6 +88,7 @@ async function runQualityVideoGif(
   const palettePath = buildVideoGifPalettePath(outputPath);
 
   try {
+    printLine(runtime.stdout, "Generating GIF palette...");
     await runFfmpeg(runtime, [
       "-y",
       "-i",
@@ -98,6 +100,7 @@ async function runQualityVideoGif(
       palettePath,
     ]);
 
+    printLine(runtime.stdout, "Rendering GIF from palette...");
     await runFfmpeg(runtime, [
       overwrite ? "-y" : "-n",
       "-i",
@@ -188,6 +191,9 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     Number.isFinite(options.width) && (options.width ?? 0) > 0 ? Math.trunc(options.width!) : 480;
   const mode = normalizeVideoGifMode(options.mode);
   const videoFilter = buildVideoGifFilter(fps, width);
+
+  printLine(runtime.stdout, "Starting GIF conversion...");
+  printLine(runtime.stdout, `Mode: ${mode}`);
 
   if (mode === "compressed") {
     await runCompressedVideoGif(runtime, inputPath, outputPath, Boolean(options.overwrite), videoFilter);
