@@ -1,6 +1,7 @@
 ---
 title: "Video GIF plan closeout and status alignment"
 created-date: 2026-04-10
+modified-date: 2026-04-10
 status: completed
 agent: codex
 ---
@@ -8,6 +9,10 @@ agent: codex
 ## Summary
 
 Closed the `video gif` high-quality mode implementation plan after reviewing the shipped `gif-profile` surface, aligning related document statuses, and clarifying that stronger perceptual tuning is future successor work rather than unfinished work inside the current plan.
+
+## Later Follow-up
+
+This closeout was later superseded the same day when follow-up design work reopened the plan for a second visual-intent flag. Current status should be read from the active plan and the newer `gif-look` follow-up job record, not from the status snapshot below.
 
 ## What Changed
 
@@ -23,6 +28,8 @@ Closed the `video gif` high-quality mode implementation plan after reviewing the
 - confirmed the current profile differences are still modest enough that they should be documented as source-type presets rather than dramatic look presets
 
 ## Status Review
+
+At the time of this closeout:
 
 - `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
 - `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`: `completed`

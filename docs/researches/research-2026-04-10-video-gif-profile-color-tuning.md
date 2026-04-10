@@ -199,6 +199,22 @@ Interactive recommendation:
   - then ask for `GIF look`
 - default `gif-look` to `faithful` when quality mode is selected and no explicit look is provided
 
+CLI interaction recommendation:
+
+- treat `--gif-look` the same way the current follow-up treats `--gif-profile` with respect to mode resolution
+- if `--gif-look` is provided without `--mode`, infer `quality`
+- reject explicit `--gif-look` when `--mode compressed` is explicit
+- if `--gif-look` is provided without `--gif-profile`, keep the source-type default at `video`
+
+Profile interaction recommendation:
+
+- `gif-profile` and `gif-look` should compose rather than replace each other
+- `gif-profile` answers what kind of source is being converted
+- `gif-look` answers how the quality-mode result should feel
+- the default quality-mode combination should be:
+  - `gif-profile=video`
+  - `gif-look=faithful`
+
 ## Implications or Recommendations
 
 Recommended public spec:
@@ -215,6 +231,9 @@ Recommended public spec:
 10. Treat the current public profiles as a first shipped pass while follow-up tuning remains open.
 11. Add a second public flag for visual intent rather than overloading `--gif-profile`.
 12. Document `faithful` as the closer-to-source path and `vibrant` as the more punchy path.
+13. Make `--gif-look` imply `quality` when `--mode` is omitted.
+14. Reject explicit `--gif-look` with explicit `--mode compressed`.
+15. Default `gif-look` to `faithful` and keep `gif-profile=video` when only look is omitted or unspecified.
 
 Recommended implementation shape:
 
@@ -229,6 +248,7 @@ Recommended implementation shape:
    - GIF render from palette
    - temp palette cleanup
 6. Add a second internal helper or config branch for `gif-look` so source-type tuning and visual-intent tuning remain separate.
+7. Keep `gif-profile` and `gif-look` resolution centralized so the direct CLI and interactive flows share one contract.
 
 ## Related Plans
 

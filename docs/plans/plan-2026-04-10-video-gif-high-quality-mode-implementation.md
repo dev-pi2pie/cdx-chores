@@ -227,14 +227,14 @@ This work is best handled as a dedicated implementation plan because it crosses 
 
 ### Phase 8: Add visual-intent look tuning follow-up
 
-- [ ] freeze the second public flag as `--gif-look faithful|vibrant`
-- [ ] define how `gif-look` interacts with `--mode compressed|quality`
-- [ ] define how `gif-look` interacts with `--gif-profile`
-- [ ] decide whether direct CLI `--gif-look` should imply `quality` when `--mode` is omitted
-- [ ] freeze the interactive contract for `GIF look` prompting under `quality`
-- [ ] document best-fit scenarios for:
-  - [ ] `faithful`
-  - [ ] `vibrant`
+- [x] freeze the second public flag as `--gif-look faithful|vibrant`
+- [x] define how `gif-look` interacts with `--mode compressed|quality`
+- [x] define how `gif-look` interacts with `--gif-profile`
+- [x] decide whether direct CLI `--gif-look` should imply `quality` when `--mode` is omitted
+- [x] freeze the interactive contract for `GIF look` prompting under `quality`
+- [x] document best-fit scenarios for:
+  - [x] `faithful`
+  - [x] `vibrant`
 - [ ] implement the internal recipe split for look-based tuning
 - [ ] add CLI and action validation coverage for `gif-look`
 - [ ] add interactive routing coverage for conditional `GIF look` prompting
