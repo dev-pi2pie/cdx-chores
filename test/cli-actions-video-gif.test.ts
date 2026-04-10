@@ -246,7 +246,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
         "-frames:v",
         "1",
         String(palettePath),
@@ -258,7 +258,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -267,6 +267,7 @@ describe("actionVideoGif", () => {
         "Starting GIF conversion...",
         "Mode: quality",
         "GIF profile: video",
+        "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
         `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
@@ -308,7 +309,7 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a",
         outputPath,
       ]);
       expect(execRecords[1]?.paletteExistsAtRender).toBe(true);
@@ -317,6 +318,7 @@ describe("actionVideoGif", () => {
         "Starting GIF conversion...",
         "Mode: quality",
         "GIF profile: video",
+        "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
       ]);
@@ -356,6 +358,7 @@ describe("actionVideoGif", () => {
         "Starting GIF conversion...",
         "Mode: quality",
         "GIF profile: video",
+        "GIF look: faithful",
         "Generating GIF palette...",
       ]);
     } finally {
@@ -388,7 +391,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
         "-frames:v",
         "1",
         String(palettePath),
@@ -400,13 +403,14 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([
         "Starting GIF conversion...",
         "Mode: quality",
         "GIF profile: screen",
+        "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
         `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
@@ -441,7 +445,7 @@ describe("actionVideoGif", () => {
         "-i",
         inputPath,
         "-vf",
-        "fps=12,scale=320:-1:flags=lanczos,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
         "-frames:v",
         "1",
         String(palettePath),
@@ -453,13 +457,14 @@ describe("actionVideoGif", () => {
         "-i",
         String(palettePath),
         "-lavfi",
-        "fps=12,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
         outputPath,
       ]);
       expect(stdout.text.trim().split("\n")).toEqual([
         "Starting GIF conversion...",
         "Mode: quality",
         "GIF profile: motion",
+        "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
         `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
@@ -480,6 +485,137 @@ describe("actionVideoGif", () => {
         output: toRepoRelativePath(outputPath),
         mode: "compressed",
         gifProfile: "video",
+      })).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+
+      expectNoOutput();
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("infers quality mode when gifLook is provided without mode and uses the default video profile", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        gifLook: "vibrant",
+        width: 320,
+        fps: 12,
+      });
+
+      const records = await readFakeFfmpegLog(logPath);
+      const execRecords = getExecRecords(records);
+      const palettePath = execRecords[0]?.outputPath;
+
+      expectNoStderr();
+      expect(execRecords).toHaveLength(2);
+      expect(execRecords[0]?.args).toEqual([
+        "-y",
+        "-i",
+        inputPath,
+        "-vf",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=full:reserve_transparent=0",
+        "-frames:v",
+        "1",
+        String(palettePath),
+      ]);
+      expect(execRecords[1]?.args).toEqual([
+        "-n",
+        "-i",
+        inputPath,
+        "-i",
+        String(palettePath),
+        "-lavfi",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=sierra2_4a",
+        outputPath,
+      ]);
+      expect(stdout.text.trim().split("\n")).toEqual([
+        "Starting GIF conversion...",
+        "Mode: quality",
+        "GIF profile: video",
+        "GIF look: vibrant",
+        "Generating GIF palette...",
+        "Rendering GIF from palette...",
+        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+      ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("uses the vibrant look recipe when explicitly requested with a profile", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        mode: "quality",
+        gifProfile: "screen",
+        gifLook: "vibrant",
+        width: 320,
+        fps: 12,
+      });
+
+      const records = await readFakeFfmpegLog(logPath);
+      const execRecords = getExecRecords(records);
+      const palettePath = execRecords[0]?.outputPath;
+
+      expectNoStderr();
+      expect(execRecords[0]?.args).toEqual([
+        "-y",
+        "-i",
+        inputPath,
+        "-vf",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98,palettegen=max_colors=256:stats_mode=diff:reserve_transparent=0",
+        "-frames:v",
+        "1",
+        String(palettePath),
+      ]);
+      expect(execRecords[1]?.args).toEqual([
+        "-n",
+        "-i",
+        inputPath,
+        "-i",
+        String(palettePath),
+        "-lavfi",
+        "fps=12,scale=320:-1:flags=lanczos,format=rgb24,eq=saturation=1.28:contrast=1.12:brightness=0.01,colorchannelmixer=rr=1.06:gg=1.00:bb=0.98[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+        outputPath,
+      ]);
+      expect(stdout.text.trim().split("\n")).toEqual([
+        "Starting GIF conversion...",
+        "Mode: quality",
+        "GIF profile: screen",
+        "GIF look: vibrant",
+        "Generating GIF palette...",
+        "Rendering GIF from palette...",
+        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+      ]);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("rejects gifLook with explicit compressed mode", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-action");
+    try {
+      const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expect(actionVideoGif(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        mode: "compressed",
+        gifLook: "faithful",
       })).rejects.toMatchObject({
         code: "INVALID_INPUT",
         exitCode: 2,

@@ -4,8 +4,10 @@ import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../action
 import { parsePositiveIntegerOption, parsePositiveNumberOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
 import {
+  parseVideoGifLookOption,
   parseVideoGifModeOption,
   parseVideoGifProfileOption,
+  type VideoGifLook,
   type VideoGifMode,
   type VideoGifProfile,
 } from "../video-gif";
@@ -79,6 +81,11 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
       "GIF quality profile: video, motion, or screen (implies quality mode)",
       parseVideoGifProfileOption,
     )
+    .option(
+      "--gif-look <look>",
+      "GIF look: faithful or vibrant (implies quality mode)",
+      parseVideoGifLookOption,
+    )
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .addHelpText(
       "after",
@@ -92,6 +99,10 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
         "  video: balanced default for most clips",
         "  motion: tuned for fast-moving scenes",
         "  screen: tuned for UI and screen recordings",
+        "",
+        "GIF looks (quality mode only):",
+        "  faithful: normalized closer-to-source look (default)",
+        "  vibrant: stronger color lift before palette generation",
       ].join("\n"),
     )
     .action(
@@ -102,6 +113,7 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
         fps?: number;
         mode?: VideoGifMode;
         gifProfile?: VideoGifProfile;
+        gifLook?: VideoGifLook;
         overwrite?: boolean;
       }) => {
         await actionVideoGif(runtime, options);

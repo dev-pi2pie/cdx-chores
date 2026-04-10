@@ -2,7 +2,7 @@
 title: "Video GIF high-quality mode implementation"
 created-date: 2026-04-10
 modified-date: 2026-04-10
-status: active
+status: completed
 agent: codex
 ---
 
@@ -14,9 +14,10 @@ Implement the new high-quality `video gif` mode from the current research direct
 
 - the base high-quality mode feature is implemented
 - the first public `gif-profile` surface is implemented and documented
-- the current profile set is now documented as a first shipped pass rather than the final tuning direction
-- stronger visual-intent tuning is now reopened as active follow-up work inside this plan
-- the missing design dimension is a second quality-mode flag for look intent, not more source-type profiles alone
+- the current profile set remains the shipped first pass for source-type tuning
+- the second quality-mode flag for look intent is now implemented as `--gif-look faithful|vibrant`
+- the complete current GIF contract is implemented, tested, and documented
+- the shipped look split now uses stronger recipe separation so `faithful` and `vibrant` feel more materially different
 
 ## Why This Plan
 
@@ -235,10 +236,17 @@ This work is best handled as a dedicated implementation plan because it crosses 
 - [x] document best-fit scenarios for:
   - [x] `faithful`
   - [x] `vibrant`
-- [ ] implement the internal recipe split for look-based tuning
-- [ ] add CLI and action validation coverage for `gif-look`
-- [ ] add interactive routing coverage for conditional `GIF look` prompting
-- [ ] update README and the GIF guide with clear `gif-look` usage examples
+- [x] implement the internal recipe split for look-based tuning
+- [x] add CLI and action validation coverage for `gif-look`
+- [x] add interactive routing coverage for conditional `GIF look` prompting
+- [x] update README and the GIF guide with clear `gif-look` usage examples
+
+### Phase 9: Strengthen shipped look separation
+
+- [x] revise the shipped `faithful` recipe so it uses an explicit normalized RGB path
+- [x] strengthen the shipped `vibrant` recipe so it is perceptually more distinct than the first-pass mild lift
+- [x] update focused GIF tests for the stronger filter chains
+- [x] update the GIF guide wording for the stronger `faithful` / `vibrant` split
 
 ## Related Research
 

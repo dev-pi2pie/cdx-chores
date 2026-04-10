@@ -9,15 +9,17 @@ import { defaultOutputPath } from "../path-utils";
 import { execCommand } from "../process";
 import type { CliRuntime } from "../types";
 import {
+  getVideoGifLookFilterConfig,
   getVideoGifProfileFilterConfig,
-  resolveVideoGifModeAndProfile,
+  resolveVideoGifContract,
+  type VideoGifLook,
   type VideoGifMode,
   type VideoGifProfile,
 } from "../video-gif";
 import { slugifyName } from "../../utils/slug";
 import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
 
-export type { VideoGifMode, VideoGifProfile } from "../video-gif";
+export type { VideoGifLook, VideoGifMode, VideoGifProfile } from "../video-gif";
 
 export interface VideoConvertOptions {
   input: string;
@@ -41,6 +43,7 @@ export interface VideoGifOptions {
   fps?: number;
   mode?: VideoGifMode;
   gifProfile?: VideoGifProfile;
+  gifLook?: VideoGifLook;
   overwrite?: boolean;
 }
 
@@ -68,6 +71,11 @@ function buildVideoGifPaletteGenFilter(profile: VideoGifProfile, videoFilter: st
 
 function buildVideoGifPaletteUseFilter(profile: VideoGifProfile, videoFilter: string): string {
   return `${videoFilter}[x];[x][1:v]${getVideoGifProfileFilterConfig(profile).paletteUse}`;
+}
+
+function buildVideoGifQualitySourceFilter(look: VideoGifLook, videoFilter: string): string {
+  const prePalette = getVideoGifLookFilterConfig(look).prePalette;
+  return prePalette ? `${videoFilter},${prePalette}` : videoFilter;
 }
 
 function buildVideoGifPalettePath(outputPath: string): string {
@@ -99,10 +107,12 @@ async function runQualityVideoGif(
   overwrite: boolean,
   videoFilter: string,
   profile: VideoGifProfile,
+  look: VideoGifLook,
 ): Promise<void> {
   const palettePath = buildVideoGifPalettePath(outputPath);
-  const paletteGenFilter = buildVideoGifPaletteGenFilter(profile, videoFilter);
-  const paletteUseFilter = buildVideoGifPaletteUseFilter(profile, videoFilter);
+  const qualitySourceFilter = buildVideoGifQualitySourceFilter(look, videoFilter);
+  const paletteGenFilter = buildVideoGifPaletteGenFilter(profile, qualitySourceFilter);
+  const paletteUseFilter = buildVideoGifPaletteUseFilter(profile, qualitySourceFilter);
 
   try {
     printLine(runtime.stdout, "Generating GIF palette...");
@@ -200,9 +210,10 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     runtime.cwd,
     options.output?.trim() || defaultOutputPath(inputPath, ".gif"),
   );
-  const { mode, profile } = resolveVideoGifModeAndProfile({
+  const { mode, profile, look } = resolveVideoGifContract({
     mode: options.mode,
     profile: options.gifProfile,
+    look: options.gifLook,
   });
   await ensureFileExists(inputPath, "Input");
 
@@ -216,6 +227,9 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
   printLine(runtime.stdout, `Mode: ${mode}`);
   if (profile) {
     printLine(runtime.stdout, `GIF profile: ${profile}`);
+  }
+  if (look) {
+    printLine(runtime.stdout, `GIF look: ${look}`);
   }
 
   if (mode === "compressed") {
@@ -231,6 +245,7 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     Boolean(options.overwrite),
     videoFilter,
     profile,
+    look,
   );
 
   printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);

@@ -2,7 +2,7 @@
 title: "GIF profile and color-tuning follow-up for video conversion"
 created-date: 2026-04-10
 modified-date: 2026-04-10
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -14,8 +14,11 @@ Define the follow-up spec for improving color fidelity in `video gif` quality mo
 
 - the first public `gif-profile` surface is implemented
 - the current `video`, `motion`, and `screen` profiles are useful, but they do not yet create a strong enough visible separation on every source
-- this research is open again because the next tuning pass now needs a second public dimension for visual intent
-- stronger tuning should cover both source type and look, rather than only adding more source-type presets
+- the second public dimension for visual intent is now defined as `--gif-look faithful|vibrant`
+- this research is complete for the current shipped profile-plus-look contract
+- the shipped `gif-look` contract now uses a stronger split:
+  - `faithful` uses an explicit RGB-normalized quality path
+  - `vibrant` uses that normalized base plus a stronger pre-palette color lift
 
 ## Key Findings
 
@@ -179,6 +182,7 @@ Suggested usage:
     - brand-sensitive output
     - docs and walkthroughs where color accuracy matters more than punch
   - expected outcome:
+    - RGB-normalized palette input
     - more restrained color shaping
     - closer-to-source look
 - `vibrant`:
@@ -189,7 +193,8 @@ Suggested usage:
     - clips where mild color lift is desirable before palette reduction
   - expected outcome:
     - more punchy output
-    - mild saturation or contrast shaping before palette generation
+    - stronger saturation and contrast shaping before palette generation
+    - a clearer visual separation from `faithful`
 
 Interactive recommendation:
 

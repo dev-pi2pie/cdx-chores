@@ -12,7 +12,7 @@ Closed the `video gif` high-quality mode implementation plan after reviewing the
 
 ## Later Follow-up
 
-This closeout was later superseded the same day when follow-up design work reopened the plan for a second visual-intent flag. Current status should be read from the active plan and the newer `gif-look` follow-up job record, not from the status snapshot below.
+This closeout was later superseded the same day when follow-up design work reopened the plan for a second visual-intent flag. Current status should be read from the completed implementation plan and the newer `gif-look` implementation job record, not from the status snapshot below.
 
 ## What Changed
 

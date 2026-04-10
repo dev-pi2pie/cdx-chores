@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Document the current `video gif` contract, including compressed versus quality mode, profile selection, interactive prompt behavior, processing-phase messages, and the internal palette cleanup model.
+Document the current `video gif` contract, including compressed versus quality mode, profile selection, look selection, interactive prompt behavior, processing-phase messages, and the internal palette cleanup model.
 
 ## Recommended Workflow
 
@@ -33,6 +33,14 @@ Example:
 
 ```bash
 cdx-chores video gif -i ./clip.mp4 -o ./clip-screen.gif --gif-profile screen --width 480 --fps 10
+```
+
+Use a GIF look when you want to control whether quality mode stays closer to the source or feels more punchy.
+
+Example:
+
+```bash
+cdx-chores video gif -i ./clip.mp4 -o ./clip-vibrant.gif --mode quality --gif-profile video --gif-look vibrant --width 480 --fps 10
 ```
 
 ## Modes
@@ -70,6 +78,7 @@ Behavior:
 - renders the GIF using that palette
 - cleans up the temporary palette automatically
 - supports GIF profiles
+- supports GIF looks
 
 ## GIF Profiles
 
@@ -124,26 +133,67 @@ Practical note:
 
 - these profiles are source-type presets, not guaranteed dramatic look presets
 - if you want the simplest and sometimes more visually punchy result, `compressed` can still be the better starting point
-- if you want the more controlled palette-based path, start with `quality` and then try `video`, `motion`, or `screen` based on the source
-- a future follow-up may introduce stronger look-oriented tuning, but that is not part of the current contract
+- if you want the more controlled palette-based path, start with `quality` and then choose both a profile and a look
+
+## GIF Looks
+
+Looks are quality-mode presets for visual intent rather than source type.
+
+Current public looks:
+
+- `faithful`: normalized closer-to-source output with restrained shaping
+- `vibrant`: more punchy output with a stronger color lift before palette generation
+
+### Choosing a Look
+
+Use `faithful` when keeping the result closer to the source matters more than making it pop.
+
+Typical cases:
+
+- product demos
+- UI recordings
+- brand-sensitive captures
+- walkthroughs where accuracy matters more than punch
+
+Use `vibrant` when you want the quality-mode path to feel more lively or visually punchy.
+
+Typical cases:
+
+- promo clips
+- social sharing
+- clips where `compressed` feels more attractive than the default quality look
+- sources that benefit from stronger saturation and contrast lift before palette reduction
+
+Current implementation note:
+
+- `faithful` now runs the quality path through an explicit RGB normalization step before palette generation
+- `vibrant` builds on that normalized base and then applies a noticeably stronger pre-palette lift
+- the goal is to make `faithful` and `vibrant` feel materially different, not just technically different
 
 ### CLI rules
 
 - `--gif-profile <profile>` implies `quality` when `--mode` is omitted
+- `--gif-look <look>` implies `quality` when `--mode` is omitted
 - `--mode compressed --gif-profile <profile>` is invalid
+- `--mode compressed --gif-look <look>` is invalid
 - `video` is the default profile when quality mode is selected and no profile is provided
+- `faithful` is the default look when quality mode is selected and no look is provided
 
 Examples:
 
 ```bash
-# explicit quality, default profile=video
+# explicit quality, default profile=video, default look=faithful
 cdx-chores video gif -i ./clip.mp4 -o ./clip-quality.gif --mode quality
 
 # profile implies quality
 cdx-chores video gif -i ./clip.mp4 -o ./clip-screen.gif --gif-profile screen
 
+# look implies quality
+cdx-chores video gif -i ./clip.mp4 -o ./clip-vibrant.gif --gif-look vibrant
+
 # invalid
 cdx-chores video gif -i ./clip.mp4 -o ./clip.gif --mode compressed --gif-profile screen
+cdx-chores video gif -i ./clip.mp4 -o ./clip.gif --mode compressed --gif-look vibrant
 ```
 
 ## Interactive Flow
@@ -154,11 +204,12 @@ Interactive `video gif` follows this shape:
 2. output path
 3. GIF mode
 4. if mode is `quality`, prompt for GIF profile
-5. width
-6. fps
-7. overwrite behavior
+5. if mode is `quality`, prompt for GIF look
+6. width
+7. fps
+8. overwrite behavior
 
-Interactive mode does not prompt for GIF profile during compressed-mode flows.
+Interactive mode does not prompt for GIF profile or GIF look during compressed-mode flows.
 
 ## Processing Messages
 
@@ -176,6 +227,7 @@ Quality mode:
 - `Starting GIF conversion...`
 - `Mode: quality`
 - `GIF profile: <profile>`
+- `GIF look: <look>`
 - `Generating GIF palette...`
 - `Rendering GIF from palette...`
 - `Wrote GIF: ...`
@@ -185,9 +237,10 @@ Quality mode:
 | Surface | Best for | Tradeoff |
 | ------- | -------- | -------- |
 | `compressed` | simplest/default conversion | lower color fidelity |
-| `quality --gif-profile video` | general video clips | slower than compressed |
-| `quality --gif-profile motion` | fast movement and dynamic scenes | more processing, tuned for motion |
-| `quality --gif-profile screen` | UI and screen recordings | larger output is common, but edges/text usually hold up better |
+| `quality --gif-profile video --gif-look faithful` | general video clips with normalized closer-to-source output | slower than compressed |
+| `quality --gif-profile video --gif-look vibrant` | general clips that need a stronger color lift | more punchy, less restrained than faithful |
+| `quality --gif-profile motion --gif-look faithful` | fast movement and dynamic scenes | more processing, tuned for motion |
+| `quality --gif-profile screen --gif-look faithful` | UI and screen recordings | larger output is common, but edges/text usually hold up better |
 
 ## Interpreting Output
 
@@ -203,7 +256,9 @@ Practical reading:
 
 - if you want the simplest and sometimes more visually punchy output, start with `compressed`
 - if you want the more controlled palette-based path, use `quality`
-- if the current quality profiles still feel too close together for your source, treat them as first-pass presets rather than radically different looks
+- if the default quality look feels too restrained, try `--gif-look vibrant`
+- if the result should stay closer to the source, stick with `--gif-look faithful`
+- if red-heavy clips still feel weaker than the source, remember that GIF still has a hard 256-color ceiling even after the stronger look split
 - if a clip still looks washed out in quality mode, increasing width or fps can sometimes reveal more of the profile differences than switching profiles alone
 
 ## Workflow Sketch
@@ -233,8 +288,7 @@ Not implemented in the current contract:
 - custom palette output paths
 - a public `--keep-palette` flag
 - real-time parsed `ffmpeg` progress bars
-- stronger visual-intent presets beyond the current first-pass source-type profiles
-- a public `--gif-look faithful|vibrant` flag
+- stronger visual-intent presets beyond `faithful` and `vibrant`
 
 ## Related Guides
 

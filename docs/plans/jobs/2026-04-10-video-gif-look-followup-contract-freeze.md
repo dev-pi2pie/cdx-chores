@@ -9,6 +9,10 @@ agent: codex
 
 Reopened the GIF color-tuning follow-up and froze the missing visual-intent contract as a planned second flag, `--gif-look faithful|vibrant`, without starting code changes yet.
 
+## Later Follow-up
+
+The `gif-look` feature was later implemented the same day. This record remains useful as the contract-freeze checkpoint, but current implementation status should be read from the implementation plan and the newer `gif-look` implementation job record.
+
 ## What Changed
 
 - reopened `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md` as active follow-up research
@@ -25,10 +29,11 @@ Reopened the GIF color-tuning follow-up and froze the missing visual-intent cont
 ## Traceability
 
 - Phase 8 design-freeze tasks are now checked in the implementation plan
-- Phase 8 implementation and validation tasks remain open
-- the GIF guide remains a completed guide for the current shipped contract and now explicitly notes that `--gif-look` is not yet implemented
+- this record captures the contract-freeze checkpoint only; later implementation status is tracked elsewhere
 
 ## Current Status Review
+
+At the time this contract was frozen:
 
 - `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
 - `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`: `in-progress`

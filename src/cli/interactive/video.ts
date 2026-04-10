@@ -7,7 +7,7 @@ import {
   promptRequiredPathWithConfig,
 } from "../prompts/path";
 import type { CliRuntime } from "../types";
-import type { VideoGifMode, VideoGifProfile } from "../video-gif";
+import type { VideoGifLook, VideoGifMode, VideoGifProfile } from "../video-gif";
 import type { VideoInteractiveActionKey } from "./menu";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
@@ -116,6 +116,24 @@ export async function handleVideoInteractiveAction(
           ],
         })
       : undefined;
+  const gifLook =
+    mode === "quality"
+      ? await select<VideoGifLook>({
+          message: "GIF look",
+          choices: [
+            {
+              name: "faithful",
+              value: "faithful",
+              description: "Normalized closer-to-source look with restrained shaping",
+            },
+            {
+              name: "vibrant",
+              value: "vibrant",
+              description: "More punchy output with stronger color lift",
+            },
+          ],
+        })
+      : undefined;
   const widthInput = await input({ message: "Width in px (optional)", default: "480" });
   const fpsInput = await input({ message: "FPS (optional)", default: "10" });
   const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
@@ -124,6 +142,7 @@ export async function handleVideoInteractiveAction(
     output: outputPath,
     mode,
     gifProfile,
+    gifLook,
     width: widthInput.trim() ? Number(widthInput) : undefined,
     fps: fpsInput.trim() ? Number(fpsInput) : undefined,
     overwrite,

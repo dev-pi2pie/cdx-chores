@@ -326,6 +326,12 @@ Video to GIF with a quality profile:
 cdx-chores video gif -i ./clip.mp4 -o ./clip-screen.gif --gif-profile screen --width 480 --fps 10
 ```
 
+Video to GIF with explicit look tuning:
+
+```bash
+cdx-chores video gif -i ./clip.mp4 -o ./clip-vibrant.gif --mode quality --gif-profile video --gif-look vibrant --width 480 --fps 10
+```
+
 Video resize with aspect-ratio-preserving scale:
 
 ```bash
