@@ -196,13 +196,18 @@ This work is best handled as a dedicated implementation plan because it crosses 
 ### Phase 6: GIF profile and color-tuning follow-up
 
 - [ ] freeze the public `--gif-profile` surface from follow-up research
+- [ ] freeze the interactive contract:
+  - [ ] prompt for `GIF profile` only after `quality` is selected
+  - [ ] do not prompt for `gif-profile` in compressed-mode interactive flows
 - [ ] decide whether the first profile set is:
   - [ ] `video`, `motion`, `screen`
   - [ ] or a smaller initial subset
-- [ ] define how `--gif-profile` interacts with `--mode compressed|quality`
+- [ ] define validation for `--gif-profile` with `--mode compressed|quality`
+  - [ ] reject explicit `--gif-profile` with explicit `--mode compressed`
 - [ ] centralize profile-to-recipe mapping in one helper
 - [ ] implement at least the default `video` recipe tuning for quality mode
 - [ ] add profile-aware tests for argument generation and validation
+- [ ] add interactive tests for conditional `gif-profile` prompting under `quality`
 - [ ] update README and the GIF guide with profile selection guidance if the profile surface lands
 
 ## Related Research
