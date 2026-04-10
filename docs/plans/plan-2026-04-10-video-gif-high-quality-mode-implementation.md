@@ -193,6 +193,19 @@ This work is best handled as a dedicated implementation plan because it crosses 
 - [ ] include an ASCII workflow sketch for compressed and quality modes
 - [ ] link the new guide from the README video-guides section
 
+### Phase 6: GIF profile and color-tuning follow-up
+
+- [ ] freeze the public `--gif-profile` surface from follow-up research
+- [ ] decide whether the first profile set is:
+  - [ ] `video`, `motion`, `screen`
+  - [ ] or a smaller initial subset
+- [ ] define how `--gif-profile` interacts with `--mode compressed|quality`
+- [ ] centralize profile-to-recipe mapping in one helper
+- [ ] implement at least the default `video` recipe tuning for quality mode
+- [ ] add profile-aware tests for argument generation and validation
+- [ ] update README and the GIF guide with profile selection guidance if the profile surface lands
+
 ## Related Research
 
 - `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`
+- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`
