@@ -51,6 +51,8 @@ REPOSITORY=""
 FALLBACK_LOGIN=""
 REPO_ROOT=""
 CHANGELOG_OVERRIDE_PATH=""
+CHANGELOG_OVERRIDE_BLOB=""
+CHANGELOG_OVERRIDE_CONTENT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -117,15 +119,18 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
 if [[ "$CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   CHANGELOG_OVERRIDE_PATH="$REPO_ROOT/CHANGELOGS/$CURRENT_TAG.md"
+  CHANGELOG_OVERRIDE_BLOB="$CURRENT_TAG:CHANGELOGS/$CURRENT_TAG.md"
 fi
 
-if [ -n "$CHANGELOG_OVERRIDE_PATH" ] && [ -e "$CHANGELOG_OVERRIDE_PATH" ]; then
-  if ! grep -q '[^[:space:]]' "$CHANGELOG_OVERRIDE_PATH"; then
+if [ -n "$CHANGELOG_OVERRIDE_BLOB" ] && git cat-file -e "$CHANGELOG_OVERRIDE_BLOB" 2>/dev/null; then
+  CHANGELOG_OVERRIDE_CONTENT=$(git show "$CHANGELOG_OVERRIDE_BLOB")
+
+  if ! printf '%s' "$CHANGELOG_OVERRIDE_CONTENT" | grep -q '[^[:space:]]'; then
     echo "Stable release notes override exists but is empty: CHANGELOGS/$CURRENT_TAG.md" >&2
     exit 1
   fi
 
-  cat "$CHANGELOG_OVERRIDE_PATH"
+  printf '%s\n' "$CHANGELOG_OVERRIDE_CONTENT"
   exit 0
 fi
 

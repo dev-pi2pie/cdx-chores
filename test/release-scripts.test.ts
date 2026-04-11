@@ -121,7 +121,7 @@ describe("stable release notes script", () => {
       );
 
       await writeFile(join(repoDir, "notes.txt"), "feature patch\n", "utf8");
-      expectSuccess(git(repoDir, "add", "notes.txt"));
+      expectSuccess(git(repoDir, "add", "notes.txt", "CHANGELOGS/v0.2.0.md"));
       expectSuccess(git(repoDir, "commit", "-m", "feat(api): generated fallback should be skipped"));
       expectSuccess(git(repoDir, "tag", "v0.2.0"));
 
@@ -150,6 +150,72 @@ describe("stable release notes script", () => {
     }
   });
 
+  test("reads CHANGELOGS override content from the tagged tree instead of branch head", async () => {
+    const repoDir = await createReleaseFixtureRepo("release-notes-tagged-override");
+
+    try {
+      await mkdir(join(repoDir, "CHANGELOGS"), { recursive: true });
+      await writeFile(
+        join(repoDir, "CHANGELOGS", "v0.2.0.md"),
+        [
+          "## What's Changed",
+          "",
+          "### New Features",
+          "- Tagged stable release body",
+          "",
+          "### Changelog",
+          "Full Changelog: v0.1.0...v0.2.0",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      await writeFile(join(repoDir, "notes.txt"), "feature patch\n", "utf8");
+      expectSuccess(git(repoDir, "add", "notes.txt", "CHANGELOGS/v0.2.0.md"));
+      expectSuccess(git(repoDir, "commit", "-m", "feat(api): tag a curated stable release body"));
+      expectSuccess(git(repoDir, "tag", "v0.2.0"));
+
+      await writeFile(
+        join(repoDir, "CHANGELOGS", "v0.2.0.md"),
+        [
+          "## What's Changed",
+          "",
+          "### New Features",
+          "- Branch-head release body that should be ignored",
+          "",
+          "### Changelog",
+          "Full Changelog: v0.1.0...v0.2.0",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      expectSuccess(git(repoDir, "add", "CHANGELOGS/v0.2.0.md"));
+      expectSuccess(git(repoDir, "commit", "-m", "docs: rewrite stable notes after the tag"));
+
+      const result = runCommand(
+        "bash",
+        [
+          join(REPO_ROOT, "scripts", "generate-stable-release-notes.sh"),
+          "--mode",
+          "hybrid",
+          "--range",
+          "v0.1.0..v0.2.0",
+          "--current-tag",
+          "v0.2.0",
+          "--previous-tag",
+          "v0.1.0",
+        ],
+        { cwd: repoDir },
+      );
+
+      expectSuccess(result);
+      expect(result.stdout).toContain("- Tagged stable release body");
+      expect(result.stdout).not.toContain("- Branch-head release body that should be ignored");
+    } finally {
+      await rm(repoDir, { recursive: true, force: true });
+    }
+  });
+
   test("fails when a matching CHANGELOGS override file is empty", async () => {
     const repoDir = await createReleaseFixtureRepo("release-notes-empty-override");
 
@@ -158,7 +224,7 @@ describe("stable release notes script", () => {
       await writeFile(join(repoDir, "CHANGELOGS", "v0.2.0.md"), "\n \n\t", "utf8");
 
       await writeFile(join(repoDir, "notes.txt"), "feature patch\n", "utf8");
-      expectSuccess(git(repoDir, "add", "notes.txt"));
+      expectSuccess(git(repoDir, "add", "notes.txt", "CHANGELOGS/v0.2.0.md"));
       expectSuccess(git(repoDir, "commit", "-m", "feat(api): empty override should fail"));
       expectSuccess(git(repoDir, "tag", "v0.2.0"));
 
