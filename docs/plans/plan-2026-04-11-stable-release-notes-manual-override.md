@@ -55,19 +55,21 @@ This is implementation planning work rather than open-ended research because the
 ### Failure behavior
 
 - if a matching override file exists but is empty or whitespace-only, fail the stable release-notes step
-- do not silently ignore malformed override content once a matching file is intentionally present
-- keep fallback behavior only for the missing-file case, not the invalid-file case
+- keep fallback behavior only for the missing-file case, not the empty-file case
+- keep markdown content-shape rules in `RELEASE_NOTES_POLICY.md` rather than enforcing full release-note structure in CI
 
 ### Authoring contract
 
 - treat the override file as final release-body markdown, not as a document with front matter
 - keep the body human-authored and publishable as-is
-- require the same top-level stable-release structure used by the generated notes:
+- require the override file to remain a complete publishable release body on its own rather than a partial fragment
+- keep the same top-level stable-release shape as the generated notes as the policy target:
   - `## What's Changed`
   - zero or more grouped `### <section>` subsections under that heading
   - `### Changelog`
-- require the override file to remain a complete publishable release body on its own rather than a partial fragment
-- keep grouped subsections optional, but keep the top-level `## What's Changed` and trailing `### Changelog` sections mandatory for manual overrides
+- allow additional curated content when useful, but keep `## What's Changed` and a trailing `### Changelog` section as the expected stable-note structure
+- require the trailing `### Changelog` section to include a canonical final line in stable compare-range form:
+  - `Full Changelog: <previous-stable-version>...<current-stable-version>`
 
 ### Stable curation contract
 
@@ -82,7 +84,11 @@ This is implementation planning work rather than open-ended research because the
   - public guides under `docs/guides/`
   - implementation job records under `docs/plans/jobs/`
   - research or plan docs only when they clarify the final behavior that shipped
-- treat contributor callouts as editorial additions to curated stable notes rather than something inferred only from commit types
+- add a `Contributors` section as an editorial addition when useful
+- use commit authors in the stable release range as the contributor source of truth
+- exclude obvious bot identities and AI-agent identities from contributor callouts
+- treat authors with no earlier repo-history presence before the current stable range as new contributors and include a welcome-style note for them
+- list returning contributors in the same `Contributors` section without the welcome-style note
 
 ## Scope
 
@@ -93,7 +99,8 @@ This is implementation planning work rather than open-ended research because the
 - fallback to the current stable generator when no matching override file exists
 - explicit failure for empty matching override files
 - tests covering override, fallback, and invalid-file behavior
-- a dedicated release-notes authoring policy or `CHANGELOGS/README.md`
+- a dedicated root-level `RELEASE_NOTES_POLICY.md`
+- an `AGENTS.md` link to the release-notes policy
 - initial `CHANGELOGS/` directory bootstrap
 
 ### Out of scope
@@ -114,7 +121,7 @@ This is implementation planning work rather than open-ended research because the
   Mitigation: fail on empty or whitespace-only matching files so an intentional override must contain real content.
 
 - Risk: release-note files drift into general documentation conventions and become cluttered with front matter or lifecycle metadata.
-  Mitigation: define a separate release-notes authoring policy instead of folding these files into `DOCUMENTATION_POLICY.md`.
+  Mitigation: define `RELEASE_NOTES_POLICY.md` as a separate root-level release-notes policy instead of folding these files into `DOCUMENTATION_POLICY.md` or mixing policy guidance into `CHANGELOGS/`.
 
 - Risk: future contributors guess at filename patterns and create files that are never consumed.
   Mitigation: document the exact contract as `CHANGELOGS/<tag>.md`, with stable semver examples and explicit non-examples.
@@ -125,15 +132,17 @@ This is implementation planning work rather than open-ended research because the
 - Risk: commit history reflects intermediate development steps rather than the final shipped contract, so stable notes can become misleading if they mirror commit titles too closely.
   Mitigation: define stable-note curation around final shipped behavior and allow docs and implementation records to act as evidence when later commits supersede the original feature wording.
 
+- Risk: contributor acknowledgments become inconsistent across releases if the source of truth is not fixed.
+  Mitigation: define commit authors in the stable release range as the baseline contributor source, then exclude bots and AI agents explicitly in the release-notes policy.
+
 ## Implementation Touchpoints
 
 - `.github/workflows/release.yml`
 - `scripts/generate-stable-release-notes.sh`
 - `test/release-scripts.test.ts`
 - `CHANGELOGS/`
-- release-notes policy doc:
-  - `CHANGELOGS/README.md`, or
-  - `RELEASE_NOTES_POLICY.md`
+- `RELEASE_NOTES_POLICY.md`
+- `AGENTS.md`
 
 ## Phase Checklist
 
@@ -144,10 +153,14 @@ This is implementation planning work rather than open-ended research because the
 - [ ] freeze missing-file fallback behavior
 - [ ] freeze empty-file failure behavior
 - [ ] freeze `scripts/generate-stable-release-notes.sh` as the single stable override-resolution boundary
-- [ ] freeze the manual override body structure as:
-  - [ ] required `## What's Changed`
+- [ ] freeze the implementation-versus-policy boundary:
+  - [ ] CI enforces only file lookup and non-empty override content
+  - [ ] `RELEASE_NOTES_POLICY.md` owns release-note structure and editorial rules
+- [ ] freeze the manual override body policy target as:
+  - [ ] expected `## What's Changed`
   - [ ] optional grouped `### <section>` subsections
-  - [ ] required trailing `### Changelog`
+  - [ ] expected trailing `### Changelog`
+  - [ ] required final line `Full Changelog: <previous-stable-version>...<current-stable-version>`
 
 ### Phase 2: Implement override resolution
 
@@ -165,16 +178,24 @@ This is implementation planning work rather than open-ended research because the
 
 ### Phase 4: Repository authoring guidance
 
-- [ ] create a dedicated release-notes policy doc or `CHANGELOGS/README.md`
+- [ ] create `RELEASE_NOTES_POLICY.md` at the repository root
+- [ ] link `AGENTS.md` to `RELEASE_NOTES_POLICY.md` as the release-note policy reference
 - [ ] document the exact filename contract with examples such as `CHANGELOGS/v0.1.1.md`
 - [ ] document that override files are final markdown bodies and must not use front matter
 - [ ] document the required top-level section shape for manual overrides
+- [ ] document the canonical trailing line:
+  - [ ] `Full Changelog: <previous-stable-version>...<current-stable-version>`
 - [ ] document the stable curation rule:
   - [ ] start from `feat` and `fix` as the primary candidate pool
   - [ ] skip `docs` by default as release-note items
   - [ ] collapse iterative commits into final shipped outcomes
   - [ ] prefer current shipped behavior over superseded early commit wording
   - [ ] use docs and job records as evidence when commit titles are misleading
+- [ ] document contributor guidance:
+  - [ ] use commit authors in the stable range as the baseline source
+  - [ ] exclude bots and AI agents
+  - [ ] welcome new contributors
+  - [ ] list returning contributors under `Contributors`
 - [ ] document the fallback rule so contributors know when a file is optional versus required
 - [ ] add an initial `CHANGELOGS/` bootstrap artifact if needed so the convention is visible in the repository
 
