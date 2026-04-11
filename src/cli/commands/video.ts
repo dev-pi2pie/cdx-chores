@@ -71,11 +71,7 @@ export function registerVideoCommands(program: Command, runtime: CliRuntime): vo
     .option("-o, --output <path>", "Output GIF file path")
     .option("--width <px>", "GIF width", (value) => Number(value))
     .option("--fps <value>", "GIF frames per second", (value) => Number(value))
-    .option(
-      "--mode <mode>",
-      "GIF mode: compressed (default) or quality",
-      parseVideoGifModeOption,
-    )
+    .option("--mode <mode>", "GIF mode: compressed (default) or quality", parseVideoGifModeOption)
     .option(
       "--gif-profile <profile>",
       "GIF quality profile: video, motion, or screen (implies quality mode)",

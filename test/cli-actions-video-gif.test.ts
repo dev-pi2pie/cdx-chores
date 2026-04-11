@@ -239,8 +239,12 @@ describe("actionVideoGif", () => {
 
       expectNoStderr();
       expect(execRecords).toHaveLength(2);
-      expect(palettePath?.startsWith(resolve(tmpdir())) || palettePath?.startsWith(tmpdir())).toBe(true);
-      expect(basename(String(palettePath))).toMatch(/^cdx-chores-video-gif-.+-palette-[0-9a-f]{6}\.png$/);
+      expect(palettePath?.startsWith(resolve(tmpdir())) || palettePath?.startsWith(tmpdir())).toBe(
+        true,
+      );
+      expect(basename(String(palettePath))).toMatch(
+        /^cdx-chores-video-gif-.+-palette-[0-9a-f]{6}\.png$/,
+      );
       expect(execRecords[0]?.args).toEqual([
         "-y",
         "-i",
@@ -480,12 +484,14 @@ describe("actionVideoGif", () => {
       const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
       const { runtime, expectNoOutput } = createActionTestRuntime();
 
-      await expect(actionVideoGif(runtime, {
-        input: toRepoRelativePath(inputPath),
-        output: toRepoRelativePath(outputPath),
-        mode: "compressed",
-        gifProfile: "video",
-      })).rejects.toMatchObject({
+      await expect(
+        actionVideoGif(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          mode: "compressed",
+          gifProfile: "video",
+        }),
+      ).rejects.toMatchObject({
         code: "INVALID_INPUT",
         exitCode: 2,
       });
@@ -611,12 +617,14 @@ describe("actionVideoGif", () => {
       const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
       const { runtime, expectNoOutput } = createActionTestRuntime();
 
-      await expect(actionVideoGif(runtime, {
-        input: toRepoRelativePath(inputPath),
-        output: toRepoRelativePath(outputPath),
-        mode: "compressed",
-        gifLook: "faithful",
-      })).rejects.toMatchObject({
+      await expect(
+        actionVideoGif(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          mode: "compressed",
+          gifLook: "faithful",
+        }),
+      ).rejects.toMatchObject({
         code: "INVALID_INPUT",
         exitCode: 2,
       });

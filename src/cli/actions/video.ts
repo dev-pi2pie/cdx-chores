@@ -97,7 +97,14 @@ async function runCompressedVideoGif(
   videoFilter: string,
 ): Promise<void> {
   printLine(runtime.stdout, "Rendering GIF...");
-  await runFfmpeg(runtime, [overwrite ? "-y" : "-n", "-i", inputPath, "-vf", videoFilter, outputPath]);
+  await runFfmpeg(runtime, [
+    overwrite ? "-y" : "-n",
+    "-i",
+    inputPath,
+    "-vf",
+    videoFilter,
+    outputPath,
+  ]);
 }
 
 async function runQualityVideoGif(
@@ -233,7 +240,13 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
   }
 
   if (mode === "compressed") {
-    await runCompressedVideoGif(runtime, inputPath, outputPath, Boolean(options.overwrite), videoFilter);
+    await runCompressedVideoGif(
+      runtime,
+      inputPath,
+      outputPath,
+      Boolean(options.overwrite),
+      videoFilter,
+    );
     printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
     return;
   }

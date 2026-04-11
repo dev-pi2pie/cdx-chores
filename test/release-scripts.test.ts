@@ -122,7 +122,9 @@ describe("stable release notes script", () => {
 
       await writeFile(join(repoDir, "notes.txt"), "feature patch\n", "utf8");
       expectSuccess(git(repoDir, "add", "notes.txt", "CHANGELOGS/v0.2.0.md"));
-      expectSuccess(git(repoDir, "commit", "-m", "feat(api): generated fallback should be skipped"));
+      expectSuccess(
+        git(repoDir, "commit", "-m", "feat(api): generated fallback should be skipped"),
+      );
       expectSuccess(git(repoDir, "tag", "v0.2.0"));
 
       const result = runCommand(
