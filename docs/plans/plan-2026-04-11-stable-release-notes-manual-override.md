@@ -2,7 +2,7 @@
 title: "Stable release notes manual override"
 created-date: 2026-04-11
 modified-date: 2026-04-11
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -148,57 +148,58 @@ This is implementation planning work rather than open-ended research because the
 
 ### Phase 1: Freeze the release-note override contract
 
-- [ ] freeze the exact stable override path as `CHANGELOGS/${CURRENT_TAG}.md`
-- [ ] freeze stable-only filename expectations as `v<major>.<minor>.<patch>.md`
-- [ ] freeze missing-file fallback behavior
-- [ ] freeze empty-file failure behavior
-- [ ] freeze `scripts/generate-stable-release-notes.sh` as the single stable override-resolution boundary
-- [ ] freeze the implementation-versus-policy boundary:
-  - [ ] CI enforces only file lookup and non-empty override content
-  - [ ] `RELEASE_NOTES_POLICY.md` owns release-note structure and editorial rules
-- [ ] freeze the manual override body policy target as:
-  - [ ] expected `## What's Changed`
-  - [ ] optional grouped `### <section>` subsections
-  - [ ] expected trailing `### Changelog`
-  - [ ] required final line `Full Changelog: <previous-stable-version>...<current-stable-version>`
+- [x] freeze the exact stable override path as `CHANGELOGS/${CURRENT_TAG}.md`
+- [x] freeze stable-only filename expectations as `v<major>.<minor>.<patch>.md`
+- [x] freeze missing-file fallback behavior
+- [x] freeze empty-file failure behavior
+- [x] freeze `scripts/generate-stable-release-notes.sh` as the single stable override-resolution boundary
+- [x] freeze the implementation-versus-policy boundary:
+  - [x] CI enforces only file lookup and non-empty override content
+  - [x] `RELEASE_NOTES_POLICY.md` owns release-note structure and editorial rules
+- [x] freeze the manual override body policy target as:
+  - [x] expected `## What's Changed`
+  - [x] optional grouped `### <section>` subsections
+  - [x] expected trailing `### Changelog`
+  - [x] required final line `Full Changelog: <previous-stable-version>...<current-stable-version>`
 
 ### Phase 2: Implement override resolution
 
-- [ ] add stable override detection before generated stable notes are emitted
-- [ ] use the matching override file as the full stable release-notes body when present and valid
-- [ ] preserve the current generated fallback path when no matching override file exists
-- [ ] keep prerelease behavior unchanged
+- [x] add stable override detection before generated stable notes are emitted
+- [x] use the matching override file as the full stable release-notes body when present and valid
+- [x] preserve the current generated fallback path when no matching override file exists
+- [x] keep prerelease behavior unchanged
 
 ### Phase 3: Verification coverage
 
-- [ ] add a test for using `CHANGELOGS/vX.Y.Z.md` when a matching file exists
-- [ ] add a test for falling back to generated notes when the matching file is absent
-- [ ] add a test for failing when the matching file is empty or whitespace-only
-- [ ] confirm the selected content still reaches the GitHub release creation path unchanged
+- [x] add a test for using `CHANGELOGS/vX.Y.Z.md` when a matching file exists
+- [x] add a test for falling back to generated notes when the matching file is absent
+- [x] add a test for failing when the matching file is empty or whitespace-only
+- [x] confirm the selected content still reaches the GitHub release creation path unchanged
 
 ### Phase 4: Repository authoring guidance
 
-- [ ] create `RELEASE_NOTES_POLICY.md` at the repository root
-- [ ] link `AGENTS.md` to `RELEASE_NOTES_POLICY.md` as the release-note policy reference
-- [ ] document the exact filename contract with examples such as `CHANGELOGS/v0.1.1.md`
-- [ ] document that override files are final markdown bodies and must not use front matter
-- [ ] document the required top-level section shape for manual overrides
-- [ ] document the canonical trailing line:
-  - [ ] `Full Changelog: <previous-stable-version>...<current-stable-version>`
-- [ ] document the stable curation rule:
-  - [ ] start from `feat` and `fix` as the primary candidate pool
-  - [ ] skip `docs` by default as release-note items
-  - [ ] collapse iterative commits into final shipped outcomes
-  - [ ] prefer current shipped behavior over superseded early commit wording
-  - [ ] use docs and job records as evidence when commit titles are misleading
-- [ ] document contributor guidance:
-  - [ ] use commit authors in the stable range as the baseline source
-  - [ ] exclude bots and AI agents
-  - [ ] welcome new contributors
-  - [ ] list returning contributors under `Contributors`
-- [ ] document the fallback rule so contributors know when a file is optional versus required
-- [ ] add an initial `CHANGELOGS/` bootstrap artifact if needed so the convention is visible in the repository
+- [x] create `RELEASE_NOTES_POLICY.md` at the repository root
+- [x] link `AGENTS.md` to `RELEASE_NOTES_POLICY.md` as the release-note policy reference
+- [x] document the exact filename contract with examples such as `CHANGELOGS/v0.1.1.md`
+- [x] document that override files are final markdown bodies and must not use front matter
+- [x] document the required top-level section shape for manual overrides
+- [x] document the canonical trailing line:
+  - [x] `Full Changelog: <previous-stable-version>...<current-stable-version>`
+- [x] document the stable curation rule:
+  - [x] start from `feat` and `fix` as the primary candidate pool
+  - [x] skip `docs` by default as release-note items
+  - [x] collapse iterative commits into final shipped outcomes
+  - [x] prefer current shipped behavior over superseded early commit wording
+  - [x] use docs and job records as evidence when commit titles are misleading
+- [x] document contributor guidance:
+  - [x] use commit authors in the stable range as the baseline source
+  - [x] exclude bots and AI agents
+  - [x] welcome new contributors
+  - [x] list returning contributors under `Contributors`
+- [x] document the fallback rule so contributors know when a file is optional versus required
+- [x] add an initial `CHANGELOGS/` bootstrap artifact if needed so the convention is visible in the repository
 
 ## Related Job Records
 
 - `docs/plans/jobs/2026-02-27-release-workflow-review-fixes.md`
+- `docs/plans/jobs/2026-04-11-stable-release-notes-manual-override-implementation.md`

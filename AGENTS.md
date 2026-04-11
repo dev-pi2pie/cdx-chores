@@ -37,6 +37,16 @@ That policy covers:
 - archive scope and link-handling rules
 - traceability rules for plans, research docs, and job records
 
+Stable release-note authoring rules now live in [RELEASE_NOTES_POLICY.md](RELEASE_NOTES_POLICY.md).
+
+That policy covers:
+
+- `CHANGELOGS/` naming and stable-tag matching rules
+- stable release-note override behavior and fallback behavior
+- release-note body structure expectations
+- stable curation guidance for iterative commit history
+- contributor acknowledgment rules
+
 ---
 
 ## Writing Guidelines

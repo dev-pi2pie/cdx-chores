@@ -49,6 +49,8 @@ CURRENT_TAG=""
 PREVIOUS_TAG=""
 REPOSITORY=""
 FALLBACK_LOGIN=""
+REPO_ROOT=""
+CHANGELOG_OVERRIDE_PATH=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -109,6 +111,22 @@ fi
 
 if [ -n "$FALLBACK_LOGIN" ] && [[ "$FALLBACK_LOGIN" != @* ]]; then
   FALLBACK_LOGIN="@$FALLBACK_LOGIN"
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+if [[ "$CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  CHANGELOG_OVERRIDE_PATH="$REPO_ROOT/CHANGELOGS/$CURRENT_TAG.md"
+fi
+
+if [ -n "$CHANGELOG_OVERRIDE_PATH" ] && [ -e "$CHANGELOG_OVERRIDE_PATH" ]; then
+  if ! grep -q '[^[:space:]]' "$CHANGELOG_OVERRIDE_PATH"; then
+    echo "Stable release notes override exists but is empty: CHANGELOGS/$CURRENT_TAG.md" >&2
+    exit 1
+  fi
+
+  cat "$CHANGELOG_OVERRIDE_PATH"
+  exit 0
 fi
 
 TMP_DIR=$(mktemp -d)
@@ -269,12 +287,7 @@ set_group_and_display_from_subject() {
 
 print_changelog_range() {
   if [ -n "$PREVIOUS_TAG" ]; then
-    printf 'Full Changelog: '
-    if [ -n "$REPOSITORY" ]; then
-      printf 'https://github.com/%s/compare/%s...%s\n' "$REPOSITORY" "$PREVIOUS_TAG" "$CURRENT_TAG"
-    else
-      printf '%s..%s\n' "$PREVIOUS_TAG" "$CURRENT_TAG"
-    fi
+    printf 'Full Changelog: %s...%s\n' "$PREVIOUS_TAG" "$CURRENT_TAG"
   else
     printf 'Full Changelog: %s\n' "$CURRENT_TAG"
   fi
