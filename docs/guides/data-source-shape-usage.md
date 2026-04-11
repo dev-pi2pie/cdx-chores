@@ -4,7 +4,7 @@ Use this guide for the reviewed source-shape artifact contract and the current s
 
 Use `docs/guides/data-schema-and-mapping-usage.md` for semantic header-mapping artifacts.
 
-As of `v0.1.0`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
+As of `v0.1.1`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
 
 Current stable contract:
 
@@ -92,7 +92,7 @@ If `--write-source-shape` is omitted, the CLI generates a filename in the shared
 
 `data query` and `data extract` now share the same reviewed source-shape replay contract.
 
-Current shipped behavior in `v0.1.0`:
+Current shipped behavior in `v0.1.1`:
 
 - `data extract` can generate reviewed source-shape artifacts
 - `data extract` can replay `--source-shape <path>`

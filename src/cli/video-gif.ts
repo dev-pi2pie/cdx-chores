@@ -24,20 +24,21 @@ export interface VideoGifLookFilterConfig {
   prePalette: string | undefined;
 }
 
-export const VIDEO_GIF_PROFILE_FILTER_CONFIG: Record<VideoGifProfile, VideoGifProfileFilterConfig> = {
-  video: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=full:reserve_transparent=1",
-    paletteUse: "paletteuse=dither=sierra2_4a",
-  },
-  motion: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
-    paletteUse: "paletteuse=dither=sierra2_4a:diff_mode=rectangle",
-  },
-  screen: {
-    paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
-    paletteUse: "paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
-  },
-};
+export const VIDEO_GIF_PROFILE_FILTER_CONFIG: Record<VideoGifProfile, VideoGifProfileFilterConfig> =
+  {
+    video: {
+      paletteGen: "palettegen=max_colors=256:stats_mode=full:reserve_transparent=1",
+      paletteUse: "paletteuse=dither=sierra2_4a",
+    },
+    motion: {
+      paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
+      paletteUse: "paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+    },
+    screen: {
+      paletteGen: "palettegen=max_colors=256:stats_mode=diff:reserve_transparent=1",
+      paletteUse: "paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle",
+    },
+  };
 
 export const VIDEO_GIF_LOOK_FILTER_CONFIG: Record<VideoGifLook, VideoGifLookFilterConfig> = {
   faithful: {
@@ -74,13 +75,10 @@ export function resolveVideoGifContract(options: {
   }
 
   if (options.profile !== undefined && !isVideoGifProfile(options.profile)) {
-    throw new CliError(
-      `GIF profile must be one of: ${VIDEO_GIF_PROFILE_VALUES.join(", ")}.`,
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      },
-    );
+    throw new CliError(`GIF profile must be one of: ${VIDEO_GIF_PROFILE_VALUES.join(", ")}.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
   }
 
   if (options.look !== undefined && !isVideoGifLook(options.look)) {
@@ -123,9 +121,7 @@ export function parseVideoGifModeOption(value: string): VideoGifMode {
     return normalized;
   }
 
-  throw new InvalidArgumentError(
-    `--mode must be one of: ${VIDEO_GIF_MODE_VALUES.join(", ")}.`,
-  );
+  throw new InvalidArgumentError(`--mode must be one of: ${VIDEO_GIF_MODE_VALUES.join(", ")}.`);
 }
 
 export function parseVideoGifProfileOption(value: string): VideoGifProfile {
@@ -145,12 +141,12 @@ export function parseVideoGifLookOption(value: string): VideoGifLook {
     return normalized;
   }
 
-  throw new InvalidArgumentError(
-    `--gif-look must be one of: ${VIDEO_GIF_LOOK_VALUES.join(", ")}.`,
-  );
+  throw new InvalidArgumentError(`--gif-look must be one of: ${VIDEO_GIF_LOOK_VALUES.join(", ")}.`);
 }
 
-export function getVideoGifProfileFilterConfig(profile: VideoGifProfile): VideoGifProfileFilterConfig {
+export function getVideoGifProfileFilterConfig(
+  profile: VideoGifProfile,
+): VideoGifProfileFilterConfig {
   return VIDEO_GIF_PROFILE_FILTER_CONFIG[profile];
 }
 
