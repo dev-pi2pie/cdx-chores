@@ -69,6 +69,21 @@ This is implementation planning work rather than open-ended research because the
 - require the override file to remain a complete publishable release body on its own rather than a partial fragment
 - keep grouped subsections optional, but keep the top-level `## What's Changed` and trailing `### Changelog` sections mandatory for manual overrides
 
+### Stable curation contract
+
+- use conventional-commit `feat` and `fix` entries as the primary candidate pool for stable release-note curation
+- skip `docs`, `test`, `style`, and `chore` commits as release-note items by default
+- re-include a non-`feat` or non-`fix` change only when it materially changes shipped user-facing behavior
+- write stable release bullets around final shipped behavior across the release range, not around each individual commit title
+- collapse iterative commit sequences for the same change into one curated bullet when later commits refine, narrow, fix, or partially revert the earlier wording
+- when an early commit message no longer matches the shipped contract, prefer the later effective behavior rather than the original feature claim
+- use repository evidence beyond commit subjects when needed to confirm the final shipped contract, including:
+  - current `README.md`
+  - public guides under `docs/guides/`
+  - implementation job records under `docs/plans/jobs/`
+  - research or plan docs only when they clarify the final behavior that shipped
+- treat contributor callouts as editorial additions to curated stable notes rather than something inferred only from commit types
+
 ## Scope
 
 ### In scope
@@ -106,6 +121,9 @@ This is implementation planning work rather than open-ended research because the
 
 - Risk: curated notes diverge visually from generated notes enough to make releases feel inconsistent.
   Mitigation: recommend the generated heading structure in the release-notes policy, while keeping the manual override body publishable as-is.
+
+- Risk: commit history reflects intermediate development steps rather than the final shipped contract, so stable notes can become misleading if they mirror commit titles too closely.
+  Mitigation: define stable-note curation around final shipped behavior and allow docs and implementation records to act as evidence when later commits supersede the original feature wording.
 
 ## Implementation Touchpoints
 
@@ -151,6 +169,12 @@ This is implementation planning work rather than open-ended research because the
 - [ ] document the exact filename contract with examples such as `CHANGELOGS/v0.1.1.md`
 - [ ] document that override files are final markdown bodies and must not use front matter
 - [ ] document the required top-level section shape for manual overrides
+- [ ] document the stable curation rule:
+  - [ ] start from `feat` and `fix` as the primary candidate pool
+  - [ ] skip `docs` by default as release-note items
+  - [ ] collapse iterative commits into final shipped outcomes
+  - [ ] prefer current shipped behavior over superseded early commit wording
+  - [ ] use docs and job records as evidence when commit titles are misleading
 - [ ] document the fallback rule so contributors know when a file is optional versus required
 - [ ] add an initial `CHANGELOGS/` bootstrap artifact if needed so the convention is visible in the repository
 
