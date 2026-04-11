@@ -2,16 +2,16 @@
 
 A Node.js CLI for file-processing chores, tabular data workflows, rename automation, and Codex-assisted tasks.
 
-Stable release scope in `v0.1.0`:
+Stable release scope in `v0.1.1`:
 
-- interactive mode + nested CLI commands
+- interactive mode + nested CLI commands, including `Esc` exit on command menus
 - `doctor` capability checks
 - CSV / TSV / JSON conversion and preview workflows, including explicit headerless preview support
 - `data extract` for shaped-table materialization across delimited, SQLite, and Excel inputs
 - DuckDB-backed query, reviewed header-mapping, source-shape replay, and Parquet preview workflows
 - `md to-docx` via `pandoc`
 - preview-first rename flows
-- `ffmpeg`-backed video wrappers
+- `ffmpeg`-backed video wrappers, including GIF quality modes and profiles
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ Runtime requirement:
 Data notes:
 
 - conversion actions are `json-to-csv`, `json-to-tsv`, `csv-to-json`, `csv-to-tsv`, `tsv-to-csv`, and `tsv-to-json`
-- `data extract` materializes one shaped table from one input file to `.csv`, `.tsv`, or `.json`; in `v0.1.0` its strongest shaping surface is Excel-oriented cleanup, where it can target a sheet or range, set `--header-row` and `--body-start-row`, and replay reviewed source-shape or header-mapping artifacts for awkward header bands or merged-cell layouts
+- `data extract` materializes one shaped table from one input file to `.csv`, `.tsv`, or `.json`; in `v0.1.1` its strongest shaping surface is Excel-oriented cleanup, where it can target a sheet or range, set `--header-row` and `--body-start-row`, and replay reviewed source-shape or header-mapping artifacts for awkward header bands or merged-cell layouts
 - `data query` is the current general-purpose lane when you need richer filtering or transformation logic than `data extract` exposes without SQL
 
 ## Capability Checks And External Tools

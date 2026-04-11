@@ -292,7 +292,11 @@ set_group_and_display_from_subject() {
 
 print_changelog_range() {
   if [ -n "$PREVIOUS_TAG" ]; then
-    printf 'Full Changelog: %s...%s\n' "$PREVIOUS_TAG" "$CURRENT_TAG"
+    if [ -n "$REPOSITORY" ]; then
+      printf 'Full Changelog: https://github.com/%s/compare/%s...%s\n' "$REPOSITORY" "$PREVIOUS_TAG" "$CURRENT_TAG"
+    else
+      printf 'Full Changelog: %s...%s\n' "$PREVIOUS_TAG" "$CURRENT_TAG"
+    fi
   else
     printf 'Full Changelog: %s\n' "$CURRENT_TAG"
   fi

@@ -69,7 +69,7 @@ This is implementation planning work rather than open-ended research because the
   - `### Changelog`
 - allow additional curated content when useful, but keep `## What's Changed` and a trailing `### Changelog` section as the expected stable-note structure
 - require the trailing `### Changelog` section to include a canonical final line in stable compare-range form:
-  - `Full Changelog: <previous-stable-version>...<current-stable-version>`
+  - `Full Changelog: https://github.com/<owner>/<repo>/compare/<previous-stable-version>...<current-stable-version>`
 
 ### Stable curation contract
 
@@ -160,7 +160,7 @@ This is implementation planning work rather than open-ended research because the
   - [x] expected `## What's Changed`
   - [x] optional grouped `### <section>` subsections
   - [x] expected trailing `### Changelog`
-  - [x] required final line `Full Changelog: <previous-stable-version>...<current-stable-version>`
+  - [x] required final line `Full Changelog: https://github.com/<owner>/<repo>/compare/<previous-stable-version>...<current-stable-version>`
 
 ### Phase 2: Implement override resolution
 
@@ -184,7 +184,7 @@ This is implementation planning work rather than open-ended research because the
 - [x] document that override files are final markdown bodies and must not use front matter
 - [x] document the required top-level section shape for manual overrides
 - [x] document the canonical trailing line:
-  - [x] `Full Changelog: <previous-stable-version>...<current-stable-version>`
+  - [x] `Full Changelog: https://github.com/<owner>/<repo>/compare/<previous-stable-version>...<current-stable-version>`
 - [x] document the stable curation rule:
   - [x] start from `feat` and `fix` as the primary candidate pool
   - [x] skip `docs` by default as release-note items

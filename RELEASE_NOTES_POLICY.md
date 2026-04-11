@@ -69,7 +69,7 @@ Expected stable note shape:
 - Thanks @existing-contributor
 
 ### Changelog
-Full Changelog: v0.1.0...v0.1.1
+Full Changelog: https://github.com/dev-pi2pie/cdx-chores/compare/v0.1.0...v0.1.1
 ```
 
 Structure rules:
@@ -78,12 +78,14 @@ Structure rules:
 - grouped `### <section>` subsections are optional
 - extra curated content is allowed when useful
 - keep a trailing `### Changelog` section
-- the last line of the file should be:
+- when the repository is known, the last line of the file should be:
+  - `Full Changelog: https://github.com/<owner>/<repo>/compare/<previous-stable-version>...<current-stable-version>`
+- only fall back to the plain compare-range form when a repository URL cannot be resolved
   - `Full Changelog: <previous-stable-version>...<current-stable-version>`
 
 Generated fallback note guidance:
 
-- generated stable release notes should use the same stable compare-range form when a previous stable tag is known
+- generated stable release notes should use the same GitHub compare URL form when a previous stable tag is known and the repository can be resolved
 - this keeps the generated fallback output aligned with the manual override policy
 
 ## Stable Curation Rules

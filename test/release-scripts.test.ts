@@ -114,7 +114,7 @@ describe("stable release notes script", () => {
           "- Added a hand-curated stable release body",
           "",
           "### Changelog",
-          "Full Changelog: v0.1.0...v0.2.0",
+          "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
           "",
         ].join("\n"),
         "utf8",
@@ -137,13 +137,17 @@ describe("stable release notes script", () => {
           "v0.2.0",
           "--previous-tag",
           "v0.1.0",
+          "--repository",
+          "example/project",
         ],
         { cwd: repoDir },
       );
 
       expectSuccess(result);
       expect(result.stdout).toContain("- Added a hand-curated stable release body");
-      expect(result.stdout).toContain("Full Changelog: v0.1.0...v0.2.0");
+      expect(result.stdout).toContain(
+        "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
+      );
       expect(result.stdout).not.toContain("generated fallback should be skipped");
     } finally {
       await rm(repoDir, { recursive: true, force: true });
@@ -164,7 +168,7 @@ describe("stable release notes script", () => {
           "- Tagged stable release body",
           "",
           "### Changelog",
-          "Full Changelog: v0.1.0...v0.2.0",
+          "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
           "",
         ].join("\n"),
         "utf8",
@@ -184,7 +188,7 @@ describe("stable release notes script", () => {
           "- Branch-head release body that should be ignored",
           "",
           "### Changelog",
-          "Full Changelog: v0.1.0...v0.2.0",
+          "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
           "",
         ].join("\n"),
         "utf8",
@@ -204,6 +208,8 @@ describe("stable release notes script", () => {
           "v0.2.0",
           "--previous-tag",
           "v0.1.0",
+          "--repository",
+          "example/project",
         ],
         { cwd: repoDir },
       );
@@ -240,6 +246,8 @@ describe("stable release notes script", () => {
           "v0.2.0",
           "--previous-tag",
           "v0.1.0",
+          "--repository",
+          "example/project",
         ],
         { cwd: repoDir },
       );
@@ -281,6 +289,8 @@ describe("stable release notes script", () => {
           "v0.2.0",
           "--previous-tag",
           "v0.1.0",
+          "--repository",
+          "example/project",
         ],
         { cwd: repoDir },
       );
@@ -288,7 +298,9 @@ describe("stable release notes script", () => {
       expectSuccess(result);
       expect(result.stdout).toContain("### New Features");
       expect(result.stdout).toContain("- feat(api): generated fallback still works");
-      expect(result.stdout).toContain("Full Changelog: v0.1.0...v0.2.0");
+      expect(result.stdout).toContain(
+        "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
+      );
       expect(result.stdout).not.toContain("unrelated future note");
     } finally {
       await rm(repoDir, { recursive: true, force: true });
@@ -397,7 +409,9 @@ describe("stable release notes script", () => {
       expect(groupedSection).toContain("### Bug Fixes");
       expect(groupedSection).not.toContain("### Chores");
       expect(groupedSection).toContain("- fix(parser): release-safe title (#77)");
-      expect(result.stdout).toContain("Full Changelog: v0.1.0...v0.2.0");
+      expect(result.stdout).toContain(
+        "Full Changelog: https://github.com/example/project/compare/v0.1.0...v0.2.0",
+      );
       expect(result.stdout).toContain("- #77 fix(parser): release-safe title by @alice");
     } finally {
       await rm(repoDir, { recursive: true, force: true });
