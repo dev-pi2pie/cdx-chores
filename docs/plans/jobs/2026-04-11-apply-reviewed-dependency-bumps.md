@@ -1,6 +1,7 @@
 ---
 title: "Apply reviewed dependency bumps"
 created-date: 2026-04-11
+modified-date: 2026-04-11
 status: completed
 agent: Codex
 ---
@@ -29,12 +30,13 @@ Apply the currently reviewed outdated dependency bumps in the working tree after
 
 - Upgraded:
   - `@inquirer/prompts` -> `8.4.1`
-  - `@openai/codex-sdk` -> `0.119.0`
+  - `@openai/codex-sdk` -> `0.120.0`
   - `fast-xml-parser` -> `5.5.11`
   - `@types/bun` -> `1.3.12`
   - `@types/node` -> `25.6.0`
   - `oxfmt` -> `0.44.0`
   - `oxlint` -> `1.59.0`
+- Same-day follow-up bumped `@openai/codex-sdk` from `0.119.0` to `0.120.0` after the upstream release became available.
 - Real-worktree verification passed:
   - `bun run lint`
   - `bun run build`
