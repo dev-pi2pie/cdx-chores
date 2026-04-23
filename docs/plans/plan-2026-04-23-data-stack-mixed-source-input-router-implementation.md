@@ -117,6 +117,13 @@ Deferred:
 - keep committed public stack fixtures reproducible through the dedicated generator
 - add targeted tests for both the feature and the fixture generator as the implementation grows
 
+### Default output-path behavior
+
+- include default output-path behavior in this overall plan
+- do not implement it before the mixed-source router and primary-source semantics are stable
+- prefer rolling it out in interactive mode first
+- keep direct CLI explicit until the default naming rule is validated in real stack usage
+
 ### Interactive mode
 
 - do not start interactive implementation before the direct CLI contract is implemented and verified
@@ -173,6 +180,9 @@ Deferred:
 
 - Risk: interactive implementation starts before the direct CLI contract is stable and creates a second product model.
   Mitigation: freeze the direct CLI contract first, then make interactive wrap that behavior instead of inventing new semantics.
+
+- Risk: default output naming becomes arbitrary or surprising in mixed-source runs.
+  Mitigation: implement it only after the input router and primary-source labeling rules are stable, and ship it in interactive mode first.
 
 ## Implementation Touchpoints
 
@@ -273,7 +283,16 @@ Deferred:
 - [ ] document the guarded fixture-generator behavior for the tracked playground tree if the guide references local reproduction
 - [ ] update interactive documentation once `data -> stack` lands
 
-### Phase 7: Record deferred follow-ups explicitly
+### Phase 7: Add default output-path behavior
+
+- [ ] freeze the default-output-path naming rule after mixed-source primary-label semantics are stable
+- [ ] introduce `use default output path` versus `custom output path` in interactive `data stack`
+- [ ] keep the default output extension aligned with the selected output format
+- [ ] prefer a stack-specific derived stem such as `.stack.csv`, `.stack.tsv`, or `.stack.json`
+- [ ] add focused tests for the chosen default-path rule
+- [ ] update docs once the default-output-path behavior ships
+
+### Phase 8: Record follow-up work explicitly
 
 - [ ] record `--union-by-name` as the preferred first schema-flex widening for later `jsonl` key-mismatch handling
 - [ ] record any future interactive widening beyond directory-first as a true mixed-source mode that mirrors the CLI contract

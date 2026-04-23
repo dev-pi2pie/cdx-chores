@@ -401,6 +401,43 @@ Implication:
 - the interactive flow stays aligned with the repo’s staged review-and-write rhythm
 - users get one clear point to catch accidental file discovery before output is written
 
+### 13. Default output-path behavior should be designed now, but implemented only after mixed-source routing semantics are stable
+
+This repo already has a shared default-output-path helper and several actions that use it.
+
+But `data stack` has an extra naming problem that those simpler actions do not:
+
+- a mixed-source invocation does not always have one obvious basename
+- one invocation may include both explicit files and directories
+- one invocation may also include a pattern that shapes the final normalized file list more than any one raw source name does
+
+Recommended direction:
+
+- keep direct CLI `--output <path>` explicit in the first shipped slice
+- record default output-path behavior as part of this plan rather than deferring it out of scope
+- implement default output-path behavior later in the same plan, after the mixed-source router and primary-source semantics are stable enough to support unsurprising naming
+
+Preferred first rollout for default output paths:
+
+- interactive mode first
+- offer:
+  - use default output path
+  - custom output path
+- keep direct CLI explicit until the naming rule is validated in real stack usage
+
+Likely future naming rule:
+
+- derive the default output stem from the normalized source set’s primary label
+- append a stack-specific suffix before the extension, such as:
+  - `.stack.csv`
+  - `.stack.tsv`
+  - `.stack.json`
+
+Implication:
+
+- the feature belongs in this overall plan
+- but it should land only after the mixed-source routing layer makes “primary source” naming stable enough to trust
+
 ## Interactive Flow Direction
 
 ### First-pass interactive scope
@@ -625,6 +662,7 @@ Preferred later directions:
 
 - when `jsonl` widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
 - when interactive widens beyond the first directory-first slice, widen to a true mixed-source input mode that mirrors the CLI contract rather than a file-only intermediate mode
+- when default output-path behavior lands, introduce it in interactive mode first and keep direct CLI explicit until the naming rule is proven stable
 
 Resolved future-direction decisions:
 
