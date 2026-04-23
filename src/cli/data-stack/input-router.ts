@@ -51,7 +51,10 @@ async function collectDirectoryCandidatePaths(options: {
 
       const entryPath = join(currentPath, entry.name);
       if (entry.isDirectory()) {
-        if ((options.recursive ?? false) && (options.maxDepth === undefined || depth < options.maxDepth)) {
+        if (
+          (options.recursive ?? false) &&
+          (options.maxDepth === undefined || depth < options.maxDepth)
+        ) {
           await walk(entryPath, depth + 1);
         }
         continue;
@@ -123,10 +126,13 @@ export async function resolveDataStackInputSources(
     }
 
     if (!sourceStats.isDirectory()) {
-      throw new CliError(`Unsupported input source kind: ${sourcePath}. Use files or directories only.`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
+      throw new CliError(
+        `Unsupported input source kind: ${sourcePath}. Use files or directories only.`,
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
     }
 
     const candidatePaths = await collectDirectoryCandidatePaths({

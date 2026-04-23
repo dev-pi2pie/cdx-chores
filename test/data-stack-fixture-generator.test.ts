@@ -22,9 +22,11 @@ function runGenerator(
   };
 }
 
-function runGeneratorWithoutOutputDir(
-  command: "clean" | "reset" | "seed",
-): { exitCode: number; stdout: string; stderr: string } {
+function runGeneratorWithoutOutputDir(command: "clean" | "reset" | "seed"): {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+} {
   const proc = Bun.spawnSync({
     cmd: ["node", "scripts/generate-data-stack-fixtures.mjs", command],
     stdout: "pipe",
@@ -42,8 +44,9 @@ async function snapshotDirectory(
   outputDir: string,
   prefix = "",
 ): Promise<Array<{ hash: string; name: string }>> {
-  const names = (await readdir(join(outputDir, prefix), { withFileTypes: true }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  const names = (await readdir(join(outputDir, prefix), { withFileTypes: true })).sort(
+    (left, right) => left.name.localeCompare(right.name),
+  );
   const entries = [];
   for (const entry of names) {
     const relativeName = prefix ? `${prefix}/${entry.name}` : entry.name;
@@ -93,10 +96,11 @@ describe("data stack fixture generator", () => {
           "tsv-matching-headers/part-002.tsv",
         ]);
 
-        const matchingTsv = await readFile(join(outputA, "tsv-matching-headers/part-001.tsv"), "utf8");
-        expect(matchingTsv).toBe(
-          "id\tname\tstatus\n5001\tMina\tactive\n5002\tNico\tpaused\n",
+        const matchingTsv = await readFile(
+          join(outputA, "tsv-matching-headers/part-001.tsv"),
+          "utf8",
         );
+        expect(matchingTsv).toBe("id\tname\tstatus\n5001\tMina\tactive\n5002\tNico\tpaused\n");
 
         const headerlessTsv = await readFile(join(outputA, "tsv-headerless/chunk-001.tsv"), "utf8");
         expect(headerlessTsv).toBe("6001\tactive\tnorth\n6002\tpaused\tsouth\n");

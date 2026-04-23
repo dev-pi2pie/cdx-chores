@@ -4,10 +4,13 @@ Use interactive mode when you want the CLI to inspect the input first, then help
 
 This is the interactive lane to prefer when `data extract` is too narrow for the transformation you need and you want output control without dropping to raw CLI flags immediately.
 
+If the main task is multi-file assembly rather than SQL authoring, use `data stack` first and then query the merged output.
+
 The current interactive flow mirrors the same shipped product split as the direct CLI: in-session shaping and header review can happen before SQL authoring, but reusable reviewed source-shape and header-mapping artifacts are still produced by the direct CLI reviewed flows.
 
 For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
 For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`.
+For assembling many local files or directories into one table before later SQL, see `docs/guides/data-stack-usage.md`.
 
 Start the flow with:
 

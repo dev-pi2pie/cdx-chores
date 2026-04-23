@@ -10,6 +10,7 @@ For the shared reviewed header-mapping artifact contract, see `docs/guides/data-
 For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`.
 For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`.
 For SQL execution instead of direct materialization, use `docs/guides/data-query-usage.md`.
+For multi-file or multi-directory assembly before later materialization or SQL, use `docs/guides/data-stack-usage.md`.
 
 Current boundary:
 
@@ -45,6 +46,7 @@ Current intent:
 - use `data extract` when you want one clean output table and do not need SQL
 - use it first for awkward Excel inputs that need sheet, range, header-row, or body-start-row interpretation before export
 - for nontrivial filtering, projection, aggregation, or other transformation logic across any supported format, prefer `data query` with `--output`
+- for assembling many CSV, TSV, or JSONL inputs into one logical table before later work, prefer `data stack`
 - when you want SQL against the exact same reviewed Excel scope, replay the accepted artifact with `data query --source-shape <path> --sql ...`
 
 ### Command shape

@@ -50,14 +50,18 @@ function validateOptions(options: DataStackOptions): void {
   }
 
   if ((options.columns?.length ?? 0) > 0) {
-    const normalizedColumns = options.columns?.map((value) => value.trim()).filter((value) => value.length > 0) ?? [];
+    const normalizedColumns =
+      options.columns?.map((value) => value.trim()).filter((value) => value.length > 0) ?? [];
     if (normalizedColumns.length !== options.columns?.length) {
       throw new CliError("--columns cannot contain empty names.", {
         code: "INVALID_INPUT",
         exitCode: 2,
       });
     }
-    if (new Set(normalizedColumns.map((value) => value.toLowerCase())).size !== normalizedColumns.length) {
+    if (
+      new Set(normalizedColumns.map((value) => value.toLowerCase())).size !==
+      normalizedColumns.length
+    ) {
       throw new CliError("--columns cannot contain duplicate names.", {
         code: "INVALID_INPUT",
         exitCode: 2,
@@ -90,11 +94,16 @@ export async function writePreparedDataStackOutput(
   printLine(runtime.stderr, `Rows: ${options.prepared.rows.length}`);
 }
 
-export async function actionDataStack(runtime: CliRuntime, options: DataStackOptions): Promise<void> {
+export async function actionDataStack(
+  runtime: CliRuntime,
+  options: DataStackOptions,
+): Promise<void> {
   validateOptions(options);
 
   const outputPath = resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path"));
-  const sourcePaths = options.sources.map((source) => resolveFromCwd(runtime, assertNonEmpty(source, "Input source")));
+  const sourcePaths = options.sources.map((source) =>
+    resolveFromCwd(runtime, assertNonEmpty(source, "Input source")),
+  );
   const outputFormat = normalizeDataStackOutputFormat(outputPath);
   const prepared = await prepareDataStackExecution({
     columns: options.columns,

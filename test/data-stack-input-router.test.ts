@@ -30,7 +30,11 @@ describe("data stack input router", () => {
         join(directoryPath, "b.csv"),
       ]);
       expect(resolved.files.map((file) => file.format)).toEqual(["csv", "csv", "csv"]);
-      expect(resolved.files.map((file) => file.sourceKind)).toEqual(["file", "directory", "directory"]);
+      expect(resolved.files.map((file) => file.sourceKind)).toEqual([
+        "file",
+        "directory",
+        "directory",
+      ]);
     });
   });
 
@@ -60,7 +64,11 @@ describe("data stack input router", () => {
       await mkdir(join(directoryPath, "level-1", "level-2"), { recursive: true });
       await writeFile(join(directoryPath, "top.csv"), "id,name\n1,Ada\n", "utf8");
       await writeFile(join(directoryPath, "level-1", "inner.csv"), "id,name\n2,Bob\n", "utf8");
-      await writeFile(join(directoryPath, "level-1", "level-2", "deep.csv"), "id,name\n3,Cyd\n", "utf8");
+      await writeFile(
+        join(directoryPath, "level-1", "level-2", "deep.csv"),
+        "id,name\n3,Cyd\n",
+        "utf8",
+      );
 
       const shallow = await resolveDataStackInputSources({
         sources: [directoryPath],

@@ -1,7 +1,8 @@
 ---
 title: "Data stack mixed-source input-router implementation"
 created-date: 2026-04-23
-status: active
+modified-date: 2026-04-23
+status: completed
 agent: codex
 ---
 
@@ -33,10 +34,10 @@ This work is best handled as a phased plan because the research deliberately sep
 
 ## Current State
 
-- `data query` and `data extract` are both explicitly one-input-file commands today
-- workspace relation binding already exists as a separate contract for SQLite and DuckDB-file inputs
-- the new research doc now freezes `data stack` as a distinct future family with mixed-source direct CLI input
-- public playground support for stack-focused examples now exists under `examples/playground/stack-cases/`
+- `data stack` is now implemented as a direct CLI action under `data`
+- interactive `data -> stack` now ships in its first directory-first form
+- the public usage guide now lives at `docs/guides/data-stack-usage.md`
+- public playground support exists under `examples/playground/stack-cases/`
 - `scripts/generate-data-stack-fixtures.mjs` creates deterministic stack-case fixtures for:
   - matching-header CSV inputs
   - matching-header TSV inputs
@@ -277,27 +278,35 @@ Deferred:
 
 ### Phase 6: Documentation and guide alignment
 
-- [ ] add a `data stack` usage guide
-- [ ] update command-family docs so `stack`, `extract`, and `query` read as complementary lanes rather than competing ones
-- [ ] keep examples anchored to `examples/playground/stack-cases/`
-- [ ] document the guarded fixture-generator behavior for the tracked playground tree if the guide references local reproduction
-- [ ] update interactive documentation once `data -> stack` lands
+- [x] add a `data stack` usage guide
+- [x] update command-family docs so `stack`, `extract`, and `query` read as complementary lanes rather than competing ones
+- [x] keep examples anchored to `examples/playground/stack-cases/`
+- [x] document the guarded fixture-generator behavior for the tracked playground tree if the guide references local reproduction
+- [x] update interactive documentation once `data -> stack` lands
 
 ### Phase 7: Add default output-path behavior
 
-- [ ] freeze the default-output-path naming rule after mixed-source primary-label semantics are stable
-- [ ] introduce `use default output path` versus `custom output path` in interactive `data stack`
-- [ ] keep the default output extension aligned with the selected output format
-- [ ] prefer a stack-specific derived stem such as `.stack.csv`, `.stack.tsv`, or `.stack.json`
-- [ ] add focused tests for the chosen default-path rule
-- [ ] update docs once the default-output-path behavior ships
+- [x] freeze the default-output-path naming rule after mixed-source primary-label semantics are stable
+- [x] introduce `use default output path` versus `custom output path` in interactive `data stack`
+- [x] keep the default output extension aligned with the selected output format
+- [x] prefer a stack-specific derived stem such as `.stack.csv`, `.stack.tsv`, or `.stack.json`
+- [x] add focused tests for the chosen default-path rule
+- [x] update docs once the default-output-path behavior ships
 
 ### Phase 8: Record follow-up work explicitly
 
-- [ ] record `--union-by-name` as the preferred first schema-flex widening for later `jsonl` key-mismatch handling
-- [ ] record any future interactive widening beyond directory-first as a true mixed-source mode that mirrors the CLI contract
-- [ ] record later schema-flex features beyond `--union-by-name`, such as provenance columns, as separate follow-up work
-- [ ] record any later Codex-assisted stack diagnostics as a separate future slice
+- [x] record `--union-by-name` as the preferred first schema-flex widening for later `jsonl` key-mismatch handling
+- [x] record any future interactive widening beyond directory-first as a true mixed-source mode that mirrors the CLI contract
+- [x] record later schema-flex features beyond `--union-by-name`, such as provenance columns, as separate follow-up work
+- [x] record any later Codex-assisted stack diagnostics as a separate future slice
+
+## Recorded Follow-Up Work
+
+- prefer `--union-by-name` as the first public schema-flex widening for later strict-`jsonl` key mismatches
+- treat any widening beyond the current directory-first interactive scope as a true mixed-source interactive mode that mirrors direct CLI source routing
+- keep later schema-flex additions such as provenance columns separate from the shipped baseline contract
+- keep any Codex-assisted stack diagnostics as a separate future slice rather than folding them into the current shipped command
+- the next interactive widening plan now lives in `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 ## Related Research
 
@@ -311,8 +320,10 @@ Deferred:
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md`
+- `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 ## Related Jobs
 
 - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
+- `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`

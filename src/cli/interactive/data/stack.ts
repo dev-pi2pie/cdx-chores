@@ -3,10 +3,14 @@ import { relative } from "node:path";
 
 import { writePreparedDataStackOutput } from "../../actions";
 import { displayPath, printLine } from "../../actions/shared";
-import { prepareDataStackExecution, type PreparedDataStackExecution } from "../../data-stack/prepare";
+import {
+  prepareDataStackExecution,
+  type PreparedDataStackExecution,
+} from "../../data-stack/prepare";
 import { promptFileOutputTarget } from "../../data-workflows/output";
 import { readTextFileRequired } from "../../file-io";
-import { resolveFromCwd } from "../../path-utils";
+import { defaultOutputPath, resolveFromCwd } from "../../path-utils";
+import { formatDefaultOutputPathHint } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import {
   DATA_STACK_INTERACTIVE_INPUT_FORMAT_VALUES,
@@ -28,6 +32,23 @@ interface InteractiveDataStackWritePlan {
   output: string;
   outputFormat: DataStackOutputFormat;
   overwrite: boolean;
+}
+
+type InteractiveDataStackWriteOutcome =
+  | {
+      kind: "confirm";
+      plan: InteractiveDataStackWritePlan;
+      prepared: PreparedDataStackExecution;
+      outputPath: string;
+    }
+  | { kind: "review" }
+  | { kind: "cancel" };
+
+function getInteractiveDataStackDefaultOutputPath(
+  directory: string,
+  outputFormat: DataStackOutputFormat,
+): string {
+  return defaultOutputPath(directory, `.stack.${outputFormat}`);
 }
 
 function renderMatchedFileSummary(
@@ -149,6 +170,7 @@ async function collectInteractiveStackSetup(
 
 async function promptInteractiveStackOutput(
   runtime: CliRuntime,
+  directory: string,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<InteractiveDataStackWritePlan> {
   const outputFormat = await select<DataStackOutputFormat>({
@@ -159,8 +181,13 @@ async function promptInteractiveStackOutput(
       { name: "JSON", value: "json" },
     ],
   });
+  const fallbackOutputPath = getInteractiveDataStackDefaultOutputPath(directory, outputFormat);
+  const outputHint = formatDefaultOutputPathHint(runtime, directory, `.stack.${outputFormat}`);
   const target = await promptFileOutputTarget({
     allowedExtensions: [`.${outputFormat}`],
+    customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
+    defaultHint: outputHint,
+    fallbackOutputPath,
     invalidExtensionMessage: `Output file must end with .${outputFormat}.`,
     message: `Output ${outputFormat.toUpperCase()} file`,
     pathPromptContext,
@@ -177,15 +204,14 @@ function renderSkippedInteractiveStackWrite(runtime: CliRuntime): void {
   printLine(runtime.stderr, "Skipped stack write.");
 }
 
-export async function runInteractiveDataStack(
+async function confirmInteractiveStackWrite(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-): Promise<void> {
-  writeInteractiveFlowTip(runtime, "data-stack");
+  setup: InteractiveDataStackSetup,
+): Promise<InteractiveDataStackWriteOutcome> {
+  let outputPlan = await promptInteractiveStackOutput(runtime, setup.directory, pathPromptContext);
 
   while (true) {
-    const setup = await collectInteractiveStackSetup(runtime, pathPromptContext);
-    const outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
     const outputPath = resolveFromCwd(runtime, outputPlan.output);
     const prepared = await prepareDataStackExecution({
       inputFormat: setup.inputFormat,
@@ -204,22 +230,26 @@ export async function runInteractiveDataStack(
     });
     const confirmed = await confirm({ message: "Write stacked output now?", default: true });
     if (confirmed) {
-      await writePreparedDataStackOutput(runtime, {
-        outputFormat: outputPlan.outputFormat,
+      return {
+        kind: "confirm",
         outputPath,
-        overwrite: outputPlan.overwrite,
+        plan: outputPlan,
         prepared,
-      });
-      return;
+      };
     }
 
-    const nextStep = await select<"revise" | "cancel">({
-      message: "Stack review next step",
+    const nextStep = await select<"review" | "destination" | "cancel">({
+      message: "Stack write next step",
       choices: [
         {
           name: "Revise stack setup",
-          value: "revise",
-          description: "Choose a different directory, pattern, traversal mode, or output",
+          value: "review",
+          description: "Choose a different directory, pattern, or traversal mode",
+        },
+        {
+          name: "Change destination",
+          value: "destination",
+          description: "Keep the current stack setup and adjust only the output destination",
         },
         {
           name: "Cancel",
@@ -228,9 +258,40 @@ export async function runInteractiveDataStack(
         },
       ],
     });
+    if (nextStep === "review") {
+      return { kind: "review" };
+    }
     if (nextStep === "cancel") {
       renderSkippedInteractiveStackWrite(runtime);
+      return { kind: "cancel" };
+    }
+
+    outputPlan = await promptInteractiveStackOutput(runtime, setup.directory, pathPromptContext);
+  }
+}
+
+export async function runInteractiveDataStack(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+): Promise<void> {
+  writeInteractiveFlowTip(runtime, "data-stack");
+
+  while (true) {
+    const setup = await collectInteractiveStackSetup(runtime, pathPromptContext);
+    const outcome = await confirmInteractiveStackWrite(runtime, pathPromptContext, setup);
+    if (outcome.kind === "cancel") {
       return;
     }
+    if (outcome.kind === "review") {
+      continue;
+    }
+
+    await writePreparedDataStackOutput(runtime, {
+      outputFormat: outcome.plan.outputFormat,
+      outputPath: outcome.outputPath,
+      overwrite: outcome.plan.overwrite,
+      prepared: outcome.prepared,
+    });
+    return;
   }
 }

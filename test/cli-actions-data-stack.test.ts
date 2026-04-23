@@ -428,7 +428,7 @@ describe("cli action modules: data stack", () => {
 
   test("actionDataStack rejects JSONL rows with no keys", async () => {
     await withTempFixtureDir("data-stack-action-jsonl-no-keys", async (fixtureDir) => {
-      await writeFile(join(fixtureDir, "a.jsonl"), '{}\n', "utf8");
+      await writeFile(join(fixtureDir, "a.jsonl"), "{}\n", "utf8");
 
       const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
       await expectCliError(
@@ -450,7 +450,11 @@ describe("cli action modules: data stack", () => {
   test("actionDataStack normalizes BOM and surrounding header whitespace before matching", async () => {
     await withTempFixtureDir("data-stack-action-normalized-headers", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "merged.json");
-      await writeFile(join(fixtureDir, "a.csv"), "\uFEFFid, name , status \n1,Ada,active\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "a.csv"),
+        "\uFEFFid, name , status \n1,Ada,active\n",
+        "utf8",
+      );
       await writeFile(join(fixtureDir, "b.csv"), "id,name,status\n2,Bob,paused\n", "utf8");
 
       const { runtime, expectNoStdout, stderr } = createActionTestRuntime({ cwd: fixtureDir });
@@ -484,9 +488,7 @@ describe("cli action modules: data stack", () => {
 
       expectNoStdout();
       expect(stderr.text).toContain("Wrote CSV: merged.csv");
-      expect(await readFile(outputPath, "utf8")).toBe(
-        "id,name,status\n1,Ada,\n2,Bob,paused\n",
-      );
+      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,Bob,paused\n");
     });
   });
 

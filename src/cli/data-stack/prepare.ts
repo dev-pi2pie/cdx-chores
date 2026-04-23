@@ -63,10 +63,13 @@ export async function prepareDataStackExecution(
   });
 
   if (options.outputPath && normalized.files.some((file) => file.path === options.outputPath)) {
-    throw new CliError(`Output path conflicts with an input source: ${options.renderPath(options.outputPath)}`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `Output path conflicts with an input source: ${options.renderPath(options.outputPath)}`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
 
   const inputFormat = ensureUniformFormat(normalized.files, options.renderPath);

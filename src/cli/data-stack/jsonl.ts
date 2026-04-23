@@ -6,7 +6,11 @@ interface ParsedJsonlStackSource {
   path: string;
 }
 
-function validateJsonlRowObject(value: unknown, path: string, lineNumber: number): Record<string, unknown> {
+function validateJsonlRowObject(
+  value: unknown,
+  path: string,
+  lineNumber: number,
+): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new CliError(`JSONL rows must be JSON objects: ${path} (line ${lineNumber}).`, {
       code: "INVALID_INPUT",
@@ -69,7 +73,9 @@ export function parseJsonlStackSourceText(options: {
     }
   });
 
-  const header = options.expectedHeader ? [...options.expectedHeader] : Object.keys(parsedRows[0] ?? {});
+  const header = options.expectedHeader
+    ? [...options.expectedHeader]
+    : Object.keys(parsedRows[0] ?? {});
   if (header.length === 0) {
     throw new CliError(`JSONL rows must contain at least one key: ${options.path}`, {
       code: "INVALID_INPUT",

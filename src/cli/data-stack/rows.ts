@@ -37,12 +37,16 @@ function parseDelimitedStackSourceText(options: {
   const nonEmptyRows = rows.filter((row) => row.some((value) => value.length > 0));
 
   if (options.noHeader) {
-    const inferredWidth = options.columns?.length ?? options.expectedHeaderWidth ?? nonEmptyRows[0]?.length;
+    const inferredWidth =
+      options.columns?.length ?? options.expectedHeaderWidth ?? nonEmptyRows[0]?.length;
     if (!inferredWidth || inferredWidth <= 0) {
-      throw new CliError(`Input file has no data rows to infer headerless columns: ${options.path}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
+      throw new CliError(
+        `Input file has no data rows to infer headerless columns: ${options.path}`,
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
     }
 
     const header = options.columns ? [...options.columns] : createPlaceholderColumns(inferredWidth);

@@ -1,7 +1,8 @@
 ---
 title: "Data stack multi-file assembly direction"
 created-date: 2026-04-23
-status: draft
+modified-date: 2026-04-23
+status: completed
 agent: codex
 ---
 
@@ -37,14 +38,20 @@ Reduce the current discussion into a research-level direction that answers:
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md`
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
+- `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 Status note:
 
-- this document is research only and does not propose an immediate implementation change
-- the current stable contract remains:
-  - one input file per `data query` or `data extract` invocation
-  - explicit workspace relation binding only for SQLite and DuckDB-file inputs
-  - headerless direct flags only where already documented today
+- this document records the research direction that shaped the shipped `data stack` implementation
+- implementation evidence now lives in:
+  - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
+  - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
+  - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
+  - `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
+- the current stable command-family split is:
+  - `data stack` for multi-source assembly
+  - `data extract` for one-input shaping and materialization
+  - `data query` for SQL
 
 ## Problem
 
@@ -668,6 +675,8 @@ Resolved future-direction decisions:
 
 - the first schema-flex widening for `jsonl` should use one explicit opt-in union flag, with `--union-by-name` as the preferred first public contract
 - the first widening beyond directory-first interactive mode should be a true mixed-source input mode that mirrors the CLI contract, not a smaller file-only intermediate mode
+- later schema-flex additions such as provenance columns should remain separate follow-up work rather than widening the shipped baseline implicitly
+- any Codex-assisted stack diagnostics should remain a separate future slice rather than being folded into the current `data stack` contract
 
 Then keep the downstream flow explicit:
 

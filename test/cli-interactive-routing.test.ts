@@ -544,7 +544,8 @@ describe("interactive mode routing", () => {
       nowIsoString: "2026-03-30T00:00:00.900Z",
       stdoutColumns: 80,
       stdoutIsTTY: true,
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers", "fixtures/stacked.json"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
       confirmQueue: [true],
     });
@@ -556,7 +557,9 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 3,
           outputFormat: "json",
-          outputPath: expect.stringContaining("fixtures/stacked.json"),
+          outputPath: expect.stringContaining(
+            "examples/playground/stack-cases/csv-matching-headers.stack.json",
+          ),
           overwrite: false,
           rowCount: 6,
         },
@@ -570,10 +573,16 @@ describe("interactive mode routing", () => {
       }),
     });
     expect(result.pathCalls).toContainEqual({
-      kind: "required",
+      kind: "hint",
+      inputPath: "examples/playground/stack-cases/csv-matching-headers",
+      nextExtension: ".stack.json",
+    });
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
       message: "Output JSON file",
       options: expect.objectContaining({
         kind: "file",
+        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.json",
       }),
     });
     expect(plainStderr).toContain("Tip: Review matched files before writing the stacked output.");
@@ -582,6 +591,9 @@ describe("interactive mode routing", () => {
     expect(plainStderr).toContain("- pattern: *.csv");
     expect(plainStderr).toContain("- traversal: shallow only");
     expect(plainStderr).toContain("- output format: JSON");
+    expect(plainStderr).toContain(
+      "- output: examples/playground/stack-cases/csv-matching-headers.stack.json",
+    );
     expect(plainStderr).toContain("- matched files: 3");
   });
 
@@ -589,7 +601,8 @@ describe("interactive mode routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:stack", "csv", "shallow", "csv", "cancel"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers", "fixtures/stacked.csv"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
       confirmQueue: [false],
     });
@@ -597,9 +610,226 @@ describe("interactive mode routing", () => {
     expect(result.actionCalls).toEqual([]);
     expect(result.stderr).toContain("Stack review");
     expect(result.stderr).toContain("Skipped stack write.");
+    expect(result.pathCalls).toContainEqual({
+      kind: "hint",
+      inputPath: "examples/playground/stack-cases/csv-matching-headers",
+      nextExtension: ".stack.csv",
+    });
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output CSV file",
+      options: expect.objectContaining({
+        customMessage: "Custom CSV output path",
+        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.csv",
+      }),
+    });
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack review next step",
+      "select:Stack write next step",
     );
+  });
+
+  test("uses the expected TSV default output metadata in interactive data stack", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "tsv", "cancel"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.pathCalls).toContainEqual({
+      kind: "hint",
+      inputPath: "examples/playground/stack-cases/csv-matching-headers",
+      nextExtension: ".stack.tsv",
+    });
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output TSV file",
+      options: expect.objectContaining({
+        customMessage: "Custom TSV output path",
+        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.tsv",
+      }),
+    });
+    expect(result.stderr).toContain("Skipped stack write.");
+  });
+
+  test("lets interactive data stack change destination without re-running stack setup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "json", "destination", "json"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 3,
+          outputFormat: "json",
+          outputPath: expect.stringContaining("fixtures/custom-stacked.json"),
+          overwrite: false,
+          rowCount: 6,
+        },
+      },
+    ]);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "input" && call.message === "Filename pattern",
+      ),
+    ).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Output format",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Stack write next step",
+    );
+    expect(stripAnsi(result.stderr)).toContain("- output: fixtures/custom-stacked.json");
+  });
+
+  test("re-enters the full stack setup when stack write chooses revise setup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "shallow",
+        "json",
+        "review",
+        "csv",
+        "recursive",
+        "json",
+      ],
+      requiredPathQueue: [
+        "examples/playground/stack-cases/csv-matching-headers",
+        "examples/playground/stack-cases/csv-matching-headers",
+      ],
+      optionalPathQueue: [undefined, undefined],
+      inputQueue: ["*.csv", "*.csv"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 3,
+          outputFormat: "json",
+          outputPath: expect.stringContaining(
+            "examples/playground/stack-cases/csv-matching-headers.stack.json",
+          ),
+          overwrite: false,
+          rowCount: 6,
+        },
+      },
+    ]);
+    expect(
+      result.pathCalls.filter(
+        (call) => call.kind === "required" && call.message === "Input directory",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "input" && call.message === "Filename pattern",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Traversal mode",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Stack write next step",
+    );
+  });
+
+  test("re-prompts stack destination when the derived default output exists and overwrite is declined", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "json"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+      existingPaths: ["examples/playground/stack-cases/csv-matching-headers.stack.json"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 3,
+          outputFormat: "json",
+          outputPath: expect.stringContaining("fixtures/custom-stacked.json"),
+          overwrite: false,
+          rowCount: 6,
+        },
+      },
+    ]);
+    expect(
+      result.pathCalls.filter(
+        (call) => call.kind === "optional" && call.message === "Output JSON file",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.pathCalls.filter(
+        (call) =>
+          call.kind === "optional" &&
+          call.message === "Output JSON file" &&
+          call.options?.defaultHint ===
+            "examples/playground/stack-cases/csv-matching-headers.stack.json" &&
+          call.options?.customMessage === "Custom JSON output path",
+      ),
+    ).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Overwrite if exists?",
+    );
+    expect(result.stdout).toContain("Choose a different output destination.");
+  });
+
+  test("accepts overwrite for the derived default stack output path when confirmed", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "json"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [true, true],
+      existingPaths: ["examples/playground/stack-cases/csv-matching-headers.stack.json"],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 3,
+          outputFormat: "json",
+          outputPath: expect.stringContaining(
+            "examples/playground/stack-cases/csv-matching-headers.stack.json",
+          ),
+          overwrite: true,
+          rowCount: 6,
+        },
+      },
+    ]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Overwrite if exists?",
+    );
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Output JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom JSON output path",
+        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.json",
+      }),
+    });
   });
 
   test("routes interactive DuckDB data extract through shared extraction execution", () => {
@@ -2264,20 +2494,12 @@ limit 25`,
         (call) => call.kind === "required" && call.message === "Output file path",
       ),
     ).toHaveLength(2);
-    expect(result.stderr).toContain("Output file already exists:");
-    expect(result.actionCalls).toHaveLength(2);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Overwrite if exists?",
+    );
+    expect(result.stdout).toContain("Choose a different output destination.");
+    expect(result.actionCalls).toHaveLength(1);
     expect(result.actionCalls[0]).toMatchObject({
-      name: "data:query",
-      options: {
-        input: "fixtures/query.csv",
-        inputFormat: "csv",
-        output: "reports/existing.json",
-        overwrite: false,
-        pretty: false,
-        sql: "select id from file",
-      },
-    });
-    expect(result.actionCalls[1]).toMatchObject({
       name: "data:query",
       options: {
         input: "fixtures/query.csv",

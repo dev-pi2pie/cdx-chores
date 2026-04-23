@@ -152,7 +152,9 @@ describe("CLI UX flags and path output", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Data preview, extract, stack, query, and conversion utilities");
+    expect(result.stdout).toContain(
+      "Data preview, extract, stack, query, and conversion utilities",
+    );
     expect(result.stdout).toContain("json-to-csv");
     expect(result.stdout).toContain("json-to-tsv");
     expect(result.stdout).toContain("csv-to-json");
