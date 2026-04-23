@@ -8,6 +8,8 @@ export { actionDataDuckDbDoctor, actionDataDuckDbExtensionInstall } from "./data
 export type { DataDuckDbDoctorOptions, DataDuckDbExtensionInstallOptions } from "./data-duckdb";
 export { actionDataExtract } from "./data-extract";
 export type { DataExtractOptions } from "./data-extract";
+export { actionDataStack } from "./data-stack";
+export type { DataStackOptions } from "./data-stack";
 export { actionDataQuery } from "./data-query";
 export type { DataQueryOptions } from "./data-query";
 export { actionDataQueryCodex } from "./data-query-codex";

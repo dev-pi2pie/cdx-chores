@@ -1,7 +1,7 @@
 ---
 title: "Data stack mixed-source input-router implementation"
 created-date: 2026-04-23
-status: draft
+status: active
 agent: codex
 ---
 
@@ -202,48 +202,48 @@ Deferred:
 
 ### Phase 1: Freeze the mixed-source command contract
 
-- [ ] freeze the direct CLI command shape for `data stack`
-- [ ] freeze raw `<source...>` input semantics for files and directories
-- [ ] freeze the phase-1 input scope to matching-header CSV and TSV only
-- [ ] freeze the mixed-source router rules:
+- [x] freeze the direct CLI command shape for `data stack`
+- [x] freeze raw `<source...>` input semantics for files and directories
+- [x] freeze the phase-1 input scope to matching-header CSV and TSV only
+- [x] freeze the mixed-source router rules:
   - explicit files pass through directly
   - directories expand into candidates
   - pattern applies only to directory-expanded candidates
-- [ ] freeze the ordering rule:
+- [x] freeze the ordering rule:
   - preserve raw source order
   - sort directory-expanded candidates deterministically within each source
-- [ ] freeze shallow-by-default traversal behavior
-- [ ] freeze opt-in recursion through `--recursive`
-- [ ] freeze `--max-depth` as valid only with `--recursive`
-- [ ] freeze deterministic final file ordering and hidden-file exclusion
-- [ ] freeze the first output set:
+- [x] freeze shallow-by-default traversal behavior
+- [x] freeze opt-in recursion through `--recursive`
+- [x] freeze `--max-depth` as valid only with `--recursive`
+- [x] freeze deterministic final file ordering and hidden-file exclusion
+- [x] freeze the first output set:
   - `.csv`
   - `.tsv`
   - optional array-style `.json`
-- [ ] keep Parquet output out of the first shipped slice
+- [x] keep Parquet output out of the first shipped slice
 
 ### Phase 2: Implement the first shipped slice
 
 #### 2A. Input router
 
-- [ ] add `src/cli/data-stack/input-router.ts`
-- [ ] implement raw-source resolution and source-kind detection
-- [ ] implement directory expansion and explicit file passthrough
-- [ ] implement pattern filtering for directory-expanded candidates
-- [ ] implement deduplication and deterministic final ordering
+- [x] add `src/cli/data-stack/input-router.ts`
+- [x] implement raw-source resolution and source-kind detection
+- [x] implement directory expansion and explicit file passthrough
+- [x] implement pattern filtering for directory-expanded candidates
+- [x] implement deduplication and deterministic final ordering
 
 #### 2B. Command and action
 
-- [ ] add `data stack` command wiring
-- [ ] implement matching-header CSV stacking
-- [ ] implement matching-header TSV stacking
-- [ ] implement first-pass validation and error messages for:
+- [x] add `data stack` command wiring
+- [x] implement matching-header CSV stacking
+- [x] implement matching-header TSV stacking
+- [x] implement first-pass validation and error messages for:
   - no matches
   - unsupported extension or format
   - mixed normalized formats
   - header mismatch
   - output path conflicts
-- [ ] add focused command and action tests for the phase-1 contract
+- [x] add focused command and action tests for the phase-1 contract
 
 ### Phase 3: Freeze and implement the first interactive flow
 
@@ -311,3 +311,7 @@ Deferred:
 
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
