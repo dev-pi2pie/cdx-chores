@@ -1,7 +1,7 @@
 ---
 title: "Multi-source query workspace contract"
 created-date: 2026-03-31
-modified-date: 2026-03-31
+modified-date: 2026-04-23
 status: completed
 agent: codex
 ---
@@ -25,6 +25,7 @@ Reduce the next-stage query expansion into an implementation-ready contract that
 
 - `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 - `docs/researches/archive/research-2026-03-20-data-command-surface-headerless-and-codex-boundaries.md`
+- `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
 
 ## Related Plans
 
@@ -37,6 +38,7 @@ Status note:
 - `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md` reflects the first shipped workspace implementation, including the earlier decision to reserve `file` in workspace mode.
 - the later follow-up alias decision that frees explicit workspace `file` bindings is tracked separately in `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
 - that follow-up has now been implemented in `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`, including comma-separated `--relation` bundles while keeping explicit aliasing for dotted selectors
+- the separate future family for directory-pattern multi-file relation assembly is now tracked in `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
 
 ## Expansion Families
 
