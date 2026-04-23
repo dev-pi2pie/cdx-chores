@@ -247,33 +247,33 @@ Deferred:
 
 ### Phase 3: Freeze and implement the first interactive flow
 
-- [ ] freeze the first-pass interactive `data stack` contract in line with the updated research
-- [ ] add an interactive `data -> stack` route only after the direct CLI behavior is stable
-- [ ] keep first-pass interactive scope to directory-first CSV and TSV stacking
-- [ ] add prompts for:
+- [x] freeze the first-pass interactive `data stack` contract in line with the updated research
+- [x] add an interactive `data -> stack` route only after the direct CLI behavior is stable
+- [x] keep first-pass interactive scope to directory-first CSV and TSV stacking
+- [x] add prompts for:
   - input directory
   - pattern
   - traversal mode
   - output format
   - output destination within the selected format
-- [ ] add one explicit review checkpoint before the write boundary
-- [ ] add focused interactive routing and flow coverage
+- [x] add one explicit review checkpoint before the write boundary
+- [x] add focused interactive routing and flow coverage
 
 ### Phase 4: Add headerless delimited support
 
-- [ ] add `--no-header`
-- [ ] add optional `--columns <name,name,...>`
-- [ ] reuse the `column_<n>` placeholder contract when `--columns` is omitted
-- [ ] reject mismatched column counts across headerless inputs
-- [ ] extend fixtures and tests for headerless CSV and TSV stacking
+- [x] add `--no-header`
+- [x] add optional `--columns <name,name,...>`
+- [x] reuse the `column_<n>` placeholder contract when `--columns` is omitted
+- [x] reject mismatched column counts across headerless inputs
+- [x] extend fixtures and tests for headerless CSV and TSV stacking
 
 ### Phase 5: Add `jsonl`
 
-- [ ] freeze the first `jsonl` row-shape contract as one object per line
-- [ ] keep first-pass row-key mismatch as a strict failure
-- [ ] record opt-in union behavior as a later schema-flex follow-up instead of widening the first `jsonl` slice
-- [ ] define `.json` output explicitly as one JSON array of row objects if that output is supported
-- [ ] add focused `jsonl` fixtures and command tests
+- [x] freeze the first `jsonl` row-shape contract as one object per line
+- [x] keep first-pass row-key mismatch as a strict failure
+- [x] record opt-in union behavior as a later schema-flex follow-up instead of widening the first `jsonl` slice
+- [x] define `.json` output explicitly as one JSON array of row objects if that output is supported
+- [x] add focused `jsonl` fixtures and command tests
 
 ### Phase 6: Documentation and guide alignment
 
@@ -315,3 +315,4 @@ Deferred:
 ## Related Jobs
 
 - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
+- `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`

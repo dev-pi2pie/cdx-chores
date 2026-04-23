@@ -5,6 +5,7 @@ export type InteractiveActionKey =
   | "data:preview"
   | "data:convert"
   | "data:extract"
+  | "data:stack"
   | "data:query"
   | "data:parquet-preview"
   | "data:json-to-csv"
@@ -64,6 +65,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
     choices: [
       { name: "preview", value: "data:preview" },
       { name: "extract", value: "data:extract" },
+      { name: "stack", value: "data:stack" },
       { name: "query", value: "data:query" },
       { name: "parquet preview", value: "data:parquet-preview" },
       { name: "convert", value: "data:convert" },

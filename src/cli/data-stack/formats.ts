@@ -6,6 +6,13 @@ import type { DataStackInputFormat, DataStackOutputFormat } from "./types";
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataStackInputFormat> = {
   ".csv": "csv",
   ".tsv": "tsv",
+  ".jsonl": "jsonl",
+};
+
+const STACK_DISCOVERY_EXTENSIONS_BY_FORMAT: Record<DataStackInputFormat, readonly string[]> = {
+  csv: [".csv"],
+  tsv: [".tsv"],
+  jsonl: [".jsonl"],
 };
 
 export function detectDataStackInputFormat(
@@ -22,7 +29,7 @@ export function detectDataStackInputFormat(
   }
 
   throw new CliError(
-    `Unsupported stack file type: ${inputPath}. Supported inputs: .csv, .tsv.`,
+    `Unsupported stack file type: ${inputPath}. Supported inputs: .csv, .tsv, .jsonl.`,
     {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -30,8 +37,15 @@ export function detectDataStackInputFormat(
   );
 }
 
-export function isSupportedDataStackDiscoveryPath(path: string): boolean {
-  return extname(path).toLowerCase() in INPUT_FORMAT_EXTENSION_MAP;
+export function isSupportedDataStackDiscoveryPath(
+  path: string,
+  format?: DataStackInputFormat,
+): boolean {
+  const extension = extname(path).toLowerCase();
+  if (!format) {
+    return extension in INPUT_FORMAT_EXTENSION_MAP;
+  }
+  return STACK_DISCOVERY_EXTENSIONS_BY_FORMAT[format].includes(extension);
 }
 
 export function normalizeDataStackOutputFormat(outputPath: string): DataStackOutputFormat {

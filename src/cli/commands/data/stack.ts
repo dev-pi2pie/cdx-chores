@@ -1,10 +1,10 @@
 import type { Command } from "commander";
+import { InvalidArgumentError } from "commander";
 
 import { actionDataStack } from "../../actions";
 import { DATA_STACK_INPUT_FORMAT_VALUES, type DataStackInputFormat } from "../../data-stack/types";
-import { parseNonNegativeIntegerOption } from "../../options/parsers";
+import { collectCsvListOption, parseNonNegativeIntegerOption } from "../../options/parsers";
 import type { CliRuntime } from "../../types";
-import { InvalidArgumentError } from "commander";
 
 function parseDataStackInputFormatOption(value: string): DataStackInputFormat {
   const normalized = value.trim().toLowerCase();
@@ -30,6 +30,13 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
       "--pattern <glob>",
       "Filter directory-expanded candidates with a glob pattern such as *.csv",
     )
+    .option("--no-header", "Treat CSV or TSV inputs as headerless and generate column_n names")
+    .option(
+      "--columns <names>",
+      "Column names for headerless CSV or TSV stacking (comma-separated)",
+      collectCsvListOption,
+      [],
+    )
     .option("--recursive", "Traverse source directories recursively", false)
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value: string) =>
       parseNonNegativeIntegerOption(value, "--max-depth"),
@@ -40,8 +47,11 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
       async (
         sources: string[],
         options: {
+          columns?: string[];
+          header?: boolean;
           inputFormat?: DataStackInputFormat;
           maxDepth?: number;
+          noHeader?: boolean;
           output?: string;
           overwrite?: boolean;
           pattern?: string;
@@ -49,8 +59,10 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
         },
       ) => {
         await actionDataStack(runtime, {
+          columns: (options.columns?.length ?? 0) > 0 ? options.columns : undefined,
           inputFormat: options.inputFormat,
           maxDepth: options.maxDepth,
+          noHeader: options.noHeader ?? options.header === false,
           output: options.output,
           overwrite: options.overwrite,
           pattern: options.pattern,

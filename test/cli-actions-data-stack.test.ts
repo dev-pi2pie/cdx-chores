@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 import { actionDataStack } from "../src/cli/actions";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: data stack", () => {
   test("actionDataStack writes CSV output from mixed explicit and directory sources", async () => {
@@ -27,7 +27,7 @@ describe("cli action modules: data stack", () => {
       });
 
       expectNoStdout();
-      expect(stderr.text).toContain("Wrote CSV: merged.csv");
+      expect(stderr.text).toContain("Wrote CSV:");
       expect(stderr.text).toContain("Files: 3");
       expect(stderr.text).toContain("Rows: 3");
       expect(await readFile(outputPath, "utf8")).toBe(
@@ -53,10 +53,76 @@ describe("cli action modules: data stack", () => {
       });
 
       expectNoStdout();
-      expect(stderr.text).toContain("Wrote JSON: merged.json");
+      expect(stderr.text).toContain("Wrote JSON:");
       expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
         { id: "4", name: "Dion", status: "active" },
         { id: "5", name: "Edda", status: "paused" },
+      ]);
+    });
+  });
+
+  test("actionDataStack stacks headerless CSV inputs with generated placeholder names", async () => {
+    await withTempFixtureDir("data-stack-action-headerless", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataStack(runtime, {
+        noHeader: true,
+        output: outputPath,
+        overwrite: true,
+        sources: [join(REPO_ROOT, "examples/playground/stack-cases/csv-headerless")],
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Wrote CSV:");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "column_1,column_2,column_3\n2001,active,north\n2002,paused,south\n2003,active,west\n2004,paused,east\n",
+      );
+    });
+  });
+
+  test("actionDataStack stacks headerless TSV inputs with explicit columns", async () => {
+    await withTempFixtureDir("data-stack-action-headerless-columns", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.json");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataStack(runtime, {
+        columns: ["id", "status", "region"],
+        noHeader: true,
+        output: outputPath,
+        overwrite: true,
+        sources: [join(REPO_ROOT, "examples/playground/stack-cases/tsv-headerless")],
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Wrote JSON:");
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: "6001", region: "north", status: "active" },
+        { id: "6002", region: "south", status: "paused" },
+        { id: "6003", region: "west", status: "active" },
+        { id: "6004", region: "east", status: "paused" },
+      ]);
+    });
+  });
+
+  test("actionDataStack stacks JSONL inputs with strict same-key handling", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.json");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime();
+      await actionDataStack(runtime, {
+        output: outputPath,
+        overwrite: true,
+        sources: [join(REPO_ROOT, "examples/playground/stack-cases/jsonl-basic")],
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Wrote JSON:");
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { action: "login", id: "evt-001", region: "apac", user_id: 41 },
+        { action: "view", id: "evt-002", region: "emea", user_id: 42 },
+        { action: "purchase", id: "evt-003", region: "amer", user_id: 43 },
+        { action: "logout", id: "evt-004", region: "apac", user_id: 44 },
       ]);
     });
   });
@@ -98,6 +164,48 @@ describe("cli action modules: data stack", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "Mixed normalized input formats are not supported for data stack",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects --columns without --no-header", async () => {
+    await withTempFixtureDir("data-stack-action-columns-without-no-header", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            columns: ["id", "name"],
+            output: "merged.csv",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--columns requires --no-header",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects --no-header for JSONL inputs", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-no-header", async (fixtureDir) => {
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            noHeader: true,
+            output: join(fixtureDir, "merged.json"),
+            sources: [join(REPO_ROOT, "examples/playground/stack-cases/jsonl-basic")],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--no-header is only valid for CSV and TSV stack inputs",
         },
       );
       expectNoOutput();
@@ -204,6 +312,135 @@ describe("cli action modules: data stack", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "Header mismatch",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects headerless column-count mismatches across files", async () => {
+    await withTempFixtureDir("data-stack-action-headerless-mismatch", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "1,Ada\n2,Bob\n", "utf8");
+      await writeFile(join(fixtureDir, "b.csv"), "3,Cyd,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            noHeader: true,
+            output: "merged.csv",
+            sources: ["a.csv", "b.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Headerless column count mismatch",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects JSONL key mismatches", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-mismatch", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.jsonl"), '{"id":"evt-1","status":"active"}\n', "utf8");
+      await writeFile(join(fixtureDir, "b.jsonl"), '{"id":"evt-2","state":"paused"}\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            sources: ["a.jsonl", "b.jsonl"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSONL key mismatch",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects malformed JSONL rows", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-invalid", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.jsonl"), '{"id":"evt-1"}\n{"id":\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            sources: ["a.jsonl"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Invalid JSONL row",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects non-object JSONL rows", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-non-object", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.jsonl"), '{"id":"evt-1"}\n["evt-2"]\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            sources: ["a.jsonl"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSONL rows must be JSON objects",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects empty JSONL files", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-empty", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.jsonl"), "\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            sources: ["a.jsonl"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Input file has no JSONL rows",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects JSONL rows with no keys", async () => {
+    await withTempFixtureDir("data-stack-action-jsonl-no-keys", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.jsonl"), '{}\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            sources: ["a.jsonl"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSONL rows must contain at least one key",
         },
       );
       expectNoOutput();

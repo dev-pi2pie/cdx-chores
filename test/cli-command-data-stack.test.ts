@@ -32,6 +32,115 @@ describe("CLI data stack command", () => {
     });
   });
 
+  test("stacks headerless CSV fixtures end to end with generated placeholder names", async () => {
+    await withTempFixtureDir("data-stack-cli-headerless", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+
+      const result = runCli([
+        "data",
+        "stack",
+        "examples/playground/stack-cases/csv-headerless",
+        "--no-header",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "column_1,column_2,column_3\n2001,active,north\n2002,paused,south\n2003,active,west\n2004,paused,east\n",
+      );
+    });
+  });
+
+  test("stacks headerless TSV fixtures end to end with explicit columns", async () => {
+    await withTempFixtureDir("data-stack-cli-headerless-columns", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.json");
+
+      const result = runCli([
+        "data",
+        "stack",
+        "examples/playground/stack-cases/tsv-headerless",
+        "--no-header",
+        "--columns",
+        "id,status,region",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: "6001", region: "north", status: "active" },
+        { id: "6002", region: "south", status: "paused" },
+        { id: "6003", region: "west", status: "active" },
+        { id: "6004", region: "east", status: "paused" },
+      ]);
+    });
+  });
+
+  test("stacks JSONL fixtures end to end", async () => {
+    await withTempFixtureDir("data-stack-cli-jsonl", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.tsv");
+
+      const result = runCli([
+        "data",
+        "stack",
+        "examples/playground/stack-cases/jsonl-basic",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id\tuser_id\taction\tregion\nevt-001\t41\tlogin\tapac\nevt-002\t42\tview\temea\nevt-003\t43\tpurchase\tamer\nevt-004\t44\tlogout\tapac\n",
+      );
+    });
+  });
+
+  test("honors --input-format jsonl for extensionless directory matches", async () => {
+    await withTempFixtureDir("data-stack-cli-jsonl-override", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "events");
+      const outputPath = join(fixtureDir, "merged.json");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        join(sourceDir, "day-01.data"),
+        '{"id":"evt-001","status":"active"}\n{"id":"evt-002","status":"paused"}\n',
+        "utf8",
+      );
+      await writeFile(
+        join(sourceDir, "day-02.data"),
+        '{"id":"evt-003","status":"active"}\n',
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--pattern",
+        "*.data",
+        "--input-format",
+        "jsonl",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: "evt-001", status: "active" },
+        { id: "evt-002", status: "paused" },
+        { id: "evt-003", status: "active" },
+      ]);
+    });
+  });
+
   test("honors --input-format for extensionless directory matches", async () => {
     await withTempFixtureDir("data-stack-cli-override", async (fixtureDir) => {
       const sourceDir = join(fixtureDir, "parts");
@@ -107,5 +216,21 @@ describe("CLI data stack command", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("--max-depth requires --recursive");
+  });
+
+  test("rejects --columns without --no-header at the command layer", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "examples/playground/stack-cases/csv-matching-headers",
+      "--columns",
+      "id,name,status",
+      "--output",
+      "examples/playground/.tmp-tests/invalid.csv",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--columns requires --no-header");
   });
 });

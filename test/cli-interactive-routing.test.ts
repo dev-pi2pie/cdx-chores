@@ -20,7 +20,7 @@ describe("interactive mode routing", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
-  test("shows the broadened data menu copy and includes data extract plus data query", () => {
+  test("shows the broadened data menu copy and includes data stack plus query and extract", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "cancel"],
@@ -37,6 +37,7 @@ describe("interactive mode routing", () => {
     ).toEqual([
       "data:preview",
       "data:extract",
+      "data:stack",
       "data:query",
       "data:parquet-preview",
       "data:convert",
@@ -533,6 +534,71 @@ describe("interactive mode routing", () => {
     expect(plainStderr).toContain("- output format: JSON");
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Continue to output setup?",
+    );
+  });
+
+  test("routes interactive data stack through shared stack execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "json"],
+      nowIsoString: "2026-03-30T00:00:00.900Z",
+      stdoutColumns: 80,
+      stdoutIsTTY: true,
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers", "fixtures/stacked.json"],
+      inputQueue: ["*.csv"],
+      confirmQueue: [true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 3,
+          outputFormat: "json",
+          outputPath: expect.stringContaining("fixtures/stacked.json"),
+          overwrite: false,
+          rowCount: 6,
+        },
+      },
+    ]);
+    expect(result.pathCalls).toContainEqual({
+      kind: "required",
+      message: "Input directory",
+      options: expect.objectContaining({
+        kind: "directory",
+      }),
+    });
+    expect(result.pathCalls).toContainEqual({
+      kind: "required",
+      message: "Output JSON file",
+      options: expect.objectContaining({
+        kind: "file",
+      }),
+    });
+    expect(plainStderr).toContain("Tip: Review matched files before writing the stacked output.");
+    expect(plainStderr).toContain("Stack review");
+    expect(plainStderr).toContain("- input format: CSV");
+    expect(plainStderr).toContain("- pattern: *.csv");
+    expect(plainStderr).toContain("- traversal: shallow only");
+    expect(plainStderr).toContain("- output format: JSON");
+    expect(plainStderr).toContain("- matched files: 3");
+  });
+
+  test("lets interactive data stack stop before writing at the final review checkpoint", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "csv", "cancel"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers", "fixtures/stacked.csv"],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stderr).toContain("Stack review");
+    expect(result.stderr).toContain("Skipped stack write.");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "select:Stack review next step",
     );
   });
 

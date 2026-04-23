@@ -70,7 +70,7 @@ async function collectDirectoryCandidatePaths(options: {
         if (!matchesDirectoryPattern(relativePath, options.pattern)) {
           continue;
         }
-      } else if (!isSupportedDataStackDiscoveryPath(entryPath)) {
+      } else if (!isSupportedDataStackDiscoveryPath(entryPath, options.inputFormat)) {
         continue;
       }
 

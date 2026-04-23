@@ -237,6 +237,8 @@ describe("CLI UX flags and path output", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("--input-format <format>");
     expect(result.stdout).toContain("--pattern <glob>");
+    expect(result.stdout).toContain("--no-header");
+    expect(result.stdout).toContain("--columns <names>");
     expect(result.stdout).toContain("--recursive");
     expect(result.stdout).toContain("--max-depth <value>");
     expect(result.stdout).toContain("--output <path>");

@@ -7,6 +7,7 @@ import {
 import { runInteractiveDataConvert } from "./data/convert";
 import { runInteractiveDataExtract } from "./data/extract";
 import { runInteractiveDataPreview, runInteractiveParquetPreview } from "./data/preview";
+import { runInteractiveDataStack } from "./data/stack";
 import { runInteractiveDataQuery } from "./data-query";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
 
@@ -27,6 +28,11 @@ export async function handleDataInteractiveAction(
 
   if (action === "data:extract") {
     await runInteractiveDataExtract(runtime, pathPromptContext);
+    return;
+  }
+
+  if (action === "data:stack") {
+    await runInteractiveDataStack(runtime, pathPromptContext);
     return;
   }
 

@@ -13,6 +13,10 @@ export interface InteractiveHarnessScenario {
   dataExtractActionErrorCode?: string;
   dataExtractActionStderr?: string;
   dataExtractActionStdout?: string;
+  dataStackActionErrorMessage?: string;
+  dataStackActionErrorCode?: string;
+  dataStackActionStderr?: string;
+  dataStackActionStdout?: string;
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;

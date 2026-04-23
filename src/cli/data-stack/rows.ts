@@ -1,9 +1,10 @@
-import { parseDelimited, stringifyDelimitedRows } from "../../utils/delimited";
+import { parseDelimited } from "../../utils/delimited";
 import { CliError } from "../errors";
-import type { DataStackInputFormat, DataStackOutputFormat } from "./types";
+import { parseJsonlStackSourceText } from "./jsonl";
+import type { DataStackDelimitedInputFormat, DataStackInputFormat } from "./types";
 
 interface ParsedStackSource {
-  dataRows: string[][];
+  dataRows: unknown[][];
   header: string[];
   path: string;
 }
@@ -20,13 +21,51 @@ function padRow(row: readonly string[], width: number): string[] {
   return [...row, ...Array.from({ length: Math.max(width - row.length, 0) }, () => "")];
 }
 
-function parseDataStackSourceText(options: {
+function createPlaceholderColumns(width: number): string[] {
+  return Array.from({ length: width }, (_value, index) => `column_${index + 1}`);
+}
+
+function parseDelimitedStackSourceText(options: {
+  columns?: readonly string[];
   expectedHeaderWidth?: number;
-  format: DataStackInputFormat;
+  format: DataStackDelimitedInputFormat;
+  noHeader?: boolean;
   path: string;
   text: string;
 }): ParsedStackSource {
   const rows = parseDelimited(options.text, options.format);
+  const nonEmptyRows = rows.filter((row) => row.some((value) => value.length > 0));
+
+  if (options.noHeader) {
+    const inferredWidth = options.columns?.length ?? options.expectedHeaderWidth ?? nonEmptyRows[0]?.length;
+    if (!inferredWidth || inferredWidth <= 0) {
+      throw new CliError(`Input file has no data rows to infer headerless columns: ${options.path}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+
+    const header = options.columns ? [...options.columns] : createPlaceholderColumns(inferredWidth);
+    const dataRows = nonEmptyRows.map((row) => {
+      if (row.length > inferredWidth) {
+        throw new CliError(
+          `Headerless column count mismatch for ${options.path}. Expected ${inferredWidth} columns but received ${row.length}.`,
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          },
+        );
+      }
+      return padRow(row, inferredWidth);
+    });
+
+    return {
+      dataRows,
+      header,
+      path: options.path,
+    };
+  }
+
   const headerRow = rows[0];
 
   if (!headerRow || headerRow.every((value) => value.trim().length === 0)) {
@@ -94,20 +133,32 @@ function ensureMatchingHeaders(options: {
 }
 
 export async function normalizeDataStackSources(options: {
+  columns?: readonly string[];
   files: ReadonlyArray<{ format: DataStackInputFormat; path: string }>;
+  noHeader?: boolean;
   readText: (path: string) => Promise<string>;
   renderPath: (path: string) => string;
-}): Promise<{ header: string[]; rows: string[][] }> {
+}): Promise<{ header: string[]; rows: unknown[][] }> {
   let baseline: ParsedStackSource | undefined;
-  const rows: string[][] = [];
+  const rows: unknown[][] = [];
 
   for (const file of options.files) {
-    const parsed = parseDataStackSourceText({
-      expectedHeaderWidth: baseline?.header.length,
-      format: file.format,
-      path: file.path,
-      text: await options.readText(file.path),
-    });
+    const text = await options.readText(file.path);
+    const parsed =
+      file.format === "jsonl"
+        ? parseJsonlStackSourceText({
+            expectedHeader: baseline?.header,
+            path: file.path,
+            text,
+          })
+        : parseDelimitedStackSourceText({
+            columns: options.columns,
+            expectedHeaderWidth: baseline?.header.length,
+            format: file.format,
+            noHeader: options.noHeader,
+            path: file.path,
+            text,
+          });
 
     if (baseline) {
       ensureMatchingHeaders({
@@ -133,19 +184,4 @@ export async function normalizeDataStackSources(options: {
     header: baseline.header,
     rows,
   };
-}
-
-export function materializeDataStackRows(options: {
-  format: DataStackOutputFormat;
-  header: readonly string[];
-  rows: ReadonlyArray<readonly string[]>;
-}): string {
-  if (options.format === "json") {
-    const records = options.rows.map((row) =>
-      Object.fromEntries(options.header.map((header, index) => [header, row[index] ?? ""])),
-    );
-    return `${JSON.stringify(records)}\n`;
-  }
-
-  return stringifyDelimitedRows([options.header, ...options.rows], options.format);
 }
