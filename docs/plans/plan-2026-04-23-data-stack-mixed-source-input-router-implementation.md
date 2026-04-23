@@ -275,8 +275,9 @@ Deferred:
 
 ### Phase 7: Record deferred follow-ups explicitly
 
-- [ ] record any future input-mode widening for interactive beyond directory-first
-- [ ] record schema-flex features such as `--union-by-name` and provenance columns as separate follow-up work
+- [ ] record `--union-by-name` as the preferred first schema-flex widening for later `jsonl` key-mismatch handling
+- [ ] record any future interactive widening beyond directory-first as a true mixed-source mode that mirrors the CLI contract
+- [ ] record later schema-flex features beyond `--union-by-name`, such as provenance columns, as separate follow-up work
 - [ ] record any later Codex-assisted stack diagnostics as a separate future slice
 
 ## Related Research

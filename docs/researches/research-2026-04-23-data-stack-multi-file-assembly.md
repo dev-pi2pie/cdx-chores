@@ -601,11 +601,6 @@ Recommended output rule:
 - if `.json` output is supported, it should mean one JSON array of row objects
 - later SQL remains the job of `data query`
 
-## Open Questions
-
-- When schema-flex work begins, should row-key mismatch on `jsonl` widen first through one opt-in union flag or through a more explicit schema-review step?
-- When interactive eventually widens beyond directory-first, should it add direct-file selection only, or a true mixed-source input mode that mirrors the CLI fully?
-
 ## Recommendation
 
 Use a new `data stack` action as the owned surface for multi-file assembly.
@@ -625,6 +620,16 @@ Keep the first implementation narrow, but allow mixed raw source kinds:
 - deterministic headerless support through `--no-header` and optional `--columns` in a later slice
 - `jsonl` as the next structured-data expansion, with strict same-key behavior first
 - no new Codex-owned stacking flow in the first slice
+
+Preferred later directions:
+
+- when `jsonl` widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
+- when interactive widens beyond the first directory-first slice, widen to a true mixed-source input mode that mirrors the CLI contract rather than a file-only intermediate mode
+
+Resolved future-direction decisions:
+
+- the first schema-flex widening for `jsonl` should use one explicit opt-in union flag, with `--union-by-name` as the preferred first public contract
+- the first widening beyond directory-first interactive mode should be a true mixed-source input mode that mirrors the CLI contract, not a smaller file-only intermediate mode
 
 Then keep the downstream flow explicit:
 
