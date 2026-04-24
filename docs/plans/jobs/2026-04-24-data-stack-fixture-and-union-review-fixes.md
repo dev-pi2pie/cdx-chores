@@ -15,11 +15,15 @@ What changed:
 - rejected duplicate names in `--union-by-name` mode before name-based row alignment
 - added action coverage for duplicate header names in union-by-name CSV stacking
 - documented that union-by-name requires unique names in each source because name-based alignment is otherwise ambiguous
+- rejected duplicate output names before JSON materialization so strict delimited stacks cannot silently drop repeated columns
+- added action coverage for duplicate CSV headers with `.json` output
+- documented the JSON output duplicate-name restriction
 
 Why:
 
 - `reset` deleted the default fixture tree and regenerated only part of the committed fixture set
 - union-by-name alignment used a name-to-index map, so duplicate header names could silently drop later duplicate columns
+- JSON object materialization used one object key per column name, so duplicate output names could silently overwrite earlier values
 
 Verification:
 

@@ -61,6 +61,30 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack rejects duplicate header names before JSON materialization", async () => {
+    await withTempFixtureDir("data-stack-action-json-duplicate-header", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.json");
+      await writeFile(join(fixtureDir, "rows.csv"), "id,value,value\n1,first,second\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.json",
+            overwrite: true,
+            sources: ["rows.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSON stack output requires unique column or key names",
+        },
+      );
+      expectNoOutput();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+    });
+  });
+
   test("actionDataStack stacks headerless CSV inputs with generated placeholder names", async () => {
     await withTempFixtureDir("data-stack-action-headerless", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "merged.csv");

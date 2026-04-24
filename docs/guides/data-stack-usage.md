@@ -70,6 +70,7 @@ Structured JSON input behavior:
 - empty structured JSON inputs are rejected
 - strict mode rejects key mismatches rather than widening automatically
 - `.json` output writes one JSON array of row objects
+- `.json` output rejects duplicate output names because JSON objects cannot safely preserve repeated keys
 
 Schema-flex behavior:
 
