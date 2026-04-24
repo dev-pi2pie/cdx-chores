@@ -163,18 +163,22 @@ Clarification:
 - show whether strict matching or union-by-name mode will be used
 - show explicit excluded columns/keys when exclusions are configured
 - preserve current output-format and destination selection flow
-- preserve current default-output-path behavior for single-source interactive runs
-- require a custom output destination for mixed-source interactive runs until a less arbitrary primary-label rule is designed
+- replace source-derived default output paths with generated stack artifact names
+- keep custom output destination available for users who want a source-specific name or location
 
 ### Default output path
 
-- keep the existing default-output rule when the interactive run has exactly one raw source:
-  - derive the sibling output path from that source path
-  - keep the stack-specific suffix aligned with the selected output format:
-    - `.stack.csv`
-    - `.stack.tsv`
-    - `.stack.json`
-- when the interactive run has two or more raw sources, skip the default-output shortcut and ask for a custom output path
+- use a generated artifact-style default output path for interactive runs:
+  - `data-stack-<timestamp>-<uid>.csv`
+  - `data-stack-<timestamp>-<uid>.tsv`
+  - `data-stack-<timestamp>-<uid>.json`
+- derive the default path from the current working directory rather than a raw source path
+- use the same naming rule for one raw source, multiple explicit files, multiple directories, and mixed file/directory source lists
+- do not derive a default output path from source stems or normalized matched files
+- do not silently overwrite a generated default path:
+  - the timestamp and uid should make collisions rare
+  - if the generated path already exists, the interactive destination flow must treat it like any other existing output path and ask before overwrite
+  - when overwrite is declined, the user must be able to choose a custom path or return to destination selection for a newly generated default candidate
 - keep direct CLI behavior unchanged:
   - direct CLI continues to require `--output <path>`
   - direct CLI does not gain implicit output naming in this follow-up
@@ -246,8 +250,12 @@ The interactive review checkpoint must show enough information for the user to u
 
 ### Default output behavior
 
-- a single raw interactive source keeps the current derived `.stack.<format>` default output option
-- two or more raw interactive sources require a custom output path
+- interactive default output uses generated stack artifact naming: `data-stack-<timestamp>-<uid>.<format>`
+- interactive default output is rooted at the current working directory, not beside any raw source
+- the generated default applies equally to single-source and multi-source interactive runs
+- generated defaults are collision-resistant but still go through the existing overwrite confirmation if the target already exists
+- declining overwrite should keep the destination flow recoverable through a custom path or a newly generated default candidate
+- custom output remains available when the user wants a source-specific or directory-local path
 - direct CLI keeps requiring `--output <path>` and does not gain implicit output naming
 
 ## Non-Goals
@@ -284,8 +292,8 @@ The interactive review checkpoint must show enough information for the user to u
 - Risk: JSON output support is mistaken for JSON input support.
   Mitigation: document and test both surfaces separately: interactive output keeps `json`, while input widening adds strict `jsonl` and strict array-of-objects `json`.
 
-- Risk: mixed-source default output naming becomes arbitrary.
-  Mitigation: keep derived defaults only for single-source runs and require a custom output path when the interactive source list contains more than one raw source.
+- Risk: source-derived default output naming becomes arbitrary for mixed-source runs.
+  Mitigation: use generated artifact naming for every interactive stack default and keep source-specific names behind the custom-output path.
 
 ## Implementation Touchpoints
 
@@ -327,8 +335,9 @@ The interactive review checkpoint must show enough information for the user to u
   - unknown names are rejected
   - exclusion disclosure is required in direct CLI stderr and interactive review
 - [x] freeze default-output behavior for widened source lists:
-  - single raw source keeps the current derived `.stack.<format>` default
-  - multiple raw sources require a custom output path
+  - interactive defaults use generated `data-stack-<timestamp>-<uid>.<format>` artifact names
+  - generated defaults apply to single-source and multi-source interactive runs
+  - direct CLI keeps requiring `--output <path>`
 
 ### Phase 2: Implement mixed-source interactive selection
 
@@ -371,6 +380,13 @@ The interactive review checkpoint must show enough information for the user to u
 - [x] use bounded disclosure for long exclusion lists
 - [x] add focused direct CLI coverage for column/key order, missing-value behavior, strict-default failures, exclusions, and disclosure
 - [x] add focused interactive coverage for selecting union-by-name, entering exclusions, and reviewing the selected schema mode plus exclusions
+- [ ] replace interactive source-derived default output paths with generated `data-stack-<timestamp>-<uid>.<format>` defaults
+- [ ] apply the generated default output naming to single-source and multi-source interactive stack runs
+- [ ] keep the generated default output rooted at the current working directory
+- [ ] preserve overwrite confirmation if a generated default output path already exists
+- [ ] keep declined-overwrite recovery ergonomic by allowing a custom path or newly generated default candidate
+- [ ] preserve custom output selection for source-specific or directory-local output paths
+- [ ] update interactive default-output tests so they no longer expect source-adjacent `.stack.<format>` paths
 
 ### Phase 5: Docs and final alignment
 
@@ -380,7 +396,7 @@ The interactive review checkpoint must show enough information for the user to u
 - [ ] document the narrow `.json` input contract and unsupported JSON shapes
 - [ ] document `--union-by-name` and `--exclude-columns` as opt-in deterministic schema-flex controls and keep strict matching documented as the default
 - [ ] document replayable stack records and Codex-assisted schema suggestions as deferred to separate future work, not part of this implementation session
-- [ ] document the single-source default-output rule and mixed-source custom-output requirement
+- [ ] document generated interactive default-output naming and direct CLI explicit-output behavior
 - [ ] add a job record when implementation lands
 
 ## Related Research

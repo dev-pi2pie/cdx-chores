@@ -57,7 +57,7 @@ Status note:
 - interactive widening remains follow-up work, not a reopening of this research direction:
   - the first interactive slice intentionally shipped directory-first and CSV/TSV-only
   - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md` owns the next mixed-source interactive work
-  - that follow-up should freeze default-output behavior before implementation because mixed raw sources do not always have one obvious basename
+  - that follow-up now uses generated stack artifact names for interactive defaults because mixed raw sources do not always have one obvious basename
 - JSON output and JSON input stay separate in this research:
   - `.json` output is supported as an encoding for the assembled table
   - strict `jsonl` input is one structured input route
@@ -444,7 +444,7 @@ Recommended direction:
 
 - keep direct CLI `--output <path>` explicit in the first shipped slice
 - record default output-path behavior as part of this plan rather than deferring it out of scope
-- implement default output-path behavior later in the same plan, after the mixed-source router and primary-source semantics are stable enough to support unsurprising naming
+- implement default output-path behavior through an interactive-only generated artifact name instead of source-stem naming
 
 Preferred first rollout for default output paths:
 
@@ -454,18 +454,20 @@ Preferred first rollout for default output paths:
   - custom output path
 - keep direct CLI explicit until the naming rule is validated in real stack usage
 
-Likely future naming rule:
+Resolved naming rule:
 
-- derive the default output stem from the normalized source set’s primary label
-- append a stack-specific suffix before the extension, such as:
-  - `.stack.csv`
-  - `.stack.tsv`
-  - `.stack.json`
+- do not derive the default name from a raw source stem or normalized matched files
+- generate a stack artifact name in the current working directory:
+  - `data-stack-<timestamp>-<uid>.csv`
+  - `data-stack-<timestamp>-<uid>.tsv`
+  - `data-stack-<timestamp>-<uid>.json`
+- use the same generated naming rule for one raw source, multiple explicit files, multiple directories, and mixed file/directory source lists
 
 Implication:
 
 - the feature belongs in this overall plan
-- but it should land only after the mixed-source routing layer makes “primary source” naming stable enough to trust
+- the implementation no longer needs a “primary source” naming rule
+- users who want source-specific names should choose a custom output path
 
 ## Interactive Flow Direction
 
@@ -718,7 +720,7 @@ Preferred later directions:
 
 - when structured JSON widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
 - when interactive widens beyond the first directory-first slice, widen to a true mixed-source input mode that mirrors the CLI contract rather than a file-only intermediate mode
-- when default output-path behavior widens beyond the single-source interactive rule, keep direct CLI explicit and require the interactive follow-up to define a stable mixed-source primary-label rule before adding implicit naming
+- default output-path behavior is now resolved in the interactive follow-up: keep direct CLI explicit and use generated interactive stack artifact names instead of deriving a primary source label
 
 Resolved future-direction decisions:
 
