@@ -5,12 +5,14 @@ import type { DataStackInputFormat, DataStackOutputFormat } from "./types";
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataStackInputFormat> = {
   ".csv": "csv",
+  ".json": "json",
   ".tsv": "tsv",
   ".jsonl": "jsonl",
 };
 
 const STACK_DISCOVERY_EXTENSIONS_BY_FORMAT: Record<DataStackInputFormat, readonly string[]> = {
   csv: [".csv"],
+  json: [".json"],
   tsv: [".tsv"],
   jsonl: [".jsonl"],
 };
@@ -29,7 +31,7 @@ export function detectDataStackInputFormat(
   }
 
   throw new CliError(
-    `Unsupported stack file type: ${inputPath}. Supported inputs: .csv, .tsv, .jsonl.`,
+    `Unsupported stack file type: ${inputPath}. Supported inputs: .csv, .tsv, .json, .jsonl.`,
     {
       code: "INVALID_INPUT",
       exitCode: 2,

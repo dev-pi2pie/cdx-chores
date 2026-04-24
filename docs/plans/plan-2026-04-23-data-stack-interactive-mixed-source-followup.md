@@ -332,45 +332,45 @@ The interactive review checkpoint must show enough information for the user to u
 
 ### Phase 2: Implement mixed-source interactive selection
 
-- [ ] add interactive prompts to collect one or more raw sources
-- [ ] route those raw sources through the existing stack normalization contract
-- [ ] review the normalized source summary before write
-- [ ] keep pattern and traversal prompts global, matching the direct CLI rule that they apply only to directory-expanded candidates
-- [ ] preserve JSON output as a write option while changing the source-selection flow
-- [ ] add an interactive schema-mode prompt with strict matching as the default and union-by-name as an explicit opt-in
-- [ ] add an interactive explicit-exclusion prompt only when union-by-name is selected
-- [ ] include the selected schema mode in the final review checkpoint
-- [ ] include excluded column/key names and counts in the final review checkpoint
-- [ ] add focused interactive routing coverage for mixed file/directory selection
+- [x] add interactive prompts to collect one or more raw sources
+- [x] route those raw sources through the existing stack normalization contract
+- [x] review the normalized source summary before write
+- [x] keep pattern and traversal prompts global, matching the direct CLI rule that they apply only to directory-expanded candidates
+- [x] preserve JSON output as a write option while changing the source-selection flow
+- [x] add an interactive schema-mode prompt with strict matching as the default and union-by-name as an explicit opt-in
+- [x] add an interactive explicit-exclusion prompt only when union-by-name is selected
+- [x] include the selected schema mode in the final review checkpoint
+- [x] include excluded column/key names and counts in the final review checkpoint
+- [x] add focused interactive routing coverage for mixed file/directory selection
 
 ### Phase 3: Add structured JSON input
 
-- [ ] add `json` to the shared stack input-format model
-- [ ] add direct CLI `json` input support for top-level arrays of objects
-- [ ] add interactive `jsonl` input support where it is still missing from interactive mode
-- [ ] add interactive `json` input support for top-level arrays of objects
-- [ ] keep strict same-key behavior aligned across direct CLI and interactive mode
-- [ ] add direct CLI coverage for `.json` discovery, `--input-format json`, strict same-key validation, and unsupported JSON shapes
-- [ ] add focused coverage for `jsonl` input selection and validation flow
-- [ ] add focused coverage for `json` input selection and validation flow
-- [ ] add rejection coverage for unsupported JSON shapes
+- [x] add `json` to the shared stack input-format model
+- [x] add direct CLI `json` input support for top-level arrays of objects
+- [x] add interactive `jsonl` input support where it is still missing from interactive mode
+- [x] add interactive `json` input support for top-level arrays of objects
+- [x] keep strict same-key behavior aligned across direct CLI and interactive mode
+- [x] add direct CLI coverage for `.json` discovery, `--input-format json`, strict same-key validation, and unsupported JSON shapes
+- [x] add focused coverage for `jsonl` input selection and validation flow
+- [x] add focused coverage for `json` input selection and validation flow
+- [x] add rejection coverage for unsupported JSON shapes
 
 ### Phase 4: Add opt-in union-by-name
 
-- [ ] add direct CLI `--union-by-name`
-- [ ] add direct CLI `--exclude-columns <name,name,...>`
-- [ ] apply union-by-name to CSV and TSV headers
-- [ ] apply union-by-name to `jsonl` object keys
-- [ ] apply union-by-name to `.json` array-of-object keys
-- [ ] apply exact-name exclusions after union construction
-- [ ] reject unknown exclusions
-- [ ] reject `--exclude-columns` unless `--union-by-name` is present
-- [ ] reject `--union-by-name` with `--no-header`
-- [ ] keep mixed normalized input formats rejected even with `--union-by-name`
-- [ ] disclose schema mode, included output count, and excluded names/counts in direct CLI stderr
-- [ ] use bounded disclosure for long exclusion lists
-- [ ] add focused direct CLI coverage for column/key order, missing-value behavior, strict-default failures, exclusions, and disclosure
-- [ ] add focused interactive coverage for selecting union-by-name, entering exclusions, and reviewing the selected schema mode plus exclusions
+- [x] add direct CLI `--union-by-name`
+- [x] add direct CLI `--exclude-columns <name,name,...>`
+- [x] apply union-by-name to CSV and TSV headers
+- [x] apply union-by-name to `jsonl` object keys
+- [x] apply union-by-name to `.json` array-of-object keys
+- [x] apply exact-name exclusions after union construction
+- [x] reject unknown exclusions
+- [x] reject `--exclude-columns` unless `--union-by-name` is present
+- [x] reject `--union-by-name` with `--no-header`
+- [x] keep mixed normalized input formats rejected even with `--union-by-name`
+- [x] disclose schema mode, included output count, and excluded names/counts in direct CLI stderr
+- [x] use bounded disclosure for long exclusion lists
+- [x] add focused direct CLI coverage for column/key order, missing-value behavior, strict-default failures, exclusions, and disclosure
+- [x] add focused interactive coverage for selecting union-by-name, entering exclusions, and reviewing the selected schema mode plus exclusions
 
 ### Phase 5: Docs and final alignment
 

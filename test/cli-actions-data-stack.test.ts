@@ -127,6 +127,124 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack stacks JSON array inputs with strict same-key handling", async () => {
+    await withTempFixtureDir("data-stack-action-json", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "events");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        join(sourceDir, "day-01.json"),
+        JSON.stringify([
+          { id: "evt-001", status: "active" },
+          { id: "evt-002", status: "paused" },
+        ]),
+        "utf8",
+      );
+      await writeFile(
+        join(sourceDir, "day-02.json"),
+        JSON.stringify([{ status: "active", id: "evt-003" }]),
+        "utf8",
+      );
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionDataStack(runtime, {
+        output: "merged.csv",
+        overwrite: true,
+        sources: ["events"],
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Wrote CSV:");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id,status\nevt-001,active\nevt-002,paused\nevt-003,active\n",
+      );
+    });
+  });
+
+  test("actionDataStack rejects JSON array key mismatches in strict mode", async () => {
+    await withTempFixtureDir("data-stack-action-json-mismatch", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "rows.json"),
+        JSON.stringify([
+          { id: "evt-001", status: "active" },
+          { id: "evt-002", action: "login" },
+        ]),
+        "utf8",
+      );
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.csv",
+            sources: ["rows.json"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSON key mismatch",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack stacks union-by-name CSV inputs with explicit exclusions", async () => {
+    await withTempFixtureDir("data-stack-action-union", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name,noise\n1,Ada,drop-a\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,status,noise\n2,active,drop-b\n", "utf8");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionDataStack(runtime, {
+        excludeColumns: ["noise"],
+        output: "merged.csv",
+        overwrite: true,
+        sources: ["parts"],
+        unionByName: true,
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Schema mode: union-by-name");
+      expect(stderr.text).toContain("Columns: 3");
+      expect(stderr.text).toContain("Excluded columns: 1 (noise)");
+      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
+    });
+  });
+
+  test("actionDataStack stacks union-by-name JSON arrays with first-seen key order", async () => {
+    await withTempFixtureDir("data-stack-action-json-union", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "events");
+      const outputPath = join(fixtureDir, "merged.json");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        join(sourceDir, "a.json"),
+        JSON.stringify([{ id: "evt-001", actor: "ada" }]),
+        "utf8",
+      );
+      await writeFile(
+        join(sourceDir, "b.json"),
+        JSON.stringify([{ id: "evt-002", action: "login" }]),
+        "utf8",
+      );
+
+      const { runtime, expectNoStdout } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionDataStack(runtime, {
+        output: "merged.json",
+        overwrite: true,
+        sources: ["events"],
+        unionByName: true,
+      });
+
+      expectNoStdout();
+      expect(await readFile(outputPath, "utf8")).toBe(
+        '[{"id":"evt-001","actor":"ada","action":""},{"id":"evt-002","actor":"","action":"login"}]\n',
+      );
+    });
+  });
+
   test("actionDataStack excludes an output path that lives inside a scanned directory", async () => {
     await withTempFixtureDir("data-stack-action-output-inside-source", async (fixtureDir) => {
       const partsPath = join(fixtureDir, "parts");
@@ -192,6 +310,80 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack rejects --exclude-columns without --union-by-name", async () => {
+    await withTempFixtureDir("data-stack-action-exclude-without-union", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            excludeColumns: ["name"],
+            output: "merged.csv",
+            sources: ["parts"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--exclude-columns requires --union-by-name",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects --union-by-name with --no-header", async () => {
+    await withTempFixtureDir("data-stack-action-union-no-header", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "1,Ada\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            noHeader: true,
+            output: "merged.csv",
+            sources: ["parts"],
+            unionByName: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--union-by-name cannot be used with --no-header",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects unknown union exclusions after discovery", async () => {
+    await withTempFixtureDir("data-stack-action-union-unknown-exclude", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            excludeColumns: ["missing"],
+            output: "merged.csv",
+            sources: ["parts"],
+            unionByName: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Unknown --exclude-columns names: missing",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
   test("actionDataStack rejects --no-header for JSONL inputs", async () => {
     await withTempFixtureDir("data-stack-action-jsonl-no-header", async (fixtureDir) => {
       const { runtime, expectNoOutput } = createActionTestRuntime();
@@ -214,14 +406,14 @@ describe("cli action modules: data stack", () => {
 
   test("actionDataStack rejects explicit unsupported input files", async () => {
     await withTempFixtureDir("data-stack-action-unsupported", async (fixtureDir) => {
-      await writeFile(join(fixtureDir, "a.json"), '[{"id":1}]\\n', "utf8");
+      await writeFile(join(fixtureDir, "a.yaml"), "id: 1\n", "utf8");
 
       const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
       await expectCliError(
         () =>
           actionDataStack(runtime, {
             output: "merged.csv",
-            sources: ["a.json"],
+            sources: ["a.yaml"],
           }),
         {
           code: "INVALID_INPUT",
@@ -420,6 +612,48 @@ describe("cli action modules: data stack", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "Input file has no JSONL rows",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects unsupported JSON stack shapes", async () => {
+    await withTempFixtureDir("data-stack-action-json-shape", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "object.json"), '{"id":"evt-001"}\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.csv",
+            sources: ["object.json"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSON stack input must be one top-level array of objects",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
+  test("actionDataStack rejects non-object JSON array items", async () => {
+    await withTempFixtureDir("data-stack-action-json-non-object", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "rows.json"), '[{"id":"evt-001"}, 2]\n', "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.csv",
+            sources: ["rows.json"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "JSON array items must be JSON objects",
         },
       );
       expectNoOutput();

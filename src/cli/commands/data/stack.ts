@@ -41,6 +41,17 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value: string) =>
       parseNonNegativeIntegerOption(value, "--max-depth"),
     )
+    .option(
+      "--union-by-name",
+      "Stack schemas by column or key name instead of requiring strict matches",
+      false,
+    )
+    .option(
+      "--exclude-columns <names>",
+      "Exclude named columns or keys from union-by-name output (comma-separated)",
+      collectCsvListOption,
+      [],
+    )
     .option("-o, --output <path>", "Write the stacked table to a .csv, .tsv, or .json file")
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .action(
@@ -48,6 +59,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
         sources: string[],
         options: {
           columns?: string[];
+          excludeColumns?: string[];
           header?: boolean;
           inputFormat?: DataStackInputFormat;
           maxDepth?: number;
@@ -56,10 +68,13 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           overwrite?: boolean;
           pattern?: string;
           recursive?: boolean;
+          unionByName?: boolean;
         },
       ) => {
         await actionDataStack(runtime, {
           columns: (options.columns?.length ?? 0) > 0 ? options.columns : undefined,
+          excludeColumns:
+            (options.excludeColumns?.length ?? 0) > 0 ? options.excludeColumns : undefined,
           inputFormat: options.inputFormat,
           maxDepth: options.maxDepth,
           noHeader: options.noHeader ?? options.header === false,
@@ -67,6 +82,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           overwrite: options.overwrite,
           pattern: options.pattern,
           recursive: options.recursive,
+          unionByName: options.unionByName,
           sources,
         });
       },

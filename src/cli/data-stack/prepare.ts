@@ -1,7 +1,8 @@
 import { CliError } from "../errors";
+import { normalizeDataStackSchemaOptions } from "./disclosure";
 import { normalizeDataStackSources } from "./rows";
 import { resolveDataStackInputSources, type DataStackNormalizedInputFile } from "./input-router";
-import type { DataStackInputFormat } from "./types";
+import type { DataStackInputFormat, DataStackSchemaMode } from "./types";
 
 function ensureUniformFormat(
   files: ReadonlyArray<{ format: DataStackInputFormat; path: string }>,
@@ -32,6 +33,7 @@ function ensureUniformFormat(
 
 export interface PrepareDataStackExecutionOptions {
   columns?: readonly string[];
+  excludeColumns?: readonly string[];
   inputFormat?: DataStackInputFormat;
   maxDepth?: number;
   noHeader?: boolean;
@@ -40,14 +42,17 @@ export interface PrepareDataStackExecutionOptions {
   readText: (path: string) => Promise<string>;
   recursive?: boolean;
   renderPath: (path: string) => string;
+  schemaMode?: DataStackSchemaMode;
   sources: string[];
 }
 
 export interface PreparedDataStackExecution {
+  excludedColumns: string[];
   files: DataStackNormalizedInputFile[];
   inputFormat: DataStackInputFormat;
   rows: unknown[][];
   header: string[];
+  schemaMode: DataStackSchemaMode;
 }
 
 export async function prepareDataStackExecution(
@@ -73,25 +78,35 @@ export async function prepareDataStackExecution(
   }
 
   const inputFormat = ensureUniformFormat(normalized.files, options.renderPath);
-  if (options.noHeader && inputFormat === "jsonl") {
+  if (options.noHeader && (inputFormat === "jsonl" || inputFormat === "json")) {
     throw new CliError("--no-header is only valid for CSV and TSV stack inputs.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
   }
 
+  const schemaOptions = normalizeDataStackSchemaOptions({
+    excludeColumns: options.excludeColumns,
+    noHeader: options.noHeader,
+    schemaMode: options.schemaMode,
+  });
+
   const normalizedRows = await normalizeDataStackSources({
     columns: options.columns,
+    excludeColumns: schemaOptions.excludeColumns,
     files: normalized.files,
     noHeader: options.noHeader,
     readText: options.readText,
     renderPath: options.renderPath,
+    schemaMode: schemaOptions.schemaMode,
   });
 
   return {
+    excludedColumns: schemaOptions.excludeColumns,
     files: normalized.files,
     header: normalizedRows.header,
     inputFormat,
     rows: normalizedRows.rows,
+    schemaMode: schemaOptions.schemaMode,
   };
 }

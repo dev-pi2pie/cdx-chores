@@ -1,6 +1,7 @@
 import { readTextFileRequired, writeTextFileSafe } from "../file-io";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
+import { formatBoundedDataStackNames, formatDataStackSchemaMode } from "../data-stack/disclosure";
 import { normalizeDataStackOutputFormat } from "../data-stack/formats";
 import { materializeDataStackRows } from "../data-stack/materialize";
 import { prepareDataStackExecution, type PreparedDataStackExecution } from "../data-stack/prepare";
@@ -10,6 +11,7 @@ import { assertNonEmpty, displayPath, printLine } from "./shared";
 
 export interface DataStackOptions {
   columns?: string[];
+  excludeColumns?: string[];
   inputFormat?: DataStackInputFormat;
   maxDepth?: number;
   noHeader?: boolean;
@@ -17,6 +19,7 @@ export interface DataStackOptions {
   overwrite?: boolean;
   pattern?: string;
   recursive?: boolean;
+  unionByName?: boolean;
   sources: string[];
 }
 
@@ -92,6 +95,17 @@ export async function writePreparedDataStackOutput(
   );
   printLine(runtime.stderr, `Files: ${options.prepared.files.length}`);
   printLine(runtime.stderr, `Rows: ${options.prepared.rows.length}`);
+  printLine(
+    runtime.stderr,
+    `Schema mode: ${formatDataStackSchemaMode(options.prepared.schemaMode)}`,
+  );
+  printLine(runtime.stderr, `Columns: ${options.prepared.header.length}`);
+  if (options.prepared.excludedColumns.length > 0) {
+    printLine(
+      runtime.stderr,
+      `Excluded columns: ${options.prepared.excludedColumns.length} (${formatBoundedDataStackNames(options.prepared.excludedColumns)})`,
+    );
+  }
 }
 
 export async function actionDataStack(
@@ -107,6 +121,7 @@ export async function actionDataStack(
   const outputFormat = normalizeDataStackOutputFormat(outputPath);
   const prepared = await prepareDataStackExecution({
     columns: options.columns,
+    excludeColumns: options.excludeColumns,
     inputFormat: options.inputFormat,
     maxDepth: options.maxDepth,
     noHeader: options.noHeader,
@@ -115,6 +130,7 @@ export async function actionDataStack(
     readText: readTextFileRequired,
     recursive: options.recursive,
     renderPath: (path) => displayPath(runtime, path),
+    schemaMode: options.unionByName === true ? "union-by-name" : "strict",
     sources: sourcePaths,
   });
   await writePreparedDataStackOutput(runtime, {

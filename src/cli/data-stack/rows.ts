@@ -1,7 +1,11 @@
 import { parseDelimited } from "../../utils/delimited";
 import { CliError } from "../errors";
-import { parseJsonlStackSourceText } from "./jsonl";
-import type { DataStackDelimitedInputFormat, DataStackInputFormat } from "./types";
+import { parseJsonlStackSourceText, parseJsonStackSourceText } from "./jsonl";
+import type {
+  DataStackDelimitedInputFormat,
+  DataStackInputFormat,
+  DataStackSchemaMode,
+} from "./types";
 
 interface ParsedStackSource {
   dataRows: unknown[][];
@@ -136,45 +140,138 @@ function ensureMatchingHeaders(options: {
   }
 }
 
+function parseStackSourceText(options: {
+  allowKeyUnion: boolean;
+  columns?: readonly string[];
+  expectedHeader?: readonly string[];
+  expectedHeaderWidth?: number;
+  file: { format: DataStackInputFormat; path: string };
+  noHeader?: boolean;
+  text: string;
+}): ParsedStackSource {
+  if (options.file.format === "jsonl") {
+    return parseJsonlStackSourceText({
+      allowKeyUnion: options.allowKeyUnion,
+      expectedHeader: options.allowKeyUnion ? undefined : options.expectedHeader,
+      path: options.file.path,
+      text: options.text,
+    });
+  }
+
+  if (options.file.format === "json") {
+    return parseJsonStackSourceText({
+      allowKeyUnion: options.allowKeyUnion,
+      expectedHeader: options.allowKeyUnion ? undefined : options.expectedHeader,
+      path: options.file.path,
+      text: options.text,
+    });
+  }
+
+  return parseDelimitedStackSourceText({
+    columns: options.columns,
+    expectedHeaderWidth: options.allowKeyUnion ? undefined : options.expectedHeaderWidth,
+    format: options.file.format,
+    noHeader: options.noHeader,
+    path: options.file.path,
+    text: options.text,
+  });
+}
+
+function createUnionHeader(sources: readonly ParsedStackSource[]): string[] {
+  const header: string[] = [];
+  const seen = new Set<string>();
+
+  for (const source of sources) {
+    for (const name of source.header) {
+      if (seen.has(name)) {
+        continue;
+      }
+      seen.add(name);
+      header.push(name);
+    }
+  }
+
+  return header;
+}
+
+function applyExcludedColumns(options: {
+  excludedColumns: readonly string[];
+  header: readonly string[];
+}): string[] {
+  if (options.excludedColumns.length === 0) {
+    return [...options.header];
+  }
+
+  const headerNames = new Set(options.header);
+  const unknownNames = options.excludedColumns.filter((name) => !headerNames.has(name));
+  if (unknownNames.length > 0) {
+    throw new CliError(`Unknown --exclude-columns names: ${unknownNames.join(", ")}.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const excludedNames = new Set(options.excludedColumns);
+  return options.header.filter((name) => !excludedNames.has(name));
+}
+
+function alignRowsToHeader(options: {
+  header: readonly string[];
+  source: ParsedStackSource;
+}): unknown[][] {
+  const sourceIndexes = new Map<string, number>();
+  for (const [index, name] of options.source.header.entries()) {
+    if (!sourceIndexes.has(name)) {
+      sourceIndexes.set(name, index);
+    }
+  }
+
+  return options.source.dataRows.map((row) =>
+    options.header.map((name) => {
+      const sourceIndex = sourceIndexes.get(name);
+      return sourceIndex === undefined ? "" : (row[sourceIndex] ?? "");
+    }),
+  );
+}
+
 export async function normalizeDataStackSources(options: {
   columns?: readonly string[];
+  excludeColumns?: readonly string[];
   files: ReadonlyArray<{ format: DataStackInputFormat; path: string }>;
   noHeader?: boolean;
   readText: (path: string) => Promise<string>;
   renderPath: (path: string) => string;
+  schemaMode?: DataStackSchemaMode;
 }): Promise<{ header: string[]; rows: unknown[][] }> {
+  const schemaMode = options.schemaMode ?? "strict";
   let baseline: ParsedStackSource | undefined;
-  const rows: unknown[][] = [];
+  const parsedSources: ParsedStackSource[] = [];
 
   for (const file of options.files) {
     const text = await options.readText(file.path);
-    const parsed =
-      file.format === "jsonl"
-        ? parseJsonlStackSourceText({
-            expectedHeader: baseline?.header,
-            path: file.path,
-            text,
-          })
-        : parseDelimitedStackSourceText({
-            columns: options.columns,
-            expectedHeaderWidth: baseline?.header.length,
-            format: file.format,
-            noHeader: options.noHeader,
-            path: file.path,
-            text,
-          });
+    const parsed = parseStackSourceText({
+      allowKeyUnion: schemaMode === "union-by-name",
+      columns: options.columns,
+      expectedHeader: baseline?.header,
+      expectedHeaderWidth: baseline?.header.length,
+      file,
+      noHeader: options.noHeader,
+      text,
+    });
 
-    if (baseline) {
+    if (schemaMode === "strict" && baseline) {
       ensureMatchingHeaders({
         baseline,
         candidate: parsed,
         renderPath: options.renderPath,
       });
-    } else {
+    }
+
+    if (!baseline) {
       baseline = parsed;
     }
 
-    rows.push(...parsed.dataRows);
+    parsedSources.push(parsed);
   }
 
   if (!baseline) {
@@ -184,8 +281,21 @@ export async function normalizeDataStackSources(options: {
     });
   }
 
+  if (schemaMode === "strict") {
+    return {
+      header: baseline.header,
+      rows: parsedSources.flatMap((source) => source.dataRows),
+    };
+  }
+
+  const unionHeader = createUnionHeader(parsedSources);
+  const header = applyExcludedColumns({
+    excludedColumns: options.excludeColumns ?? [],
+    header: unionHeader,
+  });
+
   return {
-    header: baseline.header,
-    rows,
+    header,
+    rows: parsedSources.flatMap((source) => alignRowsToHeader({ header, source })),
   };
 }

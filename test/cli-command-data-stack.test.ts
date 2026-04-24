@@ -102,6 +102,67 @@ describe("CLI data stack command", () => {
     });
   });
 
+  test("stacks JSON array inputs end to end", async () => {
+    await withTempFixtureDir("data-stack-cli-json", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "events");
+      const outputPath = join(fixtureDir, "merged.tsv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        join(sourceDir, "day-01.json"),
+        JSON.stringify([{ id: "evt-001", status: "active" }]),
+        "utf8",
+      );
+      await writeFile(
+        join(sourceDir, "day-02.json"),
+        JSON.stringify([{ status: "paused", id: "evt-002" }]),
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id\tstatus\nevt-001\tactive\nevt-002\tpaused\n",
+      );
+    });
+  });
+
+  test("supports --union-by-name and --exclude-columns from the command layer", async () => {
+    await withTempFixtureDir("data-stack-cli-union", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name,noise\n1,Ada,drop-a\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,status,noise\n2,active,drop-b\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--union-by-name",
+        "--exclude-columns",
+        "noise",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Schema mode: union-by-name");
+      expect(result.stderr).toContain("Excluded columns: 1 (noise)");
+      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
+    });
+  });
+
   test("honors --input-format jsonl for extensionless directory matches", async () => {
     await withTempFixtureDir("data-stack-cli-jsonl-override", async (fixtureDir) => {
       const sourceDir = join(fixtureDir, "events");
@@ -137,6 +198,44 @@ describe("CLI data stack command", () => {
         { id: "evt-001", status: "active" },
         { id: "evt-002", status: "paused" },
         { id: "evt-003", status: "active" },
+      ]);
+    });
+  });
+
+  test("honors --input-format json for extensionless directory matches", async () => {
+    await withTempFixtureDir("data-stack-cli-json-override", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "events");
+      const outputPath = join(fixtureDir, "merged.json");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        join(sourceDir, "day-01.data"),
+        JSON.stringify([{ id: "evt-001", status: "active" }]),
+        "utf8",
+      );
+      await writeFile(
+        join(sourceDir, "day-02.data"),
+        JSON.stringify([{ id: "evt-002", status: "paused" }]),
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--pattern",
+        "*.data",
+        "--input-format",
+        "json",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual([
+        { id: "evt-001", status: "active" },
+        { id: "evt-002", status: "paused" },
       ]);
     });
   });

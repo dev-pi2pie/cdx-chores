@@ -286,7 +286,7 @@ describe("CLI UX flags and path output", () => {
       "--output",
       "merged.csv",
       "--input-format",
-      "json",
+      "parquet",
     ]);
 
     expect(result.exitCode).not.toBe(0);
