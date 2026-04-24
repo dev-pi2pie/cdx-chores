@@ -19,7 +19,7 @@ Reduce the current discussion into a research-level direction that answers:
 - how a stack-specific input router should normalize those raw inputs into one file list
 - how a first-pass interactive `data stack` flow should work once the direct CLI contract is stable
 - how headerless delimited inputs should be normalized before stacking
-- whether `jsonl` belongs in the next multi-file assembly slice
+- how structured JSON input should work for `jsonl` and narrow `.json` files
 - how Codex-assisted flows should relate to stacking without making `stack` a new reviewed-artifact owner immediately
 
 ## Related Research
@@ -27,6 +27,7 @@ Reduce the current discussion into a research-level direction that answers:
 - `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
 - `docs/researches/research-2026-04-01-schema-aware-query-workspace-direction.md`
 - `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
+- `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 
 ## Related Historical Docs
 
@@ -57,6 +58,20 @@ Status note:
   - the first interactive slice intentionally shipped directory-first and CSV/TSV-only
   - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md` owns the next mixed-source interactive work
   - that follow-up should freeze default-output behavior before implementation because mixed raw sources do not always have one obvious basename
+- JSON output and JSON input stay separate in this research:
+  - `.json` output is supported as an encoding for the assembled table
+  - strict `jsonl` input is one structured input route
+  - strict `.json` input should be supported as one top-level array of objects
+  - arbitrary JSON shape inference remains deferred
+- `--union-by-name` should be the first opt-in schema-flex mode:
+  - strict schema matching remains the default
+  - union mode widens by column/header names or JSON object keys only when explicitly requested
+  - explicit exclusions can remove user-selected names from the widened schema
+  - the interactive follow-up should expose this as an explicit opt-in, not a hidden fallback
+- Codex-assisted schema suggestions should remain a later reviewed-assist feature:
+  - suggestions may propose exclusions or repairs in a future canary
+  - stack execution should not silently exclude, rename, or repair columns/keys
+  - replayable stack records and Codex schema reports are tracked in `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 
 ## Problem
 
@@ -105,7 +120,7 @@ This research covers:
 - mixed file and directory input discovery
 - one stack-specific input router that normalizes raw inputs into one file list
 - first-pass interactive `data stack` design
-- deterministic stacking rules for delimited inputs and a later `jsonl` slice
+- deterministic stacking rules for delimited inputs and a later structured JSON input slice
 - first-pass headerless handling as a later slice
 - how stacked output should feed later `data query` and `data query codex` flows
 
@@ -114,7 +129,7 @@ This research does not define:
 - implementation details for DuckDB file-list SQL generation
 - reviewed header-mapping or source-shape artifact changes
 - schema-aware workspace redesign
-- generic `.json` input support
+- arbitrary JSON shape inference beyond one top-level array of objects
 - mixed-format stacking in one invocation
 - Codex-assisted stack-time diagnostics in the first shipped slice
 
@@ -297,35 +312,33 @@ Implication:
 - headerless stacking stays deterministic
 - later reviewed header suggestions can remain a downstream step rather than becoming part of stack-time source interpretation
 
-### 9. `jsonl` belongs in the next slice, with strict same-key behavior first
+### 9. Structured JSON input belongs in a strict next slice
 
 Generic JSON still carries unresolved table-shape questions:
 
-- array of objects
 - top-level object
 - scalar arrays
 - nested structures
 
-`jsonl` is narrower and more aligned with stacking:
+But two JSON row-stream shapes are narrow enough to support without opening generic inference:
 
-- one object row per line
-- natural multi-file append semantics
-- easier directory-based discovery
+- `jsonl`: one object row per line
+- `json`: one top-level array of row objects
 
 Recommended next-slice contract:
 
 - support `jsonl` as one JSON object per line
-- reject top-level arrays or scalar lines
+- support `.json` as one top-level array of JSON objects
+- reject top-level JSON objects, scalar arrays, scalar lines, nested table discovery, and flattening
 - require the same key set across rows in the first pass
 - defer key-mismatch widening to a later explicit schema-flex mode such as `--union-by-name`
-- keep generic `.json` input deferred even if `.json` remains an output encoding for the assembled table
 
 Implication:
 
-- `jsonl` can join CSV and TSV earlier than generic JSON because its row model is already stream-oriented
-- the first `jsonl` contract stays deterministic rather than trying to auto-heal schema drift
+- `jsonl` and array-of-objects `.json` can join CSV and TSV earlier than broader JSON because their row models are explicit
+- the first structured JSON contract stays deterministic rather than trying to auto-heal schema drift
 
-### 10. Codex should stay downstream of stacking in the first pass
+### 10. Codex should stay reviewed and downstream of deterministic stacking
 
 The current repo already has Codex-assisted data workflows, but they are attached to:
 
@@ -333,11 +346,12 @@ The current repo already has Codex-assisted data workflows, but they are attache
 - reviewed source-shape suggestions
 - SQL drafting through `data query codex`
 
-Stacking does not need a new Codex-assisted ownership boundary immediately.
+Stacking should keep its deterministic contract first. Codex can later assist with schema review, but should not silently own stack-time repair.
 
 Recommended direction:
 
 - do not introduce `--codex-suggest-stack` in the first research route
+- do not introduce Codex auto-exclusion or auto-repair in the interactive mixed-source follow-up
 - prefer:
   - `data stack ... --output merged.csv`
   - `data query merged.csv --sql "..."`
@@ -348,11 +362,14 @@ Possible later Codex use:
 - explain header mismatch failures
 - suggest a reviewed header mapping after a placeholder-based merge
 - summarize schema drift before a user chooses a union-style mode
+- propose explicit `--exclude-columns ...` flags for noisy names
+- propose column/key repair flags or a review artifact if a later implementation supports repairs
 
 Implication:
 
 - `data stack` can stay deterministic first
 - Codex remains additive where the repo already has established review/drafting patterns
+- a future canary can add Codex schema suggestions as a reviewed-assist layer without changing the deterministic stack contract
 
 ### 11. Interactive `data stack` should begin narrower than the direct CLI contract
 
@@ -529,7 +546,7 @@ write now   revise/cancel
 - if zero files match, the flow should fail clearly before any output prompts
 - if headers mismatch in the first direct-CLI contract, the interactive flow should return to setup review rather than trying to auto-repair
 - if headerless support lands later on the direct CLI side, a later research or plan update can widen the interactive flow to include header-mode prompts and optional columns
-- once `jsonl` lands on the direct CLI side, a later research or plan update can widen the interactive flow to cover it explicitly
+- once structured JSON input lands on the direct CLI side, a later research or plan update can widen the interactive flow to cover `jsonl` and narrow `.json` explicitly
 - the interactive flow should not land before the direct CLI contract is stable enough to mirror directly
 
 ## Recommended Design Route
@@ -592,30 +609,56 @@ Recommended behavior:
 - if `--columns` is omitted, generate `column_<n>` placeholders
 - reject varying column counts
 
-### Phase 4: `jsonl`
+### Phase 4: Structured JSON input
 
 Recommended scope:
 
-- one object per line
-- one logical row per line
+- `jsonl` as one object per line
+- `.json` as one top-level array of objects
+- one logical row per object
 - strict same-key requirement first
 
 Recommended first-pass constraint:
 
-- keep generic `.json` input deferred even if `jsonl` lands
+- keep arbitrary JSON shape inference deferred even after `.json` input lands
 
 ### Phase 5: Optional schema-flex modes
 
-Future candidates:
+First opt-in schema-flex mode:
 
 - `--union-by-name`
+
+Recommended `--union-by-name` behavior:
+
+- strict matching remains the default
+- direct CLI exposes an explicit `--union-by-name` flag
+- direct CLI exposes explicit exclusions through `--exclude-columns <name,name,...>`
+- interactive mode exposes an explicit schema-mode choice, with strict matching as the default
+- interactive mode exposes exclusions only after union-by-name is selected
+- output schema order should preserve the first source's header/key order, then append newly discovered names in first-seen order
+- explicit exclusions should remove names after union construction
+- unknown exclusions should be rejected after discovery so typoed names are visible
+- missing values should use the stack materializer's empty-value policy
+- support named schemas only:
+  - CSV and TSV with headers
+  - `jsonl` object keys
+  - `.json` top-level array-of-object keys
+- reject `--union-by-name` with `--no-header` in the first schema-flex slice
+- reject `--exclude-columns` unless `--union-by-name` is present in the first schema-flex slice
+- disclose excluded names and counts in CLI stderr and interactive review
+
+Later candidates:
+
 - source provenance columns such as `--add-source-column <name>`
 - explicit row-origin file metadata
-- interactive support for those same schema-flex controls after the base direct CLI and interactive flows are stable
+- wildcard, regex, sparseness-based, or type-based exclusion rules
+- Codex-assisted schema suggestions that propose reviewed exclusions or repairs
 
 Recommended stance:
 
-- treat these as separate follow-up decisions, not baseline v1 behavior
+- treat union-by-name as the first supported schema-flex follow-up, but keep all schema-flex behavior opt-in
+- treat explicit exclusions as deterministic user choices attached to union-by-name
+- treat provenance, row-origin metadata, advanced exclusion matching, and Codex suggestions as separate follow-up decisions, not baseline v1 behavior
 
 ## Draft Command-Surface Direction
 
@@ -642,6 +685,7 @@ Likely later-slice companion form:
 
 ```bash
 cdx-chores data stack ./events ./manual.jsonl --input-format jsonl --output merged.json
+cdx-chores data stack ./exports --pattern "*.json" --input-format json --output merged.json
 ```
 
 Recommended output rule:
@@ -667,21 +711,26 @@ Keep the first implementation narrow, but allow mixed raw source kinds:
   - optional array-style `.json`
 - direct file-list and directory sources may be mixed, but mixed formats should still fail in the first slice
 - deterministic headerless support through `--no-header` and optional `--columns` in a later slice
-- `jsonl` as the next structured-data expansion, with strict same-key behavior first
+- `jsonl` and top-level array-of-objects `.json` as structured-data expansions, with strict same-key behavior first
 - no new Codex-owned stacking flow in the first slice
 
 Preferred later directions:
 
-- when `jsonl` widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
+- when structured JSON widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
 - when interactive widens beyond the first directory-first slice, widen to a true mixed-source input mode that mirrors the CLI contract rather than a file-only intermediate mode
 - when default output-path behavior widens beyond the single-source interactive rule, keep direct CLI explicit and require the interactive follow-up to define a stable mixed-source primary-label rule before adding implicit naming
 
 Resolved future-direction decisions:
 
 - the first schema-flex widening for `jsonl` should use one explicit opt-in union flag, with `--union-by-name` as the preferred first public contract
+- `--union-by-name` should also cover CSV/TSV header names and planned `.json` array-of-object keys, not only `jsonl`
+- explicit `--exclude-columns` should be the deterministic way to remove noisy names from the unioned output schema
+- interactive mode should expose union-by-name as an explicit schema-mode opt-in and show that mode in the final review
+- interactive mode should disclose excluded names/counts before writing
 - the first widening beyond directory-first interactive mode should be a true mixed-source input mode that mirrors the CLI contract, not a smaller file-only intermediate mode
-- later schema-flex additions such as provenance columns should remain separate follow-up work rather than widening the shipped baseline implicitly
-- any Codex-assisted stack diagnostics should remain a separate future slice rather than being folded into the current `data stack` contract
+- interactive widening must preserve JSON output support while adding strict `jsonl` and top-level array-of-objects `json` input support
+- later schema-flex additions such as provenance columns and advanced exclusion matching should remain separate follow-up work rather than widening the shipped baseline implicitly
+- Codex-assisted schema suggestions should remain a separate future canary slice and should propose reviewed exclusions or repairs rather than silently changing stack output
 
 Then keep the downstream flow explicit:
 

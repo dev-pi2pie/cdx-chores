@@ -73,6 +73,28 @@ Delimited header behavior:
 - first-pass key mismatches are rejected rather than widened automatically
 - `.json` output writes one JSON array of row objects
 
+Planned schema-flex behavior:
+
+- strict schema matching is the default today and should remain the default
+- `--union-by-name` is planned as an opt-in mode for stacking named schemas that add or omit columns or JSON keys
+- when enabled, it should build the output schema from the union of all header names or object keys
+- the first source's name order should come first, with newly discovered names appended in first-seen order
+- missing values should be written using the stack materializer's empty-value policy
+- explicit exclusions are planned through `--exclude-columns <name,name,...>` for union-by-name runs
+- excluded names should be exact matches, should be rejected when unknown, and should be disclosed before or after writing
+- first supported inputs should be:
+  - CSV and TSV inputs with header rows
+  - `jsonl` object rows
+  - planned `.json` top-level arrays of objects
+- `--union-by-name` should not be used automatically; it exists to make schema widening deliberate
+
+Deferred Codex schema assistance:
+
+- a later canary may add Codex-assisted suggestions for noisy exclusions or possible schema repairs
+- those suggestions should be reviewed and turned into explicit flags or artifacts
+- Codex should not silently exclude, rename, or repair stack output
+- replayable stack records and Codex schema-assist questions are separate future work, tracked in `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
+
 ### Examples
 
 Matching-header CSV from a directory:
@@ -139,7 +161,10 @@ Current limitation:
 
 - interactive mode still starts from one directory only
 - interactive mode still limits input selection to CSV or TSV
-- interactive mode does not yet expose direct file inputs, mixed-source runs, or `jsonl`
+- interactive mode does not yet expose direct file inputs, mixed-source runs, `jsonl` input, or `json` input
+- interactive mode does expose JSON as an output format
+- current direct CLI supports strict `jsonl` input but not `.json` input
+- the interactive mixed-source follow-up is expected to add `.json` input with a narrow top-level array-of-objects contract
 
 Current interactive default output rule:
 
