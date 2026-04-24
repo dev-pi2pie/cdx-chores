@@ -1,8 +1,8 @@
 ---
 title: "Data stack multi-file assembly direction"
 created-date: 2026-04-23
-modified-date: 2026-04-23
-status: completed
+modified-date: 2026-04-24
+status: in-progress
 agent: codex
 ---
 
@@ -52,6 +52,11 @@ Status note:
   - `data stack` for multi-source assembly
   - `data extract` for one-input shaping and materialization
   - `data query` for SQL
+- this research remains `in-progress` while the interactive mixed-source widening and default-output behavior are still being settled
+- interactive widening remains follow-up work, not a reopening of this research direction:
+  - the first interactive slice intentionally shipped directory-first and CSV/TSV-only
+  - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md` owns the next mixed-source interactive work
+  - that follow-up should freeze default-output behavior before implementation because mixed raw sources do not always have one obvious basename
 
 ## Problem
 
@@ -669,7 +674,7 @@ Preferred later directions:
 
 - when `jsonl` widens beyond strict same-key behavior, widen first through one explicit opt-in union flag such as `--union-by-name`
 - when interactive widens beyond the first directory-first slice, widen to a true mixed-source input mode that mirrors the CLI contract rather than a file-only intermediate mode
-- when default output-path behavior lands, introduce it in interactive mode first and keep direct CLI explicit until the naming rule is proven stable
+- when default output-path behavior widens beyond the single-source interactive rule, keep direct CLI explicit and require the interactive follow-up to define a stable mixed-source primary-label rule before adding implicit naming
 
 Resolved future-direction decisions:
 

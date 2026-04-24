@@ -1,6 +1,7 @@
 ---
 title: "Data stack interactive mixed-source follow-up"
 created-date: 2026-04-23
+modified-date: 2026-04-24
 status: draft
 agent: codex
 ---
@@ -75,7 +76,21 @@ Direct CLI `data stack` already supports more:
 - keep one explicit matched-source review before write
 - show a clear normalized source summary after mixed-source routing
 - preserve current output-format and destination selection flow
-- preserve current default-output-path behavior unless a separate change is required
+- preserve current default-output-path behavior for single-source interactive runs
+- require a custom output destination for mixed-source interactive runs until a less arbitrary primary-label rule is designed
+
+### Default output path
+
+- keep the existing default-output rule when the interactive run has exactly one raw source:
+  - derive the sibling output path from that source path
+  - keep the stack-specific suffix aligned with the selected output format:
+    - `.stack.csv`
+    - `.stack.tsv`
+    - `.stack.json`
+- when the interactive run has two or more raw sources, skip the default-output shortcut and ask for a custom output path
+- keep direct CLI behavior unchanged:
+  - direct CLI continues to require `--output <path>`
+  - direct CLI does not gain implicit output naming in this follow-up
 
 ## Non-Goals
 
@@ -96,6 +111,9 @@ Direct CLI `data stack` already supports more:
 - Risk: `jsonl` interactive support reopens generic JSON ambiguity.
   Mitigation: keep interactive `jsonl` aligned with the current direct CLI contract: one object per line, strict same-key behavior first.
 
+- Risk: mixed-source default output naming becomes arbitrary.
+  Mitigation: keep derived defaults only for single-source runs and require a custom output path when the interactive source list contains more than one raw source.
+
 ## Implementation Touchpoints
 
 - `src/cli/interactive/data/stack.ts`
@@ -112,12 +130,16 @@ Direct CLI `data stack` already supports more:
 - [ ] freeze how directory-specific options such as pattern and traversal apply inside mixed-source interactive runs
 - [ ] freeze the normalized-source review layout for mixed-source interactive runs
 - [ ] freeze whether strict `jsonl` ships in the same widening slice or immediately after it
+- [ ] freeze default-output behavior for widened source lists:
+  - single raw source keeps the current derived `.stack.<format>` default
+  - multiple raw sources require a custom output path
 
 ### Phase 2: Implement mixed-source interactive selection
 
 - [ ] add interactive prompts to collect one or more raw sources
 - [ ] route those raw sources through the existing stack normalization contract
 - [ ] review the normalized source summary before write
+- [ ] keep pattern and traversal prompts global, matching the direct CLI rule that they apply only to directory-expanded candidates
 - [ ] add focused interactive routing coverage for mixed file/directory selection
 
 ### Phase 3: Add interactive `jsonl`
@@ -130,6 +152,7 @@ Direct CLI `data stack` already supports more:
 
 - [ ] update `docs/guides/data-stack-usage.md` so the interactive section matches the widened flow
 - [ ] update any data-command guide wording that still describes interactive stack as directory-only
+- [ ] document the single-source default-output rule and mixed-source custom-output requirement
 - [ ] add a job record when implementation lands
 
 ## Related Research
