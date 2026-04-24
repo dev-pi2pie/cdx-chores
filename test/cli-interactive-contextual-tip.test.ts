@@ -48,6 +48,13 @@ describe("interactive flow tip pools", () => {
     ]);
   });
 
+  test("returns the expected static tips for data stack", () => {
+    expect(getInteractiveFlowStaticTips("data-stack")).toEqual([
+      "Pattern filtering only affects files discovered from the input directory.",
+      "Review matched files before writing the stacked output.",
+    ]);
+  });
+
   test("builds the expected randomized pool for data query", () => {
     expect(
       buildInteractiveFlowTipPool("data-query", "Press Ctrl+C to abort this session."),
@@ -66,6 +73,16 @@ describe("interactive flow tip pools", () => {
       "Press Ctrl+C to abort this session.",
       "Source interpretation is reviewed before output setup.",
       "Change destination keeps the current extraction setup.",
+    ]);
+  });
+
+  test("builds the expected randomized pool for data stack", () => {
+    expect(
+      buildInteractiveFlowTipPool("data-stack", "Press Ctrl+C to abort this session."),
+    ).toEqual([
+      "Press Ctrl+C to abort this session.",
+      "Pattern filtering only affects files discovered from the input directory.",
+      "Review matched files before writing the stacked output.",
     ]);
   });
 });
@@ -89,6 +106,12 @@ describe("interactive flow tip selection", () => {
     expect(
       getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-extract", 0.9),
     ).toBe("Change destination keeps the current extraction setup.");
+  });
+
+  test("selects the expected stack tip for a deterministic random value", () => {
+    expect(
+      getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-stack", 0.9),
+    ).toBe("Review matched files before writing the stacked output.");
   });
 
   test("derives the selection value from runtime milliseconds", () => {

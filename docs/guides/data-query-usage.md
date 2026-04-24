@@ -11,6 +11,7 @@ As of `v0.1.1`, this guide documents the stable split where direct `data query` 
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
+For assembling many local sources into one table before later SQL, use `docs/guides/data-stack-usage.md`.
 For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
@@ -53,6 +54,7 @@ Current usage guidance:
 
 - use `data query` when you already know the SQL you want to run
 - use `data query` when `data extract` is too narrow for the transformation you need, even if the input is not Excel
+- use `data stack` first when the main problem is multi-file assembly rather than SQL
 - use `--output` on `data query` when you want SQL-backed materialization rather than bounded terminal output
 
 ### Direct CLI vs interactive mode

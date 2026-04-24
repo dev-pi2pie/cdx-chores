@@ -5,7 +5,7 @@ import {
   writeInteractiveTip,
 } from "./notice";
 
-export type InteractiveFlowTipScope = "data-query" | "data-extract";
+export type InteractiveFlowTipScope = "data-query" | "data-extract" | "data-stack";
 
 const INTERACTIVE_FLOW_STATIC_TIPS: Record<InteractiveFlowTipScope, readonly string[]> = {
   "data-query": [
@@ -16,6 +16,10 @@ const INTERACTIVE_FLOW_STATIC_TIPS: Record<InteractiveFlowTipScope, readonly str
   "data-extract": [
     "Source interpretation is reviewed before output setup.",
     "Change destination keeps the current extraction setup.",
+  ],
+  "data-stack": [
+    "Pattern filtering only affects files discovered from the input directory.",
+    "Review matched files before writing the stacked output.",
   ],
 };
 

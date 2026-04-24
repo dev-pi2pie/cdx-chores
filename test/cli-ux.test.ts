@@ -147,12 +147,14 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("name");
   });
 
-  test("data help reflects preview plus conversion workflows", () => {
+  test("data help reflects preview, stack, and conversion workflows", () => {
     const result = runCli(["data", "--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Data preview, extract, query, and conversion utilities");
+    expect(result.stdout).toContain(
+      "Data preview, extract, stack, query, and conversion utilities",
+    );
     expect(result.stdout).toContain("json-to-csv");
     expect(result.stdout).toContain("json-to-tsv");
     expect(result.stdout).toContain("csv-to-json");
@@ -163,6 +165,7 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("preview");
     expect(result.stdout).toContain("parquet");
     expect(result.stdout).toContain("query");
+    expect(result.stdout).toContain("stack");
   });
 
   test("data csv-to-tsv help does not expose JSON-only pretty printing", () => {
@@ -229,6 +232,22 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).not.toContain("--sql");
   });
 
+  test("data stack help documents mixed-source discovery and output options", () => {
+    const result = runCli(["data", "stack", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("--input-format <format>");
+    expect(result.stdout).toContain("--pattern <glob>");
+    expect(result.stdout).toContain("--no-header");
+    expect(result.stdout).toContain("--columns <names>");
+    expect(result.stdout).toContain("--recursive");
+    expect(result.stdout).toContain("--max-depth <value>");
+    expect(result.stdout).toContain("--output <path>");
+    expect(result.stdout).toContain("--overwrite");
+    expect(result.stdout).toContain("Input source file or directory");
+  });
+
   test("data query rejects invalid input-format values at CLI parsing time", () => {
     const result = runCli([
       "data",
@@ -253,6 +272,21 @@ describe("CLI UX flags and path output", () => {
       "sample.json",
       "--input-format",
       "json",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--input-format must be one of:");
+  });
+
+  test("data stack rejects invalid input-format values at CLI parsing time", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "sample.csv",
+      "--output",
+      "merged.csv",
+      "--input-format",
+      "parquet",
     ]);
 
     expect(result.exitCode).not.toBe(0);

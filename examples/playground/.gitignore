@@ -6,6 +6,8 @@
 !data-query/**
 !data-query-probe/
 !data-query-probe/**
+!stack-cases/
+!stack-cases/**
 !parquet-preview/
 !parquet-preview/**
 !tabular-preview/

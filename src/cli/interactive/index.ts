@@ -55,6 +55,7 @@ export async function runInteractiveMode(
     case "data:preview":
     case "data:convert":
     case "data:extract":
+    case "data:stack":
     case "data:query":
     case "data:parquet-preview":
     case "data:json-to-csv":
