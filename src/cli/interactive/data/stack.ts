@@ -1,3 +1,6 @@
+import { stat } from "node:fs/promises";
+import { extname } from "node:path";
+
 import { confirm, input, select } from "@inquirer/prompts";
 
 import { writePreparedDataStackOutput } from "../../actions";
@@ -10,10 +13,10 @@ import {
   formatBoundedDataStackNames,
   formatDataStackSchemaMode,
 } from "../../data-stack/disclosure";
-import { promptFileOutputTarget } from "../../data-workflows/output";
+import { createDataStackDefaultOutputPath } from "../../data-stack/default-output";
 import { readTextFileRequired } from "../../file-io";
-import { defaultOutputPath, resolveFromCwd } from "../../path-utils";
-import { formatDefaultOutputPathHint } from "../../prompts/path";
+import { resolveFromCwd } from "../../path-utils";
+import { promptOptionalOutputPathChoice } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import {
   DATA_STACK_INTERACTIVE_INPUT_FORMAT_VALUES,
@@ -53,13 +56,6 @@ type InteractiveDataStackWriteOutcome =
     }
   | { kind: "review" }
   | { kind: "cancel" };
-
-function getInteractiveDataStackDefaultOutputPath(
-  source: string,
-  outputFormat: DataStackOutputFormat,
-): string {
-  return defaultOutputPath(source, `.stack.${outputFormat}`);
-}
 
 function renderMatchedFileSummary(
   runtime: CliRuntime,
@@ -253,7 +249,6 @@ async function collectInteractiveStackSetup(
 
 async function promptInteractiveStackOutput(
   runtime: CliRuntime,
-  sources: readonly InteractiveDataStackSource[],
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<InteractiveDataStackWritePlan> {
   const outputFormat = await select<DataStackOutputFormat>({
@@ -264,30 +259,34 @@ async function promptInteractiveStackOutput(
       { name: "JSON", value: "json" },
     ],
   });
-  const singleSource = sources[0];
-  const fallbackOutputPath =
-    sources.length === 1 && singleSource
-      ? getInteractiveDataStackDefaultOutputPath(singleSource.raw, outputFormat)
-      : undefined;
-  const outputHint =
-    sources.length === 1 && singleSource
-      ? formatDefaultOutputPathHint(runtime, singleSource.raw, `.stack.${outputFormat}`)
-      : undefined;
-  const target = await promptFileOutputTarget({
-    allowedExtensions: [`.${outputFormat}`],
-    customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
-    defaultHint: outputHint,
-    fallbackOutputPath,
-    invalidExtensionMessage: `Output file must end with .${outputFormat}.`,
-    message: `Output ${outputFormat.toUpperCase()} file`,
-    pathPromptContext,
-    runtime,
-  });
-  return {
-    output: target.output,
-    outputFormat,
-    overwrite: target.overwrite,
-  };
+
+  while (true) {
+    const fallbackOutputPath = createDataStackDefaultOutputPath(runtime, outputFormat);
+    const chosenOutputPath = await promptOptionalOutputPathChoice({
+      message: `Output ${outputFormat.toUpperCase()} file`,
+      defaultHint: fallbackOutputPath,
+      kind: "file",
+      ...pathPromptContext,
+      customMessage: `Custom ${outputFormat.toUpperCase()} output path`,
+    });
+    const output = chosenOutputPath ?? fallbackOutputPath;
+
+    if (extname(output).toLowerCase() !== `.${outputFormat}`) {
+      printLine(runtime.stdout, `Output file must end with .${outputFormat}.`);
+      continue;
+    }
+
+    try {
+      await stat(resolveFromCwd(runtime, output));
+      const overwrite = await confirm({ message: "Overwrite if exists?", default: false });
+      if (overwrite) {
+        return { output, outputFormat, overwrite };
+      }
+      printLine(runtime.stdout, "Choose a different output destination.");
+    } catch {
+      return { output, outputFormat, overwrite: false };
+    }
+  }
 }
 
 function renderSkippedInteractiveStackWrite(runtime: CliRuntime): void {
@@ -299,7 +298,7 @@ async function confirmInteractiveStackWrite(
   pathPromptContext: InteractivePathPromptContext,
   setup: InteractiveDataStackSetup,
 ): Promise<InteractiveDataStackWriteOutcome> {
-  let outputPlan = await promptInteractiveStackOutput(runtime, setup.sources, pathPromptContext);
+  let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
 
   while (true) {
     const outputPath = resolveFromCwd(runtime, outputPlan.output);
@@ -358,7 +357,7 @@ async function confirmInteractiveStackWrite(
       return { kind: "cancel" };
     }
 
-    outputPlan = await promptInteractiveStackOutput(runtime, setup.sources, pathPromptContext);
+    outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
   }
 }
 

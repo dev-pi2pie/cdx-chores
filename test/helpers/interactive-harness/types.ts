@@ -8,6 +8,7 @@ export interface InteractiveHarnessScenario {
   existingPaths?: string[];
   inputQueue?: string[];
   requiredPathQueue?: string[];
+  statExistsQueue?: boolean[];
   optionalPathQueue?: Array<string | undefined>;
   dataExtractActionErrorMessage?: string;
   dataExtractActionErrorCode?: string;

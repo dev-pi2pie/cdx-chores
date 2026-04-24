@@ -380,13 +380,13 @@ The interactive review checkpoint must show enough information for the user to u
 - [x] use bounded disclosure for long exclusion lists
 - [x] add focused direct CLI coverage for column/key order, missing-value behavior, strict-default failures, exclusions, and disclosure
 - [x] add focused interactive coverage for selecting union-by-name, entering exclusions, and reviewing the selected schema mode plus exclusions
-- [ ] replace interactive source-derived default output paths with generated `data-stack-<timestamp>-<uid>.<format>` defaults
-- [ ] apply the generated default output naming to single-source and multi-source interactive stack runs
-- [ ] keep the generated default output rooted at the current working directory
-- [ ] preserve overwrite confirmation if a generated default output path already exists
-- [ ] keep declined-overwrite recovery ergonomic by allowing a custom path or newly generated default candidate
-- [ ] preserve custom output selection for source-specific or directory-local output paths
-- [ ] update interactive default-output tests so they no longer expect source-adjacent `.stack.<format>` paths
+- [x] replace interactive source-derived default output paths with generated `data-stack-<timestamp>-<uid>.<format>` defaults
+- [x] apply the generated default output naming to single-source and multi-source interactive stack runs
+- [x] keep the generated default output rooted at the current working directory
+- [x] preserve overwrite confirmation if a generated default output path already exists
+- [x] keep declined-overwrite recovery ergonomic by allowing a custom path or newly generated default candidate
+- [x] preserve custom output selection for source-specific or directory-local output paths
+- [x] update interactive default-output tests so they no longer expect source-adjacent `.stack.<format>` paths
 
 ### Phase 5: Docs and final alignment
 
@@ -397,7 +397,7 @@ The interactive review checkpoint must show enough information for the user to u
 - [ ] document `--union-by-name` and `--exclude-columns` as opt-in deterministic schema-flex controls and keep strict matching documented as the default
 - [ ] document replayable stack records and Codex-assisted schema suggestions as deferred to separate future work, not part of this implementation session
 - [ ] document generated interactive default-output naming and direct CLI explicit-output behavior
-- [ ] add a job record when implementation lands
+- [x] add a job record when implementation lands
 
 ## Related Research
 
@@ -413,3 +413,4 @@ The interactive review checkpoint must show enough information for the user to u
 - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
+- `docs/plans/jobs/2026-04-24-data-stack-generated-default-output.md`

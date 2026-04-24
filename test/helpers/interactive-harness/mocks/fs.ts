@@ -9,7 +9,10 @@ export function installFsPromiseMocks(context: HarnessRunnerContext): void {
     },
     stat: async (inputPath: unknown) => {
       const resolvedPath = context.resolveHarnessPath(inputPath);
-      if (context.existingPaths.has(resolvedPath)) {
+      const statExists =
+        context.existingPaths.has(resolvedPath) ||
+        (context.statExistsQueue.length > 0 ? context.statExistsQueue.shift() === true : false);
+      if (statExists) {
         return {
           isDirectory: () => false,
           isFile: () => true,

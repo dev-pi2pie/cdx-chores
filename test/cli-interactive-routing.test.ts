@@ -4,6 +4,19 @@ import { REPO_ROOT } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./helpers/interactive-harness";
 import { stripAnsi } from "./cli-actions-data-preview/helpers";
 
+const DEFAULT_DATA_STACK_TIMESTAMP = "20260225T000000Z";
+
+function dataStackDefaultOutputMatcher(
+  timestamp: string,
+  extension: string,
+): ReturnType<typeof expect.stringMatching> {
+  return expect.stringMatching(new RegExp(`data-stack-${timestamp}-[a-f0-9]{8}\\.${extension}$`));
+}
+
+function dataStackDefaultPathPattern(timestamp: string, extension: string): RegExp {
+  return new RegExp(`data-stack-${timestamp}-[a-f0-9]{8}\\.${extension}$`);
+}
+
 describe("interactive mode routing", () => {
   test("routes the doctor flow from the root menu", () => {
     const result = runInteractiveHarness({
@@ -557,9 +570,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 3,
           outputFormat: "json",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/csv-matching-headers.stack.json",
-          ),
+          outputPath: dataStackDefaultOutputMatcher("20260330T000000Z", "json"),
           overwrite: false,
           rowCount: 6,
         },
@@ -573,18 +584,14 @@ describe("interactive mode routing", () => {
       }),
     });
     expect(result.pathCalls).toContainEqual({
-      kind: "hint",
-      inputPath: "examples/playground/stack-cases/csv-matching-headers",
-      nextExtension: ".stack.json",
-    });
-    expect(result.pathCalls).toContainEqual({
       kind: "optional",
       message: "Output JSON file",
       options: expect.objectContaining({
         kind: "file",
-        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.json",
+        defaultHint: dataStackDefaultOutputMatcher("20260330T000000Z", "json"),
       }),
     });
+    expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(plainStderr).toContain("Tip: Review matched files before writing the stacked output.");
     expect(plainStderr).toContain("Stack review");
     expect(plainStderr).toContain("- input sources: 1");
@@ -593,9 +600,7 @@ describe("interactive mode routing", () => {
     expect(plainStderr).toContain("- traversal: shallow only");
     expect(plainStderr).toContain("- schema mode: strict");
     expect(plainStderr).toContain("- output format: JSON");
-    expect(plainStderr).toContain(
-      "- output: examples/playground/stack-cases/csv-matching-headers.stack.json",
-    );
+    expect(plainStderr).toMatch(/- output: data-stack-20260330T000000Z-[a-f0-9]{8}\.json/);
     expect(plainStderr).toContain("- matched files: 3");
   });
 
@@ -606,8 +611,8 @@ describe("interactive mode routing", () => {
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers/part-001.csv",
         "examples/playground/stack-cases/csv-matching-headers",
-        "fixtures/mixed-stack.json",
       ],
+      optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
       confirmQueue: [true, false, true],
     });
@@ -619,7 +624,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 3,
           outputFormat: "json",
-          outputPath: expect.stringContaining("fixtures/mixed-stack.json"),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
           overwrite: false,
           rowCount: 6,
         },
@@ -633,10 +638,11 @@ describe("interactive mode routing", () => {
       }),
     });
     expect(result.pathCalls).toContainEqual({
-      kind: "required",
+      kind: "optional",
       message: "Output JSON file",
       options: expect.objectContaining({
         kind: "file",
+        defaultHint: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
       }),
     });
     expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
@@ -661,9 +667,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 2,
           outputFormat: "csv",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/json-array-basic.stack.csv",
-          ),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "csv"),
           overwrite: false,
           rowCount: 3,
         },
@@ -690,9 +694,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 2,
           outputFormat: "json",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/jsonl-basic.stack.json",
-          ),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
           overwrite: false,
           rowCount: 4,
         },
@@ -719,9 +721,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 2,
           outputFormat: "json",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/csv-union.stack.json",
-          ),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
           overwrite: false,
           rowCount: 2,
         },
@@ -748,18 +748,14 @@ describe("interactive mode routing", () => {
     expect(result.stderr).toContain("Stack review");
     expect(result.stderr).toContain("Skipped stack write.");
     expect(result.pathCalls).toContainEqual({
-      kind: "hint",
-      inputPath: "examples/playground/stack-cases/csv-matching-headers",
-      nextExtension: ".stack.csv",
-    });
-    expect(result.pathCalls).toContainEqual({
       kind: "optional",
       message: "Output CSV file",
       options: expect.objectContaining({
         customMessage: "Custom CSV output path",
-        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.csv",
+        defaultHint: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "csv"),
       }),
     });
+    expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "select:Stack write next step",
     );
@@ -777,18 +773,14 @@ describe("interactive mode routing", () => {
 
     expect(result.actionCalls).toEqual([]);
     expect(result.pathCalls).toContainEqual({
-      kind: "hint",
-      inputPath: "examples/playground/stack-cases/csv-matching-headers",
-      nextExtension: ".stack.tsv",
-    });
-    expect(result.pathCalls).toContainEqual({
       kind: "optional",
       message: "Output TSV file",
       options: expect.objectContaining({
         customMessage: "Custom TSV output path",
-        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.tsv",
+        defaultHint: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "tsv"),
       }),
     });
+    expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(result.stderr).toContain("Skipped stack write.");
   });
 
@@ -870,9 +862,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 3,
           outputFormat: "json",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/csv-matching-headers.stack.json",
-          ),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
           overwrite: false,
           rowCount: 6,
         },
@@ -898,7 +888,7 @@ describe("interactive mode routing", () => {
     );
   });
 
-  test("re-prompts stack destination when the derived default output exists and overwrite is declined", () => {
+  test("re-prompts stack destination when the generated default output exists and overwrite is declined", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
@@ -906,7 +896,7 @@ describe("interactive mode routing", () => {
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
       inputQueue: ["*.csv"],
       confirmQueue: [false, false, true],
-      existingPaths: ["examples/playground/stack-cases/csv-matching-headers.stack.json"],
+      statExistsQueue: [true, false],
     });
 
     expect(result.actionCalls).toEqual([
@@ -926,13 +916,24 @@ describe("interactive mode routing", () => {
         (call) => call.kind === "optional" && call.message === "Output JSON file",
       ),
     ).toHaveLength(2);
+    const defaultHints = result.pathCalls
+      .filter((call) => call.kind === "optional" && call.message === "Output JSON file")
+      .map((call) => call.options?.defaultHint);
+    expect(defaultHints).toHaveLength(2);
+    for (const defaultHint of defaultHints) {
+      expect(typeof defaultHint).toBe("string");
+      expect(
+        dataStackDefaultPathPattern(DEFAULT_DATA_STACK_TIMESTAMP, "json").test(
+          defaultHint as string,
+        ),
+      ).toBe(true);
+    }
+    expect(new Set(defaultHints).size).toBe(2);
     expect(
       result.pathCalls.filter(
         (call) =>
           call.kind === "optional" &&
           call.message === "Output JSON file" &&
-          call.options?.defaultHint ===
-            "examples/playground/stack-cases/csv-matching-headers.stack.json" &&
           call.options?.customMessage === "Custom JSON output path",
       ),
     ).toHaveLength(2);
@@ -942,7 +943,7 @@ describe("interactive mode routing", () => {
     expect(result.stdout).toContain("Choose a different output destination.");
   });
 
-  test("accepts overwrite for the derived default stack output path when confirmed", () => {
+  test("accepts overwrite for the generated default stack output path when confirmed", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
@@ -950,7 +951,7 @@ describe("interactive mode routing", () => {
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
-      existingPaths: ["examples/playground/stack-cases/csv-matching-headers.stack.json"],
+      statExistsQueue: [true],
     });
 
     expect(result.actionCalls).toEqual([
@@ -959,9 +960,7 @@ describe("interactive mode routing", () => {
         options: {
           fileCount: 3,
           outputFormat: "json",
-          outputPath: expect.stringContaining(
-            "examples/playground/stack-cases/csv-matching-headers.stack.json",
-          ),
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
           overwrite: true,
           rowCount: 6,
         },
@@ -975,7 +974,7 @@ describe("interactive mode routing", () => {
       message: "Output JSON file",
       options: expect.objectContaining({
         customMessage: "Custom JSON output path",
-        defaultHint: "examples/playground/stack-cases/csv-matching-headers.stack.json",
+        defaultHint: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
       }),
     });
   });

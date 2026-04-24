@@ -8,6 +8,7 @@ export interface HarnessRunnerContext {
   scenario: InteractiveHarnessScenario;
   result: InteractiveHarnessResultState;
   existingPaths: Set<string>;
+  statExistsQueue: boolean[];
   mockedPathPromptRuntimeConfig: {
     mode: "auto";
     autocomplete: {
@@ -42,6 +43,7 @@ export function createHarnessRunnerContext(
   const existingPaths = new Set(
     (scenario.existingPaths ?? []).map((item) => resolveHarnessPath(item)),
   );
+  const statExistsQueue = [...(scenario.statExistsQueue ?? [])];
   const recordAction = (name: string, options: Record<string, unknown>): void => {
     result.actionCalls.push({ name, options });
   };
@@ -50,6 +52,7 @@ export function createHarnessRunnerContext(
     scenario,
     result,
     existingPaths,
+    statExistsQueue,
     mockedPathPromptRuntimeConfig: {
       mode: "auto",
       autocomplete: {
