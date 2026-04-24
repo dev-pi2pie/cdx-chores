@@ -1,6 +1,7 @@
 ---
 title: "Apply ordered dependency security and maintenance pass"
 created-date: 2026-04-23
+modified-date: 2026-04-24
 status: completed
 agent: Codex
 ---
@@ -40,6 +41,12 @@ Additional notes:
 
 - Added a package override for `@xmldom/xmldom: 0.8.13` so the `mammoth` transitive dependency no longer resolves the vulnerable `0.8.11` line.
 - Restored caret ranges for packages that previously used caret-style manifest entries after `bun add` rewrote them to exact versions.
+
+## Follow-Up Note
+
+- `2026-04-24`: after the original ordered pass was recorded, `@openai/codex-sdk` was advanced again from `^0.123.0` to `^0.124.0` in `package.json` and `bun.lock`.
+- This follow-up leaves the rest of the 2026-04-23 dependency pass unchanged.
+- No additional verification is recorded in this job note for the `^0.124.0` follow-up; the verification results below remain the results of the original ordered pass.
 
 ## Verification
 
