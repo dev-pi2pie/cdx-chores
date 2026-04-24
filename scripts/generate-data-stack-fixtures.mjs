@@ -293,6 +293,35 @@ function createJsonlCases() {
   ];
 }
 
+function createJsonArrayCases() {
+  return [
+    {
+      path: "json-array-basic/day-01.json",
+      content: `${JSON.stringify([
+        { id: "evt-001", status: "active" },
+        { id: "evt-002", status: "paused" },
+      ])}\n`,
+    },
+    {
+      path: "json-array-basic/day-02.json",
+      content: `${JSON.stringify([{ status: "active", id: "evt-003" }])}\n`,
+    },
+  ];
+}
+
+function createUnionCases() {
+  return [
+    {
+      path: "csv-union/source-a.csv",
+      content: rowsToDelimited([{ id: 1, name: "Ada", noise: "drop-a" }], ","),
+    },
+    {
+      path: "csv-union/source-b.csv",
+      content: rowsToDelimited([{ id: 2, status: "active", noise: "drop-b" }], ","),
+    },
+  ];
+}
+
 function createRecursiveCases() {
   return [
     {
@@ -338,6 +367,8 @@ async function seedFixtures(outputDir) {
     ...createHeaderlessTsvCases(),
     ...createHeaderMismatchCases(),
     ...createJsonlCases(),
+    ...createJsonArrayCases(),
+    ...createUnionCases(),
     ...createRecursiveCases(),
   ];
 

@@ -214,6 +214,31 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack rejects duplicate header names in union-by-name mode", async () => {
+    await withTempFixtureDir("data-stack-action-union-duplicate-header", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,value,value\n1,first,second\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.csv",
+            overwrite: true,
+            sources: ["parts"],
+            unionByName: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Duplicate column or key name",
+        },
+      );
+      expectNoOutput();
+    });
+  });
+
   test("actionDataStack stacks union-by-name JSON arrays with first-seen key order", async () => {
     await withTempFixtureDir("data-stack-action-json-union", async (fixtureDir) => {
       const sourceDir = join(fixtureDir, "events");

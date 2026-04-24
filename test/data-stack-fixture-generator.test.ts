@@ -86,6 +86,10 @@ describe("data stack fixture generator", () => {
           "csv-matching-headers/part-001.csv",
           "csv-matching-headers/part-002.csv",
           "csv-matching-headers/part-003.csv",
+          "csv-union/source-a.csv",
+          "csv-union/source-b.csv",
+          "json-array-basic/day-01.json",
+          "json-array-basic/day-02.json",
           "jsonl-basic/day-01.jsonl",
           "jsonl-basic/day-02.jsonl",
           "recursive-depth/level-1/branch-a.csv",
@@ -105,6 +109,12 @@ describe("data stack fixture generator", () => {
 
         const headerlessTsv = await readFile(join(outputA, "tsv-headerless/chunk-001.tsv"), "utf8");
         expect(headerlessTsv).toBe("6001\tactive\tnorth\n6002\tpaused\tsouth\n");
+
+        const unionCsv = await readFile(join(outputA, "csv-union/source-a.csv"), "utf8");
+        expect(unionCsv).toBe("id,name,noise\n1,Ada,drop-a\n");
+
+        const jsonArray = await readFile(join(outputA, "json-array-basic/day-02.json"), "utf8");
+        expect(jsonArray).toBe('[{"status":"active","id":"evt-003"}]\n');
       });
     });
   });

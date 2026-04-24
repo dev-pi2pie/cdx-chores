@@ -215,6 +215,27 @@ function applyExcludedColumns(options: {
   return options.header.filter((name) => !excludedNames.has(name));
 }
 
+function assertUniqueHeaderNames(options: {
+  header: readonly string[];
+  path: string;
+  renderPath: (path: string) => string;
+  schemaMode: DataStackSchemaMode;
+}): void {
+  const seen = new Set<string>();
+  for (const name of options.header) {
+    if (seen.has(name)) {
+      throw new CliError(
+        `Duplicate column or key name in ${options.renderPath(options.path)}: ${name}. ${options.schemaMode} requires unique names.`,
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
+    }
+    seen.add(name);
+  }
+}
+
 function alignRowsToHeader(options: {
   header: readonly string[];
   source: ParsedStackSource;
@@ -286,6 +307,15 @@ export async function normalizeDataStackSources(options: {
       header: baseline.header,
       rows: parsedSources.flatMap((source) => source.dataRows),
     };
+  }
+
+  for (const source of parsedSources) {
+    assertUniqueHeaderNames({
+      header: source.header,
+      path: source.path,
+      renderPath: options.renderPath,
+      schemaMode,
+    });
   }
 
   const unionHeader = createUnionHeader(parsedSources);

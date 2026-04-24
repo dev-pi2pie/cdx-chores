@@ -78,6 +78,7 @@ Schema-flex behavior:
 - when enabled, it builds the output schema from the union of all header names or object keys
 - the first source's name order comes first, with newly discovered names appended in first-seen order
 - missing values are written using the stack materializer's empty-value policy
+- duplicate names in one source are rejected in union-by-name mode because name-based alignment would otherwise be ambiguous
 - `--exclude-columns <name,name,...>` is accepted only with `--union-by-name`
 - excluded names are exact matches
 - unknown exclusions are rejected after source discovery so typos are visible
