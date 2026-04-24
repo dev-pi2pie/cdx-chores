@@ -179,6 +179,77 @@ Clarification:
   - direct CLI continues to require `--output <path>`
   - direct CLI does not gain implicit output naming in this follow-up
 
+## Frozen Phase 1 Contract
+
+Phase 1 freezes the implementation contract below. Later phases should treat this section as the source of truth unless a follow-up doc explicitly revises it.
+
+### Interactive source entry
+
+- interactive `data stack` collects a raw source list, not one directory
+- the raw source list accepts files, directories, or both together
+- each entered source is kept as a raw source and then passed through the shared stack source normalizer
+- per-source input-format, pattern, traversal, or schema options are out of scope for this follow-up
+- source normalization owns file-vs-directory detection and deterministic matched-file ordering
+- duplicate matched files are suppressed by the shared source normalizer
+- duplicate detection uses the exact normalized path string emitted by the router; the first occurrence wins
+
+### Directory options in mixed-source runs
+
+- pattern and traversal prompts are global run options
+- pattern filtering applies only to candidates expanded from directory sources
+- traversal options apply only to directory sources
+- explicit file sources are included directly and are not filtered out by the directory pattern
+- recursive traversal and max-depth behavior should remain aligned with the existing direct CLI source router
+- max-depth is valid only when recursive traversal is enabled
+- interactive mode should only ask for max-depth after recursive traversal is selected
+
+### Normalized-source review
+
+The interactive review checkpoint must show enough information for the user to understand what will be stacked before writing:
+
+- raw source count and matched file count
+- selected input format
+- selected pattern and traversal mode when directory sources are present
+- normalized matched files in deterministic order, using bounded display if the list is long
+- selected schema mode, either strict or union-by-name
+- excluded column/key names and excluded count when exclusions are configured
+
+### Structured JSON input
+
+- `jsonl` input means one JSON object per non-empty line
+- `json` input means one top-level JSON array whose items are all JSON objects
+- scalar rows, array rows, top-level objects, scalar arrays, nested table discovery, and flattening are rejected
+- empty structured JSON inputs are rejected
+- strict matching remains the default: all rows across all matched structured JSON sources must share the same key set
+- direct CLI and interactive mode must call the same structured JSON parser and validation path
+
+### Union-by-name schema mode
+
+- strict schema matching remains the default in direct CLI and interactive mode
+- `--union-by-name` is opt-in for direct CLI
+- interactive mode exposes union-by-name as an explicit opt-in schema-mode choice
+- the first source's column/key order wins
+- newly discovered names append in first-seen order as later files or rows introduce them
+- explicit exclusions are removed after union construction
+- missing values use the stack materializer's existing empty-value policy
+- headerless mode is rejected with union-by-name in this follow-up
+- mixed normalized input formats remain rejected even when union-by-name is enabled
+
+### Explicit exclusions
+
+- direct CLI accepts `--exclude-columns <name,name,...>` only with `--union-by-name`
+- interactive mode asks for exclusions only when union-by-name is selected
+- exclusions use exact column/key-name matches only
+- exclusions are validated after source discovery and union construction
+- unknown exclusion names are rejected so typos are visible
+- direct CLI stderr and interactive review must disclose the excluded count and bounded excluded names when exclusions are present
+
+### Default output behavior
+
+- a single raw interactive source keeps the current derived `.stack.<format>` default output option
+- two or more raw interactive sources require a custom output path
+- direct CLI keeps requiring `--output <path>` and does not gain implicit output naming
+
 ## Non-Goals
 
 - changing direct CLI `data stack` source routing
@@ -235,27 +306,27 @@ Clarification:
 
 ### Phase 1: Freeze the widened interactive contract
 
-- [ ] freeze the interactive source-entry model for files, directories, or both together
-- [ ] freeze how directory-specific options such as pattern and traversal apply inside mixed-source interactive runs
-- [ ] freeze the normalized-source review layout for mixed-source interactive runs
-- [ ] freeze the structured JSON input contract:
+- [x] freeze the interactive source-entry model for files, directories, or both together
+- [x] freeze how directory-specific options such as pattern and traversal apply inside mixed-source interactive runs
+- [x] freeze the normalized-source review layout for mixed-source interactive runs
+- [x] freeze the structured JSON input contract:
   - `jsonl` means one JSON object per line
   - `json` means one top-level array of objects
   - both require strict same-key behavior first
-- [ ] freeze direct CLI and interactive mode as sharing the same structured JSON parser and validation behavior
-- [ ] freeze `--union-by-name` as opt-in:
+- [x] freeze direct CLI and interactive mode as sharing the same structured JSON parser and validation behavior
+- [x] freeze `--union-by-name` as opt-in:
   - strict matching remains default
   - first source order wins
   - newly discovered names append in first-seen order
   - explicit exclusions are removed after union construction
   - missing values use the stack materializer's empty-value policy
   - headerless mode is rejected for this first schema-flex slice
-- [ ] freeze explicit exclusion behavior:
+- [x] freeze explicit exclusion behavior:
   - `--exclude-columns <name,name,...>` is accepted only with `--union-by-name`
   - exact matches only
   - unknown names are rejected
   - exclusion disclosure is required in direct CLI stderr and interactive review
-- [ ] freeze default-output behavior for widened source lists:
+- [x] freeze default-output behavior for widened source lists:
   - single raw source keeps the current derived `.stack.<format>` default
   - multiple raw sources require a custom output path
 
