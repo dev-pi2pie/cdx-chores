@@ -2,7 +2,7 @@
 title: "Data stack interactive mixed-source follow-up"
 created-date: 2026-04-23
 modified-date: 2026-04-24
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -36,17 +36,17 @@ That made sense for the first shipped slice, but it now creates a visible mismat
 - direct CLI supports explicit files and directories together
 - direct CLI already supports strict `jsonl`
 
-It also leaves JSON wording ambiguous:
+At the time this follow-up was drafted, it also left JSON wording ambiguous:
 
-- interactive mode already supports JSON output
-- direct CLI already supports `.json` output
-- neither the current direct CLI nor interactive mode supports `.json` input yet
+- interactive mode already supported JSON output
+- direct CLI already supported `.json` output
+- neither direct CLI nor interactive mode supported `.json` input yet
 
 This follow-up should be handled in its own plan because the base `data stack` plan is already complete and this work is a widening/refinement pass rather than initial bring-up.
 
-## Current State
+## Starting State
 
-Interactive `data -> stack` currently supports:
+At plan start, interactive `data -> stack` supported:
 
 - one directory only
 - `csv` or `tsv` input selection
@@ -58,18 +58,33 @@ Interactive `data -> stack` currently supports:
   - `json`
 - default or custom output destination
 
-Direct CLI `data stack` already supports more:
+At plan start, direct CLI `data stack` already supported more:
 
 - one or more raw `<source...>` arguments
 - explicit files, directories, or both together
 - strict `jsonl`
 
-Clarification:
+Starting clarification:
 
-- current interactive mode does not expose `jsonl` input selection
-- current interactive mode does not expose `json` input selection
-- current interactive mode does expose JSON as an output format
+- interactive mode did not expose `jsonl` input selection
+- interactive mode did not expose `json` input selection
+- interactive mode did expose JSON as an output format
 - this follow-up should add narrow `.json` input support instead of treating JSON output as the only JSON surface
+
+## Completion State
+
+This plan is completed. The current implementation now supports:
+
+- direct CLI `.json` input as one top-level array of row objects
+- interactive mixed file/directory source entry
+- interactive `csv`, `tsv`, `json`, and `jsonl` input selection
+- strict schema matching as the default
+- opt-in direct CLI `--union-by-name`
+- opt-in direct CLI `--exclude-columns <name,name,...>` with exact-name validation
+- interactive union-by-name schema mode and optional exact exclusions
+- schema-mode and exclusion disclosure in direct CLI stderr and interactive review
+- generated interactive default output names rooted at the current working directory
+- public guide wording for JSON input/output separation, schema-flex controls, generated defaults, and deferred replay/Codex-assist work
 
 ## Scope
 
@@ -390,13 +405,13 @@ The interactive review checkpoint must show enough information for the user to u
 
 ### Phase 5: Docs and final alignment
 
-- [ ] update `docs/guides/data-stack-usage.md` so the interactive section matches the widened flow
-- [ ] update any data-command guide wording that still describes interactive stack as directory-only
-- [ ] keep guide wording explicit that JSON output and JSON input are separate supported surfaces
-- [ ] document the narrow `.json` input contract and unsupported JSON shapes
-- [ ] document `--union-by-name` and `--exclude-columns` as opt-in deterministic schema-flex controls and keep strict matching documented as the default
-- [ ] document replayable stack records and Codex-assisted schema suggestions as deferred to separate future work, not part of this implementation session
-- [ ] document generated interactive default-output naming and direct CLI explicit-output behavior
+- [x] update `docs/guides/data-stack-usage.md` so the interactive section matches the widened flow
+- [x] update any data-command guide wording that still describes interactive stack as directory-only
+- [x] keep guide wording explicit that JSON output and JSON input are separate supported surfaces
+- [x] document the narrow `.json` input contract and unsupported JSON shapes
+- [x] document `--union-by-name` and `--exclude-columns` as opt-in deterministic schema-flex controls and keep strict matching documented as the default
+- [x] document replayable stack records and Codex-assisted schema suggestions as deferred to separate future work, not part of this implementation session
+- [x] document generated interactive default-output naming and direct CLI explicit-output behavior
 - [x] add a job record when implementation lands
 
 ## Related Research
@@ -414,3 +429,4 @@ The interactive review checkpoint must show enough information for the user to u
 - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
 - `docs/plans/jobs/2026-04-24-data-stack-generated-default-output.md`
+- `docs/plans/jobs/2026-04-24-data-stack-interactive-followup-docs-closeout.md`

@@ -1,7 +1,7 @@
 ---
 title: "Data stack mixed-source input-router implementation"
 created-date: 2026-04-23
-modified-date: 2026-04-23
+modified-date: 2026-04-24
 status: completed
 agent: codex
 ---
@@ -35,7 +35,7 @@ This work is best handled as a phased plan because the research deliberately sep
 ## Current State
 
 - `data stack` is now implemented as a direct CLI action under `data`
-- interactive `data -> stack` now ships in its first directory-first form
+- interactive `data -> stack` first shipped in a directory-first form, then the completed follow-up widened it to mixed file/directory sources, JSONL, narrow `.json` input, union-by-name, exact exclusions, and generated stack artifact defaults
 - the public usage guide now lives at `docs/guides/data-stack-usage.md`
 - public playground support exists under `examples/playground/stack-cases/`
 - `scripts/generate-data-stack-fixtures.mjs` creates deterministic stack-case fixtures for:
@@ -289,7 +289,7 @@ Deferred:
 - [x] freeze the default-output-path naming rule after mixed-source primary-label semantics are stable
 - [x] introduce `use default output path` versus `custom output path` in interactive `data stack`
 - [x] keep the default output extension aligned with the selected output format
-- [x] prefer a stack-specific derived stem such as `.stack.csv`, `.stack.tsv`, or `.stack.json`
+- [x] supersede the first derived-stem default with generated `data-stack-<timestamp>-<uid>.<format>` artifact naming in the interactive mixed-source follow-up
 - [x] add focused tests for the chosen default-path rule
 - [x] update docs once the default-output-path behavior ships
 
@@ -306,7 +306,7 @@ Deferred:
 - treat any widening beyond the current directory-first interactive scope as a true mixed-source interactive mode that mirrors direct CLI source routing
 - keep later schema-flex additions such as provenance columns separate from the shipped baseline contract
 - keep any Codex-assisted stack diagnostics as a separate future slice rather than folding them into the current shipped command
-- the next interactive widening plan now lives in `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
+- the interactive widening plan now lives in `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md` and is completed
 
 ## Related Research
 
@@ -327,3 +327,5 @@ Deferred:
 - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
 - `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
+- `docs/plans/jobs/2026-04-24-data-stack-generated-default-output.md`
+- `docs/plans/jobs/2026-04-24-data-stack-interactive-followup-docs-closeout.md`

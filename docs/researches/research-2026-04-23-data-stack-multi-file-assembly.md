@@ -2,7 +2,7 @@
 title: "Data stack multi-file assembly direction"
 created-date: 2026-04-23
 modified-date: 2026-04-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -49,15 +49,16 @@ Status note:
   - `docs/plans/jobs/2026-04-23-data-stack-phase-1-2-implementation.md`
   - `docs/plans/jobs/2026-04-23-data-stack-phase-3-5-implementation.md`
   - `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
+  - `docs/plans/jobs/2026-04-24-data-stack-generated-default-output.md`
+  - `docs/plans/jobs/2026-04-24-data-stack-interactive-followup-docs-closeout.md`
 - the current stable command-family split is:
   - `data stack` for multi-source assembly
   - `data extract` for one-input shaping and materialization
   - `data query` for SQL
-- this research remains `in-progress` while the interactive mixed-source widening and default-output behavior are still being settled
-- interactive widening remains follow-up work, not a reopening of this research direction:
+- this research is now completed because the direct CLI, structured JSON input, schema-flex mode, widened interactive flow, generated interactive defaults, and guide alignment are all recorded in linked implementation plans and job records
+- the first interactive slice was intentionally narrower, then widened through `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`:
   - the first interactive slice intentionally shipped directory-first and CSV/TSV-only
-  - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md` owns the next mixed-source interactive work
-  - that follow-up now uses generated stack artifact names for interactive defaults because mixed raw sources do not always have one obvious basename
+  - the completed follow-up now supports mixed file/directory sources, `jsonl`, narrow `.json` input, union-by-name, exact exclusions, and generated stack artifact names for interactive defaults
 - JSON output and JSON input stay separate in this research:
   - `.json` output is supported as an encoding for the assembled table
   - strict `jsonl` input is one structured input route
@@ -217,7 +218,7 @@ This repo already has relevant precedents:
 - file-vs-directory target detection in rename cleanup
 - conservative extension-based format detection in the data-query family
 
-But there is not yet one shared utility that says:
+At research time, there was not yet one shared utility that said:
 
 - accept mixed raw inputs
 - detect source kind for each
@@ -725,7 +726,7 @@ Preferred later directions:
 Resolved future-direction decisions:
 
 - the first schema-flex widening for `jsonl` should use one explicit opt-in union flag, with `--union-by-name` as the preferred first public contract
-- `--union-by-name` should also cover CSV/TSV header names and planned `.json` array-of-object keys, not only `jsonl`
+- `--union-by-name` should also cover CSV/TSV header names and `.json` array-of-object keys, not only `jsonl`
 - explicit `--exclude-columns` should be the deterministic way to remove noisy names from the unioned output schema
 - interactive mode should expose union-by-name as an explicit schema-mode opt-in and show that mode in the final review
 - interactive mode should disclose excluded names/counts before writing

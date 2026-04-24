@@ -19,30 +19,26 @@ Current stable boundary:
 - matching-header CSV and TSV inputs are supported directly
 - headerless CSV and TSV inputs are supported through `--no-header`
 - strict `jsonl` is supported as one JSON object per line with the same key set across rows
+- strict `.json` input is supported as one top-level array of objects with the same key set across rows
+- strict schema matching is the default
+- `--union-by-name` is available as an opt-in schema-flex mode
+- `--exclude-columns <name,name,...>` removes exact column/key names from union-by-name output
 - mixed normalized input formats are rejected
 - output requires `.csv`, `.tsv`, or `.json`
 - direct CLI requires `--output <path>`
-- interactive mode is available through `cdx-chores interactive`
-- first-pass interactive `data stack` stays narrower than the direct CLI:
-  - directory-first only
-  - CSV and TSV only
-
-Important current restriction:
-
-- interactive `data stack` does not yet mirror the full direct CLI contract
-- if you need mixed file-plus-directory input or strict `jsonl`, use direct CLI `data stack` today
-- the planned widening is tracked in `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
+- interactive mode is available through `cdx-chores interactive` and supports mixed file/directory sources, CSV, TSV, JSONL, JSON, strict matching, union-by-name, exclusions, and generated default output paths
 
 ### Command shape
 
 ```bash
-cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--overwrite]
+cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--union-by-name] [--exclude-columns <name,name,...>] [--overwrite]
 ```
 
 Supported `--input-format` values:
 
 - `csv`
 - `tsv`
+- `json`
 - `jsonl`
 
 ### Direct CLI behavior
@@ -65,28 +61,33 @@ Delimited header behavior:
 - when `--columns` is omitted in headerless mode, placeholder names such as `column_1`, `column_2`, ... are generated
 - headerless runs reject mismatched column counts across inputs
 
-`jsonl` behavior:
+Structured JSON input behavior:
 
-- each line must be one JSON object
-- empty files are rejected
-- non-object rows are rejected
-- first-pass key mismatches are rejected rather than widened automatically
+- `jsonl` input means one JSON object per non-empty line
+- `.json` input means one top-level JSON array
+- every `.json` array item must be an object
+- top-level objects, scalar rows, scalar arrays, nested table discovery, and flattening are rejected
+- empty structured JSON inputs are rejected
+- strict mode rejects key mismatches rather than widening automatically
 - `.json` output writes one JSON array of row objects
 
-Planned schema-flex behavior:
+Schema-flex behavior:
 
-- strict schema matching is the default today and should remain the default
-- `--union-by-name` is planned as an opt-in mode for stacking named schemas that add or omit columns or JSON keys
-- when enabled, it should build the output schema from the union of all header names or object keys
-- the first source's name order should come first, with newly discovered names appended in first-seen order
-- missing values should be written using the stack materializer's empty-value policy
-- explicit exclusions are planned through `--exclude-columns <name,name,...>` for union-by-name runs
-- excluded names should be exact matches, should be rejected when unknown, and should be disclosed before or after writing
-- first supported inputs should be:
+- strict schema matching is the default for direct CLI and interactive mode
+- `--union-by-name` is opt-in for stacking named schemas that add or omit columns or JSON keys
+- when enabled, it builds the output schema from the union of all header names or object keys
+- the first source's name order comes first, with newly discovered names appended in first-seen order
+- missing values are written using the stack materializer's empty-value policy
+- `--exclude-columns <name,name,...>` is accepted only with `--union-by-name`
+- excluded names are exact matches
+- unknown exclusions are rejected after source discovery so typos are visible
+- schema mode, output column/key count, and bounded exclusion names are disclosed in the write summary or interactive review
+- union-by-name is supported for:
   - CSV and TSV inputs with header rows
-  - `jsonl` object rows
-  - planned `.json` top-level arrays of objects
-- `--union-by-name` should not be used automatically; it exists to make schema widening deliberate
+  - JSONL object rows
+  - `.json` top-level arrays of objects
+- `--union-by-name` is rejected with `--no-header` in this slice because generated `column_<n>` names are not a stable user-authored schema
+- `--union-by-name` is not used automatically; it exists to make schema widening deliberate
 
 Deferred Codex schema assistance:
 
@@ -121,6 +122,18 @@ Strict `jsonl` stacking:
 cdx-chores data stack ./examples/playground/stack-cases/jsonl-basic --pattern "*.jsonl" --input-format jsonl --output ./examples/playground/.tmp-tests/events.stack.json --overwrite
 ```
 
+Strict `.json` array-of-objects stacking:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/json-array-basic --pattern "*.json" --input-format json --output ./examples/playground/.tmp-tests/json-array.stack.csv --overwrite
+```
+
+Union-by-name with exact exclusions:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --union-by-name --exclude-columns noise --output ./examples/playground/.tmp-tests/union.stack.json --overwrite
+```
+
 Recursive directory discovery:
 
 ```bash
@@ -142,43 +155,51 @@ Choose:
 
 Current interactive flow:
 
-1. choose the input directory
-2. choose CSV or TSV input format
-3. enter a filename pattern
-4. choose shallow or recursive traversal
-5. choose output format
-6. choose destination style:
-   - use default output path
+1. Enter one input source.
+2. Optionally add more sources.
+3. Choose CSV, TSV, JSON, or JSONL input format.
+4. Enter a filename pattern.
+5. Choose shallow or recursive traversal.
+6. Choose strict matching or union-by-name schema mode.
+7. If union-by-name is selected, optionally enter exact column/key exclusions.
+8. Choose output format.
+9. Choose destination style:
+   - use generated default output path
    - custom output path
-7. review the matched-file summary and write setup
-8. at the write boundary, choose one of:
+10. Review the normalized source summary, schema mode, matched files, output format, and write setup.
+11. At the write boundary, choose one of:
    - write now
    - revise stack setup
    - change destination
    - cancel
 
-Current limitation:
-
-- interactive mode still starts from one directory only
-- interactive mode still limits input selection to CSV or TSV
-- interactive mode does not yet expose direct file inputs, mixed-source runs, `jsonl` input, or `json` input
-- interactive mode does expose JSON as an output format
-- current direct CLI supports strict `jsonl` input but not `.json` input
-- the interactive mixed-source follow-up is expected to add `.json` input with a narrow top-level array-of-objects contract
-
 Current interactive default output rule:
 
-- the input directory is the current primary label
-- the default output path is a sibling path derived from that directory name
-- the suffix is stack-specific and follows the chosen output format:
-  - `.stack.csv`
-  - `.stack.tsv`
-  - `.stack.json`
+- interactive defaults use generated stack artifact names rooted at the current working directory
+- the naming rule is the same for single-source and mixed-source runs:
+  - `data-stack-<timestamp>-<uid>.csv`
+  - `data-stack-<timestamp>-<uid>.tsv`
+  - `data-stack-<timestamp>-<uid>.json`
+- direct CLI stays explicit and still requires `--output <path>`
+- generated default collisions are rare, but they still go through overwrite confirmation
+- if overwrite is declined, the destination prompt can choose a custom path or generate a new default candidate
 
 Example:
 
-- input directory: `examples/playground/stack-cases/csv-matching-headers`
-- default JSON output: `examples/playground/stack-cases/csv-matching-headers.stack.json`
+- selected output format: JSON
+- default JSON output: `data-stack-20260424T120000Z-a1b2c3d4.json`
+
+Interactive JSON wording:
+
+- JSON output means the stacked table is written as one JSON array of row objects
+- JSON input means each matched `.json` source is one top-level array of row objects
+- JSON output support does not imply arbitrary JSON input inference
+
+Deferred interactive work:
+
+- replayable stack records are not part of the current interactive flow
+- Codex-assisted schema exclusion or repair suggestions are not part of the current interactive flow
+- those future surfaces are tracked in `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 
 ### Fixture reproduction
 
