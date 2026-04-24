@@ -33,6 +33,7 @@ function matchesDirectoryPattern(relativePath: string, pattern: string): boolean
 
 async function collectDirectoryCandidatePaths(options: {
   directoryPath: string;
+  inputFormat?: DataStackInputFormat;
   maxDepth?: number;
   outputPath?: string;
   pattern?: string;
@@ -137,6 +138,7 @@ export async function resolveDataStackInputSources(
 
     const candidatePaths = await collectDirectoryCandidatePaths({
       directoryPath: sourcePath,
+      inputFormat: options.inputFormat,
       maxDepth: options.maxDepth,
       outputPath: options.outputPath,
       pattern: options.pattern,

@@ -1,10 +1,11 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const defaultOutputDir = join(repoRoot, "examples", "playground", "stack-cases");
+const scratchOutputRoot = join(repoRoot, "examples", "playground", ".tmp-tests");
 
 function printUsage() {
   console.log(
@@ -106,6 +107,36 @@ async function writeFixture(outputDir, relativePath, content) {
 
 async function cleanOutputDir(outputDir) {
   await rm(outputDir, { recursive: true, force: true });
+}
+
+function isInsideDirectory(parentPath, candidatePath) {
+  const relativePath = relative(parentPath, candidatePath);
+  return relativePath.length > 0 && !relativePath.startsWith("..") && !isAbsolute(relativePath);
+}
+
+function assertSafeResetTarget(outputDir) {
+  const normalizedOutputDir = resolve(outputDir);
+  if (
+    normalizedOutputDir === defaultOutputDir ||
+    isInsideDirectory(scratchOutputRoot, normalizedOutputDir)
+  ) {
+    return;
+  }
+
+  throw new Error(
+    `Refusing to clean unsafe fixture output directory: ${outputDir}. Use the default stack fixture root or a path under ${scratchOutputRoot}.`,
+  );
+}
+
+function assertSafeCleanTarget(outputDir) {
+  const normalizedOutputDir = resolve(outputDir);
+  if (normalizedOutputDir === defaultOutputDir) {
+    throw new Error(
+      "Refusing to clean the default tracked stack fixture tree. Use reset for the committed playground fixtures.",
+    );
+  }
+
+  assertSafeResetTarget(normalizedOutputDir);
 }
 
 function createMatchingHeaderCases() {
@@ -339,12 +370,14 @@ async function main() {
           "Refusing to clean the default tracked stack fixture tree. Pass --output-dir to clean a non-default directory.",
         );
       }
+      assertSafeCleanTarget(parsed.outputDir);
       await cleanOutputDir(parsed.outputDir);
       console.log(`Cleaned ${parsed.outputDir}`);
       return;
     }
 
     if (parsed.command === "reset") {
+      assertSafeResetTarget(parsed.outputDir);
       await cleanOutputDir(parsed.outputDir);
       await seedFixtures(parsed.outputDir);
       console.log(`Reset ${parsed.outputDir} with deterministic data stack fixtures`);
@@ -359,4 +392,13 @@ async function main() {
   }
 }
 
-await main();
+export const fixtureGeneratorInternals = {
+  assertSafeCleanTarget,
+  assertSafeResetTarget,
+  defaultOutputDir,
+  scratchOutputRoot,
+};
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

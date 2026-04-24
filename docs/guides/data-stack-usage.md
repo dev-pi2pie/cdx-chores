@@ -215,4 +215,4 @@ Guarded clean behavior:
 
 - the generator refuses to delete the default tracked fixture root with `clean`
 - use `reset` for the committed playground tree
-- use `clean --output-dir <path>` only for alternate generated fixture roots
+- use `clean --output-dir <path>` only for alternate generated fixture roots under `examples/playground/.tmp-tests/`

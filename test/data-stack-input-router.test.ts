@@ -58,6 +58,27 @@ describe("data stack input router", () => {
     });
   });
 
+  test("uses input-format overrides when discovering directory candidates without a pattern", async () => {
+    await withTempFixtureDir("data-stack-router-input-format", async (fixtureDir) => {
+      const directoryPath = join(fixtureDir, "parts");
+      await mkdir(directoryPath, { recursive: true });
+      await writeFile(join(directoryPath, "a.csv"), "id,name\n1,Ada\n", "utf8");
+      await writeFile(
+        join(directoryPath, "b.json"),
+        JSON.stringify([{ id: 2, name: "Bao" }]),
+        "utf8",
+      );
+
+      const resolved = await resolveDataStackInputSources({
+        inputFormat: "json",
+        sources: [directoryPath],
+      });
+
+      expect(resolved.files.map((file) => file.path)).toEqual([join(directoryPath, "b.json")]);
+      expect(resolved.files.map((file) => file.format)).toEqual(["json"]);
+    });
+  });
+
   test("keeps directory discovery shallow by default and applies recursive depth caps only when requested", async () => {
     await withTempFixtureDir("data-stack-router-depth", async (fixtureDir) => {
       const directoryPath = join(fixtureDir, "tree");
