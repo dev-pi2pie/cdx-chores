@@ -829,7 +829,7 @@ Resolved in this revision:
 - recommendation provenance:
   - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-No known high-level product-contract questions remain in this research. The next plan should convert these decisions into implementation phases, exact command naming, validation rules, and tests.
+No known high-level product-contract questions remain in this research. The linked implementation plan should keep these decisions as the source of truth for phases, exact command naming, validation rules, and tests.
 
 ## Related Research
 
@@ -841,5 +841,6 @@ No known high-level product-contract questions remain in this research. The next
 
 ## Related Plans
 
+- `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
