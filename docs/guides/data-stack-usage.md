@@ -23,6 +23,11 @@ Current stable boundary:
 - strict schema matching is the default
 - `--union-by-name` is available as an opt-in schema-flex mode
 - `--exclude-columns <name,name,...>` removes exact column/key names from union-by-name output
+- `--dry-run` writes a replayable stack-plan artifact and does not write stack output
+- `data stack replay <record>` executes a reviewed stack-plan JSON artifact
+- `--unique-by <name,name,...>` records an explicit unique key for duplicate-key diagnostics
+- `--on-duplicate preserve|report|reject` controls deterministic duplicate handling
+- `--codex-assist` can write an advisory report during dry-run
 - mixed normalized input formats are rejected
 - output requires `.csv`, `.tsv`, or `.json`
 - direct CLI requires `--output <path>`
@@ -31,7 +36,8 @@ Current stable boundary:
 ### Command shape
 
 ```bash
-cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--union-by-name] [--exclude-columns <name,name,...>] [--overwrite]
+cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--union-by-name] [--exclude-columns <name,name,...>] [--unique-by <name,name,...>] [--on-duplicate preserve|report|reject] [--dry-run] [--plan-output <path>] [--codex-assist] [--codex-report-output <path>] [--overwrite]
+cdx-chores data stack replay <record> [--output <path>] [--auto-clean]
 ```
 
 Supported `--input-format` values:
@@ -91,12 +97,37 @@ Schema-flex behavior:
 - `--union-by-name` is rejected with `--no-header` in this slice because generated `column_<n>` names are not a stable user-authored schema
 - `--union-by-name` is not used automatically; it exists to make schema widening deliberate
 
-Deferred Codex schema assistance:
+Dry-run and replay behavior:
 
-- a later canary may add Codex-assisted suggestions for noisy exclusions or possible schema repairs
-- those suggestions should be reviewed and turned into explicit flags or artifacts
-- Codex should not silently exclude, rename, or repair stack output
-- replayable stack records and Codex schema-assist questions are separate future work, tracked in `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
+- `--dry-run` runs source discovery, schema normalization, duplicate diagnostics, and plan writing, then skips materialized output writing
+- direct dry-run still requires `--output` so the plan records the intended output path and format
+- when `--plan-output` is omitted, the CLI writes `data-stack-plan-<timestamp>Z-<uid>.json`
+- `data stack replay <record>` accepts a filesystem path to a stack-plan JSON artifact
+- replay warns when stored source size or mtime fingerprints changed
+- replay can override the recorded output path with `--output <path>`
+- replay rejects advisory Codex reports and other non-stack-plan JSON files
+- `--auto-clean` on replay removes only the stack-plan JSON after successful replay
+
+Duplicate and unique-key behavior:
+
+- exact duplicate rows compare every normalized output column or key
+- `--unique-by` switches duplicate-key diagnostics to the selected key columns
+- candidate unique keys are reported in the stack-plan diagnostics
+- `preserve` keeps all rows and records diagnostics
+- `report` keeps all rows and records findings for review
+- `reject` fails before writing materialized output when exact duplicates or selected-key conflicts are found
+- stack never silently drops rows or applies keep-first/keep-last behavior
+
+Codex assist behavior:
+
+- direct `--codex-assist` is valid only with `--dry-run`
+- `--codex-report-output <path>` writes the advisory report to a custom JSON path
+- interactive Codex review uses the same advisory report model, but it is requested from the status preview instead of a direct CLI flag
+- Codex reports link to the analyzed stack plan through payload metadata
+- recommendations are advisory until accepted or edited in a review flow
+- accepted or edited recommendations become deterministic stack-plan fields with a new `payloadId`
+- stack replay executes only stack-plan artifacts, not Codex report artifacts
+- supported recommendation areas are headerless column names, union exclusions, unique-key selection, duplicate policy selection, and schema-drift explanation
 
 ### Examples
 
@@ -136,6 +167,36 @@ Union-by-name with exact exclusions:
 cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --union-by-name --exclude-columns noise --output ./examples/playground/.tmp-tests/union.stack.json --overwrite
 ```
 
+Dry-run plan without writing stack output:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-matching-headers --pattern "*.csv" --output ./examples/playground/.tmp-tests/matching.stack.csv --dry-run
+```
+
+Replay a reviewed stack plan:
+
+```bash
+cdx-chores data stack replay ./data-stack-plan-20260425T120000Z-a1b2c3d4.json --output ./examples/playground/.tmp-tests/replayed.stack.csv
+```
+
+Record a unique key and report duplicate diagnostics:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-matching-headers --pattern "*.csv" --output ./examples/playground/.tmp-tests/matching.stack.csv --unique-by id --on-duplicate report --dry-run
+```
+
+Reject duplicate rows before writing:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-matching-headers --pattern "*.csv" --output ./examples/playground/.tmp-tests/matching.stack.csv --on-duplicate reject
+```
+
+Write an advisory Codex report during dry-run:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
+```
+
 Recursive directory discovery:
 
 ```bash
@@ -168,9 +229,11 @@ Current interactive flow:
 9. Choose destination style:
    - use generated default output path
    - custom output path
-10. Review the normalized source summary, schema mode, matched files, output format, and write setup.
+10. Review the normalized source summary, schema mode, matched files, row count, duplicate/key status, stack-plan path, advisory report status, output format, and write setup.
 11. At the write boundary, choose one of:
    - write now
+   - dry-run plan only
+   - request Codex recommendations
    - revise stack setup
    - change destination
    - cancel
@@ -185,6 +248,21 @@ Current interactive default output rule:
 - direct CLI stays explicit and still requires `--output <path>`
 - generated default collisions are rare, but they still go through overwrite confirmation
 - if overwrite is declined, the destination prompt can choose a custom path or generate a new default candidate
+- dry-run plan only writes a stack-plan JSON artifact and defaults to keeping it
+- successful write asks whether to keep the applied stack plan
+- declining retention removes only the generated stack-plan JSON
+- Codex or diagnostic reports have a separate keep prompt
+- failed writes keep all generated artifacts for troubleshooting
+
+Interactive Codex review:
+
+- Codex recommendations are requested from the status preview, before write or plan save
+- interactive review is not a materialized write; it produces an advisory report plus a reviewed deterministic plan when recommendations are accepted or edited
+- recommendations are shown as patch-style changes with a short reason
+- each recommendation can be accepted, edited, skipped, or used to cancel review
+- accepted and edited recommendations create a new deterministic plan payload before write or dry-run save
+- the status preview is shown again after accepted or edited recommendations
+- if Codex fails, the interactive flow keeps the current deterministic setup and lets the user continue
 
 Example:
 
@@ -196,12 +274,6 @@ Interactive JSON wording:
 - JSON output means the stacked table is written as one JSON array of row objects
 - JSON input means each matched `.json` source is one top-level array of row objects
 - JSON output support does not imply arbitrary JSON input inference
-
-Deferred interactive work:
-
-- replayable stack records are not part of the current interactive flow
-- Codex-assisted schema exclusion or repair suggestions are not part of the current interactive flow
-- those future surfaces are tracked in `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 
 ### Fixture reproduction
 

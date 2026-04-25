@@ -23,6 +23,7 @@ import {
   writeDataStackPlanArtifact,
   type DataStackDuplicatePolicy,
   type DataStackPlanArtifact,
+  type DataStackPlanMetadata,
 } from "../data-stack/plan";
 import { prepareDataStackExecution, type PreparedDataStackExecution } from "../data-stack/prepare";
 import type { DataStackInputFormat, DataStackOutputFormat } from "../data-stack/types";
@@ -189,6 +190,9 @@ export async function createPreparedDataStackPlan(options: {
   sourcePaths: readonly string[];
   stackOptions: DataStackOptions;
   uniqueBy: readonly string[];
+  metadata?: Partial<
+    Omit<DataStackPlanMetadata, "artifactId" | "artifactType" | "issuedAt" | "payloadId">
+  >;
 }): Promise<DataStackPlanArtifact> {
   return createDataStackPlanArtifact({
     diagnostics: options.diagnostics.planDiagnostics,
@@ -203,6 +207,7 @@ export async function createPreparedDataStackPlan(options: {
       format: options.prepared.inputFormat,
       headerMode: options.stackOptions.noHeader ? "no-header" : "header",
     },
+    metadata: options.metadata,
     now: options.runtime.now(),
     output: {
       format: options.outputFormat,
@@ -246,6 +251,9 @@ export async function writePreparedDataStackPlan(
     sourcePaths: readonly string[];
     stackOptions: DataStackOptions;
     uniqueBy: readonly string[];
+    metadata?: Partial<
+      Omit<DataStackPlanMetadata, "artifactId" | "artifactType" | "issuedAt" | "payloadId">
+    >;
   },
 ): Promise<DataStackPlanArtifact> {
   const plan =
@@ -262,6 +270,7 @@ export async function writePreparedDataStackPlan(
       sourcePaths: options.sourcePaths,
       stackOptions: options.stackOptions,
       uniqueBy: options.uniqueBy,
+      metadata: options.metadata,
     }));
   await writeDataStackPlanArtifact(options.planPath, plan, { overwrite: options.overwrite });
   return plan;

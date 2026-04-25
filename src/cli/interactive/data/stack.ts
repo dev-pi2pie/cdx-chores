@@ -1,12 +1,25 @@
 import { rm, stat } from "node:fs/promises";
 import { extname } from "node:path";
 
-import { confirm, input, select } from "@inquirer/prompts";
+import { confirm, editor, input, select } from "@inquirer/prompts";
 
-import { writePreparedDataStackOutput, writePreparedDataStackPlan } from "../../actions";
+import {
+  applyDataStackCodexRecommendationDecisions,
+  createPreparedDataStackPlan,
+  generateDataStackCodexReportFileName,
+  suggestDataStackWithCodex,
+  writeDataStackCodexReportArtifact,
+  writePreparedDataStackOutput,
+  writePreparedDataStackPlan,
+  type DataStackCodexPatch,
+  type DataStackCodexRecommendation,
+  type DataStackCodexRecommendationDecisionInput,
+  type DataStackCodexReportArtifact,
+} from "../../actions";
 import { displayPath, printLine } from "../../actions/shared";
 import {
   computeDataStackDiagnostics,
+  enforceDataStackDuplicatePolicy,
   type DataStackDiagnosticsResult,
 } from "../../data-stack/diagnostics";
 import {
@@ -26,6 +39,7 @@ import {
   generateDataStackPlanFileName,
   type DataStackDuplicatePolicy,
   type DataStackPlanArtifact,
+  type DataStackPlanMetadata,
 } from "../../data-stack/plan";
 import {
   DATA_STACK_INTERACTIVE_INPUT_FORMAT_VALUES,
@@ -34,6 +48,7 @@ import {
   type DataStackSchemaMode,
 } from "../../data-stack/types";
 import { writeInteractiveFlowTip } from "../contextual-tip";
+import { createInteractiveAnalyzerStatus } from "../analyzer-status";
 import type { InteractivePathPromptContext } from "../shared";
 
 interface InteractiveDataStackSource {
@@ -58,6 +73,7 @@ interface InteractiveDataStackWritePlan {
 
 const INTERACTIVE_DATA_STACK_DUPLICATE_POLICY: DataStackDuplicatePolicy = "preserve";
 const INTERACTIVE_DATA_STACK_UNIQUE_BY: readonly string[] = [];
+const INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS = 30_000;
 
 type InteractiveDataStackWriteOutcome =
   | {
@@ -77,6 +93,16 @@ type InteractiveDataStackPlanWriteOptions = Omit<
   Parameters<typeof writePreparedDataStackPlan>[1],
   "plan" | "planPath"
 >;
+
+interface InteractiveDataStackPreviewState {
+  diagnostics: DataStackDiagnosticsResult;
+  outputPath: string;
+  plan: InteractiveDataStackWritePlan;
+  planArtifact?: DataStackPlanArtifact;
+  planWriteOptions: InteractiveDataStackPlanWriteOptions;
+  prepared: PreparedDataStackExecution;
+  setup: InteractiveDataStackSetup;
+}
 
 function renderMatchedFileSummary(
   runtime: CliRuntime,
@@ -142,20 +168,43 @@ function renderInteractiveStackStatusPreview(
   options: {
     diagnostics: DataStackDiagnosticsResult;
     planPath: string;
+    plan?: DataStackPlanArtifact;
     prepared: PreparedDataStackExecution;
   },
 ): void {
+  const uniqueBy = options.plan?.duplicates.uniqueBy ?? INTERACTIVE_DATA_STACK_UNIQUE_BY;
   printLine(runtime.stderr, `- row count: ${options.prepared.rows.length}`);
   printLine(
     runtime.stderr,
     `- duplicate rows: ${options.diagnostics.duplicateSummary.exactDuplicateRows}`,
   );
-  printLine(runtime.stderr, "- unique key: not selected");
+  if (uniqueBy.length > 0) {
+    printLine(runtime.stderr, `- unique key: ${uniqueBy.join(", ")}`);
+    printLine(
+      runtime.stderr,
+      `- duplicate key conflicts: ${options.diagnostics.duplicateSummary.duplicateKeyConflicts}`,
+    );
+  } else {
+    printLine(runtime.stderr, "- unique key: not selected");
+  }
+  printLine(
+    runtime.stderr,
+    `- duplicate policy: ${options.plan?.duplicates.policy ?? INTERACTIVE_DATA_STACK_DUPLICATE_POLICY}`,
+  );
   printLine(
     runtime.stderr,
     `- stack plan: ${displayPath(runtime, resolveFromCwd(runtime, options.planPath))}`,
   );
-  printLine(runtime.stderr, "- advisory report: not requested");
+  printLine(
+    runtime.stderr,
+    `- advisory report: ${options.plan?.diagnostics.reportPath ? displayPath(runtime, options.plan.diagnostics.reportPath) : "not requested"}`,
+  );
+  if ((options.plan?.metadata.recommendationDecisions.length ?? 0) > 0) {
+    printLine(
+      runtime.stderr,
+      `- Codex accepted changes: ${options.plan?.metadata.recommendationDecisions.length}`,
+    );
+  }
 }
 
 async function promptInteractiveStackPlanPath(
@@ -237,6 +286,161 @@ function buildInteractiveStackPlanWriteOptions(options: {
     },
     uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
   };
+}
+
+function getInteractiveStackPlanMetadata(
+  plan: DataStackPlanArtifact,
+): Partial<Omit<DataStackPlanMetadata, "artifactId" | "artifactType" | "issuedAt" | "payloadId">> {
+  return {
+    acceptedRecommendationIds: plan.metadata.acceptedRecommendationIds,
+    createdBy: plan.metadata.createdBy,
+    derivedFromPayloadId: plan.metadata.derivedFromPayloadId,
+    recommendationDecisions: plan.metadata.recommendationDecisions,
+  };
+}
+
+async function createInteractiveStackPlanArtifact(
+  runtime: CliRuntime,
+  state: InteractiveDataStackPreviewState,
+  metadata?: Partial<
+    Omit<DataStackPlanMetadata, "artifactId" | "artifactType" | "issuedAt" | "payloadId">
+  >,
+): Promise<DataStackPlanArtifact> {
+  return await createPreparedDataStackPlan({
+    ...state.planWriteOptions,
+    runtime,
+    metadata,
+  });
+}
+
+function buildInteractiveStackPlanWriteInput(
+  state: InteractiveDataStackPreviewState,
+  planPath: string,
+  reviewedPlan?: DataStackPlanArtifact,
+): Parameters<typeof writePreparedDataStackPlan>[1] {
+  return {
+    ...state.planWriteOptions,
+    ...(reviewedPlan ? { metadata: getInteractiveStackPlanMetadata(reviewedPlan) } : {}),
+    planPath,
+  };
+}
+
+function renderInteractiveCodexRecommendations(
+  runtime: CliRuntime,
+  recommendations: readonly DataStackCodexRecommendation[],
+): void {
+  printLine(runtime.stderr, "Codex recommendations");
+  if (recommendations.length === 0) {
+    printLine(runtime.stderr, "- none");
+    return;
+  }
+  for (const recommendation of recommendations) {
+    printLine(
+      runtime.stderr,
+      `- ${recommendation.id}: ${recommendation.title} (${Math.round(recommendation.confidence * 100)}%)`,
+    );
+    printLine(runtime.stderr, `  ${recommendation.reasoningSummary}`);
+    for (const patch of recommendation.patches) {
+      printLine(runtime.stderr, `  ${patch.path}: ${JSON.stringify(patch.value)}`);
+    }
+  }
+}
+
+function renderInteractiveAcceptedCodexChanges(
+  runtime: CliRuntime,
+  plan: DataStackPlanArtifact,
+): void {
+  printLine(runtime.stderr, "Accepted Codex changes");
+  printLine(runtime.stderr, `- output columns: ${plan.schema.includedNames.join(", ")}`);
+  printLine(
+    runtime.stderr,
+    `- excluded columns: ${plan.schema.excludedNames.length > 0 ? plan.schema.excludedNames.join(", ") : "none"}`,
+  );
+  printLine(
+    runtime.stderr,
+    `- unique key: ${plan.duplicates.uniqueBy.length > 0 ? plan.duplicates.uniqueBy.join(", ") : "not selected"}`,
+  );
+  printLine(runtime.stderr, `- duplicate policy: ${plan.duplicates.policy}`);
+}
+
+function parseEditedCodexPatches(value: string): DataStackCodexPatch[] {
+  const parsed = JSON.parse(value) as unknown;
+  if (!Array.isArray(parsed)) {
+    throw new Error("Edited patches must be a JSON array.");
+  }
+  return parsed as DataStackCodexPatch[];
+}
+
+async function reviewInteractiveCodexRecommendations(
+  runtime: CliRuntime,
+  report: DataStackCodexReportArtifact,
+): Promise<DataStackCodexRecommendationDecisionInput[]> {
+  const decisions: DataStackCodexRecommendationDecisionInput[] = [];
+  for (const recommendation of report.recommendations) {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, `Recommendation ${recommendation.id}: ${recommendation.title}`);
+    printLine(runtime.stderr, recommendation.reasoningSummary);
+    for (const patch of recommendation.patches) {
+      printLine(runtime.stderr, `- ${patch.path}: ${JSON.stringify(patch.value)}`);
+    }
+
+    const action = await select<"accept" | "edit" | "skip" | "cancel">({
+      message: "Codex recommendation review",
+      choices: [
+        {
+          name: "Accept recommendation",
+          value: "accept",
+          description: "Apply this recommendation to the deterministic stack plan",
+        },
+        {
+          name: "Edit patches",
+          value: "edit",
+          description: "Edit this recommendation's JSON patches before applying",
+        },
+        {
+          name: "Skip recommendation",
+          value: "skip",
+          description: "Leave this recommendation out of the stack plan",
+        },
+        {
+          name: "Cancel review",
+          value: "cancel",
+          description: "Stop reviewing recommendations and keep the current stack setup",
+        },
+      ],
+    });
+
+    if (action === "cancel") {
+      return [];
+    }
+    if (action === "skip") {
+      continue;
+    }
+    if (action === "accept") {
+      decisions.push({ decision: "accepted", recommendationId: recommendation.id });
+      continue;
+    }
+
+    const edited = await editor({
+      message: "Edit recommendation patches JSON",
+      default: JSON.stringify(recommendation.patches, null, 2),
+      postfix: ".json",
+      validate: (value) => {
+        try {
+          parseEditedCodexPatches(String(value ?? ""));
+          return true;
+        } catch (error) {
+          return error instanceof Error ? error.message : String(error);
+        }
+      },
+    });
+    decisions.push({
+      decision: "edited",
+      recommendationId: recommendation.id,
+      patches: parseEditedCodexPatches(edited),
+    });
+  }
+  return decisions;
 }
 
 async function promptInteractiveStackInputFormat(): Promise<DataStackInputFormat> {
@@ -416,52 +620,186 @@ function renderSkippedInteractiveStackWrite(runtime: CliRuntime): void {
   printLine(runtime.stderr, "Skipped stack write.");
 }
 
+async function prepareInteractiveStackPreviewState(options: {
+  outputPath: string;
+  outputPlan: InteractiveDataStackWritePlan;
+  planArtifact?: DataStackPlanArtifact;
+  runtime: CliRuntime;
+  setup: InteractiveDataStackSetup;
+}): Promise<InteractiveDataStackPreviewState> {
+  const plan = options.planArtifact;
+  const sourcePaths = options.setup.sources.map((source) => source.resolved);
+  const prepared = await prepareDataStackExecution({
+    columns: plan?.input.headerMode === "no-header" ? plan.input.columns : undefined,
+    excludeColumns: plan?.schema.excludedNames ?? options.setup.excludeColumns,
+    inputFormat: plan?.input.format ?? options.setup.inputFormat,
+    noHeader: plan?.input.headerMode === "no-header",
+    outputPath: options.outputPath,
+    pattern: options.setup.pattern,
+    readText: readTextFileRequired,
+    recursive: options.setup.recursive,
+    renderPath: (path) => displayPath(options.runtime, path),
+    schemaMode: plan?.schema.mode ?? options.setup.schemaMode,
+    sources: sourcePaths,
+  });
+  const uniqueBy = plan?.duplicates.uniqueBy ?? INTERACTIVE_DATA_STACK_UNIQUE_BY;
+  const diagnostics = computeDataStackDiagnostics({
+    header: prepared.header,
+    matchedFileCount: prepared.files.length,
+    reportPath: plan?.diagnostics.reportPath,
+    rows: prepared.rows,
+    uniqueBy,
+  });
+  const planWriteOptions = buildInteractiveStackPlanWriteOptions({
+    diagnostics,
+    outputPath: options.outputPath,
+    outputPlan: options.outputPlan,
+    prepared,
+    setup: {
+      ...options.setup,
+      excludeColumns: plan?.schema.excludedNames ?? options.setup.excludeColumns,
+      inputFormat: plan?.input.format ?? options.setup.inputFormat,
+      schemaMode: plan?.schema.mode ?? options.setup.schemaMode,
+    },
+  });
+
+  return {
+    diagnostics,
+    outputPath: options.outputPath,
+    plan: options.outputPlan,
+    planArtifact: plan,
+    planWriteOptions: {
+      ...planWriteOptions,
+      duplicatePolicy: plan?.duplicates.policy ?? planWriteOptions.duplicatePolicy,
+      inputColumns:
+        plan?.input.headerMode === "no-header" ? plan.input.columns : planWriteOptions.inputColumns,
+      uniqueBy,
+    },
+    prepared,
+    setup: options.setup,
+  };
+}
+
+async function requestInteractiveStackCodexReview(
+  runtime: CliRuntime,
+  state: InteractiveDataStackPreviewState,
+): Promise<DataStackPlanArtifact | undefined> {
+  const reportPath = resolveFromCwd(runtime, generateDataStackCodexReportFileName(runtime.now()));
+  const diagnosticsWithReport = computeDataStackDiagnostics({
+    header: state.prepared.header,
+    matchedFileCount: state.prepared.files.length,
+    reportPath,
+    rows: state.prepared.rows,
+    uniqueBy: state.planArtifact?.duplicates.uniqueBy ?? INTERACTIVE_DATA_STACK_UNIQUE_BY,
+  });
+  const plan = await createInteractiveStackPlanArtifact(runtime, {
+    ...state,
+    diagnostics: diagnosticsWithReport,
+    planWriteOptions: {
+      ...state.planWriteOptions,
+      diagnostics: diagnosticsWithReport,
+    },
+  });
+
+  const status = createInteractiveAnalyzerStatus(runtime.stdout, runtime.colorEnabled);
+  let report: DataStackCodexReportArtifact;
+  try {
+    status.wait("Waiting for Codex stack recommendations");
+    report = await suggestDataStackWithCodex({
+      diagnostics: diagnosticsWithReport,
+      now: runtime.now(),
+      plan,
+      timeoutMs: INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS,
+      workingDirectory: runtime.cwd,
+    });
+  } catch (error) {
+    printLine(
+      runtime.stderr,
+      `Codex stack recommendations failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    printLine(runtime.stderr, "Keeping current deterministic stack setup.");
+    return undefined;
+  } finally {
+    status.stop();
+  }
+
+  await writeDataStackCodexReportArtifact(reportPath, report, { overwrite: true });
+  printLine(
+    runtime.stderr,
+    `Codex assist: wrote advisory report ${displayPath(runtime, reportPath)}`,
+  );
+  renderInteractiveCodexRecommendations(runtime, report.recommendations);
+  const decisions = await reviewInteractiveCodexRecommendations(runtime, report);
+  if (decisions.length === 0) {
+    printLine(runtime.stderr, "No Codex recommendations accepted.");
+    return plan;
+  }
+
+  try {
+    const appliedPlan = applyDataStackCodexRecommendationDecisions({
+      decisions,
+      now: runtime.now(),
+      plan,
+      report,
+    });
+    const nextState = await prepareInteractiveStackPreviewState({
+      outputPath: state.outputPath,
+      outputPlan: state.plan,
+      planArtifact: appliedPlan,
+      runtime,
+      setup: state.setup,
+    });
+    const nextPlan = await createInteractiveStackPlanArtifact(
+      runtime,
+      nextState,
+      getInteractiveStackPlanMetadata(appliedPlan),
+    );
+    renderInteractiveAcceptedCodexChanges(runtime, nextPlan);
+    printLine(runtime.stderr, "Re-running stack status preview with accepted Codex changes.");
+    return nextPlan;
+  } catch (error) {
+    printLine(
+      runtime.stderr,
+      `Codex recommendation application failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    printLine(runtime.stderr, "Keeping current deterministic stack setup.");
+    return plan;
+  }
+}
+
 async function confirmInteractiveStackWrite(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   setup: InteractiveDataStackSetup,
 ): Promise<InteractiveDataStackWriteOutcome> {
   let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
+  let reviewedPlan: DataStackPlanArtifact | undefined;
 
   while (true) {
     const outputPath = resolveFromCwd(runtime, outputPlan.output);
     const defaultPlanPath = generateDataStackPlanFileName(runtime.now());
-    const prepared = await prepareDataStackExecution({
-      inputFormat: setup.inputFormat,
-      excludeColumns: setup.excludeColumns,
-      outputPath,
-      pattern: setup.pattern,
-      readText: readTextFileRequired,
-      recursive: setup.recursive,
-      renderPath: (path) => displayPath(runtime, path),
-      schemaMode: setup.schemaMode,
-      sources: setup.sources.map((source) => source.resolved),
-    });
-    const diagnostics = computeDataStackDiagnostics({
-      header: prepared.header,
-      matchedFileCount: prepared.files.length,
-      rows: prepared.rows,
-      uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
-    });
-    const planWriteOptions = buildInteractiveStackPlanWriteOptions({
-      diagnostics,
+    const state = await prepareInteractiveStackPreviewState({
       outputPath,
       outputPlan,
-      prepared,
+      planArtifact: reviewedPlan,
+      runtime,
       setup,
     });
 
     renderInteractiveStackReview(runtime, {
       ...setup,
       ...outputPlan,
-      prepared,
+      prepared: state.prepared,
     });
     renderInteractiveStackStatusPreview(runtime, {
-      diagnostics,
+      diagnostics: state.diagnostics,
+      plan: reviewedPlan,
       planPath: defaultPlanPath,
-      prepared,
+      prepared: state.prepared,
     });
-    const nextStep = await select<"write" | "dry-run" | "review" | "destination" | "cancel">({
+    const nextStep = await select<
+      "write" | "dry-run" | "codex" | "review" | "destination" | "cancel"
+    >({
       message: "Stack action",
       choices: [
         {
@@ -473,6 +811,11 @@ async function confirmInteractiveStackWrite(
           name: "Dry-run plan only",
           value: "dry-run",
           description: "Save a replayable stack plan without writing stacked output",
+        },
+        {
+          name: "Request Codex recommendations",
+          value: "codex",
+          description: "Ask for advisory schema, key, and duplicate-policy suggestions",
         },
         {
           name: "Revise setup",
@@ -491,20 +834,24 @@ async function confirmInteractiveStackWrite(
         },
       ],
     });
+    if (nextStep === "codex") {
+      reviewedPlan = await requestInteractiveStackCodexReview(runtime, state);
+      continue;
+    }
     if (nextStep === "write") {
       const planPath = resolveFromCwd(runtime, defaultPlanPath);
-      const planArtifact = await writePreparedDataStackPlan(runtime, {
-        ...planWriteOptions,
-        planPath,
-      });
+      const planArtifact = await writePreparedDataStackPlan(
+        runtime,
+        buildInteractiveStackPlanWriteInput(state, planPath, reviewedPlan),
+      );
       return {
-        diagnostics,
+        diagnostics: state.diagnostics,
         kind: "write",
         outputPath,
         plan: outputPlan,
         planArtifact,
         planPath,
-        prepared,
+        prepared: state.prepared,
       };
     }
     if (nextStep === "dry-run") {
@@ -512,10 +859,10 @@ async function confirmInteractiveStackWrite(
         runtime,
         await promptInteractiveStackPlanPath(runtime, pathPromptContext),
       );
-      const planArtifact = await writePreparedDataStackPlan(runtime, {
-        ...planWriteOptions,
-        planPath: chosenPlanPath,
-      });
+      const planArtifact = await writePreparedDataStackPlan(
+        runtime,
+        buildInteractiveStackPlanWriteInput(state, chosenPlanPath, reviewedPlan),
+      );
       printLine(
         runtime.stderr,
         `Dry run: wrote stack plan ${displayPath(runtime, chosenPlanPath)}`,
@@ -556,13 +903,18 @@ export async function runInteractiveDataStack(
     }
 
     try {
+      enforceDataStackDuplicatePolicy({
+        diagnostics: outcome.diagnostics,
+        policy: outcome.planArtifact.duplicates.policy,
+        uniqueBy: outcome.planArtifact.duplicates.uniqueBy,
+      });
       await writePreparedDataStackOutput(runtime, {
         diagnostics: outcome.diagnostics,
         outputFormat: outcome.plan.outputFormat,
         outputPath: outcome.outputPath,
         overwrite: outcome.plan.overwrite,
         prepared: outcome.prepared,
-        uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
+        uniqueBy: outcome.planArtifact.duplicates.uniqueBy,
       });
     } catch (error) {
       printLine(

@@ -23,6 +23,8 @@ export interface HarnessRunnerContext {
   directoryPathForFile(inputPath: unknown): string;
   recordAction(name: string, options: Record<string, unknown>): void;
   recordStackPlanWrite(path: string, options: Record<string, unknown>): void;
+  recordCodexReportWrite(path: string, options: Record<string, unknown>): void;
+  recordRemovedPath(path: string): void;
 }
 
 function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
@@ -33,6 +35,8 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     pathCalls: [],
     actionCalls: [],
     stackPlanWrites: [],
+    codexReportWrites: [],
+    removedPaths: [],
   };
 }
 
@@ -51,6 +55,12 @@ export function createHarnessRunnerContext(
   };
   const recordStackPlanWrite = (path: string, options: Record<string, unknown>): void => {
     result.stackPlanWrites.push({ path, options });
+  };
+  const recordCodexReportWrite = (path: string, options: Record<string, unknown>): void => {
+    result.codexReportWrites.push({ path, options });
+  };
+  const recordRemovedPath = (path: string): void => {
+    result.removedPaths.push(path);
   };
 
   return {
@@ -79,5 +89,7 @@ export function createHarnessRunnerContext(
     },
     recordAction,
     recordStackPlanWrite,
+    recordCodexReportWrite,
+    recordRemovedPath,
   };
 }

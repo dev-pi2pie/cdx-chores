@@ -1,7 +1,7 @@
 ---
 title: "Data stack replay records, duplicate handling, and Codex schema assist"
 created-date: 2026-04-24
-modified-date: 2026-04-25
+modified-date: 2026-04-26
 status: in-progress
 agent: codex
 ---
@@ -37,9 +37,11 @@ The repo already has related patterns:
 
 This research now chooses the same safety shape for `data stack`: dry-run produces a reviewed deterministic plan, and `data stack replay <record>` runs that accepted plan later.
 
-## Current State
+The first implementation pass now proves the deterministic pieces and reviewed Codex report flow, but interactive Codex prompting still needs refinement. The current interactive implementation exposes Codex as a peer of final write/save actions; the desired UX should feel closer to `data extract` and `rename`, where Codex appears as a contextual helper only when diagnostics show it can help.
 
-`data stack` currently has no replayable stack-record contract.
+## Starting State
+
+At the start of this research, `data stack` had no replayable stack-record contract.
 
 Current and planned deterministic behavior is expressed through command options:
 
@@ -50,7 +52,7 @@ Current and planned deterministic behavior is expressed through command options:
 - schema mode such as strict matching or `--union-by-name`
 - explicit exclusions such as `--exclude-columns`
 
-The current completed stack follow-up plan only records replay and Codex schema suggestions as deferred reviewed-assist work. It does not define:
+Before this research and its linked implementation plan, the completed stack follow-up work only recorded replay and Codex schema suggestions as deferred reviewed-assist work. That earlier work did not define:
 
 - a stack record file format
 - a replay command
@@ -829,7 +831,49 @@ Resolved in this revision:
 - recommendation provenance:
   - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-No known high-level product-contract questions remain in this research. The linked implementation plan should keep these decisions as the source of truth for phases, exact command naming, validation rules, and tests.
+The core replay, duplicate/key, and advisory-report contract is settled in this research. The linked implementation plan should keep those decisions as the source of truth for exact command naming, validation rules, and tests. The remaining open thread is the interactive Codex trigger UX described below.
+
+## Follow-Up Direction
+
+The remaining open question is not whether Codex can participate in `data stack`; that is settled. The open UX question is when interactive mode should ask for Codex help.
+
+Current Phase 7 behavior:
+
+- prepares deterministic stack status
+- offers `Request Codex recommendations` beside final actions such as write and dry-run
+- reviews recommendations and re-runs the status preview after accepted or edited recommendations
+
+That works, but it feels late in the flow. The refined direction is:
+
+```text
+collect stack setup
+  -> prepare deterministic status preview
+     -> if diagnostics show useful signals:
+          offer Codex as contextual help
+          - review with Codex
+          - continue without Codex
+          - revise setup
+          - cancel
+     -> if accepted/edited recommendations exist:
+          re-prepare deterministic status preview
+     -> final action menu:
+          - write now
+          - dry-run plan only
+          - change destination
+          - revise setup
+          - cancel
+```
+
+Codex should be offered only when deterministic diagnostics suggest it can add value:
+
+- headerless CSV/TSV using generated column names
+- union-by-name output with extra or noisy columns
+- exact duplicate rows
+- candidate unique keys when no unique key is selected
+- duplicate-key conflicts when a unique key is selected
+- schema drift or schema mismatch context where a review explanation can help
+
+This keeps the deterministic contract unchanged while making interactive Codex assist feel like a review helper instead of a final write action.
 
 ## Related Research
 
@@ -844,3 +888,10 @@ No known high-level product-contract questions remain in this research. The link
 - `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-25-data-stack-plan-artifact-foundation.md`
+- `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`

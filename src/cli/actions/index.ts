@@ -15,6 +15,19 @@ export {
   writePreparedDataStackOutput,
   writePreparedDataStackPlan,
 } from "./data-stack";
+export { suggestDataStackWithCodex } from "../data-stack/codex-assist";
+export type { DataStackCodexRunner } from "../data-stack/codex-assist";
+export {
+  applyDataStackCodexRecommendationDecisions,
+  generateDataStackCodexReportFileName,
+  writeDataStackCodexReportArtifact,
+} from "../data-stack/codex-report";
+export type {
+  DataStackCodexPatch,
+  DataStackCodexRecommendation,
+  DataStackCodexRecommendationDecisionInput,
+  DataStackCodexReportArtifact,
+} from "../data-stack/codex-report";
 export { actionDataStackReplay } from "./data-stack-replay";
 export type { DataStackReplayOptions } from "./data-stack-replay";
 export { actionDataQuery } from "./data-query";

@@ -18,6 +18,8 @@ export interface InteractiveHarnessScenario {
   dataStackActionErrorCode?: string;
   dataStackActionStderr?: string;
   dataStackActionStdout?: string;
+  dataStackCodexErrorMessage?: string;
+  dataStackCodexRecommendations?: Array<Record<string, unknown>>;
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;
@@ -67,6 +69,8 @@ export interface InteractiveHarnessResult {
   }>;
   actionCalls: Array<{ name: string; options: Record<string, unknown> }>;
   stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
+  codexReportWrites: Array<{ path: string; options: Record<string, unknown> }>;
+  removedPaths: string[];
   stdout: string;
   stderr: string;
   error?: string;

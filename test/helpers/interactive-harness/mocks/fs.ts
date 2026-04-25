@@ -4,7 +4,8 @@ import type { HarnessRunnerContext } from "../context";
 
 export function installFsPromiseMocks(context: HarnessRunnerContext): void {
   mock.module("node:fs/promises", () => ({
-    rm: async (_path: unknown, _options: Record<string, unknown>) => {
+    rm: async (path: unknown, _options: Record<string, unknown>) => {
+      context.recordRemovedPath(String(path));
       return undefined;
     },
     stat: async (inputPath: unknown) => {

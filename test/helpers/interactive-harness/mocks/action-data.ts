@@ -1,8 +1,80 @@
 import type { HarnessRunnerContext } from "../context";
+import { applyDataStackCodexRecommendationDecisions as applyRealDataStackCodexRecommendationDecisions } from "../../../../src/cli/data-stack/codex-report";
 
 interface ActionRuntimeLike {
   stdout: { write(chunk: string): boolean };
   stderr: { write(chunk: string): boolean };
+}
+
+interface MockStackPlanOptions {
+  diagnostics?: { planDiagnostics?: { reportPath?: unknown; rowCount?: unknown } } | undefined;
+  duplicatePolicy?: unknown;
+  inputColumns?: unknown;
+  metadata?: Record<string, unknown>;
+  outputFormat?: unknown;
+  outputPath?: unknown;
+  prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
+  sourcePaths?: unknown;
+  stackOptions?: Record<string, unknown>;
+  uniqueBy?: unknown;
+}
+
+function createMockStackPlanArtifact(options: MockStackPlanOptions): Record<string, unknown> {
+  return {
+    command: {
+      action: "stack",
+      family: "data",
+      replayCommand: "data stack replay",
+    },
+    diagnostics: {
+      candidateUniqueKeys: [],
+      matchedFileCount: options.prepared?.files?.length ?? 0,
+      reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+      rowCount: options.prepared?.rows?.length ?? 0,
+      schemaNameCount: options.prepared?.header?.length ?? 0,
+    },
+    duplicates: {
+      duplicateKeyConflicts: 0,
+      exactDuplicateRows: 0,
+      policy: options.duplicatePolicy,
+      uniqueBy: options.uniqueBy,
+    },
+    input: {
+      columns: options.inputColumns,
+      format: options.stackOptions?.inputFormat,
+      headerMode: "header",
+    },
+    metadata: {
+      acceptedRecommendationIds: [],
+      artifactId: "data-stack-plan-test",
+      artifactType: "data-stack-plan",
+      createdBy: "test",
+      derivedFromPayloadId: null,
+      issuedAt: "2026-02-25T00:00:00.000Z",
+      payloadId: "stack-payload-test",
+      recommendationDecisions: [],
+      ...options.metadata,
+    },
+    output: {
+      format: options.outputFormat,
+      overwrite: options.stackOptions?.overwrite,
+      path: options.outputPath,
+    },
+    schema: {
+      excludedNames: options.stackOptions?.excludeColumns,
+      includedNames: options.prepared?.header ?? [],
+      mode: options.stackOptions?.unionByName === true ? "union-by-name" : "strict",
+    },
+    sources: {
+      baseDirectory: process.cwd(),
+      maxDepth: null,
+      pattern: options.stackOptions?.pattern,
+      raw: options.sourcePaths,
+      recursive: options.stackOptions?.recursive,
+      resolved: [],
+    },
+    version: 1,
+  };
 }
 
 function resolveOutputPath(
@@ -72,23 +144,12 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         throw error;
       }
     },
-    createPreparedDataStackPlan: async (options: {
-      diagnostics?: { planDiagnostics?: { reportPath?: string | null } } | undefined;
-      prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
-    }) => ({
-      diagnostics: {
-        reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
-      },
-      metadata: {
-        artifactId: "data-stack-plan-test",
-        payloadId: "stack-payload-test",
-      },
-      output: {},
-      prepared: options.prepared,
-    }),
+    createPreparedDataStackPlan: async (options: MockStackPlanOptions) =>
+      createMockStackPlanArtifact(options),
     writePreparedDataStackOutput: async (
       runtime: ActionRuntimeLike,
       options: {
+        uniqueBy?: unknown;
         outputFormat?: unknown;
         outputPath?: unknown;
         overwrite?: unknown;
@@ -101,6 +162,9 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         outputPath: options.outputPath,
         overwrite: options.overwrite,
         rowCount: options.prepared?.rows?.length,
+        ...(Array.isArray(options.uniqueBy) && options.uniqueBy.length > 0
+          ? { uniqueBy: options.uniqueBy }
+          : {}),
       });
 
       if (typeof context.scenario.dataStackActionStdout === "string") {
@@ -134,6 +198,8 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         inputColumns?: unknown;
         outputFormat?: unknown;
         outputPath?: unknown;
+        metadata?: Record<string, unknown>;
+        plan?: Record<string, unknown>;
         planPath?: unknown;
         prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
         sourcePaths?: unknown;
@@ -142,70 +208,75 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
       },
     ) => {
       const planPath = String(options.planPath ?? "");
+      const plan = options.plan ?? createMockStackPlanArtifact(options);
+      const planDiagnostics = plan?.diagnostics as Record<string, unknown> | undefined;
+      const planDuplicates = plan?.duplicates as Record<string, unknown> | undefined;
+      const planMetadata =
+        (plan?.metadata as Record<string, unknown> | undefined) ?? options.metadata;
       context.recordStackPlanWrite(planPath, {
-        columnCount: options.prepared?.header?.length,
-        duplicatePolicy: options.duplicatePolicy,
+        acceptedRecommendationIds: planMetadata?.acceptedRecommendationIds,
+        columnCount: options.prepared?.header?.length ?? planDiagnostics?.schemaNameCount,
+        derivedFromPayloadId: planMetadata?.derivedFromPayloadId,
+        duplicatePolicy: planDuplicates?.policy ?? options.duplicatePolicy,
         fileCount: options.prepared?.files?.length,
         outputFormat: options.outputFormat,
         outputPath: options.outputPath,
-        reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+        payloadId: planMetadata?.payloadId,
+        recommendationDecisions: planMetadata?.recommendationDecisions,
+        reportPath:
+          planDiagnostics?.reportPath ?? options.diagnostics?.planDiagnostics?.reportPath ?? null,
         rowCount: options.prepared?.rows?.length ?? options.diagnostics?.planDiagnostics?.rowCount,
-        uniqueBy: options.uniqueBy,
+        uniqueBy: planDuplicates?.uniqueBy ?? options.uniqueBy,
       });
+      return plan;
+    },
+    generateDataStackCodexReportFileName: () =>
+      "data-stack-codex-report-20260225T000000Z-testabcd.json",
+    applyDataStackCodexRecommendationDecisions: (options: {
+      decisions: Array<{
+        decision: "accepted" | "edited";
+        patches?: Array<Record<string, unknown>>;
+        recommendationId: string;
+      }>;
+      plan: Record<string, unknown>;
+      report: {
+        metadata?: { artifactId?: string };
+        recommendations?: Array<Record<string, unknown>>;
+      };
+    }) => {
+      return applyRealDataStackCodexRecommendationDecisions({
+        decisions: options.decisions,
+        now: new Date("2026-02-25T00:00:00.000Z"),
+        plan: options.plan as never,
+        report: options.report as never,
+      });
+    },
+    suggestDataStackWithCodex: async () => {
+      if (context.scenario.dataStackCodexErrorMessage) {
+        throw new Error(context.scenario.dataStackCodexErrorMessage);
+      }
       return {
-        command: {
-          action: "stack",
-          family: "data",
-          replayCommand: "data stack replay",
-        },
-        diagnostics: {
-          candidateUniqueKeys: [],
-          matchedFileCount: options.prepared?.files?.length ?? 0,
-          reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
-          rowCount: options.prepared?.rows?.length ?? 0,
-          schemaNameCount: options.prepared?.header?.length ?? 0,
-        },
-        duplicates: {
-          duplicateKeyConflicts: 0,
-          exactDuplicateRows: 0,
-          policy: options.duplicatePolicy,
-          uniqueBy: options.uniqueBy,
-        },
-        input: {
-          columns: options.inputColumns,
-          format: options.stackOptions?.inputFormat,
-          headerMode: "header",
-        },
+        facts: {},
         metadata: {
-          acceptedRecommendationIds: [],
-          artifactId: "data-stack-plan-test",
-          artifactType: "data-stack-plan",
+          artifactId: "data-stack-codex-report-test",
+          artifactType: "data-stack-codex-report",
           createdBy: "test",
-          derivedFromPayloadId: null,
           issuedAt: "2026-02-25T00:00:00.000Z",
-          payloadId: "stack-payload-test",
-          recommendationDecisions: [],
+          payloadId: "stack-codex-report-payload-test",
+          planArtifactId: "data-stack-plan-test",
+          planPayloadId: "stack-payload-test",
         },
-        output: {
-          format: options.outputFormat,
-          overwrite: options.stackOptions?.overwrite,
-          path: options.outputPath,
-        },
-        schema: {
-          excludedNames: options.stackOptions?.excludeColumns,
-          includedNames: options.prepared?.header ?? [],
-          mode: options.stackOptions?.unionByName === true ? "union-by-name" : "strict",
-        },
-        sources: {
-          baseDirectory: process.cwd(),
-          maxDepth: null,
-          pattern: options.stackOptions?.pattern,
-          raw: options.sourcePaths,
-          recursive: options.stackOptions?.recursive,
-          resolved: [],
-        },
+        recommendations: context.scenario.dataStackCodexRecommendations ?? [],
         version: 1,
       };
+    },
+    writeDataStackCodexReportArtifact: async (
+      path: string,
+      report: { recommendations?: unknown[] },
+    ) => {
+      context.recordCodexReportWrite(path, {
+        recommendationCount: report.recommendations?.length ?? 0,
+      });
     },
     actionDataQuery: async (runtime: ActionRuntimeLike, options: Record<string, unknown>) => {
       context.recordAction("data:query", options);

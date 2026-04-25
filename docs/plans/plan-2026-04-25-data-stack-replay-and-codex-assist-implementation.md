@@ -277,25 +277,37 @@ Duplicate policy execution rules:
 
 ### Phase 7: Wire reviewed Codex assist into interactive mode
 
-- [ ] ask whether to request Codex recommendations after deterministic status preview
-- [ ] surface recommendations for headerless columns, exclusions, unique keys, duplicate policy, and schema drift
-- [ ] support accept, edit, skip, and cancel review outcomes
-- [ ] treat Codex output as advisory until the user accepts or edits recommendations
-- [ ] create a new deterministic stack plan with a new `payloadId` after accepted or edited recommendations
-- [ ] show accepted deterministic changes before write or plan save
-- [ ] re-run status preview before write or plan save after any accepted or edited recommendation
-- [ ] keep Codex failures isolated to assist mode and preserve the deterministic stack setup
-- [ ] add tests using deterministic Codex runners or stubs
+- [x] ask whether to request Codex recommendations after deterministic status preview
+- [x] surface recommendations for headerless columns, exclusions, unique keys, duplicate policy, and schema drift
+- [x] support accept, edit, skip, and cancel review outcomes
+- [x] treat Codex output as advisory until the user accepts or edits recommendations
+- [x] create a new deterministic stack plan with a new `payloadId` after accepted or edited recommendations
+- [x] show accepted deterministic changes before write or plan save
+- [x] re-run status preview before write or plan save after any accepted or edited recommendation
+- [x] keep Codex failures isolated to assist mode and preserve the deterministic stack setup
+- [x] add tests using deterministic Codex runners or stubs
 
 ### Phase 8: Documentation and closure
 
-- [ ] update `docs/guides/data-stack-usage.md` with dry-run, replay, duplicate policy, and Codex assist usage
-- [ ] add examples for `data stack --dry-run`, `data stack replay <record>`, `--unique-by`, and `--on-duplicate`
-- [ ] document artifact retention and auto-clean behavior
-- [ ] document that Codex reports are advisory and payload-linked
-- [ ] update related research status only after implementation evidence and job records exist
-- [ ] create job records for completed implementation slices
-- [ ] run focused tests and record verification commands
+- [x] update `docs/guides/data-stack-usage.md` with dry-run, replay, duplicate policy, and Codex assist usage
+- [x] add examples for `data stack --dry-run`, `data stack replay <record>`, `--unique-by`, and `--on-duplicate`
+- [x] document artifact retention and auto-clean behavior
+- [x] document that Codex reports are advisory and payload-linked
+- [x] update related research status only after implementation evidence and job records exist
+- [x] create job records for completed implementation slices
+- [x] run focused tests and record verification commands
+
+### Phase 9: Smooth interactive Codex assist trigger
+
+- [ ] move interactive Codex assist out of the final `Stack action` menu and into a contextual assist checkpoint before write/save decisions
+- [ ] only offer Codex assist when deterministic diagnostics show useful signals, such as headerless generated columns, noisy union columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
+- [ ] render the assist checkpoint as `review with Codex`, `continue without Codex`, `revise setup`, or `cancel`
+- [ ] preserve the current direct CLI contract where `--codex-assist` remains valid only with `--dry-run`
+- [ ] keep interactive Codex review advisory and non-materializing; accepted or edited recommendations still become deterministic plan fields before write or dry-run save
+- [ ] re-run the status preview after accepted or edited recommendations, then show the final action menu with write, dry-run, destination, revise, and cancel only
+- [ ] avoid prompting for Codex when diagnostics do not indicate a likely benefit
+- [ ] add interactive tests for signal-triggered assist offers, no-signal skip behavior, continue-without-Codex, accepted recommendation re-preview, and Codex failure fallback
+- [ ] update the guide after the interactive flow is changed so it no longer describes Codex as a final action-menu peer
 
 ## Acceptance Criteria
 
@@ -311,6 +323,7 @@ Duplicate policy execution rules:
 - accepted or edited Codex recommendations create a new stack-plan `payloadId` before write or replay
 - Codex advisory reports are never replayed directly
 - public guide docs explain the new workflow without duplicating the full JSON schema
+- interactive Codex assist appears as a contextual review checkpoint when diagnostics suggest it can help, not as a peer of final write/save actions
 
 ## Risks and Mitigations
 
@@ -347,3 +360,4 @@ Duplicate policy execution rules:
 - `docs/plans/jobs/2026-04-25-data-stack-plan-artifact-foundation.md`
 - `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`
