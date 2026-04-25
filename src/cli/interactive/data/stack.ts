@@ -1,10 +1,14 @@
-import { stat } from "node:fs/promises";
+import { rm, stat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { confirm, input, select } from "@inquirer/prompts";
 
-import { writePreparedDataStackOutput } from "../../actions";
+import { writePreparedDataStackOutput, writePreparedDataStackPlan } from "../../actions";
 import { displayPath, printLine } from "../../actions/shared";
+import {
+  computeDataStackDiagnostics,
+  type DataStackDiagnosticsResult,
+} from "../../data-stack/diagnostics";
 import {
   prepareDataStackExecution,
   type PreparedDataStackExecution,
@@ -18,6 +22,11 @@ import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import { promptOptionalOutputPathChoice } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
+import {
+  generateDataStackPlanFileName,
+  type DataStackDuplicatePolicy,
+  type DataStackPlanArtifact,
+} from "../../data-stack/plan";
 import {
   DATA_STACK_INTERACTIVE_INPUT_FORMAT_VALUES,
   type DataStackInputFormat,
@@ -47,15 +56,27 @@ interface InteractiveDataStackWritePlan {
   overwrite: boolean;
 }
 
+const INTERACTIVE_DATA_STACK_DUPLICATE_POLICY: DataStackDuplicatePolicy = "preserve";
+const INTERACTIVE_DATA_STACK_UNIQUE_BY: readonly string[] = [];
+
 type InteractiveDataStackWriteOutcome =
   | {
-      kind: "confirm";
+      diagnostics: DataStackDiagnosticsResult;
+      kind: "write";
       plan: InteractiveDataStackWritePlan;
+      planArtifact: DataStackPlanArtifact;
+      planPath: string;
       prepared: PreparedDataStackExecution;
       outputPath: string;
     }
+  | { kind: "dry-run" }
   | { kind: "review" }
   | { kind: "cancel" };
+
+type InteractiveDataStackPlanWriteOptions = Omit<
+  Parameters<typeof writePreparedDataStackPlan>[1],
+  "plan" | "planPath"
+>;
 
 function renderMatchedFileSummary(
   runtime: CliRuntime,
@@ -114,6 +135,108 @@ function renderInteractiveStackReview(
     `- output: ${displayPath(runtime, resolveFromCwd(runtime, options.output))}`,
   );
   printLine(runtime.stderr, `- overwrite: ${options.overwrite ? "yes" : "no"}`);
+}
+
+function renderInteractiveStackStatusPreview(
+  runtime: CliRuntime,
+  options: {
+    diagnostics: DataStackDiagnosticsResult;
+    planPath: string;
+    prepared: PreparedDataStackExecution;
+  },
+): void {
+  printLine(runtime.stderr, `- row count: ${options.prepared.rows.length}`);
+  printLine(
+    runtime.stderr,
+    `- duplicate rows: ${options.diagnostics.duplicateSummary.exactDuplicateRows}`,
+  );
+  printLine(runtime.stderr, "- unique key: not selected");
+  printLine(
+    runtime.stderr,
+    `- stack plan: ${displayPath(runtime, resolveFromCwd(runtime, options.planPath))}`,
+  );
+  printLine(runtime.stderr, "- advisory report: not requested");
+}
+
+async function promptInteractiveStackPlanPath(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+): Promise<string> {
+  while (true) {
+    const fallbackPlanPath = generateDataStackPlanFileName(runtime.now());
+    const chosenPlanPath = await promptOptionalOutputPathChoice({
+      message: "Stack plan JSON file",
+      defaultHint: fallbackPlanPath,
+      kind: "file",
+      ...pathPromptContext,
+      customMessage: "Custom stack plan JSON path",
+    });
+    const planPath = chosenPlanPath ?? fallbackPlanPath;
+    if (extname(planPath).toLowerCase() === ".json") {
+      return planPath;
+    }
+    printLine(runtime.stdout, "Stack plan file must end with .json.");
+  }
+}
+
+async function removeInteractiveStackArtifact(runtime: CliRuntime, path: string): Promise<void> {
+  await rm(path, { force: true });
+  printLine(runtime.stderr, `Removed stack plan: ${displayPath(runtime, path)}`);
+}
+
+async function maybeKeepInteractiveStackPlan(runtime: CliRuntime, planPath: string): Promise<void> {
+  const keepPlan = await confirm({ message: "Keep stack plan?", default: true });
+  if (!keepPlan) {
+    await removeInteractiveStackArtifact(runtime, planPath);
+  }
+}
+
+async function maybeKeepInteractiveStackReport(
+  runtime: CliRuntime,
+  plan: DataStackPlanArtifact,
+): Promise<void> {
+  if (!plan.diagnostics.reportPath) {
+    return;
+  }
+  const keepReport = await confirm({ message: "Keep diagnostic/advisory report?", default: true });
+  if (!keepReport) {
+    await rm(plan.diagnostics.reportPath, { force: true });
+    printLine(
+      runtime.stderr,
+      `Removed diagnostic/advisory report: ${displayPath(runtime, plan.diagnostics.reportPath)}`,
+    );
+  }
+}
+
+function buildInteractiveStackPlanWriteOptions(options: {
+  diagnostics: DataStackDiagnosticsResult;
+  outputPath: string;
+  outputPlan: InteractiveDataStackWritePlan;
+  prepared: PreparedDataStackExecution;
+  setup: InteractiveDataStackSetup;
+}): InteractiveDataStackPlanWriteOptions {
+  const sourcePaths = options.setup.sources.map((source) => source.resolved);
+  return {
+    diagnostics: options.diagnostics,
+    duplicatePolicy: INTERACTIVE_DATA_STACK_DUPLICATE_POLICY,
+    inputColumns: options.prepared.header,
+    outputFormat: options.outputPlan.outputFormat,
+    outputPath: options.outputPath,
+    overwrite: options.outputPlan.overwrite,
+    prepared: options.prepared,
+    sourcePaths,
+    stackOptions: {
+      excludeColumns: options.setup.excludeColumns,
+      inputFormat: options.setup.inputFormat,
+      output: options.outputPlan.output,
+      overwrite: options.outputPlan.overwrite,
+      pattern: options.setup.pattern,
+      recursive: options.setup.recursive,
+      sources: sourcePaths,
+      unionByName: options.setup.schemaMode === "union-by-name",
+    },
+    uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
+  };
 }
 
 async function promptInteractiveStackInputFormat(): Promise<DataStackInputFormat> {
@@ -302,6 +425,7 @@ async function confirmInteractiveStackWrite(
 
   while (true) {
     const outputPath = resolveFromCwd(runtime, outputPlan.output);
+    const defaultPlanPath = generateDataStackPlanFileName(runtime.now());
     const prepared = await prepareDataStackExecution({
       inputFormat: setup.inputFormat,
       excludeColumns: setup.excludeColumns,
@@ -313,29 +437,47 @@ async function confirmInteractiveStackWrite(
       schemaMode: setup.schemaMode,
       sources: setup.sources.map((source) => source.resolved),
     });
+    const diagnostics = computeDataStackDiagnostics({
+      header: prepared.header,
+      matchedFileCount: prepared.files.length,
+      rows: prepared.rows,
+      uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
+    });
+    const planWriteOptions = buildInteractiveStackPlanWriteOptions({
+      diagnostics,
+      outputPath,
+      outputPlan,
+      prepared,
+      setup,
+    });
 
     renderInteractiveStackReview(runtime, {
       ...setup,
       ...outputPlan,
       prepared,
     });
-    const confirmed = await confirm({ message: "Write stacked output now?", default: true });
-    if (confirmed) {
-      return {
-        kind: "confirm",
-        outputPath,
-        plan: outputPlan,
-        prepared,
-      };
-    }
-
-    const nextStep = await select<"review" | "destination" | "cancel">({
-      message: "Stack write next step",
+    renderInteractiveStackStatusPreview(runtime, {
+      diagnostics,
+      planPath: defaultPlanPath,
+      prepared,
+    });
+    const nextStep = await select<"write" | "dry-run" | "review" | "destination" | "cancel">({
+      message: "Stack action",
       choices: [
         {
-          name: "Revise stack setup",
+          name: "Write now",
+          value: "write",
+          description: "Write the stacked output and save this stack plan first",
+        },
+        {
+          name: "Dry-run plan only",
+          value: "dry-run",
+          description: "Save a replayable stack plan without writing stacked output",
+        },
+        {
+          name: "Revise setup",
           value: "review",
-          description: "Choose a different directory, pattern, or traversal mode",
+          description: "Choose a different source, pattern, traversal, or schema mode",
         },
         {
           name: "Change destination",
@@ -349,6 +491,39 @@ async function confirmInteractiveStackWrite(
         },
       ],
     });
+    if (nextStep === "write") {
+      const planPath = resolveFromCwd(runtime, defaultPlanPath);
+      const planArtifact = await writePreparedDataStackPlan(runtime, {
+        ...planWriteOptions,
+        planPath,
+      });
+      return {
+        diagnostics,
+        kind: "write",
+        outputPath,
+        plan: outputPlan,
+        planArtifact,
+        planPath,
+        prepared,
+      };
+    }
+    if (nextStep === "dry-run") {
+      const chosenPlanPath = resolveFromCwd(
+        runtime,
+        await promptInteractiveStackPlanPath(runtime, pathPromptContext),
+      );
+      const planArtifact = await writePreparedDataStackPlan(runtime, {
+        ...planWriteOptions,
+        planPath: chosenPlanPath,
+      });
+      printLine(
+        runtime.stderr,
+        `Dry run: wrote stack plan ${displayPath(runtime, chosenPlanPath)}`,
+      );
+      await maybeKeepInteractiveStackPlan(runtime, chosenPlanPath);
+      await maybeKeepInteractiveStackReport(runtime, planArtifact);
+      return { kind: "dry-run" };
+    }
     if (nextStep === "review") {
       return { kind: "review" };
     }
@@ -373,16 +548,31 @@ export async function runInteractiveDataStack(
     if (outcome.kind === "cancel") {
       return;
     }
+    if (outcome.kind === "dry-run") {
+      return;
+    }
     if (outcome.kind === "review") {
       continue;
     }
 
-    await writePreparedDataStackOutput(runtime, {
-      outputFormat: outcome.plan.outputFormat,
-      outputPath: outcome.outputPath,
-      overwrite: outcome.plan.overwrite,
-      prepared: outcome.prepared,
-    });
+    try {
+      await writePreparedDataStackOutput(runtime, {
+        diagnostics: outcome.diagnostics,
+        outputFormat: outcome.plan.outputFormat,
+        outputPath: outcome.outputPath,
+        overwrite: outcome.plan.overwrite,
+        prepared: outcome.prepared,
+        uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
+      });
+    } catch (error) {
+      printLine(
+        runtime.stderr,
+        `Keeping stack plan after failed write: ${displayPath(runtime, outcome.planPath)}`,
+      );
+      throw error;
+    }
+    await maybeKeepInteractiveStackPlan(runtime, outcome.planPath);
+    await maybeKeepInteractiveStackReport(runtime, outcome.planArtifact);
     return;
   }
 }

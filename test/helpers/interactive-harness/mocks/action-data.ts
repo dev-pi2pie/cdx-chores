@@ -72,6 +72,20 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         throw error;
       }
     },
+    createPreparedDataStackPlan: async (options: {
+      diagnostics?: { planDiagnostics?: { reportPath?: string | null } } | undefined;
+      prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
+    }) => ({
+      diagnostics: {
+        reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+      },
+      metadata: {
+        artifactId: "data-stack-plan-test",
+        payloadId: "stack-payload-test",
+      },
+      output: {},
+      prepared: options.prepared,
+    }),
     writePreparedDataStackOutput: async (
       runtime: ActionRuntimeLike,
       options: {
@@ -109,6 +123,89 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         error.code = context.scenario.dataStackActionErrorCode ?? "DATA_STACK_FAILED";
         throw error;
       }
+    },
+    writePreparedDataStackPlan: async (
+      _runtime: ActionRuntimeLike,
+      options: {
+        diagnostics?:
+          | { planDiagnostics?: { reportPath?: unknown; rowCount?: unknown } }
+          | undefined;
+        duplicatePolicy?: unknown;
+        inputColumns?: unknown;
+        outputFormat?: unknown;
+        outputPath?: unknown;
+        planPath?: unknown;
+        prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
+        sourcePaths?: unknown;
+        stackOptions?: Record<string, unknown>;
+        uniqueBy?: unknown;
+      },
+    ) => {
+      const planPath = String(options.planPath ?? "");
+      context.recordStackPlanWrite(planPath, {
+        columnCount: options.prepared?.header?.length,
+        duplicatePolicy: options.duplicatePolicy,
+        fileCount: options.prepared?.files?.length,
+        outputFormat: options.outputFormat,
+        outputPath: options.outputPath,
+        reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+        rowCount: options.prepared?.rows?.length ?? options.diagnostics?.planDiagnostics?.rowCount,
+        uniqueBy: options.uniqueBy,
+      });
+      return {
+        command: {
+          action: "stack",
+          family: "data",
+          replayCommand: "data stack replay",
+        },
+        diagnostics: {
+          candidateUniqueKeys: [],
+          matchedFileCount: options.prepared?.files?.length ?? 0,
+          reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+          rowCount: options.prepared?.rows?.length ?? 0,
+          schemaNameCount: options.prepared?.header?.length ?? 0,
+        },
+        duplicates: {
+          duplicateKeyConflicts: 0,
+          exactDuplicateRows: 0,
+          policy: options.duplicatePolicy,
+          uniqueBy: options.uniqueBy,
+        },
+        input: {
+          columns: options.inputColumns,
+          format: options.stackOptions?.inputFormat,
+          headerMode: "header",
+        },
+        metadata: {
+          acceptedRecommendationIds: [],
+          artifactId: "data-stack-plan-test",
+          artifactType: "data-stack-plan",
+          createdBy: "test",
+          derivedFromPayloadId: null,
+          issuedAt: "2026-02-25T00:00:00.000Z",
+          payloadId: "stack-payload-test",
+          recommendationDecisions: [],
+        },
+        output: {
+          format: options.outputFormat,
+          overwrite: options.stackOptions?.overwrite,
+          path: options.outputPath,
+        },
+        schema: {
+          excludedNames: options.stackOptions?.excludeColumns,
+          includedNames: options.prepared?.header ?? [],
+          mode: options.stackOptions?.unionByName === true ? "union-by-name" : "strict",
+        },
+        sources: {
+          baseDirectory: process.cwd(),
+          maxDepth: null,
+          pattern: options.stackOptions?.pattern,
+          raw: options.sourcePaths,
+          recursive: options.stackOptions?.recursive,
+          resolved: [],
+        },
+        version: 1,
+      };
     },
     actionDataQuery: async (runtime: ActionRuntimeLike, options: Record<string, unknown>) => {
       context.recordAction("data:query", options);

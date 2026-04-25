@@ -10,7 +10,11 @@ export { actionDataExtract } from "./data-extract";
 export type { DataExtractOptions } from "./data-extract";
 export { actionDataStack } from "./data-stack";
 export type { DataStackOptions } from "./data-stack";
-export { writePreparedDataStackOutput } from "./data-stack";
+export {
+  createPreparedDataStackPlan,
+  writePreparedDataStackOutput,
+  writePreparedDataStackPlan,
+} from "./data-stack";
 export { actionDataStackReplay } from "./data-stack-replay";
 export type { DataStackReplayOptions } from "./data-stack-replay";
 export { actionDataQuery } from "./data-query";

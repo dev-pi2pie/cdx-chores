@@ -40,6 +40,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
+    expect(result.stackPlanWrites).toHaveLength(0);
     expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
       name: "data",
       value: "data",
@@ -553,7 +554,7 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack through shared stack execution", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
       nowIsoString: "2026-03-30T00:00:00.900Z",
       stdoutColumns: 80,
       stdoutIsTTY: true,
@@ -607,7 +608,7 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with mixed file and directory sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers/part-001.csv",
         "examples/playground/stack-cases/csv-matching-headers",
@@ -653,7 +654,7 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with JSON input selection", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "json", "shallow", "strict", "csv"],
+      selectQueue: ["data", "data:stack", "json", "shallow", "strict", "csv", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/json-array-basic"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.json"],
@@ -680,7 +681,7 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with JSONL input selection", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "jsonl", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "jsonl", "shallow", "strict", "json", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/jsonl-basic"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.jsonl"],
@@ -707,7 +708,7 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with union-by-name exclusions", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "union-by-name", "json"],
+      selectQueue: ["data", "data:stack", "csv", "shallow", "union-by-name", "json", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-union"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv", "noise"],
@@ -757,7 +758,85 @@ describe("interactive mode routing", () => {
     });
     expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack action",
+    );
+  });
+
+  test("writes an interactive data stack dry-run plan without materialized output", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "dry-run"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stackPlanWrites[0]?.path).toEqual(
+      expect.stringMatching(/data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+    );
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      fileCount: 3,
+      outputFormat: "json",
+      rowCount: 6,
+    });
+    expect(result.stderr).toContain("Dry run: wrote stack plan");
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Stack plan JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom stack plan JSON path",
+        defaultHint: expect.stringMatching(/^data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+      }),
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep stack plan?",
+    );
+  });
+
+  test("removes the interactive stack plan when write succeeds and keeping is declined", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.actionCalls.map((call) => call.name)).toEqual(["data:stack"]);
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stackPlanWrites[0]?.path).toEqual(
+      expect.stringMatching(/data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep stack plan?",
+    );
+    expect(result.stderr).toContain("Removed stack plan:");
+  });
+
+  test("keeps the interactive stack plan when materialized writing fails", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
+        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+        optionalPathQueue: [undefined],
+        inputQueue: ["*.csv"],
+        confirmQueue: [false],
+        dataStackActionErrorMessage: "write failed",
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("write failed");
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stderr).toContain("Keeping stack plan after failed write:");
+    expect(result.stderr).not.toContain("Removed stack plan:");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "confirm:Keep stack plan?",
     );
   });
 
@@ -796,6 +875,7 @@ describe("interactive mode routing", () => {
         "json",
         "destination",
         "json",
+        "write",
       ],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
@@ -826,7 +906,7 @@ describe("interactive mode routing", () => {
       ),
     ).toHaveLength(2);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack action",
     );
     expect(stripAnsi(result.stderr)).toContain("- output: fixtures/custom-stacked.json");
   });
@@ -846,6 +926,7 @@ describe("interactive mode routing", () => {
         "recursive",
         "strict",
         "json",
+        "write",
       ],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers",
@@ -884,14 +965,14 @@ describe("interactive mode routing", () => {
       ),
     ).toHaveLength(2);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack action",
     );
   });
 
   test("re-prompts stack destination when the generated default output exists and overwrite is declined", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
       inputQueue: ["*.csv"],
@@ -946,7 +1027,7 @@ describe("interactive mode routing", () => {
   test("accepts overwrite for the generated default stack output path when confirmed", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],

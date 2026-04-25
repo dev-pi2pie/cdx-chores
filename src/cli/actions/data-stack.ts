@@ -4,6 +4,11 @@ import { readTextFileRequired, writeTextFileSafe } from "../file-io";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import {
+  generateDataStackCodexReportFileName,
+  writeDataStackCodexReportArtifact,
+} from "../data-stack/codex-report";
+import { suggestDataStackWithCodex, type DataStackCodexRunner } from "../data-stack/codex-assist";
+import {
   computeDataStackDiagnostics,
   enforceDataStackDuplicatePolicy,
   type DataStackDiagnosticsResult,
@@ -25,6 +30,10 @@ import { CliError } from "../errors";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
 
 export interface DataStackOptions {
+  codexAssist?: boolean;
+  codexReportOutput?: string;
+  codexRunner?: DataStackCodexRunner;
+  codexTimeoutMs?: number;
   columns?: string[];
   dryRun?: boolean;
   excludeColumns?: string[];
@@ -98,6 +107,20 @@ function validateOptions(options: DataStackOptions): void {
     });
   }
 
+  if (options.codexAssist && !options.dryRun) {
+    throw new CliError("--codex-assist requires --dry-run.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  if (options.codexReportOutput?.trim() && !options.codexAssist) {
+    throw new CliError("--codex-report-output requires --codex-assist.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
   if (
     options.onDuplicate &&
     !(DATA_STACK_DUPLICATE_POLICY_VALUES as readonly string[]).includes(options.onDuplicate)
@@ -142,6 +165,9 @@ async function createSourceFingerprint(path: string): Promise<
 > {
   try {
     const sourceStats = await stat(path);
+    if (!Number.isFinite(sourceStats.mtimeMs) || !Number.isFinite(sourceStats.size)) {
+      return undefined;
+    }
     return {
       mtimeMs: sourceStats.mtimeMs,
       sizeBytes: sourceStats.size,
@@ -151,7 +177,7 @@ async function createSourceFingerprint(path: string): Promise<
   }
 }
 
-async function createPreparedDataStackPlan(options: {
+export async function createPreparedDataStackPlan(options: {
   diagnostics: DataStackDiagnosticsResult;
   duplicatePolicy: DataStackDuplicatePolicy;
   inputColumns?: readonly string[];
@@ -203,6 +229,42 @@ async function createPreparedDataStackPlan(options: {
       ),
     },
   });
+}
+
+export async function writePreparedDataStackPlan(
+  runtime: CliRuntime,
+  options: {
+    diagnostics: DataStackDiagnosticsResult;
+    duplicatePolicy: DataStackDuplicatePolicy;
+    inputColumns?: readonly string[];
+    outputFormat: DataStackOutputFormat;
+    outputPath: string;
+    overwrite?: boolean;
+    plan?: DataStackPlanArtifact;
+    planPath: string;
+    prepared: PreparedDataStackExecution;
+    sourcePaths: readonly string[];
+    stackOptions: DataStackOptions;
+    uniqueBy: readonly string[];
+  },
+): Promise<DataStackPlanArtifact> {
+  const plan =
+    options.plan ??
+    (await createPreparedDataStackPlan({
+      diagnostics: options.diagnostics,
+      duplicatePolicy: options.duplicatePolicy,
+      inputColumns: options.inputColumns,
+      outputFormat: options.outputFormat,
+      outputPath: options.outputPath,
+      overwrite: options.overwrite,
+      prepared: options.prepared,
+      runtime,
+      sourcePaths: options.sourcePaths,
+      stackOptions: options.stackOptions,
+      uniqueBy: options.uniqueBy,
+    }));
+  await writeDataStackPlanArtifact(options.planPath, plan, { overwrite: options.overwrite });
+  return plan;
 }
 
 function renderDataStackDiagnosticsSummary(
@@ -309,6 +371,12 @@ export async function actionDataStack(
   validateOptions(options);
 
   const outputPath = resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path"));
+  const codexReportPath = options.codexAssist
+    ? resolveFromCwd(
+        runtime,
+        options.codexReportOutput?.trim() || generateDataStackCodexReportFileName(runtime.now()),
+      )
+    : undefined;
   const sourcePaths = options.sources.map((source) =>
     resolveFromCwd(runtime, assertNonEmpty(source, "Input source")),
   );
@@ -333,6 +401,7 @@ export async function actionDataStack(
   const diagnostics = computeDataStackDiagnostics({
     header: prepared.header,
     matchedFileCount: prepared.files.length,
+    reportPath: codexReportPath,
     rows: prepared.rows,
     uniqueBy,
   });
@@ -349,20 +418,50 @@ export async function actionDataStack(
       runtime,
       options.planOutput?.trim() || generateDataStackPlanFileName(runtime.now()),
     );
-    const plan = await createPreparedDataStackPlan({
+    const plan = await writePreparedDataStackPlan(runtime, {
       diagnostics,
       duplicatePolicy,
       inputColumns: options.columns?.length ? options.columns : prepared.header,
       outputFormat,
       outputPath,
       overwrite: options.overwrite,
+      planPath,
       prepared,
-      runtime,
       sourcePaths,
       stackOptions: options,
       uniqueBy,
     });
-    await writeDataStackPlanArtifact(planPath, plan, { overwrite: options.overwrite });
+    if (options.codexAssist) {
+      const reportPath = assertNonEmpty(codexReportPath, "Codex report path");
+      let report;
+      try {
+        report = await suggestDataStackWithCodex({
+          diagnostics,
+          now: runtime.now(),
+          plan,
+          runner: options.codexRunner,
+          timeoutMs: options.codexTimeoutMs,
+          workingDirectory: runtime.cwd,
+        });
+      } catch (error) {
+        if (error instanceof CliError) {
+          throw error;
+        }
+        throw new CliError(
+          `Codex stack assist failed: ${error instanceof Error ? error.message : String(error)}`,
+          {
+            code: "DATA_STACK_CODEX_FAILED",
+            exitCode: 2,
+          },
+        );
+      }
+      await writeDataStackCodexReportArtifact(reportPath, report, { overwrite: options.overwrite });
+      printLine(
+        runtime.stderr,
+        `Codex assist: wrote advisory report ${displayPath(runtime, reportPath)}`,
+      );
+      printLine(runtime.stderr, "Codex recommendations were not applied.");
+    }
     renderDryRunSummary(runtime, {
       diagnostics,
       duplicatePolicy,

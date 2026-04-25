@@ -245,34 +245,35 @@ Duplicate policy execution rules:
 
 ### Phase 5: Rework interactive stack around status preview
 
-- [ ] create one prepared stack-plan object before the write boundary
-- [ ] render source, schema, row-count, duplicate/key, output, and artifact summaries
-- [ ] offer write now, dry-run plan only, revise setup, and cancel
-- [ ] write dry-run plans from interactive mode with generated default path first and custom destination available
-- [ ] ensure dry-run plan only writes no materialized output
-- [ ] prompt to keep the dry-run stack plan with default `Yes`
-- [ ] ask whether to keep the applied stack plan after successful write
-- [ ] auto-clean only the stack-plan artifact when the user declines keeping it
-- [ ] keep all artifacts when execution fails
-- [ ] ask diagnostic/advisory report retention separately
-- [ ] add interactive tests for dry-run-only, write-now keep-plan, write-now clean-plan, revise, cancel, and failure-retention paths
+- [x] create one prepared stack-plan object before the write boundary
+- [x] render source, schema, row-count, duplicate/key, output, and artifact summaries
+- [x] offer write now, dry-run plan only, revise setup, and cancel
+- [x] keep destination changes as a separate preview action so users can adjust output without repeating source setup
+- [x] write dry-run plans from interactive mode with generated default path first and custom destination available
+- [x] ensure dry-run plan only writes no materialized output
+- [x] prompt to keep the dry-run stack plan with default `Yes`
+- [x] ask whether to keep the applied stack plan after successful write
+- [x] auto-clean only the stack-plan artifact when the user declines keeping it
+- [x] keep all artifacts when execution fails
+- [x] ask diagnostic/advisory report retention separately
+- [x] add interactive tests for dry-run-only, write-now keep-plan, write-now clean-plan, revise, cancel, and failure-retention paths
 
 ### Phase 6: Add Codex advisory reports
 
-- [ ] add direct `--codex-assist`
-- [ ] add `--codex-report-output <path>`
-- [ ] require `--dry-run` when `--codex-assist` is used
-- [ ] make direct `--codex-assist` report-generation only and prevent direct recommendation application
-- [ ] define Codex report TypeScript types and validation helpers
-- [ ] build deterministic fact payloads from stack diagnostics
-- [ ] add report writer for `data-stack-codex-report-<timestamp>Z-<uid>.json`
-- [ ] add recommendation id and JSON Pointer style patch validation
-- [ ] support only `replace` patches against known stack-plan fields in v1
-- [ ] reject conflicting recommendation batches
-- [ ] apply accepted recommendations into a new stack plan with a new payload id
-- [ ] apply edited recommendations into deterministic plan fields and record `decision: "edited"`
-- [ ] keep advisory reports out of replay execution
-- [ ] add tests for direct assist flag validation, report writing, patch validation, accept/edit lineage, conflicting patches, and replay isolation
+- [x] add direct `--codex-assist`
+- [x] add `--codex-report-output <path>`
+- [x] require `--dry-run` when `--codex-assist` is used
+- [x] make direct `--codex-assist` report-generation only and prevent direct recommendation application
+- [x] define Codex report TypeScript types and validation helpers
+- [x] build deterministic fact payloads from stack diagnostics
+- [x] add report writer for `data-stack-codex-report-<timestamp>Z-<uid>.json`
+- [x] add recommendation id and JSON Pointer style patch validation
+- [x] support only `replace` patches against known stack-plan fields in v1
+- [x] reject conflicting recommendation batches
+- [x] apply accepted recommendations into a new stack plan with a new payload id
+- [x] apply edited recommendations into deterministic plan fields and record `decision: "edited"`
+- [x] keep advisory reports out of replay execution
+- [x] add tests for direct assist flag validation, report writing, patch validation, accept/edit lineage, conflicting patches, and replay isolation
 
 ### Phase 7: Wire reviewed Codex assist into interactive mode
 
@@ -345,3 +346,4 @@ Duplicate policy execution rules:
 
 - `docs/plans/jobs/2026-04-25-data-stack-plan-artifact-foundation.md`
 - `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`

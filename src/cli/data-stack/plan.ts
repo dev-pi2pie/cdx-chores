@@ -208,7 +208,7 @@ function ensureOneOf<T extends string>(value: unknown, values: readonly T[], con
   );
 }
 
-function formatDataStackPlanTimestamp(now: Date): string {
+export function formatDataStackArtifactTimestamp(now: Date): string {
   return now
     .toISOString()
     .replaceAll("-", "")
@@ -225,7 +225,7 @@ export function createDataStackPlanIdentity(options: {
   now: Date;
   uid?: string;
 }): DataStackPlanIdentity {
-  const timestamp = formatDataStackPlanTimestamp(options.now);
+  const timestamp = formatDataStackArtifactTimestamp(options.now);
   const uid = options.uid ?? createDataStackPlanUid();
   const artifactId = `data-stack-plan-${timestamp}-${uid}`;
   const payloadId = `stack-payload-${timestamp}-${uid}`;

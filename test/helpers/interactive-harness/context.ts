@@ -22,6 +22,7 @@ export interface HarnessRunnerContext {
   resolveHarnessPath(inputPath: unknown): string;
   directoryPathForFile(inputPath: unknown): string;
   recordAction(name: string, options: Record<string, unknown>): void;
+  recordStackPlanWrite(path: string, options: Record<string, unknown>): void;
 }
 
 function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
@@ -31,6 +32,7 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     validationCalls: [],
     pathCalls: [],
     actionCalls: [],
+    stackPlanWrites: [],
   };
 }
 
@@ -46,6 +48,9 @@ export function createHarnessRunnerContext(
   const statExistsQueue = [...(scenario.statExistsQueue ?? [])];
   const recordAction = (name: string, options: Record<string, unknown>): void => {
     result.actionCalls.push({ name, options });
+  };
+  const recordStackPlanWrite = (path: string, options: Record<string, unknown>): void => {
+    result.stackPlanWrites.push({ path, options });
   };
 
   return {
@@ -73,5 +78,6 @@ export function createHarnessRunnerContext(
       return dirname(resolveHarnessPath(inputPath));
     },
     recordAction,
+    recordStackPlanWrite,
   };
 }

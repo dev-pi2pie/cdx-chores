@@ -66,6 +66,7 @@ export interface InteractiveHarnessResult {
     nextExtension?: string;
   }>;
   actionCalls: Array<{ name: string; options: Record<string, unknown> }>;
+  stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
   stdout: string;
   stderr: string;
   error?: string;

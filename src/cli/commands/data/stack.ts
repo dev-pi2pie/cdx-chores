@@ -68,6 +68,11 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
     )
     .option("--dry-run", "Prepare and write a replayable stack plan without writing stack output")
     .option("--plan-output <path>", "Write the dry-run stack plan to a custom JSON path")
+    .option(
+      "--codex-assist",
+      "Ask Codex for advisory stack recommendations and write a report (requires --dry-run)",
+    )
+    .option("--codex-report-output <path>", "Write the Codex advisory report to a custom JSON path")
     .option("-o, --output <path>", "Write the stacked table to a .csv, .tsv, or .json file")
     .option("--overwrite", "Overwrite output file if it already exists", false)
     .option(
@@ -85,6 +90,8 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
       async (
         sources: string[],
         options: {
+          codexAssist?: boolean;
+          codexReportOutput?: string;
           columns?: string[];
           dryRun?: boolean;
           excludeColumns?: string[];
@@ -103,6 +110,8 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
         },
       ) => {
         await actionDataStack(runtime, {
+          codexAssist: options.codexAssist,
+          codexReportOutput: options.codexReportOutput,
           columns: (options.columns?.length ?? 0) > 0 ? options.columns : undefined,
           dryRun: options.dryRun,
           excludeColumns:

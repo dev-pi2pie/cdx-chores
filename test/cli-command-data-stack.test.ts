@@ -4,6 +4,11 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import {
+  createDataStackCodexReportArtifact,
+  serializeDataStackCodexReportArtifact,
+} from "../src/cli/data-stack/codex-report";
+import { computeDataStackDiagnostics } from "../src/cli/data-stack/diagnostics";
+import {
   readDataStackPlanArtifact,
   serializeDataStackPlanArtifact,
 } from "../src/cli/data-stack/plan";
@@ -248,6 +253,38 @@ describe("CLI data stack command", () => {
     expect(result.stderr).toContain("--on-duplicate must be one of");
   });
 
+  test("requires --dry-run for direct Codex assist", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "examples/playground/stack-cases/csv-matching-headers",
+      "--output",
+      "examples/playground/.tmp-tests/codex-assist.csv",
+      "--codex-assist",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--codex-assist requires --dry-run");
+  });
+
+  test("requires --codex-assist for custom Codex report output", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "examples/playground/stack-cases/csv-matching-headers",
+      "--dry-run",
+      "--output",
+      "examples/playground/.tmp-tests/codex-assist.csv",
+      "--codex-report-output",
+      "examples/playground/.tmp-tests/codex-report.json",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--codex-report-output requires --codex-assist");
+  });
+
   test("replays a dry-run stack plan", async () => {
     await withTempFixtureDir("data-stack-cli-replay", async (fixtureDir) => {
       const sourcePath = join(fixtureDir, "a.csv");
@@ -350,6 +387,61 @@ describe("CLI data stack command", () => {
       expect((await readDataStackPlanArtifact(planPath)).metadata.artifactType).toBe(
         "data-stack-plan",
       );
+    });
+  });
+
+  test("replay rejects Codex advisory reports instead of treating them as stack plans", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-report", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const reportPath = join(fixtureDir, "codex-report.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const plan = await readDataStackPlanArtifact(planPath);
+      const diagnostics = computeDataStackDiagnostics({
+        header: plan.schema.includedNames,
+        matchedFileCount: 1,
+        rows: [["1", "active"]],
+      });
+      await writeFile(
+        reportPath,
+        serializeDataStackCodexReportArtifact(
+          createDataStackCodexReportArtifact({
+            diagnostics,
+            now: new Date("2026-04-26T00:00:00.000Z"),
+            plan,
+            recommendations: [
+              {
+                confidence: 0.9,
+                id: "rec_unique_id",
+                patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+                reasoningSummary: "id is complete and unique.",
+                title: "Use id as unique key",
+              },
+            ],
+            uid: "aaaabbbb",
+          }),
+        ),
+        "utf8",
+      );
+
+      const replay = runCli(["data", "stack", "replay", toRepoRelativePath(reportPath)]);
+
+      expect(replay.exitCode).toBe(2);
+      expect(replay.stderr).toContain("Invalid data stack plan artifact");
     });
   });
 
