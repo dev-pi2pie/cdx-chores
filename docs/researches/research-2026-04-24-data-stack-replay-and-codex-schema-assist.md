@@ -278,31 +278,150 @@ Implication:
 
 A replayable stack record should describe a deterministic stack run.
 
-Likely record contents:
+The v1 stack-plan artifact should be JSON and follow the existing reviewed-artifact convention of `version` plus `metadata.artifactType`, with extra replay identity fields because this artifact is executable input.
 
-- record version
-- command family and action
-- raw sources
-- base directory and resolved source summary
-- pattern
-- recursive and max-depth settings
-- input format
-- header mode
-- columns for headerless input, if any
-- schema mode:
-  - strict
-  - union-by-name
-- explicit exclusions
-- duplicate policy:
-  - preserve
-  - report
-  - reject
-  - keep-first
-  - keep-last
-- unique key columns, if explicitly selected
-- output format
-- optional output path
-- optional source fingerprints and row/schema summary
+Artifact family name:
+
+- `data-stack-plan-<timestamp>Z-<uid>.json`
+
+Required top-level keys:
+
+- `version`
+- `metadata`
+- `command`
+- `sources`
+- `input`
+- `schema`
+- `duplicates`
+- `output`
+- `diagnostics`
+
+Recommended v1 shape:
+
+```json
+{
+  "version": 1,
+  "metadata": {
+    "artifactType": "data-stack-plan",
+    "artifactId": "data-stack-plan-20260425T120000Z-a1b2c3d4",
+    "payloadId": "stack-payload-20260425T120000Z-a1b2c3d4",
+    "issuedAt": "2026-04-25T12:00:00.000Z",
+    "createdBy": "cdx-chores data stack --dry-run"
+  },
+  "command": {
+    "family": "data",
+    "action": "stack",
+    "replayCommand": "data stack replay"
+  },
+  "sources": {
+    "baseDirectory": ".",
+    "raw": ["./inputs"],
+    "pattern": "*.csv",
+    "recursive": false,
+    "maxDepth": null,
+    "resolved": [
+      {
+        "path": "inputs/part-001.csv",
+        "kind": "file",
+        "fingerprint": {
+          "sizeBytes": 1234,
+          "mtimeMs": 1777118400000
+        }
+      }
+    ]
+  },
+  "input": {
+    "format": "csv",
+    "headerMode": "header",
+    "columns": []
+  },
+  "schema": {
+    "mode": "strict",
+    "includedNames": ["id", "name", "status"],
+    "excludedNames": []
+  },
+  "duplicates": {
+    "policy": "preserve",
+    "uniqueBy": [],
+    "exactDuplicateRows": 0,
+    "duplicateKeyConflicts": 0
+  },
+  "output": {
+    "format": "csv",
+    "path": "merged.csv",
+    "overwrite": false
+  },
+  "diagnostics": {
+    "matchedFileCount": 1,
+    "rowCount": 25,
+    "schemaNameCount": 3,
+    "candidateUniqueKeys": [
+      {
+        "columns": ["id"],
+        "nullRows": 0,
+        "duplicateRows": 0
+      }
+    ],
+    "reportPath": null
+  }
+}
+```
+
+Payload identity:
+
+- `metadata.artifactId` identifies the replay artifact file family and should match the generated filename stem by default.
+- `metadata.payloadId` identifies the accepted deterministic stack setup inside the artifact.
+- `metadata.issuedAt` is an ISO UTC timestamp for artifact creation.
+- replay should preserve those values when reading an existing plan instead of regenerating them.
+
+The split lets a future tool distinguish:
+
+- two files that contain the same accepted payload
+- one file rewritten with a new accepted payload
+- advisory reports that reference the accepted payload without becoming executable input
+
+Key usage table:
+
+| Key | Required | Replay usage | Notes |
+| --- | --- | --- | --- |
+| `version` | Yes | Selects the parser and compatibility rules | Artifact schema version, not CLI package version |
+| `metadata.artifactType` | Yes | Rejects non-stack-plan JSON | Must be `data-stack-plan` |
+| `metadata.artifactId` | Yes | Names and audits the plan artifact | Defaults from `data-stack-plan-<timestamp>Z-<uid>` |
+| `metadata.payloadId` | Yes | Links accepted setup to diagnostics/advisory reports | Stable for the accepted deterministic payload |
+| `metadata.issuedAt` | Yes | Audits when the plan was written | ISO UTC timestamp |
+| `command.family` | Yes | Verifies command family | `data` |
+| `command.action` | Yes | Verifies command action | `stack` |
+| `command.replayCommand` | Yes | Documents replay surface | `data stack replay` |
+| `sources.baseDirectory` | Yes | Resolves relative source paths | Captures the authoring base path |
+| `sources.raw` | Yes | Audits original source intent | Raw paths as entered |
+| `sources.pattern` | No | Replays directory expansion | Required when directory discovery used a pattern |
+| `sources.recursive` | Yes | Replays traversal mode | Boolean |
+| `sources.maxDepth` | No | Replays traversal bound | `null` means no explicit bound |
+| `sources.resolved[]` | Yes | Replays the accepted source list | Exact normalized files from dry-run |
+| `sources.resolved[].fingerprint` | No | Warns on drift by default | Size and mtime are v1 baseline; content hash can be later |
+| `input.format` | Yes | Selects parser | `csv`, `tsv`, `jsonl`, or `json` |
+| `input.headerMode` | Yes | Replays header handling | `header` or `no-header` |
+| `input.columns` | Conditional | Replays headerless names | Required for `no-header` |
+| `schema.mode` | Yes | Replays strict vs union behavior | `strict` or `union-by-name` |
+| `schema.includedNames` | Yes | Audits accepted output schema | Ordered output names |
+| `schema.excludedNames` | Yes | Replays explicit exclusions | Empty array when none |
+| `duplicates.policy` | Yes | Replays duplicate behavior | v1 supports `preserve`, `report`, `reject` |
+| `duplicates.uniqueBy` | Yes | Replays selected unique key | Empty array means exact-row diagnostics only |
+| `duplicates.exactDuplicateRows` | Yes | Audits dry-run finding | Bounded fact, not execution input by itself |
+| `duplicates.duplicateKeyConflicts` | Yes | Audits dry-run finding | Applies when `uniqueBy` is non-empty |
+| `output.format` | Yes | Selects writer | `csv`, `tsv`, or `json` |
+| `output.path` | No | Default replay destination | Replay may require `--output` if missing |
+| `output.overwrite` | Yes | Replays overwrite intent | Replay can still require explicit confirmation in interactive mode |
+| `diagnostics.*` | Yes | Supports review and stale-plan warnings | Bounded diagnostics, not Codex-owned |
+| `diagnostics.candidateUniqueKeys[]` | Yes | Shows deterministic key candidates | Entries should list `columns`, `nullRows`, and `duplicateRows` |
+
+V1 duplicate policies should stay conservative:
+
+- `preserve`
+- `report`
+- `reject`
+
+`keep-first` and `keep-last` are deterministic, but data-losing. They should remain out of v1 unless a later implementation plan explicitly widens duplicate handling after `report` and `reject` are validated.
 
 Codex suggestions should not be required to replay the record.
 
@@ -350,10 +469,10 @@ Recommended first duplicate policies:
   - fails when duplicates are detected for the selected key or exact-row mode
 - `keep-first`:
   - deterministic but data-losing
-  - should require explicit `--unique-by`
+  - keep out of the first duplicate-policy implementation
 - `keep-last`:
   - deterministic but data-losing
-  - should require explicit `--unique-by`
+  - keep out of the first duplicate-policy implementation
 
 Exact duplicate rows and duplicate business keys should be treated differently:
 
@@ -444,7 +563,7 @@ The next implementation plan should treat these as in-scope commitments:
 - support output-path override at replay time
 - include duplicate/key diagnostics in dry-run review
 - add explicit `--unique-by <name[,name...]>`
-- add explicit `--on-duplicate preserve|report|reject|keep-first|keep-last`
+- add explicit `--on-duplicate preserve|report|reject`
 - persist duplicate policy and selected unique keys in the replay record
 - keep Codex recommendations optional, reviewed, and downstream of deterministic facts
 
@@ -456,7 +575,7 @@ Out of scope for that plan:
 - schema-aware query workspace redesign
 - broad generic `data replay`
 
-## Open Questions
+## Resolved Questions
 
 Resolved in this revision:
 
@@ -464,21 +583,32 @@ Resolved in this revision:
   - use `data stack replay <record>`
 - first record format:
   - use JSON
+- replay artifact identity:
+  - include both `metadata.artifactId` and `metadata.payloadId`
+- replay artifact timestamp:
+  - include `metadata.issuedAt` as an ISO UTC timestamp
+- direct dry-run artifact writing:
+  - write a generated `data-stack-plan-<timestamp>Z-<uid>.json` by default and allow `--plan-output <path>` override
+- interactive dry-run-only artifact writing:
+  - offer the same generated default plan path first, with a custom destination option
+- direct replay auto-clean:
+  - support explicit `--auto-clean`, default false
+- source fingerprints:
+  - store v1 size and mtime fingerprints when available, warn on mismatch by default, and allow a strict replay mode later if needed
+- replay output path:
+  - store `output.path` when known, allow `data stack replay <record> --output <path>` override, and require an output path at replay time if the record omits one
+- duplicate reports:
+  - embed bounded duplicate/key diagnostics in the stack plan, and allow a separate advisory report only for detailed or Codex-assisted review evidence
+- unique-key candidate search:
+  - detect single-column candidates by default and bounded two-column candidates under a documented cap
+- duplicate-policy v1:
+  - ship `preserve`, `report`, and `reject`; keep `keep-first` and `keep-last` out of v1 because they drop data
 - duplicate/key handling:
   - include diagnostic and deterministic-control work in the next implementation plan
 - Codex role:
   - use Codex for reviewed recommendations from deterministic diagnostics, not execution
 
-Remaining questions for the implementation plan:
-
-- Should direct `--dry-run` always write a stack-plan artifact, require `--plan-output <path>`, or generate a default `data-stack-plan-<timestamp>Z-<uid>.json` name?
-- Should interactive dry-run-only mode always offer the same default plan path, or ask for a custom plan destination?
-- Should direct `data stack replay <record>` expose an explicit `--auto-clean` flag, or should auto-clean remain interactive-only first?
-- Should replay compare source fingerprints as hard failures, warnings, or opt-in strict checks?
-- Should replay output path be optional in the record, overridable at replay time, or both?
-- Should duplicate reports be embedded in the stack-plan artifact, exported separately, or both?
-- Should unique-key candidate search support only single columns first, or also bounded column groups?
-- Should `keep-first` and `keep-last` ship in the first duplicate-policy slice, or should the first slice restrict mutation to `preserve`, `report`, and `reject`?
+No open product-contract questions remain in this research. The next plan should convert these decisions into implementation phases and tests.
 
 ## Related Research
 
