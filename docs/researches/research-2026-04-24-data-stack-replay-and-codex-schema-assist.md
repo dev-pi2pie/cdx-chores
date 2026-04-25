@@ -1,13 +1,14 @@
 ---
-title: "Data stack replay records and Codex schema assist"
+title: "Data stack replay records, duplicate handling, and Codex schema assist"
 created-date: 2026-04-24
-status: draft
+modified-date: 2026-04-25
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
-Explore whether `data stack` should gain replayable stack records and a later Codex-assisted schema suggestion workflow, without blurring the deterministic `data stack` command contract.
+Define the next `data stack` development stage for replayable dry-run records, duplicate/key diagnostics, and Codex-assisted reviewed recommendations, without blurring the deterministic `data stack` command contract.
 
 ## Why This Research
 
@@ -22,16 +23,19 @@ The current `data stack` direction now has a clearer deterministic follow-up pat
 That still leaves an adjacent workflow unowned:
 
 - preserving a reviewed stack setup for replay
+- adding dry-run review before materialized output is written
+- identifying duplicate rows and possible unique keys during stack review
 - allowing Codex to suggest noisy exclusions or possible schema repairs
+- allowing Codex to explain duplicate/key workarounds from deterministic diagnostics
 - keeping those suggestions reviewable instead of silently mutating stack output
 
 The repo already has related patterns:
 
-- `rename` has replayable plan artifacts that can be applied later
+- `rename` has dry-run plan artifacts that can be applied later
 - `data extract` has reviewed source-shape behavior for shaped extraction
 - Codex-assisted flows generally propose reviewed changes rather than silently applying hidden transformations
 
-This research should decide whether `data stack` needs a similar artifact boundary.
+This research now chooses the same safety shape for `data stack`: dry-run produces a reviewed deterministic plan, and `data stack replay <record>` runs that accepted plan later.
 
 ## Current State
 
@@ -46,10 +50,14 @@ Current and planned deterministic behavior is expressed through command options:
 - schema mode such as strict matching or `--union-by-name`
 - explicit exclusions such as `--exclude-columns`
 
-The current follow-up plan only records Codex schema suggestions as deferred reviewed-assist work. It does not define:
+The current completed stack follow-up plan only records replay and Codex schema suggestions as deferred reviewed-assist work. It does not define:
 
 - a stack record file format
 - a replay command
+- a dry-run mode that writes or offers the replayable record
+- duplicate-row diagnostics
+- unique-key candidate diagnostics
+- explicit duplicate policy options
 - artifact lifecycle or retention rules
 - how Codex suggestions become deterministic replayable input
 
@@ -57,11 +65,13 @@ The current follow-up plan only records Codex schema suggestions as deferred rev
 
 This research covers:
 
-- whether a replayable stack record should exist
+- the decision that a replayable stack record should exist
+- the decision that the replay command should be `data stack replay <record>`
+- the dry-run contract that prepares and reviews a stack plan without writing stack output
 - what belongs in that record
-- whether the replay surface should be a command such as `data stack replay <record>`
+- duplicate-row and unique-key handling for the next implementation plan
 - how explicit exclusions and union-by-name should be represented
-- how Codex schema suggestions could produce reviewed recommendations
+- how Codex schema and duplicate/key suggestions could produce reviewed recommendations
 - how to keep Codex suggestions separate from deterministic stack execution
 
 This research does not implement:
@@ -72,9 +82,64 @@ This research does not implement:
 - rename artifact changes
 - automatic stack-time repair
 
-## Direction To Explore
+## Chosen Direction
 
-### 1. Deterministic stack records should be separate from Codex suggestions
+### 1. `data stack replay <record>` should be the replay surface
+
+Use a stack-owned replay command rather than a generic data replay command:
+
+```bash
+cdx-chores data stack ./inputs --pattern "*.csv" --output merged.csv --dry-run
+cdx-chores data stack replay ./data-stack-plan-20260425T120000Z-a1b2c3d4.json
+```
+
+This mirrors the `rename` safety model:
+
+- the normal command can produce a dry-run plan
+- the dry-run plan is inspectable and replayable
+- replay executes the reviewed plan without requiring Codex
+- advisory analysis remains separate from replayable execution input
+
+`data stack replay <record>` is preferred over `data replay <record>` because the first stack record is stack-specific:
+
+- stack has source normalization and schema-mode settings
+- stack has output materialization settings
+- stack duplicate/key policy belongs to row assembly, not generic data execution
+
+Implication:
+
+- a broader `data replay` can be reconsidered only after multiple data actions share one artifact family
+- the next implementation plan should treat `data stack replay <record>` as the committed command surface
+
+### 2. Dry-run should author deterministic stack records
+
+Dry-run should do real preparation but stop before writing materialized stack output.
+
+Required dry-run work:
+
+- normalize raw sources
+- resolve matched files
+- validate input format
+- validate header mode and headerless columns
+- validate strict or union-by-name schema mode
+- validate explicit exclusions
+- compute file, row, schema, exclusion, and duplicate/key diagnostics
+- show a review summary
+- write or offer a replayable stack record
+
+Dry-run should not:
+
+- write the merged `.csv`, `.tsv`, or `.json` output
+- silently dedupe rows
+- silently repair schema drift
+- silently accept Codex suggestions
+
+Implication:
+
+- dry-run becomes the safest authoring path for repeatable stack runs
+- interactive mode can later mirror rename-style artifact-retention prompts without changing the deterministic replay contract
+
+### 3. Deterministic stack records should be separate from Codex suggestions
 
 A replayable stack record should describe a deterministic stack run.
 
@@ -83,6 +148,7 @@ Likely record contents:
 - record version
 - command family and action
 - raw sources
+- base directory and resolved source summary
 - pattern
 - recursive and max-depth settings
 - input format
@@ -92,8 +158,16 @@ Likely record contents:
   - strict
   - union-by-name
 - explicit exclusions
+- duplicate policy:
+  - preserve
+  - report
+  - reject
+  - keep-first
+  - keep-last
+- unique key columns, if explicitly selected
 - output format
 - optional output path
+- optional source fingerprints and row/schema summary
 
 Codex suggestions should not be required to replay the record.
 
@@ -102,10 +176,80 @@ Implication:
 - a user can review, commit, and replay the record without Codex availability
 - Codex remains an authoring aid, not an execution dependency
 
-### 2. Codex schema assist should propose changes, not apply them silently
+### 4. Duplicate rows and unique-key handling belong in this dev stage
 
-Possible future Codex suggestions:
+Duplicate handling should be part of the next implementation plan, not a vague future follow-up.
 
+Default behavior:
+
+- preserve rows unless the user explicitly chooses a duplicate policy
+- report duplicate diagnostics in dry-run and interactive review
+- make the selected duplicate policy replayable
+
+The next implementation plan should complete the diagnostic and deterministic-control layer:
+
+- exact duplicate-row detection
+- candidate unique-key detection
+- explicit unique-key selection
+- explicit duplicate policy selection
+- replay-record persistence for the selected policy
+
+Recommended direct CLI options:
+
+```bash
+cdx-chores data stack ./inputs --output merged.csv --dry-run
+cdx-chores data stack ./inputs --output merged.csv --unique-by order_id --on-duplicate report
+cdx-chores data stack ./inputs --output merged.csv --unique-by order_id --on-duplicate reject
+```
+
+Recommended first duplicate policies:
+
+- `preserve`:
+  - default behavior
+  - writes all rows
+  - reports duplicate diagnostics when dry-run/review is requested
+- `report`:
+  - writes all rows
+  - records duplicate-key or exact-duplicate findings in the plan/report
+- `reject`:
+  - fails when duplicates are detected for the selected key or exact-row mode
+- `keep-first`:
+  - deterministic but data-losing
+  - should require explicit `--unique-by`
+- `keep-last`:
+  - deterministic but data-losing
+  - should require explicit `--unique-by`
+
+Exact duplicate rows and duplicate business keys should be treated differently:
+
+- exact duplicate rows compare all output columns/keys after normalization
+- duplicate business keys compare only user-selected unique-key columns
+- rows with the same key but different non-key values are conflicts, not safe automatic repairs
+
+Implication:
+
+- `data stack` can identify duplicate risk without guessing the business meaning of a row
+- the user chooses the key and conflict behavior
+- replay captures that explicit choice
+
+### 5. Codex assist should propose reviewed workarounds from deterministic facts
+
+Codex assistance is useful in this dev stage, but only downstream of deterministic diagnostics.
+
+Deterministic analyzers should compute facts such as:
+
+- schema mismatch details
+- sparse or always-empty columns
+- exact duplicate-row counts
+- candidate unique columns or column groups
+- duplicate-key conflict counts
+- example conflicting rows or bounded summaries
+
+Codex can then help explain or recommend:
+
+- likely unique-key candidates from names plus uniqueness statistics
+- safer duplicate policy choices such as `report` or `reject`
+- suspicious duplicate-key conflicts such as same order id with different totals
 - noisy columns or keys to exclude
 - likely misspelled duplicate columns or keys
 - possible rename or repair suggestions
@@ -117,13 +261,15 @@ Recommended contract:
 - accepted suggestions become explicit deterministic options or a replayable record
 - no silent auto-exclude
 - no silent auto-repair
+- no silent unique-key selection
+- no silent dedupe
 
 Implication:
 
 - the final stack output is explainable from CLI flags or a record file
 - Codex behavior can improve without changing deterministic replay semantics
 
-### 3. Replay and advisory artifacts should be different artifact classes
+### 6. Replay and advisory artifacts should be different artifact classes
 
 The rename cleanup research already distinguishes replayable execution plans from advisory analyzer reports.
 
@@ -137,21 +283,62 @@ The rename cleanup research already distinguishes replayable execution plans fro
   - advisory
   - not directly replayed unless accepted into a record or flags
   - useful for review and audit
+- duplicate/key report:
+  - diagnostic
+  - may be embedded in dry-run output or exported separately
+  - should not be confused with replayable execution input unless accepted into the stack record
 
 Implication:
 
 - users can keep Codex evidence without confusing it for a stack execution plan
 - future artifact-retention prompts can treat replay records and advisory reports separately
 
+## Recommended Implementation Plan Commitments
+
+The next implementation plan should treat these as in-scope commitments:
+
+- add `--dry-run` to direct `data stack`
+- add `data stack replay <record>`
+- define JSON stack-plan artifacts
+- generate stack-plan artifacts from dry-run
+- validate replay records strictly before execution
+- support output-path override at replay time
+- include duplicate/key diagnostics in dry-run review
+- add explicit `--unique-by <name[,name...]>`
+- add explicit `--on-duplicate preserve|report|reject|keep-first|keep-last`
+- persist duplicate policy and selected unique keys in the replay record
+- keep Codex recommendations optional, reviewed, and downstream of deterministic facts
+
+Out of scope for that plan:
+
+- automatic schema repair
+- automatic row repair
+- arbitrary JSON flattening
+- schema-aware query workspace redesign
+- broad generic `data replay`
+
 ## Open Questions
 
-- Should the replay command be `data stack replay <record>` or a broader `data replay <record>`?
-- Should output path be required in the record, optional, or overridable at replay time?
-- Should records store relative paths as entered, resolved paths, or both?
-- Should records include source fingerprints or only source paths?
-- Should accepted Codex suggestions be written back into the same record or a separate reviewed record?
-- Should the first record format be JSON, YAML, or another repo-standard artifact format?
-- Should interactive mode ask whether to save a stack record after review, before write, or after a successful write?
+Resolved in this revision:
+
+- replay command:
+  - use `data stack replay <record>`
+- first record format:
+  - use JSON
+- duplicate/key handling:
+  - include diagnostic and deterministic-control work in the next implementation plan
+- Codex role:
+  - use Codex for reviewed recommendations from deterministic diagnostics, not execution
+
+Remaining questions for the implementation plan:
+
+- Should dry-run always write a stack-plan artifact, or ask before writing in interactive mode?
+- Should direct `--dry-run` require `--plan-output <path>`, or generate a default `data-stack-plan-<timestamp>Z-<uid>.json` name?
+- Should replay compare source fingerprints as hard failures, warnings, or opt-in strict checks?
+- Should replay output path be optional in the record, overridable at replay time, or both?
+- Should duplicate reports be embedded in the stack-plan artifact, exported separately, or both?
+- Should unique-key candidate search support only single columns first, or also bounded column groups?
+- Should `keep-first` and `keep-last` ship in the first duplicate-policy slice, or should the first slice restrict mutation to `preserve`, `report`, and `reject`?
 
 ## Related Research
 
