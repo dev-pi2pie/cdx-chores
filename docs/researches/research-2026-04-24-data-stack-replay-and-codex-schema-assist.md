@@ -151,8 +151,10 @@ Recommended interactive rules:
 
 - prepare a deterministic status preview before any write
 - show matched-source, schema, row-count, duplicate/key, and output summaries
-- optionally ask for Codex recommendations from deterministic diagnostics
-- ask whether to write now, save a dry-run plan only, revise setup, or cancel
+- surface a contextual Codex checkpoint only when deterministic diagnostics suggest it can help
+- keep the no-signal path quiet and go straight to write/save choices
+- after accepted or edited Codex recommendations, re-prepare and show the deterministic status preview
+- ask whether to write now, save a dry-run plan only, change destination, revise setup, or cancel
 - if writing now, execute the accepted stack plan
 - after success, ask separate retention questions for execution and advisory artifacts
 
@@ -167,7 +169,7 @@ The status preview should include:
 - exact duplicate-row count
 - duplicate-key conflict count, if `--unique-by` is selected
 - candidate unique-key summary, when available
-- Codex recommendation status, if requested
+- Codex checkpoint status, when diagnostics surfaced it or a report was reviewed
 
 Interactive artifact retention should follow the rename cleanup lesson:
 
@@ -202,76 +204,112 @@ Auto-clean should never remove:
 - source files
 - Codex diagnostic reports unless the user explicitly declines keeping that report
 
-### 4. Interactive dry-run/replay ASCII sketch
+### 4. Interactive dry-run/replay ASCII sketches
+
+The interactive flow is easier to read as three sketches: setup and optional Codex review, final action choice, and post-write retention.
+
+#### Setup and contextual Codex checkpoint
 
 ```text
 cdx-chores interactive
-        |
-        v
-       data
-        |
-        v
-       stack
-        |
-        v
+  |
+  v
+data
+  |
+  v
+stack
+  |
+  v
 collect sources, format, schema, duplicate policy
-        |
-        v
+  |
+  v
 choose output destination
-        |
-        v
+  |
+  v
 prepare status preview
-        |
-        v
+  |
+  v
 show source/schema/duplicate/key/output summary
-        |
-        v
-ask for Codex recommendations?
-        |
-   +----+----+
-   |         |
-  no        yes
-   |         |
-   |         v
-   |   show reviewed suggestions
-   |         |
-   +----+----+
-        |
-        v
-review accepted stack setup
-        |
-  +-----+----------+-------------+--------+
-  |                |             |        |
-  v                v             v        v
-write now     dry-run only   revise   cancel
-  |                |
-  v                v
-execute plan   write/offer stack plan
+  |
+  v
+diagnostics show Codex-useful signals?
+  |
+  +-- no ----> final action menu
+  |
+  +-- yes ---> Codex assist checkpoint
+                 |
+                 +-- continue without Codex -> final action menu
+                 |
+                 +-- revise setup ----------> collect setup again
+                 |
+                 +-- cancel ----------------> stop
+                 |
+                 +-- review with Codex -----> review Codex recommendations
+                                               |
+                                               +-- skip review -----------> final action menu
+                                               |
+                                               v
+                                             accept or edit recommendations
+                                               |
+                                               v
+                                             apply reviewed changes to deterministic plan
+                                               |
+                                               v
+                                             re-prepare status preview
+                                               |
+                                               v
+                                             show updated summary
+                                               |
+                                               v
+                                             final action menu
+```
+
+#### Final action menu
+
+```text
+final action menu
+  |
+  +-- write now ----------> execute accepted stack plan
+  |
+  +-- dry-run plan only --> write/offer stack plan
+  |
+  +-- change destination -> choose output destination
+  |
+  +-- revise setup -------> collect setup again
+  |
+  +-- cancel -------------> stop
+```
+
+#### Retention after write or dry-run save
+
+```text
+execute accepted stack plan
   |
   v
 write output succeeds?
   |
-  +------no------> keep all generated artifacts
+  +-- no ----> keep all generated artifacts
   |
- yes
+  +-- yes ---> Keep applied stack plan?
+                |
+                +-- yes -> keep stack plan
+                |
+                +-- no --> auto-clean stack plan only
+                           |
+                           v
+                         Keep diagnostic report? (if present)
+
+write/offer stack plan
   |
   v
-Keep applied stack plan?
-  |
-  +----yes----> keep stack plan
-  |
- no
-  |
-  v
-auto-clean stack plan only
-  |
-  v
-Keep diagnostic report? (if present)
+Keep dry-run stack plan?
 ```
 
 Implication:
 
-- interactive mode gets one visible decision point after status preview
+- interactive Codex assist becomes a contextual review checkpoint, not a peer of write/save actions
+- the final action menu stays focused on deterministic execution, dry-run plan saving, destination changes, revision, or cancellation
+- quiet no-signal inputs skip Codex prompting entirely
 - immediate write still runs through a concrete plan instead of recomputing hidden state
 - auto-clean is scoped to execution artifacts and only after success
 - advisory evidence survives unless the user explicitly removes it
@@ -843,26 +881,14 @@ Current Phase 7 behavior:
 - offers `Request Codex recommendations` beside final actions such as write and dry-run
 - reviews recommendations and re-runs the status preview after accepted or edited recommendations
 
-That works, but it feels late in the flow. The refined direction is:
+That works, but it feels late in the flow. The refined direction is the section 4 ASCII sketch:
 
-```text
-collect stack setup
-  -> prepare deterministic status preview
-     -> if diagnostics show useful signals:
-          offer Codex as contextual help
-          - review with Codex
-          - continue without Codex
-          - revise setup
-          - cancel
-     -> if accepted/edited recommendations exist:
-          re-prepare deterministic status preview
-     -> final action menu:
-          - write now
-          - dry-run plan only
-          - change destination
-          - revise setup
-          - cancel
-```
+- first prepare deterministic status
+- only then decide whether diagnostics justify a Codex checkpoint
+- keep `review with Codex`, `continue without Codex`, `revise setup`, and `cancel` inside that checkpoint
+- after accepted or edited recommendations, apply them into deterministic plan fields and re-preview
+- keep the final action menu focused on write, dry-run plan, destination change, setup revision, and cancel
+- leave the direct CLI contract unchanged: `--codex-assist` remains valid only with `--dry-run`
 
 Codex should be offered only when deterministic diagnostics suggest it can add value:
 
