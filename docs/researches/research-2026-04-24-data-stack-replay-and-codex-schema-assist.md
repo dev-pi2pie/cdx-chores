@@ -125,7 +125,9 @@ Required dry-run work:
 - validate explicit exclusions
 - compute file, row, schema, exclusion, and duplicate/key diagnostics
 - show a review summary
-- write or offer a replayable stack record
+- write or offer a replayable stack record:
+  - direct dry-run writes a generated plan by default, with `--plan-output <path>` override
+  - interactive dry-run offers the generated default first, with a custom destination option
 
 Dry-run should not:
 
@@ -143,16 +145,14 @@ Implication:
 
 Interactive `data stack` should keep the current setup-review rhythm, but insert a status preview and stack-plan lifecycle before any materialized output is written.
 
-Recommended interactive flow:
+Recommended interactive rules:
 
-1. collect mixed sources, format, schema mode, exclusions, duplicate policy, and output destination
-2. prepare a deterministic status preview
-3. show matched-source, schema, row-count, duplicate/key, and output summaries
-4. optionally ask for Codex recommendations from the deterministic diagnostics
-5. show the accepted deterministic stack setup
-6. ask whether to write now, save a dry-run plan only, revise setup, or cancel
-7. if writing now, execute the accepted stack plan
-8. after success, ask separate retention questions for execution and advisory artifacts
+- prepare a deterministic status preview before any write
+- show matched-source, schema, row-count, duplicate/key, and output summaries
+- optionally ask for Codex recommendations from deterministic diagnostics
+- ask whether to write now, save a dry-run plan only, revise setup, or cancel
+- if writing now, execute the accepted stack plan
+- after success, ask separate retention questions for execution and advisory artifacts
 
 The status preview should include:
 
@@ -278,6 +278,8 @@ Implication:
 
 A replayable stack record should describe a deterministic stack run.
 
+#### Stack Plan Artifact
+
 The v1 stack-plan artifact should be JSON and follow the existing reviewed-artifact convention of `version` plus `metadata.artifactType`, with extra replay identity fields because this artifact is executable input.
 
 Artifact family name:
@@ -296,6 +298,14 @@ Required top-level keys:
 - `output`
 - `diagnostics`
 
+Terminology note:
+
+- `schema` in this artifact means the accepted stack output column/key contract.
+- for CSV/TSV with headers, `schema.includedNames` comes from accepted header names
+- for JSONL or `.json` array rows, `schema.includedNames` comes from accepted object keys
+- for headerless CSV/TSV, `input.columns` supplies the accepted positional names and `schema.includedNames` mirrors those names
+- this is not a DuckDB/database schema and should not be confused with schema-qualified query selectors such as `analytics.events`
+
 Recommended v1 shape:
 
 ```json
@@ -305,6 +315,9 @@ Recommended v1 shape:
     "artifactType": "data-stack-plan",
     "artifactId": "data-stack-plan-20260425T120000Z-a1b2c3d4",
     "payloadId": "stack-payload-20260425T120000Z-a1b2c3d4",
+    "derivedFromPayloadId": null,
+    "acceptedRecommendationIds": [],
+    "recommendationDecisions": [],
     "issuedAt": "2026-04-25T12:00:00.000Z",
     "createdBy": "cdx-chores data stack --dry-run"
   },
@@ -367,18 +380,36 @@ Recommended v1 shape:
 }
 ```
 
+#### Payload Lineage
+
 Payload identity:
 
 - `metadata.artifactId` identifies the replay artifact file family and should match the generated filename stem by default.
-- `metadata.payloadId` identifies the accepted deterministic stack setup inside the artifact.
+- `metadata.payloadId` identifies the deterministic stack setup inside the artifact.
+- `metadata.derivedFromPayloadId` records the earlier payload when the current plan was produced by accepting or editing recommendations.
+- `metadata.acceptedRecommendationIds` records which advisory recommendations shaped this plan when the user accepted them without edit.
+- `metadata.recommendationDecisions` records accepted and edited recommendation decisions when advisory review shaped the new payload.
 - `metadata.issuedAt` is an ISO UTC timestamp for artifact creation.
 - replay should preserve those values when reading an existing plan instead of regenerating them.
+
+Payload lifecycle:
+
+- the first dry-run plan mints a `payloadId` for the prepared deterministic setup
+- a Codex report references that analyzed payload
+- accepting or editing any Codex recommendation creates a new deterministic setup and therefore a new `payloadId`
+- the new plan should set `derivedFromPayloadId` to the analyzed payload from the report
+- accepted recommendations may be recorded in `acceptedRecommendationIds`
+- edited recommendations should not be treated as exact accepted recommendations
+- edited recommendations should be recorded in `recommendationDecisions` with `decision: "edited"` while the edited values live in deterministic plan fields
+- replay always uses the final stack-plan `payloadId` and never follows advisory reports at execution time
 
 The split lets a future tool distinguish:
 
 - two files that contain the same accepted payload
 - one file rewritten with a new accepted payload
 - advisory reports that reference the accepted payload without becoming executable input
+
+#### Field Usage
 
 Key usage table:
 
@@ -388,6 +419,9 @@ Key usage table:
 | `metadata.artifactType` | Yes | Rejects non-stack-plan JSON | Must be `data-stack-plan` |
 | `metadata.artifactId` | Yes | Names and audits the plan artifact | Defaults from `data-stack-plan-<timestamp>Z-<uid>` |
 | `metadata.payloadId` | Yes | Links accepted setup to diagnostics/advisory reports | Stable for the accepted deterministic payload |
+| `metadata.derivedFromPayloadId` | No | Audits recommendation acceptance/edit lineage | Set when a new payload is created from a previous analyzed payload |
+| `metadata.acceptedRecommendationIds` | No | Audits exact accepted recommendations | Empty for edited recommendations or no Codex assist |
+| `metadata.recommendationDecisions` | No | Audits accepted or edited recommendations | Entries identify report artifact, recommendation id, and `accepted` or `edited` decision |
 | `metadata.issuedAt` | Yes | Audits when the plan was written | ISO UTC timestamp |
 | `command.family` | Yes | Verifies command family | `data` |
 | `command.action` | Yes | Verifies command action | `stack` |
@@ -486,7 +520,7 @@ Implication:
 - the user chooses the key and conflict behavior
 - replay captures that explicit choice
 
-### 7. Codex assist should propose reviewed workarounds from deterministic facts
+### 7. Codex assist should produce reviewed proposals from deterministic facts
 
 Codex assistance is useful in this dev stage, but only downstream of deterministic diagnostics.
 
@@ -497,10 +531,12 @@ Deterministic analyzers should compute facts such as:
 - exact duplicate-row counts
 - candidate unique columns or column groups
 - duplicate-key conflict counts
+- headerless column counts, samples, null counts, and enum-like value summaries
 - example conflicting rows or bounded summaries
 
-Codex can then help explain or recommend:
+Codex can then help explain or recommend reviewed proposals:
 
+- headerless CSV/TSV column names
 - likely unique-key candidates from names plus uniqueness statistics
 - safer duplicate policy choices such as `report` or `reject`
 - suspicious duplicate-key conflicts such as same order id with different totals
@@ -508,6 +544,16 @@ Codex can then help explain or recommend:
 - likely misspelled duplicate columns or keys
 - possible rename or repair suggestions
 - schema-drift summary before a user chooses union-by-name
+
+Recommended assist surfaces:
+
+| Surface | Deterministic facts | Codex may suggest | Patch target | Accepted result |
+| --- | --- | --- | --- | --- |
+| Headerless input | Column count, samples, null counts, uniqueness, enum-like values | Human-readable `input.columns` names | `/input/columns`, `/schema/includedNames` | Stored in `input.columns` and mirrored in `schema.includedNames` |
+| Noisy union columns | Sparseness, always-empty columns, source distribution | Names for `schema.excludedNames` | `/schema/excludedNames` | Stored as explicit exclusions |
+| Unique key choice | Null, uniqueness, duplicate, and bounded candidate-key stats | `duplicates.uniqueBy` candidate | `/duplicates/uniqueBy` | Stored as selected unique key |
+| Duplicate policy | Exact duplicate counts, duplicate-key conflict counts, example conflicts | `preserve`, `report`, or `reject` | `/duplicates/policy` | Stored as `duplicates.policy` |
+| Schema drift | Strict mismatch details, first-seen names, missing names by source | Use union-by-name, revise columns, or exclude explicit names | `/schema/mode`, `/schema/includedNames`, `/schema/excludedNames` | Stored as `schema.mode`, `schema.includedNames`, and `schema.excludedNames` |
 
 Recommended contract:
 
@@ -523,7 +569,168 @@ Implication:
 - the final stack output is explainable from CLI flags or a record file
 - Codex behavior can improve without changing deterministic replay semantics
 
-### 8. Replay and advisory artifacts should be different artifact classes
+### 8. Codex reports should be advisory and payload-linked
+
+Codex recommendations should be written to a separate advisory report when the user wants to preserve the review evidence.
+
+Artifact family name:
+
+- `data-stack-codex-report-<timestamp>Z-<uid>.json`
+
+Recommended advisory shape:
+
+```json
+{
+  "version": 1,
+  "metadata": {
+    "artifactType": "data-stack-codex-report",
+    "artifactId": "data-stack-codex-report-20260425T120500Z-d4c3b2a1",
+    "payloadId": "stack-payload-20260425T120000Z-a1b2c3d4",
+    "issuedAt": "2026-04-25T12:05:00.000Z",
+    "createdBy": "cdx-chores data stack",
+    "mode": "codex-assist"
+  },
+  "facts": {
+    "matchedFileCount": 2,
+    "rowCount": 50,
+    "schemaNameCount": 3
+  },
+  "recommendations": [
+    {
+      "recommendationId": "rec-001",
+      "kind": "headerless-columns",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/input/columns",
+          "value": ["id", "name", "status"]
+        },
+        {
+          "op": "replace",
+          "path": "/schema/includedNames",
+          "value": ["id", "name", "status"]
+        }
+      ],
+      "confidence": "medium",
+      "evidence": [
+        "column 1 is unique and numeric",
+        "column 3 has repeated active/inactive values"
+      ],
+      "reportStatus": "proposed-at-issue-time"
+    },
+    {
+      "recommendationId": "rec-002",
+      "kind": "unique-key",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/duplicates/uniqueBy",
+          "value": ["id"]
+        }
+      ],
+      "confidence": "high",
+      "evidence": ["id has no nulls and no duplicates"],
+      "reportStatus": "proposed-at-issue-time"
+    }
+  ]
+}
+```
+
+Recommendation patch rules:
+
+- each recommendation must have a stable `recommendationId`
+- each recommendation must include one or more JSON Pointer style `patches`
+- v1 should support only `replace` patches against known stack-plan fields
+- multi-field suggestions must include every deterministic field that needs to change together
+- patches must be validated as one set against the report's analyzed payload before any value is applied
+- patch application is atomic: either every patch in the accepted recommendation applies, or none of them apply
+- partial acceptance of one recommendation is not supported in v1; users who want only part of a recommendation must choose the edit path
+- overlapping patches in the same recommendation are invalid unless they target the same path with the same value
+- accepting multiple recommendations in one review batch is valid only when their patch paths do not conflict; conflicting batches must be rejected and returned to review
+- accepting a recommendation applies its patches exactly into a new stack plan
+- editing a recommendation uses the same target fields but stores the user-edited values in the new stack plan
+- the advisory report should keep `reportStatus: "proposed-at-issue-time"` unless the implementation later writes an updated advisory report; the executable plan is the source of truth for accepted values
+
+Report rules:
+
+- `metadata.payloadId` must reference the deterministic stack payload that was analyzed when the report was produced.
+- report recommendations are advisory and are not replayed directly.
+- accepted or edited recommendations must be copied into deterministic fields such as `input.columns`, `schema.excludedNames`, `duplicates.uniqueBy`, or `duplicates.policy`.
+- accepting or editing recommendations must mint a new stack-plan `payloadId`; the old report remains linked to the analyzed payload through `metadata.payloadId`.
+- exact accepts should be recorded in both `acceptedRecommendationIds` and `recommendationDecisions`.
+- edited accepts should be recorded only in `recommendationDecisions` with `decision: "edited"`.
+- report retention should be independent from stack-plan retention.
+
+Implication:
+
+- Codex evidence can be audited without making replay depend on Codex availability
+- implementation has a concrete report boundary instead of an implicit "suggestions" concept
+
+#### Example: headerless assist
+
+The strongest first Codex assist case is headerless CSV/TSV naming. For example, if deterministic analysis sees three positional fields:
+
+```csv
+1001,Alice,active
+1002,Bob,inactive
+```
+
+Codex may propose:
+
+```json
+{
+  "recommendationId": "rec-001",
+  "kind": "headerless-columns",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/input/columns",
+      "value": ["id", "name", "status"]
+    },
+    {
+      "op": "replace",
+      "path": "/schema/includedNames",
+      "value": ["id", "name", "status"]
+    }
+  ],
+  "evidence": [
+    "column 1 is unique and numeric",
+    "column 2 contains person-like text",
+    "column 3 has repeated active/inactive values"
+  ]
+}
+```
+
+The user must accept or edit those names. Only the accepted names enter the replay plan:
+
+```json
+{
+  "metadata": {
+    "payloadId": "stack-payload-20260425T120300Z-e5f6a7b8",
+    "derivedFromPayloadId": "stack-payload-20260425T120000Z-a1b2c3d4",
+    "acceptedRecommendationIds": ["rec-001"],
+    "recommendationDecisions": [
+      {
+        "reportArtifactId": "data-stack-codex-report-20260425T120500Z-d4c3b2a1",
+        "recommendationId": "rec-001",
+        "decision": "accepted"
+      }
+    ]
+  },
+  "input": {
+    "format": "csv",
+    "headerMode": "no-header",
+    "columns": ["id", "name", "status"]
+  },
+  "schema": {
+    "mode": "strict",
+    "includedNames": ["id", "name", "status"],
+    "excludedNames": []
+  }
+}
+```
+
+### 9. Replay and advisory artifacts should be different artifact classes
 
 The rename cleanup research already distinguishes replayable execution plans from advisory analyzer reports.
 
@@ -558,10 +765,14 @@ The next implementation plan should treat these as in-scope commitments:
 - update interactive mode with the status-preview, write-now, dry-run-only, revise, and cancel flow
 - add stack-plan retention prompts in interactive mode
 - support post-success stack-plan auto-clean when the user declines keeping the applied plan
+- support direct replay `--auto-clean` as an explicit flag that removes only the stack-plan JSON after successful replay
 - keep diagnostic/advisory report retention separate from stack-plan retention
 - validate replay records strictly before execution
 - support output-path override at replay time
 - include duplicate/key diagnostics in dry-run review
+- add deterministic headerless column diagnostics for Codex-assisted naming
+- define `data-stack-codex-report-<timestamp>Z-<uid>.json`
+- add reviewed Codex assist for headerless columns, explicit exclusions, unique-key selection, duplicate policy, and schema drift explanation
 - add explicit `--unique-by <name[,name...]>`
 - add explicit `--on-duplicate preserve|report|reject`
 - persist duplicate policy and selected unique keys in the replay record
@@ -592,7 +803,7 @@ Resolved in this revision:
 - interactive dry-run-only artifact writing:
   - offer the same generated default plan path first, with a custom destination option
 - direct replay auto-clean:
-  - support explicit `--auto-clean`, default false
+  - support explicit `--auto-clean`, default false, and remove only the stack-plan JSON after successful replay
 - source fingerprints:
   - store v1 size and mtime fingerprints when available, warn on mismatch by default, and allow a strict replay mode later if needed
 - replay output path:
@@ -607,8 +818,18 @@ Resolved in this revision:
   - include diagnostic and deterministic-control work in the next implementation plan
 - Codex role:
   - use Codex for reviewed recommendations from deterministic diagnostics, not execution
+- Codex report shape:
+  - use `data-stack-codex-report-<timestamp>Z-<uid>.json` with recommendations tied to the analyzed stack `payloadId`
+- Codex assist surfaces:
+  - cover headerless columns, noisy exclusions, unique-key choice, duplicate policy, and schema drift
+- recommendation application:
+  - use stable recommendation ids plus atomic JSON Pointer style `replace` patches into known stack-plan fields
+- payload lifecycle:
+  - accepting or editing Codex recommendations creates a new stack-plan `payloadId` and records lineage through `derivedFromPayloadId`
+- recommendation provenance:
+  - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-No open product-contract questions remain in this research. The next plan should convert these decisions into implementation phases and tests.
+No known high-level product-contract questions remain in this research. The next plan should convert these decisions into implementation phases, exact command naming, validation rules, and tests.
 
 ## Related Research
 
