@@ -37,7 +37,9 @@ The repo already has related patterns:
 
 This research now chooses the same safety shape for `data stack`: dry-run produces a reviewed deterministic plan, and `data stack replay <record>` runs that accepted plan later.
 
-The first implementation pass now proves the deterministic pieces and reviewed Codex report flow, but interactive Codex prompting still needs refinement. The current interactive implementation exposes Codex as a peer of final write/save actions; the desired UX should feel closer to `data extract` and `rename`, where Codex appears as a contextual helper only when diagnostics show it can help.
+The implementation now proves the deterministic pieces, reviewed Codex report flow, and contextual interactive Codex checkpoint. Interactive Codex assist now follows the `data extract` and `rename` rhythm: it appears as a contextual helper only when diagnostics show it can help, rather than as a peer of final write/save actions.
+
+A live interactive run against `examples/playground/stack-cases/csv-header-mismatch/` found remaining hardening work before this research should close: the Codex structured-output schema is rejected because `patches[].value` lacks an explicit JSON Schema `type`, the raw provider error is too noisy for normal interactive output, and the analyzer status line can merge with the following failure message.
 
 ## Starting State
 
@@ -869,19 +871,19 @@ Resolved in this revision:
 - recommendation provenance:
   - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-The core replay, duplicate/key, and advisory-report contract is settled in this research. The linked implementation plan should keep those decisions as the source of truth for exact command naming, validation rules, and tests. The remaining open thread is the interactive Codex trigger UX described below.
+The core replay, duplicate/key, advisory-report, and interactive Codex checkpoint contracts are settled in this research. The linked implementation plan is the source of truth for exact command naming, validation rules, tests, and the remaining interactive Codex hardening follow-up.
 
-## Follow-Up Direction
+## Final Interactive Direction
 
-The remaining open question is not whether Codex can participate in `data stack`; that is settled. The open UX question is when interactive mode should ask for Codex help.
+Codex participates in `data stack` as a reviewed assist surface, not as execution input. The final UX answer is that interactive mode asks for Codex help only after deterministic status preview shows useful signals.
 
-Current Phase 7 behavior:
+Earlier Phase 7 behavior:
 
 - prepares deterministic stack status
 - offers `Request Codex recommendations` beside final actions such as write and dry-run
 - reviews recommendations and re-runs the status preview after accepted or edited recommendations
 
-That works, but it feels late in the flow. The refined direction is the section 4 ASCII sketch:
+Phase 9 moves that reviewed assist into the section 4 ASCII sketch:
 
 - first prepare deterministic status
 - only then decide whether diagnostics justify a Codex checkpoint
@@ -900,6 +902,18 @@ Codex should be offered only when deterministic diagnostics suggest it can add v
 - schema drift or schema mismatch context where a review explanation can help
 
 This keeps the deterministic contract unchanged while making interactive Codex assist feel like a review helper instead of a final write action.
+
+## Follow-Up Hardening
+
+The remaining open work is not the checkpoint shape itself; it is the interactive robustness around that checkpoint:
+
+- fix the structured-output schema for Codex recommendations so `patches[].value` has an explicit JSON Schema type
+- keep raw provider JSON out of normal interactive failure messages
+- clear the analyzer status line before printing Codex success or failure output
+- make bounded matched-file samples explicit when many files are matched
+- decide whether manually added input sources also need bounded display in interactive stack review
+
+Until that follow-up is implemented and verified, this research should stay `in-progress`.
 
 ## Related Research
 

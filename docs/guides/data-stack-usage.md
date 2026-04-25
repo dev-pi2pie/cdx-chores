@@ -122,7 +122,7 @@ Codex assist behavior:
 
 - direct `--codex-assist` is valid only with `--dry-run`
 - `--codex-report-output <path>` writes the advisory report to a custom JSON path
-- interactive Codex review uses the same advisory report model, but it is requested from the status preview instead of a direct CLI flag
+- interactive Codex review uses the same advisory report model, but it appears as a contextual checkpoint only when deterministic diagnostics show useful signals
 - Codex reports link to the analyzed stack plan through payload metadata
 - recommendations are advisory until accepted or edited in a review flow
 - accepted or edited recommendations become deterministic stack-plan fields with a new `payloadId`
@@ -230,10 +230,14 @@ Current interactive flow:
    - use generated default output path
    - custom output path
 10. Review the normalized source summary, schema mode, matched files, row count, duplicate/key status, stack-plan path, advisory report status, output format, and write setup.
-11. At the write boundary, choose one of:
+11. If diagnostics show useful signals, choose one Codex checkpoint action:
+   - review with Codex
+   - continue without Codex
+   - revise stack setup
+   - cancel
+12. At the write boundary, choose one of:
    - write now
    - dry-run plan only
-   - request Codex recommendations
    - revise stack setup
    - change destination
    - cancel
@@ -256,7 +260,9 @@ Current interactive default output rule:
 
 Interactive Codex review:
 
-- Codex recommendations are requested from the status preview, before write or plan save
+- Codex recommendations are requested from a contextual checkpoint before write or plan save
+- the checkpoint is shown only when diagnostics indicate likely value, such as generated headerless columns, sparse union-by-name columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
+- no-signal runs skip the checkpoint and go straight to the final action menu
 - interactive review is not a materialized write; it produces an advisory report plus a reviewed deterministic plan when recommendations are accepted or edited
 - recommendations are shown as patch-style changes with a short reason
 - each recommendation can be accepted, edited, skipped, or used to cancel review

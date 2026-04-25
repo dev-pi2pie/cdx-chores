@@ -299,15 +299,25 @@ Duplicate policy execution rules:
 
 ### Phase 9: Smooth interactive Codex assist trigger
 
-- [ ] move interactive Codex assist out of the final `Stack action` menu and into a contextual assist checkpoint before write/save decisions
-- [ ] only offer Codex assist when deterministic diagnostics show useful signals, such as headerless generated columns, noisy union columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
-- [ ] render the assist checkpoint as `review with Codex`, `continue without Codex`, `revise setup`, or `cancel`
-- [ ] preserve the current direct CLI contract where `--codex-assist` remains valid only with `--dry-run`
-- [ ] keep interactive Codex review advisory and non-materializing; accepted or edited recommendations still become deterministic plan fields before write or dry-run save
-- [ ] re-run the status preview after accepted or edited recommendations, then show the final action menu with write, dry-run, destination, revise, and cancel only
-- [ ] avoid prompting for Codex when diagnostics do not indicate a likely benefit
-- [ ] add interactive tests for signal-triggered assist offers, no-signal skip behavior, continue-without-Codex, accepted recommendation re-preview, and Codex failure fallback
-- [ ] update the guide after the interactive flow is changed so it no longer describes Codex as a final action-menu peer
+- [x] move interactive Codex assist out of the final `Stack action` menu and into a contextual assist checkpoint before write/save decisions
+- [x] only offer Codex assist when deterministic diagnostics show useful signals, such as headerless generated columns, noisy union columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
+- [x] render the assist checkpoint as `review with Codex`, `continue without Codex`, `revise setup`, or `cancel`
+- [x] preserve the current direct CLI contract where `--codex-assist` remains valid only with `--dry-run`
+- [x] keep interactive Codex review advisory and non-materializing; accepted or edited recommendations still become deterministic plan fields before write or dry-run save
+- [x] re-run the status preview after accepted or edited recommendations, then show the final action menu with write, dry-run, destination, revise, and cancel only
+- [x] avoid prompting for Codex when diagnostics do not indicate a likely benefit
+- [x] add interactive tests for signal-triggered assist offers, no-signal skip behavior, continue-without-Codex, accepted recommendation re-preview, and Codex failure fallback
+- [x] update the guide after the interactive flow is changed so it no longer describes Codex as a final action-menu peer
+
+### Phase 10: Interactive Codex assist hardening follow-up
+
+- [ ] fix the data-stack Codex structured-output schema so `patches[].value` uses an explicit JSON Schema `type` instead of a loose empty schema
+- [ ] convert raw Codex/provider failures into concise interactive messages that explain the recommendations are unavailable and that deterministic setup is preserved
+- [ ] stop or clear the interactive analyzer status before printing Codex success or failure output so the status line does not merge with the next message
+- [ ] add tests for the structured-output schema, sanitized failure copy, and status cleanup ordering around Codex failures
+- [ ] make large matched-file previews clearer by labeling bounded samples and reporting how many matched files are hidden from the sample
+- [ ] review whether manually added input sources also need bounded display in interactive stack review
+- [ ] update the guide and job records after the hardening pass is implemented and verified
 
 ## Acceptance Criteria
 
@@ -324,6 +334,7 @@ Duplicate policy execution rules:
 - Codex advisory reports are never replayed directly
 - public guide docs explain the new workflow without duplicating the full JSON schema
 - interactive Codex assist appears as a contextual review checkpoint when diagnostics suggest it can help, not as a peer of final write/save actions
+- interactive Codex assist handles provider/schema failures with concise output and clean status-line behavior
 
 ## Risks and Mitigations
 
@@ -361,3 +372,4 @@ Duplicate policy execution rules:
 - `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`

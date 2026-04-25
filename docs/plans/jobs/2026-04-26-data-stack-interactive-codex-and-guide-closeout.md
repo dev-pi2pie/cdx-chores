@@ -40,4 +40,4 @@ git diff --check
 - Interactive Codex recommendations remain advisory until accepted or edited.
 - Stack replay still executes only stack-plan JSON artifacts, never Codex report artifacts.
 - Auto-clean remains scoped to stack-plan artifacts after successful execution.
-- A follow-up Phase 9 remains open to move interactive Codex assist from the final action menu into a contextual diagnostic checkpoint.
+- Follow-up Phase 9 is now completed in `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`; interactive Codex assist now appears as a contextual diagnostic checkpoint instead of a final action-menu peer.

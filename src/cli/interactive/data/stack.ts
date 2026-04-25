@@ -23,6 +23,11 @@ import {
   type DataStackDiagnosticsResult,
 } from "../../data-stack/diagnostics";
 import {
+  formatDataStackCodexAssistSignal,
+  getDataStackCodexAssistSignals,
+  type DataStackCodexAssistSignal,
+} from "../../data-stack/codex-signals";
+import {
   prepareDataStackExecution,
   type PreparedDataStackExecution,
 } from "../../data-stack/prepare";
@@ -344,6 +349,73 @@ function renderInteractiveCodexRecommendations(
       printLine(runtime.stderr, `  ${patch.path}: ${JSON.stringify(patch.value)}`);
     }
   }
+}
+
+function getInteractiveStackCodexAssistSignals(
+  state: InteractiveDataStackPreviewState,
+): DataStackCodexAssistSignal[] {
+  const plan = state.planArtifact;
+  const uniqueBy = plan?.duplicates.uniqueBy ?? INTERACTIVE_DATA_STACK_UNIQUE_BY;
+
+  return getDataStackCodexAssistSignals({
+    diagnostics: state.diagnostics,
+    headerMode: plan?.input.headerMode ?? "header",
+    inputColumns: plan?.input.columns ?? state.prepared.header,
+    schemaMode: plan?.schema.mode ?? state.setup.schemaMode,
+    uniqueBy,
+  });
+}
+
+function createInteractiveStackCodexSignalKey(
+  state: InteractiveDataStackPreviewState,
+  signals: readonly DataStackCodexAssistSignal[],
+): string {
+  const uniqueBy = state.planArtifact?.duplicates.uniqueBy ?? INTERACTIVE_DATA_STACK_UNIQUE_BY;
+  return JSON.stringify({
+    duplicateKeyConflicts: state.diagnostics.duplicateSummary.duplicateKeyConflicts,
+    exactDuplicateRows: state.diagnostics.duplicateSummary.exactDuplicateRows,
+    header: state.prepared.header,
+    schemaMode: state.planArtifact?.schema.mode ?? state.setup.schemaMode,
+    signals,
+    uniqueBy,
+  });
+}
+
+async function promptInteractiveStackCodexCheckpoint(
+  runtime: CliRuntime,
+  signals: readonly DataStackCodexAssistSignal[],
+): Promise<"codex" | "continue" | "review" | "cancel"> {
+  printLine(runtime.stderr, "Codex assist checkpoint");
+  printLine(
+    runtime.stderr,
+    `- signals: ${signals.map(formatDataStackCodexAssistSignal).join(", ")}`,
+  );
+
+  return await select<"codex" | "continue" | "review" | "cancel">({
+    message: "Codex assist checkpoint",
+    choices: [
+      {
+        name: "Review with Codex",
+        value: "codex",
+        description: "Ask for advisory schema, key, and duplicate-policy suggestions",
+      },
+      {
+        name: "Continue without Codex",
+        value: "continue",
+        description: "Keep the deterministic stack setup and choose a final action",
+      },
+      {
+        name: "Revise setup",
+        value: "review",
+        description: "Choose a different source, pattern, traversal, or schema mode",
+      },
+      {
+        name: "Cancel",
+        value: "cancel",
+        description: "Stop before writing the stacked output",
+      },
+    ],
+  });
 }
 
 function renderInteractiveAcceptedCodexChanges(
@@ -774,6 +846,7 @@ async function confirmInteractiveStackWrite(
 ): Promise<InteractiveDataStackWriteOutcome> {
   let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
   let reviewedPlan: DataStackPlanArtifact | undefined;
+  let handledCodexSignalKey: string | undefined;
 
   while (true) {
     const outputPath = resolveFromCwd(runtime, outputPlan.output);
@@ -797,9 +870,33 @@ async function confirmInteractiveStackWrite(
       planPath: defaultPlanPath,
       prepared: state.prepared,
     });
-    const nextStep = await select<
-      "write" | "dry-run" | "codex" | "review" | "destination" | "cancel"
-    >({
+
+    const codexSignals = getInteractiveStackCodexAssistSignals(state);
+    const codexSignalKey = createInteractiveStackCodexSignalKey(state, codexSignals);
+    const hasReviewedCodexChanges =
+      (state.planArtifact?.metadata.recommendationDecisions.length ?? 0) > 0;
+    if (
+      codexSignals.length > 0 &&
+      handledCodexSignalKey !== codexSignalKey &&
+      !hasReviewedCodexChanges
+    ) {
+      const checkpointAction = await promptInteractiveStackCodexCheckpoint(runtime, codexSignals);
+      if (checkpointAction === "codex") {
+        handledCodexSignalKey = codexSignalKey;
+        reviewedPlan = await requestInteractiveStackCodexReview(runtime, state);
+        continue;
+      }
+      if (checkpointAction === "review") {
+        return { kind: "review" };
+      }
+      if (checkpointAction === "cancel") {
+        renderSkippedInteractiveStackWrite(runtime);
+        return { kind: "cancel" };
+      }
+      handledCodexSignalKey = codexSignalKey;
+    }
+
+    const nextStep = await select<"write" | "dry-run" | "review" | "destination" | "cancel">({
       message: "Stack action",
       choices: [
         {
@@ -811,11 +908,6 @@ async function confirmInteractiveStackWrite(
           name: "Dry-run plan only",
           value: "dry-run",
           description: "Save a replayable stack plan without writing stacked output",
-        },
-        {
-          name: "Request Codex recommendations",
-          value: "codex",
-          description: "Ask for advisory schema, key, and duplicate-policy suggestions",
         },
         {
           name: "Revise setup",
@@ -834,10 +926,6 @@ async function confirmInteractiveStackWrite(
         },
       ],
     });
-    if (nextStep === "codex") {
-      reviewedPlan = await requestInteractiveStackCodexReview(runtime, state);
-      continue;
-    }
     if (nextStep === "write") {
       const planPath = resolveFromCwd(runtime, defaultPlanPath);
       const planArtifact = await writePreparedDataStackPlan(

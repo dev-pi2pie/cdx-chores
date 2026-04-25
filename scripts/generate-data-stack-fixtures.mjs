@@ -322,6 +322,35 @@ function createUnionCases() {
   ];
 }
 
+function createNoCodexSignalCases() {
+  return [
+    {
+      path: "csv-no-codex-signal/part-001.csv",
+      content: rowsToDelimited(
+        [
+          { a: 0, b: 0, c: 0 },
+          { a: 0, b: 0, c: 1 },
+          { a: 0, b: 1, c: 0 },
+          { a: 0, b: 1, c: 1 },
+        ],
+        ",",
+      ),
+    },
+    {
+      path: "csv-no-codex-signal/part-002.csv",
+      content: rowsToDelimited(
+        [
+          { a: 1, b: 0, c: 0 },
+          { a: 1, b: 0, c: 1 },
+          { a: 1, b: 1, c: 0 },
+          { a: 1, b: 1, c: 1 },
+        ],
+        ",",
+      ),
+    },
+  ];
+}
+
 function createRecursiveCases() {
   return [
     {
@@ -369,6 +398,7 @@ async function seedFixtures(outputDir) {
     ...createJsonlCases(),
     ...createJsonArrayCases(),
     ...createUnionCases(),
+    ...createNoCodexSignalCases(),
     ...createRecursiveCases(),
   ];
 
