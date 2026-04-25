@@ -1,6 +1,7 @@
 ---
 title: "Data stack replay and Codex assist implementation"
 created-date: 2026-04-25
+modified-date: 2026-04-26
 status: active
 agent: codex
 ---
@@ -94,6 +95,7 @@ Missing pieces:
 ### Replay
 
 - add `data stack replay <record>`
+- define `<record>` as a filesystem path to a stack-plan JSON artifact; replay does not resolve logical artifact ids in v1
 - validate the stack-plan artifact before execution
 - reject non-stack-plan JSON
 - reject unsupported artifact versions
@@ -182,7 +184,6 @@ Duplicate policy execution rules:
 - `src/cli/data-stack/materialize.ts`
 - `src/cli/data-stack/types.ts`
 - new `src/cli/data-stack/plan.ts`
-- new `src/cli/data-stack/replay.ts`
 - new `src/cli/data-stack/diagnostics.ts`
 - new `src/cli/data-stack/codex-assist.ts`
 - new `src/cli/data-stack/codex-report.ts`
@@ -206,41 +207,41 @@ Duplicate policy execution rules:
 
 ### Phase 2: Add deterministic diagnostics
 
-- [ ] compute exact duplicate-row counts from normalized output rows
-- [ ] compute duplicate-key conflicts when `uniqueBy` is selected
-- [ ] compute single-column candidate unique keys
-- [ ] compute bounded two-column candidate unique keys
-- [ ] compute headerless column samples, null counts, uniqueness summaries, and enum-like value summaries for Codex assist
-- [ ] keep diagnostics bounded so large inputs do not create huge artifacts
-- [ ] add tests for duplicate rows, duplicate key conflicts, null-key handling, candidate keys, and bounded examples
+- [x] compute exact duplicate-row counts from normalized output rows
+- [x] compute duplicate-key conflicts when `uniqueBy` is selected
+- [x] compute single-column candidate unique keys
+- [x] compute bounded two-column candidate unique keys
+- [x] compute headerless column samples, null counts, uniqueness summaries, and enum-like value summaries for Codex assist
+- [x] keep diagnostics bounded so large inputs do not create huge artifacts
+- [x] add tests for duplicate rows, duplicate key conflicts, null-key handling, candidate keys, and bounded examples
 
 ### Phase 3: Add direct dry-run and duplicate controls
 
-- [ ] add `--dry-run`
-- [ ] add `--plan-output <path>`
-- [ ] add `--unique-by <name[,name...]>`
-- [ ] add `--on-duplicate preserve|report|reject`
-- [ ] validate `--unique-by` names against the accepted output schema
-- [ ] reject unknown duplicate policies
-- [ ] enforce `reject` failures before writing materialized output
-- [ ] keep `--output` required for direct dry-run in v1 so output format and default replay destination stay deterministic
-- [ ] make dry-run prepare diagnostics and write a stack plan without writing stack output
-- [ ] render a concise dry-run summary to stderr
-- [ ] add direct CLI tests for dry-run, generated plan paths, custom plan output, duplicate controls, and reject behavior
+- [x] add `--dry-run`
+- [x] add `--plan-output <path>`
+- [x] add `--unique-by <name[,name...]>`
+- [x] add `--on-duplicate preserve|report|reject`
+- [x] validate `--unique-by` names against the accepted output schema
+- [x] reject unknown duplicate policies
+- [x] enforce `reject` failures before writing materialized output
+- [x] keep `--output` required for direct dry-run in v1 so output format and default replay destination stay deterministic
+- [x] make dry-run prepare diagnostics and write a stack plan without writing stack output
+- [x] render a concise dry-run summary to stderr
+- [x] add direct CLI tests for dry-run, generated plan paths, custom plan output, duplicate controls, and reject behavior
 
 ### Phase 4: Add replay command
 
-- [ ] register `data stack replay <record>`
-- [ ] read and validate stack-plan JSON
-- [ ] replay the accepted resolved source list and deterministic options
-- [ ] warn on size or mtime fingerprint drift by default
-- [ ] support `--output <path>` override
-- [ ] fail clearly when no output path is available
-- [ ] preserve `output.overwrite` semantics
-- [ ] enforce the stored duplicate policy during replay
-- [ ] support explicit `--auto-clean` after successful replay
-- [ ] ensure auto-clean removes only the stack-plan JSON
-- [ ] add replay tests for valid records, invalid records, output override, missing output path, fingerprint warning, duplicate policy, and auto-clean
+- [x] register `data stack replay <record>`
+- [x] read and validate stack-plan JSON
+- [x] replay the accepted resolved source list and deterministic options
+- [x] warn on size or mtime fingerprint drift by default
+- [x] support `--output <path>` override
+- [x] fail clearly when no output path is available
+- [x] preserve `output.overwrite` semantics
+- [x] enforce the stored duplicate policy during replay
+- [x] support explicit `--auto-clean` after successful replay
+- [x] ensure auto-clean removes only the stack-plan JSON
+- [x] add replay tests for valid records, invalid records, output override, missing output path, fingerprint warning, duplicate policy, and auto-clean
 
 ### Phase 5: Rework interactive stack around status preview
 
@@ -343,3 +344,4 @@ Duplicate policy execution rules:
 ## Related Jobs
 
 - `docs/plans/jobs/2026-04-25-data-stack-plan-artifact-foundation.md`
+- `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`

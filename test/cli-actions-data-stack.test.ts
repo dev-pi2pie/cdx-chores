@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { actionDataStack } from "../src/cli/actions";
+import { readDataStackPlanArtifact } from "../src/cli/data-stack/plan";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -58,6 +59,103 @@ describe("cli action modules: data stack", () => {
         { id: "4", name: "Dion", status: "active" },
         { id: "5", name: "Edda", status: "paused" },
       ]);
+    });
+  });
+
+  test("actionDataStack writes a dry-run stack plan without materializing output", async () => {
+    await withTempFixtureDir("data-stack-action-dry-run", async (fixtureDir) => {
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n1,paused\n", "utf8");
+
+      const { runtime, stderr, expectNoStdout } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionDataStack(runtime, {
+        dryRun: true,
+        onDuplicate: "report",
+        output: "merged.csv",
+        planOutput: "stack-plan.json",
+        sources: ["a.csv"],
+        uniqueBy: ["id"],
+      });
+
+      expectNoStdout();
+      expect(stderr.text).toContain("Dry run: wrote stack plan stack-plan.json");
+      expect(stderr.text).toContain("Duplicate key conflicts: 1");
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+      const plan = await readDataStackPlanArtifact(planPath);
+      expect(plan.duplicates).toEqual({
+        duplicateKeyConflicts: 1,
+        exactDuplicateRows: 0,
+        policy: "report",
+        uniqueBy: ["id"],
+      });
+      expect(plan.output.path).toBe(outputPath);
+      expect(plan.diagnostics.schemaNameCount).toBe(2);
+    });
+  });
+
+  test("actionDataStack generates a default dry-run plan path", async () => {
+    await withTempFixtureDir("data-stack-action-dry-run-generated", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-04-25T12:00:00.000Z"),
+      });
+      await actionDataStack(runtime, {
+        dryRun: true,
+        output: "merged.csv",
+        sources: ["a.csv"],
+      });
+
+      expect(stderr.text).toMatch(
+        /Dry run: wrote stack plan data-stack-plan-20260425T120000Z-[0-9a-f]{8}\.json/,
+      );
+    });
+  });
+
+  test("actionDataStack rejects duplicate rows before writing when policy is reject", async () => {
+    await withTempFixtureDir("data-stack-action-duplicate-reject", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            onDuplicate: "reject",
+            output: "merged.csv",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "exact duplicate rows found",
+        },
+      );
+      expectNoOutput();
+      await expect(readFile(join(fixtureDir, "merged.csv"), "utf8")).rejects.toThrow();
+    });
+  });
+
+  test("actionDataStack validates unique key names against output schema", async () => {
+    await withTempFixtureDir("data-stack-action-unique-missing", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            output: "merged.csv",
+            sources: ["a.csv"],
+            uniqueBy: ["missing"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Unknown --unique-by names",
+        },
+      );
+      expectNoOutput();
     });
   });
 

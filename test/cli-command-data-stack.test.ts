@@ -3,6 +3,10 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
+import {
+  readDataStackPlanArtifact,
+  serializeDataStackPlanArtifact,
+} from "../src/cli/data-stack/plan";
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("CLI data stack command", () => {
@@ -160,6 +164,291 @@ describe("CLI data stack command", () => {
       expect(result.stderr).toContain("Schema mode: union-by-name");
       expect(result.stderr).toContain("Excluded columns: 1 (noise)");
       expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
+    });
+  });
+
+  test("writes a custom dry-run plan without stack output from the command layer", async () => {
+    await withTempFixtureDir("data-stack-cli-dry-run", async (fixtureDir) => {
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n1,paused\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(join(fixtureDir, "a.csv")),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--unique-by",
+        "id",
+        "--on-duplicate",
+        "report",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`Dry run: wrote stack plan ${toRepoRelativePath(planPath)}`);
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+      const plan = await readDataStackPlanArtifact(planPath);
+      expect(plan.duplicates.duplicateKeyConflicts).toBe(1);
+      expect(plan.duplicates.policy).toBe("report");
+    });
+  });
+
+  test("supports comma-separated composite unique keys from the command layer", async () => {
+    await withTempFixtureDir("data-stack-cli-composite-unique", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(
+        sourcePath,
+        "region,day,status\napac,mon,active\napac,mon,paused\napac,,draft\n",
+        "utf8",
+      );
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--unique-by",
+        "region,day",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Unique key: region, day");
+      expect(result.stderr).toContain("Duplicate key conflicts: 1");
+      expect(result.stderr).toContain("Null key rows: 1");
+      const plan = await readDataStackPlanArtifact(planPath);
+      expect(plan.duplicates.uniqueBy).toEqual(["region", "day"]);
+      expect(plan.duplicates.duplicateKeyConflicts).toBe(1);
+    });
+  });
+
+  test("rejects unknown duplicate policies from the command layer", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "examples/playground/stack-cases/csv-matching-headers",
+      "--output",
+      "examples/playground/.tmp-tests/invalid.csv",
+      "--on-duplicate",
+      "drop",
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--on-duplicate must be one of");
+  });
+
+  test("replays a dry-run stack plan", async () => {
+    await withTempFixtureDir("data-stack-cli-replay", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n2,paused\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const replay = runCli(["data", "stack", "replay", toRepoRelativePath(planPath)]);
+
+      expect(replay.exitCode).toBe(0);
+      expect(replay.stdout).toBe("");
+      expect(replay.stderr).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
+      expect(await readFile(outputPath, "utf8")).toBe("id,status\n1,active\n2,paused\n");
+    });
+  });
+
+  test("replay supports output override and auto-clean", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-override", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const originalOutputPath = join(fixtureDir, "merged.csv");
+      const overrideOutputPath = join(fixtureDir, "override.json");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(originalOutputPath),
+        "--overwrite",
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const replay = runCli([
+        "data",
+        "stack",
+        "replay",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(overrideOutputPath),
+        "--auto-clean",
+      ]);
+
+      expect(replay.exitCode).toBe(0);
+      expect(JSON.parse(await readFile(overrideOutputPath, "utf8"))).toEqual([
+        { id: "1", status: "active" },
+      ]);
+      await expect(readFile(originalOutputPath, "utf8")).rejects.toThrow();
+      await expect(readFile(planPath, "utf8")).rejects.toThrow();
+    });
+  });
+
+  test("replay refuses to write output over its own plan artifact", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-self-overwrite", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const replay = runCli([
+        "data",
+        "stack",
+        "replay",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(planPath),
+      ]);
+
+      expect(replay.exitCode).toBe(2);
+      expect(replay.stderr).toContain("Replay output path cannot be the stack-plan record path");
+      expect((await readDataStackPlanArtifact(planPath)).metadata.artifactType).toBe(
+        "data-stack-plan",
+      );
+    });
+  });
+
+  test("replay fails clearly when no output path is available", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-missing-output", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const plan = await readDataStackPlanArtifact(planPath);
+      await writeFile(
+        planPath,
+        serializeDataStackPlanArtifact({
+          ...plan,
+          output: {
+            ...plan.output,
+            path: null,
+          },
+        }),
+        "utf8",
+      );
+
+      const replay = runCli(["data", "stack", "replay", toRepoRelativePath(planPath)]);
+
+      expect(replay.exitCode).toBe(2);
+      expect(replay.stderr).toContain("Replay requires an output path");
+    });
+  });
+
+  test("replay warns on fingerprint drift", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-drift", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+      await writeFile(sourcePath, "id,status\n1,active\n2,paused\n", "utf8");
+
+      const replay = runCli(["data", "stack", "replay", toRepoRelativePath(planPath)]);
+
+      expect(replay.exitCode).toBe(0);
+      expect(replay.stderr).toContain("Warning: source fingerprint changed");
+      expect(await readFile(outputPath, "utf8")).toBe("id,status\n1,active\n2,paused\n");
+    });
+  });
+
+  test("replay enforces stored reject duplicate policy", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-duplicate-reject", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n1,paused\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--unique-by",
+        "id",
+        "--on-duplicate",
+        "reject",
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+
+      const replay = runCli(["data", "stack", "replay", toRepoRelativePath(planPath)]);
+
+      expect(replay.exitCode).toBe(2);
+      expect(replay.stderr).toContain("Replay duplicate key conflicts found");
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
     });
   });
 

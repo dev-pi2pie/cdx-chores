@@ -10,9 +10,10 @@ export const DATA_STACK_PLAN_VERSION = 1;
 export const DATA_STACK_PLAN_REPLAY_COMMAND = "data stack replay";
 export const DATA_STACK_PLAN_CREATED_BY = "cdx-chores data stack --dry-run";
 export const DATA_STACK_PLAN_UID_HEX_LENGTH = 8;
+export const DATA_STACK_DUPLICATE_POLICY_VALUES = ["preserve", "report", "reject"] as const;
 
 export type DataStackPlanHeaderMode = "header" | "no-header";
-export type DataStackDuplicatePolicy = "preserve" | "report" | "reject";
+export type DataStackDuplicatePolicy = (typeof DATA_STACK_DUPLICATE_POLICY_VALUES)[number];
 export type DataStackRecommendationDecisionValue = "accepted" | "edited";
 
 export interface DataStackPlanRecommendationDecision {
@@ -461,7 +462,7 @@ function parseDuplicates(value: unknown): DataStackPlanDuplicates {
       duplicates.exactDuplicateRows,
       "duplicates.exactDuplicateRows",
     ),
-    policy: ensureOneOf(duplicates.policy, ["preserve", "report", "reject"], "duplicates.policy"),
+    policy: ensureOneOf(duplicates.policy, DATA_STACK_DUPLICATE_POLICY_VALUES, "duplicates.policy"),
     uniqueBy: ensureStringArray(duplicates.uniqueBy, "duplicates.uniqueBy"),
   };
 }
