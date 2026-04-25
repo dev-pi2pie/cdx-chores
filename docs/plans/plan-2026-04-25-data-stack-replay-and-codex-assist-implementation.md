@@ -1,7 +1,7 @@
 ---
 title: "Data stack replay and Codex assist implementation"
 created-date: 2026-04-25
-status: draft
+status: active
 agent: codex
 ---
 
@@ -17,7 +17,7 @@ The implementation must keep one clear boundary:
 
 ## Why This Plan
 
-The research now resolves the product contract for stack replay and Codex schema assist. It chooses:
+The research records the current product-contract direction for stack replay and Codex schema assist. This plan uses that direction to implement the work in auditable phases:
 
 - `data stack replay <record>` as the replay command
 - JSON stack-plan artifacts as deterministic execution input
@@ -196,13 +196,13 @@ Duplicate policy execution rules:
 
 ### Phase 1: Freeze and implement stack-plan artifacts
 
-- [ ] define stack-plan TypeScript types and validation helpers
-- [ ] define artifact id and payload id generation helpers
-- [ ] define JSON serialization with stable field ordering
-- [ ] define stack-plan parse errors for invalid JSON, wrong artifact type, and unsupported versions
-- [ ] persist source raw paths, resolved files, traversal settings, input format, header mode, schema mode, exclusions, output format, output path, overwrite intent, duplicate policy, unique key, diagnostics, and fingerprints
-- [ ] add artifact read/write unit tests
-- [ ] add fixture-style tests for v1 valid and invalid stack-plan JSON
+- [x] define stack-plan TypeScript types and validation helpers
+- [x] define artifact id and payload id generation helpers
+- [x] define JSON serialization with stable field ordering
+- [x] define stack-plan parse errors for invalid JSON, wrong artifact type, and unsupported versions
+- [x] persist source raw paths, resolved files, traversal settings, input format, header mode, schema mode, exclusions, output format, output path, overwrite intent, duplicate policy, unique key, diagnostics, and fingerprints
+- [x] add artifact read/write unit tests
+- [x] add fixture-style tests for v1 valid and invalid stack-plan JSON
 
 ### Phase 2: Add deterministic diagnostics
 
@@ -339,3 +339,7 @@ Duplicate policy execution rules:
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
 - `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-04-25-data-stack-plan-artifact-foundation.md`
