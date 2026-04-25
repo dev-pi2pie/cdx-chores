@@ -137,9 +137,144 @@ Dry-run should not:
 Implication:
 
 - dry-run becomes the safest authoring path for repeatable stack runs
-- interactive mode can later mirror rename-style artifact-retention prompts without changing the deterministic replay contract
+- interactive mode should mirror rename-style artifact-retention prompts without changing the deterministic replay contract
 
-### 3. Deterministic stack records should be separate from Codex suggestions
+### 3. Interactive mode should borrow the rename preview/apply rhythm
+
+Interactive `data stack` should keep the current setup-review rhythm, but insert a status preview and stack-plan lifecycle before any materialized output is written.
+
+Recommended interactive flow:
+
+1. collect mixed sources, format, schema mode, exclusions, duplicate policy, and output destination
+2. prepare a deterministic status preview
+3. show matched-source, schema, row-count, duplicate/key, and output summaries
+4. optionally ask for Codex recommendations from the deterministic diagnostics
+5. show the accepted deterministic stack setup
+6. ask whether to write now, save a dry-run plan only, revise setup, or cancel
+7. if writing now, execute the accepted stack plan
+8. after success, ask separate retention questions for execution and advisory artifacts
+
+The status preview should include:
+
+- matched file count and bounded source sample
+- input format and schema mode
+- output format and output path
+- exact exclusions
+- duplicate policy
+- selected unique key, if any
+- exact duplicate-row count
+- duplicate-key conflict count, if `--unique-by` is selected
+- candidate unique-key summary, when available
+- Codex recommendation status, if requested
+
+Interactive artifact retention should follow the rename cleanup lesson:
+
+- the stack plan is an execution/replay artifact
+- Codex schema or duplicate/key reports are advisory artifacts
+- these artifact classes need separate retention prompts
+- a single auto-clean decision must not delete advisory evidence
+
+If the user chooses to write after the status preview:
+
+- run the accepted stack plan
+- if the write succeeds, ask whether to keep the applied stack plan for later `data stack replay`
+- if the user declines, auto-clean only the stack-plan artifact
+- if advisory reports exist, ask separately whether to keep them
+- if the write fails, skip cleanup prompts and keep all generated artifacts for diagnosis
+
+Recommended prompt defaults:
+
+- dry-run only:
+  - `Keep dry-run stack plan for later data stack replay?`
+  - default `Yes`
+- write now succeeds:
+  - `Keep applied stack plan?`
+  - default `No`
+- advisory report exists:
+  - `Keep stack diagnostic report?`
+  - default `Yes`
+
+Auto-clean should never remove:
+
+- the materialized stack output
+- source files
+- Codex diagnostic reports unless the user explicitly declines keeping that report
+
+### 4. Interactive dry-run/replay ASCII sketch
+
+```text
+cdx-chores interactive
+        |
+        v
+       data
+        |
+        v
+       stack
+        |
+        v
+collect sources, format, schema, duplicate policy
+        |
+        v
+choose output destination
+        |
+        v
+prepare status preview
+        |
+        v
+show source/schema/duplicate/key/output summary
+        |
+        v
+ask for Codex recommendations?
+        |
+   +----+----+
+   |         |
+  no        yes
+   |         |
+   |         v
+   |   show reviewed suggestions
+   |         |
+   +----+----+
+        |
+        v
+review accepted stack setup
+        |
+  +-----+----------+-------------+--------+
+  |                |             |        |
+  v                v             v        v
+write now     dry-run only   revise   cancel
+  |                |
+  v                v
+execute plan   write/offer stack plan
+  |
+  v
+write output succeeds?
+  |
+  +------no------> keep all generated artifacts
+  |
+ yes
+  |
+  v
+Keep applied stack plan?
+  |
+  +----yes----> keep stack plan
+  |
+ no
+  |
+  v
+auto-clean stack plan only
+  |
+  v
+Keep diagnostic report? (if present)
+```
+
+Implication:
+
+- interactive mode gets one visible decision point after status preview
+- immediate write still runs through a concrete plan instead of recomputing hidden state
+- auto-clean is scoped to execution artifacts and only after success
+- advisory evidence survives unless the user explicitly removes it
+
+### 5. Deterministic stack records should be separate from Codex suggestions
 
 A replayable stack record should describe a deterministic stack run.
 
@@ -176,7 +311,7 @@ Implication:
 - a user can review, commit, and replay the record without Codex availability
 - Codex remains an authoring aid, not an execution dependency
 
-### 4. Duplicate rows and unique-key handling belong in this dev stage
+### 6. Duplicate rows and unique-key handling belong in this dev stage
 
 Duplicate handling should be part of the next implementation plan, not a vague future follow-up.
 
@@ -232,7 +367,7 @@ Implication:
 - the user chooses the key and conflict behavior
 - replay captures that explicit choice
 
-### 5. Codex assist should propose reviewed workarounds from deterministic facts
+### 7. Codex assist should propose reviewed workarounds from deterministic facts
 
 Codex assistance is useful in this dev stage, but only downstream of deterministic diagnostics.
 
@@ -269,7 +404,7 @@ Implication:
 - the final stack output is explainable from CLI flags or a record file
 - Codex behavior can improve without changing deterministic replay semantics
 
-### 6. Replay and advisory artifacts should be different artifact classes
+### 8. Replay and advisory artifacts should be different artifact classes
 
 The rename cleanup research already distinguishes replayable execution plans from advisory analyzer reports.
 
@@ -301,6 +436,10 @@ The next implementation plan should treat these as in-scope commitments:
 - add `data stack replay <record>`
 - define JSON stack-plan artifacts
 - generate stack-plan artifacts from dry-run
+- update interactive mode with the status-preview, write-now, dry-run-only, revise, and cancel flow
+- add stack-plan retention prompts in interactive mode
+- support post-success stack-plan auto-clean when the user declines keeping the applied plan
+- keep diagnostic/advisory report retention separate from stack-plan retention
 - validate replay records strictly before execution
 - support output-path override at replay time
 - include duplicate/key diagnostics in dry-run review
@@ -332,8 +471,9 @@ Resolved in this revision:
 
 Remaining questions for the implementation plan:
 
-- Should dry-run always write a stack-plan artifact, or ask before writing in interactive mode?
-- Should direct `--dry-run` require `--plan-output <path>`, or generate a default `data-stack-plan-<timestamp>Z-<uid>.json` name?
+- Should direct `--dry-run` always write a stack-plan artifact, require `--plan-output <path>`, or generate a default `data-stack-plan-<timestamp>Z-<uid>.json` name?
+- Should interactive dry-run-only mode always offer the same default plan path, or ask for a custom plan destination?
+- Should direct `data stack replay <record>` expose an explicit `--auto-clean` flag, or should auto-clean remain interactive-only first?
 - Should replay compare source fingerprints as hard failures, warnings, or opt-in strict checks?
 - Should replay output path be optional in the record, overridable at replay time, or both?
 - Should duplicate reports be embedded in the stack-plan artifact, exported separately, or both?
@@ -343,6 +483,7 @@ Remaining questions for the implementation plan:
 ## Related Research
 
 - `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
+- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
 - `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
 - `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
