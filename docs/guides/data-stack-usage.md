@@ -82,7 +82,7 @@ Structured JSON input behavior:
 Schema-flex behavior:
 
 - strict schema matching is the default for direct CLI
-- interactive mode defaults to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices
+- interactive mode defaults to `Automatic schema check`, with explicit `Strict matching` and `Union by name` choices
 - `--schema-mode strict` requires every matched file to have the same accepted column or key names
 - `--schema-mode union-by-name` stacks named schemas that add or omit columns or JSON keys
 - `--schema-mode auto` tries strict first, then deterministic union-by-name only for schema mismatches that can be widened safely
@@ -109,7 +109,7 @@ Direct CLI `--schema-mode auto` decision tree:
 3. If union-by-name preparation succeeds, use `union-by-name`.
 4. If widening is unsafe, such as headerless generated names or duplicate names inside one source, stop with a concise diagnostic.
 
-Interactive `Analyze automatically` uses the same deterministic analysis. After the status preview, the normal contextual Codex checkpoint may still appear when diagnostics show useful review signals, such as schema drift, noisy union columns, duplicate rows, or candidate unique keys. Codex remains a reviewed helper; it is not required for automatic schema analysis.
+Interactive `Automatic schema check` uses the same deterministic analysis. After the status preview, the `Analyze with Codex (powered by Codex)` checkpoint may still appear when diagnostics show useful review signals, such as schema drift, noisy union columns, duplicate rows, or candidate unique keys. Codex remains a reviewed helper; it is not required for automatic schema analysis.
 
 Dry-run and replay behavior:
 
@@ -236,43 +236,53 @@ Choose:
 1. `data`
 2. `stack`
 
-Current implemented interactive flow:
+Current implemented interactive flow after Phase 12:
 
 1. Enter one input source.
 2. Optionally add more sources.
 3. Choose CSV, TSV, JSON, or JSONL input format.
-4. Enter a filename pattern.
-5. Choose shallow or recursive traversal.
-6. Choose Analyze automatically, strict matching, or union-by-name schema mode.
-7. If union-by-name is selected, optionally enter exact column/key exclusions.
-8. Choose output format.
-9. Choose destination style:
+4. For directory sources, enter or accept the filename pattern.
+5. For directory sources, choose shallow or recursive traversal.
+6. Review the matched-file preview.
+7. Use these files, revise the pattern, revise sources, or cancel before schema prompts.
+8. Review the dry-run/replay path: save a replayable stack plan without writing output, then later run `data stack replay <record>`.
+9. Choose automatic schema check, strict matching, or union-by-name schema mode.
+10. If union-by-name is selected, optionally enter exact column/key exclusions.
+11. Choose output format.
+12. Choose destination style:
    - use generated default output path
    - custom output path
-10. Review the deterministic status preview:
-   - normalized source summary
-   - schema mode
+13. Review the deterministic status preview:
+   - input discovery
+   - schema analysis
    - matched files and bounded sample
-   - row count
-   - duplicate/key status
-   - stack-plan path
-   - advisory report status
-   - output format and destination
-11. If diagnostics show useful signals, choose one Codex checkpoint action:
-   - review with Codex
+   - duplicate/key diagnostics
+   - output target
+   - stack-plan and advisory-report status
+14. If diagnostics show useful signals, choose one Codex-powered analysis checkpoint action:
+   - analyze with Codex (powered by Codex)
    - continue without Codex
    - revise stack setup
    - cancel
-12. If Codex recommendations are accepted or edited, review the refreshed deterministic status preview.
-13. At the write boundary, choose one of:
+15. If Codex recommendations are accepted or edited, review the refreshed deterministic status preview.
+16. At the write boundary, choose one of:
    - write now
    - dry-run plan only
    - change destination
    - revise stack setup
    - cancel
-14. If `dry-run plan only` is selected, write only the stack-plan artifact and choose whether to keep it.
-15. If `write now` succeeds, choose whether to keep the applied stack plan.
-16. If advisory reports exist, answer their retention prompt separately from the stack-plan retention prompt.
+17. If `dry-run plan only` is selected, write only the stack-plan artifact and choose whether to keep it.
+18. If `write now` succeeds, choose whether to keep the applied stack plan.
+19. If advisory reports exist, answer their retention prompt separately from the stack-plan retention prompt.
+
+Planned Phase 13 source-discovery follow-up:
+
+The current implemented flow still asks for directory filename pattern and traversal before the matched-file preview. Phase 13 will move those controls behind a common options menu:
+
+- directory sources should preview matches with the inferred default pattern before asking for a pattern
+- the matched-file checkpoint should offer `Use these files`, `Options`, `Revise sources`, and `Cancel`
+- `Options` should contain pattern, recursive scan, and input-format controls
+- explicit-file sources should keep the shortest path and skip pattern/traversal controls
 
 Current interactive default output rule:
 
@@ -292,10 +302,11 @@ Current interactive default output rule:
 
 Interactive Codex review:
 
-- Codex recommendations are requested from a contextual checkpoint before write or plan save
+- Codex recommendations are requested from a contextual `Analyze with Codex (powered by Codex)` checkpoint before write or plan save
 - the checkpoint is shown only when diagnostics indicate likely value, such as generated headerless columns, sparse union-by-name columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
-- no-signal runs skip the checkpoint and go straight to the final action menu
+- no-signal runs skip the checkpoint and go straight to `Stack plan action`
 - interactive review is not a materialized write; it produces an advisory report plus a reviewed deterministic plan when recommendations are accepted or edited
+- deterministic automatic schema checking is separate from Codex-powered suggestions and does not require Codex availability
 - recommendations are shown as patch-style changes with a short reason
 - each recommendation can be accepted, edited, skipped, or used to cancel review
 - accepted and edited recommendations create a new deterministic plan payload before write or dry-run save

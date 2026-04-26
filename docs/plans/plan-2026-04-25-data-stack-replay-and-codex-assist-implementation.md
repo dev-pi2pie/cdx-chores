@@ -10,7 +10,9 @@ agent: codex
 
 Implement the next `data stack` development stage: replayable dry-run stack plans, deterministic duplicate/key diagnostics, reviewed Codex recommendations, and an interactive status-preview flow that can write, save, revise, or cancel without hiding execution state.
 
-The deterministic stack/replay/Codex-assist foundation is implemented through Phase 11. The plan remains active for a Phase 12 interactive workflow cleanup because the current interactive mode still explains dry-run too late, makes pattern selection feel too manual, and should align more closely with the source-shape review used by `data extract`.
+The deterministic stack/replay/Codex-assist foundation is implemented through Phase 11. Phase 12 then completed the first interactive workflow cleanup so the current flow explains dry-run earlier, previews matched files before schema choices, and aligns more closely with the source-shape review used by `data extract`.
+
+The remaining follow-up is Phase 13: make source discovery less prompt-heavy by treating filename pattern and traversal as common options behind a matched-file options menu instead of mandatory-feeling setup prompts.
 
 The implementation must keep one clear boundary:
 
@@ -29,7 +31,7 @@ The research records the current product-contract direction for stack replay and
 - Codex reports as advisory artifacts linked to deterministic payload ids
 - interactive status preview before any materialized output write
 
-This plan turns those decisions into implementable phases. Earlier deterministic stack work remains closed; the active follow-up is limited to the interactive workflow shape.
+This plan turns those decisions into implementable phases. Earlier deterministic stack work remains closed; the active follow-up is limited to the interactive source-discovery workflow shape.
 
 ## Starting State
 
@@ -203,7 +205,8 @@ Status note:
 - Phases 1 through 11 are implemented and checked off.
 - Phase 10 closed the interactive Codex hardening follow-up.
 - Phase 11 closed the schema-mode naming and automatic analysis cleanup.
-- Phase 12 is reopened for an extract-shaped interactive workflow cleanup.
+- Phase 12 closed the extract-shaped interactive workflow cleanup.
+- Phase 13 is open for a source-discovery options menu that removes the redundant filename-pattern step from the default path.
 
 ### Phase 1: Freeze and implement stack-plan artifacts
 
@@ -309,12 +312,12 @@ Status note:
 
 ### Phase 9: Smooth interactive Codex assist trigger
 
-- [x] move interactive Codex assist out of the final `Stack action` menu and into a contextual assist checkpoint before write/save decisions
+- [x] move interactive Codex assist out of the final action menu and into a contextual assist checkpoint before write/save decisions
 - [x] only offer Codex assist when deterministic diagnostics show useful signals, such as headerless generated columns, noisy union columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
 - [x] render the assist checkpoint as `review with Codex`, `continue without Codex`, `revise setup`, or `cancel`
 - [x] preserve the current direct CLI contract where `--codex-assist` remains valid only with `--dry-run`
 - [x] keep interactive Codex review advisory and non-materializing; accepted or edited recommendations still become deterministic plan fields before write or dry-run save
-- [x] re-run the status preview after accepted or edited recommendations, then show the final action menu with write, dry-run, destination, revise, and cancel only
+- [x] re-run the status preview after accepted or edited recommendations, then show the stack plan action prompt with write, dry-run, destination, revise, and cancel only
 - [x] avoid prompting for Codex when diagnostics do not indicate a likely benefit
 - [x] add interactive tests for signal-triggered assist offers, no-signal skip behavior, continue-without-Codex, accepted recommendation re-preview, and Codex failure fallback
 - [x] update the guide after the interactive flow is changed so it no longer describes Codex as a final action-menu peer
@@ -344,16 +347,29 @@ Status note:
 
 ### Phase 12: Extract-shaped interactive workflow cleanup
 
-- [ ] revise interactive stack setup so source discovery happens before schema and output decisions, closer to the `data extract` source-shape flow
-- [ ] make pattern selection smarter by inferring a useful default, showing a bounded matched-file preview, and offering revise-pattern before schema prompts
-- [ ] explain dry-run during source discovery, before schema prompts and before the final action menu, as "save a replayable stack plan without writing output"
-- [ ] split the stack review screen into clearer groups: input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
-- [ ] replace the current deterministic auto-analysis label with wording that does not imply Codex, and reserve `Analyze with Codex (powered by Codex)` for Codex-backed reviewed suggestions
-- [ ] keep deterministic `--schema-mode auto` wording separate from Codex-powered reviewed suggestions so users do not think direct CLI auto requires Codex
-- [ ] align final write/save/revise/cancel prompts with the `data extract` review rhythm while preserving stack-plan retention and replay semantics
-- [ ] update the ASCII sketches in the research after the implementation details settle
-- [ ] add or update interactive routing tests for source discovery, pattern preview revision, early dry-run explanation, Codex-powered labeling, and final action behavior
-- [ ] update `docs/guides/data-stack-usage.md`, this plan, the research doc, and a job record after implementation evidence exists
+- [x] revise interactive stack setup so source discovery happens before schema and output decisions, closer to the `data extract` source-shape flow
+- [x] make pattern selection smarter by inferring a useful default, showing a bounded matched-file preview, and offering revise-pattern before schema prompts
+- [x] explain dry-run during source discovery, before schema prompts and before the stack plan action prompt, as "save a replayable stack plan without writing output"
+- [x] split the stack review screen into clearer groups: input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
+- [x] replace the current deterministic auto-analysis label with wording that does not imply Codex, and reserve `Analyze with Codex (powered by Codex)` for Codex-backed reviewed suggestions
+- [x] keep deterministic `--schema-mode auto` wording separate from Codex-powered reviewed suggestions so users do not think direct CLI auto requires Codex
+- [x] align final write/save/revise/cancel prompts with the `data extract` review rhythm while preserving stack-plan retention and replay semantics
+- [x] update the ASCII sketches in the research after the implementation details settle
+- [x] add or update interactive routing tests for source discovery, pattern preview revision, early dry-run explanation, Codex-powered labeling, and final action behavior
+- [x] update `docs/guides/data-stack-usage.md`, this plan, the research doc, and a job record after implementation evidence exists
+
+### Phase 13: Source-discovery options menu follow-up
+
+- [ ] make directory source discovery preview use the inferred default pattern first instead of prompting for `Filename pattern` immediately
+- [ ] add a `Source discovery options` menu from the matched-file preview
+- [ ] move `Change filename pattern` into that options menu
+- [ ] move traversal control into that options menu, for example `Toggle recursive scan`
+- [ ] include `Change input format` in the options menu so users can recover from a wrong format choice without restarting all source entry
+- [ ] keep `Use these files`, `Options`, `Revise sources`, and `Cancel` as the normal matched-file checkpoint actions
+- [ ] only force pattern entry when the inferred default finds no files and the user chooses to recover by changing the pattern
+- [ ] keep explicit-file sources on the short path with no pattern/traversal options unless directory sources are added
+- [ ] update interactive routing tests for default-pattern preview, options-menu pattern change, recursive toggle, input-format change, no-match recovery, and explicit-file short path
+- [ ] update the guide, research, plan status, and job records after implementation evidence exists
 
 ## Acceptance Criteria
 
@@ -377,6 +393,8 @@ Status note:
 - interactive source discovery shows matched-file evidence before schema decisions
 - interactive dry-run is explained during source discovery before schema prompts and before the final write/save decision point
 - Codex-powered analysis is labeled clearly in interactive mode while deterministic replay remains Codex-independent
+- filename pattern is not a mandatory-feeling prompt on the default interactive path
+- source-discovery options can revise pattern, traversal, and input format from the matched-file preview
 
 ## Risks and Mitigations
 
@@ -404,6 +422,9 @@ Status note:
 - Risk: smarter pattern inference hides which files will be stacked.
   Mitigation: always show a bounded matched-file preview and a revise-pattern branch before schema decisions.
 
+- Risk: hiding pattern behind options makes recovery harder for no-match directories.
+  Mitigation: keep no-match recovery focused on `Source discovery options`, with clear choices to change pattern, toggle recursion, change input format, revise sources, or cancel.
+
 ## Related Research
 
 - `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
@@ -425,3 +446,4 @@ Status note:
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`
 - `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`
+- `docs/plans/jobs/2026-04-26-data-stack-extract-shaped-interactive-workflow.md`
