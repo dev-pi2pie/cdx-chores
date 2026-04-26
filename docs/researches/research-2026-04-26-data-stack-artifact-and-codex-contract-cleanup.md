@@ -1,7 +1,8 @@
 ---
 title: "Data stack artifact and Codex contract cleanup"
 created-date: 2026-04-26
-status: draft
+modified-date: 2026-04-26
+status: completed
 agent: codex
 ---
 
@@ -150,9 +151,9 @@ Keep `/schema/excludedNames` as the supported executable way to remove union-by-
 - reduces review and replay ambiguity
 - avoids accidental hidden column-selection semantics
 
-## Provisional Direction
+## Implemented Direction
 
-The follow-up implementation direction is:
+The follow-up implementation landed through `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`:
 
 - keep UID-based generated artifact paths in the current CLI execution directory
 - fall back to another generated UID path when a generated dry-run artifact path collides
@@ -173,6 +174,7 @@ No redesign is needed. The follow-up implementation plan should stay narrow:
 
 ## Related Plans
 
+- `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`
 - `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 
 ## Related Research
@@ -182,12 +184,15 @@ No redesign is needed. The follow-up implementation plan should stay narrow:
 
 ## Related Jobs
 
+- `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 - `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 
 ## References
 
 [^data-stack-plan]: `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 [^data-stack-research]: `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
+[^data-stack-cleanup-plan]: `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`
+[^data-stack-cleanup-job]: `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 [^data-stack-review-job]: `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 [^codex-report-code]: `src/cli/data-stack/codex-report.ts`
 [^data-stack-action-code]: `src/cli/actions/data-stack.ts`

@@ -239,7 +239,7 @@ describe("cli action modules: data stack", () => {
         () =>
           actionDataStack(runtime, {
             codexAssist: true,
-            codexReportOutput: "stack-plan.json",
+            codexReportOutput: "nested/../stack-plan.json",
             codexRunner: async () =>
               JSON.stringify({
                 recommendations: [
@@ -265,6 +265,62 @@ describe("cli action modules: data stack", () => {
         },
       );
       expectNoOutput();
+      await expect(readFile(planPath, "utf8")).rejects.toThrow();
+    });
+  });
+
+  test("actionDataStack rejects custom plan output matching stack output", async () => {
+    await withTempFixtureDir("data-stack-action-plan-output-collision", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            dryRun: true,
+            output: "merged.csv",
+            overwrite: true,
+            planOutput: "./merged.csv",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--plan-output cannot be the same path as --output",
+        },
+      );
+      expectNoOutput();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+    });
+  });
+
+  test("actionDataStack rejects custom Codex report output matching stack output", async () => {
+    await withTempFixtureDir("data-stack-action-report-output-collision", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            codexAssist: true,
+            codexReportOutput: "subdir/../merged.csv",
+            dryRun: true,
+            output: "merged.csv",
+            overwrite: true,
+            planOutput: "stack-plan.json",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as --output",
+        },
+      );
+      expectNoOutput();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
       await expect(readFile(planPath, "utf8")).rejects.toThrow();
     });
   });

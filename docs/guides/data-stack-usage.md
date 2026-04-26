@@ -116,6 +116,7 @@ Dry-run and replay behavior:
 - `--dry-run` runs source discovery, schema normalization, duplicate diagnostics, and plan writing, then skips materialized output writing
 - direct dry-run still requires `--output` so the plan records the intended output path and format
 - when `--plan-output` is omitted, the CLI writes `data-stack-plan-<timestamp>Z-<uid>.json`
+- generated dry-run artifact paths fall back to another UID path on collision; explicit custom artifact paths that resolve to the same file as `--output` or each other fail before writing
 - `data stack replay <record>` accepts a filesystem path to a stack-plan JSON artifact
 - replay warns when stored source size or mtime fingerprints changed
 - replay can override the recorded output path with `--output <path>`

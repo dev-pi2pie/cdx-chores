@@ -20,7 +20,6 @@ export const DATA_STACK_CODEX_REPORT_UID_HEX_LENGTH = 8;
 export const DATA_STACK_CODEX_PATCH_PATHS = [
   "/input/columns",
   "/schema/mode",
-  "/schema/includedNames",
   "/schema/excludedNames",
   "/duplicates/uniqueBy",
   "/duplicates/policy",
@@ -219,9 +218,6 @@ export function validateDataStackCodexPatch(
     }
     return { op: "replace", path, value: columns };
   }
-  if (path === "/schema/includedNames") {
-    return { op: "replace", path, value: ensureStringArray(patch.value, path) };
-  }
   if (path === "/schema/mode") {
     return { op: "replace", path, value: ensureSchemaMode(patch.value) };
   }
@@ -385,9 +381,6 @@ function applyPatchToPlan(
   switch (patch.path) {
     case "/input/columns":
       next.input.columns = [...(patch.value as string[])];
-      break;
-    case "/schema/includedNames":
-      next.schema.includedNames = [...(patch.value as string[])];
       break;
     case "/schema/mode":
       next.schema.mode = patch.value as DataStackPlanArtifact["schema"]["mode"];

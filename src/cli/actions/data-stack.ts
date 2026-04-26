@@ -3,11 +3,9 @@ import { stat } from "node:fs/promises";
 import { readTextFileRequired, writeTextFileSafe } from "../file-io";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
-import {
-  generateDataStackCodexReportFileName,
-  writeDataStackCodexReportArtifact,
-} from "../data-stack/codex-report";
+import { writeDataStackCodexReportArtifact } from "../data-stack/codex-report";
 import { suggestDataStackWithCodex, type DataStackCodexRunner } from "../data-stack/codex-assist";
+import { resolveDataStackDryRunArtifactPaths } from "../data-stack/artifact-paths";
 import {
   computeDataStackDiagnostics,
   enforceDataStackDuplicatePolicy,
@@ -19,7 +17,6 @@ import { materializeDataStackRows } from "../data-stack/materialize";
 import {
   createDataStackPlanArtifact,
   DATA_STACK_DUPLICATE_POLICY_VALUES,
-  generateDataStackPlanFileName,
   writeDataStackPlanArtifact,
   type DataStackDuplicatePolicy,
   type DataStackPlanArtifact,
@@ -404,12 +401,16 @@ export async function actionDataStack(
   validateOptions(options);
 
   const outputPath = resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path"));
-  const codexReportPath = options.codexAssist
-    ? resolveFromCwd(
+  const dryRunArtifactPaths = options.dryRun
+    ? resolveDataStackDryRunArtifactPaths({
+        codexAssist: options.codexAssist,
+        codexReportOutput: options.codexReportOutput,
+        outputPath,
+        planOutput: options.planOutput,
         runtime,
-        options.codexReportOutput?.trim() || generateDataStackCodexReportFileName(runtime.now()),
-      )
+      })
     : undefined;
+  const codexReportPath = dryRunArtifactPaths?.codexReportPath;
   const sourcePaths = options.sources.map((source) =>
     resolveFromCwd(runtime, assertNonEmpty(source, "Input source")),
   );
@@ -454,16 +455,7 @@ export async function actionDataStack(
   }
 
   if (options.dryRun) {
-    const planPath = resolveFromCwd(
-      runtime,
-      options.planOutput?.trim() || generateDataStackPlanFileName(runtime.now()),
-    );
-    if (codexReportPath && codexReportPath === planPath) {
-      throw new CliError("--codex-report-output cannot be the same path as --plan-output.", {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
+    const planPath = assertNonEmpty(dryRunArtifactPaths?.planPath, "Plan path");
     const plan = await writePreparedDataStackPlan(runtime, {
       diagnostics,
       duplicatePolicy,

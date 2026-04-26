@@ -1,7 +1,8 @@
 ---
 title: "Data stack artifact contract cleanup"
 created-date: 2026-04-26
-status: draft
+modified-date: 2026-04-26
+status: completed
 agent: codex
 ---
 
@@ -40,27 +41,27 @@ This is a small review-fix plan. It does not redesign replay, add advisory repor
 
 ## Implementation Steps
 
-- [ ] Add a small helper in the direct `data stack` action to compare resolved dry-run paths, track whether artifact paths were generated or custom, and report the conflicting custom option names.
-- [ ] Use the helper before writing the stack-plan artifact or Codex report artifact.
-- [ ] Regenerate generated plan/report paths when the helper finds a collision involving a generated artifact path.
-- [ ] Remove `/schema/includedNames` from `DATA_STACK_CODEX_PATCH_PATHS`.
-- [ ] Remove the `/schema/includedNames` validation and application branches.
-- [ ] Update Codex report tests that currently expect `/schema/includedNames` to be valid.
-- [ ] Add direct dry-run regression tests for explicit custom-path rejection:
+- [x] Add a small helper in the direct `data stack` action to compare resolved dry-run paths, track whether artifact paths were generated or custom, and report the conflicting custom option names.
+- [x] Use the helper before writing the stack-plan artifact or Codex report artifact.
+- [x] Regenerate generated plan/report paths when the helper finds a collision involving a generated artifact path.
+- [x] Remove `/schema/includedNames` from `DATA_STACK_CODEX_PATCH_PATHS`.
+- [x] Remove the `/schema/includedNames` validation and application branches.
+- [x] Update Codex report tests that currently expect `/schema/includedNames` to be valid.
+- [x] Add direct dry-run regression tests for explicit custom-path rejection:
   - custom `--plan-output` resolves to the same file as `--output`
   - custom `--codex-report-output` resolves to the same file as `--output`
   - custom `--codex-report-output` resolves to the same file as custom `--plan-output`
-- [ ] Add direct dry-run regression tests for generated-path fallback:
+- [x] Add direct dry-run regression tests for generated-path fallback:
   - omitted `--plan-output` generated path collides and falls back to another generated UID path
   - omitted `--codex-report-output` generated path collides and falls back to another generated UID path
-- [ ] Update guide wording only if the public docs mention allowed Codex patch paths or dry-run artifact path behavior.
+- [x] Update guide wording only if the public docs mention allowed Codex patch paths or dry-run artifact path behavior.
 
 ## Validation
 
 Run focused coverage first:
 
 ```text
-bun test test/data-stack-codex-report.test.ts test/cli-actions-data-stack.test.ts test/cli-command-data-stack.test.ts
+bun test test/data-stack-artifact-paths.test.ts test/data-stack-codex-report.test.ts test/cli-actions-data-stack.test.ts test/cli-command-data-stack.test.ts
 ```
 
 Then run the usual patch gates:
@@ -91,10 +92,12 @@ git diff --check
 
 ## Related Jobs
 
+- `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 - `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 
 ## References
 
 [^cleanup-research]: `docs/researches/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md`
+[^cleanup-job]: `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 [^data-stack-action]: `src/cli/actions/data-stack.ts`
 [^codex-report]: `src/cli/data-stack/codex-report.ts`

@@ -121,8 +121,10 @@ describe("data stack Codex report helpers", () => {
 
   test("structured Codex output schema gives patch values an explicit type", () => {
     const recommendations = DATA_STACK_CODEX_OUTPUT_SCHEMA.properties.recommendations;
+    const patchPath = recommendations.items.properties.patches.items.properties.path;
     const patchValue = recommendations.items.properties.patches.items.properties.value;
 
+    expect(patchPath.enum).not.toContain("/schema/includedNames");
     expect(patchValue).toEqual({
       type: ["string", "array"],
       items: { type: "string" },
@@ -188,6 +190,19 @@ describe("data stack Codex report helpers", () => {
           title: "Bad key",
         }),
       "unknown schema names",
+    );
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(plan, {
+          confidence: 0.8,
+          id: "rec_included_names",
+          patches: [
+            { op: "replace", path: "/schema/includedNames" as never, value: ["id", "status"] },
+          ],
+          reasoningSummary: "Included names are not an executable patch.",
+          title: "Bad included names patch",
+        }),
+      "path must be one of",
     );
     expectCliError(
       () =>
