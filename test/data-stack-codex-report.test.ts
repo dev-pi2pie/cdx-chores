@@ -167,8 +167,40 @@ describe("data stack Codex report helpers", () => {
     expect(nextPlan.schema.mode).toBe("union-by-name");
   });
 
+  test("accepts schema exclusions only when the resulting schema state is executable", () => {
+    const plan = createPlan();
+    const recommendation = validateDataStackCodexRecommendation(plan, {
+      confidence: 0.8,
+      id: "rec_schema_exclusions",
+      patches: [
+        { op: "replace", path: "/schema/mode", value: "union-by-name" },
+        { op: "replace", path: "/schema/excludedNames", value: ["status"] },
+      ],
+      reasoningSummary: "Union by name can exclude sparse status values.",
+      title: "Exclude status in union mode",
+    });
+
+    expect(recommendation.patches).toEqual([
+      { op: "replace", path: "/schema/mode", value: "union-by-name" },
+      { op: "replace", path: "/schema/excludedNames", value: ["status"] },
+    ]);
+  });
+
   test("rejects unsupported or conflicting patch shapes", () => {
     const plan = createPlan();
+    const headerlessPlan: DataStackPlanArtifact = {
+      ...plan,
+      input: {
+        columns: ["column_1", "column_2"],
+        format: "csv",
+        headerMode: "no-header",
+      },
+      schema: {
+        excludedNames: [],
+        includedNames: ["column_1", "column_2"],
+        mode: "strict",
+      },
+    };
     expectCliError(
       () =>
         validateDataStackCodexRecommendation(plan, {
@@ -190,6 +222,42 @@ describe("data stack Codex report helpers", () => {
           title: "Bad key",
         }),
       "unknown schema names",
+    );
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(plan, {
+          confidence: 0.8,
+          id: "rec_strict_exclusions",
+          patches: [{ op: "replace", path: "/schema/excludedNames", value: ["status"] }],
+          reasoningSummary: "Strict mode cannot carry exclusions.",
+          title: "Bad strict exclusions",
+        }),
+      "--exclude-columns requires --schema-mode union-by-name",
+    );
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(plan, {
+          confidence: 0.8,
+          id: "rec_unknown_exclusion",
+          patches: [
+            { op: "replace", path: "/schema/mode", value: "union-by-name" },
+            { op: "replace", path: "/schema/excludedNames", value: ["missing"] },
+          ],
+          reasoningSummary: "Missing is not an accepted schema name.",
+          title: "Bad unknown exclusion",
+        }),
+      "unknown schema names",
+    );
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(headerlessPlan, {
+          confidence: 0.8,
+          id: "rec_headerless_union",
+          patches: [{ op: "replace", path: "/schema/mode", value: "union-by-name" }],
+          reasoningSummary: "Headerless input cannot use union-by-name.",
+          title: "Bad headerless schema mode",
+        }),
+      "--schema-mode union-by-name cannot be used with --no-header",
     );
     expectCliError(
       () =>

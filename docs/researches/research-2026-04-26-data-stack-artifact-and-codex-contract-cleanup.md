@@ -184,6 +184,7 @@ No redesign is needed. The follow-up implementation plan should stay narrow:
 
 ## Related Jobs
 
+- `docs/plans/jobs/2026-04-26-data-stack-codex-schema-patch-validation.md`
 - `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 - `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 
@@ -192,6 +193,7 @@ No redesign is needed. The follow-up implementation plan should stay narrow:
 [^data-stack-plan]: `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 [^data-stack-research]: `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 [^data-stack-cleanup-plan]: `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`
+[^data-stack-schema-patch-job]: `docs/plans/jobs/2026-04-26-data-stack-codex-schema-patch-validation.md`
 [^data-stack-cleanup-job]: `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 [^data-stack-review-job]: `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 [^codex-report-code]: `src/cli/data-stack/codex-report.ts`

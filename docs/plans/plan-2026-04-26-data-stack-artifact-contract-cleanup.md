@@ -92,12 +92,14 @@ git diff --check
 
 ## Related Jobs
 
+- `docs/plans/jobs/2026-04-26-data-stack-codex-schema-patch-validation.md`
 - `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 - `docs/plans/jobs/2026-04-26-data-stack-review-finding-followup.md`
 
 ## References
 
 [^cleanup-research]: `docs/researches/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md`
+[^schema-patch-job]: `docs/plans/jobs/2026-04-26-data-stack-codex-schema-patch-validation.md`
 [^cleanup-job]: `docs/plans/jobs/2026-04-26-data-stack-artifact-contract-cleanup.md`
 [^data-stack-action]: `src/cli/actions/data-stack.ts`
 [^codex-report]: `src/cli/data-stack/codex-report.ts`

@@ -11,6 +11,7 @@ import {
   type DataStackPlanArtifact,
 } from "./plan";
 import type { DataStackDiagnosticsResult, DataStackColumnSummary } from "./diagnostics";
+import { normalizeDataStackSchemaOptions } from "./disclosure";
 
 export const DATA_STACK_CODEX_REPORT_ARTIFACT_TYPE = "data-stack-codex-report";
 export const DATA_STACK_CODEX_REPORT_VERSION = 1;
@@ -193,6 +194,17 @@ function assertKnownSchemaNames(
   }
 }
 
+function assertExecutableSchemaPatch(
+  plan: DataStackPlanArtifact,
+  schema: DataStackPlanArtifact["schema"],
+): void {
+  normalizeDataStackSchemaOptions({
+    excludeColumns: schema.excludedNames,
+    noHeader: plan.input.headerMode === "no-header",
+    schemaMode: schema.mode,
+  });
+}
+
 export function validateDataStackCodexPatch(
   plan: DataStackPlanArtifact,
   patch: DataStackCodexPatch,
@@ -219,13 +231,24 @@ export function validateDataStackCodexPatch(
     return { op: "replace", path, value: columns };
   }
   if (path === "/schema/mode") {
-    return { op: "replace", path, value: ensureSchemaMode(patch.value) };
+    const mode = ensureSchemaMode(patch.value);
+    assertExecutableSchemaPatch(plan, {
+      ...plan.schema,
+      mode,
+    });
+    return { op: "replace", path, value: mode };
   }
   if (path === "/schema/excludedNames") {
+    const excludedNames = ensureStringArray(patch.value, path, { allowEmpty: true });
+    assertKnownSchemaNames(plan, excludedNames, path);
+    assertExecutableSchemaPatch(plan, {
+      ...plan.schema,
+      excludedNames,
+    });
     return {
       op: "replace",
       path,
-      value: ensureStringArray(patch.value, path, { allowEmpty: true }),
+      value: excludedNames,
     };
   }
   if (path === "/duplicates/uniqueBy") {
@@ -257,8 +280,9 @@ export function validateDataStackCodexRecommendation(
     });
   }
   const seenPaths = new Set<string>();
+  let validationPlan = plan;
   const patches = recommendation.patches.map((patch) => {
-    const validated = validateDataStackCodexPatch(plan, patch);
+    const validated = validateDataStackCodexPatch(validationPlan, patch);
     if (seenPaths.has(validated.path)) {
       throw new CliError(
         `Invalid data stack Codex recommendation ${id}: duplicate patch path ${validated.path}.`,
@@ -269,6 +293,7 @@ export function validateDataStackCodexRecommendation(
       );
     }
     seenPaths.add(validated.path);
+    validationPlan = applyPatchToPlan(validationPlan, validated);
     return validated;
   });
   return {
