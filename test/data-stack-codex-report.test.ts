@@ -186,6 +186,58 @@ describe("data stack Codex report helpers", () => {
     ]);
   });
 
+  test("validates unique keys against patched headerless input columns", () => {
+    const plan: DataStackPlanArtifact = {
+      ...createPlan(),
+      input: {
+        columns: ["column_1", "column_2"],
+        format: "csv",
+        headerMode: "no-header",
+      },
+      schema: {
+        excludedNames: [],
+        includedNames: ["column_1", "column_2"],
+        mode: "strict",
+      },
+    };
+    const report = createDataStackCodexReportArtifact({
+      diagnostics: computeDataStackDiagnostics({
+        header: plan.schema.includedNames,
+        matchedFileCount: 1,
+        rows: [
+          ["1", "active"],
+          ["2", "paused"],
+        ],
+      }),
+      now: new Date("2026-04-26T00:01:00.000Z"),
+      plan,
+      recommendations: [
+        {
+          confidence: 0.86,
+          id: "rec_headerless_key",
+          patches: [
+            { op: "replace", path: "/input/columns", value: ["id", "status"] },
+            { op: "replace", path: "/duplicates/uniqueBy", value: ["id"] },
+          ],
+          reasoningSummary: "The generated first column is a stable id.",
+          title: "Name headerless id column",
+        },
+      ],
+      uid: "ddddcccc",
+    });
+
+    const nextPlan = applyDataStackCodexRecommendationDecisions({
+      decisions: [{ decision: "accepted", recommendationId: "rec_headerless_key" }],
+      now: new Date("2026-04-26T00:02:00.000Z"),
+      plan,
+      report,
+    });
+
+    expect(nextPlan.input.columns).toEqual(["id", "status"]);
+    expect(nextPlan.schema.includedNames).toEqual(["id", "status"]);
+    expect(nextPlan.duplicates.uniqueBy).toEqual(["id"]);
+  });
+
   test("rejects unsupported or conflicting patch shapes", () => {
     const plan = createPlan();
     const headerlessPlan: DataStackPlanArtifact = {

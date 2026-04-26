@@ -406,6 +406,7 @@ function applyPatchToPlan(
   switch (patch.path) {
     case "/input/columns":
       next.input.columns = [...(patch.value as string[])];
+      next.schema.includedNames = [...next.input.columns];
       break;
     case "/schema/mode":
       next.schema.mode = patch.value as DataStackPlanArtifact["schema"]["mode"];

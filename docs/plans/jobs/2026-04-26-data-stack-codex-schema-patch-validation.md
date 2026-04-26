@@ -18,6 +18,12 @@ Address the review finding that Codex schema recommendation patches could be acc
 - Validated recommendation patches sequentially so a recommendation can still switch to `union-by-name` and then apply executable exclusions in the same ordered patch batch.
 - Added Codex report regression coverage for valid ordered schema patches and rejected non-executable schema states.
 
+## Follow-up Review Fix
+
+- Updated `/input/columns` patch application for headerless plans so the validation plan's `schema.includedNames` follows the renamed input columns.
+- Added regression coverage for an ordered headerless Codex recommendation that renames generated columns and then selects a unique key by the new name.
+- Verified the derived plan preserves the patched headerless column names and the accepted `uniqueBy` field.
+
 ## Verification
 
 ```text
