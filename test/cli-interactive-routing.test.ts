@@ -40,6 +40,7 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
+    expect(result.stackPlanWrites).toHaveLength(0);
     expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
       name: "data",
       value: "data",
@@ -553,14 +554,14 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack through shared stack execution", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
       nowIsoString: "2026-03-30T00:00:00.900Z",
       stdoutColumns: 80,
       stdoutIsTTY: true,
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
-      confirmQueue: [false, true],
+      confirmQueue: [false, true, true],
     });
     const plainStderr = stripAnsi(result.stderr);
 
@@ -593,21 +594,349 @@ describe("interactive mode routing", () => {
     });
     expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(plainStderr).toContain("Tip: Review matched files before writing the stacked output.");
+    expect(plainStderr).toContain("Source discovery");
+    expect(plainStderr).toContain("Dry-run path");
+    expect(plainStderr).toContain(
+      "- save a replayable stack plan without writing output; later run data stack replay <record>",
+    );
     expect(plainStderr).toContain("Stack review");
+    expect(plainStderr).toContain("Input discovery");
+    expect(plainStderr).toContain("Schema analysis");
+    expect(plainStderr).toContain("Duplicate and key diagnostics");
+    expect(plainStderr).toContain("Output target");
     expect(plainStderr).toContain("- input sources: 1");
     expect(plainStderr).toContain("- input format: CSV");
-    expect(plainStderr).toContain("- pattern: *.csv");
+    expect(plainStderr).toContain("- pattern: format default (*.csv)");
     expect(plainStderr).toContain("- traversal: shallow only");
     expect(plainStderr).toContain("- schema mode: strict");
     expect(plainStderr).toContain("- output format: JSON");
     expect(plainStderr).toMatch(/- output: data-stack-20260330T000000Z-[a-f0-9]{8}\.json/);
     expect(plainStderr).toContain("- matched files: 3");
+    expect(plainStderr).toContain("Codex-powered analysis checkpoint");
+    expect(plainStderr).toContain("- signals: candidate unique keys");
+    expect(result.codexReportWrites).toHaveLength(0);
+    expect(
+      result.selectChoicesByMessage["Codex-powered analysis checkpoint"]?.map(
+        (choice) => choice.value,
+      ),
+    ).toEqual(["codex", "continue", "review", "cancel"]);
+    expect(result.selectChoicesByMessage["Codex-powered analysis checkpoint"]?.[0]?.name).toBe(
+      "Analyze with Codex",
+    );
+    expect(result.selectChoicesByMessage["Schema mode"]?.map((choice) => choice.value)).toEqual([
+      "auto",
+      "strict",
+      "union-by-name",
+    ]);
+    expect(result.selectChoicesByMessage["Schema mode"]?.[0]?.name).toBe("Automatic schema check");
+    expect(result.selectChoicesByMessage["Matched files"]?.map((choice) => choice.value)).toEqual([
+      "accept",
+      "options",
+      "sources",
+      "cancel",
+    ]);
+    expect(
+      result.selectChoicesByMessage["Stack plan action"]?.map((choice) => choice.value),
+    ).toEqual(["write", "dry-run", "review", "destination", "cancel"]);
+    expect(plainStderr).toMatch(
+      /Replay later: cdx-chores data stack replay data-stack-plan-20260330T000000Z-[a-f0-9]{8}\.json/,
+    );
+    expect(result.stderr).toContain("\u001b[33mReplay later:\u001b[39m");
+    const escape = String.fromCharCode(27);
+    expect(result.stderr).toContain(
+      `${escape}[36mcdx-chores data stack replay data-stack-plan-20260330T000000Z-`,
+    );
+    expect(result.stderr).toContain(`.json${escape}[39m`);
+  });
+
+  test("lets interactive data stack recover through source discovery options before schema setup", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "options",
+        "pattern",
+        "options",
+        "pattern",
+        "accept",
+        "strict",
+        "json",
+        "continue",
+        "dry-run",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      inputQueue: ["*.txt", "*.csv"],
+      confirmQueue: [false, true, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([]);
+    expect(plainStderr).toContain("Matched-file preview failed:");
+    expect(plainStderr).toContain("- pattern: *.csv");
+    expect(plainStderr).toContain("- traversal: shallow only");
+    expect(plainStderr).toContain("- matched files: 3");
+    expect(plainStderr.indexOf("Dry-run path")).toBeLessThan(
+      plainStderr.indexOf("Schema analysis"),
+    );
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "input" && call.message === "Filename pattern",
+      ),
+    ).toHaveLength(2);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Matched files",
+      ),
+    ).toHaveLength(3);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Source discovery options",
+      ),
+    ).toHaveLength(2);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      inputFormat: "csv",
+      pattern: "*.csv",
+      recursive: false,
+    });
+  });
+
+  test("keeps failed interactive data stack previews on recovery actions only", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "options", "pattern", "cancel"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      inputQueue: ["*.txt"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Matched-file preview failed:");
+    expect(result.selectChoicesByMessage["Matched files"]?.map((choice) => choice.value)).toEqual([
+      "options",
+      "sources",
+      "cancel",
+    ]);
+    expect(stripAnsi(result.stderr)).toContain("Skipped stack write.");
+  });
+
+  test("keeps source discovery options for directories named like CSV files", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "options",
+        "recursive",
+        "accept",
+        "strict",
+        "json",
+        "continue",
+        "dry-run",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-directory-extension.csv"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.selectChoicesByMessage["Matched files"]?.map((choice) => choice.value)).toEqual([
+      "accept",
+      "options",
+      "sources",
+      "cancel",
+    ]);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      fileCount: 2,
+      inputFormat: "csv",
+      recursive: true,
+    });
+  });
+
+  test("lets interactive data stack toggle recursive discovery from source options", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "options",
+        "recursive",
+        "accept",
+        "strict",
+        "json",
+        "continue",
+        "dry-run",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [false, true, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([]);
+    expect(plainStderr).toContain("- traversal: recursive");
+    expect(
+      result.selectChoicesByMessage["Source discovery options"]?.map((choice) => choice.value),
+    ).toEqual(["pattern", "recursive", "format", "back"]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "select:Traversal mode",
+    );
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      inputFormat: "csv",
+      recursive: true,
+    });
+  });
+
+  test("lets interactive data stack change input format from source options", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "tsv",
+        "options",
+        "format",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "continue",
+        "dry-run",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      confirmQueue: [false, true, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([]);
+    expect(plainStderr).toContain("Matched-file preview failed:");
+    expect(plainStderr).toContain("- input format: CSV");
+    expect(plainStderr).toContain("- pattern: format default (*.csv)");
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Input format",
+      ),
+    ).toHaveLength(2);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      inputFormat: "csv",
+      recursive: false,
+    });
+  });
+
+  test("skips the interactive data stack Codex checkpoint when diagnostics have no useful signals", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-no-codex-signal"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 2,
+          outputFormat: "json",
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
+          overwrite: false,
+          rowCount: 8,
+        },
+      },
+    ]);
+    expect(result.codexReportWrites).toHaveLength(0);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "select:Codex-powered analysis checkpoint",
+    );
+  });
+
+  test("interactive data stack can analyze schema mode automatically", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "auto", "json", "continue", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-header-mismatch"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 2,
+          outputFormat: "json",
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
+          overwrite: false,
+          rowCount: 4,
+        },
+      },
+    ]);
+    expect(plainStderr).toContain("- schema mode: union-by-name");
+    expect(plainStderr).toContain("- schema analysis: auto -> union-by-name");
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      schemaMode: "union-by-name",
+    });
+  });
+
+  test("bounds interactive data stack input-source and matched-file samples", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "cancel"],
+      requiredPathQueue: [
+        "examples/playground/stack-cases/csv-many-files/part-001.csv",
+        "examples/playground/stack-cases/csv-many-files/part-002.csv",
+        "examples/playground/stack-cases/csv-many-files/part-003.csv",
+        "examples/playground/stack-cases/csv-many-files/part-004.csv",
+        "examples/playground/stack-cases/csv-many-files/part-005.csv",
+        "examples/playground/stack-cases/csv-many-files/part-006.csv",
+      ],
+      optionalPathQueue: [undefined],
+      inputQueue: [],
+      confirmQueue: [true, true, true, true, true, false, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(plainStderr).toContain("- input sources: 6");
+    expect(plainStderr).toContain("- pattern: skipped for explicit file sources");
+    expect(plainStderr).toContain("1. examples/playground/stack-cases/csv-many-files/part-001.csv");
+    expect(plainStderr).toContain("5. examples/playground/stack-cases/csv-many-files/part-005.csv");
+    expect(plainStderr).not.toContain(
+      "6. examples/playground/stack-cases/csv-many-files/part-006.csv",
+    );
+    expect(plainStderr).toContain("... 1 more input source(s) hidden");
+    expect(plainStderr).toContain("- matched files: 6");
+    expect(plainStderr).toContain("- sample files (first 5):");
+    expect(plainStderr).toContain("csv-many-files/part-001.csv");
+    expect(plainStderr).toContain("csv-many-files/part-005.csv");
+    expect(plainStderr).not.toContain("csv-many-files/part-006.csv");
+    expect(plainStderr).toContain("- sample files hidden: 1");
+    expect(result.selectChoicesByMessage["Matched files"]?.map((choice) => choice.value)).toEqual([
+      "accept",
+      "sources",
+      "cancel",
+    ]);
+    expect(
+      result.selectChoicesByMessage["Matched files"]?.map((choice) => choice.value),
+    ).not.toContain("options");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "input:Filename pattern",
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "select:Traversal mode",
+    );
   });
 
   test("routes interactive data stack with mixed file and directory sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers/part-001.csv",
         "examples/playground/stack-cases/csv-matching-headers",
@@ -653,11 +982,11 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with JSON input selection", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "json", "shallow", "strict", "csv"],
+      selectQueue: ["data", "data:stack", "json", "accept", "strict", "csv", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/json-array-basic"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.json"],
-      confirmQueue: [false, true],
+      confirmQueue: [false, true, true],
     });
     const plainStderr = stripAnsi(result.stderr);
 
@@ -680,11 +1009,11 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with JSONL input selection", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "jsonl", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "jsonl", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/jsonl-basic"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.jsonl"],
-      confirmQueue: [false, true],
+      confirmQueue: [false, true, true],
     });
     const plainStderr = stripAnsi(result.stderr);
 
@@ -707,11 +1036,20 @@ describe("interactive mode routing", () => {
   test("routes interactive data stack with union-by-name exclusions", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "union-by-name", "json"],
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "union-by-name",
+        "json",
+        "continue",
+        "write",
+      ],
       requiredPathQueue: ["examples/playground/stack-cases/csv-union"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv", "noise"],
-      confirmQueue: [false, true],
+      inputQueue: ["noise"],
+      confirmQueue: [false, true, true],
     });
     const plainStderr = stripAnsi(result.stderr);
 
@@ -737,7 +1075,7 @@ describe("interactive mode routing", () => {
   test("lets interactive data stack stop before writing at the final review checkpoint", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "csv", "cancel"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "csv", "continue", "cancel"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
@@ -757,14 +1095,503 @@ describe("interactive mode routing", () => {
     });
     expect(result.pathCalls.some((call) => call.kind === "hint")).toBe(false);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack plan action",
+    );
+  });
+
+  test("writes an interactive data stack dry-run plan without materialized output", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "dry-run"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stackPlanWrites[0]?.path).toEqual(
+      expect.stringMatching(/data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+    );
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      fileCount: 3,
+      outputFormat: "json",
+      rowCount: 6,
+    });
+    expect(result.stderr).toContain("Dry run: wrote stack plan");
+    expect(result.pathCalls).toContainEqual({
+      kind: "optional",
+      message: "Stack plan JSON file",
+      options: expect.objectContaining({
+        customMessage: "Custom stack plan JSON path",
+        defaultHint: expect.stringMatching(/^data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+      }),
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep stack plan?",
+    );
+    expect(stripAnsi(result.stderr)).toMatch(
+      /Replay later: cdx-chores data stack replay data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json/,
+    );
+  });
+
+  test("rejects an interactive dry-run plan at the stack output path", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: [
+          "data",
+          "data:stack",
+          "csv",
+          "accept",
+          "strict",
+          "json",
+          "continue",
+          "dry-run",
+        ],
+        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+        optionalPathQueue: ["fixtures/custom-stacked.json", "fixtures/custom-stacked.json"],
+        inputQueue: ["*.csv"],
+        confirmQueue: [false],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("Stack plan path cannot be the same as stack output path");
+    expect(result.stackPlanWrites).toHaveLength(0);
+    expect(result.actionCalls).toEqual([]);
+  });
+
+  test("rejects an interactive dry-run plan at an input source path", () => {
+    const inputPath = "examples/playground/stack-cases/json-array-basic/day-01.json";
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: [
+          "data",
+          "data:stack",
+          "json",
+          "accept",
+          "strict",
+          "json",
+          "continue",
+          "dry-run",
+        ],
+        requiredPathQueue: [inputPath],
+        optionalPathQueue: ["fixtures/custom-stacked.json", inputPath],
+        confirmQueue: [false],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("Stack plan path cannot be the same as an input source");
+    expect(result.stackPlanWrites).toHaveLength(0);
+    expect(result.actionCalls).toEqual([]);
+  });
+
+  test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "accept",
+        "write",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.91,
+          id: "rec_unique_id",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+          reasoningSummary: "The id column has unique values in the sampled rows.",
+          title: "Use id as the unique key",
+        },
+      ],
+    });
+
+    expect(result.codexReportWrites).toEqual([
+      {
+        path: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
+        options: { recommendationCount: 1 },
+      },
+    ]);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: ["rec_unique_id"],
+      derivedFromPayloadId: "stack-payload-test",
+      recommendationDecisions: [
+        expect.objectContaining({
+          decision: "accepted",
+          recommendationId: "rec_unique_id",
+        }),
+      ],
+      uniqueBy: ["id"],
+    });
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: expect.objectContaining({
+          uniqueBy: ["id"],
+        }),
+      },
+    ]);
+    expect(stripAnsi(result.stderr)).toContain("Accepted Codex changes");
+    expect(stripAnsi(result.stderr)).toContain("Re-running stack status preview");
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Stack plan action",
+      ),
+    ).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) => call.kind === "select" && call.message === "Codex-powered analysis checkpoint",
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("reviews edited interactive data stack Codex patches before writing", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "edit",
+        "write",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      editorQueue: [
+        JSON.stringify([{ op: "replace", path: "/duplicates/policy", value: "report" }], null, 2),
+      ],
+      confirmQueue: [false, true, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.8,
+          id: "rec_duplicate_policy",
+          patches: [{ op: "replace", path: "/duplicates/policy", value: "reject" }],
+          reasoningSummary: "Duplicate policy should be explicit.",
+          title: "Set duplicate policy",
+        },
+      ],
+    });
+
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      duplicatePolicy: "report",
+      recommendationDecisions: [
+        expect.objectContaining({
+          decision: "edited",
+          recommendationId: "rec_duplicate_policy",
+        }),
+      ],
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "editor:Edit recommendation patches JSON",
+    );
+  });
+
+  test("saves an accepted interactive Codex recommendation in dry-run-only mode", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "accept",
+        "dry-run",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined, undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, false, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.91,
+          id: "rec_unique_id",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+          reasoningSummary: "The id column has unique values in the sampled rows.",
+          title: "Use id as the unique key",
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.codexReportWrites).toEqual([]);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: ["rec_unique_id"],
+      reportPath: null,
+      uniqueBy: ["id"],
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep diagnostic/advisory report?",
+    );
+    expect(result.removedPaths).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Skipped diagnostic/advisory report.");
+    expect(result.stderr).toContain("Dry run: wrote stack plan");
+  });
+
+  test("can keep the interactive Codex advisory report separately", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "skip",
+        "write",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.7,
+          id: "rec_unique_id",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+          reasoningSummary: "Potential unique key.",
+          title: "Use id as the unique key",
+        },
+      ],
+    });
+
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: [],
+      reportPath: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
+      uniqueBy: [],
+    });
+    expect(result.codexReportWrites).toEqual([
+      {
+        path: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
+        options: { recommendationCount: 1 },
+      },
+    ]);
+    expect(result.removedPaths).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Codex assist: wrote advisory report");
+  });
+
+  test("keeps deterministic setup when interactive Codex review is cancelled", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "cancel",
+        "write",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.7,
+          id: "rec_unique_id",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+          reasoningSummary: "Potential unique key.",
+          title: "Use id as the unique key",
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: expect.not.objectContaining({
+          uniqueBy: ["id"],
+        }),
+      },
+    ]);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: [],
+      uniqueBy: [],
+    });
+    expect(stripAnsi(result.stderr)).toContain("No Codex recommendations accepted.");
+  });
+
+  test("keeps deterministic setup when interactive Codex recommendation application fails", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "accept",
+        "write",
+      ],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.7,
+          id: "rec_unknown_key",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["missing"] }],
+          reasoningSummary: "Invalid key in test.",
+          title: "Use missing as the unique key",
+        },
+      ],
+    });
+
+    expect(result.actionCalls).toHaveLength(1);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: [],
+      uniqueBy: [],
+    });
+    expect(stripAnsi(result.stderr)).toContain("Codex recommendation application failed:");
+    expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+  });
+
+  test("keeps interactive data stack setup when Codex recommendations fail", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+      dataStackCodexErrorMessage:
+        '{"type":"error","error":{"type":"invalid_request_error","code":"invalid_json_schema","message":"Invalid schema for response_format"}}',
+      stdoutIsTTY: true,
+    });
+
+    expect(result.codexReportWrites).toHaveLength(0);
+    expect(result.actionCalls).toHaveLength(1);
+    expect(result.stdout.endsWith("\r\u001b[2K")).toBe(true);
+    expect(stripAnsi(result.stderr)).toContain(
+      "Codex stack recommendations unavailable: Codex rejected the structured recommendation schema.",
+    );
+    expect(stripAnsi(result.stderr)).not.toContain("invalid_json_schema");
+    expect(stripAnsi(result.stderr)).not.toContain("invalid_request_error");
+    expect(stripAnsi(result.stderr)).not.toContain("response_format");
+    expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+  });
+
+  test("keeps interactive data stack setup when Codex recommendations fail with plain text", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+      dataStackCodexErrorMessage: "mocked Codex outage",
+      stdoutIsTTY: true,
+    });
+
+    expect(result.codexReportWrites).toHaveLength(0);
+    expect(result.actionCalls).toHaveLength(1);
+    expect(result.stdout.endsWith("\r\u001b[2K")).toBe(true);
+    expect(stripAnsi(result.stderr)).toContain(
+      "Codex stack recommendations unavailable. Review failed before recommendations were returned.",
+    );
+    expect(stripAnsi(result.stderr)).not.toContain("mocked Codex outage");
+    expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+  });
+
+  test("removes the interactive stack plan when write succeeds and keeping is declined", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.actionCalls.map((call) => call.name)).toEqual(["data:stack"]);
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stackPlanWrites[0]?.path).toEqual(
+      expect.stringMatching(/data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json$/),
+    );
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep stack plan?",
+    );
+    expect(result.stderr).toContain("Removed stack plan:");
+    expect(stripAnsi(result.stderr)).not.toContain("Replay later:");
+  });
+
+  test("keeps the interactive stack plan when materialized writing fails", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
+        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+        optionalPathQueue: [undefined],
+        inputQueue: ["*.csv"],
+        confirmQueue: [false],
+        dataStackActionErrorMessage: "write failed",
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("write failed");
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(result.stderr).toContain("Keeping stack plan after failed write:");
+    expect(result.stderr).not.toContain("Removed stack plan:");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "confirm:Keep stack plan?",
+    );
+  });
+
+  test("keeps the interactive stack plan when the final stack write finds an existing output", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
+        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+        optionalPathQueue: ["fixtures/custom-stacked.json"],
+        confirmQueue: [false],
+        dataStackWriteExistingPaths: ["fixtures/custom-stacked.json"],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("Output file already exists:");
+    expect(result.actionCalls).toHaveLength(1);
+    expect(result.stackPlanWrites).toHaveLength(1);
+    expect(stripAnsi(result.stderr)).toContain("Keeping stack plan after failed write:");
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
+      "confirm:Keep stack plan?",
     );
   });
 
   test("uses the expected TSV default output metadata in interactive data stack", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "tsv", "cancel"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "tsv", "continue", "cancel"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
@@ -791,11 +1618,13 @@ describe("interactive mode routing", () => {
         "data",
         "data:stack",
         "csv",
-        "shallow",
+        "accept",
         "strict",
         "json",
+        "continue",
         "destination",
         "json",
+        "write",
       ],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
@@ -819,14 +1648,14 @@ describe("interactive mode routing", () => {
       result.promptCalls.filter(
         (call) => call.kind === "input" && call.message === "Filename pattern",
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(
       result.promptCalls.filter(
         (call) => call.kind === "select" && call.message === "Output format",
       ),
     ).toHaveLength(2);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack plan action",
     );
     expect(stripAnsi(result.stderr)).toContain("- output: fixtures/custom-stacked.json");
   });
@@ -838,14 +1667,17 @@ describe("interactive mode routing", () => {
         "data",
         "data:stack",
         "csv",
-        "shallow",
+        "accept",
         "strict",
         "json",
+        "continue",
         "review",
         "csv",
-        "recursive",
+        "accept",
         "strict",
         "json",
+        "continue",
+        "write",
       ],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers",
@@ -877,21 +1709,21 @@ describe("interactive mode routing", () => {
       result.promptCalls.filter(
         (call) => call.kind === "input" && call.message === "Filename pattern",
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(0);
     expect(
       result.promptCalls.filter(
         (call) => call.kind === "select" && call.message === "Traversal mode",
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(0);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
-      "select:Stack write next step",
+      "select:Stack plan action",
     );
   });
 
   test("re-prompts stack destination when the generated default output exists and overwrite is declined", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
       inputQueue: ["*.csv"],
@@ -946,7 +1778,7 @@ describe("interactive mode routing", () => {
   test("accepts overwrite for the generated default stack output path when confirmed", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json"],
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],

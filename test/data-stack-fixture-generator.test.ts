@@ -83,9 +83,17 @@ describe("data stack fixture generator", () => {
           "csv-header-mismatch/source-b.csv",
           "csv-headerless/chunk-001.csv",
           "csv-headerless/chunk-002.csv",
+          "csv-many-files/part-001.csv",
+          "csv-many-files/part-002.csv",
+          "csv-many-files/part-003.csv",
+          "csv-many-files/part-004.csv",
+          "csv-many-files/part-005.csv",
+          "csv-many-files/part-006.csv",
           "csv-matching-headers/part-001.csv",
           "csv-matching-headers/part-002.csv",
           "csv-matching-headers/part-003.csv",
+          "csv-no-codex-signal/part-001.csv",
+          "csv-no-codex-signal/part-002.csv",
           "csv-union/source-a.csv",
           "csv-union/source-b.csv",
           "json-array-basic/day-01.json",
@@ -112,6 +120,15 @@ describe("data stack fixture generator", () => {
 
         const unionCsv = await readFile(join(outputA, "csv-union/source-a.csv"), "utf8");
         expect(unionCsv).toBe("id,name,noise\n1,Ada,drop-a\n");
+
+        const noSignalCsv = await readFile(
+          join(outputA, "csv-no-codex-signal/part-001.csv"),
+          "utf8",
+        );
+        expect(noSignalCsv).toBe("a,b,c\n0,0,0\n0,0,1\n0,1,0\n0,1,1\n");
+
+        const manyCsv = await readFile(join(outputA, "csv-many-files/part-006.csv"), "utf8");
+        expect(manyCsv).toBe("id,status\n7006,paused\n");
 
         const jsonArray = await readFile(join(outputA, "json-array-basic/day-02.json"), "utf8");
         expect(jsonArray).toBe('[{"status":"active","id":"evt-003"}]\n');

@@ -2,7 +2,8 @@ import { CliError } from "../errors";
 import { normalizeDataStackSchemaOptions } from "./disclosure";
 import { normalizeDataStackSources } from "./rows";
 import { resolveDataStackInputSources, type DataStackNormalizedInputFile } from "./input-router";
-import type { DataStackInputFormat, DataStackSchemaMode } from "./types";
+import { isDataStackSchemaMismatchError } from "./schema-errors";
+import type { DataStackInputFormat, DataStackSchemaMode, DataStackSchemaModeOption } from "./types";
 
 function ensureUniformFormat(
   files: ReadonlyArray<{ format: DataStackInputFormat; path: string }>,
@@ -42,7 +43,7 @@ export interface PrepareDataStackExecutionOptions {
   readText: (path: string) => Promise<string>;
   recursive?: boolean;
   renderPath: (path: string) => string;
-  schemaMode?: DataStackSchemaMode;
+  schemaMode?: DataStackSchemaModeOption;
   sources: string[];
 }
 
@@ -53,6 +54,84 @@ export interface PreparedDataStackExecution {
   rows: unknown[][];
   header: string[];
   schemaMode: DataStackSchemaMode;
+}
+
+function createAutoSchemaModeFailure(error: unknown): CliError {
+  const reason = error instanceof Error ? error.message : String(error);
+  return new CliError(
+    `--schema-mode auto could not choose a safe schema mode. Use --schema-mode strict to fail on schema drift, use --schema-mode union-by-name after resolving ambiguous names, or revise the inputs. Last error: ${reason}`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
+async function normalizeSourcesForSchemaMode(options: {
+  columns?: readonly string[];
+  excludeColumns?: readonly string[];
+  files: DataStackNormalizedInputFile[];
+  noHeader?: boolean;
+  readText: (path: string) => Promise<string>;
+  renderPath: (path: string) => string;
+  schemaMode: DataStackSchemaMode;
+}): Promise<{ header: string[]; rows: unknown[][] }> {
+  return await normalizeDataStackSources({
+    columns: options.columns,
+    excludeColumns: options.excludeColumns,
+    files: options.files,
+    noHeader: options.noHeader,
+    readText: options.readText,
+    renderPath: options.renderPath,
+    schemaMode: options.schemaMode,
+  });
+}
+
+async function normalizeSourcesWithAutoSchemaMode(options: {
+  columns?: readonly string[];
+  files: DataStackNormalizedInputFile[];
+  noHeader?: boolean;
+  readText: (path: string) => Promise<string>;
+  renderPath: (path: string) => string;
+}): Promise<{ header: string[]; rows: unknown[][]; schemaMode: DataStackSchemaMode }> {
+  try {
+    const normalizedRows = await normalizeSourcesForSchemaMode({
+      columns: options.columns,
+      files: options.files,
+      noHeader: options.noHeader,
+      readText: options.readText,
+      renderPath: options.renderPath,
+      schemaMode: "strict",
+    });
+    return {
+      ...normalizedRows,
+      schemaMode: "strict",
+    };
+  } catch (error) {
+    if (!isDataStackSchemaMismatchError(error)) {
+      throw error;
+    }
+    if (options.noHeader) {
+      throw createAutoSchemaModeFailure(error);
+    }
+  }
+
+  try {
+    const normalizedRows = await normalizeSourcesForSchemaMode({
+      columns: options.columns,
+      files: options.files,
+      noHeader: options.noHeader,
+      readText: options.readText,
+      renderPath: options.renderPath,
+      schemaMode: "union-by-name",
+    });
+    return {
+      ...normalizedRows,
+      schemaMode: "union-by-name",
+    };
+  } catch (error) {
+    throw createAutoSchemaModeFailure(error);
+  }
 }
 
 export async function prepareDataStackExecution(
@@ -91,15 +170,27 @@ export async function prepareDataStackExecution(
     schemaMode: options.schemaMode,
   });
 
-  const normalizedRows = await normalizeDataStackSources({
-    columns: options.columns,
-    excludeColumns: schemaOptions.excludeColumns,
-    files: normalized.files,
-    noHeader: options.noHeader,
-    readText: options.readText,
-    renderPath: options.renderPath,
-    schemaMode: schemaOptions.schemaMode,
-  });
+  const normalizedRows =
+    schemaOptions.schemaMode === "auto"
+      ? await normalizeSourcesWithAutoSchemaMode({
+          columns: options.columns,
+          files: normalized.files,
+          noHeader: options.noHeader,
+          readText: options.readText,
+          renderPath: options.renderPath,
+        })
+      : {
+          ...(await normalizeSourcesForSchemaMode({
+            columns: options.columns,
+            excludeColumns: schemaOptions.excludeColumns,
+            files: normalized.files,
+            noHeader: options.noHeader,
+            readText: options.readText,
+            renderPath: options.renderPath,
+            schemaMode: schemaOptions.schemaMode,
+          })),
+          schemaMode: schemaOptions.schemaMode,
+        };
 
   return {
     excludedColumns: schemaOptions.excludeColumns,
@@ -107,6 +198,6 @@ export async function prepareDataStackExecution(
     header: normalizedRows.header,
     inputFormat,
     rows: normalizedRows.rows,
-    schemaMode: schemaOptions.schemaMode,
+    schemaMode: normalizedRows.schemaMode,
   };
 }

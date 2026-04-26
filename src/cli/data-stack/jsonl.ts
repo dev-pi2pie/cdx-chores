@@ -1,4 +1,5 @@
 import { CliError } from "../errors";
+import { DataStackSchemaMismatchError } from "./schema-errors";
 
 interface ParsedJsonlStackSource {
   dataRows: unknown[][];
@@ -33,12 +34,8 @@ function compareJsonlKeySets(options: {
     baselineSorted.length !== candidateSorted.length ||
     baselineSorted.some((value, index) => value !== candidateSorted[index])
   ) {
-    throw new CliError(
+    throw new DataStackSchemaMismatchError(
       `${options.label ?? "JSONL"} key mismatch for ${options.path}. Expected keys ${baselineSorted.join(", ")} but received ${candidateSorted.join(", ")}.`,
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      },
     );
   }
 }

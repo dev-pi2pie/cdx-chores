@@ -1,7 +1,7 @@
 ---
 title: "Apply ordered dependency security and maintenance pass"
 created-date: 2026-04-23
-modified-date: 2026-04-24
+modified-date: 2026-04-25
 status: completed
 agent: Codex
 ---
@@ -45,6 +45,10 @@ Additional notes:
 ## Follow-Up Note
 
 - `2026-04-24`: after the original ordered pass was recorded, `@openai/codex-sdk` was advanced again from `^0.123.0` to `^0.124.0` in `package.json` and `bun.lock`.
+- `2026-04-25`: updated `fast-xml-parser` from `5.7.1` to `5.7.2` and `@openai/codex-sdk` from `^0.124.0` to `^0.125.0`.
+- Upstream `fast-xml-parser` `5.7.2` records backward compatibility for numerical external entities plus fixes for `attributesGroupName` with `preserveOrder` and a stack overflow on very long tag expressions.
+- Upstream `@openai/codex-sdk` `0.125.0` keeps the same direct package shape for this repo: the SDK depends on the matching `@openai/codex` package, and this repo only uses the SDK adapter surface through `Codex.startThread`.
+- Verification for the `2026-04-25` follow-up: `bun audit` passed with `No vulnerabilities found`; targeted OOXML/Codex adapter tests passed with `25` passing tests and `0` failures; `bun run build` passed on `tsdown v0.21.10`; `bun test` passed with `786` passing tests and `0` failures.
 - This follow-up leaves the rest of the 2026-04-23 dependency pass unchanged.
 - No additional verification is recorded in this job note for the `^0.124.0` follow-up; the verification results below remain the results of the original ordered pass.
 

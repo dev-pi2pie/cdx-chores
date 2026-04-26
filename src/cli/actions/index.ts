@@ -10,7 +10,29 @@ export { actionDataExtract } from "./data-extract";
 export type { DataExtractOptions } from "./data-extract";
 export { actionDataStack } from "./data-stack";
 export type { DataStackOptions } from "./data-stack";
-export { writePreparedDataStackOutput } from "./data-stack";
+export {
+  createPreparedDataStackPlan,
+  writePreparedDataStackOutput,
+  writePreparedDataStackPlan,
+} from "./data-stack";
+export {
+  formatDataStackCodexAssistFailure,
+  suggestDataStackWithCodex,
+} from "../data-stack/codex-assist";
+export type { DataStackCodexRunner } from "../data-stack/codex-assist";
+export {
+  applyDataStackCodexRecommendationDecisions,
+  generateDataStackCodexReportFileName,
+  writeDataStackCodexReportArtifact,
+} from "../data-stack/codex-report";
+export type {
+  DataStackCodexPatch,
+  DataStackCodexRecommendation,
+  DataStackCodexRecommendationDecisionInput,
+  DataStackCodexReportArtifact,
+} from "../data-stack/codex-report";
+export { actionDataStackReplay } from "./data-stack-replay";
+export type { DataStackReplayOptions } from "./data-stack-replay";
 export { actionDataQuery } from "./data-query";
 export type { DataQueryOptions } from "./data-query";
 export { actionDataQueryCodex } from "./data-query-codex";
