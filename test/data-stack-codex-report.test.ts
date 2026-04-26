@@ -59,6 +59,17 @@ function createPlan(): DataStackPlanArtifact {
   });
 }
 
+function createUnionModePlan(): DataStackPlanArtifact {
+  const plan = createPlan();
+  return {
+    ...plan,
+    schema: {
+      ...plan.schema,
+      mode: "union-by-name",
+    },
+  };
+}
+
 function createReport(plan: DataStackPlanArtifact) {
   const diagnostics = computeDataStackDiagnostics({
     header: plan.schema.includedNames,
@@ -131,63 +142,62 @@ describe("data stack Codex report helpers", () => {
     });
   });
 
-  test("applies schema-mode recommendations into the deterministic stack plan", () => {
+  test("accepts schema-mode recommendations only when they keep the existing mode", () => {
     const plan = createPlan();
-    const diagnostics = computeDataStackDiagnostics({
-      header: plan.schema.includedNames,
-      matchedFileCount: 1,
-      rows: [
-        ["1", "active", "north"],
-        ["2", "paused", "south"],
-      ],
+    const recommendation = validateDataStackCodexRecommendation(plan, {
+      confidence: 0.72,
+      id: "rec_schema_mode",
+      patches: [{ op: "replace", path: "/schema/mode", value: "strict" }],
+      reasoningSummary: "Keep strict schema handling.",
+      title: "Keep strict mode",
     });
-    const report = createDataStackCodexReportArtifact({
-      diagnostics,
-      now: new Date("2026-04-26T00:01:00.000Z"),
-      plan,
-      recommendations: [
-        {
+
+    expect(recommendation.patches).toEqual([
+      { op: "replace", path: "/schema/mode", value: "strict" },
+    ]);
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(plan, {
           confidence: 0.72,
           id: "rec_schema_union",
           patches: [{ op: "replace", path: "/schema/mode", value: "union-by-name" }],
           reasoningSummary: "Sources show deterministic schema drift.",
           title: "Use union by name",
-        },
-      ],
-      uid: "bbbbcccc",
-    });
+        }),
+      "cannot change schema mode",
+    );
 
-    const nextPlan = applyDataStackCodexRecommendationDecisions({
-      decisions: [{ decision: "accepted", recommendationId: "rec_schema_union" }],
-      now: new Date("2026-04-26T00:02:00.000Z"),
-      plan,
-      report,
-    });
-
-    expect(nextPlan.schema.mode).toBe("union-by-name");
+    const unionPlan = createUnionModePlan();
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(unionPlan, {
+          confidence: 0.72,
+          id: "rec_schema_strict",
+          patches: [{ op: "replace", path: "/schema/mode", value: "strict" }],
+          reasoningSummary: "Sources now look strict.",
+          title: "Use strict mode",
+        }),
+      "cannot change schema mode",
+    );
   });
 
   test("accepts schema exclusions only when the resulting schema state is executable", () => {
-    const plan = createPlan();
+    const plan = createUnionModePlan();
     const recommendation = validateDataStackCodexRecommendation(plan, {
       confidence: 0.8,
       id: "rec_schema_exclusions",
-      patches: [
-        { op: "replace", path: "/schema/mode", value: "union-by-name" },
-        { op: "replace", path: "/schema/excludedNames", value: ["status"] },
-      ],
+      patches: [{ op: "replace", path: "/schema/excludedNames", value: ["status"] }],
       reasoningSummary: "Union by name can exclude sparse status values.",
       title: "Exclude status in union mode",
     });
 
     expect(recommendation.patches).toEqual([
-      { op: "replace", path: "/schema/mode", value: "union-by-name" },
       { op: "replace", path: "/schema/excludedNames", value: ["status"] },
     ]);
   });
 
   test("applies schema exclusions to included names in derived plans", () => {
-    const plan = createPlan();
+    const plan = createUnionModePlan();
     const diagnostics = computeDataStackDiagnostics({
       header: plan.schema.includedNames,
       matchedFileCount: 1,
@@ -204,10 +214,7 @@ describe("data stack Codex report helpers", () => {
         {
           confidence: 0.8,
           id: "rec_schema_exclusions",
-          patches: [
-            { op: "replace", path: "/schema/mode", value: "union-by-name" },
-            { op: "replace", path: "/schema/excludedNames", value: ["status"] },
-          ],
+          patches: [{ op: "replace", path: "/schema/excludedNames", value: ["status"] }],
           reasoningSummary: "Union by name can exclude sparse status values.",
           title: "Exclude status in union mode",
         },
@@ -230,7 +237,7 @@ describe("data stack Codex report helpers", () => {
   });
 
   test("removes excluded schema names from derived unique keys", () => {
-    const plan = createPlan();
+    const plan = createUnionModePlan();
     const diagnostics = computeDataStackDiagnostics({
       header: plan.schema.includedNames,
       matchedFileCount: 1,
@@ -248,7 +255,6 @@ describe("data stack Codex report helpers", () => {
           confidence: 0.8,
           id: "rec_schema_exclusions_with_key",
           patches: [
-            { op: "replace", path: "/schema/mode", value: "union-by-name" },
             { op: "replace", path: "/duplicates/uniqueBy", value: ["id", "status"] },
             { op: "replace", path: "/schema/excludedNames", value: ["status"] },
           ],
@@ -591,13 +597,10 @@ describe("data stack Codex report helpers", () => {
     );
     expectCliError(
       () =>
-        validateDataStackCodexRecommendation(plan, {
+        validateDataStackCodexRecommendation(createUnionModePlan(), {
           confidence: 0.8,
           id: "rec_unknown_exclusion",
-          patches: [
-            { op: "replace", path: "/schema/mode", value: "union-by-name" },
-            { op: "replace", path: "/schema/excludedNames", value: ["missing"] },
-          ],
+          patches: [{ op: "replace", path: "/schema/excludedNames", value: ["missing"] }],
           reasoningSummary: "Missing is not an accepted schema name.",
           title: "Bad unknown exclusion",
         }),
@@ -612,7 +615,7 @@ describe("data stack Codex report helpers", () => {
           reasoningSummary: "Headerless input cannot use union-by-name.",
           title: "Bad headerless schema mode",
         }),
-      "--schema-mode union-by-name cannot be used with --no-header",
+      "cannot change schema mode",
     );
     expectCliError(
       () =>

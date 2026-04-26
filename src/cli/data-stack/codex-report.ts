@@ -240,6 +240,22 @@ function assertExecutableSchemaPatch(
   });
 }
 
+function assertReplayableSchemaModePatch(
+  plan: DataStackPlanArtifact,
+  mode: DataStackPlanArtifact["schema"]["mode"],
+): void {
+  if (mode === plan.schema.mode) {
+    return;
+  }
+  throw new CliError(
+    "Invalid data stack Codex patch: /schema/mode cannot change schema mode because the stack plan does not store per-source schemas needed to prove replay compatibility.",
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
 function assertHeaderlessColumnPatchWidth(
   plan: DataStackPlanArtifact,
   columns: readonly string[],
@@ -284,6 +300,7 @@ export function validateDataStackCodexPatch(
   }
   if (path === "/schema/mode") {
     const mode = ensureSchemaMode(patch.value);
+    assertReplayableSchemaModePatch(plan, mode);
     assertExecutableSchemaPatch(plan, {
       ...plan.schema,
       mode,

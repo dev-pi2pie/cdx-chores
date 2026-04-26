@@ -37,6 +37,8 @@ A sixth review follow-up found that the interactive dry-run plan prompt still al
 
 A seventh review follow-up found that replacing `/schema/excludedNames` on a plan that already carried exclusions could silently lose the previously excluded schema basis and later produce a non-replayable plan. The follow-up now rejects exclusion replacements that remove existing exclusions, still allows additive exclusions against the current included-or-excluded schema names, and covers both paths in Codex report helper regressions.
 
+An eighth review follow-up found that accepted `/schema/mode` recommendations could change a derived plan to a mode that the stored sources could not prepare during replay. Because the plan artifact does not store per-source raw schemas, the follow-up now rejects mode-changing Codex patches, still allows no-op mode patches, and updates the Codex prompt to avoid asking for schema-mode changes.
+
 ## Verification
 
 ```text
@@ -117,6 +119,18 @@ Seventh follow-up verification:
 
 ```text
 bun test test/data-stack-codex-report.test.ts
+bun run lint
+bun run format:check
+git diff --check
+bun run build
+```
+
+Eighth follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
+bun test test/data-stack-codex-report.test.ts test/cli-actions-data-stack.test.ts test/cli-command-data-stack.test.ts
+bun test test/data-stack-codex-signals.test.ts test/data-stack-diagnostics.test.ts test/data-stack-plan.test.ts
 bun run lint
 bun run format:check
 git diff --check

@@ -101,7 +101,7 @@ function buildDataStackCodexPrompt(options: {
     "- Use only replace patches against the allowed JSON Pointer paths.",
     "- Prefer the smallest deterministic patch that expresses the recommendation.",
     "- Recommend headerless column names only through /input/columns.",
-    "- Recommend schema mode changes only through /schema/mode with strict or union-by-name.",
+    "- Do not recommend schema mode changes; users should run a new dry-run with --schema-mode for that.",
     "- Recommend unique key changes only through /duplicates/uniqueBy.",
     "- Recommend duplicate policy changes only through /duplicates/policy.",
     "- Keep reasoning_summary short and grounded in the facts.",
