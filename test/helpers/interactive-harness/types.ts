@@ -20,6 +20,7 @@ export interface InteractiveHarnessScenario {
   dataStackActionStdout?: string;
   dataStackCodexErrorMessage?: string;
   dataStackCodexRecommendations?: Array<Record<string, unknown>>;
+  dataStackWriteExistingPaths?: string[];
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;

@@ -1,4 +1,4 @@
-import { rm, stat } from "node:fs/promises";
+import { lstat, rm, stat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { confirm, editor, input, select } from "@inquirer/prompts";
@@ -81,6 +81,13 @@ interface InteractiveDataStackSetup {
   sources: InteractiveDataStackSource[];
 }
 
+interface InteractiveDataStackSourceDiscoveryState {
+  inputFormat: DataStackInputFormat;
+  pattern?: string;
+  recursive: boolean;
+  sources: InteractiveDataStackSource[];
+}
+
 interface InteractiveDataStackWritePlan {
   output: string;
   outputFormat: DataStackOutputFormat;
@@ -90,6 +97,9 @@ interface InteractiveDataStackWritePlan {
 const INTERACTIVE_DATA_STACK_DUPLICATE_POLICY: DataStackDuplicatePolicy = "preserve";
 const INTERACTIVE_DATA_STACK_UNIQUE_BY: readonly string[] = [];
 const INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS = 30_000;
+
+type InteractiveDataStackMatchedFileAction = "accept" | "options" | "sources" | "cancel";
+type InteractiveDataStackSourceDiscoveryOption = "pattern" | "recursive" | "format" | "back";
 
 type InteractiveDataStackWriteOutcome =
   | {
@@ -192,7 +202,10 @@ function renderInteractiveStackReview(
   renderInteractiveInputSourceSummary(runtime, options.sources);
   printLine(runtime.stderr, `- input format: ${options.inputFormat.toUpperCase()}`);
   if (usesInteractiveDirectoryDiscovery(options.sources)) {
-    printLine(runtime.stderr, `- pattern: ${options.pattern}`);
+    printLine(
+      runtime.stderr,
+      `- pattern: ${formatInteractiveStackPattern(options.pattern, options.inputFormat)}`,
+    );
     printLine(runtime.stderr, `- traversal: ${options.recursive ? "recursive" : "shallow only"}`);
   }
   renderMatchedFileSummary(runtime, {
@@ -595,17 +608,35 @@ async function promptInteractiveStackPattern(inputFormat: DataStackInputFormat):
   ).trim();
 }
 
+function formatInteractiveStackPattern(
+  pattern: string | undefined,
+  inputFormat: DataStackInputFormat,
+): string {
+  return pattern ?? `format default (*.${inputFormat})`;
+}
+
 function usesInteractiveDirectoryDiscovery(
   sources: readonly InteractiveDataStackSource[],
 ): boolean {
   return sources.some((source) => source.kind === "directory");
 }
 
-function inferInteractiveStackSourceKind(
-  sourcePath: string,
-  inputFormat?: DataStackInputFormat,
-): "directory" | "file" {
-  return isSupportedDataStackDiscoveryPath(sourcePath, inputFormat) ? "file" : "directory";
+async function inferInteractiveStackSourceKind(
+  source: InteractiveDataStackSourcePath,
+): Promise<"directory" | "file"> {
+  try {
+    const sourceStats = await lstat(source.resolved);
+    if (sourceStats.isFile()) {
+      return "file";
+    }
+    if (sourceStats.isDirectory()) {
+      return "directory";
+    }
+  } catch {
+    // Let the later resolver produce the user-facing missing-source error.
+  }
+
+  return isSupportedDataStackDiscoveryPath(source.raw) ? "file" : "directory";
 }
 
 function renderInteractiveStackSourceDiscovery(
@@ -623,7 +654,10 @@ function renderInteractiveStackSourceDiscovery(
   renderInteractiveInputSourceSummary(runtime, options.sources);
   printLine(runtime.stderr, `- input format: ${options.inputFormat.toUpperCase()}`);
   if (usesInteractiveDirectoryDiscovery(options.sources)) {
-    printLine(runtime.stderr, `- pattern: ${options.pattern ?? "format default"}`);
+    printLine(
+      runtime.stderr,
+      `- pattern: ${formatInteractiveStackPattern(options.pattern, options.inputFormat)}`,
+    );
     printLine(runtime.stderr, `- traversal: ${options.recursive ? "recursive" : "shallow only"}`);
   } else {
     printLine(runtime.stderr, "- pattern: skipped for explicit file sources");
@@ -633,9 +667,9 @@ function renderInteractiveStackSourceDiscovery(
 
 async function promptInteractiveStackMatchedFiles(options: {
   allowAccept: boolean;
-  allowPattern: boolean;
-}): Promise<"accept" | "pattern" | "sources" | "cancel"> {
-  return await select<"accept" | "pattern" | "sources" | "cancel">({
+  allowOptions: boolean;
+}): Promise<InteractiveDataStackMatchedFileAction> {
+  return await select<InteractiveDataStackMatchedFileAction>({
     message: "Matched files",
     choices: [
       ...(options.allowAccept
@@ -647,12 +681,12 @@ async function promptInteractiveStackMatchedFiles(options: {
             },
           ]
         : []),
-      ...(options.allowPattern
+      ...(options.allowOptions
         ? [
             {
-              name: "Revise pattern",
-              value: "pattern" as const,
-              description: "Change the filename pattern and preview matches again",
+              name: "Options",
+              value: "options" as const,
+              description: "Change source discovery settings and preview again",
             },
           ]
         : []),
@@ -665,6 +699,38 @@ async function promptInteractiveStackMatchedFiles(options: {
         name: "Cancel",
         value: "cancel",
         description: "Stop before preparing the stack plan",
+      },
+    ],
+  });
+}
+
+async function promptInteractiveStackSourceDiscoveryOptions(options: {
+  recursive: boolean;
+}): Promise<InteractiveDataStackSourceDiscoveryOption> {
+  return await select<InteractiveDataStackSourceDiscoveryOption>({
+    message: "Source discovery options",
+    choices: [
+      {
+        name: "Change filename pattern",
+        value: "pattern",
+        description: "Override the selected format's default filename match",
+      },
+      {
+        name: options.recursive ? "Use shallow scan" : "Scan subdirectories",
+        value: "recursive",
+        description: options.recursive
+          ? "Preview direct children only"
+          : "Include nested subdirectories in the preview",
+      },
+      {
+        name: "Change input format",
+        value: "format",
+        description: "Choose CSV, TSV, JSON, or JSONL and preview again",
+      },
+      {
+        name: "Back to matched files",
+        value: "back",
+        description: "Return without changing source discovery settings",
       },
     ],
   });
@@ -708,33 +774,48 @@ async function collectInteractiveStackSources(
   return sources;
 }
 
-function addInteractiveStackSourceKinds(
+async function addInteractiveStackSourceKinds(
   sources: readonly InteractiveDataStackSourcePath[],
-  inputFormat: DataStackInputFormat,
-): InteractiveDataStackSource[] {
-  return sources.map((source) => ({
-    ...source,
-    kind: inferInteractiveStackSourceKind(source.raw, inputFormat),
-  }));
+): Promise<InteractiveDataStackSource[]> {
+  return await Promise.all(
+    sources.map(async (source) => ({
+      ...source,
+      kind: await inferInteractiveStackSourceKind(source),
+    })),
+  );
 }
 
-async function promptInteractiveStackTraversalMode(): Promise<boolean> {
-  const traversalMode = await select<"shallow" | "recursive">({
-    message: "Traversal mode",
-    choices: [
-      {
-        name: "shallow only",
-        value: "shallow",
-        description: "Scan direct children of the selected directory only",
-      },
-      {
-        name: "recursive",
-        value: "recursive",
-        description: "Include nested subdirectories",
-      },
-    ],
+async function updateInteractiveStackSourceDiscoveryState(
+  state: InteractiveDataStackSourceDiscoveryState,
+  sourcePaths: readonly InteractiveDataStackSourcePath[],
+): Promise<InteractiveDataStackSourceDiscoveryState> {
+  const discoveryOption = await promptInteractiveStackSourceDiscoveryOptions({
+    recursive: state.recursive,
   });
-  return traversalMode === "recursive";
+
+  switch (discoveryOption) {
+    case "pattern":
+      return {
+        ...state,
+        pattern: await promptInteractiveStackPattern(state.inputFormat),
+      };
+    case "recursive":
+      return {
+        ...state,
+        recursive: !state.recursive,
+      };
+    case "format": {
+      const inputFormat = await promptInteractiveStackInputFormat();
+      return {
+        inputFormat,
+        pattern: undefined,
+        recursive: state.recursive,
+        sources: await addInteractiveStackSourceKinds(sourcePaths),
+      };
+    }
+    case "back":
+      return state;
+  }
 }
 
 async function promptInteractiveStackSchemaMode(): Promise<DataStackSchemaModeOption> {
@@ -786,47 +867,50 @@ async function promptInteractiveStackExcludeColumns(
 async function collectInteractiveStackMatchedFiles(options: {
   inputFormat: DataStackInputFormat;
   runtime: CliRuntime;
-  sources: readonly InteractiveDataStackSource[];
+  sourcePaths: readonly InteractiveDataStackSourcePath[];
 }): Promise<
   | {
+      inputFormat: DataStackInputFormat;
       pattern?: string;
       recursive: boolean;
+      sources: InteractiveDataStackSource[];
     }
   | "sources"
   | "cancel"
 > {
-  const usesDirectorySource = usesInteractiveDirectoryDiscovery(options.sources);
-  let pattern = usesDirectorySource
-    ? await promptInteractiveStackPattern(options.inputFormat)
-    : undefined;
-  let recursive = usesDirectorySource ? await promptInteractiveStackTraversalMode() : false;
+  let state: InteractiveDataStackSourceDiscoveryState = {
+    inputFormat: options.inputFormat,
+    pattern: undefined,
+    recursive: false,
+    sources: await addInteractiveStackSourceKinds(options.sourcePaths),
+  };
 
   while (true) {
+    const usesDirectorySource = usesInteractiveDirectoryDiscovery(state.sources);
     try {
       const preview = await resolveDataStackInputSources({
-        inputFormat: options.inputFormat,
-        pattern,
-        recursive,
-        sources: options.sources.map((source) => source.resolved),
+        inputFormat: state.inputFormat,
+        pattern: state.pattern,
+        recursive: state.recursive,
+        sources: state.sources.map((source) => source.resolved),
       });
       renderInteractiveStackSourceDiscovery(options.runtime, {
         files: preview.files,
-        inputFormat: options.inputFormat,
-        pattern,
-        recursive,
-        sources: options.sources,
+        inputFormat: state.inputFormat,
+        pattern: state.pattern,
+        recursive: state.recursive,
+        sources: state.sources,
       });
 
       const previewAction = await promptInteractiveStackMatchedFiles({
         allowAccept: true,
-        allowPattern: usesDirectorySource,
+        allowOptions: usesDirectorySource,
       });
       switch (previewAction) {
         case "accept":
-          return { pattern, recursive };
-        case "pattern":
-          pattern = await promptInteractiveStackPattern(options.inputFormat);
-          recursive = await promptInteractiveStackTraversalMode();
+          return state;
+        case "options":
+          state = await updateInteractiveStackSourceDiscoveryState(state, options.sourcePaths);
           continue;
         case "sources":
           return "sources";
@@ -840,12 +924,11 @@ async function collectInteractiveStackMatchedFiles(options: {
       );
       const previewAction = await promptInteractiveStackMatchedFiles({
         allowAccept: false,
-        allowPattern: usesDirectorySource,
+        allowOptions: usesDirectorySource,
       });
       switch (previewAction) {
-        case "pattern":
-          pattern = await promptInteractiveStackPattern(options.inputFormat);
-          recursive = await promptInteractiveStackTraversalMode();
+        case "options":
+          state = await updateInteractiveStackSourceDiscoveryState(state, options.sourcePaths);
           continue;
         case "sources":
           return "sources";
@@ -865,11 +948,10 @@ async function collectInteractiveStackSetup(
   while (true) {
     const rawSources = await collectInteractiveStackSources(runtime, pathPromptContext);
     const inputFormat = await promptInteractiveStackInputFormat();
-    const sources = addInteractiveStackSourceKinds(rawSources, inputFormat);
     const matchedFiles = await collectInteractiveStackMatchedFiles({
       inputFormat,
       runtime,
-      sources,
+      sourcePaths: rawSources,
     });
     switch (matchedFiles) {
       case "sources":
@@ -882,11 +964,11 @@ async function collectInteractiveStackSetup(
         const excludeColumns = await promptInteractiveStackExcludeColumns(schemaMode);
         return {
           excludeColumns,
-          inputFormat,
+          inputFormat: matchedFiles.inputFormat,
           pattern: matchedFiles.pattern,
           recursive: matchedFiles.recursive,
           schemaMode,
-          sources,
+          sources: matchedFiles.sources,
         };
       }
     }

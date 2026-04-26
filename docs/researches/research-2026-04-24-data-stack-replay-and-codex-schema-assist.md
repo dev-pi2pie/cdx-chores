@@ -2,7 +2,7 @@
 title: "Data stack replay records, duplicate handling, and Codex schema assist"
 created-date: 2026-04-24
 modified-date: 2026-04-26
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -37,18 +37,16 @@ The repo already has related patterns:
 
 This research now chooses the same safety shape for `data stack`: dry-run produces a reviewed deterministic plan, and `data stack replay <record>` runs that accepted plan later.
 
-The implementation now proves the deterministic pieces, reviewed Codex report flow, contextual interactive Codex checkpoint, and the extract-shaped interactive workflow cleanup. Interactive mode now explains dry-run before schema choices, previews matched files before stack preparation, and labels Codex-powered analysis separately from deterministic automatic schema checking.
-
-The remaining source-discovery follow-up is to make the default path smoother: filename pattern and traversal should be common options behind the matched-file preview, not mandatory-feeling prompts before the user sees the default matches.
+The implementation now proves the deterministic pieces, reviewed Codex report flow, contextual interactive Codex checkpoint, and the extract-shaped interactive workflow cleanup. Interactive mode now explains dry-run before schema choices, previews matched files before stack preparation, labels Codex-powered analysis separately from deterministic automatic schema checking, and keeps filename pattern, traversal, and input-format changes behind source discovery options.
 
 An interactive hardening follow-up resolved the live issue found against `examples/playground/stack-cases/csv-header-mismatch/`: Codex patch values now have an explicit structured-output schema type, raw provider-shaped failures are replaced by concise unavailable messages, and the analyzer status line is cleared before failure output is printed.
 
 Status note:
 
 - the replay, duplicate/key, contextual Codex checkpoint, and schema-mode execution contracts are settled
-- the linked implementation plan is implemented through Phase 12
-- the interactive workflow now uses source discovery, pattern preview, early dry-run explanation, deterministic-auto wording, and Codex-powered reviewed analysis
-- Phase 13 is open for a source-discovery options menu that removes the redundant filename-pattern prompt from the default path
+- the linked implementation plan is implemented through Phase 13
+- the interactive workflow now uses source discovery, default matched-file preview, source discovery options, early dry-run explanation, deterministic-auto wording, and Codex-powered reviewed analysis
+- Phase 13 removed the redundant filename-pattern prompt from the default path
 
 ## Starting State
 
@@ -122,11 +120,11 @@ This mirrors the `rename` safety model:
 Implication:
 
 - a broader `data replay` can be reconsidered only after multiple data actions share one artifact family
-- the next implementation plan should treat `data stack replay <record>` as the committed command surface
+- the implementation plan treats `data stack replay <record>` as the committed command surface
 
-### 2. Dry-run should author deterministic stack records
+### 2. Dry-run authors deterministic stack records
 
-Dry-run should do real preparation but stop before writing materialized stack output.
+Dry-run does real preparation but stops before writing materialized stack output.
 
 Required dry-run work:
 
@@ -142,7 +140,7 @@ Required dry-run work:
   - direct dry-run writes a generated plan by default, with `--plan-output <path>` override
   - interactive dry-run offers the generated default first, with a custom destination option
 
-Dry-run should not:
+Dry-run does not:
 
 - write the merged `.csv`, `.tsv`, or `.json` output
 - silently dedupe rows
@@ -152,13 +150,13 @@ Dry-run should not:
 Implication:
 
 - dry-run becomes the safest authoring path for repeatable stack runs
-- interactive mode should mirror rename-style artifact-retention prompts without changing the deterministic replay contract
+- interactive mode mirrors rename-style artifact-retention prompts without changing the deterministic replay contract
 
-### 3. Interactive mode should borrow the rename preview/apply rhythm
+### 3. Interactive mode borrows the rename preview/apply rhythm
 
-Interactive `data stack` should keep the current setup-review rhythm, but insert a status preview and stack-plan lifecycle before any materialized output is written.
+Interactive `data stack` keeps the setup-review rhythm, but inserts a status preview and stack-plan lifecycle before any materialized output is written.
 
-Recommended interactive rules:
+Implemented interactive rules:
 
 - prepare a deterministic status preview before any write
 - show matched-source, schema, row-count, duplicate/key, and output summaries
@@ -169,7 +167,7 @@ Recommended interactive rules:
 - if writing now, execute the accepted stack plan
 - after success, ask separate retention questions for execution and advisory artifacts
 
-The status preview should include:
+The status preview includes:
 
 - matched file count and bounded source sample
 - input format and schema mode
@@ -182,7 +180,7 @@ The status preview should include:
 - candidate unique-key summary, when available
 - Codex checkpoint status, when diagnostics surfaced it or a report was reviewed
 
-Interactive artifact retention should follow the rename cleanup lesson:
+Interactive artifact retention follows the rename cleanup lesson:
 
 - the stack plan is an execution/replay artifact
 - Codex schema or duplicate/key reports are advisory artifacts
@@ -197,7 +195,7 @@ If the user chooses to write after the status preview:
 - if advisory reports exist, ask separately whether to keep them
 - if the write fails, skip cleanup prompts and keep all generated artifacts for diagnosis
 
-Recommended prompt defaults:
+Prompt defaults:
 
 - dry-run only:
   - `Keep dry-run stack plan for later data stack replay?`
@@ -209,7 +207,7 @@ Recommended prompt defaults:
   - `Keep stack diagnostic report?`
   - default `Yes`
 
-Auto-clean should never remove:
+Auto-clean does not remove:
 
 - the materialized stack output
 - source files
@@ -1000,7 +998,7 @@ Resolved in this revision:
 - recommendation provenance:
   - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-The core replay, duplicate/key, advisory-report, and interactive Codex checkpoint contracts are settled in this research. The linked implementation plan is the source of truth for exact command naming, validation rules, tests, and the active Phase 13 interactive source-discovery follow-up.
+The core replay, duplicate/key, advisory-report, interactive Codex checkpoint, and source-discovery option contracts are settled in this research. The linked implementation plan is the source of truth for exact command naming, validation rules, and tests.
 
 ## Revised Interactive Direction
 
@@ -1059,15 +1057,15 @@ The schema-mode product-contract cleanup was also implemented:
 - made direct CLI `auto` deterministic-first and fail with next-step hints when deterministic widening is unsafe
 - kept Codex schema recommendations as reviewed changes that materialize into deterministic stack-plan fields
 
-With Phases 1 through 12 implemented and tested, the deterministic stack/replay/Codex-assist foundation and extract-shaped interactive workflow cleanup are complete.
+With Phases 1 through 13 implemented and tested, the deterministic stack/replay/Codex-assist foundation, extract-shaped interactive workflow cleanup, and source-discovery options follow-up are complete.
 
-The research remains in progress for the Phase 13 source-discovery options follow-up. The target shape is:
+The completed Phase 13 source-discovery shape is:
 
-- preview directory matches with the inferred default pattern first
-- show `Use these files`, `Options`, `Revise sources`, and `Cancel` at the matched-file checkpoint
-- move filename pattern, recursive scan, and input-format changes into `Source discovery options`
-- keep explicit-file sources on the shortest path
-- require pattern editing only as a recovery or advanced choice
+- directory sources preview matches with the inferred default pattern first
+- `Use these files`, `Options`, `Revise sources`, and `Cancel` appear at the matched-file checkpoint
+- filename pattern, recursive scan, and input-format changes live in `Source discovery options`
+- explicit-file sources stay on the shortest path
+- pattern editing is required only as a recovery or advanced choice
 
 ## Related Research
 
@@ -1092,3 +1090,4 @@ The research remains in progress for the Phase 13 source-discovery options follo
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`
 - `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`
 - `docs/plans/jobs/2026-04-26-data-stack-extract-shaped-interactive-workflow.md`
+- `docs/plans/jobs/2026-04-26-data-stack-source-discovery-options.md`

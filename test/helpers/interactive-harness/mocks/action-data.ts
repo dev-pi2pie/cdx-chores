@@ -182,7 +182,11 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         runtime.stderr.write(context.scenario.dataStackActionStderr);
       }
 
-      if (typeof options.outputPath === "string" && context.existingPaths.has(options.outputPath)) {
+      if (
+        typeof options.outputPath === "string" &&
+        (context.existingPaths.has(options.outputPath) ||
+          context.dataStackWriteExistingPaths.has(options.outputPath))
+      ) {
         if (options.overwrite !== true) {
           throw createOutputExistsError(String(options.outputPath));
         }
@@ -229,10 +233,13 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         derivedFromPayloadId: planMetadata?.derivedFromPayloadId,
         duplicatePolicy: planDuplicates?.policy ?? options.duplicatePolicy,
         fileCount: options.prepared?.files?.length,
+        inputFormat: (plan?.input as Record<string, unknown> | undefined)?.format,
         outputFormat: options.outputFormat,
         outputPath: options.outputPath,
         payloadId: planMetadata?.payloadId,
+        pattern: (plan?.sources as Record<string, unknown> | undefined)?.pattern,
         recommendationDecisions: planMetadata?.recommendationDecisions,
+        recursive: (plan?.sources as Record<string, unknown> | undefined)?.recursive,
         reportPath:
           planDiagnostics?.reportPath ?? options.diagnostics?.planDiagnostics?.reportPath ?? null,
         rowCount: options.prepared?.rows?.length ?? options.diagnostics?.planDiagnostics?.rowCount,

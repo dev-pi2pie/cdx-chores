@@ -236,15 +236,15 @@ Choose:
 1. `data`
 2. `stack`
 
-Current implemented interactive flow after Phase 12:
+Current implemented interactive flow:
 
 1. Enter one input source.
 2. Optionally add more sources.
 3. Choose CSV, TSV, JSON, or JSONL input format.
-4. For directory sources, enter or accept the filename pattern.
-5. For directory sources, choose shallow or recursive traversal.
-6. Review the matched-file preview.
-7. Use these files, revise the pattern, revise sources, or cancel before schema prompts.
+4. Review the matched-file preview. Directory sources use the selected format's default match first, such as `*.csv` for CSV.
+5. Use these files, open source discovery options, revise sources, or cancel before schema prompts.
+6. From source discovery options, change filename pattern, toggle recursive scan, change input format, or return to matched files.
+7. Explicit-file sources skip pattern and traversal controls unless a directory source is also included.
 8. Review the dry-run/replay path: save a replayable stack plan without writing output, then later run `data stack replay <record>`.
 9. Choose automatic schema check, strict matching, or union-by-name schema mode.
 10. If union-by-name is selected, optionally enter exact column/key exclusions.
@@ -274,15 +274,6 @@ Current implemented interactive flow after Phase 12:
 17. If `dry-run plan only` is selected, write only the stack-plan artifact and choose whether to keep it.
 18. If `write now` succeeds, choose whether to keep the applied stack plan.
 19. If advisory reports exist, answer their retention prompt separately from the stack-plan retention prompt.
-
-Planned Phase 13 source-discovery follow-up:
-
-The current implemented flow still asks for directory filename pattern and traversal before the matched-file preview. Phase 13 will move those controls behind a common options menu:
-
-- directory sources should preview matches with the inferred default pattern before asking for a pattern
-- the matched-file checkpoint should offer `Use these files`, `Options`, `Revise sources`, and `Cancel`
-- `Options` should contain pattern, recursive scan, and input-format controls
-- explicit-file sources should keep the shortest path and skip pattern/traversal controls
 
 Current interactive default output rule:
 

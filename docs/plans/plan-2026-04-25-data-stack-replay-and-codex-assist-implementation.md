@@ -2,7 +2,7 @@
 title: "Data stack replay and Codex assist implementation"
 created-date: 2026-04-25
 modified-date: 2026-04-26
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -10,9 +10,7 @@ agent: codex
 
 Implement the next `data stack` development stage: replayable dry-run stack plans, deterministic duplicate/key diagnostics, reviewed Codex recommendations, and an interactive status-preview flow that can write, save, revise, or cancel without hiding execution state.
 
-The deterministic stack/replay/Codex-assist foundation is implemented through Phase 11. Phase 12 then completed the first interactive workflow cleanup so the current flow explains dry-run earlier, previews matched files before schema choices, and aligns more closely with the source-shape review used by `data extract`.
-
-The remaining follow-up is Phase 13: make source discovery less prompt-heavy by treating filename pattern and traversal as common options behind a matched-file options menu instead of mandatory-feeling setup prompts.
+The deterministic stack/replay/Codex-assist foundation is implemented through Phase 11. Phase 12 completed the first interactive workflow cleanup so the flow explains dry-run earlier, previews matched files before schema choices, and aligns more closely with the source-shape review used by `data extract`. Phase 13 then made source discovery less prompt-heavy by treating filename pattern, traversal, and input-format changes as common options behind the matched-file preview.
 
 The implementation must keep one clear boundary:
 
@@ -31,7 +29,7 @@ The research records the current product-contract direction for stack replay and
 - Codex reports as advisory artifacts linked to deterministic payload ids
 - interactive status preview before any materialized output write
 
-This plan turns those decisions into implementable phases. Earlier deterministic stack work remains closed; the active follow-up is limited to the interactive source-discovery workflow shape.
+This plan turns those decisions into implementable phases. The deterministic stack work and the interactive source-discovery follow-ups are now closed.
 
 ## Starting State
 
@@ -206,7 +204,7 @@ Status note:
 - Phase 10 closed the interactive Codex hardening follow-up.
 - Phase 11 closed the schema-mode naming and automatic analysis cleanup.
 - Phase 12 closed the extract-shaped interactive workflow cleanup.
-- Phase 13 is open for a source-discovery options menu that removes the redundant filename-pattern step from the default path.
+- Phase 13 closed the source-discovery options menu follow-up and removed the redundant filename-pattern step from the default path.
 
 ### Phase 1: Freeze and implement stack-plan artifacts
 
@@ -360,16 +358,16 @@ Status note:
 
 ### Phase 13: Source-discovery options menu follow-up
 
-- [ ] make directory source discovery preview use the inferred default pattern first instead of prompting for `Filename pattern` immediately
-- [ ] add a `Source discovery options` menu from the matched-file preview
-- [ ] move `Change filename pattern` into that options menu
-- [ ] move traversal control into that options menu, for example `Toggle recursive scan`
-- [ ] include `Change input format` in the options menu so users can recover from a wrong format choice without restarting all source entry
-- [ ] keep `Use these files`, `Options`, `Revise sources`, and `Cancel` as the normal matched-file checkpoint actions
-- [ ] only force pattern entry when the inferred default finds no files and the user chooses to recover by changing the pattern
-- [ ] keep explicit-file sources on the short path with no pattern/traversal options unless directory sources are added
-- [ ] update interactive routing tests for default-pattern preview, options-menu pattern change, recursive toggle, input-format change, no-match recovery, and explicit-file short path
-- [ ] update the guide, research, plan status, and job records after implementation evidence exists
+- [x] make directory source discovery preview use the inferred default pattern first instead of prompting for `Filename pattern` immediately
+- [x] add a `Source discovery options` menu from the matched-file preview
+- [x] move `Change filename pattern` into that options menu
+- [x] move traversal control into that options menu, for example `Toggle recursive scan`
+- [x] include `Change input format` in the options menu so users can recover from a wrong format choice without restarting all source entry
+- [x] keep `Use these files`, `Options`, `Revise sources`, and `Cancel` as the normal matched-file checkpoint actions
+- [x] only force pattern entry when the inferred default finds no files and the user chooses to recover by changing the pattern
+- [x] keep explicit-file sources on the short path with no pattern/traversal options unless directory sources are added
+- [x] update interactive routing tests for default-pattern preview, options-menu pattern change, recursive toggle, input-format change, no-match recovery, and explicit-file short path
+- [x] update the guide, research, plan status, and job records after implementation evidence exists
 
 ## Acceptance Criteria
 
@@ -447,3 +445,4 @@ Status note:
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`
 - `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`
 - `docs/plans/jobs/2026-04-26-data-stack-extract-shaped-interactive-workflow.md`
+- `docs/plans/jobs/2026-04-26-data-stack-source-discovery-options.md`
