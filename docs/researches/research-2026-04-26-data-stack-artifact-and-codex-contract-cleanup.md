@@ -40,13 +40,17 @@ Direct dry-run has up to three relevant paths:
 - `planPath`: the stack-plan JSON artifact produced by `--dry-run`
 - `codexReportPath`: the advisory Codex report JSON artifact produced by `--codex-assist`
 
-Default generated plan/report paths should live in the current CLI execution directory and include a UID, so normal dry-runs do not collide. Custom paths should stay flexible, but exact same-file collisions should be rejected.
+Default generated plan/report paths should live in the current CLI execution directory and include a UID, so normal dry-runs do not collide. If a generated artifact path still collides with the intended output or another artifact path, the command should fall back to another generated UID path. Custom paths should stay flexible, but explicit custom paths that resolve to the same file as another dry-run path should be rejected.
 
-Problem examples:
+Explicit custom-path rejection examples:
 
 - `--dry-run --plan-output merged.csv --output merged.csv` writes stack-plan JSON at the same path that the plan records as the future materialized output; replay then does not have a clean plan artifact to consume
 - `--dry-run --codex-assist --codex-report-output merged.csv --output merged.csv` writes an advisory report at the exact file path intended for materialized stack output
 - custom `--plan-output` and `--codex-report-output` can also point to the same file unless checked
+
+Generated-path fallback example:
+
+- when `--plan-output` or `--codex-report-output` is omitted and the generated path collides, generate another UID path instead of failing
 
 ### Codex patch surface
 
@@ -80,20 +84,23 @@ It does not use `/schema/includedNames` as an independent column-selection or co
 
 ### Artifact paths
 
-Generated artifact paths should include a UID and default to the current CLI execution directory. Same directory is fine; same resolved file path is not.
+Generated artifact paths should include a UID and default to the current CLI execution directory. Same directory is fine. Same resolved file path should either fall back when generated or fail when explicitly customized.
 
-Direct dry-run should reject exact same-file collisions among:
+Direct dry-run should handle exact same-file collisions among:
 
 - materialized output intent path
 - stack-plan artifact path
 - Codex report artifact path
 
+Generated artifact paths should fall back to another generated UID path when they collide. Explicit custom artifact paths should fail when they collide with another artifact path or the intended output path.
+
 Rationale:
 
 - UID defaults avoid normal collisions without extra user decisions
+- generated fallback handles rare UID or basename collisions without making users care about generated paths
 - custom paths remain supported
-- rejecting exact same-file collisions prevents a plan or advisory report from replacing another artifact or occupying the future output path
-- this keeps the rule close to existing artifact workflows: generated names avoid collisions, custom names are allowed, and exact unsafe overlaps fail early
+- rejecting explicit exact same-file collisions prevents a user-specified plan or advisory report from replacing another artifact or occupying the future output path
+- this keeps the rule close to existing artifact workflows: generated names avoid collisions, generated fallbacks avoid edge cases, custom names are allowed, and exact unsafe custom overlaps fail early
 
 ### Codex patches
 
@@ -115,12 +122,13 @@ Unsupported patch paths for the current cleanup:
 
 ## Small Cleanup Solution
 
-### Keep UID defaults and reject exact custom collisions
+### Keep UID defaults, fallback generated paths, and reject exact custom collisions
 
 The path solution should stay small:
 
 - keep generated stack-plan and Codex report names UID-based
 - keep generated artifacts in the current CLI execution directory
+- regenerate generated artifact paths when they collide with another dry-run path
 - keep custom paths supported
 - reject custom paths that resolve to the exact same file as another dry-run artifact or the intended output
 
@@ -147,7 +155,8 @@ Keep `/schema/excludedNames` as the supported executable way to remove union-by-
 The follow-up implementation direction is:
 
 - keep UID-based generated artifact paths in the current CLI execution directory
-- reject exact same-file collisions among dry-run output, plan, and Codex report paths
+- fall back to another generated UID path when a generated dry-run artifact path collides
+- reject explicit custom same-file collisions among dry-run output, plan, and Codex report paths
 - keep Codex patches limited to fields that deterministic stack preparation and replay consume
 - remove `/schema/includedNames` from the executable patch surface for now
 - keep `/schema/excludedNames` as the supported schema-pruning operation for the current branch
@@ -158,7 +167,7 @@ This keeps the shipped canary contract honest without adding new replay semantic
 
 No redesign is needed. The follow-up implementation plan should stay narrow:
 
-- add one shared exact-path collision check for direct dry-run artifacts
+- add one shared exact-path collision check for direct dry-run artifacts, with fallback for generated artifact paths
 - remove `/schema/includedNames` from accepted Codex patch paths
 - update only the tests and guide text needed for those two contract fixes
 

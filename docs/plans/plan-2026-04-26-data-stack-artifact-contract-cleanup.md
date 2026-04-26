@@ -9,7 +9,7 @@ agent: codex
 
 Patch the two concrete `data stack` contract gaps recorded in the cleanup research:
 
-- direct dry-run should reject custom paths that resolve to the same file for output, stack-plan, or Codex report artifacts
+- direct dry-run should fall back from generated artifact paths that collide, and reject custom paths that resolve to the same file for output, stack-plan, or Codex report artifacts
 - Codex accepted patches should remove the unsupported `/schema/includedNames` path from the executable patch surface
 
 This is a small review-fix plan. It does not redesign replay, add advisory report shapes, or introduce stack column selection/reordering.
@@ -21,11 +21,12 @@ This is a small review-fix plan. It does not redesign replay, add advisory repor
 - keep UID-based generated stack-plan and Codex report names
 - keep generated artifacts in the current CLI execution directory
 - keep custom `--plan-output` and `--codex-report-output` paths supported
-- add one shared exact-path guard for direct dry-run paths:
+- add one shared exact-path helper for direct dry-run paths:
   - `outputPath`
   - `planPath`
   - `codexReportPath`
-- fail before writing any dry-run artifact when two resolved paths match
+- when a generated artifact path collides, fall back to another generated UID path before writing
+- fail before writing any dry-run artifact when an explicit custom artifact path collides with another artifact path or the intended output path
 - compare absolute paths resolved from the CLI cwd; do not depend on the target file already existing; symlink identity and case-insensitive filesystem aliases are out of scope for this patch
 - keep existing replay behavior unchanged
 
@@ -39,15 +40,19 @@ This is a small review-fix plan. It does not redesign replay, add advisory repor
 
 ## Implementation Steps
 
-- [ ] Add a small helper in the direct `data stack` action to compare resolved dry-run paths and report the conflicting option names.
+- [ ] Add a small helper in the direct `data stack` action to compare resolved dry-run paths, track whether artifact paths were generated or custom, and report the conflicting custom option names.
 - [ ] Use the helper before writing the stack-plan artifact or Codex report artifact.
+- [ ] Regenerate generated plan/report paths when the helper finds a collision involving a generated artifact path.
 - [ ] Remove `/schema/includedNames` from `DATA_STACK_CODEX_PATCH_PATHS`.
 - [ ] Remove the `/schema/includedNames` validation and application branches.
 - [ ] Update Codex report tests that currently expect `/schema/includedNames` to be valid.
-- [ ] Add direct dry-run regression tests for:
-  - `--plan-output` equal to `--output`
-  - `--codex-report-output` equal to `--output`
-  - `--codex-report-output` equal to `--plan-output`
+- [ ] Add direct dry-run regression tests for explicit custom-path rejection:
+  - custom `--plan-output` resolves to the same file as `--output`
+  - custom `--codex-report-output` resolves to the same file as `--output`
+  - custom `--codex-report-output` resolves to the same file as custom `--plan-output`
+- [ ] Add direct dry-run regression tests for generated-path fallback:
+  - omitted `--plan-output` generated path collides and falls back to another generated UID path
+  - omitted `--codex-report-output` generated path collides and falls back to another generated UID path
 - [ ] Update guide wording only if the public docs mention allowed Codex patch paths or dry-run artifact path behavior.
 
 ## Validation
