@@ -21,7 +21,8 @@ This job closes the follow-up that made interactive `data stack` source discover
 - Kept explicit-file sources on the short path with no pattern or traversal options.
 - Preserved no-match recovery by offering source discovery options, source revision, or cancel without allowing a false accept.
 - Simplified the Codex checkpoint action label to `Analyze with Codex`.
-- Added a colored replay command tip after users choose to keep a stack plan.
+- Added a replay command tip after users choose to keep a stack plan.
+- Styled the replay tip with a yellow label and cyan replay command so the reusable command stands out.
 - Updated interactive routing coverage for default-pattern preview, options-menu pattern change, recursive toggle, input-format change, no-match recovery, and explicit-file short path.
 - Added a fixture for a directory whose name ends in `.csv` to verify source discovery options are based on filesystem kind, not filename extension.
 - Updated the guide, research, and implementation plan with the completed Phase 13 flow and status.
@@ -30,6 +31,9 @@ This job closes the follow-up that made interactive `data stack` source discover
 
 ```bash
 bun test test/cli-interactive-routing.test.ts
+bun run lint
+bun run format:check
+git diff --check
 ```
 
 Result: passed.

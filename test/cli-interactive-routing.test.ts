@@ -642,6 +642,11 @@ describe("interactive mode routing", () => {
       /Replay later: cdx-chores data stack replay data-stack-plan-20260330T000000Z-[a-f0-9]{8}\.json/,
     );
     expect(result.stderr).toContain("\u001b[33mReplay later:\u001b[39m");
+    const escape = String.fromCharCode(27);
+    expect(result.stderr).toContain(
+      `${escape}[36mcdx-chores data stack replay data-stack-plan-20260330T000000Z-`,
+    );
+    expect(result.stderr).toContain(`.json${escape}[39m`);
   });
 
   test("lets interactive data stack recover through source discovery options before schema setup", () => {
