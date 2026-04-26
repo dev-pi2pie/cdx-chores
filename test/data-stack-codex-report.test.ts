@@ -186,6 +186,49 @@ describe("data stack Codex report helpers", () => {
     ]);
   });
 
+  test("applies schema exclusions to included names in derived plans", () => {
+    const plan = createPlan();
+    const diagnostics = computeDataStackDiagnostics({
+      header: plan.schema.includedNames,
+      matchedFileCount: 1,
+      rows: [
+        ["1", "active", "north"],
+        ["2", "paused", "south"],
+      ],
+    });
+    const report = createDataStackCodexReportArtifact({
+      diagnostics,
+      now: new Date("2026-04-26T00:01:00.000Z"),
+      plan,
+      recommendations: [
+        {
+          confidence: 0.8,
+          id: "rec_schema_exclusions",
+          patches: [
+            { op: "replace", path: "/schema/mode", value: "union-by-name" },
+            { op: "replace", path: "/schema/excludedNames", value: ["status"] },
+          ],
+          reasoningSummary: "Union by name can exclude sparse status values.",
+          title: "Exclude status in union mode",
+        },
+      ],
+      uid: "bbbbdddd",
+    });
+
+    const nextPlan = applyDataStackCodexRecommendationDecisions({
+      decisions: [{ decision: "accepted", recommendationId: "rec_schema_exclusions" }],
+      now: new Date("2026-04-26T00:02:00.000Z"),
+      plan,
+      report,
+    });
+
+    expect(nextPlan.schema).toEqual({
+      excludedNames: ["status"],
+      includedNames: ["id", "region"],
+      mode: "union-by-name",
+    });
+  });
+
   test("validates unique keys against patched headerless input columns", () => {
     const plan: DataStackPlanArtifact = {
       ...createPlan(),

@@ -1,6 +1,7 @@
 ---
 title: "Data stack artifact contract cleanup"
 created-date: 2026-04-26
+modified-date: 2026-04-26
 status: completed
 agent: codex
 ---
@@ -20,6 +21,10 @@ Implement the narrow `data stack` artifact contract cleanup from `docs/plans/pla
 - Updated `docs/guides/data-stack-usage.md` to document generated-path fallback and explicit custom collision failure.
 - Marked the implementation plan completed and linked this job record from the related research and plan docs.
 
+## Follow-Up Note
+
+A review follow-up found that accepted `/schema/excludedNames` Codex patches could leave the derived plan's `schema.includedNames` at the pre-exclusion list when callers used `applyDataStackCodexRecommendationDecisions()` directly. The follow-up now prunes `schema.includedNames` as exclusion patches are applied and adds regression coverage for a union-by-name exclusion recommendation.
+
 ## Verification
 
 ```text
@@ -28,6 +33,16 @@ bun run lint
 bun run format:check
 bun run build
 git diff --check
+```
+
+Follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
+bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
+bun run lint
+bun run format:check
+bun run build
 ```
 
 ## Related Research
