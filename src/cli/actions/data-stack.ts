@@ -458,6 +458,12 @@ export async function actionDataStack(
       runtime,
       options.planOutput?.trim() || generateDataStackPlanFileName(runtime.now()),
     );
+    if (codexReportPath && codexReportPath === planPath) {
+      throw new CliError("--codex-report-output cannot be the same path as --plan-output.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
     const plan = await writePreparedDataStackPlan(runtime, {
       diagnostics,
       duplicatePolicy,

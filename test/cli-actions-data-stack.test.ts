@@ -229,6 +229,46 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack rejects matching plan and Codex report output paths", async () => {
+    await withTempFixtureDir("data-stack-action-codex-report-collision", async (fixtureDir) => {
+      const planPath = join(fixtureDir, "stack-plan.json");
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            codexAssist: true,
+            codexReportOutput: "stack-plan.json",
+            codexRunner: async () =>
+              JSON.stringify({
+                recommendations: [
+                  {
+                    confidence: 0.92,
+                    id: "rec_unique_id",
+                    patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+                    reasoning_summary: "id is complete and unique in the deterministic facts.",
+                    title: "Use id as unique key",
+                  },
+                ],
+              }),
+            dryRun: true,
+            output: "merged.csv",
+            overwrite: true,
+            planOutput: "stack-plan.json",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as --plan-output",
+        },
+      );
+      expectNoOutput();
+      await expect(readFile(planPath, "utf8")).rejects.toThrow();
+    });
+  });
+
   test("actionDataStack surfaces malformed Codex assist responses", async () => {
     await withTempFixtureDir("data-stack-action-codex-malformed", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");

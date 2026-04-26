@@ -64,6 +64,10 @@ function normalizeDiagnosticValue(value: unknown): string {
   return String(value);
 }
 
+function encodeDiagnosticTuple(values: readonly unknown[]): string {
+  return JSON.stringify(values.map((value) => normalizeDiagnosticValue(value)));
+}
+
 function isNullKeyValue(value: unknown): boolean {
   return value === null || value === undefined || String(value).length === 0;
 }
@@ -82,9 +86,7 @@ function countDuplicateRows(keys: readonly string[]): number {
 }
 
 function computeExactDuplicateRows(rows: ReadonlyArray<readonly unknown[]>): number {
-  return countDuplicateRows(
-    rows.map((row) => row.map((value) => normalizeDiagnosticValue(value)).join("\u001f")),
-  );
+  return countDuplicateRows(rows.map((row) => encodeDiagnosticTuple(row)));
 }
 
 function resolveColumnIndexes(header: readonly string[], names: readonly string[]): number[] {
@@ -111,7 +113,7 @@ function analyzeKeyColumns(
       nullRows += 1;
       continue;
     }
-    keys.push(values.map((value) => normalizeDiagnosticValue(value)).join("\u001f"));
+    keys.push(encodeDiagnosticTuple(values));
   }
 
   return {

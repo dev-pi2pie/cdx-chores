@@ -53,6 +53,21 @@ describe("data stack diagnostics", () => {
     expect(diagnostics.duplicateKeyNullRows).toBe(1);
   });
 
+  test("does not collapse distinct composite keys containing delimiters", () => {
+    const diagnostics = computeDataStackDiagnostics({
+      header: ["left", "right"],
+      matchedFileCount: 1,
+      rows: [
+        ["a\u001fb", "c"],
+        ["a", "b\u001fc"],
+      ],
+      uniqueBy: ["left", "right"],
+    });
+
+    expect(diagnostics.duplicateSummary.duplicateKeyConflicts).toBe(0);
+    expect(diagnostics.duplicateSummary.exactDuplicateRows).toBe(0);
+  });
+
   test("reports candidate unique keys only when values are complete and unique", () => {
     const diagnostics = computeDataStackDiagnostics({
       header: ["id", "region", "day"],
