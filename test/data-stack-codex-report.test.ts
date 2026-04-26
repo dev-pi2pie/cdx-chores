@@ -430,6 +430,34 @@ describe("data stack Codex report helpers", () => {
     );
   });
 
+  test("rejects headerless column patches that change column count", () => {
+    const plan: DataStackPlanArtifact = {
+      ...createPlan(),
+      input: {
+        columns: ["column_1", "column_2"],
+        format: "csv",
+        headerMode: "no-header",
+      },
+      schema: {
+        excludedNames: [],
+        includedNames: ["column_1", "column_2"],
+        mode: "strict",
+      },
+    };
+
+    expectCliError(
+      () =>
+        validateDataStackCodexRecommendation(plan, {
+          confidence: 0.86,
+          id: "rec_headerless_short_columns",
+          patches: [{ op: "replace", path: "/input/columns", value: ["id"] }],
+          reasoningSummary: "Name the generated id column.",
+          title: "Name headerless id column",
+        }),
+      "must preserve the headerless column count",
+    );
+  });
+
   test("rejects unsupported or conflicting patch shapes", () => {
     const plan = createPlan();
     const headerlessPlan: DataStackPlanArtifact = {

@@ -31,6 +31,8 @@ A third review follow-up found that the interactive dry-run path could write a s
 
 A fourth review follow-up found that accepted headerless `/input/columns` recommendations could rename generated schema names while leaving `duplicates.uniqueBy` pointed at the old names. The follow-up now remaps existing unique keys by headerless column position during input-column replacement and rejects any remaining unknown unique-key names, with regression coverage for both the remap and rejection paths.
 
+A fifth review follow-up found two remaining contract gaps: headerless `/input/columns` recommendations could change the prepared column count, and direct dry-run artifacts could be written over already-resolved input files when `--overwrite` was set. The follow-up now rejects headerless column-count changes during Codex patch validation and rejects dry-run plan/report artifact paths that overlap prepared input files before any artifact is persisted, with focused regressions for both paths.
+
 ## Verification
 
 ```text
@@ -78,6 +80,18 @@ Fourth follow-up verification:
 ```text
 bun test test/data-stack-codex-report.test.ts
 bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
+bun run lint
+bun run format:check
+git diff --check
+bun run build
+```
+
+Fifth follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
+bun test test/cli-actions-data-stack.test.ts
+bun test test/data-stack-codex-report.test.ts test/cli-actions-data-stack.test.ts test/cli-command-data-stack.test.ts
 bun run lint
 bun run format:check
 git diff --check

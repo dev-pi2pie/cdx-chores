@@ -114,6 +114,63 @@ describe("cli action modules: data stack", () => {
     });
   });
 
+  test("actionDataStack rejects dry-run plan output matching an input file", async () => {
+    await withTempFixtureDir("data-stack-action-plan-input-collision", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            dryRun: true,
+            output: "merged.csv",
+            overwrite: true,
+            planOutput: "a.csv",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--plan-output cannot be the same path as an input source",
+        },
+      );
+      expectNoOutput();
+      expect(await readFile(sourcePath, "utf8")).toBe("id,status\n1,active\n");
+    });
+  });
+
+  test("actionDataStack rejects Codex report output matching an input file", async () => {
+    await withTempFixtureDir("data-stack-action-report-input-collision", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            codexAssist: true,
+            codexReportOutput: "a.csv",
+            codexRunner: async () => JSON.stringify({ recommendations: [] }),
+            dryRun: true,
+            output: "merged.csv",
+            overwrite: true,
+            planOutput: "stack-plan.json",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as an input source",
+        },
+      );
+      expectNoOutput();
+      expect(await readFile(sourcePath, "utf8")).toBe("id,status\n1,active\n");
+      await expect(readFile(planPath, "utf8")).rejects.toThrow();
+    });
+  });
+
   test("actionDataStack rejects duplicate rows before writing when policy is reject", async () => {
     await withTempFixtureDir("data-stack-action-duplicate-reject", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n1,active\n", "utf8");

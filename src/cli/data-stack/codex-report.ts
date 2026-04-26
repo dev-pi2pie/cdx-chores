@@ -205,6 +205,22 @@ function assertExecutableSchemaPatch(
   });
 }
 
+function assertHeaderlessColumnPatchWidth(
+  plan: DataStackPlanArtifact,
+  columns: readonly string[],
+): void {
+  if (columns.length === plan.input.columns.length) {
+    return;
+  }
+  throw new CliError(
+    `Invalid data stack Codex patch: /input/columns must preserve the headerless column count (${plan.input.columns.length}); received ${columns.length}.`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
 export function validateDataStackCodexPatch(
   plan: DataStackPlanArtifact,
   patch: DataStackCodexPatch,
@@ -228,6 +244,7 @@ export function validateDataStackCodexPatch(
         },
       );
     }
+    assertHeaderlessColumnPatchWidth(plan, columns);
     return { op: "replace", path, value: columns };
   }
   if (path === "/schema/mode") {

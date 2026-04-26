@@ -351,6 +351,28 @@ function renderDryRunSummary(
   });
 }
 
+function assertDataStackDryRunArtifactPathsDoNotOverlapInputs(
+  runtime: CliRuntime,
+  options: {
+    paths: ReadonlyArray<{ label: string; path?: string }>;
+    prepared: PreparedDataStackExecution;
+  },
+): void {
+  const inputPaths = new Set(options.prepared.files.map((file) => file.path));
+  for (const reservation of options.paths) {
+    if (!reservation.path || !inputPaths.has(reservation.path)) {
+      continue;
+    }
+    throw new CliError(
+      `${reservation.label} cannot be the same path as an input source: ${displayPath(runtime, reservation.path)}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+}
+
 export async function writePreparedDataStackOutput(
   runtime: CliRuntime,
   options: {
@@ -456,6 +478,13 @@ export async function actionDataStack(
 
   if (options.dryRun) {
     const planPath = assertNonEmpty(dryRunArtifactPaths?.planPath, "Plan path");
+    assertDataStackDryRunArtifactPathsDoNotOverlapInputs(runtime, {
+      paths: [
+        { label: "--plan-output", path: planPath },
+        { label: "--codex-report-output", path: codexReportPath },
+      ],
+      prepared,
+    });
     const plan = await writePreparedDataStackPlan(runtime, {
       diagnostics,
       duplicatePolicy,
