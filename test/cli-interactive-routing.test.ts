@@ -1136,6 +1136,33 @@ describe("interactive mode routing", () => {
     );
   });
 
+  test("rejects an interactive dry-run plan at the stack output path", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: [
+          "data",
+          "data:stack",
+          "csv",
+          "accept",
+          "strict",
+          "json",
+          "continue",
+          "dry-run",
+        ],
+        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+        optionalPathQueue: ["fixtures/custom-stacked.json", "fixtures/custom-stacked.json"],
+        inputQueue: ["*.csv"],
+        confirmQueue: [false],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("Stack plan path cannot be the same as stack output path");
+    expect(result.stackPlanWrites).toHaveLength(0);
+    expect(result.actionCalls).toEqual([]);
+  });
+
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
     const result = runInteractiveHarness({
       mode: "run",

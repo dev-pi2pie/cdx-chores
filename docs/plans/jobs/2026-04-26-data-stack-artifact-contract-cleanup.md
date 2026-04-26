@@ -27,6 +27,8 @@ A review follow-up found that accepted `/schema/excludedNames` Codex patches cou
 
 A second review follow-up found that an accepted recommendation could first set `/duplicates/uniqueBy` and then exclude one of those selected schema names. The follow-up now prunes excluded names from `duplicates.uniqueBy` during the same exclusion patch so derived plans remain replayable, with regression coverage for the ordered unique-key-plus-exclusion recommendation.
 
+A third review follow-up found that the interactive dry-run path could write a stack-plan JSON to the same path as the planned JSON stack output. The follow-up now rejects interactive stack-plan paths that equal the stack output path before either dry-run or write-now plan persistence, matching the direct CLI collision contract, and adds interactive harness coverage for the custom JSON collision.
+
 ## Verification
 
 ```text
@@ -52,6 +54,17 @@ Second follow-up verification:
 ```text
 bun test test/data-stack-codex-report.test.ts
 bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
+bun run lint
+bun run format:check
+git diff --check
+bun run build
+```
+
+Third follow-up verification:
+
+```text
+bun test test/cli-interactive-routing.test.ts
+bun test test/data-stack-artifact-paths.test.ts test/cli-interactive-routing.test.ts
 bun run lint
 bun run format:check
 git diff --check

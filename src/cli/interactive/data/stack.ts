@@ -41,6 +41,7 @@ import {
   formatDataStackSchemaMode,
 } from "../../data-stack/disclosure";
 import { createDataStackDefaultOutputPath } from "../../data-stack/default-output";
+import { CliError } from "../../errors";
 import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import { promptOptionalOutputPathChoice } from "../../prompts/path";
@@ -308,6 +309,23 @@ async function promptInteractiveStackPlanPath(
 async function removeInteractiveStackArtifact(runtime: CliRuntime, path: string): Promise<void> {
   await rm(path, { force: true });
   printLine(runtime.stderr, `Removed stack plan: ${displayPath(runtime, path)}`);
+}
+
+function assertInteractiveStackPlanPathIsReplayable(options: {
+  outputPath: string;
+  planPath: string;
+  runtime: CliRuntime;
+}): void {
+  if (options.planPath !== options.outputPath) {
+    return;
+  }
+  throw new CliError(
+    `Stack plan path cannot be the same as stack output path: ${displayPath(options.runtime, options.planPath)}.`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
 }
 
 async function maybeKeepInteractiveStackPlan(runtime: CliRuntime, planPath: string): Promise<void> {
@@ -1267,6 +1285,7 @@ async function confirmInteractiveStackWrite(
     });
     if (nextStep === "write") {
       const planPath = resolveFromCwd(runtime, defaultPlanPath);
+      assertInteractiveStackPlanPathIsReplayable({ outputPath, planPath, runtime });
       const planArtifact = await writePreparedDataStackPlan(
         runtime,
         buildInteractiveStackPlanWriteInput(state, planPath, reviewedPlan),
@@ -1286,6 +1305,11 @@ async function confirmInteractiveStackWrite(
         runtime,
         await promptInteractiveStackPlanPath(runtime, pathPromptContext),
       );
+      assertInteractiveStackPlanPathIsReplayable({
+        outputPath,
+        planPath: chosenPlanPath,
+        runtime,
+      });
       const planArtifact = await writePreparedDataStackPlan(
         runtime,
         buildInteractiveStackPlanWriteInput(state, chosenPlanPath, reviewedPlan),
