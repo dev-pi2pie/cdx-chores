@@ -36,7 +36,7 @@ Current `data stack` already supports:
 - direct CLI mixed file/directory sources
 - CSV, TSV, JSONL, and narrow `.json` array input
 - strict schema matching by default
-- opt-in `--union-by-name`
+- opt-in `--union-by-name` as the canary schema-flex flag from `v0.1.2-canary.2`
 - exact `--exclude-columns <name,name,...>` with union-by-name
 - direct output to `.csv`, `.tsv`, or `.json`
 - interactive mixed-source setup with generated default output paths
@@ -195,6 +195,11 @@ Duplicate policy execution rules:
 
 ## Phase Checklist
 
+Status note:
+
+- Phases 1 through 9 are implemented and checked off.
+- Phase 10 and Phase 11 are follow-up hardening and product-contract cleanup work, so this plan remains `active`.
+
 ### Phase 1: Freeze and implement stack-plan artifacts
 
 - [x] define stack-plan TypeScript types and validation helpers
@@ -319,6 +324,19 @@ Duplicate policy execution rules:
 - [ ] review whether manually added input sources also need bounded display in interactive stack review
 - [ ] update the guide and job records after the hardening pass is implemented and verified
 
+### Phase 11: Schema-mode naming and automatic analysis follow-up
+
+- [ ] introduce `--schema-mode <strict|union-by-name|auto>` as the explicit schema-mode contract for direct CLI
+- [ ] decide whether `--union-by-name` should be removed during canary development or kept as a short-lived compatibility alias with a clear deprecation message
+- [ ] document the canary compatibility note: `--union-by-name` existed in `v0.1.2-canary.2`, and `--schema-mode union-by-name` is the intended replacement surface
+- [ ] keep direct CLI default behavior fail-closed as `--schema-mode strict`
+- [ ] make interactive mode default to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices still available
+- [ ] define `--schema-mode auto` as deterministic analysis first, with Codex assist used only when available and only for ambiguous cases that require reviewed judgment
+- [ ] ensure `--schema-mode auto` never silently widens ambiguous schemas when Codex assist is unavailable; print concise next-step hints instead
+- [ ] keep accepted Codex schema recommendations materialized as deterministic stack-plan fields before write, dry-run save, or replay
+- [ ] update direct CLI, interactive, dry-run, replay, and guide tests for schema-mode naming, default behavior, canary transition handling, and unavailable-Codex fallback copy
+- [ ] update the research, guide, and job records after the schema-mode follow-up is implemented and verified
+
 ## Acceptance Criteria
 
 - direct `data stack --dry-run` writes a replayable JSON stack plan and does not write materialized output
@@ -335,6 +353,9 @@ Duplicate policy execution rules:
 - public guide docs explain the new workflow without duplicating the full JSON schema
 - interactive Codex assist appears as a contextual review checkpoint when diagnostics suggest it can help, not as a peer of final write/save actions
 - interactive Codex assist handles provider/schema failures with concise output and clean status-line behavior
+- direct schema-mode usage has a single explicit surface, `--schema-mode <strict|union-by-name|auto>`, with strict as the direct CLI default
+- interactive schema setup offers an `Analyze automatically` default while still allowing explicit strict and union-by-name choices
+- unavailable Codex assist never causes `--schema-mode auto` to make an ambiguous schema choice silently
 
 ## Risks and Mitigations
 
@@ -352,6 +373,9 @@ Duplicate policy execution rules:
 
 - Risk: interactive auto-clean removes evidence users need later.
   Mitigation: prompt separately for execution stack plans and advisory reports.
+
+- Risk: `--schema-mode auto` is mistaken for "always use Codex" or silently changes script output.
+  Mitigation: define auto as deterministic-first, keep strict as the direct CLI default, and require reviewed confirmation or a clear diagnostic for ambiguous cases.
 
 ## Related Research
 

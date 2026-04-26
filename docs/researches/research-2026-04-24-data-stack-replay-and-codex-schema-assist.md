@@ -17,7 +17,7 @@ The current `data stack` direction now has a clearer deterministic follow-up pat
 - mixed-source interactive input
 - strict `jsonl` input
 - narrow `.json` input as one top-level array of objects
-- opt-in `--union-by-name`
+- opt-in `--union-by-name` in `v0.1.2-canary.2`
 - explicit `--exclude-columns <name,name,...>`
 
 That still leaves an adjacent workflow unowned:
@@ -41,6 +41,11 @@ The implementation now proves the deterministic pieces, reviewed Codex report fl
 
 A live interactive run against `examples/playground/stack-cases/csv-header-mismatch/` found remaining hardening work before this research should close: the Codex structured-output schema is rejected because `patches[].value` lacks an explicit JSON Schema `type`, the raw provider error is too noisy for normal interactive output, and the analyzer status line can merge with the following failure message.
 
+Status note:
+
+- the replay, duplicate/key, and contextual Codex checkpoint contracts are settled
+- the research remains `in-progress` because interactive hardening and schema-mode cleanup are still open follow-ups
+
 ## Starting State
 
 At the start of this research, `data stack` had no replayable stack-record contract.
@@ -51,7 +56,7 @@ Current and planned deterministic behavior is expressed through command options:
 - pattern and traversal options
 - input format
 - output format and output path
-- schema mode such as strict matching or `--union-by-name`
+- schema mode such as strict matching, union-by-name, or automatic analysis
 - explicit exclusions such as `--exclude-columns`
 
 Before this research and its linked implementation plan, the completed stack follow-up work only recorded replay and Codex schema suggestions as deferred reviewed-assist work. That earlier work did not define:
@@ -611,7 +616,59 @@ Implication:
 - the final stack output is explainable from CLI flags or a record file
 - Codex behavior can improve without changing deterministic replay semantics
 
-### 8. Codex reports should be advisory and payload-linked
+### 8. Schema mode should have one explicit CLI surface
+
+`--union-by-name` was introduced during canary development as the first schema-flex switch. The next CLI surface should move that choice under one mode option:
+
+```bash
+cdx-chores data stack ./inputs --output merged.csv --schema-mode strict
+cdx-chores data stack ./inputs --output merged.csv --schema-mode union-by-name
+cdx-chores data stack ./inputs --output merged.csv --schema-mode auto --dry-run
+```
+
+Canary compatibility note:
+
+- `--union-by-name` existed in `v0.1.2-canary.2`
+- the intended replacement is `--schema-mode union-by-name`
+- because this is still canary development, the breaking change is acceptable if the guide and release notes call it out clearly
+- if a compatibility alias is kept for one canary, it should print a concise migration hint rather than becoming a second long-term spelling
+
+Recommended defaults:
+
+- direct CLI default:
+  - `--schema-mode strict`
+  - fail closed for scripts and repeatable automation
+- interactive default:
+  - `Analyze automatically`
+  - show explicit `Strict matching` and `Union by name` choices for users who already know the intended schema contract
+- replay default:
+  - use the recorded `schema.mode` from the stack-plan artifact
+
+`auto` should not mean "Codex is required." It should mean:
+
+1. Run deterministic schema analysis first.
+2. Choose `strict` when all accepted names match exactly.
+3. Choose `union-by-name` only when the widening is deterministic and low-risk.
+4. Ask for reviewed Codex help only when ambiguity remains and Codex assist is available.
+5. Stop with concise next-step hints when ambiguity remains and Codex assist is unavailable.
+
+Examples of ambiguity that should not be widened silently:
+
+- duplicated names inside one source
+- headerless inputs with generated `column_<n>` names
+- misspelled or near-duplicate headers
+- conflicting unique-key evidence
+- noisy extra columns that require exclusion judgment
+
+This keeps `auto` useful in interactive review and dry-run exploration without turning Codex availability into an execution dependency.
+
+Implication:
+
+- direct CLI remains scriptable and predictable
+- interactive mode becomes smoother by borrowing the `rename` style of automatic analysis plus reviewed confirmation
+- Codex schema recommendations still become deterministic stack-plan fields before write, dry-run save, or replay
+
+### 9. Codex reports should be advisory and payload-linked
 
 Codex recommendations should be written to a separate advisory report when the user wants to preserve the review evidence.
 
@@ -815,6 +872,12 @@ The next implementation plan should treat these as in-scope commitments:
 - add deterministic headerless column diagnostics for Codex-assisted naming
 - define `data-stack-codex-report-<timestamp>Z-<uid>.json`
 - add reviewed Codex assist for headerless columns, explicit exclusions, unique-key selection, duplicate policy, and schema drift explanation
+- introduce `--schema-mode <strict|union-by-name|auto>` as the long-term schema-mode CLI surface
+- treat direct CLI strict matching as the default fallback
+- make interactive schema setup default to `Analyze automatically`
+- make `--schema-mode auto` deterministic-first and Codex-assisted only when available and useful
+- never silently widen ambiguous schemas when Codex assist is unavailable
+- document that `--union-by-name` existed in `v0.1.2-canary.2` and is being replaced by `--schema-mode union-by-name`
 - add explicit `--unique-by <name[,name...]>`
 - add explicit `--on-duplicate preserve|report|reject`
 - persist duplicate policy and selected unique keys in the replay record
@@ -864,6 +927,12 @@ Resolved in this revision:
   - use `data-stack-codex-report-<timestamp>Z-<uid>.json` with recommendations tied to the analyzed stack `payloadId`
 - Codex assist surfaces:
   - cover headerless columns, noisy exclusions, unique-key choice, duplicate policy, and schema drift
+- schema-mode CLI surface:
+  - replace the standalone canary-era `--union-by-name` spelling with `--schema-mode <strict|union-by-name|auto>`
+- schema-mode defaults:
+  - direct CLI defaults to `strict`; interactive defaults to `Analyze automatically`; replay uses the recorded stack-plan mode
+- schema-mode auto fallback:
+  - use deterministic analysis first, Codex only for ambiguous reviewed cases, and concise failure guidance when ambiguity remains without Codex
 - recommendation application:
   - use stable recommendation ids plus atomic JSON Pointer style `replace` patches into known stack-plan fields
 - payload lifecycle:
@@ -912,6 +981,15 @@ The remaining open work is not the checkpoint shape itself; it is the interactiv
 - clear the analyzer status line before printing Codex success or failure output
 - make bounded matched-file samples explicit when many files are matched
 - decide whether manually added input sources also need bounded display in interactive stack review
+
+The schema-mode follow-up is a separate product-contract cleanup:
+
+- introduce `--schema-mode <strict|union-by-name|auto>`
+- treat `--union-by-name` as a canary-era flag from `v0.1.2-canary.2`, either removed during canary development or retained temporarily as a migration alias
+- keep direct CLI default behavior as strict matching
+- default interactive schema setup to `Analyze automatically`
+- make `auto` deterministic-first and Codex-assisted only when ambiguity needs reviewed judgment
+- provide a clear unavailable-Codex message instead of silently guessing or printing provider-shaped errors
 
 Until that follow-up is implemented and verified, this research should stay `in-progress`.
 

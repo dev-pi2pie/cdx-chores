@@ -12,7 +12,7 @@ For one-input shaping without SQL, see `docs/guides/data-extract-usage.md`.
 For SQL over one local source or a query workspace, see `docs/guides/data-query-usage.md`.
 For the interactive SQL flow, see `docs/guides/data-query-interactive-usage.md`.
 
-Current stable boundary:
+Current command boundary:
 
 - accepts one or more raw `<source>` arguments
 - raw sources may be files, directories, or both together
@@ -21,7 +21,7 @@ Current stable boundary:
 - strict `jsonl` is supported as one JSON object per line with the same key set across rows
 - strict `.json` input is supported as one top-level array of objects with the same key set across rows
 - strict schema matching is the default
-- `--union-by-name` is available as an opt-in schema-flex mode
+- `--union-by-name` is available as the current canary opt-in schema-flex mode
 - `--exclude-columns <name,name,...>` removes exact column/key names from union-by-name output
 - `--dry-run` writes a replayable stack-plan artifact and does not write stack output
 - `data stack replay <record>` executes a reviewed stack-plan JSON artifact
@@ -96,6 +96,16 @@ Schema-flex behavior:
   - `.json` top-level arrays of objects
 - `--union-by-name` is rejected with `--no-header` in this slice because generated `column_<n>` names are not a stable user-authored schema
 - `--union-by-name` is not used automatically; it exists to make schema widening deliberate
+
+Planned canary schema-mode transition note:
+
+- `--union-by-name` existed in `v0.1.2-canary.2`
+- the current shipped canary option remains `--union-by-name`
+- the planned replacement surface is `--schema-mode <strict|union-by-name|auto>`
+- until that follow-up is implemented, examples in this guide intentionally keep using the current canary flag
+- direct CLI should continue to default to strict matching
+- interactive mode is planned to move toward an `Analyze automatically` default with explicit strict and union-by-name choices still available
+- planned `auto` behavior should use deterministic analysis first, ask Codex assist only for ambiguous reviewed cases when available, and fail with concise next-step hints when ambiguity cannot be resolved safely
 
 Dry-run and replay behavior:
 
@@ -216,7 +226,7 @@ Choose:
 1. `data`
 2. `stack`
 
-Current interactive flow:
+Current implemented interactive flow:
 
 1. Enter one input source.
 2. Optionally add more sources.
@@ -229,18 +239,30 @@ Current interactive flow:
 9. Choose destination style:
    - use generated default output path
    - custom output path
-10. Review the normalized source summary, schema mode, matched files, row count, duplicate/key status, stack-plan path, advisory report status, output format, and write setup.
+10. Review the deterministic status preview:
+   - normalized source summary
+   - schema mode
+   - matched files and bounded sample
+   - row count
+   - duplicate/key status
+   - stack-plan path
+   - advisory report status
+   - output format and destination
 11. If diagnostics show useful signals, choose one Codex checkpoint action:
    - review with Codex
    - continue without Codex
    - revise stack setup
    - cancel
-12. At the write boundary, choose one of:
+12. If Codex recommendations are accepted or edited, review the refreshed deterministic status preview.
+13. At the write boundary, choose one of:
    - write now
    - dry-run plan only
-   - revise stack setup
    - change destination
+   - revise stack setup
    - cancel
+14. If `dry-run plan only` is selected, write only the stack-plan artifact and choose whether to keep it.
+15. If `write now` succeeds, choose whether to keep the applied stack plan.
+16. If advisory reports exist, answer their retention prompt separately from the stack-plan retention prompt.
 
 Current interactive default output rule:
 
@@ -257,6 +279,13 @@ Current interactive default output rule:
 - declining retention removes only the generated stack-plan JSON
 - Codex or diagnostic reports have a separate keep prompt
 - failed writes keep all generated artifacts for troubleshooting
+
+Planned schema-mode refinement:
+
+- interactive schema setup should default to `Analyze automatically`
+- the explicit choices remain available as `Strict matching` and `Union by name`
+- automatic analysis should pick strict when sources match exactly, use deterministic union-by-name only when the widening is low-risk, and request reviewed Codex help only for ambiguous cases
+- if Codex assist is unavailable and the schema is still ambiguous, interactive mode should explain the issue and let the user choose an explicit schema mode or revise setup
 
 Interactive Codex review:
 
