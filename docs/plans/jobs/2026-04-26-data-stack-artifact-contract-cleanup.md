@@ -29,6 +29,8 @@ A second review follow-up found that an accepted recommendation could first set 
 
 A third review follow-up found that the interactive dry-run path could write a stack-plan JSON to the same path as the planned JSON stack output. The follow-up now rejects interactive stack-plan paths that equal the stack output path before either dry-run or write-now plan persistence, matching the direct CLI collision contract, and adds interactive harness coverage for the custom JSON collision.
 
+A fourth review follow-up found that accepted headerless `/input/columns` recommendations could rename generated schema names while leaving `duplicates.uniqueBy` pointed at the old names. The follow-up now remaps existing unique keys by headerless column position during input-column replacement and rejects any remaining unknown unique-key names, with regression coverage for both the remap and rejection paths.
+
 ## Verification
 
 ```text
@@ -65,6 +67,17 @@ Third follow-up verification:
 ```text
 bun test test/cli-interactive-routing.test.ts
 bun test test/data-stack-artifact-paths.test.ts test/cli-interactive-routing.test.ts
+bun run lint
+bun run format:check
+git diff --check
+bun run build
+```
+
+Fourth follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
+bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
 bun run lint
 bun run format:check
 git diff --check

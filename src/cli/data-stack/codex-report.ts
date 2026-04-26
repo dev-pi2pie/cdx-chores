@@ -398,16 +398,47 @@ export async function writeDataStackCodexReportArtifact(
   await writeTextFileSafe(path, serializeDataStackCodexReportArtifact(report), options);
 }
 
+function reconcileUniqueByForRenamedSchema(options: {
+  nextNames: readonly string[];
+  previousNames: readonly string[];
+  uniqueBy: readonly string[];
+}): string[] {
+  const nextNames = [...options.nextNames];
+  const nextNameSet = new Set(nextNames);
+  const remappedUniqueBy = options.uniqueBy.map((name) => {
+    const previousIndex = options.previousNames.indexOf(name);
+    return previousIndex >= 0 ? (nextNames[previousIndex] ?? name) : name;
+  });
+  const unknownNames = remappedUniqueBy.filter((name) => !nextNameSet.has(name));
+  if (unknownNames.length > 0) {
+    throw new CliError(
+      `Invalid data stack Codex patch: /input/columns leaves duplicates.uniqueBy with unknown schema names: ${unknownNames.join(", ")}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+  return remappedUniqueBy;
+}
+
 function applyPatchToPlan(
   plan: DataStackPlanArtifact,
   patch: DataStackCodexPatch,
 ): DataStackPlanArtifact {
   const next = structuredClone(plan) as DataStackPlanArtifact;
   switch (patch.path) {
-    case "/input/columns":
+    case "/input/columns": {
+      const previousNames = next.schema.includedNames;
       next.input.columns = [...(patch.value as string[])];
       next.schema.includedNames = [...next.input.columns];
+      next.duplicates.uniqueBy = reconcileUniqueByForRenamedSchema({
+        nextNames: next.schema.includedNames,
+        previousNames,
+        uniqueBy: next.duplicates.uniqueBy,
+      });
       break;
+    }
     case "/schema/mode":
       next.schema.mode = patch.value as DataStackPlanArtifact["schema"]["mode"];
       break;
