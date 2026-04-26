@@ -25,6 +25,8 @@ Implement the narrow `data stack` artifact contract cleanup from `docs/plans/pla
 
 A review follow-up found that accepted `/schema/excludedNames` Codex patches could leave the derived plan's `schema.includedNames` at the pre-exclusion list when callers used `applyDataStackCodexRecommendationDecisions()` directly. The follow-up now prunes `schema.includedNames` as exclusion patches are applied and adds regression coverage for a union-by-name exclusion recommendation.
 
+A second review follow-up found that an accepted recommendation could first set `/duplicates/uniqueBy` and then exclude one of those selected schema names. The follow-up now prunes excluded names from `duplicates.uniqueBy` during the same exclusion patch so derived plans remain replayable, with regression coverage for the ordered unique-key-plus-exclusion recommendation.
+
 ## Verification
 
 ```text
@@ -42,6 +44,17 @@ bun test test/data-stack-codex-report.test.ts
 bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
 bun run lint
 bun run format:check
+bun run build
+```
+
+Second follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
+bun test test/data-stack-codex-report.test.ts test/cli-command-data-stack.test.ts
+bun run lint
+bun run format:check
+git diff --check
 bun run build
 ```
 

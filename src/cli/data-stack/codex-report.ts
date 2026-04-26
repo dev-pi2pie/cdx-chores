@@ -413,6 +413,9 @@ function applyPatchToPlan(
       break;
     case "/schema/excludedNames":
       next.schema.excludedNames = [...(patch.value as string[])];
+      next.duplicates.uniqueBy = next.duplicates.uniqueBy.filter(
+        (name) => !next.schema.excludedNames.includes(name),
+      );
       next.schema.includedNames = next.schema.includedNames.filter(
         (name) => !next.schema.excludedNames.includes(name),
       );

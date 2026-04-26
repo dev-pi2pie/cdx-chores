@@ -229,6 +229,51 @@ describe("data stack Codex report helpers", () => {
     });
   });
 
+  test("removes excluded schema names from derived unique keys", () => {
+    const plan = createPlan();
+    const diagnostics = computeDataStackDiagnostics({
+      header: plan.schema.includedNames,
+      matchedFileCount: 1,
+      rows: [
+        ["1", "active", "north"],
+        ["2", "paused", "south"],
+      ],
+    });
+    const report = createDataStackCodexReportArtifact({
+      diagnostics,
+      now: new Date("2026-04-26T00:01:00.000Z"),
+      plan,
+      recommendations: [
+        {
+          confidence: 0.8,
+          id: "rec_schema_exclusions_with_key",
+          patches: [
+            { op: "replace", path: "/schema/mode", value: "union-by-name" },
+            { op: "replace", path: "/duplicates/uniqueBy", value: ["id", "status"] },
+            { op: "replace", path: "/schema/excludedNames", value: ["status"] },
+          ],
+          reasoningSummary: "Union by name can exclude sparse status values.",
+          title: "Exclude status in union mode",
+        },
+      ],
+      uid: "bbbbeeee",
+    });
+
+    const nextPlan = applyDataStackCodexRecommendationDecisions({
+      decisions: [{ decision: "accepted", recommendationId: "rec_schema_exclusions_with_key" }],
+      now: new Date("2026-04-26T00:02:00.000Z"),
+      plan,
+      report,
+    });
+
+    expect(nextPlan.duplicates.uniqueBy).toEqual(["id"]);
+    expect(nextPlan.schema).toEqual({
+      excludedNames: ["status"],
+      includedNames: ["id", "region"],
+      mode: "union-by-name",
+    });
+  });
+
   test("validates unique keys against patched headerless input columns", () => {
     const plan: DataStackPlanArtifact = {
       ...createPlan(),
