@@ -1321,7 +1321,7 @@ describe("interactive mode routing", () => {
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
       inputQueue: ["*.csv"],
-      confirmQueue: [false, true, false, false],
+      confirmQueue: [false, false, true],
       dataStackCodexRecommendations: [
         {
           confidence: 0.91,
@@ -1334,27 +1334,21 @@ describe("interactive mode routing", () => {
     });
 
     expect(result.actionCalls).toEqual([]);
-    expect(result.codexReportWrites).toEqual([
-      {
-        path: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
-        options: { recommendationCount: 1 },
-      },
-    ]);
+    expect(result.codexReportWrites).toEqual([]);
     expect(result.stackPlanWrites[0]?.options).toMatchObject({
       acceptedRecommendationIds: ["rec_unique_id"],
-      reportPath: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
+      reportPath: null,
       uniqueBy: ["id"],
     });
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Keep diagnostic/advisory report?",
     );
-    expect(result.removedPaths).toContainEqual(
-      expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
-    );
+    expect(result.removedPaths).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Skipped diagnostic/advisory report.");
     expect(result.stderr).toContain("Dry run: wrote stack plan");
   });
 
-  test("can remove the interactive Codex advisory report separately", () => {
+  test("can keep the interactive Codex advisory report separately", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: [
@@ -1371,7 +1365,7 @@ describe("interactive mode routing", () => {
       requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
-      confirmQueue: [false, true, false],
+      confirmQueue: [false, true, true],
       dataStackCodexRecommendations: [
         {
           confidence: 0.7,
@@ -1388,10 +1382,14 @@ describe("interactive mode routing", () => {
       reportPath: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
       uniqueBy: [],
     });
-    expect(result.removedPaths).toContainEqual(
-      expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
-    );
-    expect(stripAnsi(result.stderr)).toContain("Removed diagnostic/advisory report:");
+    expect(result.codexReportWrites).toEqual([
+      {
+        path: expect.stringContaining("data-stack-codex-report-20260225T000000Z-testabcd.json"),
+        options: { recommendationCount: 1 },
+      },
+    ]);
+    expect(result.removedPaths).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Codex assist: wrote advisory report");
   });
 
   test("keeps deterministic setup when interactive Codex review is cancelled", () => {

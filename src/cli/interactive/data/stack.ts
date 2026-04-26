@@ -134,6 +134,14 @@ interface InteractiveDataStackPreviewState {
   setup: InteractiveDataStackSetup;
 }
 
+interface InteractiveDataStackReviewedPlan {
+  plan: DataStackPlanArtifact;
+  report?: {
+    artifact: DataStackCodexReportArtifact;
+    path: string;
+  };
+}
+
 const INTERACTIVE_STACK_PREVIEW_SAMPLE_LIMIT = 5;
 
 function createInteractiveStackPreviewSample<T>(items: readonly T[]): {
@@ -361,23 +369,6 @@ function renderInteractiveStackReplayTip(runtime: CliRuntime, planPath: string):
   printLine(runtime.stderr, `${pc.yellow("Replay later:")} ${pc.cyan(replayCommand)}`);
 }
 
-async function maybeKeepInteractiveStackReport(
-  runtime: CliRuntime,
-  plan: DataStackPlanArtifact,
-): Promise<void> {
-  if (!plan.diagnostics.reportPath) {
-    return;
-  }
-  const keepReport = await confirm({ message: "Keep diagnostic/advisory report?", default: true });
-  if (!keepReport) {
-    await rm(plan.diagnostics.reportPath, { force: true });
-    printLine(
-      runtime.stderr,
-      `Removed diagnostic/advisory report: ${displayPath(runtime, plan.diagnostics.reportPath)}`,
-    );
-  }
-}
-
 function buildInteractiveStackPlanWriteOptions(options: {
   diagnostics: DataStackDiagnosticsResult;
   outputPath: string;
@@ -433,6 +424,83 @@ async function createInteractiveStackPlanArtifact(
     runtime,
     metadata,
   });
+}
+
+function setInteractiveStackDiagnosticsReportPath(
+  diagnostics: DataStackDiagnosticsResult,
+  reportPath: string | null,
+): DataStackDiagnosticsResult {
+  return {
+    ...diagnostics,
+    planDiagnostics: {
+      ...diagnostics.planDiagnostics,
+      reportPath,
+    },
+  };
+}
+
+function setInteractiveStackPlanReportPath(
+  plan: DataStackPlanArtifact,
+  reportPath: string | null,
+): DataStackPlanArtifact {
+  const next = structuredClone(plan) as DataStackPlanArtifact;
+  next.diagnostics.reportPath = reportPath;
+  return next;
+}
+
+function setInteractiveStackStateReportPath(
+  state: InteractiveDataStackPreviewState,
+  reportPath: string | null,
+): InteractiveDataStackPreviewState {
+  const diagnostics = setInteractiveStackDiagnosticsReportPath(state.diagnostics, reportPath);
+  return {
+    ...state,
+    diagnostics,
+    planArtifact: state.planArtifact
+      ? setInteractiveStackPlanReportPath(state.planArtifact, reportPath)
+      : undefined,
+    planWriteOptions: {
+      ...state.planWriteOptions,
+      diagnostics,
+    },
+  };
+}
+
+async function resolveInteractiveStackReportPersistence(
+  runtime: CliRuntime,
+  state: InteractiveDataStackPreviewState,
+  reviewedPlan?: InteractiveDataStackReviewedPlan,
+): Promise<{
+  reviewedPlan?: DataStackPlanArtifact;
+  state: InteractiveDataStackPreviewState;
+}> {
+  if (!reviewedPlan?.report) {
+    return {
+      reviewedPlan: reviewedPlan?.plan,
+      state,
+    };
+  }
+
+  const keepReport = await confirm({ message: "Keep diagnostic/advisory report?", default: true });
+  if (!keepReport) {
+    printLine(runtime.stderr, "Skipped diagnostic/advisory report.");
+    return {
+      reviewedPlan: setInteractiveStackPlanReportPath(reviewedPlan.plan, null),
+      state: setInteractiveStackStateReportPath(state, null),
+    };
+  }
+
+  await writeDataStackCodexReportArtifact(reviewedPlan.report.path, reviewedPlan.report.artifact, {
+    overwrite: true,
+  });
+  printLine(
+    runtime.stderr,
+    `Codex assist: wrote advisory report ${displayPath(runtime, reviewedPlan.report.path)}`,
+  );
+  return {
+    reviewedPlan: reviewedPlan.plan,
+    state,
+  };
 }
 
 function buildInteractiveStackPlanWriteInput(
@@ -1131,7 +1199,7 @@ async function prepareInteractiveStackPreviewState(options: {
 async function requestInteractiveStackCodexReview(
   runtime: CliRuntime,
   state: InteractiveDataStackPreviewState,
-): Promise<DataStackPlanArtifact | undefined> {
+): Promise<InteractiveDataStackReviewedPlan | undefined> {
   const reportPath = resolveFromCwd(runtime, generateDataStackCodexReportFileName(runtime.now()));
   const diagnosticsWithReport = computeDataStackDiagnostics({
     header: state.prepared.header,
@@ -1168,16 +1236,21 @@ async function requestInteractiveStackCodexReview(
     status.stop();
   }
 
-  await writeDataStackCodexReportArtifact(reportPath, report, { overwrite: true });
   printLine(
     runtime.stderr,
-    `Codex assist: wrote advisory report ${displayPath(runtime, reportPath)}`,
+    `Codex assist: prepared advisory report ${displayPath(runtime, reportPath)}`,
   );
   renderInteractiveCodexRecommendations(runtime, report.recommendations);
   const decisions = await reviewInteractiveCodexRecommendations(runtime, report);
   if (decisions.length === 0) {
     printLine(runtime.stderr, "No Codex recommendations accepted.");
-    return plan;
+    return {
+      plan,
+      report: {
+        artifact: report,
+        path: reportPath,
+      },
+    };
   }
 
   try {
@@ -1201,14 +1274,26 @@ async function requestInteractiveStackCodexReview(
     );
     renderInteractiveAcceptedCodexChanges(runtime, nextPlan);
     printLine(runtime.stderr, "Re-running stack status preview with accepted Codex changes.");
-    return nextPlan;
+    return {
+      plan: nextPlan,
+      report: {
+        artifact: report,
+        path: reportPath,
+      },
+    };
   } catch (error) {
     printLine(
       runtime.stderr,
       `Codex recommendation application failed: ${error instanceof Error ? error.message : String(error)}`,
     );
     printLine(runtime.stderr, "Keeping current deterministic stack setup.");
-    return plan;
+    return {
+      plan,
+      report: {
+        artifact: report,
+        path: reportPath,
+      },
+    };
   }
 }
 
@@ -1218,7 +1303,7 @@ async function confirmInteractiveStackWrite(
   setup: InteractiveDataStackSetup,
 ): Promise<InteractiveDataStackWriteOutcome> {
   let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
-  let reviewedPlan: DataStackPlanArtifact | undefined;
+  let reviewedPlan: InteractiveDataStackReviewedPlan | undefined;
   let handledCodexSignalKey: string | undefined;
 
   while (true) {
@@ -1227,7 +1312,7 @@ async function confirmInteractiveStackWrite(
     const state = await prepareInteractiveStackPreviewState({
       outputPath,
       outputPlan,
-      planArtifact: reviewedPlan,
+      planArtifact: reviewedPlan?.plan,
       runtime,
       setup,
     });
@@ -1241,7 +1326,7 @@ async function confirmInteractiveStackWrite(
     });
     renderInteractiveStackStatusPreview(runtime, {
       diagnostics: state.diagnostics,
-      plan: reviewedPlan,
+      plan: reviewedPlan?.plan,
       planPath: defaultPlanPath,
       prepared: state.prepared,
     });
@@ -1309,9 +1394,14 @@ async function confirmInteractiveStackWrite(
         prepared: state.prepared,
         runtime,
       });
+      const writeInput = await resolveInteractiveStackReportPersistence(
+        runtime,
+        state,
+        reviewedPlan,
+      );
       const planArtifact = await writePreparedDataStackPlan(
         runtime,
-        buildInteractiveStackPlanWriteInput(state, planPath, reviewedPlan),
+        buildInteractiveStackPlanWriteInput(writeInput.state, planPath, writeInput.reviewedPlan),
       );
       return {
         diagnostics: state.diagnostics,
@@ -1338,16 +1428,24 @@ async function confirmInteractiveStackWrite(
         prepared: state.prepared,
         runtime,
       });
-      const planArtifact = await writePreparedDataStackPlan(
+      const writeInput = await resolveInteractiveStackReportPersistence(
         runtime,
-        buildInteractiveStackPlanWriteInput(state, chosenPlanPath, reviewedPlan),
+        state,
+        reviewedPlan,
+      );
+      await writePreparedDataStackPlan(
+        runtime,
+        buildInteractiveStackPlanWriteInput(
+          writeInput.state,
+          chosenPlanPath,
+          writeInput.reviewedPlan,
+        ),
       );
       printLine(
         runtime.stderr,
         `Dry run: wrote stack plan ${displayPath(runtime, chosenPlanPath)}`,
       );
       await maybeKeepInteractiveStackPlan(runtime, chosenPlanPath);
-      await maybeKeepInteractiveStackReport(runtime, planArtifact);
       return { kind: "dry-run" };
     }
     if (nextStep === "review") {
@@ -1407,7 +1505,6 @@ export async function runInteractiveDataStack(
       throw error;
     }
     await maybeKeepInteractiveStackPlan(runtime, outcome.planPath);
-    await maybeKeepInteractiveStackReport(runtime, outcome.planArtifact);
     return;
   }
 }

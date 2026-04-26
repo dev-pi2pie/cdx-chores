@@ -39,6 +39,8 @@ A seventh review follow-up found that replacing `/schema/excludedNames` on a pla
 
 An eighth review follow-up found that accepted `/schema/mode` recommendations could change a derived plan to a mode that the stored sources could not prepare during replay. Because the plan artifact does not store per-source raw schemas, the follow-up now rejects mode-changing Codex patches, still allows no-op mode patches, and updates the Codex prompt to avoid asking for schema-mode changes.
 
+A ninth follow-up found that the interactive Codex dry-run flow could write a plan that referenced an advisory report and then remove that report when the user declined to keep it. The follow-up now keeps Codex reports in memory until the final write boundary, asks whether to keep the report before persisting the final plan, and clears `diagnostics.reportPath` when the report is skipped.
+
 ## Verification
 
 ```text
@@ -135,6 +137,12 @@ bun run lint
 bun run format:check
 git diff --check
 bun run build
+```
+
+Ninth follow-up verification:
+
+```text
+bun test test/cli-interactive-routing.test.ts
 ```
 
 ## Related Research
