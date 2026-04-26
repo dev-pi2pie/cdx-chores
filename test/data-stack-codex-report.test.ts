@@ -274,6 +274,89 @@ describe("data stack Codex report helpers", () => {
     });
   });
 
+  test("rejects exclusion replacements that remove existing exclusions", () => {
+    const plan: DataStackPlanArtifact = {
+      ...createPlan(),
+      schema: {
+        excludedNames: ["noise"],
+        includedNames: ["id", "status"],
+        mode: "union-by-name",
+      },
+    };
+    const report = createReport(plan);
+
+    expectCliError(
+      () =>
+        applyDataStackCodexRecommendationDecisions({
+          decisions: [
+            {
+              decision: "edited",
+              patches: [{ op: "replace", path: "/schema/excludedNames", value: [] }],
+              recommendationId: "rec_unique_id",
+            },
+          ],
+          now: new Date("2026-04-26T00:02:00.000Z"),
+          plan,
+          report,
+        }),
+      "must keep existing excluded schema names",
+    );
+  });
+
+  test("applies additive exclusion replacements from the full schema basis", () => {
+    const plan: DataStackPlanArtifact = {
+      ...createPlan(),
+      duplicates: {
+        duplicateKeyConflicts: 0,
+        exactDuplicateRows: 0,
+        policy: "preserve",
+        uniqueBy: ["status"],
+      },
+      schema: {
+        excludedNames: ["noise"],
+        includedNames: ["id", "status"],
+        mode: "union-by-name",
+      },
+    };
+    const report = createDataStackCodexReportArtifact({
+      diagnostics: computeDataStackDiagnostics({
+        header: plan.schema.includedNames,
+        matchedFileCount: 1,
+        rows: [
+          ["1", "active"],
+          ["2", "paused"],
+        ],
+        uniqueBy: plan.duplicates.uniqueBy,
+      }),
+      now: new Date("2026-04-26T00:01:00.000Z"),
+      plan,
+      recommendations: [
+        {
+          confidence: 0.8,
+          id: "rec_schema_exclusions",
+          patches: [{ op: "replace", path: "/schema/excludedNames", value: ["noise", "status"] }],
+          reasoningSummary: "Exclude sparse status values while keeping existing exclusions.",
+          title: "Exclude status in union mode",
+        },
+      ],
+      uid: "bbbbffff",
+    });
+
+    const nextPlan = applyDataStackCodexRecommendationDecisions({
+      decisions: [{ decision: "accepted", recommendationId: "rec_schema_exclusions" }],
+      now: new Date("2026-04-26T00:02:00.000Z"),
+      plan,
+      report,
+    });
+
+    expect(nextPlan.duplicates.uniqueBy).toEqual([]);
+    expect(nextPlan.schema).toEqual({
+      excludedNames: ["noise", "status"],
+      includedNames: ["id"],
+      mode: "union-by-name",
+    });
+  });
+
   test("validates unique keys against patched headerless input columns", () => {
     const plan: DataStackPlanArtifact = {
       ...createPlan(),

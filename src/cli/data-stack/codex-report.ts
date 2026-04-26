@@ -194,6 +194,41 @@ function assertKnownSchemaNames(
   }
 }
 
+function assertKnownSchemaOrExcludedNames(
+  plan: DataStackPlanArtifact,
+  names: readonly string[],
+  context: string,
+): void {
+  const available = new Set([...plan.schema.includedNames, ...plan.schema.excludedNames]);
+  const unknown = names.filter((name) => !available.has(name));
+  if (unknown.length > 0) {
+    throw new CliError(
+      `Invalid data stack Codex patch: ${context} contains unknown schema names: ${unknown.join(", ")}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+}
+
+function assertPreservesExistingExcludedNames(
+  plan: DataStackPlanArtifact,
+  excludedNames: readonly string[],
+): void {
+  const nextExcludedNames = new Set(excludedNames);
+  const removedNames = plan.schema.excludedNames.filter((name) => !nextExcludedNames.has(name));
+  if (removedNames.length > 0) {
+    throw new CliError(
+      `Invalid data stack Codex patch: /schema/excludedNames must keep existing excluded schema names: ${removedNames.join(", ")}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+}
+
 function assertExecutableSchemaPatch(
   plan: DataStackPlanArtifact,
   schema: DataStackPlanArtifact["schema"],
@@ -257,7 +292,8 @@ export function validateDataStackCodexPatch(
   }
   if (path === "/schema/excludedNames") {
     const excludedNames = ensureStringArray(patch.value, path, { allowEmpty: true });
-    assertKnownSchemaNames(plan, excludedNames, path);
+    assertKnownSchemaOrExcludedNames(plan, excludedNames, path);
+    assertPreservesExistingExcludedNames(plan, excludedNames);
     assertExecutableSchemaPatch(plan, {
       ...plan.schema,
       excludedNames,
@@ -464,9 +500,10 @@ function applyPatchToPlan(
       next.duplicates.uniqueBy = next.duplicates.uniqueBy.filter(
         (name) => !next.schema.excludedNames.includes(name),
       );
-      next.schema.includedNames = next.schema.includedNames.filter(
-        (name) => !next.schema.excludedNames.includes(name),
-      );
+      next.schema.includedNames = [
+        ...next.schema.includedNames,
+        ...plan.schema.excludedNames.filter((name) => !next.schema.includedNames.includes(name)),
+      ].filter((name) => !next.schema.excludedNames.includes(name));
       break;
     case "/duplicates/uniqueBy":
       next.duplicates.uniqueBy = [...(patch.value as string[])];

@@ -35,6 +35,8 @@ A fifth review follow-up found two remaining contract gaps: headerless `/input/c
 
 A sixth review follow-up found that the interactive dry-run plan prompt still allowed a stack-plan JSON path to overlap a matched input source. The follow-up now applies the same reserved artifact contract in the interactive flow by rejecting stack-plan paths that equal prepared input files before either dry-run or write-now plan persistence, with harness coverage for a JSON input-source collision.
 
+A seventh review follow-up found that replacing `/schema/excludedNames` on a plan that already carried exclusions could silently lose the previously excluded schema basis and later produce a non-replayable plan. The follow-up now rejects exclusion replacements that remove existing exclusions, still allows additive exclusions against the current included-or-excluded schema names, and covers both paths in Codex report helper regressions.
+
 ## Verification
 
 ```text
@@ -105,6 +107,16 @@ Sixth follow-up verification:
 ```text
 bun test test/cli-interactive-routing.test.ts
 bun test test/cli-interactive-routing.test.ts test/data-stack-artifact-paths.test.ts test/cli-actions-data-stack.test.ts
+bun run lint
+bun run format:check
+git diff --check
+bun run build
+```
+
+Seventh follow-up verification:
+
+```text
+bun test test/data-stack-codex-report.test.ts
 bun run lint
 bun run format:check
 git diff --check
