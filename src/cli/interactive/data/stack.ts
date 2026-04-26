@@ -45,6 +45,7 @@ import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import { promptOptionalOutputPathChoice } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
+import { getCliColors } from "../../colors";
 import {
   generateDataStackPlanFileName,
   type DataStackDuplicatePolicy,
@@ -313,7 +314,17 @@ async function maybeKeepInteractiveStackPlan(runtime: CliRuntime, planPath: stri
   const keepPlan = await confirm({ message: "Keep stack plan?", default: true });
   if (!keepPlan) {
     await removeInteractiveStackArtifact(runtime, planPath);
+    return;
   }
+  renderInteractiveStackReplayTip(runtime, planPath);
+}
+
+function renderInteractiveStackReplayTip(runtime: CliRuntime, planPath: string): void {
+  const pc = getCliColors(runtime);
+  printLine(
+    runtime.stderr,
+    `${pc.yellow("Replay later:")} cdx-chores data stack replay ${displayPath(runtime, planPath)}`,
+  );
 }
 
 async function maybeKeepInteractiveStackReport(
@@ -467,7 +478,7 @@ async function promptInteractiveStackCodexCheckpoint(
     message: "Codex-powered analysis checkpoint",
     choices: [
       {
-        name: "Analyze with Codex (powered by Codex)",
+        name: "Analyze with Codex",
         value: "codex",
         description: "Ask for advisory schema, key, and duplicate-policy suggestions",
       },

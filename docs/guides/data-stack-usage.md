@@ -109,7 +109,7 @@ Direct CLI `--schema-mode auto` decision tree:
 3. If union-by-name preparation succeeds, use `union-by-name`.
 4. If widening is unsafe, such as headerless generated names or duplicate names inside one source, stop with a concise diagnostic.
 
-Interactive `Automatic schema check` uses the same deterministic analysis. After the status preview, the `Analyze with Codex (powered by Codex)` checkpoint may still appear when diagnostics show useful review signals, such as schema drift, noisy union columns, duplicate rows, or candidate unique keys. Codex remains a reviewed helper; it is not required for automatic schema analysis.
+Interactive `Automatic schema check` uses the same deterministic analysis. After the status preview, the `Analyze with Codex` checkpoint may still appear when diagnostics show useful review signals, such as schema drift, noisy union columns, duplicate rows, or candidate unique keys. Codex remains a reviewed helper; it is not required for automatic schema analysis.
 
 Dry-run and replay behavior:
 
@@ -260,7 +260,7 @@ Current implemented interactive flow:
    - output target
    - stack-plan and advisory-report status
 14. If diagnostics show useful signals, choose one Codex-powered analysis checkpoint action:
-   - analyze with Codex (powered by Codex)
+   - analyze with Codex
    - continue without Codex
    - revise stack setup
    - cancel
@@ -287,13 +287,14 @@ Current interactive default output rule:
 - if overwrite is declined, the destination prompt can choose a custom path or generate a new default candidate
 - dry-run plan only writes a stack-plan JSON artifact and defaults to keeping it
 - successful write asks whether to keep the applied stack plan
+- when a kept stack plan remains available, interactive mode prints a colored `Replay later: cdx-chores data stack replay <record>` tip
 - declining retention removes only the generated stack-plan JSON
 - Codex or diagnostic reports have a separate keep prompt
 - failed writes keep all generated artifacts for troubleshooting
 
 Interactive Codex review:
 
-- Codex recommendations are requested from a contextual `Analyze with Codex (powered by Codex)` checkpoint before write or plan save
+- Codex recommendations are requested from a contextual `Analyze with Codex` checkpoint before write or plan save
 - the checkpoint is shown only when diagnostics indicate likely value, such as generated headerless columns, sparse union-by-name columns, duplicate rows, candidate unique keys, selected-key conflicts, or schema drift
 - no-signal runs skip the checkpoint and go straight to `Stack plan action`
 - interactive review is not a materialized write; it produces an advisory report plus a reviewed deterministic plan when recommendations are accepted or edited

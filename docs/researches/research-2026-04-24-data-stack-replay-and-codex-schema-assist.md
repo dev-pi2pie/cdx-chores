@@ -203,6 +203,8 @@ Prompt defaults:
 - write now succeeds:
   - `Keep applied stack plan?`
   - default `No`
+- kept stack plan:
+  - print a colored `Replay later: cdx-chores data stack replay <record>` tip
 - advisory report exists:
   - `Keep stack diagnostic report?`
   - default `Yes`
@@ -301,8 +303,7 @@ diagnostics show Codex-useful signals?
                  |
                  +-- cancel ------------------------> stop
                  |
-                 +-- analyze with Codex
-                     (powered by Codex) ------------> review recommendations
+                 +-- analyze with Codex ------------> review recommendations
                                                         |
                                                         +-- skip review ----> Stack plan action
                                                         |
@@ -360,7 +361,7 @@ write/offer stack plan
 Keep dry-run stack plan?
   |
   v
-later: data stack replay <record>
+Replay later: cdx-chores data stack replay <record>
 ```
 
 Implication:
@@ -696,7 +697,7 @@ Recommended defaults:
 - interactive default:
   - deterministic automatic schema check
   - show explicit `Strict matching` and `Union by name` choices for users who already know the intended schema contract
-  - reserve `Analyze with Codex (powered by Codex)` for the reviewed-assist checkpoint after deterministic preview
+  - reserve `Analyze with Codex` for the reviewed-assist checkpoint after deterministic preview
 - replay default:
   - use the recorded `schema.mode` from the stack-plan artifact
 
@@ -1035,7 +1036,7 @@ The final interactive cleanup moved beyond only placing the Codex checkpoint cor
 - dry-run is explained early as "save a replayable stack plan without writing output"
 - pattern selection is a source-discovery step with a bounded matched-file preview before schema prompts
 - review output is grouped as input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
-- the Codex path is explicit in wording as `Analyze with Codex (powered by Codex)`, so users can distinguish Codex-powered suggestions from deterministic `--schema-mode auto`
+- the Codex path is explicit in wording as `Analyze with Codex`, so users can distinguish Codex-powered suggestions from deterministic `--schema-mode auto`
 - deterministic replay semantics are preserved: accepted Codex recommendations still become explicit plan fields before write, dry-run save, or replay
 
 ## Implemented Hardening

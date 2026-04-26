@@ -21,7 +21,7 @@ This job closes the follow-up that reopened the interactive `data stack` workflo
 - Grouped stack review output into input discovery, schema analysis, duplicate/key diagnostics, and output target sections.
 - Renamed the final action prompt to `Stack plan action`.
 - Renamed the Codex checkpoint to `Codex-powered analysis checkpoint`.
-- Labeled the Codex-backed action as `Analyze with Codex (powered by Codex)`.
+- Labeled the Codex-backed action as `Analyze with Codex`.
 - Renamed the deterministic schema option to `Automatic schema check` so it does not imply Codex.
 - Updated interactive routing coverage for pattern revision, explicit-file pattern skipping, dry-run copy, review grouping, and Codex-powered labels.
 - Updated the data stack guide, research, and implementation plan.
@@ -37,7 +37,7 @@ bun run format:check
 
 Result: passed.
 
-The interactive routing coverage verifies source discovery before schema setup, pattern preview revision after a failed match, recovery-only actions for failed previews, explicit-file pattern skipping, early dry-run/replay copy, grouped stack review output, `Stack plan action`, and `Analyze with Codex (powered by Codex)` labeling.
+The interactive routing coverage verifies source discovery before schema setup, pattern preview revision after a failed match, recovery-only actions for failed previews, explicit-file pattern skipping, early dry-run/replay copy, grouped stack review output, `Stack plan action`, and `Analyze with Codex` labeling.
 
 The guide, research, and implementation plan were updated with the completed Phase 12 flow and status.
 

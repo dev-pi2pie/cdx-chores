@@ -20,6 +20,8 @@ This job closes the follow-up that made interactive `data stack` source discover
 - Moved filename pattern overrides, recursive scan toggling, and input-format changes into source discovery options.
 - Kept explicit-file sources on the short path with no pattern or traversal options.
 - Preserved no-match recovery by offering source discovery options, source revision, or cancel without allowing a false accept.
+- Simplified the Codex checkpoint action label to `Analyze with Codex`.
+- Added a colored replay command tip after users choose to keep a stack plan.
 - Updated interactive routing coverage for default-pattern preview, options-menu pattern change, recursive toggle, input-format change, no-match recovery, and explicit-file short path.
 - Added a fixture for a directory whose name ends in `.csv` to verify source discovery options are based on filesystem kind, not filename extension.
 - Updated the guide, research, and implementation plan with the completed Phase 13 flow and status.
@@ -32,7 +34,7 @@ bun test test/cli-interactive-routing.test.ts
 
 Result: passed.
 
-The interactive routing coverage verifies that directory sources preview by format default first, filename pattern is only prompted from source discovery options, recursive discovery toggles from the options menu, input format can be changed without re-entering sources, failed previews do not expose `Use these files`, directory/file source-kind checks use filesystem metadata, explicit-file sources skip pattern/traversal controls, and final write-time output-exists failures preserve the stack-plan artifact.
+The interactive routing coverage verifies that directory sources preview by format default first, filename pattern is only prompted from source discovery options, recursive discovery toggles from the options menu, input format can be changed without re-entering sources, failed previews do not expose `Use these files`, directory/file source-kind checks use filesystem metadata, explicit-file sources skip pattern/traversal controls, kept stack plans show a replay command tip, and final write-time output-exists failures preserve the stack-plan artifact.
 
 ## Notes
 

@@ -621,7 +621,7 @@ describe("interactive mode routing", () => {
       ),
     ).toEqual(["codex", "continue", "review", "cancel"]);
     expect(result.selectChoicesByMessage["Codex-powered analysis checkpoint"]?.[0]?.name).toBe(
-      "Analyze with Codex (powered by Codex)",
+      "Analyze with Codex",
     );
     expect(result.selectChoicesByMessage["Schema mode"]?.map((choice) => choice.value)).toEqual([
       "auto",
@@ -638,6 +638,10 @@ describe("interactive mode routing", () => {
     expect(
       result.selectChoicesByMessage["Stack plan action"]?.map((choice) => choice.value),
     ).toEqual(["write", "dry-run", "review", "destination", "cancel"]);
+    expect(plainStderr).toMatch(
+      /Replay later: cdx-chores data stack replay data-stack-plan-20260330T000000Z-[a-f0-9]{8}\.json/,
+    );
+    expect(result.stderr).toContain("\u001b[33mReplay later:\u001b[39m");
   });
 
   test("lets interactive data stack recover through source discovery options before schema setup", () => {
@@ -1122,6 +1126,9 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "confirm:Keep stack plan?",
     );
+    expect(stripAnsi(result.stderr)).toMatch(
+      /Replay later: cdx-chores data stack replay data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json/,
+    );
   });
 
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
@@ -1476,6 +1483,7 @@ describe("interactive mode routing", () => {
       "confirm:Keep stack plan?",
     );
     expect(result.stderr).toContain("Removed stack plan:");
+    expect(stripAnsi(result.stderr)).not.toContain("Replay later:");
   });
 
   test("keeps the interactive stack plan when materialized writing fails", () => {

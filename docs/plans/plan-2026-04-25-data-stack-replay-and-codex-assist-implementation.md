@@ -349,7 +349,7 @@ Status note:
 - [x] make pattern selection smarter by inferring a useful default, showing a bounded matched-file preview, and offering revise-pattern before schema prompts
 - [x] explain dry-run during source discovery, before schema prompts and before the stack plan action prompt, as "save a replayable stack plan without writing output"
 - [x] split the stack review screen into clearer groups: input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
-- [x] replace the current deterministic auto-analysis label with wording that does not imply Codex, and reserve `Analyze with Codex (powered by Codex)` for Codex-backed reviewed suggestions
+- [x] replace the current deterministic auto-analysis label with wording that does not imply Codex, and reserve `Analyze with Codex` for Codex-backed reviewed suggestions
 - [x] keep deterministic `--schema-mode auto` wording separate from Codex-powered reviewed suggestions so users do not think direct CLI auto requires Codex
 - [x] align final write/save/revise/cancel prompts with the `data extract` review rhythm while preserving stack-plan retention and replay semantics
 - [x] update the ASCII sketches in the research after the implementation details settle
@@ -378,6 +378,7 @@ Status note:
 - duplicate policy behavior is enforced the same way in direct execution and replay
 - interactive mode offers write now, dry-run only, revise, and cancel from one status preview
 - interactive dry-run only writes no materialized output and defaults to keeping the generated stack plan
+- kept interactive stack plans show a colored replay command tip
 - auto-clean is scoped to stack-plan artifacts and runs only after successful execution
 - Codex recommendations are review-only and become deterministic stack-plan fields only after accept or edit
 - accepted or edited Codex recommendations create a new stack-plan `payloadId` before write or replay
@@ -415,7 +416,7 @@ Status note:
   Mitigation: define auto as deterministic-first, keep strict as the direct CLI default, and require reviewed confirmation or a clear diagnostic for ambiguous cases.
 
 - Risk: interactive "auto analysis" wording makes deterministic auto and Codex-powered suggestions sound like the same thing.
-  Mitigation: keep deterministic `--schema-mode auto` copy separate from `Analyze with Codex (powered by Codex)` copy in interactive mode.
+  Mitigation: keep deterministic `--schema-mode auto` copy separate from `Analyze with Codex` copy in interactive mode.
 
 - Risk: smarter pattern inference hides which files will be stacked.
   Mitigation: always show a bounded matched-file preview and a revise-pattern branch before schema decisions.
