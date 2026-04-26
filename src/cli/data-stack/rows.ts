@@ -1,6 +1,7 @@
 import { parseDelimited } from "../../utils/delimited";
 import { CliError } from "../errors";
 import { parseJsonlStackSourceText, parseJsonStackSourceText } from "./jsonl";
+import { DataStackSchemaMismatchError } from "./schema-errors";
 import type {
   DataStackDelimitedInputFormat,
   DataStackInputFormat,
@@ -56,12 +57,8 @@ function parseDelimitedStackSourceText(options: {
     const header = options.columns ? [...options.columns] : createPlaceholderColumns(inferredWidth);
     const dataRows = nonEmptyRows.map((row) => {
       if (row.length > inferredWidth) {
-        throw new CliError(
+        throw new DataStackSchemaMismatchError(
           `Headerless column count mismatch for ${options.path}. Expected ${inferredWidth} columns but received ${row.length}.`,
-          {
-            code: "INVALID_INPUT",
-            exitCode: 2,
-          },
         );
       }
       return padRow(row, inferredWidth);
@@ -117,25 +114,18 @@ function ensureMatchingHeaders(options: {
   candidate: ParsedStackSource;
   renderPath: (path: string) => string;
 }): void {
-  if (options.baseline.header.length !== options.candidate.header.length) {
-    throw new CliError(
+  const createMismatchError = () =>
+    new DataStackSchemaMismatchError(
       `Header mismatch for ${options.renderPath(options.candidate.path)}. Expected ${options.baseline.header.join(", ")} from ${options.renderPath(options.baseline.path)} but received ${options.candidate.header.join(", ")}.`,
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      },
     );
+
+  if (options.baseline.header.length !== options.candidate.header.length) {
+    throw createMismatchError();
   }
 
   for (const [index, value] of options.candidate.header.entries()) {
     if (value !== options.baseline.header[index]) {
-      throw new CliError(
-        `Header mismatch for ${options.renderPath(options.candidate.path)}. Expected ${options.baseline.header.join(", ")} from ${options.renderPath(options.baseline.path)} but received ${options.candidate.header.join(", ")}.`,
-        {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-        },
-      );
+      throw createMismatchError();
     }
   }
 }

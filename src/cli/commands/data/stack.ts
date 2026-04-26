@@ -6,7 +6,12 @@ import {
   DATA_STACK_DUPLICATE_POLICY_VALUES,
   type DataStackDuplicatePolicy,
 } from "../../data-stack/plan";
-import { DATA_STACK_INPUT_FORMAT_VALUES, type DataStackInputFormat } from "../../data-stack/types";
+import {
+  DATA_STACK_INPUT_FORMAT_VALUES,
+  DATA_STACK_SCHEMA_MODE_OPTION_VALUES,
+  type DataStackInputFormat,
+  type DataStackSchemaModeOption,
+} from "../../data-stack/types";
 import { collectCsvListOption, parseNonNegativeIntegerOption } from "../../options/parsers";
 import type { CliRuntime } from "../../types";
 
@@ -17,6 +22,16 @@ function parseDataStackInputFormatOption(value: string): DataStackInputFormat {
   }
   throw new InvalidArgumentError(
     `--input-format must be one of: ${DATA_STACK_INPUT_FORMAT_VALUES.join(", ")}.`,
+  );
+}
+
+function parseDataStackSchemaModeOption(value: string): DataStackSchemaModeOption {
+  const normalized = value.trim().toLowerCase();
+  if ((DATA_STACK_SCHEMA_MODE_OPTION_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as DataStackSchemaModeOption;
+  }
+  throw new InvalidArgumentError(
+    `--schema-mode must be one of: ${DATA_STACK_SCHEMA_MODE_OPTION_VALUES.join(", ")}.`,
   );
 }
 
@@ -55,10 +70,11 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
     .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value: string) =>
       parseNonNegativeIntegerOption(value, "--max-depth"),
     )
+    .option("--union-by-name", "Deprecated canary alias for --schema-mode union-by-name", false)
     .option(
-      "--union-by-name",
-      "Stack schemas by column or key name instead of requiring strict matches",
-      false,
+      "--schema-mode <mode>",
+      `Schema matching mode (${DATA_STACK_SCHEMA_MODE_OPTION_VALUES.join(", ")})`,
+      parseDataStackSchemaModeOption,
     )
     .option(
       "--exclude-columns <names>",
@@ -105,6 +121,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           pattern?: string;
           planOutput?: string;
           recursive?: boolean;
+          schemaMode?: DataStackSchemaModeOption;
           unionByName?: boolean;
           uniqueBy?: string[];
         },
@@ -125,6 +142,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           pattern: options.pattern,
           planOutput: options.planOutput,
           recursive: options.recursive,
+          schemaMode: options.schemaMode,
           unionByName: options.unionByName,
           uniqueBy: (options.uniqueBy?.length ?? 0) > 0 ? options.uniqueBy : undefined,
           sources,

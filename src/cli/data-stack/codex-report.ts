@@ -19,6 +19,7 @@ export const DATA_STACK_CODEX_REPORT_UID_HEX_LENGTH = 8;
 
 export const DATA_STACK_CODEX_PATCH_PATHS = [
   "/input/columns",
+  "/schema/mode",
   "/schema/includedNames",
   "/schema/excludedNames",
   "/duplicates/uniqueBy",
@@ -162,6 +163,19 @@ function ensureDuplicatePolicy(value: unknown): DataStackDuplicatePolicy {
   );
 }
 
+function ensureSchemaMode(value: unknown): DataStackPlanArtifact["schema"]["mode"] {
+  if (value === "strict" || value === "union-by-name") {
+    return value;
+  }
+  throw new CliError(
+    "Invalid data stack Codex patch: /schema/mode must be one of: strict, union-by-name.",
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
 function assertKnownSchemaNames(
   plan: DataStackPlanArtifact,
   names: readonly string[],
@@ -207,6 +221,9 @@ export function validateDataStackCodexPatch(
   }
   if (path === "/schema/includedNames") {
     return { op: "replace", path, value: ensureStringArray(patch.value, path) };
+  }
+  if (path === "/schema/mode") {
+    return { op: "replace", path, value: ensureSchemaMode(patch.value) };
   }
   if (path === "/schema/excludedNames") {
     return {
@@ -371,6 +388,9 @@ function applyPatchToPlan(
       break;
     case "/schema/includedNames":
       next.schema.includedNames = [...(patch.value as string[])];
+      break;
+    case "/schema/mode":
+      next.schema.mode = patch.value as DataStackPlanArtifact["schema"]["mode"];
       break;
     case "/schema/excludedNames":
       next.schema.excludedNames = [...(patch.value as string[])];

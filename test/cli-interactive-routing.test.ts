@@ -609,6 +609,11 @@ describe("interactive mode routing", () => {
     expect(
       result.selectChoicesByMessage["Codex assist checkpoint"]?.map((choice) => choice.value),
     ).toEqual(["codex", "continue", "review", "cancel"]);
+    expect(result.selectChoicesByMessage["Schema mode"]?.map((choice) => choice.value)).toEqual([
+      "auto",
+      "strict",
+      "union-by-name",
+    ]);
     expect(result.selectChoicesByMessage["Stack action"]?.map((choice) => choice.value)).toEqual([
       "write",
       "dry-run",
@@ -644,6 +649,69 @@ describe("interactive mode routing", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
       "select:Codex assist checkpoint",
     );
+  });
+
+  test("interactive data stack can analyze schema mode automatically", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "auto", "json", "continue", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-header-mismatch"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: {
+          fileCount: 2,
+          outputFormat: "json",
+          outputPath: dataStackDefaultOutputMatcher(DEFAULT_DATA_STACK_TIMESTAMP, "json"),
+          overwrite: false,
+          rowCount: 4,
+        },
+      },
+    ]);
+    expect(plainStderr).toContain("- schema mode: union-by-name");
+    expect(plainStderr).toContain("- schema analysis: auto -> union-by-name");
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      schemaMode: "union-by-name",
+    });
+  });
+
+  test("bounds interactive data stack input-source and matched-file samples", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "continue", "cancel"],
+      requiredPathQueue: [
+        "examples/playground/stack-cases/csv-many-files/part-001.csv",
+        "examples/playground/stack-cases/csv-many-files/part-002.csv",
+        "examples/playground/stack-cases/csv-many-files/part-003.csv",
+        "examples/playground/stack-cases/csv-many-files/part-004.csv",
+        "examples/playground/stack-cases/csv-many-files/part-005.csv",
+        "examples/playground/stack-cases/csv-many-files/part-006.csv",
+      ],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [true, true, true, true, true, false, true],
+    });
+    const plainStderr = stripAnsi(result.stderr);
+
+    expect(plainStderr).toContain("- input sources: 6");
+    expect(plainStderr).toContain("1. examples/playground/stack-cases/csv-many-files/part-001.csv");
+    expect(plainStderr).toContain("5. examples/playground/stack-cases/csv-many-files/part-005.csv");
+    expect(plainStderr).not.toContain(
+      "6. examples/playground/stack-cases/csv-many-files/part-006.csv",
+    );
+    expect(plainStderr).toContain("... 1 more input source(s) hidden");
+    expect(plainStderr).toContain("- matched files: 6");
+    expect(plainStderr).toContain("- sample files (first 5):");
+    expect(plainStderr).toContain("csv-many-files/part-001.csv");
+    expect(plainStderr).toContain("csv-many-files/part-005.csv");
+    expect(plainStderr).not.toContain("csv-many-files/part-006.csv");
+    expect(plainStderr).toContain("- sample files hidden: 1");
   });
 
   test("routes interactive data stack with mixed file and directory sources", () => {
@@ -1158,12 +1226,42 @@ describe("interactive mode routing", () => {
       optionalPathQueue: [undefined],
       inputQueue: ["*.csv"],
       confirmQueue: [false, true],
-      dataStackCodexErrorMessage: "mocked Codex outage",
+      dataStackCodexErrorMessage:
+        '{"type":"error","error":{"type":"invalid_request_error","code":"invalid_json_schema","message":"Invalid schema for response_format"}}',
+      stdoutIsTTY: true,
     });
 
     expect(result.codexReportWrites).toHaveLength(0);
     expect(result.actionCalls).toHaveLength(1);
-    expect(stripAnsi(result.stderr)).toContain("Codex stack recommendations failed");
+    expect(result.stdout.endsWith("\r\u001b[2K")).toBe(true);
+    expect(stripAnsi(result.stderr)).toContain(
+      "Codex stack recommendations unavailable: Codex rejected the structured recommendation schema.",
+    );
+    expect(stripAnsi(result.stderr)).not.toContain("invalid_json_schema");
+    expect(stripAnsi(result.stderr)).not.toContain("invalid_request_error");
+    expect(stripAnsi(result.stderr)).not.toContain("response_format");
+    expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+  });
+
+  test("keeps interactive data stack setup when Codex recommendations fail with plain text", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["data", "data:stack", "csv", "shallow", "strict", "json", "codex", "write"],
+      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
+      optionalPathQueue: [undefined],
+      inputQueue: ["*.csv"],
+      confirmQueue: [false, true],
+      dataStackCodexErrorMessage: "mocked Codex outage",
+      stdoutIsTTY: true,
+    });
+
+    expect(result.codexReportWrites).toHaveLength(0);
+    expect(result.actionCalls).toHaveLength(1);
+    expect(result.stdout.endsWith("\r\u001b[2K")).toBe(true);
+    expect(stripAnsi(result.stderr)).toContain(
+      "Codex stack recommendations unavailable. Review failed before recommendations were returned.",
+    );
+    expect(stripAnsi(result.stderr)).not.toContain("mocked Codex outage");
     expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
   });
 

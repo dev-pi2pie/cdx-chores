@@ -1,7 +1,10 @@
 import { CliError } from "../errors";
-import type { DataStackSchemaMode } from "./types";
+import type { DataStackSchemaModeOption } from "./types";
 
-export function formatDataStackSchemaMode(mode: DataStackSchemaMode): string {
+export function formatDataStackSchemaMode(mode: DataStackSchemaModeOption): string {
+  if (mode === "auto") {
+    return "auto";
+  }
   return mode === "union-by-name" ? "union-by-name" : "strict";
 }
 
@@ -15,8 +18,8 @@ export function formatBoundedDataStackNames(names: readonly string[], limit = 8)
 export function normalizeDataStackSchemaOptions(options: {
   excludeColumns?: readonly string[];
   noHeader?: boolean;
-  schemaMode?: DataStackSchemaMode;
-}): { excludeColumns: string[]; schemaMode: DataStackSchemaMode } {
+  schemaMode?: DataStackSchemaModeOption;
+}): { excludeColumns: string[]; schemaMode: DataStackSchemaModeOption } {
   const schemaMode = options.schemaMode ?? "strict";
   const excludeColumns =
     options.excludeColumns?.map((value) => value.trim()).filter((value) => value.length > 0) ?? [];
@@ -29,14 +32,14 @@ export function normalizeDataStackSchemaOptions(options: {
   }
 
   if (excludeColumns.length > 0 && schemaMode !== "union-by-name") {
-    throw new CliError("--exclude-columns requires --union-by-name.", {
+    throw new CliError("--exclude-columns requires --schema-mode union-by-name.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
   }
 
   if (schemaMode === "union-by-name" && options.noHeader) {
-    throw new CliError("--union-by-name cannot be used with --no-header.", {
+    throw new CliError("--schema-mode union-by-name cannot be used with --no-header.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });

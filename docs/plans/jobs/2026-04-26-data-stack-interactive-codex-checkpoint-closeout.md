@@ -46,4 +46,4 @@ Reviewer follow-up:
 - The final action menu now contains only deterministic execution or navigation choices.
 - Codex reports remain advisory artifacts and are never replayed directly.
 - Stack-plan and advisory-report retention prompts remain separate.
-- A live follow-up found additional interactive Codex hardening work around structured-output schema validation, concise failure copy, status-line cleanup, and large-preview wording; that work is tracked as Phase 10 in the implementation plan, so the plan and research are not closed yet.
+- A live follow-up found additional interactive Codex hardening work around structured-output schema validation, concise failure copy, status-line cleanup, and large-preview wording; that work was later completed with the schema-mode cleanup in `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`.

@@ -12,7 +12,7 @@ import type { DataStackPlanArtifact } from "./plan";
 
 const DATA_STACK_CODEX_TIMEOUT_MS = 30_000;
 
-const DATA_STACK_CODEX_OUTPUT_SCHEMA = {
+export const DATA_STACK_CODEX_OUTPUT_SCHEMA = {
   type: "object",
   properties: {
     recommendations: {
@@ -34,7 +34,10 @@ const DATA_STACK_CODEX_OUTPUT_SCHEMA = {
                   type: "string",
                   enum: [...DATA_STACK_CODEX_PATCH_PATHS],
                 },
-                value: {},
+                value: {
+                  type: ["string", "array"],
+                  items: { type: "string" },
+                },
               },
               required: ["op", "path", "value"],
               additionalProperties: false,
@@ -55,6 +58,8 @@ export type DataStackCodexRunner = (options: {
   timeoutMs?: number;
   workingDirectory: string;
 }) => Promise<string>;
+
+export type DataStackCodexAssistFailureKind = "structured-output-schema" | "unavailable";
 
 export interface SuggestDataStackWithCodexOptions {
   diagnostics: DataStackDiagnosticsResult;
@@ -96,6 +101,7 @@ function buildDataStackCodexPrompt(options: {
     "- Use only replace patches against the allowed JSON Pointer paths.",
     "- Prefer the smallest deterministic patch that expresses the recommendation.",
     "- Recommend headerless column names only through /input/columns.",
+    "- Recommend schema mode changes only through /schema/mode with strict or union-by-name.",
     "- Recommend unique key changes only through /duplicates/uniqueBy.",
     "- Recommend duplicate policy changes only through /duplicates/policy.",
     "- Keep reasoning_summary short and grounded in the facts.",
@@ -182,6 +188,28 @@ function parseDataStackCodexRecommendations(finalResponse: string): DataStackCod
     throw new Error("Codex stack response did not include recommendations.");
   }
   return parsed.recommendations.map(parseDataStackCodexRecommendation);
+}
+
+export function classifyDataStackCodexAssistFailure(
+  error: unknown,
+): DataStackCodexAssistFailureKind {
+  const message = error instanceof Error ? error.message : String(error);
+  if (
+    message.includes("invalid_json_schema") ||
+    message.includes("invalid_request_error") ||
+    message.includes("response_format") ||
+    message.trim().startsWith("{")
+  ) {
+    return "structured-output-schema";
+  }
+  return "unavailable";
+}
+
+export function formatDataStackCodexAssistFailure(error: unknown): string {
+  if (classifyDataStackCodexAssistFailure(error) === "structured-output-schema") {
+    return "Codex stack recommendations unavailable: Codex rejected the structured recommendation schema.";
+  }
+  return "Codex stack recommendations unavailable. Review failed before recommendations were returned.";
 }
 
 async function runDataStackCodexPrompt(options: {

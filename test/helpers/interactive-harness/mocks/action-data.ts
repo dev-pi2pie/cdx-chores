@@ -1,5 +1,6 @@
 import type { HarnessRunnerContext } from "../context";
 import { applyDataStackCodexRecommendationDecisions as applyRealDataStackCodexRecommendationDecisions } from "../../../../src/cli/data-stack/codex-report";
+import { formatDataStackCodexAssistFailure as formatRealDataStackCodexAssistFailure } from "../../../../src/cli/data-stack/codex-assist";
 
 interface ActionRuntimeLike {
   stdout: { write(chunk: string): boolean };
@@ -13,7 +14,9 @@ interface MockStackPlanOptions {
   metadata?: Record<string, unknown>;
   outputFormat?: unknown;
   outputPath?: unknown;
-  prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
+  prepared?:
+    | { files?: unknown[]; header?: unknown[]; rows?: unknown[]; schemaMode?: unknown }
+    | undefined;
   sourcePaths?: unknown;
   stackOptions?: Record<string, unknown>;
   uniqueBy?: unknown;
@@ -63,7 +66,12 @@ function createMockStackPlanArtifact(options: MockStackPlanOptions): Record<stri
     schema: {
       excludedNames: options.stackOptions?.excludeColumns,
       includedNames: options.prepared?.header ?? [],
-      mode: options.stackOptions?.unionByName === true ? "union-by-name" : "strict",
+      mode:
+        options.prepared?.schemaMode === "union-by-name" ||
+        options.stackOptions?.schemaMode === "union-by-name" ||
+        options.stackOptions?.unionByName === true
+          ? "union-by-name"
+          : "strict",
     },
     sources: {
       baseDirectory: process.cwd(),
@@ -201,7 +209,9 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         metadata?: Record<string, unknown>;
         plan?: Record<string, unknown>;
         planPath?: unknown;
-        prepared?: { files?: unknown[]; header?: unknown[]; rows?: unknown[] } | undefined;
+        prepared?:
+          | { files?: unknown[]; header?: unknown[]; rows?: unknown[]; schemaMode?: unknown }
+          | undefined;
         sourcePaths?: unknown;
         stackOptions?: Record<string, unknown>;
         uniqueBy?: unknown;
@@ -226,6 +236,7 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         reportPath:
           planDiagnostics?.reportPath ?? options.diagnostics?.planDiagnostics?.reportPath ?? null,
         rowCount: options.prepared?.rows?.length ?? options.diagnostics?.planDiagnostics?.rowCount,
+        schemaMode: (plan?.schema as Record<string, unknown> | undefined)?.mode,
         uniqueBy: planDuplicates?.uniqueBy ?? options.uniqueBy,
       });
       return plan;
@@ -270,6 +281,7 @@ export function createDataActionMocks(context: HarnessRunnerContext) {
         version: 1,
       };
     },
+    formatDataStackCodexAssistFailure: formatRealDataStackCodexAssistFailure,
     writeDataStackCodexReportArtifact: async (
       path: string,
       report: { recommendations?: unknown[] },

@@ -6,6 +6,7 @@ import { confirm, editor, input, select } from "@inquirer/prompts";
 import {
   applyDataStackCodexRecommendationDecisions,
   createPreparedDataStackPlan,
+  formatDataStackCodexAssistFailure,
   generateDataStackCodexReportFileName,
   suggestDataStackWithCodex,
   writeDataStackCodexReportArtifact,
@@ -51,6 +52,7 @@ import {
   type DataStackInputFormat,
   type DataStackOutputFormat,
   type DataStackSchemaMode,
+  type DataStackSchemaModeOption,
 } from "../../data-stack/types";
 import { writeInteractiveFlowTip } from "../contextual-tip";
 import { createInteractiveAnalyzerStatus } from "../analyzer-status";
@@ -66,7 +68,7 @@ interface InteractiveDataStackSetup {
   inputFormat: DataStackInputFormat;
   pattern: string;
   recursive: boolean;
-  schemaMode: DataStackSchemaMode;
+  schemaMode: DataStackSchemaModeOption;
   sources: InteractiveDataStackSource[];
 }
 
@@ -106,7 +108,22 @@ interface InteractiveDataStackPreviewState {
   planArtifact?: DataStackPlanArtifact;
   planWriteOptions: InteractiveDataStackPlanWriteOptions;
   prepared: PreparedDataStackExecution;
+  requestedSchemaMode: DataStackSchemaModeOption;
+  resolvedSchemaMode: DataStackSchemaMode;
   setup: InteractiveDataStackSetup;
+}
+
+const INTERACTIVE_STACK_PREVIEW_SAMPLE_LIMIT = 5;
+
+function createInteractiveStackPreviewSample<T>(items: readonly T[]): {
+  hiddenCount: number;
+  sample: T[];
+} {
+  const sample = items.slice(0, INTERACTIVE_STACK_PREVIEW_SAMPLE_LIMIT);
+  return {
+    hiddenCount: Math.max(items.length - sample.length, 0),
+    sample,
+  };
 }
 
 function renderMatchedFileSummary(
@@ -115,11 +132,32 @@ function renderMatchedFileSummary(
     files: ReadonlyArray<{ path: string }>;
   },
 ): void {
-  const samplePaths = options.files.slice(0, 5).map((file) => displayPath(runtime, file.path));
+  const { hiddenCount, sample } = createInteractiveStackPreviewSample(options.files);
+  const samplePaths = sample.map((file) => displayPath(runtime, file.path));
 
   printLine(runtime.stderr, `- matched files: ${options.files.length}`);
   if (samplePaths.length > 0) {
-    printLine(runtime.stderr, `- sample files: ${samplePaths.join(", ")}`);
+    printLine(
+      runtime.stderr,
+      `- sample files (first ${samplePaths.length}): ${samplePaths.join(", ")}`,
+    );
+  }
+  if (hiddenCount > 0) {
+    printLine(runtime.stderr, `- sample files hidden: ${hiddenCount}`);
+  }
+}
+
+function renderInteractiveInputSourceSummary(
+  runtime: CliRuntime,
+  sources: readonly InteractiveDataStackSource[],
+): void {
+  const { hiddenCount, sample } = createInteractiveStackPreviewSample(sources);
+  printLine(runtime.stderr, `- input sources: ${sources.length}`);
+  for (const [index, source] of sample.entries()) {
+    printLine(runtime.stderr, `  ${index + 1}. ${displayPath(runtime, source.resolved)}`);
+  }
+  if (hiddenCount > 0) {
+    printLine(runtime.stderr, `  ... ${hiddenCount} more input source(s) hidden`);
   }
 }
 
@@ -134,22 +172,26 @@ function renderInteractiveStackReview(
     pattern: string;
     prepared: PreparedDataStackExecution;
     recursive: boolean;
+    requestedSchemaMode: DataStackSchemaModeOption;
     schemaMode: DataStackSchemaMode;
     sources: readonly InteractiveDataStackSource[];
   },
 ): void {
   printLine(runtime.stderr, "Stack review");
   printLine(runtime.stderr, "");
-  printLine(runtime.stderr, `- input sources: ${options.sources.length}`);
-  for (const [index, source] of options.sources.entries()) {
-    printLine(runtime.stderr, `  ${index + 1}. ${displayPath(runtime, source.resolved)}`);
-  }
+  renderInteractiveInputSourceSummary(runtime, options.sources);
   printLine(runtime.stderr, `- input format: ${options.inputFormat.toUpperCase()}`);
   if (options.prepared.files.some((file) => file.sourceKind === "directory")) {
     printLine(runtime.stderr, `- pattern: ${options.pattern}`);
     printLine(runtime.stderr, `- traversal: ${options.recursive ? "recursive" : "shallow only"}`);
   }
   printLine(runtime.stderr, `- schema mode: ${formatDataStackSchemaMode(options.schemaMode)}`);
+  if (options.requestedSchemaMode === "auto") {
+    printLine(
+      runtime.stderr,
+      `- schema analysis: auto -> ${formatDataStackSchemaMode(options.schemaMode)}`,
+    );
+  }
   printLine(runtime.stderr, `- output columns: ${options.prepared.header.length}`);
   if (options.excludeColumns.length > 0) {
     printLine(
@@ -286,8 +328,9 @@ function buildInteractiveStackPlanWriteOptions(options: {
       overwrite: options.outputPlan.overwrite,
       pattern: options.setup.pattern,
       recursive: options.setup.recursive,
+      schemaMode: options.prepared.schemaMode,
       sources: sourcePaths,
-      unionByName: options.setup.schemaMode === "union-by-name",
+      unionByName: options.prepared.schemaMode === "union-by-name",
     },
     uniqueBy: INTERACTIVE_DATA_STACK_UNIQUE_BY,
   };
@@ -361,7 +404,7 @@ function getInteractiveStackCodexAssistSignals(
     diagnostics: state.diagnostics,
     headerMode: plan?.input.headerMode ?? "header",
     inputColumns: plan?.input.columns ?? state.prepared.header,
-    schemaMode: plan?.schema.mode ?? state.setup.schemaMode,
+    schemaMode: plan?.schema.mode ?? state.resolvedSchemaMode,
     uniqueBy,
   });
 }
@@ -375,7 +418,7 @@ function createInteractiveStackCodexSignalKey(
     duplicateKeyConflicts: state.diagnostics.duplicateSummary.duplicateKeyConflicts,
     exactDuplicateRows: state.diagnostics.duplicateSummary.exactDuplicateRows,
     header: state.prepared.header,
-    schemaMode: state.planArtifact?.schema.mode ?? state.setup.schemaMode,
+    schemaMode: state.planArtifact?.schema.mode ?? state.resolvedSchemaMode,
     signals,
     uniqueBy,
   });
@@ -584,17 +627,22 @@ async function promptInteractiveStackTraversalMode(): Promise<boolean> {
   return traversalMode === "recursive";
 }
 
-async function promptInteractiveStackSchemaMode(): Promise<DataStackSchemaMode> {
-  return await select<DataStackSchemaMode>({
+async function promptInteractiveStackSchemaMode(): Promise<DataStackSchemaModeOption> {
+  return await select<DataStackSchemaModeOption>({
     message: "Schema mode",
     choices: [
       {
-        name: "strict",
+        name: "Analyze automatically",
+        value: "auto",
+        description: "Use strict when possible, then deterministic union by name when safe",
+      },
+      {
+        name: "Strict matching",
         value: "strict",
         description: "Require every matched file to use the same columns or keys",
       },
       {
-        name: "union by name",
+        name: "Union by name",
         value: "union-by-name",
         description: "Opt in to named-schema union and fill missing values",
       },
@@ -748,6 +796,8 @@ async function prepareInteractiveStackPreviewState(options: {
       uniqueBy,
     },
     prepared,
+    requestedSchemaMode: options.setup.schemaMode,
+    resolvedSchemaMode: prepared.schemaMode,
     setup: options.setup,
   };
 }
@@ -785,10 +835,7 @@ async function requestInteractiveStackCodexReview(
       workingDirectory: runtime.cwd,
     });
   } catch (error) {
-    printLine(
-      runtime.stderr,
-      `Codex stack recommendations failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    printLine(runtime.stderr, formatDataStackCodexAssistFailure(error));
     printLine(runtime.stderr, "Keeping current deterministic stack setup.");
     return undefined;
   } finally {
@@ -863,6 +910,8 @@ async function confirmInteractiveStackWrite(
       ...setup,
       ...outputPlan,
       prepared: state.prepared,
+      requestedSchemaMode: state.requestedSchemaMode,
+      schemaMode: state.prepared.schemaMode,
     });
     renderInteractiveStackStatusPreview(runtime, {
       diagnostics: state.diagnostics,

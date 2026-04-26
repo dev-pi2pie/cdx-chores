@@ -351,6 +351,16 @@ function createNoCodexSignalCases() {
   ];
 }
 
+function createManyFileCases() {
+  return Array.from({ length: 6 }, (_value, index) => {
+    const id = 7001 + index;
+    return {
+      path: `csv-many-files/part-${String(index + 1).padStart(3, "0")}.csv`,
+      content: rowsToDelimited([{ id, status: index % 2 === 0 ? "active" : "paused" }], ","),
+    };
+  });
+}
+
 function createRecursiveCases() {
   return [
     {
@@ -399,6 +409,7 @@ async function seedFixtures(outputDir) {
     ...createJsonArrayCases(),
     ...createUnionCases(),
     ...createNoCodexSignalCases(),
+    ...createManyFileCases(),
     ...createRecursiveCases(),
   ];
 

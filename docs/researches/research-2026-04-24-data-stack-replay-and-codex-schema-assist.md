@@ -2,7 +2,7 @@
 title: "Data stack replay records, duplicate handling, and Codex schema assist"
 created-date: 2026-04-24
 modified-date: 2026-04-26
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -39,18 +39,18 @@ This research now chooses the same safety shape for `data stack`: dry-run produc
 
 The implementation now proves the deterministic pieces, reviewed Codex report flow, and contextual interactive Codex checkpoint. Interactive Codex assist now follows the `data extract` and `rename` rhythm: it appears as a contextual helper only when diagnostics show it can help, rather than as a peer of final write/save actions.
 
-A live interactive run against `examples/playground/stack-cases/csv-header-mismatch/` found remaining hardening work before this research should close: the Codex structured-output schema is rejected because `patches[].value` lacks an explicit JSON Schema `type`, the raw provider error is too noisy for normal interactive output, and the analyzer status line can merge with the following failure message.
+An interactive hardening follow-up resolved the live issue found against `examples/playground/stack-cases/csv-header-mismatch/`: Codex patch values now have an explicit structured-output schema type, raw provider-shaped failures are replaced by concise unavailable messages, and the analyzer status line is cleared before failure output is printed.
 
 Status note:
 
-- the replay, duplicate/key, and contextual Codex checkpoint contracts are settled
-- the research remains `in-progress` because interactive hardening and schema-mode cleanup are still open follow-ups
+- the replay, duplicate/key, contextual Codex checkpoint, and schema-mode contracts are settled
+- the linked implementation plan is completed through Phase 11
 
 ## Starting State
 
 At the start of this research, `data stack` had no replayable stack-record contract.
 
-Current and planned deterministic behavior is expressed through command options:
+Current deterministic behavior is expressed through command options:
 
 - raw sources
 - pattern and traversal options
@@ -618,7 +618,7 @@ Implication:
 
 ### 8. Schema mode should have one explicit CLI surface
 
-`--union-by-name` was introduced during canary development as the first schema-flex switch. The next CLI surface should move that choice under one mode option:
+`--union-by-name` was introduced during canary development as the first schema-flex switch. The CLI surface now moves that choice under one mode option:
 
 ```bash
 cdx-chores data stack ./inputs --output merged.csv --schema-mode strict
@@ -630,8 +630,8 @@ Canary compatibility note:
 
 - `--union-by-name` existed in `v0.1.2-canary.2`
 - the intended replacement is `--schema-mode union-by-name`
-- because this is still canary development, the breaking change is acceptable if the guide and release notes call it out clearly
-- if a compatibility alias is kept for one canary, it should print a concise migration hint rather than becoming a second long-term spelling
+- because this is still canary development, the long-term contract can move to `--schema-mode`
+- a temporary compatibility alias is kept and prints a concise migration warning rather than becoming a second long-term spelling
 
 Recommended defaults:
 
@@ -644,13 +644,14 @@ Recommended defaults:
 - replay default:
   - use the recorded `schema.mode` from the stack-plan artifact
 
-`auto` should not mean "Codex is required." It should mean:
+Direct CLI `auto` should not mean "Codex is required." It should mean:
 
 1. Run deterministic schema analysis first.
 2. Choose `strict` when all accepted names match exactly.
 3. Choose `union-by-name` only when the widening is deterministic and low-risk.
-4. Ask for reviewed Codex help only when ambiguity remains and Codex assist is available.
-5. Stop with concise next-step hints when ambiguity remains and Codex assist is unavailable.
+4. Stop with concise next-step hints when deterministic widening is unsafe.
+
+Interactive `Analyze automatically` uses the same deterministic decision tree. After the status preview, the contextual Codex checkpoint may still appear when diagnostics show useful review signals. Codex remains a reviewed helper for schema/key/duplicate recommendations, not a dependency of automatic schema analysis.
 
 Examples of ambiguity that should not be widened silently:
 
@@ -875,7 +876,7 @@ The next implementation plan should treat these as in-scope commitments:
 - introduce `--schema-mode <strict|union-by-name|auto>` as the long-term schema-mode CLI surface
 - treat direct CLI strict matching as the default fallback
 - make interactive schema setup default to `Analyze automatically`
-- make `--schema-mode auto` deterministic-first and Codex-assisted only when available and useful
+- make direct CLI `--schema-mode auto` deterministic-first and fail-closed; keep interactive Codex assist as an optional reviewed checkpoint after diagnostics show useful signals
 - never silently widen ambiguous schemas when Codex assist is unavailable
 - document that `--union-by-name` existed in `v0.1.2-canary.2` and is being replaced by `--schema-mode union-by-name`
 - add explicit `--unique-by <name[,name...]>`
@@ -932,7 +933,7 @@ Resolved in this revision:
 - schema-mode defaults:
   - direct CLI defaults to `strict`; interactive defaults to `Analyze automatically`; replay uses the recorded stack-plan mode
 - schema-mode auto fallback:
-  - use deterministic analysis first, Codex only for ambiguous reviewed cases, and concise failure guidance when ambiguity remains without Codex
+  - use deterministic analysis first, and provide concise failure guidance when widening is unsafe
 - recommendation application:
   - use stable recommendation ids plus atomic JSON Pointer style `replace` patches into known stack-plan fields
 - payload lifecycle:
@@ -972,26 +973,26 @@ Codex should be offered only when deterministic diagnostics suggest it can add v
 
 This keeps the deterministic contract unchanged while making interactive Codex assist feel like a review helper instead of a final write action.
 
-## Follow-Up Hardening
+## Implemented Hardening
 
-The remaining open work is not the checkpoint shape itself; it is the interactive robustness around that checkpoint:
+The remaining checkpoint robustness work was implemented after the Phase 9 checkpoint shape:
 
-- fix the structured-output schema for Codex recommendations so `patches[].value` has an explicit JSON Schema type
-- keep raw provider JSON out of normal interactive failure messages
-- clear the analyzer status line before printing Codex success or failure output
-- make bounded matched-file samples explicit when many files are matched
-- decide whether manually added input sources also need bounded display in interactive stack review
+- fixed the structured-output schema for Codex recommendations so `patches[].value` has an explicit JSON Schema type
+- kept raw provider JSON out of normal interactive failure messages
+- cleared the analyzer status line before printing Codex success or failure output
+- made bounded matched-file samples explicit when many files are matched
+- bounded manually added input-source display in interactive stack review
 
-The schema-mode follow-up is a separate product-contract cleanup:
+The schema-mode product-contract cleanup was also implemented:
 
-- introduce `--schema-mode <strict|union-by-name|auto>`
-- treat `--union-by-name` as a canary-era flag from `v0.1.2-canary.2`, either removed during canary development or retained temporarily as a migration alias
-- keep direct CLI default behavior as strict matching
-- default interactive schema setup to `Analyze automatically`
-- make `auto` deterministic-first and Codex-assisted only when ambiguity needs reviewed judgment
-- provide a clear unavailable-Codex message instead of silently guessing or printing provider-shaped errors
+- introduced `--schema-mode <strict|union-by-name|auto>`
+- retained `--union-by-name` as a canary-era compatibility alias from `v0.1.2-canary.2` with a migration hint
+- kept direct CLI default behavior as strict matching
+- defaulted interactive schema setup to `Analyze automatically`
+- made direct CLI `auto` deterministic-first and fail with next-step hints when deterministic widening is unsafe
+- kept Codex schema recommendations as reviewed changes that materialize into deterministic stack-plan fields
 
-Until that follow-up is implemented and verified, this research should stay `in-progress`.
+With those follow-ups implemented and tested, this research is completed.
 
 ## Related Research
 
@@ -1013,3 +1014,5 @@ Until that follow-up is implemented and verified, this research should stay `in-
 - `docs/plans/jobs/2026-04-26-data-stack-diagnostics-dry-run-replay.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`
+- `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`
+- `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`

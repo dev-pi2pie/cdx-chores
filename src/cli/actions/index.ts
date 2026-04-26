@@ -15,7 +15,10 @@ export {
   writePreparedDataStackOutput,
   writePreparedDataStackPlan,
 } from "./data-stack";
-export { suggestDataStackWithCodex } from "../data-stack/codex-assist";
+export {
+  formatDataStackCodexAssistFailure,
+  suggestDataStackWithCodex,
+} from "../data-stack/codex-assist";
 export type { DataStackCodexRunner } from "../data-stack/codex-assist";
 export {
   applyDataStackCodexRecommendationDecisions,

@@ -172,6 +172,171 @@ describe("CLI data stack command", () => {
     });
   });
 
+  test("supports --schema-mode union-by-name from the command layer", async () => {
+    await withTempFixtureDir("data-stack-cli-schema-mode-union", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,status\n2,active\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--schema-mode",
+        "union-by-name",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Schema mode: union-by-name");
+      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
+    });
+  });
+
+  test("keeps --union-by-name as a canary alias with migration guidance", async () => {
+    await withTempFixtureDir("data-stack-cli-union-alias", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,status\n2,active\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--union-by-name",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Use --schema-mode union-by-name");
+      expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
+    });
+  });
+
+  test("accepts canary union alias with matching canonical schema mode", async () => {
+    await withTempFixtureDir("data-stack-cli-union-alias-canonical", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,name\n1,Ada\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,status\n2,active\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--union-by-name",
+        "--schema-mode",
+        "union-by-name",
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Use --schema-mode union-by-name");
+      expect(result.stderr).toContain("Schema mode: union-by-name");
+      const plan = await readDataStackPlanArtifact(planPath);
+      expect(plan.schema.mode).toBe("union-by-name");
+      expect(plan.schema.includedNames).toEqual(["id", "name", "status"]);
+    });
+  });
+
+  test("rejects conflicting canary union alias and schema mode", () => {
+    const result = runCli([
+      "data",
+      "stack",
+      "examples/playground/stack-cases/csv-matching-headers",
+      "--union-by-name",
+      "--schema-mode",
+      "strict",
+      "--output",
+      "examples/playground/.tmp-tests/conflict.csv",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("--union-by-name cannot be combined with --schema-mode");
+  });
+
+  test("schema-mode auto keeps strict when headers match exactly", async () => {
+    await withTempFixtureDir("data-stack-cli-schema-mode-auto-strict", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+      const result = runCli([
+        "data",
+        "stack",
+        "examples/playground/stack-cases/csv-matching-headers",
+        "--pattern",
+        "*.csv",
+        "--schema-mode",
+        "auto",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Schema mode: strict");
+    });
+  });
+
+  test("schema-mode auto uses deterministic union for schema drift", async () => {
+    await withTempFixtureDir("data-stack-cli-schema-mode-auto-union", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
+      const result = runCli([
+        "data",
+        "stack",
+        "examples/playground/stack-cases/csv-header-mismatch",
+        "--pattern",
+        "*.csv",
+        "--schema-mode",
+        "auto",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Schema mode: union-by-name");
+      expect(await readFile(outputPath, "utf8")).toBe(
+        "id,name,status,state\n3001,Iris,active,\n3002,Jules,paused,\n3003,Kira,,active\n3004,Luca,,paused\n",
+      );
+    });
+  });
+
+  test("schema-mode auto stops when widening is ambiguous", async () => {
+    await withTempFixtureDir("data-stack-cli-schema-mode-auto-ambiguous", async (fixtureDir) => {
+      const sourceDir = join(fixtureDir, "parts");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(sourceDir, "a.csv"), "id,value,value\n1,first,second\n", "utf8");
+      await writeFile(join(sourceDir, "b.csv"), "id,value\n2,third\n", "utf8");
+
+      const result = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourceDir),
+        "--schema-mode",
+        "auto",
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "merged.csv")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("--schema-mode auto could not choose a safe schema mode");
+      expect(result.stderr).toContain("--schema-mode union-by-name");
+    });
+  });
+
   test("writes a custom dry-run plan without stack output from the command layer", async () => {
     await withTempFixtureDir("data-stack-cli-dry-run", async (fixtureDir) => {
       const planPath = join(fixtureDir, "stack-plan.json");

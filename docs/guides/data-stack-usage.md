@@ -21,7 +21,8 @@ Current command boundary:
 - strict `jsonl` is supported as one JSON object per line with the same key set across rows
 - strict `.json` input is supported as one top-level array of objects with the same key set across rows
 - strict schema matching is the default
-- `--union-by-name` is available as the current canary opt-in schema-flex mode
+- `--schema-mode <strict|union-by-name|auto>` selects strict matching, named-schema union, or deterministic automatic analysis
+- `--union-by-name` remains as a temporary compatibility alias that prints a concise migration warning for `--schema-mode union-by-name`
 - `--exclude-columns <name,name,...>` removes exact column/key names from union-by-name output
 - `--dry-run` writes a replayable stack-plan artifact and does not write stack output
 - `data stack replay <record>` executes a reviewed stack-plan JSON artifact
@@ -31,12 +32,12 @@ Current command boundary:
 - mixed normalized input formats are rejected
 - output requires `.csv`, `.tsv`, or `.json`
 - direct CLI requires `--output <path>`
-- interactive mode is available through `cdx-chores interactive` and supports mixed file/directory sources, CSV, TSV, JSONL, JSON, strict matching, union-by-name, exclusions, and generated default output paths
+- interactive mode is available through `cdx-chores interactive` and supports mixed file/directory sources, CSV, TSV, JSONL, JSON, automatic schema analysis, strict matching, union-by-name, exclusions, and generated default output paths
 
 ### Command shape
 
 ```bash
-cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--union-by-name] [--exclude-columns <name,name,...>] [--unique-by <name,name,...>] [--on-duplicate preserve|report|reject] [--dry-run] [--plan-output <path>] [--codex-assist] [--codex-report-output <path>] [--overwrite]
+cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--schema-mode strict|union-by-name|auto] [--union-by-name] [--exclude-columns <name,name,...>] [--unique-by <name,name,...>] [--on-duplicate preserve|report|reject] [--dry-run] [--plan-output <path>] [--codex-assist] [--codex-report-output <path>] [--overwrite]
 cdx-chores data stack replay <record> [--output <path>] [--auto-clean]
 ```
 
@@ -80,13 +81,17 @@ Structured JSON input behavior:
 
 Schema-flex behavior:
 
-- strict schema matching is the default for direct CLI and interactive mode
-- `--union-by-name` is opt-in for stacking named schemas that add or omit columns or JSON keys
+- strict schema matching is the default for direct CLI
+- interactive mode defaults to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices
+- `--schema-mode strict` requires every matched file to have the same accepted column or key names
+- `--schema-mode union-by-name` stacks named schemas that add or omit columns or JSON keys
+- `--schema-mode auto` tries strict first, then deterministic union-by-name only for schema mismatches that can be widened safely
+- `--union-by-name` existed in `v0.1.2-canary.2` and remains as a temporary compatibility alias that prints a concise migration warning for `--schema-mode union-by-name`
 - when enabled, it builds the output schema from the union of all header names or object keys
 - the first source's name order comes first, with newly discovered names appended in first-seen order
 - missing values are written using the stack materializer's empty-value policy
 - duplicate names in one source are rejected in union-by-name mode because name-based alignment would otherwise be ambiguous
-- `--exclude-columns <name,name,...>` is accepted only with `--union-by-name`
+- `--exclude-columns <name,name,...>` is accepted only with `--schema-mode union-by-name` or the `--union-by-name` alias
 - excluded names are exact matches
 - unknown exclusions are rejected after source discovery so typos are visible
 - schema mode, output column/key count, and bounded exclusion names are disclosed in the write summary or interactive review
@@ -94,18 +99,17 @@ Schema-flex behavior:
   - CSV and TSV inputs with header rows
   - JSONL object rows
   - `.json` top-level arrays of objects
-- `--union-by-name` is rejected with `--no-header` in this slice because generated `column_<n>` names are not a stable user-authored schema
-- `--union-by-name` is not used automatically; it exists to make schema widening deliberate
+- `--schema-mode union-by-name` is rejected with `--no-header` because generated `column_<n>` names are not a stable user-authored schema
+- direct CLI `--schema-mode auto` does not call Codex; if deterministic analysis cannot choose safely, the command stops with next-step hints instead of silently guessing
 
-Planned canary schema-mode transition note:
+Direct CLI `--schema-mode auto` decision tree:
 
-- `--union-by-name` existed in `v0.1.2-canary.2`
-- the current shipped canary option remains `--union-by-name`
-- the planned replacement surface is `--schema-mode <strict|union-by-name|auto>`
-- until that follow-up is implemented, examples in this guide intentionally keep using the current canary flag
-- direct CLI should continue to default to strict matching
-- interactive mode is planned to move toward an `Analyze automatically` default with explicit strict and union-by-name choices still available
-- planned `auto` behavior should use deterministic analysis first, ask Codex assist only for ambiguous reviewed cases when available, and fail with concise next-step hints when ambiguity cannot be resolved safely
+1. If strict preparation succeeds, use `strict`.
+2. If strict preparation fails only because accepted names differ, try `union-by-name`.
+3. If union-by-name preparation succeeds, use `union-by-name`.
+4. If widening is unsafe, such as headerless generated names or duplicate names inside one source, stop with a concise diagnostic.
+
+Interactive `Analyze automatically` uses the same deterministic analysis. After the status preview, the normal contextual Codex checkpoint may still appear when diagnostics show useful review signals, such as schema drift, noisy union columns, duplicate rows, or candidate unique keys. Codex remains a reviewed helper; it is not required for automatic schema analysis.
 
 Dry-run and replay behavior:
 
@@ -174,7 +178,13 @@ cdx-chores data stack ./examples/playground/stack-cases/json-array-basic --patte
 Union-by-name with exact exclusions:
 
 ```bash
-cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --union-by-name --exclude-columns noise --output ./examples/playground/.tmp-tests/union.stack.json --overwrite
+cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --schema-mode union-by-name --exclude-columns noise --output ./examples/playground/.tmp-tests/union.stack.json --overwrite
+```
+
+Automatic schema analysis:
+
+```bash
+cdx-chores data stack ./examples/playground/stack-cases/csv-header-mismatch --pattern "*.csv" --schema-mode auto --output ./examples/playground/.tmp-tests/auto.stack.csv --dry-run
 ```
 
 Dry-run plan without writing stack output:
@@ -204,7 +214,7 @@ cdx-chores data stack ./examples/playground/stack-cases/csv-matching-headers --p
 Write an advisory Codex report during dry-run:
 
 ```bash
-cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
+cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --schema-mode union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
 ```
 
 Recursive directory discovery:
@@ -233,7 +243,7 @@ Current implemented interactive flow:
 3. Choose CSV, TSV, JSON, or JSONL input format.
 4. Enter a filename pattern.
 5. Choose shallow or recursive traversal.
-6. Choose strict matching or union-by-name schema mode.
+6. Choose Analyze automatically, strict matching, or union-by-name schema mode.
 7. If union-by-name is selected, optionally enter exact column/key exclusions.
 8. Choose output format.
 9. Choose destination style:
@@ -280,13 +290,6 @@ Current interactive default output rule:
 - Codex or diagnostic reports have a separate keep prompt
 - failed writes keep all generated artifacts for troubleshooting
 
-Planned schema-mode refinement:
-
-- interactive schema setup should default to `Analyze automatically`
-- the explicit choices remain available as `Strict matching` and `Union by name`
-- automatic analysis should pick strict when sources match exactly, use deterministic union-by-name only when the widening is low-risk, and request reviewed Codex help only for ambiguous cases
-- if Codex assist is unavailable and the schema is still ambiguous, interactive mode should explain the issue and let the user choose an explicit schema mode or revise setup
-
 Interactive Codex review:
 
 - Codex recommendations are requested from a contextual checkpoint before write or plan save
@@ -297,7 +300,7 @@ Interactive Codex review:
 - each recommendation can be accepted, edited, skipped, or used to cancel review
 - accepted and edited recommendations create a new deterministic plan payload before write or dry-run save
 - the status preview is shown again after accepted or edited recommendations
-- if Codex fails, the interactive flow keeps the current deterministic setup and lets the user continue
+- if Codex fails, the interactive flow clears the thinking status, prints a concise unavailable message, keeps raw provider JSON out of normal output, and lets the user continue with the current deterministic setup
 
 Example:
 

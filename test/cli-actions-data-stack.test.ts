@@ -455,7 +455,7 @@ describe("cli action modules: data stack", () => {
             sources: ["rows.json"],
           }),
         {
-          code: "INVALID_INPUT",
+          code: "DATA_STACK_SCHEMA_MISMATCH",
           exitCode: 2,
           messageIncludes: "JSON key mismatch",
         },
@@ -627,7 +627,7 @@ describe("cli action modules: data stack", () => {
         {
           code: "INVALID_INPUT",
           exitCode: 2,
-          messageIncludes: "--exclude-columns requires --union-by-name",
+          messageIncludes: "--exclude-columns requires --schema-mode union-by-name",
         },
       );
       expectNoOutput();
@@ -652,7 +652,7 @@ describe("cli action modules: data stack", () => {
         {
           code: "INVALID_INPUT",
           exitCode: 2,
-          messageIncludes: "--union-by-name cannot be used with --no-header",
+          messageIncludes: "--schema-mode union-by-name cannot be used with --no-header",
         },
       );
       expectNoOutput();
@@ -801,7 +801,7 @@ describe("cli action modules: data stack", () => {
             sources: ["a.csv", "b.csv"],
           }),
         {
-          code: "INVALID_INPUT",
+          code: "DATA_STACK_SCHEMA_MISMATCH",
           exitCode: 2,
           messageIncludes: "Header mismatch",
         },
@@ -824,7 +824,7 @@ describe("cli action modules: data stack", () => {
             sources: ["a.csv", "b.csv"],
           }),
         {
-          code: "INVALID_INPUT",
+          code: "DATA_STACK_SCHEMA_MISMATCH",
           exitCode: 2,
           messageIncludes: "Headerless column count mismatch",
         },
@@ -846,7 +846,7 @@ describe("cli action modules: data stack", () => {
             sources: ["a.jsonl", "b.jsonl"],
           }),
         {
-          code: "INVALID_INPUT",
+          code: "DATA_STACK_SCHEMA_MISMATCH",
           exitCode: 2,
           messageIncludes: "JSONL key mismatch",
         },

@@ -26,7 +26,11 @@ import {
   type DataStackPlanMetadata,
 } from "../data-stack/plan";
 import { prepareDataStackExecution, type PreparedDataStackExecution } from "../data-stack/prepare";
-import type { DataStackInputFormat, DataStackOutputFormat } from "../data-stack/types";
+import type {
+  DataStackInputFormat,
+  DataStackOutputFormat,
+  DataStackSchemaModeOption,
+} from "../data-stack/types";
 import { CliError } from "../errors";
 import { assertNonEmpty, displayPath, printLine } from "./shared";
 
@@ -47,9 +51,27 @@ export interface DataStackOptions {
   pattern?: string;
   planOutput?: string;
   recursive?: boolean;
+  schemaMode?: DataStackSchemaModeOption;
   unionByName?: boolean;
   uniqueBy?: string[];
   sources: string[];
+}
+
+function resolveDataStackSchemaModeOption(options: DataStackOptions): DataStackSchemaModeOption {
+  if (
+    options.unionByName === true &&
+    options.schemaMode &&
+    options.schemaMode !== "union-by-name"
+  ) {
+    throw new CliError(
+      "--union-by-name cannot be combined with --schema-mode other than union-by-name.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+  return options.unionByName === true ? "union-by-name" : (options.schemaMode ?? "strict");
 }
 
 function validateOptions(options: DataStackOptions): void {
@@ -59,6 +81,8 @@ function validateOptions(options: DataStackOptions): void {
       exitCode: 2,
     });
   }
+
+  resolveDataStackSchemaModeOption(options);
 
   if (!options.output?.trim()) {
     throw new CliError("--output is required for data stack runs.", {
@@ -392,6 +416,7 @@ export async function actionDataStack(
   const outputFormat = normalizeDataStackOutputFormat(outputPath);
   const uniqueBy = options.uniqueBy ?? [];
   const duplicatePolicy = options.onDuplicate ?? "preserve";
+  const schemaMode = resolveDataStackSchemaModeOption(options);
   const prepared = await prepareDataStackExecution({
     columns: options.columns,
     excludeColumns: options.excludeColumns,
@@ -403,9 +428,15 @@ export async function actionDataStack(
     readText: readTextFileRequired,
     recursive: options.recursive,
     renderPath: (path) => displayPath(runtime, path),
-    schemaMode: options.unionByName === true ? "union-by-name" : "strict",
+    schemaMode,
     sources: sourcePaths,
   });
+  if (options.unionByName === true) {
+    printLine(
+      runtime.stderr,
+      "Warning: --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.",
+    );
+  }
 
   const diagnostics = computeDataStackDiagnostics({
     header: prepared.header,

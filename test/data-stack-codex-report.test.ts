@@ -5,6 +5,7 @@ import {
   createDataStackCodexReportArtifact,
   validateDataStackCodexRecommendation,
 } from "../src/cli/data-stack/codex-report";
+import { DATA_STACK_CODEX_OUTPUT_SCHEMA } from "../src/cli/data-stack/codex-assist";
 import { computeDataStackDiagnostics } from "../src/cli/data-stack/diagnostics";
 import {
   createDataStackPlanArtifact,
@@ -116,6 +117,52 @@ describe("data stack Codex report helpers", () => {
     expect(recommendation.patches).toEqual([
       { op: "replace", path: "/duplicates/policy", value: "reject" },
     ]);
+  });
+
+  test("structured Codex output schema gives patch values an explicit type", () => {
+    const recommendations = DATA_STACK_CODEX_OUTPUT_SCHEMA.properties.recommendations;
+    const patchValue = recommendations.items.properties.patches.items.properties.value;
+
+    expect(patchValue).toEqual({
+      type: ["string", "array"],
+      items: { type: "string" },
+    });
+  });
+
+  test("applies schema-mode recommendations into the deterministic stack plan", () => {
+    const plan = createPlan();
+    const diagnostics = computeDataStackDiagnostics({
+      header: plan.schema.includedNames,
+      matchedFileCount: 1,
+      rows: [
+        ["1", "active", "north"],
+        ["2", "paused", "south"],
+      ],
+    });
+    const report = createDataStackCodexReportArtifact({
+      diagnostics,
+      now: new Date("2026-04-26T00:01:00.000Z"),
+      plan,
+      recommendations: [
+        {
+          confidence: 0.72,
+          id: "rec_schema_union",
+          patches: [{ op: "replace", path: "/schema/mode", value: "union-by-name" }],
+          reasoningSummary: "Sources show deterministic schema drift.",
+          title: "Use union by name",
+        },
+      ],
+      uid: "bbbbcccc",
+    });
+
+    const nextPlan = applyDataStackCodexRecommendationDecisions({
+      decisions: [{ decision: "accepted", recommendationId: "rec_schema_union" }],
+      now: new Date("2026-04-26T00:02:00.000Z"),
+      plan,
+      report,
+    });
+
+    expect(nextPlan.schema.mode).toBe("union-by-name");
   });
 
   test("rejects unsupported or conflicting patch shapes", () => {

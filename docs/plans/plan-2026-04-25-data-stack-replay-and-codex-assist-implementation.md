@@ -2,7 +2,7 @@
 title: "Data stack replay and Codex assist implementation"
 created-date: 2026-04-25
 modified-date: 2026-04-26
-status: active
+status: completed
 agent: codex
 ---
 
@@ -31,12 +31,13 @@ This plan turns those decisions into implementable phases without reopening earl
 
 ## Starting State
 
-Current `data stack` already supports:
+Current `data stack` now supports:
 
 - direct CLI mixed file/directory sources
 - CSV, TSV, JSONL, and narrow `.json` array input
 - strict schema matching by default
-- opt-in `--union-by-name` as the canary schema-flex flag from `v0.1.2-canary.2`
+- `--schema-mode <strict|union-by-name|auto>`
+- `--union-by-name` as a canary compatibility alias from `v0.1.2-canary.2`
 - exact `--exclude-columns <name,name,...>` with union-by-name
 - direct output to `.csv`, `.tsv`, or `.json`
 - interactive mixed-source setup with generated default output paths
@@ -197,8 +198,9 @@ Duplicate policy execution rules:
 
 Status note:
 
-- Phases 1 through 9 are implemented and checked off.
-- Phase 10 and Phase 11 are follow-up hardening and product-contract cleanup work, so this plan remains `active`.
+- Phases 1 through 11 are implemented and checked off.
+- Phase 10 closed the interactive Codex hardening follow-up.
+- Phase 11 closed the schema-mode naming and automatic analysis cleanup.
 
 ### Phase 1: Freeze and implement stack-plan artifacts
 
@@ -316,26 +318,26 @@ Status note:
 
 ### Phase 10: Interactive Codex assist hardening follow-up
 
-- [ ] fix the data-stack Codex structured-output schema so `patches[].value` uses an explicit JSON Schema `type` instead of a loose empty schema
-- [ ] convert raw Codex/provider failures into concise interactive messages that explain the recommendations are unavailable and that deterministic setup is preserved
-- [ ] stop or clear the interactive analyzer status before printing Codex success or failure output so the status line does not merge with the next message
-- [ ] add tests for the structured-output schema, sanitized failure copy, and status cleanup ordering around Codex failures
-- [ ] make large matched-file previews clearer by labeling bounded samples and reporting how many matched files are hidden from the sample
-- [ ] review whether manually added input sources also need bounded display in interactive stack review
-- [ ] update the guide and job records after the hardening pass is implemented and verified
+- [x] fix the data-stack Codex structured-output schema so `patches[].value` uses an explicit JSON Schema `type` instead of a loose empty schema
+- [x] convert raw Codex/provider failures into concise interactive messages that explain the recommendations are unavailable and that deterministic setup is preserved
+- [x] stop or clear the interactive analyzer status before printing Codex success or failure output so the status line does not merge with the next message
+- [x] add tests for the structured-output schema, sanitized failure copy, and status cleanup ordering around Codex failures
+- [x] make large matched-file previews clearer by labeling bounded samples and reporting how many matched files are hidden from the sample
+- [x] review whether manually added input sources also need bounded display in interactive stack review
+- [x] update the guide and job records after the hardening pass is implemented and verified
 
 ### Phase 11: Schema-mode naming and automatic analysis follow-up
 
-- [ ] introduce `--schema-mode <strict|union-by-name|auto>` as the explicit schema-mode contract for direct CLI
-- [ ] decide whether `--union-by-name` should be removed during canary development or kept as a short-lived compatibility alias with a clear deprecation message
-- [ ] document the canary compatibility note: `--union-by-name` existed in `v0.1.2-canary.2`, and `--schema-mode union-by-name` is the intended replacement surface
-- [ ] keep direct CLI default behavior fail-closed as `--schema-mode strict`
-- [ ] make interactive mode default to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices still available
-- [ ] define `--schema-mode auto` as deterministic analysis first, with Codex assist used only when available and only for ambiguous cases that require reviewed judgment
-- [ ] ensure `--schema-mode auto` never silently widens ambiguous schemas when Codex assist is unavailable; print concise next-step hints instead
-- [ ] keep accepted Codex schema recommendations materialized as deterministic stack-plan fields before write, dry-run save, or replay
-- [ ] update direct CLI, interactive, dry-run, replay, and guide tests for schema-mode naming, default behavior, canary transition handling, and unavailable-Codex fallback copy
-- [ ] update the research, guide, and job records after the schema-mode follow-up is implemented and verified
+- [x] introduce `--schema-mode <strict|union-by-name|auto>` as the explicit schema-mode contract for direct CLI
+- [x] decide whether `--union-by-name` should be removed during canary development or kept as a temporary compatibility alias that prints a concise migration warning
+- [x] document the canary compatibility note: `--union-by-name` existed in `v0.1.2-canary.2`, and `--schema-mode union-by-name` is the intended replacement surface
+- [x] keep direct CLI default behavior fail-closed as `--schema-mode strict`
+- [x] make interactive mode default to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices still available
+- [x] define direct CLI `--schema-mode auto` as deterministic analysis first, with interactive Codex assist remaining an optional reviewed checkpoint after diagnostics show useful signals
+- [x] ensure `--schema-mode auto` never silently widens ambiguous schemas when Codex assist is unavailable; print concise next-step hints instead
+- [x] keep accepted Codex schema recommendations materialized as deterministic stack-plan fields before write, dry-run save, or replay
+- [x] update direct CLI, interactive, dry-run, replay, and guide tests for schema-mode naming, default behavior, canary transition handling, and unavailable-Codex fallback copy
+- [x] update the research, guide, and job records after the schema-mode follow-up is implemented and verified
 
 ## Acceptance Criteria
 
@@ -397,3 +399,4 @@ Status note:
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-preview-and-codex-reports.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-and-guide-closeout.md`
 - `docs/plans/jobs/2026-04-26-data-stack-interactive-codex-checkpoint-closeout.md`
+- `docs/plans/jobs/2026-04-26-data-stack-codex-hardening-and-schema-mode.md`
