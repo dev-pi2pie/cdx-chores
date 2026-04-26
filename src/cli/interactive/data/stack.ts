@@ -328,6 +328,24 @@ function assertInteractiveStackPlanPathIsReplayable(options: {
   );
 }
 
+function assertInteractiveStackPlanPathDoesNotOverlapInputs(options: {
+  planPath: string;
+  prepared: PreparedDataStackExecution;
+  runtime: CliRuntime;
+}): void {
+  const collidingInput = options.prepared.files.find((file) => file.path === options.planPath);
+  if (!collidingInput) {
+    return;
+  }
+  throw new CliError(
+    `Stack plan path cannot be the same as an input source: ${displayPath(options.runtime, options.planPath)}.`,
+    {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    },
+  );
+}
+
 async function maybeKeepInteractiveStackPlan(runtime: CliRuntime, planPath: string): Promise<void> {
   const keepPlan = await confirm({ message: "Keep stack plan?", default: true });
   if (!keepPlan) {
@@ -1286,6 +1304,11 @@ async function confirmInteractiveStackWrite(
     if (nextStep === "write") {
       const planPath = resolveFromCwd(runtime, defaultPlanPath);
       assertInteractiveStackPlanPathIsReplayable({ outputPath, planPath, runtime });
+      assertInteractiveStackPlanPathDoesNotOverlapInputs({
+        planPath,
+        prepared: state.prepared,
+        runtime,
+      });
       const planArtifact = await writePreparedDataStackPlan(
         runtime,
         buildInteractiveStackPlanWriteInput(state, planPath, reviewedPlan),
@@ -1308,6 +1331,11 @@ async function confirmInteractiveStackWrite(
       assertInteractiveStackPlanPathIsReplayable({
         outputPath,
         planPath: chosenPlanPath,
+        runtime,
+      });
+      assertInteractiveStackPlanPathDoesNotOverlapInputs({
+        planPath: chosenPlanPath,
+        prepared: state.prepared,
         runtime,
       });
       const planArtifact = await writePreparedDataStackPlan(

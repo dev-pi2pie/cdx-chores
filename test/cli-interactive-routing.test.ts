@@ -1163,6 +1163,33 @@ describe("interactive mode routing", () => {
     expect(result.actionCalls).toEqual([]);
   });
 
+  test("rejects an interactive dry-run plan at an input source path", () => {
+    const inputPath = "examples/playground/stack-cases/json-array-basic/day-01.json";
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: [
+          "data",
+          "data:stack",
+          "json",
+          "accept",
+          "strict",
+          "json",
+          "continue",
+          "dry-run",
+        ],
+        requiredPathQueue: [inputPath],
+        optionalPathQueue: ["fixtures/custom-stacked.json", inputPath],
+        confirmQueue: [false],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain("Stack plan path cannot be the same as an input source");
+    expect(result.stackPlanWrites).toHaveLength(0);
+    expect(result.actionCalls).toEqual([]);
+  });
+
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
     const result = runInteractiveHarness({
       mode: "run",
