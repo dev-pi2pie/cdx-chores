@@ -2,13 +2,15 @@
 title: "Data stack replay and Codex assist implementation"
 created-date: 2026-04-25
 modified-date: 2026-04-26
-status: completed
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
 Implement the next `data stack` development stage: replayable dry-run stack plans, deterministic duplicate/key diagnostics, reviewed Codex recommendations, and an interactive status-preview flow that can write, save, revise, or cancel without hiding execution state.
+
+The deterministic stack/replay/Codex-assist foundation is implemented through Phase 11. The plan remains active for a Phase 12 interactive workflow cleanup because the current interactive mode still explains dry-run too late, makes pattern selection feel too manual, and should align more closely with the source-shape review used by `data extract`.
 
 The implementation must keep one clear boundary:
 
@@ -27,7 +29,7 @@ The research records the current product-contract direction for stack replay and
 - Codex reports as advisory artifacts linked to deterministic payload ids
 - interactive status preview before any materialized output write
 
-This plan turns those decisions into implementable phases without reopening earlier `data stack` work.
+This plan turns those decisions into implementable phases. Earlier deterministic stack work remains closed; the active follow-up is limited to the interactive workflow shape.
 
 ## Starting State
 
@@ -201,6 +203,7 @@ Status note:
 - Phases 1 through 11 are implemented and checked off.
 - Phase 10 closed the interactive Codex hardening follow-up.
 - Phase 11 closed the schema-mode naming and automatic analysis cleanup.
+- Phase 12 is reopened for an extract-shaped interactive workflow cleanup.
 
 ### Phase 1: Freeze and implement stack-plan artifacts
 
@@ -332,12 +335,25 @@ Status note:
 - [x] decide whether `--union-by-name` should be removed during canary development or kept as a temporary compatibility alias that prints a concise migration warning
 - [x] document the canary compatibility note: `--union-by-name` existed in `v0.1.2-canary.2`, and `--schema-mode union-by-name` is the intended replacement surface
 - [x] keep direct CLI default behavior fail-closed as `--schema-mode strict`
-- [x] make interactive mode default to `Analyze automatically`, with explicit `Strict matching` and `Union by name` choices still available
+- [x] make interactive mode default to deterministic automatic schema analysis, with explicit `Strict matching` and `Union by name` choices still available
 - [x] define direct CLI `--schema-mode auto` as deterministic analysis first, with interactive Codex assist remaining an optional reviewed checkpoint after diagnostics show useful signals
 - [x] ensure `--schema-mode auto` never silently widens ambiguous schemas when Codex assist is unavailable; print concise next-step hints instead
 - [x] keep accepted Codex schema recommendations materialized as deterministic stack-plan fields before write, dry-run save, or replay
 - [x] update direct CLI, interactive, dry-run, replay, and guide tests for schema-mode naming, default behavior, canary transition handling, and unavailable-Codex fallback copy
 - [x] update the research, guide, and job records after the schema-mode follow-up is implemented and verified
+
+### Phase 12: Extract-shaped interactive workflow cleanup
+
+- [ ] revise interactive stack setup so source discovery happens before schema and output decisions, closer to the `data extract` source-shape flow
+- [ ] make pattern selection smarter by inferring a useful default, showing a bounded matched-file preview, and offering revise-pattern before schema prompts
+- [ ] explain dry-run during source discovery, before schema prompts and before the final action menu, as "save a replayable stack plan without writing output"
+- [ ] split the stack review screen into clearer groups: input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
+- [ ] replace the current deterministic auto-analysis label with wording that does not imply Codex, and reserve `Analyze with Codex (powered by Codex)` for Codex-backed reviewed suggestions
+- [ ] keep deterministic `--schema-mode auto` wording separate from Codex-powered reviewed suggestions so users do not think direct CLI auto requires Codex
+- [ ] align final write/save/revise/cancel prompts with the `data extract` review rhythm while preserving stack-plan retention and replay semantics
+- [ ] update the ASCII sketches in the research after the implementation details settle
+- [ ] add or update interactive routing tests for source discovery, pattern preview revision, early dry-run explanation, Codex-powered labeling, and final action behavior
+- [ ] update `docs/guides/data-stack-usage.md`, this plan, the research doc, and a job record after implementation evidence exists
 
 ## Acceptance Criteria
 
@@ -356,8 +372,11 @@ Status note:
 - interactive Codex assist appears as a contextual review checkpoint when diagnostics suggest it can help, not as a peer of final write/save actions
 - interactive Codex assist handles provider/schema failures with concise output and clean status-line behavior
 - direct schema-mode usage has a single explicit surface, `--schema-mode <strict|union-by-name|auto>`, with strict as the direct CLI default
-- interactive schema setup offers an `Analyze automatically` default while still allowing explicit strict and union-by-name choices
+- interactive schema setup offers deterministic automatic schema analysis while still allowing explicit strict and union-by-name choices
 - unavailable Codex assist never causes `--schema-mode auto` to make an ambiguous schema choice silently
+- interactive source discovery shows matched-file evidence before schema decisions
+- interactive dry-run is explained during source discovery before schema prompts and before the final write/save decision point
+- Codex-powered analysis is labeled clearly in interactive mode while deterministic replay remains Codex-independent
 
 ## Risks and Mitigations
 
@@ -378,6 +397,12 @@ Status note:
 
 - Risk: `--schema-mode auto` is mistaken for "always use Codex" or silently changes script output.
   Mitigation: define auto as deterministic-first, keep strict as the direct CLI default, and require reviewed confirmation or a clear diagnostic for ambiguous cases.
+
+- Risk: interactive "auto analysis" wording makes deterministic auto and Codex-powered suggestions sound like the same thing.
+  Mitigation: keep deterministic `--schema-mode auto` copy separate from `Analyze with Codex (powered by Codex)` copy in interactive mode.
+
+- Risk: smarter pattern inference hides which files will be stacked.
+  Mitigation: always show a bounded matched-file preview and a revise-pattern branch before schema decisions.
 
 ## Related Research
 

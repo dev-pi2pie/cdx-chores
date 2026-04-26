@@ -2,7 +2,7 @@
 title: "Data stack replay records, duplicate handling, and Codex schema assist"
 created-date: 2026-04-24
 modified-date: 2026-04-26
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -37,14 +37,15 @@ The repo already has related patterns:
 
 This research now chooses the same safety shape for `data stack`: dry-run produces a reviewed deterministic plan, and `data stack replay <record>` runs that accepted plan later.
 
-The implementation now proves the deterministic pieces, reviewed Codex report flow, and contextual interactive Codex checkpoint. Interactive Codex assist now follows the `data extract` and `rename` rhythm: it appears as a contextual helper only when diagnostics show it can help, rather than as a peer of final write/save actions.
+The implementation now proves the deterministic pieces, reviewed Codex report flow, and contextual interactive Codex checkpoint. The remaining open work is the shape of the interactive workflow itself: the current interaction still explains dry-run too late, pattern selection still feels too manual, and the flow should align more closely with `data extract` source review than with the `rename` apply flow.
 
 An interactive hardening follow-up resolved the live issue found against `examples/playground/stack-cases/csv-header-mismatch/`: Codex patch values now have an explicit structured-output schema type, raw provider-shaped failures are replaced by concise unavailable messages, and the analyzer status line is cleared before failure output is printed.
 
 Status note:
 
-- the replay, duplicate/key, contextual Codex checkpoint, and schema-mode contracts are settled
-- the linked implementation plan is completed through Phase 11
+- the replay, duplicate/key, contextual Codex checkpoint, and schema-mode execution contracts are settled
+- the linked implementation plan is implemented through Phase 11
+- the interactive workflow is reopened for a Phase 12 cleanup around source discovery, pattern preview, early dry-run explanation, deterministic-auto wording, and Codex-powered reviewed analysis
 
 ## Starting State
 
@@ -213,9 +214,11 @@ Auto-clean should never remove:
 
 ### 4. Interactive dry-run/replay ASCII sketches
 
-The interactive flow is easier to read as three sketches: setup and optional Codex review, final action choice, and post-write retention.
+The interactive flow is easier to read as three sketches: source discovery and dry-run framing, deterministic preview plus optional Codex-powered analysis, and final write/replay retention.
 
-#### Setup and contextual Codex checkpoint
+This direction is intentionally closer to `data extract` than to `rename`. The user should first understand the selected sources and shape, then preview the deterministic stack plan, then choose whether to write output or save a replayable dry-run plan.
+
+#### Source discovery and dry-run framing
 
 ```text
 cdx-chores interactive
@@ -227,13 +230,42 @@ data
 stack
   |
   v
-collect sources, format, schema, duplicate policy
+choose input sources
   |
   v
+choose or infer pattern
+  |
+  v
+show matched-file preview
+  |
+  +-- revise pattern -------> choose or infer pattern
+  |
+  +-- revise sources -------> choose input sources
+  |
+  +-- cancel ---------------> stop
+  |
+  +-- accept matches
+        |
+        v
+      explain dry-run/replay path
+        |
+        v
+      choose format/header/schema
+        |
+        v
+      choose duplicate/key policy
+        |
+        v
+      choose output destination
+```
+
+#### Deterministic preview and Codex-powered analysis
+
+```text
 choose output destination
   |
   v
-prepare status preview
+prepare deterministic stack preview
   |
   v
 show source/schema/duplicate/key/output summary
@@ -243,40 +275,39 @@ diagnostics show Codex-useful signals?
   |
   +-- no ----> final action menu
   |
-  +-- yes ---> Codex assist checkpoint
+  +-- yes ---> Codex-powered analysis checkpoint
                  |
-                 +-- continue without Codex -> final action menu
+                 +-- continue without Codex --------> final action menu
                  |
-                 +-- revise setup ----------> collect setup again
+                 +-- revise setup ------------------> choose input sources
                  |
-                 +-- cancel ----------------> stop
+                 +-- cancel ------------------------> stop
                  |
-                 +-- review with Codex -----> review Codex recommendations
-                                               |
-                                               +-- skip review -----------> final action menu
-                                               |
-                                               v
-                                             accept or edit recommendations
-                                               |
-                                               v
-                                             apply reviewed changes to deterministic plan
-                                               |
-                                               v
-                                             re-prepare status preview
-                                               |
-                                               v
-                                             show updated summary
-                                               |
-                                               v
-                                             final action menu
+                 +-- analyze with Codex
+                     (powered by Codex) ------------> review recommendations
+                                                        |
+                                                        +-- skip review ----> final action menu
+                                                        |
+                                                        v
+                                                      accept or edit recommendations
+                                                        |
+                                                        v
+                                                      apply reviewed changes
+                                                        |
+                                                        v
+                                                      re-prepare deterministic preview
+                                                        |
+                                                        v
+                                                      show updated summary
+                                                        |
+                                                        v
+                                                      final action menu
 ```
 
-#### Final action menu
+#### Final action, dry-run, replay, and retention
 
 ```text
 final action menu
-  |
-  +-- write now ----------> execute accepted stack plan
   |
   +-- dry-run plan only --> write/offer stack plan
   |
@@ -285,31 +316,33 @@ final action menu
   +-- revise setup -------> collect setup again
   |
   +-- cancel -------------> stop
-```
-
-#### Retention after write or dry-run save
-
-```text
-execute accepted stack plan
   |
-  v
-write output succeeds?
-  |
-  +-- no ----> keep all generated artifacts
-  |
-  +-- yes ---> Keep applied stack plan?
-                |
-                +-- yes -> keep stack plan
-                |
-                +-- no --> auto-clean stack plan only
-                           |
-                           v
-                         Keep diagnostic report? (if present)
+  +-- write now
+        |
+        v
+      execute accepted stack plan
+        |
+        v
+      write output succeeds?
+        |
+        +-- no ----> keep all generated artifacts
+        |
+        +-- yes ---> Keep applied stack plan?
+                      |
+                      +-- yes -> keep stack plan
+                      |
+                      +-- no --> auto-clean stack plan only
+                                 |
+                                 v
+                               Keep diagnostic report? (if present)
 
 write/offer stack plan
   |
   v
 Keep dry-run stack plan?
+  |
+  v
+later: data stack replay <record>
 ```
 
 Implication:
@@ -318,6 +351,9 @@ Implication:
 - the final action menu stays focused on deterministic execution, dry-run plan saving, destination changes, revision, or cancellation
 - quiet no-signal inputs skip Codex prompting entirely
 - immediate write still runs through a concrete plan instead of recomputing hidden state
+- dry-run should be introduced before the final action menu as a replayable plan path, not only as a late write option
+- pattern selection should show a bounded match preview and let the user revise before schema decisions
+- Codex-powered analysis should be labeled as such so users know reviewed recommendations depend on Codex, while deterministic preview and replay do not
 - auto-clean is scoped to execution artifacts and only after success
 - advisory evidence survives unless the user explicitly removes it
 
@@ -639,8 +675,9 @@ Recommended defaults:
   - `--schema-mode strict`
   - fail closed for scripts and repeatable automation
 - interactive default:
-  - `Analyze automatically`
+  - deterministic automatic schema check
   - show explicit `Strict matching` and `Union by name` choices for users who already know the intended schema contract
+  - reserve `Analyze with Codex (powered by Codex)` for the reviewed-assist checkpoint after deterministic preview
 - replay default:
   - use the recorded `schema.mode` from the stack-plan artifact
 
@@ -651,7 +688,7 @@ Direct CLI `auto` should not mean "Codex is required." It should mean:
 3. Choose `union-by-name` only when the widening is deterministic and low-risk.
 4. Stop with concise next-step hints when deterministic widening is unsafe.
 
-Interactive `Analyze automatically` uses the same deterministic decision tree. After the status preview, the contextual Codex checkpoint may still appear when diagnostics show useful review signals. Codex remains a reviewed helper for schema/key/duplicate recommendations, not a dependency of automatic schema analysis.
+Interactive deterministic auto schema checking uses the same decision tree. After the status preview, the contextual Codex checkpoint may still appear when diagnostics show useful review signals. Codex remains a reviewed helper for schema/key/duplicate recommendations, not a dependency of automatic schema analysis.
 
 Examples of ambiguity that should not be widened silently:
 
@@ -875,7 +912,7 @@ The next implementation plan should treat these as in-scope commitments:
 - add reviewed Codex assist for headerless columns, explicit exclusions, unique-key selection, duplicate policy, and schema drift explanation
 - introduce `--schema-mode <strict|union-by-name|auto>` as the long-term schema-mode CLI surface
 - treat direct CLI strict matching as the default fallback
-- make interactive schema setup default to `Analyze automatically`
+- make interactive schema setup default to deterministic automatic schema checking
 - make direct CLI `--schema-mode auto` deterministic-first and fail-closed; keep interactive Codex assist as an optional reviewed checkpoint after diagnostics show useful signals
 - never silently widen ambiguous schemas when Codex assist is unavailable
 - document that `--union-by-name` existed in `v0.1.2-canary.2` and is being replaced by `--schema-mode union-by-name`
@@ -931,7 +968,8 @@ Resolved in this revision:
 - schema-mode CLI surface:
   - replace the standalone canary-era `--union-by-name` spelling with `--schema-mode <strict|union-by-name|auto>`
 - schema-mode defaults:
-  - direct CLI defaults to `strict`; interactive defaults to `Analyze automatically`; replay uses the recorded stack-plan mode
+  - direct CLI defaults to `strict`; interactive defaults to deterministic automatic schema checking; replay uses the recorded stack-plan mode
+  - reserve Codex-powered wording for the reviewed assist checkpoint, not the deterministic schema-mode choice
 - schema-mode auto fallback:
   - use deterministic analysis first, and provide concise failure guidance when widening is unsafe
 - recommendation application:
@@ -941,11 +979,11 @@ Resolved in this revision:
 - recommendation provenance:
   - use `recommendationDecisions` to record accepted and edited recommendation review decisions
 
-The core replay, duplicate/key, advisory-report, and interactive Codex checkpoint contracts are settled in this research. The linked implementation plan is the source of truth for exact command naming, validation rules, tests, and the remaining interactive Codex hardening follow-up.
+The core replay, duplicate/key, advisory-report, and interactive Codex checkpoint contracts are settled in this research. The linked implementation plan is the source of truth for exact command naming, validation rules, tests, and the reopened interactive workflow follow-up.
 
-## Final Interactive Direction
+## Revised Interactive Direction
 
-Codex participates in `data stack` as a reviewed assist surface, not as execution input. The final UX answer is that interactive mode asks for Codex help only after deterministic status preview shows useful signals.
+Codex participates in `data stack` as a reviewed assist surface, not as execution input. The revised UX answer is that interactive mode should first behave like `data extract`: discover sources, show the matched shape, preview the deterministic work, then ask whether Codex-powered analysis would help.
 
 Earlier Phase 7 behavior:
 
@@ -953,7 +991,7 @@ Earlier Phase 7 behavior:
 - offers `Request Codex recommendations` beside final actions such as write and dry-run
 - reviews recommendations and re-runs the status preview after accepted or edited recommendations
 
-Phase 9 moves that reviewed assist into the section 4 ASCII sketch:
+Phase 9 moved that reviewed assist into the section 4 ASCII sketch:
 
 - first prepare deterministic status
 - only then decide whether diagnostics justify a Codex checkpoint
@@ -973,6 +1011,14 @@ Codex should be offered only when deterministic diagnostics suggest it can add v
 
 This keeps the deterministic contract unchanged while making interactive Codex assist feel like a review helper instead of a final write action.
 
+The next interactive cleanup should move beyond only placing the Codex checkpoint correctly:
+
+- explain dry-run early as "save a replayable stack plan without writing output"
+- make pattern selection a source-discovery step with a bounded matched-file preview before schema prompts
+- group review output as input discovery, schema analysis, duplicate/key diagnostics, output target, and plan action
+- make the Codex path explicit in wording, for example `Analyze with Codex (powered by Codex)`, so users can distinguish Codex-powered suggestions from deterministic `--schema-mode auto`
+- preserve deterministic replay semantics: accepted Codex recommendations still become explicit plan fields before write, dry-run save, or replay
+
 ## Implemented Hardening
 
 The remaining checkpoint robustness work was implemented after the Phase 9 checkpoint shape:
@@ -988,11 +1034,11 @@ The schema-mode product-contract cleanup was also implemented:
 - introduced `--schema-mode <strict|union-by-name|auto>`
 - retained `--union-by-name` as a canary-era compatibility alias from `v0.1.2-canary.2` with a migration hint
 - kept direct CLI default behavior as strict matching
-- defaulted interactive schema setup to `Analyze automatically`
+- defaulted interactive schema setup to deterministic automatic schema analysis; Phase 12 still needs to clean up the user-facing label so it is not confused with Codex-powered suggestions
 - made direct CLI `auto` deterministic-first and fail with next-step hints when deterministic widening is unsafe
 - kept Codex schema recommendations as reviewed changes that materialize into deterministic stack-plan fields
 
-With those follow-ups implemented and tested, this research is completed.
+With Phases 1 through 11 implemented and tested, the deterministic stack/replay/Codex-assist foundation is complete. The research remains in progress while the Phase 12 interactive workflow cleanup is planned and implemented.
 
 ## Related Research
 
