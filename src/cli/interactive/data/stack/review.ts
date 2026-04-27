@@ -7,7 +7,10 @@ import {
   formatBoundedDataStackNames,
   formatDataStackSchemaMode,
 } from "../../../data-stack/disclosure";
-import { prepareDataStackExecution } from "../../../data-stack/prepare";
+import {
+  prepareDataStackExecution,
+  type PreparedDataStackExecution,
+} from "../../../data-stack/prepare";
 import type { DataStackPlanArtifact } from "../../../data-stack/plan";
 import type {
   DataStackInputFormat,

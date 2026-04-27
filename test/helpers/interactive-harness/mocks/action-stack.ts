@@ -9,6 +9,7 @@ import type {
   DataStackOutputFormat,
   DataStackSchemaMode,
 } from "../../../../src/cli/data-stack/types";
+import type { DataStackCodexPatch } from "../../../../src/cli/data-stack/codex-report";
 import { applyDataStackCodexRecommendationDecisions as applyRealDataStackCodexRecommendationDecisions } from "../../../../src/cli/data-stack/codex-report";
 import { formatDataStackCodexAssistFailure as formatRealDataStackCodexAssistFailure } from "../../../../src/cli/data-stack/codex-assist";
 
@@ -39,6 +40,10 @@ function toStringArray(value: unknown): string[] {
     : [];
 }
 
+function toOptionalString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
 function createMockStackPlanArtifact(options: MockStackPlanOptions): DataStackPlanArtifact {
   const metadata = options.metadata as Partial<DataStackPlanMetadata> | undefined;
   const stackOptions = options.stackOptions ?? {};
@@ -58,7 +63,7 @@ function createMockStackPlanArtifact(options: MockStackPlanOptions): DataStackPl
     diagnostics: {
       candidateUniqueKeys: [],
       matchedFileCount: options.prepared?.files?.length ?? 0,
-      reportPath: options.diagnostics?.planDiagnostics?.reportPath ?? null,
+      reportPath: toOptionalString(options.diagnostics?.planDiagnostics?.reportPath),
       rowCount: options.prepared?.rows?.length ?? 0,
       schemaNameCount: options.prepared?.header?.length ?? 0,
     },
@@ -240,7 +245,7 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
     applyDataStackCodexRecommendationDecisions: (options: {
       decisions: Array<{
         decision: "accepted" | "edited";
-        patches?: Array<Record<string, unknown>>;
+        patches?: DataStackCodexPatch[];
         recommendationId: string;
       }>;
       plan: DataStackPlanArtifact;
