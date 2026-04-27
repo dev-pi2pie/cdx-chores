@@ -1,6 +1,7 @@
 ---
 title: "Data stack TypeScript refactor scan"
 created-date: 2026-04-27
+modified-date: 2026-04-27
 status: draft
 agent: codex
 ---
@@ -306,6 +307,7 @@ Why this order:
 
 ## Related Plans
 
+- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
 - `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
