@@ -5,6 +5,7 @@ import { actionsModuleUrl } from "../module-urls";
 import { createDataActionMocks } from "./action-data";
 import { createMiscActionMocks } from "./action-misc";
 import { createRenameActionMocks } from "./action-rename";
+import { createStackActionMocks } from "./action-stack";
 
 export function installActionMocks(context: HarnessRunnerContext): void {
   mock.module(actionsModuleUrl, () => ({
@@ -15,6 +16,7 @@ export function installActionMocks(context: HarnessRunnerContext): void {
     },
     ...createMiscActionMocks(context),
     ...createDataActionMocks(context),
+    ...createStackActionMocks(context),
     ...createRenameActionMocks(context),
   }));
 }

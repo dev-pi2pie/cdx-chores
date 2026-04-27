@@ -31,6 +31,7 @@ This plan turns the data-stack refactor research into an implementation sequence
 
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-1-2.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-3-4.md`
+- `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-5-6.md`
 
 ## Why This Plan
 
@@ -183,13 +184,13 @@ bun run lint
 
 ### Phase 5: Move stack interactive tests and mocks
 
-- [ ] move stack-specific cases out of `test/cli-interactive-routing.test.ts`
-- [ ] create `test/cli-interactive-data-stack/` for stack-specific interactive tests
-- [ ] preserve one shared routing smoke case in `test/cli-interactive-routing.test.ts`
-- [ ] extract stack action mocks from `test/helpers/interactive-harness/mocks/action-data.ts` into `test/helpers/interactive-harness/mocks/action-stack.ts`
-- [ ] extract query and extract action mocks only if needed to keep the helper split coherent
-- [ ] keep shared lightweight data preview and conversion mocks in a small shared helper
-- [ ] verify interactive routing and stack-specific interactive coverage
+- [x] move stack-specific cases out of `test/cli-interactive-routing.test.ts`
+- [x] create `test/cli-interactive-data-stack/` for stack-specific interactive tests
+- [x] preserve one shared routing smoke case in `test/cli-interactive-routing.test.ts`
+- [x] extract stack action mocks from `test/helpers/interactive-harness/mocks/action-data.ts` into `test/helpers/interactive-harness/mocks/action-stack.ts`
+- [x] extract query and extract action mocks only if needed to keep the helper split coherent
+- [x] keep shared lightweight data preview and conversion mocks in a small shared helper
+- [x] verify interactive routing and stack-specific interactive coverage
 
 Focused verification:
 
@@ -200,15 +201,15 @@ bun run lint
 
 ### Phase 6: Split interactive data-stack source module
 
-- [ ] move `src/cli/interactive/data/stack.ts` to `src/cli/interactive/data/stack/index.ts`
-- [ ] extract source collection, source-kind detection, input-format selection, pattern, recursion, matched-file review, and source discovery options into `src/cli/interactive/data/stack/source-discovery.ts`
-- [ ] extract stack review, status preview, bounded samples, and replay-tip rendering into `src/cli/interactive/data/stack/review.ts`
-- [ ] extract plan path validation, report path persistence, keep/remove prompts, and cleanup into `src/cli/interactive/data/stack/artifacts.ts`
-- [ ] extract Codex signal detection, recommendation rendering, edited patch parsing, decision collection, and failure fallback into `src/cli/interactive/data/stack/codex-review.ts`
-- [ ] extract destination selection, preview preparation, final action selection, write execution, revise setup, dry-run only, and failure retention behavior into `src/cli/interactive/data/stack/write-flow.ts`
-- [ ] extract shared interactive stack types into `src/cli/interactive/data/stack/types.ts`
-- [ ] keep `runInteractiveDataStack` as the only public entrypoint from `index.ts`
-- [ ] verify stack interactive tests, direct action tests, and command tests
+- [x] move `src/cli/interactive/data/stack.ts` to `src/cli/interactive/data/stack/index.ts`
+- [x] extract source collection, source-kind detection, input-format selection, pattern, recursion, matched-file review, and source discovery options into `src/cli/interactive/data/stack/source-discovery.ts`
+- [x] extract stack review, status preview, bounded samples, and replay-tip rendering into `src/cli/interactive/data/stack/review.ts`
+- [x] extract plan path validation, report path persistence, keep/remove prompts, and cleanup into `src/cli/interactive/data/stack/artifacts.ts`
+- [x] extract Codex signal detection, recommendation rendering, edited patch parsing, decision collection, and failure fallback into `src/cli/interactive/data/stack/codex-review.ts`
+- [x] extract destination selection, preview preparation, final action selection, write execution, revise setup, dry-run only, and failure retention behavior into `src/cli/interactive/data/stack/write-flow.ts`
+- [x] extract shared interactive stack types into `src/cli/interactive/data/stack/types.ts`
+- [x] keep `runInteractiveDataStack` as the only public entrypoint from `index.ts`
+- [x] verify stack interactive tests, direct action tests, and command tests
 
 Focused verification:
 
