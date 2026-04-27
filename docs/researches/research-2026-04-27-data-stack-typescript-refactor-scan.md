@@ -2,7 +2,7 @@
 title: "Data stack TypeScript refactor scan"
 created-date: 2026-04-27
 modified-date: 2026-04-27
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -304,6 +304,17 @@ Why this order:
 - `data-stack/plan.ts` and `data-stack/codex-report.ts` should move to folder modules with `index.ts` facades, preserving the original import style where callers import from `../../data-stack/plan` or `../../data-stack/codex-report`.
 - Command-layer stack tests should split before the interactive source split. That keeps direct stack and replay behavior visible before the higher-risk interactive refactor starts.
 - Broader non-stack hotspots should get a separate updated TypeScript refactor plan after the stack wave lands. They should not be folded into the first data-stack refactor implementation plan.
+
+## Implementation Outcome
+
+The recommended stack refactor was implemented through `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md` and its job records. The closeout pass verified that the source and test splits landed with the intended folder-module facades, behavior-owned tests, and one remaining shared interactive routing smoke case.
+
+Status evidence:
+
+- Phases 1 and 2 split the stack-plan and Codex-report contract modules and their tests.
+- Phases 3 and 4 split the direct action module and command-layer tests.
+- Phases 5 and 6 split stack-specific interactive tests, harness mocks, and the interactive source module.
+- Phase 7 reran the final stack-focused suite, including the retained shared interactive routing smoke case, plus broader validation before completing the implementation plan.
 
 ## Related Plans
 

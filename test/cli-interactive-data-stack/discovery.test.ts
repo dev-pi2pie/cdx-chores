@@ -3,14 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_DATA_STACK_TIMESTAMP,
   dataStackDefaultOutputMatcher,
-  runInteractiveHarness,
+  runDataStackInteractiveHarness,
   stripAnsi,
 } from "./helpers";
 
 describe("interactive data stack discovery", () => {
   test("lets interactive data stack recover through source discovery options before schema setup", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -25,7 +24,6 @@ describe("interactive data stack discovery", () => {
         "continue",
         "dry-run",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
       inputQueue: ["*.txt", "*.csv"],
       confirmQueue: [false, true, true],
@@ -63,10 +61,8 @@ describe("interactive data stack discovery", () => {
   });
 
   test("keeps failed interactive data stack previews on recovery actions only", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "options", "pattern", "cancel"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       inputQueue: ["*.txt"],
       confirmQueue: [false],
     });
@@ -82,8 +78,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("keeps source discovery options for directories named like CSV files", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -115,8 +110,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("lets interactive data stack toggle recursive discovery from source options", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -129,7 +123,6 @@ describe("interactive data stack discovery", () => {
         "continue",
         "dry-run",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
       confirmQueue: [false, true, true],
     });
@@ -150,8 +143,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("lets interactive data stack change input format from source options", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -165,7 +157,6 @@ describe("interactive data stack discovery", () => {
         "continue",
         "dry-run",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
       confirmQueue: [false, true, true],
     });
@@ -187,12 +178,10 @@ describe("interactive data stack discovery", () => {
   });
 
   test("skips the interactive data stack Codex checkpoint when diagnostics have no useful signals", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-no-codex-signal"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true],
     });
 
@@ -215,12 +204,10 @@ describe("interactive data stack discovery", () => {
   });
 
   test("interactive data stack can analyze schema mode automatically", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "auto", "json", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/csv-header-mismatch"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
     });
     const plainStderr = stripAnsi(result.stderr);
@@ -245,8 +232,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("bounds interactive data stack input-source and matched-file samples", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "cancel"],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-many-files/part-001.csv",
@@ -293,15 +279,13 @@ describe("interactive data stack discovery", () => {
   });
 
   test("routes interactive data stack with mixed file and directory sources", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: [
         "examples/playground/stack-cases/csv-matching-headers/part-001.csv",
         "examples/playground/stack-cases/csv-matching-headers",
       ],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [true, false, true],
     });
     const plainStderr = stripAnsi(result.stderr);
@@ -339,8 +323,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("routes interactive data stack with JSON input selection", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "json", "accept", "strict", "csv", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/json-array-basic"],
       optionalPathQueue: [undefined],
@@ -366,8 +349,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("routes interactive data stack with JSONL input selection", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "jsonl", "accept", "strict", "json", "continue", "write"],
       requiredPathQueue: ["examples/playground/stack-cases/jsonl-basic"],
       optionalPathQueue: [undefined],
@@ -393,8 +375,7 @@ describe("interactive data stack discovery", () => {
   });
 
   test("routes interactive data stack with union-by-name exclusions", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",

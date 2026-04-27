@@ -2,7 +2,7 @@
 title: "Data stack TypeScript refactor implementation"
 created-date: 2026-04-27
 modified-date: 2026-04-27
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -32,6 +32,7 @@ This plan turns the data-stack refactor research into an implementation sequence
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-1-2.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-3-4.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-5-6.md`
+- `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-7-closeout.md`
 
 ## Why This Plan
 
@@ -220,16 +221,16 @@ bun run lint
 
 ### Phase 7: Final test-structure review and closeout
 
-- [ ] review all moved stack test files for duplicated setup, missing coverage, and confusing grouping
-- [ ] compare the new test layout against the original stack coverage list from the research doc
-- [ ] run focused stack tests as one group
-- [ ] run broader repo validation after the final grouping review passes
-- [ ] update this plan checklist and add job records for implementation phases as they land
+- [x] review all moved stack test files for duplicated setup, missing coverage, and confusing grouping
+- [x] compare the new test layout against the original stack coverage list from the research doc
+- [x] run focused stack tests as one group
+- [x] run broader repo validation after the final grouping review passes
+- [x] update this plan checklist and add job records for implementation phases as they land
 
 Focused verification:
 
 ```bash
-bun test test/data-stack-plan test/data-stack-codex-report test/cli-actions-data-stack test/cli-command-data-stack test/cli-interactive-data-stack
+bun test test/data-stack-plan test/data-stack-codex-report test/cli-actions-data-stack test/cli-command-data-stack test/cli-interactive-routing.test.ts test/cli-interactive-data-stack
 bun run lint
 bun run format:check
 bun run build
@@ -241,3 +242,25 @@ bun run build
 - The command-layer test split happens before the interactive source split so direct and replay behavior remains easy to audit.
 - The final test-structure review is required even though each phase moves its own tests; it is the guard against accidentally creating a scattered or duplicated test surface.
 - If any phase requires behavior changes to complete cleanly, stop and draft a separate corrective plan or follow-up rather than hiding behavior changes inside the refactor.
+
+## Closeout Evidence
+
+Phase 7 confirmed the new source and test layout against the April 27 research targets. The stack-specific coverage now lives in owned test directories, and the shared interactive routing file keeps only routing-level coverage for `data stack`.
+
+Final verification:
+
+```bash
+bun test test/data-stack-plan test/data-stack-codex-report test/cli-actions-data-stack test/cli-command-data-stack test/cli-interactive-routing.test.ts test/cli-interactive-data-stack
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+The build completed with the existing ineffective dynamic import warning for `src/cli/prompts/path.ts`; it did not block the build.
+
+Final review records:
+
+- `ts_structure_refactorer`: no blocking findings; `source-discovery.ts` and `codex-review.ts` are the first watch points if future prompt or Codex branches grow.
+- `test_reviewer`: initial findings on final verification scope, report-decline coverage, and duplicated stack harness setup were resolved before closeout.
+- `Northstar`: no blocking documentation findings after closeout updates.

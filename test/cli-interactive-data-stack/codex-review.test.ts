@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness, stripAnsi } from "./helpers";
+import { runDataStackInteractiveHarness, stripAnsi } from "./helpers";
 
 describe("interactive data stack codex review", () => {
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -17,9 +16,7 @@ describe("interactive data stack codex review", () => {
         "accept",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
       dataStackCodexRecommendations: [
         {
@@ -71,9 +68,56 @@ describe("interactive data stack codex review", () => {
     ).toHaveLength(1);
   });
 
+  test("clears declined interactive Codex report references before successful writing", () => {
+    const result = runDataStackInteractiveHarness({
+      selectQueue: [
+        "data",
+        "data:stack",
+        "csv",
+        "accept",
+        "strict",
+        "json",
+        "codex",
+        "accept",
+        "write",
+      ],
+      optionalPathQueue: [undefined],
+      confirmQueue: [false, false, true],
+      dataStackCodexRecommendations: [
+        {
+          confidence: 0.91,
+          id: "rec_unique_id",
+          patches: [{ op: "replace", path: "/duplicates/uniqueBy", value: ["id"] }],
+          reasoningSummary: "The id column has unique values in the sampled rows.",
+          title: "Use id as the unique key",
+        },
+      ],
+    });
+
+    expect(result.codexReportWrites).toEqual([]);
+    expect(result.actionCalls).toEqual([
+      {
+        name: "data:stack",
+        options: expect.objectContaining({
+          uniqueBy: ["id"],
+        }),
+      },
+    ]);
+    expect(result.stackPlanWrites[0]?.options).toMatchObject({
+      acceptedRecommendationIds: ["rec_unique_id"],
+      reportPath: null,
+      uniqueBy: ["id"],
+    });
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
+      "confirm:Keep diagnostic/advisory report?",
+    );
+    expect(result.removedPaths).toEqual([]);
+    expect(stripAnsi(result.stderr)).toContain("Skipped diagnostic/advisory report.");
+    expect(stripAnsi(result.stderr)).not.toContain("Codex assist: wrote advisory report");
+  });
+
   test("reviews edited interactive data stack Codex patches before writing", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -85,9 +129,7 @@ describe("interactive data stack codex review", () => {
         "edit",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       editorQueue: [
         JSON.stringify([{ op: "replace", path: "/duplicates/policy", value: "report" }], null, 2),
       ],
@@ -118,8 +160,7 @@ describe("interactive data stack codex review", () => {
   });
 
   test("saves an accepted interactive Codex recommendation in dry-run-only mode", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -131,9 +172,7 @@ describe("interactive data stack codex review", () => {
         "accept",
         "dry-run",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false, true],
       dataStackCodexRecommendations: [
         {
@@ -162,8 +201,7 @@ describe("interactive data stack codex review", () => {
   });
 
   test("can keep the interactive Codex advisory report separately", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -175,9 +213,7 @@ describe("interactive data stack codex review", () => {
         "skip",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
       dataStackCodexRecommendations: [
         {
@@ -206,8 +242,7 @@ describe("interactive data stack codex review", () => {
   });
 
   test("keeps deterministic setup when interactive Codex review is cancelled", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -219,9 +254,7 @@ describe("interactive data stack codex review", () => {
         "cancel",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
       dataStackCodexRecommendations: [
         {
@@ -250,8 +283,7 @@ describe("interactive data stack codex review", () => {
   });
 
   test("keeps deterministic setup when interactive Codex recommendation application fails", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -263,9 +295,7 @@ describe("interactive data stack codex review", () => {
         "accept",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
       dataStackCodexRecommendations: [
         {
@@ -288,12 +318,9 @@ describe("interactive data stack codex review", () => {
   });
 
   test("keeps interactive data stack setup when Codex recommendations fail", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true],
       dataStackCodexErrorMessage:
         '{"type":"error","error":{"type":"invalid_request_error","code":"invalid_json_schema","message":"Invalid schema for response_format"}}',
@@ -313,12 +340,9 @@ describe("interactive data stack codex review", () => {
   });
 
   test("keeps interactive data stack setup when Codex recommendations fail with plain text", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true],
       dataStackCodexErrorMessage: "mocked Codex outage",
       stdoutIsTTY: true,

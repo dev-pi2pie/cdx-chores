@@ -4,18 +4,15 @@ import {
   DEFAULT_DATA_STACK_TIMESTAMP,
   dataStackDefaultOutputMatcher,
   dataStackDefaultPathPattern,
-  runInteractiveHarness,
+  runDataStackInteractiveHarness,
   stripAnsi,
 } from "./helpers";
 
 describe("interactive data stack dry run write", () => {
   test("lets interactive data stack stop before writing at the final review checkpoint", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "csv", "continue", "cancel"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false],
     });
 
@@ -37,12 +34,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("writes an interactive data stack dry-run plan without materialized output", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "dry-run"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
     });
 
@@ -74,9 +68,8 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("rejects an interactive dry-run plan at the stack output path", () => {
-    const result = runInteractiveHarness(
+    const result = runDataStackInteractiveHarness(
       {
-        mode: "run",
         selectQueue: [
           "data",
           "data:stack",
@@ -87,9 +80,7 @@ describe("interactive data stack dry run write", () => {
           "continue",
           "dry-run",
         ],
-        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
         optionalPathQueue: ["fixtures/custom-stacked.json", "fixtures/custom-stacked.json"],
-        inputQueue: ["*.csv"],
         confirmQueue: [false],
       },
       { allowFailure: true },
@@ -102,9 +93,8 @@ describe("interactive data stack dry run write", () => {
 
   test("rejects an interactive dry-run plan at an input source path", () => {
     const inputPath = "examples/playground/stack-cases/json-array-basic/day-01.json";
-    const result = runInteractiveHarness(
+    const result = runDataStackInteractiveHarness(
       {
-        mode: "run",
         selectQueue: [
           "data",
           "data:stack",
@@ -128,12 +118,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("removes the interactive stack plan when write succeeds and keeping is declined", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false],
     });
 
@@ -150,13 +137,10 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("keeps the interactive stack plan when materialized writing fails", () => {
-    const result = runInteractiveHarness(
+    const result = runDataStackInteractiveHarness(
       {
-        mode: "run",
         selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
-        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
         optionalPathQueue: [undefined],
-        inputQueue: ["*.csv"],
         confirmQueue: [false],
         dataStackActionErrorMessage: "write failed",
       },
@@ -173,11 +157,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("keeps the interactive stack plan when the final stack write finds an existing output", () => {
-    const result = runInteractiveHarness(
+    const result = runDataStackInteractiveHarness(
       {
-        mode: "run",
         selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
-        requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
         optionalPathQueue: ["fixtures/custom-stacked.json"],
         confirmQueue: [false],
         dataStackWriteExistingPaths: ["fixtures/custom-stacked.json"],
@@ -195,12 +177,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("uses the expected TSV default output metadata in interactive data stack", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "tsv", "continue", "cancel"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false],
     });
 
@@ -218,8 +197,7 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("lets interactive data stack change destination without re-running stack setup", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -232,9 +210,7 @@ describe("interactive data stack dry run write", () => {
         "json",
         "write",
       ],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false, true],
     });
 
@@ -267,8 +243,7 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("re-enters the full stack setup when stack write chooses revise setup", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: [
         "data",
         "data:stack",
@@ -327,12 +302,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("re-prompts stack destination when the generated default output exists and overwrite is declined", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined, "fixtures/custom-stacked.json"],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, false, true],
       statExistsQueue: [true, false],
     });
@@ -382,12 +354,9 @@ describe("interactive data stack dry run write", () => {
   });
 
   test("accepts overwrite for the generated default stack output path when confirmed", () => {
-    const result = runInteractiveHarness({
-      mode: "run",
+    const result = runDataStackInteractiveHarness({
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "write"],
-      requiredPathQueue: ["examples/playground/stack-cases/csv-matching-headers"],
       optionalPathQueue: [undefined],
-      inputQueue: ["*.csv"],
       confirmQueue: [false, true, true],
       statExistsQueue: [true],
     });
