@@ -30,6 +30,7 @@ This plan turns the data-stack refactor research into an implementation sequence
 ## Implementation Records
 
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-1-2.md`
+- `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-3-4.md`
 
 ## Why This Plan
 
@@ -140,20 +141,20 @@ bun run lint
 
 ### Phase 3: Split direct data-stack action and tests
 
-- [ ] move `src/cli/actions/data-stack.ts` to `src/cli/actions/data-stack/index.ts`
-- [ ] extract option validation and schema-mode option resolution into `src/cli/actions/data-stack/options.ts`
-- [ ] extract plan preparation, source fingerprints, artifact collision checks, and plan writing into `src/cli/actions/data-stack/plan-write.ts`
-- [ ] extract materialized output writing into `src/cli/actions/data-stack/output-write.ts`
-- [ ] extract dry-run, diagnostics, and Codex-assist summary rendering into `src/cli/actions/data-stack/reporting.ts`
-- [ ] extract direct action orchestration into `src/cli/actions/data-stack/run.ts`
-- [ ] preserve exports consumed by `src/cli/actions/index.ts` and interactive stack code
-- [ ] split `test/cli-actions-data-stack.test.ts` into behavior-owned files:
+- [x] move `src/cli/actions/data-stack.ts` to `src/cli/actions/data-stack/index.ts`
+- [x] extract option validation and schema-mode option resolution into `src/cli/actions/data-stack/options.ts`
+- [x] extract plan preparation, source fingerprints, artifact collision checks, and plan writing into `src/cli/actions/data-stack/plan-write.ts`
+- [x] extract materialized output writing into `src/cli/actions/data-stack/output-write.ts`
+- [x] extract dry-run, diagnostics, and Codex-assist summary rendering into `src/cli/actions/data-stack/reporting.ts`
+- [x] extract direct action orchestration into `src/cli/actions/data-stack/run.ts`
+- [x] preserve exports consumed by `src/cli/actions/index.ts` and interactive stack code
+- [x] split `test/cli-actions-data-stack.test.ts` into behavior-owned files:
   - `test/cli-actions-data-stack/happy-paths.test.ts`
   - `test/cli-actions-data-stack/validation.test.ts`
   - `test/cli-actions-data-stack/schema-modes.test.ts`
   - `test/cli-actions-data-stack/dry-run-plan.test.ts`
   - `test/cli-actions-data-stack/codex-assist.test.ts`
-- [ ] verify direct action tests and command smoke coverage
+- [x] verify direct action tests and command smoke coverage
 
 Focused verification:
 
@@ -164,14 +165,14 @@ bun run lint
 
 ### Phase 4: Split command-layer stack tests
 
-- [ ] split `test/cli-command-data-stack.test.ts` into:
+- [x] split `test/cli-command-data-stack.test.ts` into:
   - `test/cli-command-data-stack/direct-stack.test.ts`
   - `test/cli-command-data-stack/replay.test.ts`
   - `test/cli-command-data-stack/options.test.ts`
-- [ ] keep direct stack tests focused on direct command execution and materialized outputs
-- [ ] keep replay tests focused on artifact read, fingerprint drift, output override, duplicate policy, and auto-clean behavior
-- [ ] keep options tests focused on schema-mode aliases, duplicate policies, input-format options, and command-layer validation
-- [ ] verify no command-layer coverage was dropped during movement
+- [x] keep direct stack tests focused on direct command execution and materialized outputs
+- [x] keep replay tests focused on artifact read, fingerprint drift, output override, duplicate policy, and auto-clean behavior
+- [x] keep options tests focused on schema-mode aliases, duplicate policies, input-format options, and command-layer validation
+- [x] verify no command-layer coverage was dropped during movement
 
 Focused verification:
 
