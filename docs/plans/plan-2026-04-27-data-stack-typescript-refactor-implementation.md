@@ -1,7 +1,8 @@
 ---
 title: "Data stack TypeScript refactor implementation"
 created-date: 2026-04-27
-status: draft
+modified-date: 2026-04-27
+status: in-progress
 agent: codex
 ---
 
@@ -25,6 +26,10 @@ This plan turns the data-stack refactor research into an implementation sequence
 - `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
 - `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 - `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
+
+## Implementation Records
+
+- `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-1-2.md`
 
 ## Why This Plan
 
@@ -95,16 +100,16 @@ Every phase must preserve:
 
 ### Phase 1: Split stack-plan artifact module and tests
 
-- [ ] move `src/cli/data-stack/plan.ts` to `src/cli/data-stack/plan/index.ts`
-- [ ] extract artifact constants, literal unions, and interfaces into `src/cli/data-stack/plan/types.ts`
-- [ ] extract timestamp, identity, payload id, and filename helpers into `src/cli/data-stack/plan/identity.ts`
-- [ ] extract artifact parsing and validation into `src/cli/data-stack/plan/parse.ts`
-- [ ] extract stable artifact ordering and serialization into `src/cli/data-stack/plan/serialize.ts`
-- [ ] extract read/write helpers into `src/cli/data-stack/plan/io.ts`
-- [ ] keep `src/cli/data-stack/plan/index.ts` as the public facade for current imports
-- [ ] add or update `test/helpers/data-stack-test-utils.ts` with stack-plan builders only if it reduces repeated setup
-- [ ] split `test/data-stack-plan.test.ts` into `test/data-stack-plan/identity-serialization.test.ts` and `test/data-stack-plan/parse-io.test.ts`
-- [ ] verify stack-plan tests and the replay tests that consume stack-plan artifacts
+- [x] move `src/cli/data-stack/plan.ts` to `src/cli/data-stack/plan/index.ts`
+- [x] extract artifact constants, literal unions, and interfaces into `src/cli/data-stack/plan/types.ts`
+- [x] extract timestamp, identity, payload id, and filename helpers into `src/cli/data-stack/plan/identity.ts`
+- [x] extract artifact parsing and validation into `src/cli/data-stack/plan/parse.ts`
+- [x] extract stable artifact ordering and serialization into `src/cli/data-stack/plan/serialize.ts`
+- [x] extract read/write helpers into `src/cli/data-stack/plan/io.ts`
+- [x] keep `src/cli/data-stack/plan/index.ts` as the public facade for current imports
+- [x] add or update `test/helpers/data-stack-test-utils.ts` with stack-plan builders only if it reduces repeated setup
+- [x] split `test/data-stack-plan.test.ts` into `test/data-stack-plan/identity-serialization.test.ts` and `test/data-stack-plan/parse-io.test.ts`
+- [x] verify stack-plan tests and the replay tests that consume stack-plan artifacts
 
 Focused verification:
 
@@ -115,16 +120,16 @@ bun run lint
 
 ### Phase 2: Split Codex report module and tests
 
-- [ ] move `src/cli/data-stack/codex-report.ts` to `src/cli/data-stack/codex-report/index.ts`
-- [ ] extract report constants, patch paths, and interfaces into `src/cli/data-stack/codex-report/types.ts`
-- [ ] extract patch and recommendation validation into `src/cli/data-stack/codex-report/validation.ts`
-- [ ] extract fact payload, report artifact creation, serialization, filename generation, and write helpers into `src/cli/data-stack/codex-report/artifact.ts`
-- [ ] extract accepted and edited recommendation application into `src/cli/data-stack/codex-report/apply.ts`
-- [ ] preserve recommendation lineage fields and `/input/columns` to `duplicates.uniqueBy` remapping
-- [ ] keep `src/cli/data-stack/codex-report/index.ts` as the public facade for current imports
-- [ ] extend `test/helpers/data-stack-test-utils.ts` with Codex-report builders only where assertions stay explicit
-- [ ] split `test/data-stack-codex-report.test.ts` into `test/data-stack-codex-report/validation.test.ts` and `test/data-stack-codex-report/apply.test.ts`
-- [ ] verify Codex report tests and direct Codex-assist action coverage
+- [x] move `src/cli/data-stack/codex-report.ts` to `src/cli/data-stack/codex-report/index.ts`
+- [x] extract report constants, patch paths, and interfaces into `src/cli/data-stack/codex-report/types.ts`
+- [x] extract patch and recommendation validation into `src/cli/data-stack/codex-report/validation.ts`
+- [x] extract fact payload, report artifact creation, serialization, filename generation, and write helpers into `src/cli/data-stack/codex-report/artifact.ts`
+- [x] extract accepted and edited recommendation application into `src/cli/data-stack/codex-report/apply.ts`
+- [x] preserve recommendation lineage fields and `/input/columns` to `duplicates.uniqueBy` remapping
+- [x] keep `src/cli/data-stack/codex-report/index.ts` as the public facade for current imports
+- [x] extend `test/helpers/data-stack-test-utils.ts` with Codex-report builders only where assertions stay explicit
+- [x] split `test/data-stack-codex-report.test.ts` into `test/data-stack-codex-report/validation.test.ts` and `test/data-stack-codex-report/apply.test.ts`
+- [x] verify Codex report tests and direct Codex-assist action coverage
 
 Focused verification:
 

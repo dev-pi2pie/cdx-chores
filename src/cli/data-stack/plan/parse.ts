@@ -1,122 +1,23 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-
-import { CliError } from "../errors";
-import type { DataStackInputFormat, DataStackOutputFormat, DataStackSchemaMode } from "./types";
-
-export const DATA_STACK_PLAN_ARTIFACT_TYPE = "data-stack-plan";
-export const DATA_STACK_PLAN_VERSION = 1;
-export const DATA_STACK_PLAN_REPLAY_COMMAND = "data stack replay";
-export const DATA_STACK_PLAN_CREATED_BY = "cdx-chores data stack --dry-run";
-export const DATA_STACK_PLAN_UID_HEX_LENGTH = 8;
-export const DATA_STACK_DUPLICATE_POLICY_VALUES = ["preserve", "report", "reject"] as const;
-
-export type DataStackPlanHeaderMode = "header" | "no-header";
-export type DataStackDuplicatePolicy = (typeof DATA_STACK_DUPLICATE_POLICY_VALUES)[number];
-export type DataStackRecommendationDecisionValue = "accepted" | "edited";
-
-export interface DataStackPlanRecommendationDecision {
-  decision: DataStackRecommendationDecisionValue;
-  recommendationId: string;
-  reportArtifactId: string;
-}
-
-export interface DataStackPlanMetadata {
-  acceptedRecommendationIds: string[];
-  artifactId: string;
-  artifactType: typeof DATA_STACK_PLAN_ARTIFACT_TYPE;
-  createdBy: string;
-  derivedFromPayloadId: string | null;
-  issuedAt: string;
-  payloadId: string;
-  recommendationDecisions: DataStackPlanRecommendationDecision[];
-}
-
-export interface DataStackPlanCommand {
-  action: "stack";
-  family: "data";
-  replayCommand: typeof DATA_STACK_PLAN_REPLAY_COMMAND;
-}
-
-export interface DataStackPlanSourceFingerprint {
-  mtimeMs: number;
-  sizeBytes: number;
-}
-
-export interface DataStackPlanResolvedSource {
-  fingerprint?: DataStackPlanSourceFingerprint;
-  kind: "file";
-  path: string;
-}
-
-export interface DataStackPlanSources {
-  baseDirectory: string;
-  maxDepth: number | null;
-  pattern: string | null;
-  raw: string[];
-  recursive: boolean;
-  resolved: DataStackPlanResolvedSource[];
-}
-
-export interface DataStackPlanInput {
-  columns: string[];
-  format: DataStackInputFormat;
-  headerMode: DataStackPlanHeaderMode;
-}
-
-export interface DataStackPlanSchema {
-  excludedNames: string[];
-  includedNames: string[];
-  mode: DataStackSchemaMode;
-}
-
-export interface DataStackPlanDuplicates {
-  duplicateKeyConflicts: number;
-  exactDuplicateRows: number;
-  policy: DataStackDuplicatePolicy;
-  uniqueBy: string[];
-}
-
-export interface DataStackPlanOutput {
-  format: DataStackOutputFormat;
-  overwrite: boolean;
-  path: string | null;
-}
-
-export interface DataStackPlanCandidateUniqueKey {
-  columns: string[];
-  duplicateRows: number;
-  nullRows: number;
-}
-
-export interface DataStackPlanDiagnostics {
-  candidateUniqueKeys: DataStackPlanCandidateUniqueKey[];
-  matchedFileCount: number;
-  reportPath: string | null;
-  rowCount: number;
-  schemaNameCount: number;
-}
-
-export interface DataStackPlanArtifact {
-  command: DataStackPlanCommand;
-  diagnostics: DataStackPlanDiagnostics;
-  duplicates: DataStackPlanDuplicates;
-  input: DataStackPlanInput;
-  metadata: DataStackPlanMetadata;
-  output: DataStackPlanOutput;
-  schema: DataStackPlanSchema;
-  sources: DataStackPlanSources;
-  version: typeof DATA_STACK_PLAN_VERSION;
-}
-
-export interface DataStackPlanIdentity {
-  artifactId: string;
-  fileName: string;
-  payloadId: string;
-  timestamp: string;
-  uid: string;
-}
+import { CliError } from "../../errors";
+import {
+  DATA_STACK_DUPLICATE_POLICY_VALUES,
+  DATA_STACK_PLAN_ARTIFACT_TYPE,
+  DATA_STACK_PLAN_REPLAY_COMMAND,
+  DATA_STACK_PLAN_VERSION,
+  type DataStackPlanArtifact,
+  type DataStackPlanCandidateUniqueKey,
+  type DataStackPlanCommand,
+  type DataStackPlanDiagnostics,
+  type DataStackPlanDuplicates,
+  type DataStackPlanInput,
+  type DataStackPlanMetadata,
+  type DataStackPlanOutput,
+  type DataStackPlanRecommendationDecision,
+  type DataStackPlanResolvedSource,
+  type DataStackPlanSchema,
+  type DataStackPlanSourceFingerprint,
+  type DataStackPlanSources,
+} from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -208,90 +109,20 @@ function ensureOneOf<T extends string>(value: unknown, values: readonly T[], con
   );
 }
 
-export function formatDataStackArtifactTimestamp(now: Date): string {
-  return now
-    .toISOString()
-    .replaceAll("-", "")
-    .replaceAll(":", "")
-    .replace(/\.\d{3}Z$/, "Z");
-}
-
-function createDataStackPlanUid(): string {
-  // Keep filenames short while the timestamp carries most of the uniqueness budget.
-  return randomUUID().replaceAll("-", "").slice(0, DATA_STACK_PLAN_UID_HEX_LENGTH);
-}
-
-export function createDataStackPlanIdentity(options: {
-  now: Date;
-  uid?: string;
-}): DataStackPlanIdentity {
-  const timestamp = formatDataStackArtifactTimestamp(options.now);
-  const uid = options.uid ?? createDataStackPlanUid();
-  const artifactId = `data-stack-plan-${timestamp}-${uid}`;
-  const payloadId = `stack-payload-${timestamp}-${uid}`;
-  return {
-    artifactId,
-    fileName: `${artifactId}.json`,
-    payloadId,
-    timestamp,
-    uid,
-  };
-}
-
-export function generateDataStackPlanFileName(now = new Date()): string {
-  return createDataStackPlanIdentity({ now }).fileName;
-}
-
-export function createDataStackPlanArtifact(
-  options: Omit<DataStackPlanArtifact, "command" | "metadata" | "version"> & {
-    metadata?: Partial<
-      Omit<DataStackPlanMetadata, "artifactId" | "artifactType" | "issuedAt" | "payloadId">
-    > & {
-      artifactId?: string;
-      issuedAt?: string;
-      payloadId?: string;
-    };
-    now: Date;
-    uid?: string;
+function ensureArray<T>(
+  value: unknown,
+  options: {
+    context: string;
+    parse: (value: unknown, context: string) => T;
   },
-): DataStackPlanArtifact {
-  const identity = createDataStackPlanIdentity({ now: options.now, uid: options.uid });
-  return normalizeDataStackPlanArtifact({
-    command: {
-      action: "stack",
-      family: "data",
-      replayCommand: DATA_STACK_PLAN_REPLAY_COMMAND,
-    },
-    diagnostics: options.diagnostics,
-    duplicates: options.duplicates,
-    input: options.input,
-    metadata: {
-      acceptedRecommendationIds: [
-        ...(options.metadata?.acceptedRecommendationIds ??
-          options.metadata?.recommendationDecisions
-            ?.filter((decision) => decision.decision === "accepted")
-            .map((decision) => decision.recommendationId) ??
-          []),
-      ],
-      artifactId: options.metadata?.artifactId ?? identity.artifactId,
-      artifactType: DATA_STACK_PLAN_ARTIFACT_TYPE,
-      createdBy: options.metadata?.createdBy ?? DATA_STACK_PLAN_CREATED_BY,
-      derivedFromPayloadId: options.metadata?.derivedFromPayloadId ?? null,
-      issuedAt: options.metadata?.issuedAt ?? options.now.toISOString(),
-      payloadId: options.metadata?.payloadId ?? identity.payloadId,
-      recommendationDecisions: (options.metadata?.recommendationDecisions ?? []).map(
-        (decision) => ({
-          decision: decision.decision,
-          recommendationId: decision.recommendationId,
-          reportArtifactId: decision.reportArtifactId,
-        }),
-      ),
-    },
-    output: options.output,
-    schema: options.schema,
-    sources: options.sources,
-    version: DATA_STACK_PLAN_VERSION,
-  });
+): T[] {
+  if (!Array.isArray(value)) {
+    throw new CliError(`Invalid data stack plan artifact: ${options.context} must be an array.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return value.map((item, index) => options.parse(item, `${options.context}[${index}]`));
 }
 
 function parseRecommendationDecision(
@@ -505,74 +336,7 @@ function parseDiagnostics(value: unknown): DataStackPlanDiagnostics {
   };
 }
 
-function ensureArray<T>(
-  value: unknown,
-  options: {
-    context: string;
-    parse: (value: unknown, context: string) => T;
-  },
-): T[] {
-  if (!Array.isArray(value)) {
-    throw new CliError(`Invalid data stack plan artifact: ${options.context} must be an array.`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-  return value.map((item, index) => options.parse(item, `${options.context}[${index}]`));
-}
-
-export function parseDataStackPlanArtifact(parsed: unknown): DataStackPlanArtifact {
-  const artifact = ensureRecord(parsed, "root");
-  if (artifact.version !== DATA_STACK_PLAN_VERSION) {
-    throw new CliError(
-      `Unsupported data stack plan artifact version: ${String(artifact.version)}.`,
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      },
-    );
-  }
-
-  return normalizeDataStackPlanArtifact({
-    command: parseCommand(artifact.command),
-    diagnostics: parseDiagnostics(artifact.diagnostics),
-    duplicates: parseDuplicates(artifact.duplicates),
-    input: parseInput(artifact.input),
-    metadata: parseMetadata(artifact.metadata),
-    output: parseOutput(artifact.output),
-    schema: parseSchema(artifact.schema),
-    sources: parseSources(artifact.sources),
-    version: DATA_STACK_PLAN_VERSION,
-  });
-}
-
-export async function readDataStackPlanArtifact(path: string): Promise<DataStackPlanArtifact> {
-  let raw: string;
-  try {
-    raw = await readFile(path, "utf8");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to read data stack plan artifact: ${path} (${message})`, {
-      code: "FILE_READ_ERROR",
-      exitCode: 2,
-    });
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Invalid data stack plan artifact JSON: ${path} (${message})`, {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-
-  return parseDataStackPlanArtifact(parsed);
-}
-
-function orderDataStackPlanArtifact(artifact: DataStackPlanArtifact): DataStackPlanArtifact {
+export function orderDataStackPlanArtifact(artifact: DataStackPlanArtifact): DataStackPlanArtifact {
   return {
     version: DATA_STACK_PLAN_VERSION,
     metadata: {
@@ -648,8 +412,25 @@ function orderDataStackPlanArtifact(artifact: DataStackPlanArtifact): DataStackP
   };
 }
 
-function normalizeDataStackPlanArtifact(artifact: DataStackPlanArtifact): DataStackPlanArtifact {
-  return orderDataStackPlanArtifact({
+export function normalizeDataStackPlanArtifact(
+  artifact: DataStackPlanArtifact,
+): DataStackPlanArtifact {
+  return orderDataStackPlanArtifact(artifact);
+}
+
+export function parseDataStackPlanArtifact(parsed: unknown): DataStackPlanArtifact {
+  const artifact = ensureRecord(parsed, "root");
+  if (artifact.version !== DATA_STACK_PLAN_VERSION) {
+    throw new CliError(
+      `Unsupported data stack plan artifact version: ${String(artifact.version)}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return normalizeDataStackPlanArtifact({
     command: parseCommand(artifact.command),
     diagnostics: parseDiagnostics(artifact.diagnostics),
     duplicates: parseDuplicates(artifact.duplicates),
@@ -660,41 +441,4 @@ function normalizeDataStackPlanArtifact(artifact: DataStackPlanArtifact): DataSt
     sources: parseSources(artifact.sources),
     version: DATA_STACK_PLAN_VERSION,
   });
-}
-
-export function serializeDataStackPlanArtifact(artifact: DataStackPlanArtifact): string {
-  return `${JSON.stringify(orderDataStackPlanArtifact(artifact), null, 2)}\n`;
-}
-
-export async function writeDataStackPlanArtifact(
-  path: string,
-  artifact: DataStackPlanArtifact,
-  options: { overwrite?: boolean } = {},
-): Promise<void> {
-  const overwrite = options.overwrite ?? false;
-  try {
-    await stat(path);
-    if (!overwrite) {
-      throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      });
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-    // Missing files are expected for new plan artifacts.
-  }
-
-  await mkdir(dirname(path), { recursive: true });
-  try {
-    await writeFile(path, serializeDataStackPlanArtifact(artifact), "utf8");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to write file: ${path} (${message})`, {
-      code: "FILE_WRITE_ERROR",
-      exitCode: 2,
-    });
-  }
 }
