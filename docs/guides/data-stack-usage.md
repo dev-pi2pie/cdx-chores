@@ -86,7 +86,7 @@ Schema-flex behavior:
 - `--schema-mode strict` requires every matched file to have the same accepted column or key names
 - `--schema-mode union-by-name` stacks named schemas that add or omit columns or JSON keys
 - `--schema-mode auto` tries strict first, then deterministic union-by-name only for schema mismatches that can be widened safely
-- `--union-by-name` existed in `v0.1.2-canary.2` and remains as a temporary compatibility alias that prints a concise migration warning for `--schema-mode union-by-name`
+- the older `--union-by-name` flag remains as a temporary compatibility alias that prints a concise migration warning for `--schema-mode union-by-name`
 - when enabled, it builds the output schema from the union of all header names or object keys
 - the first source's name order comes first, with newly discovered names appended in first-seen order
 - missing values are written using the stack materializer's empty-value policy

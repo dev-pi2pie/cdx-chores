@@ -7,7 +7,7 @@ Workspace runs expose one or more explicit relation bindings instead.
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 
-As of `v0.1.1`, this guide documents the stable split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation still begins on the `data extract` lane.
+As of `v0.1.2`, this guide documents the stable split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation still begins on the `data extract` lane.
 
 For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
 For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
@@ -242,7 +242,7 @@ Practical reading:
 - use `data query --source-shape <path>` once you have an accepted reviewed scope and want filtering, projection, aggregation, or SQL-backed output
 - this is the current direct-CLI way to reach the same shape-first outcome that interactive `data query` reaches in one guided flow
 
-Known limitation in `v0.1.1`:
+Known limitation in `v0.1.2`:
 
 - direct `data query codex` still takes explicit shape flags only in this slice
 - direct `data query codex` does not currently accept `--source-shape <path>`
