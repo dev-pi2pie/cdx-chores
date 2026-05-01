@@ -1,7 +1,7 @@
 ---
 title: "Apply ordered dependency security and maintenance pass"
 created-date: 2026-04-23
-modified-date: 2026-04-25
+modified-date: 2026-05-01
 status: completed
 agent: Codex
 ---
@@ -51,6 +51,15 @@ Additional notes:
 - Verification for the `2026-04-25` follow-up: `bun audit` passed with `No vulnerabilities found`; targeted OOXML/Codex adapter tests passed with `25` passing tests and `0` failures; `bun run build` passed on `tsdown v0.21.10`; `bun test` passed with `786` passing tests and `0` failures.
 - This follow-up leaves the rest of the 2026-04-23 dependency pass unchanged.
 - No additional verification is recorded in this job note for the `^0.124.0` follow-up; the verification results below remain the results of the original ordered pass.
+
+## Follow-Up Note 2026-05-01
+
+- Updated `@openai/codex-sdk` from `^0.125.0` to `^0.128.0`.
+- Updated dev tooling `oxfmt` from `0.46.0` to `0.47.0` and `oxlint` from `1.61.0` to `1.62.0`.
+- Left `pdfjs-dist` at `^5.6.205` because `pdfjs-dist@5.7.284` declares `node >=22.13.0 || >=24`, while this package still advertises `node >=22.5.0`.
+- Preserved the existing manifest style: caret range for `@openai/codex-sdk`, exact versions for `oxfmt` and `oxlint`.
+- Verification for this follow-up: `bun audit` passed with `No vulnerabilities found`; `bun run lint` passed with `0` warnings and `0` errors; `bun run format:check` passed; `bun run build` passed on `tsdown v0.21.10`; focused Codex/PDF/DOCX adapter tests passed with `25` passing tests and `0` failures; full `bun test` passed with `892` passing tests and `0` failures.
+- This follow-up leaves the rest of the 2026-04-23 dependency pass unchanged.
 
 ## Verification
 
