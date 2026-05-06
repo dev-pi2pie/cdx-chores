@@ -71,7 +71,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
   applyCommonFileOptions(
     mdCommand
       .command("to-docx")
-      .description("Convert Markdown to DOCX using pandoc")
+      .description("Convert Markdown to DOCX using Pandoc")
       .requiredOption("-i, --input <path>", "Input Markdown file")
       .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
         await actionMdToDocx(runtime, options);
