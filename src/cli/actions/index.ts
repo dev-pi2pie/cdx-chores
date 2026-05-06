@@ -53,8 +53,18 @@ export type {
   TsvToCsvOptions,
   TsvToJsonOptions,
 } from "./data";
-export { actionMdFrontmatterToJson, actionMdToDocx } from "./markdown";
-export type { MdFrontmatterToJsonOptions, MdToDocxOptions } from "./markdown";
+export {
+  actionMdFrontmatterToJson,
+  actionMdPdfTemplateInit,
+  actionMdToDocx,
+  actionMdToPdf,
+} from "./markdown";
+export type {
+  MdFrontmatterToJsonOptions,
+  MdPdfTemplateInitOptions,
+  MdToDocxOptions,
+  MdToPdfOptions,
+} from "./markdown";
 export {
   actionRenameApply,
   actionRenameBatch,
