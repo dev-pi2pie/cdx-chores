@@ -190,7 +190,7 @@ cdx-chores md to-pdf --input ./docs/report.md
 
 Local images should render in the PDF when WeasyPrint can load the file. Missing local images are allowed to render with WeasyPrint warnings, and the CLI surfaces those warnings before the success line.
 
-Remote `http` and `https` assets are disabled by default, including URLs in HTML asset attributes, custom CSS, inline `style` attributes, and `<style>` blocks. Opt in explicitly when the document should fetch remote assets:
+Non-local asset URL schemes are disabled by default, including URLs in HTML asset attributes, custom CSS, inline `style` attributes, and `<style>` blocks. Relative paths, `file:` URLs, and `data:` URLs are allowed by default. Opt in explicitly when the document should fetch remote assets:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --allow-remote-assets

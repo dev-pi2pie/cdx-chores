@@ -29,7 +29,8 @@ export interface RenderMarkdownPdfResult {
   warnings: string[];
 }
 
-const REMOTE_URL_PATTERN = /^https?:\/\//i;
+const URL_SCHEME_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
+const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[a-z]:[\\/]/i;
 const HTML_TAG_PATTERN = /<\s*([a-z][\w:-]*)\b[^>]*>/gi;
 const HTML_ASSET_TAGS = new Set([
   "img",
@@ -73,11 +74,23 @@ function collectRemoteValuesFromPattern(value: string, pattern: RegExp): string[
   const remotes: string[] = [];
   for (const match of value.matchAll(pattern)) {
     const candidate = (match[2] ?? match[3] ?? match[4] ?? match[1] ?? "").trim();
-    if (REMOTE_URL_PATTERN.test(candidate)) {
+    if (shouldBlockAssetUrl(candidate)) {
       remotes.push(candidate);
     }
   }
   return remotes;
+}
+
+function shouldBlockAssetUrl(candidate: string): boolean {
+  if (candidate.startsWith("//")) {
+    return true;
+  }
+  if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(candidate)) {
+    return false;
+  }
+
+  const scheme = candidate.match(URL_SCHEME_PATTERN)?.[1]?.toLowerCase();
+  return scheme !== undefined && scheme !== "file" && scheme !== "data";
 }
 
 function collectRemoteHtmlAssets(html: string): string[] {

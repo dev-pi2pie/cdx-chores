@@ -88,7 +88,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .option("--css <path>", "Custom print stylesheet")
         .option("--no-default-css", "Do not apply the built-in default stylesheet")
         .option("--html-output <path>", "Write the intermediate rendered HTML")
-        .option("--allow-remote-assets", "Allow http and https assets during PDF rendering", false)
+        .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
         .action(async (options: MarkdownPdfCliOptions) => {
           await actionMdToPdf(runtime, {
             ...options,

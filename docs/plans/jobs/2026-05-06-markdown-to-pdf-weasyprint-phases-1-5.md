@@ -49,6 +49,21 @@ bun run format:check
 git diff --check
 ```
 
+### 2026-05-06 non-local asset scheme blocking
+
+- Addressed review finding `[P2] Enforce the full remote-asset protocol block`.
+- Tightened the default asset guard to allow relative paths, `file:`, and `data:` while blocking protocol-relative URLs and other absolute URL schemes unless `--allow-remote-assets` is passed.
+- Added regression coverage for non-HTTP remote schemes, protocol-relative URLs, and local `file:` / `data:` asset URLs.
+
+Follow-up validation:
+
+```text
+bun test test/cli-actions-md-to-pdf.test.ts
+bun run lint
+bun run format:check
+git diff --check
+```
+
 ## Follow-Up
 
 - Revisit SVG fixture-level smoke coverage when WeasyPrint availability is stable enough in the local or CI environment.

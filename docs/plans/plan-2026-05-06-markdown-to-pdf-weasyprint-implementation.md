@@ -158,7 +158,7 @@ cdx-chores md to-pdf --input report.md --html-output report.render.html
 - Resolve relative local image paths against the Markdown input file directory, not the process cwd.
 - Allow absolute local image paths, but do not optimize for recipe portability around them.
 - Allow WeasyPrint to render with warnings when a local image is missing; surface renderer warnings clearly.
-- Disable `http` and `https` assets by default.
+- Disable non-local asset URL schemes by default while allowing relative paths, `file:`, and `data:`.
 - Add `--allow-remote-assets` as the explicit opt-in for remote assets.
 - Allow `file` and `data` protocols by default.
 - Include fixture coverage for local PNG or JPEG image resolution and SVG if the environment supports it reliably.
@@ -347,7 +347,7 @@ If the CLI path cannot enforce the default protocol policy cleanly, use the Weas
 ### Phase 4: Add asset policy coverage
 
 - [x] Enforce `file,data` asset protocols by default.
-- [x] Add `--allow-remote-assets` to opt in to `http,https`.
+- [x] Add `--allow-remote-assets` to opt in to non-local asset URL schemes.
 - [x] Add local image fixture coverage for relative paths resolved from the Markdown file directory.
 - [x] Add a warning-path test for missing local image references when practical.
 - [x] Keep fixture-level SVG smoke coverage deferred until local renderer behavior is stable.
@@ -384,7 +384,7 @@ git diff --check
   Mitigation: make `doctor` inspect WeasyPrint directly, preserve stderr detail, and document platform library hints separately from Pandoc.
 
 - Risk: remote assets are fetched unexpectedly during local document rendering.
-  Mitigation: enforce local/data asset protocols by default and require `--allow-remote-assets` for `http` and `https`.
+  Mitigation: enforce relative, file, and data assets by default and require `--allow-remote-assets` for non-local asset URL schemes.
 
 - Risk: relative image paths resolve against the process cwd instead of the Markdown file directory.
   Mitigation: set the renderer base URL from the input file directory and add fixture coverage where command cwd differs from input cwd.

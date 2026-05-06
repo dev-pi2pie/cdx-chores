@@ -297,11 +297,11 @@ Recommended v1 asset policy:
 | Relative local image path | Supported; resolve relative to Markdown input directory |
 | Absolute local image path | Supported, but discouraged for portable recipes |
 | Missing local image | Allow WeasyPrint to render with warnings; surface warnings clearly so success is not mistaken for a clean render |
-| `http`/`https` image | Disabled by default through the renderer's allowed-protocol policy; users can opt in with `--allow-remote-assets` |
+| Non-local URL-scheme image | Disabled by default through the renderer's allowed-protocol policy; users can opt in with `--allow-remote-assets` |
 | SVG image | Supported if WeasyPrint renders it reliably; include fixture coverage |
 | GIF/video/audio | Not treated as rich media in PDF; document as unsupported or first-frame/best-effort only after validation |
 
-Remote assets should not be silently fetched in the first implementation. The default render should restrict assets to local/data protocols, and `--allow-remote-assets` should be the explicit opt-in for `http` and `https`. This keeps local document rendering predictable and reduces security surprises.
+Remote assets should not be silently fetched in the first implementation. The default render should allow relative paths, `file:`, and `data:` assets, and `--allow-remote-assets` should be the explicit opt-in for non-local asset URL schemes. This keeps local document rendering predictable and reduces security surprises.
 
 ### 9. `doctor` should add WeasyPrint as a feature dependency
 
@@ -444,7 +444,7 @@ These notes are now reflected in the dedicated implementation plan:
 ## Reviewed Decisions
 
 1. Missing local images should not be a hard pre-render validation failure in v1. Allow WeasyPrint to render with warnings, then surface those warnings clearly in CLI output.
-2. Remote assets should be disabled by default. The default render should use an allowed-protocol policy such as `file,data`, and `--allow-remote-assets` should opt in to `http` and `https`.
+2. Remote assets should be disabled by default. The default render should allow relative paths, `file:`, and `data:` assets, and `--allow-remote-assets` should opt in to non-local asset URL schemes.
 3. Intermediate HTML should be written only when `--html-output <path>` is passed. Failed renders should not leave implicit debug files by default; users can rerun with `--html-output` when they need the exact HTML artifact.
 4. `md pdf-template init` should write into a new or empty output directory by default. It should overwrite existing recipe files only when `--overwrite` is passed.
 5. The `report` preset should insert a page break after the ToC by default when ToC is enabled. This behavior should still be controllable through a page-break option rather than hardcoded into every ToC render.

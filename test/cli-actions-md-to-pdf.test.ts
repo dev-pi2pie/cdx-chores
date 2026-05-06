@@ -499,6 +499,70 @@ describe("cli action modules: md to-pdf", () => {
     });
   });
 
+  test("blocks non-local asset schemes by default", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const customCss = join(fixtureDir, "remote.css");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        customCss,
+        '.remote { background: url("ftp://example.com/logo.png"); }\n.protocol { background: url("//example.com/banner.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      const error = await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(customCss),
+            runner,
+          }),
+        {
+          code: "REMOTE_ASSET_BLOCKED",
+          exitCode: 2,
+          messageIncludes: "ftp://example.com/logo.png",
+        },
+      );
+
+      expect(error.message).toContain("//example.com/banner.png");
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("allows local file and data asset URLs by default", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const customCss = join(fixtureDir, "local.css");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        customCss,
+        '.data { background: url("data:image/png;base64,AAAA"); }\n.file { background: url("file:///tmp/logo.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({
+        html: '<html><body><img src="file:///tmp/chart.png"></body></html>',
+      });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        css: toRepoRelativePath(customCss),
+        runner,
+      });
+
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(true);
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
   test("reports pandoc renderer failures", async () => {
     await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
