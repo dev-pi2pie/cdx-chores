@@ -11,8 +11,20 @@ import {
   actionVideoGif,
   actionVideoResize,
 } from "../src/cli/actions";
+import { inspectCommand } from "../src/cli/deps";
+import type { ExecCommandResult } from "../src/cli/process";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+
+function ok(stdout = "", stderr = ""): ExecCommandResult {
+  return {
+    ok: true,
+    code: 0,
+    signal: null,
+    stdout,
+    stderr,
+  };
+}
 
 describe("cli action modules: doctor", () => {
   test("actionDoctor emits machine-readable JSON payload", async () => {
@@ -128,6 +140,22 @@ describe("cli action modules: doctor", () => {
       expect(payload.queryCodex.detail).toContain(invalidOverride);
       expect(payload.capabilities["data.query.codex"]).toBe(false);
     });
+  });
+
+  test("inspectCommand parses WeasyPrint version labels", async () => {
+    const versions = [
+      ["WeasyPrint version 67.0\n", "67.0"],
+      ["WeasyPrint version: 67.0\n", "67.0"],
+      ["System: test\nVersion: 67.0\n", "67.0"],
+    ] as const;
+
+    for (const [stdout, expectedVersion] of versions) {
+      const status = await inspectCommand("weasyprint", "darwin", async () => ok(stdout));
+      expect(status).toMatchObject({
+        available: true,
+        version: expectedVersion,
+      });
+    }
   });
 });
 

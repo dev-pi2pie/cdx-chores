@@ -39,6 +39,20 @@ function parseFirstLineWithPattern(output: string, pattern: RegExp): string | nu
 
 const commandOutput = (result: ExecCommandResult) => result.stdout || result.stderr;
 
+function parseWeasyPrintVersion(output: string): string | null {
+  const directVersion = output.match(/(?:^|\n)\s*WeasyPrint\s+version:?\s+([^\s]+)/i);
+  if (directVersion) {
+    return directVersion[1] ?? firstLine(output);
+  }
+
+  const infoVersion = output.match(/(?:^|\n)\s*Version:\s*([^\s]+)/i);
+  if (infoVersion) {
+    return infoVersion[1] ?? firstLine(output);
+  }
+
+  return parseFirstLineWithPattern(output, /^weasyprint\s+([^\s:]+)/i);
+}
+
 const DEPENDENCIES: Record<DependencyCommand, DependencyDescriptor> = {
   pandoc: {
     installHints: {
@@ -70,13 +84,7 @@ const DEPENDENCIES: Record<DependencyCommand, DependencyDescriptor> = {
       { args: ["--info"], output: commandOutput },
       { args: ["--version"], output: commandOutput },
     ],
-    parseVersion: (output) => {
-      const infoVersion = output.match(/(?:^|\n)WeasyPrint(?:\s+version)?\s+([^\s]+)/i);
-      if (infoVersion) {
-        return infoVersion[1] ?? firstLine(output);
-      }
-      return parseFirstLineWithPattern(output, /^weasyprint(?:\s+version)?\s+([^\s]+)/i);
-    },
+    parseVersion: parseWeasyPrintVersion,
   },
 };
 

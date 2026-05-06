@@ -64,6 +64,20 @@ bun run format:check
 git diff --check
 ```
 
+### 2026-05-06 WeasyPrint version parsing
+
+- Fixed `doctor` version parsing for WeasyPrint outputs such as `WeasyPrint version 67.0` and colon-labeled `Version: 67.0` forms.
+- Added regression coverage around `inspectCommand("weasyprint", ...)` so the human-readable doctor report does not print an empty `version:` token.
+
+Follow-up validation:
+
+```text
+bun test test/cli-actions-doctor-markdown-video-deferred.test.ts
+bun run lint
+bun run format:check
+git diff --check
+```
+
 ## Follow-Up
 
 - Revisit SVG fixture-level smoke coverage when WeasyPrint availability is stable enough in the local or CI environment.
