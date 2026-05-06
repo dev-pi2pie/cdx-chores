@@ -12,7 +12,7 @@ import {
   actionVideoResize,
 } from "../src/cli/actions";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: doctor", () => {
   test("actionDoctor emits machine-readable JSON payload", async () => {
@@ -27,9 +27,12 @@ describe("cli action modules: doctor", () => {
     expect(typeof payload.nodeVersion).toBe("string");
     expect(payload.tools).toHaveProperty("pandoc");
     expect(payload.tools).toHaveProperty("ffmpeg");
+    expect(payload.tools).toHaveProperty("weasyprint");
     expect(typeof payload.tools.pandoc.available).toBe("boolean");
     expect(typeof payload.tools.ffmpeg.available).toBe("boolean");
+    expect(typeof payload.tools.weasyprint.available).toBe("boolean");
     expect(Object.hasOwn(payload.capabilities, "md.to-docx")).toBe(true);
+    expect(Object.hasOwn(payload.capabilities, "md.to-pdf")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "video.gif")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.csv")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.duckdb")).toBe(true);
@@ -66,6 +69,8 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("Node.js:");
     expect(stdout.text).toContain("Capabilities:");
     expect(stdout.text).toContain("md.to-docx");
+    expect(stdout.text).toContain("md.to-pdf");
+    expect(stdout.text).toContain("weasyprint");
     expect(stdout.text).toContain("video.gif");
     expect(stdout.text).toContain("Data query formats:");
     expect(stdout.text).toContain("Data query Codex:");
@@ -106,31 +111,16 @@ describe("cli action modules: doctor", () => {
 
   test("actionDoctor reports an invalid codex override as unavailable", async () => {
     await withTempFixtureDir("doctor-codex-override", async (fixtureDir) => {
-      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
-      const originalOverride = process.env.CDX_CHORES_CODEX_PATH;
-      const originalCodexApiKey = process.env.CODEX_API_KEY;
       const invalidOverride = join(fixtureDir, "missing-codex");
 
-      process.env.CDX_CHORES_CODEX_PATH = invalidOverride;
-      process.env.CODEX_API_KEY = "test-key";
+      const result = runCli(["doctor", "--json"], undefined, {
+        CDX_CHORES_CODEX_PATH: invalidOverride,
+        CODEX_API_KEY: "test-key",
+      });
 
-      try {
-        await actionDoctor(runtime, { json: true });
-      } finally {
-        if (originalOverride === undefined) {
-          delete process.env.CDX_CHORES_CODEX_PATH;
-        } else {
-          process.env.CDX_CHORES_CODEX_PATH = originalOverride;
-        }
-        if (originalCodexApiKey === undefined) {
-          delete process.env.CODEX_API_KEY;
-        } else {
-          process.env.CODEX_API_KEY = originalCodexApiKey;
-        }
-      }
-
-      expectNoStderr();
-      const payload = JSON.parse(stdout.text);
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      const payload = JSON.parse(result.stdout);
       expect(payload.queryCodex.configuredSupport).toBe(false);
       expect(payload.queryCodex.readyToDraft).toBe(false);
       expect(payload.queryCodex.authSessionAvailable).toBe(true);

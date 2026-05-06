@@ -15,9 +15,10 @@ export async function actionDoctor(
   options: DoctorOptions = {},
 ): Promise<void> {
   const pc = getCliColors(runtime);
-  const [pandoc, ffmpeg, queryExtensions, codexEnvironment] = await Promise.all([
+  const [pandoc, ffmpeg, weasyprint, queryExtensions, codexEnvironment] = await Promise.all([
     inspectCommand("pandoc", runtime.platform),
     inspectCommand("ffmpeg", runtime.platform),
+    inspectCommand("weasyprint", runtime.platform),
     inspectDataQueryExtensions(),
     inspectCodexEnvironment(),
   ]);
@@ -68,6 +69,7 @@ export async function actionDoctor(
 
   const capabilities = {
     "md.to-docx": pandoc.available,
+    "md.to-pdf": pandoc.available && weasyprint.available,
     "video.convert": ffmpeg.available,
     "video.resize": ffmpeg.available,
     "video.gif": ffmpeg.available,
@@ -85,7 +87,7 @@ export async function actionDoctor(
       generatedAt: runtime.now().toISOString(),
       platform: runtime.platform,
       nodeVersion: process.version,
-      tools: { pandoc, ffmpeg },
+      tools: { pandoc, ffmpeg, weasyprint },
       query: {
         available: queryExtensions.available,
         detail: queryExtensions.detail,
@@ -104,7 +106,7 @@ export async function actionDoctor(
   printLine(runtime.stdout, `${pc.dim("Node.js:")} ${pc.white(process.version)}`);
   printLine(runtime.stdout);
 
-  for (const item of [pandoc, ffmpeg]) {
+  for (const item of [pandoc, ffmpeg, weasyprint]) {
     const statusText = item.available
       ? pc.green(`available (${item.version ?? "unknown version"})`)
       : pc.red("missing");

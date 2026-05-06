@@ -1,7 +1,8 @@
 ---
 title: "Markdown to PDF with WeasyPrint implementation"
 created-date: 2026-05-06
-status: draft
+modified-date: 2026-05-06
+status: active
 agent: codex
 ---
 
@@ -25,12 +26,14 @@ The related research freezes the main product decisions:
 
 This plan turns those decisions into an implementation sequence.
 
-## Current State
+## Starting State
 
-- `src/cli/actions/markdown.ts` implements:
+At plan creation, the Markdown implementation only had:
+
+- `src/cli/actions/markdown.ts`:
   - `actionMdToDocx`
   - `actionMdFrontmatterToJson`
-- `src/cli/commands/markdown.ts` registers:
+- `src/cli/commands/markdown.ts`:
   - `md to-docx`
   - `md frontmatter-to-json`
 - `src/cli/actions/doctor.ts` reports `pandoc` and maps it to `md.to-docx`.
@@ -40,7 +43,14 @@ This plan turns those decisions into an implementation sequence.
   - `test/fixtures/docs/pandoc-fixture.css`
   - `test/fixtures/docs/metadata-rich.pdf`
 
-There is no current `md to-pdf` action, command, recipe generator, WeasyPrint dependency inspection, or Markdown PDF guide.
+## Implementation Status
+
+Phases 1-5 are now implemented and linked through the completed job record. The remaining active items are documentation follow-ups:
+
+- add or update the public Markdown PDF usage guide
+- update README command summaries only if the shipped command surface is documented there
+
+The plan remains `active` until those documentation follow-ups are either completed or moved into a narrower docs-only plan/job.
 
 ## Scope
 
@@ -304,9 +314,9 @@ If the CLI path cannot enforce the default protocol policy cleanly, use the Weas
 
 ### Phase 1: Freeze helpers and validators
 
-- [ ] Add preset, orientation, ToC page-break, and margin-unit constants.
-- [ ] Add option normalization for `md to-pdf`.
-- [ ] Add validation for:
+- [x] Add preset, orientation, ToC page-break, and margin-unit constants.
+- [x] Add option normalization for `md to-pdf`.
+- [x] Add validation for:
   - preset
   - page size
   - orientation
@@ -315,56 +325,56 @@ If the CLI path cannot enforce the default protocol policy cleanly, use the Weas
   - ToC page-break mode
   - custom template path
   - custom CSS path
-- [ ] Add default PDF output derivation from the Markdown input path.
-- [ ] Add tests for validation and default output derivation before renderer execution.
+- [x] Add default PDF output derivation from the Markdown input path.
+- [x] Add tests for validation and default output derivation before renderer execution.
 
 ### Phase 2: Add recipe generation
 
-- [ ] Add a built-in Pandoc HTML template.
-- [ ] Add built-in CSS generation for all first-pass presets.
-- [ ] Add CSS generation for page size, orientation, margins, and ToC page-break behavior.
-- [ ] Add `md pdf-template init` command wiring.
-- [ ] Add tests for generated `template.html` and `style.css` content.
-- [ ] Add tests for output-directory refusal and `--overwrite` behavior.
+- [x] Add a built-in Pandoc HTML template.
+- [x] Add built-in CSS generation for all first-pass presets.
+- [x] Add CSS generation for page size, orientation, margins, and ToC page-break behavior.
+- [x] Add `md pdf-template init` command wiring.
+- [x] Add tests for generated `template.html` and `style.css` content.
+- [x] Add tests for output-directory refusal and `--overwrite` behavior.
 
 ### Phase 3: Add direct PDF rendering
 
-- [ ] Add `MdToPdfOptions` and `actionMdToPdf`.
-- [ ] Require `pandoc` and `weasyprint` before rendering.
-- [ ] Generate Pandoc standalone HTML with the selected recipe.
-- [ ] Pass the resolved Markdown input directory as the asset base URL.
-- [ ] Apply default CSS and custom CSS in the documented order.
-- [ ] Write `--html-output` only when explicitly requested.
-- [ ] Capture and surface renderer warnings.
-- [ ] Print `Wrote PDF: <path>` on success.
-- [ ] Add tests for command wiring and action failure paths with mocked renderer execution.
+- [x] Add `MdToPdfOptions` and `actionMdToPdf`.
+- [x] Require `pandoc` and `weasyprint` before rendering.
+- [x] Generate Pandoc standalone HTML with the selected recipe.
+- [x] Pass the resolved Markdown input directory as the asset base URL.
+- [x] Apply default CSS and custom CSS in the documented order.
+- [x] Write `--html-output` only when explicitly requested.
+- [x] Capture and surface renderer warnings.
+- [x] Print `Wrote PDF: <path>` on success.
+- [x] Add tests for command wiring and action failure paths with mocked renderer execution.
 
 ### Phase 4: Add asset policy coverage
 
-- [ ] Enforce `file,data` asset protocols by default.
-- [ ] Add `--allow-remote-assets` to opt in to `http,https`.
-- [ ] Add local image fixture coverage for relative paths resolved from the Markdown file directory.
-- [ ] Add a warning-path test for missing local image references when practical.
-- [ ] Add fixture-level smoke coverage for SVG only if the local renderer behavior is stable.
+- [x] Enforce `file,data` asset protocols by default.
+- [x] Add `--allow-remote-assets` to opt in to `http,https`.
+- [x] Add local image fixture coverage for relative paths resolved from the Markdown file directory.
+- [x] Add a warning-path test for missing local image references when practical.
+- [x] Keep fixture-level SVG smoke coverage deferred until local renderer behavior is stable.
 
 ### Phase 5: Extend doctor
 
-- [ ] Add `weasyprint` to dependency inspection.
-- [ ] Parse WeasyPrint version or info output.
-- [ ] Add install hints for macOS, Windows, and Linux.
-- [ ] Add `tools.weasyprint` to `doctor --json`.
-- [ ] Add `capabilities["md.to-pdf"]`.
-- [ ] Update human-readable `doctor` output to show WeasyPrint separately.
-- [ ] Add doctor payload and human-output tests.
+- [x] Add `weasyprint` to dependency inspection.
+- [x] Parse WeasyPrint version or info output.
+- [x] Add install hints for macOS, Windows, and Linux.
+- [x] Add `tools.weasyprint` to `doctor --json`.
+- [x] Add `capabilities["md.to-pdf"]`.
+- [x] Update human-readable `doctor` output to show WeasyPrint separately.
+- [x] Add doctor payload and human-output tests.
 
 ### Phase 6: Docs and verification
 
 - [ ] Add or update a Markdown PDF usage guide.
-- [ ] Add a job record for the implementation pass.
-- [ ] Link the job record to this plan and the research doc.
+- [x] Add a job record for the implementation pass.
+- [x] Link the job record to this plan and the research doc.
 - [ ] Update README command summaries only if the shipped command surface is documented there.
-- [ ] Run focused Markdown PDF tests.
-- [ ] Run:
+- [x] Run focused Markdown PDF tests.
+- [x] Run:
 
 ```text
 bun run lint
@@ -405,6 +415,10 @@ git diff --check
 ## Related Plans
 
 - `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md` — separate PDF-native workflow plan. This plan should not absorb merge, split, image conversion, or PDF-to-Markdown extraction.
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md`
 
 ## References
 
