@@ -241,7 +241,30 @@ cdx-chores md to-pdf --input report.md --html-output report.render.html
 
 The debug HTML should be the exact HTML passed to WeasyPrint after Pandoc processing and template application.
 
-### 7. Local images should work by default when paths are relative to the Markdown file
+### 7. Default PDF output should derive from the Markdown input path
+
+`md to-pdf` should follow the existing derived-output convention used by other file conversion commands:
+
+```bash
+cdx-chores md to-pdf --input docs/report.md
+```
+
+Default output:
+
+```text
+docs/report.pdf
+```
+
+Rules:
+
+- `--output <path>` overrides the derived output path
+- no PDF bytes are written to stdout in v1
+- `--overwrite` is required when the resolved PDF output already exists
+- `--html-output <path>` remains separate from the PDF output path and is never inferred automatically
+
+`md pdf-template init` should keep `--output <directory>` explicit so the command does not create a recipe directory in an unexpected location.
+
+### 8. Local images should work by default when paths are relative to the Markdown file
 
 Markdown commonly includes local images. WeasyPrint supports linked stylesheets and image elements in HTML, and its API exposes `base_url` specifically for resolving relative URLs from generated HTML.[^weasyprint-api]
 
@@ -279,7 +302,7 @@ Recommended v1 asset policy:
 
 Remote assets should not be silently fetched in the first implementation. The default render should restrict assets to local/data protocols, and `--allow-remote-assets` should be the explicit opt-in for `http` and `https`. This keeps local document rendering predictable and reduces security surprises.
 
-### 8. `doctor` should add WeasyPrint as a feature dependency
+### 9. `doctor` should add WeasyPrint as a feature dependency
 
 `doctor` should inspect `weasyprint` and expose a capability:
 
@@ -307,7 +330,7 @@ The human-readable report should explain missing WeasyPrint separately from miss
 
 The install hint should mention that WeasyPrint can fail even when the Python package exists if platform rendering libraries are not reachable. The WeasyPrint docs specifically call out macOS library path issues and `DYLD_FALLBACK_LIBRARY_PATH` for missing `.dylib` cases.[^weasyprint-first-steps]
 
-### 9. Codex SDK assistance should be deferred from v1
+### 10. Codex SDK assistance should be deferred from v1
 
 Codex assistance could help generate a fitting document recipe from an intent:
 
@@ -352,7 +375,7 @@ Deterministic code should turn those structured fields into `template.html` and 
 Plan `md to-pdf` first as a deterministic document-rendering workflow:
 
 ```bash
-cdx-chores md to-pdf --input input.md --output output.pdf
+cdx-chores md to-pdf --input input.md
 ```
 
 Recommended first-pass command surface:
@@ -360,7 +383,6 @@ Recommended first-pass command surface:
 ```bash
 cdx-chores md to-pdf \
   --input input.md \
-  --output output.pdf \
   --preset article \
   --page-size A4 \
   --orientation portrait \
@@ -411,6 +433,7 @@ Likely implementation slices:
    - invalid margin unit rejection
    - ToC flag wiring
    - ToC page-break default and override behavior
+   - default PDF output path derivation
    - default recipe materialization
    - custom CSS/template path validation
    - image path resolution relative to the Markdown input
