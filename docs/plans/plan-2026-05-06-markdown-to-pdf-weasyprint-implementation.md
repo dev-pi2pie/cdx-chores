@@ -2,7 +2,7 @@
 title: "Markdown to PDF with WeasyPrint implementation"
 created-date: 2026-05-06
 modified-date: 2026-05-06
-status: active
+status: completed
 agent: codex
 ---
 
@@ -45,12 +45,7 @@ At plan creation, the Markdown implementation only had:
 
 ## Implementation Status
 
-Phases 1-5 are now implemented and linked through the completed job record. The remaining active items are documentation follow-ups:
-
-- add or update the public Markdown PDF usage guide
-- update README command summaries only if the shipped command surface is documented there
-
-The plan remains `active` until those documentation follow-ups are either completed or moved into a narrower docs-only plan/job.
+Phases 1-6 are complete and linked through completed job records. The deterministic `md to-pdf` workflow, `md pdf-template init`, `doctor` capability reporting, focused tests, public guide, and README command summaries are now recorded.
 
 ## Scope
 
@@ -369,10 +364,10 @@ If the CLI path cannot enforce the default protocol policy cleanly, use the Weas
 
 ### Phase 6: Docs and verification
 
-- [ ] Add or update a Markdown PDF usage guide.
+- [x] Add or update a Markdown PDF usage guide.
 - [x] Add a job record for the implementation pass.
 - [x] Link the job record to this plan and the research doc.
-- [ ] Update README command summaries only if the shipped command surface is documented there.
+- [x] Update README command summaries only if the shipped command surface is documented there.
 - [x] Run focused Markdown PDF tests.
 - [x] Run:
 
@@ -419,6 +414,7 @@ git diff --check
 ## Related Jobs
 
 - `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md`
+- `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md`
 
 ## References
 

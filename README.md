@@ -2,7 +2,7 @@
 
 A Node.js CLI for file-processing chores, tabular data workflows, rename automation, and Codex-assisted tasks.
 
-Stable release scope in `v0.1.2`:
+Current command scope:
 
 - interactive mode + nested CLI commands, including `Esc` exit on command menus
 - `doctor` capability checks
@@ -11,7 +11,7 @@ Stable release scope in `v0.1.2`:
 - DuckDB-backed query, reviewed header-mapping, source-shape replay, and Parquet preview workflows
 - `data stack` for assembling multiple CSV, TSV, JSONL, or JSON files and directories into one output table
 - replayable `data stack` plan artifacts, dry-run diagnostics, duplicate/key checks, and optional reviewed Codex assistance
-- `md to-docx` via `pandoc`
+- `md to-docx` via `pandoc` and Markdown-to-PDF rendering via WeasyPrint
 - preview-first rename flows
 - `ffmpeg`-backed video wrappers, including GIF quality modes and profiles
 
@@ -51,7 +51,7 @@ Runtime requirement:
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
 | `data` | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
-| `md` | `to-docx`, `frontmatter-to-json` | Markdown conversion and metadata extraction | `to-docx` requires `pandoc` |
+| `md` | `to-docx`, `to-pdf`, `pdf-template init`, `frontmatter-to-json` | Markdown conversion, PDF recipe generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
 | `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
@@ -72,6 +72,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | Area | What ships with `cdx-chores` | Additional requirement | How to verify or repair |
 | ---- | ---------------------------- | ---------------------- | ----------------------- |
 | `md to-docx` | Markdown-to-DOCX command wrapper | `pandoc` must be installed on `PATH` | Run `cdx-chores doctor` |
+| `md to-pdf` | Markdown-to-PDF command wrapper and default HTML/CSS recipe | `pandoc` and `weasyprint` must be installed on `PATH` | Run `cdx-chores doctor` |
 | `video convert`, `video resize`, `video gif` | Video command wrappers | `ffmpeg` must be installed on `PATH` | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
@@ -199,6 +200,24 @@ Markdown to DOCX:
 
 ```bash
 cdx-chores md to-docx -i ./notes.md -o ./notes.docx
+```
+
+Markdown to PDF:
+
+```bash
+cdx-chores md to-pdf -i ./notes.md
+```
+
+Markdown to PDF with a report ToC:
+
+```bash
+cdx-chores md to-pdf -i ./report.md --preset report --toc --toc-depth 3
+```
+
+Generate editable Markdown PDF template files:
+
+```bash
+cdx-chores md pdf-template init --output ./pdf-template
 ```
 
 Markdown frontmatter to JSON:
@@ -371,6 +390,11 @@ Video:
 
 - `docs/guides/video-gif-usage-and-quality-modes.md`
 - `docs/guides/video-resize-usage-and-ux.md`
+
+Markdown:
+
+- `docs/guides/markdown-pdf-usage.md`
+- `docs/guides/md-frontmatter-to-json-output-contract.md`
 
 ## Local Development
 

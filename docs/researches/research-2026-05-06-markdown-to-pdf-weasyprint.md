@@ -2,7 +2,7 @@
 title: "Markdown to PDF with WeasyPrint"
 created-date: 2026-05-06
 modified-date: 2026-05-06
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ Define a dedicated `md to-pdf` direction that turns Markdown into print-ready PD
 
 ## Milestone Goal
 
-Prepare a pre-plan recommendation for a Markdown-owned PDF export lane. This document is now `in-progress`: it records the preferred direction from the current discussion and links the first dedicated implementation plan, but it should not be marked `completed` until implementation evidence or linked job records exist.
+Prepare a pre-plan recommendation for a Markdown-owned PDF export lane. This document is now `completed`: the preferred direction is recorded, the dedicated implementation plan is linked, and completed job records capture implementation, validation, and public documentation evidence.
 
 ## Why This Research
 
@@ -42,15 +42,15 @@ This research records the desired product contract before planning implementatio
 
 ## Starting State
 
-The current implementation is a direct Pandoc wrapper for DOCX:
+At research start, the Markdown implementation was a direct Pandoc wrapper for DOCX:
 
 ```bash
 cdx-chores md to-docx --input input.md --output output.docx
 ```
 
-The current `doctor` action checks `pandoc` and maps it to the `md.to-docx` capability.
+The `doctor` action checked `pandoc` and mapped it to the `md.to-docx` capability.
 
-There is no current `md to-pdf` command, no generated Markdown PDF recipe, no WeasyPrint check in `doctor`, and no public contract for page layout defaults, table of contents behavior, custom HTML/CSS, or image handling.
+There was no `md to-pdf` command, no generated Markdown PDF recipe, no WeasyPrint check in `doctor`, and no public contract for page layout defaults, table of contents behavior, custom HTML/CSS, or image handling.
 
 There is an existing draft plan for the `pdf` command group. That plan covers PDF-native workflows such as merge, split, PDF-to-images, images-to-PDF, and PDF-to-Markdown extraction. This research is separate: it covers Markdown-to-PDF generation under the `md` command group, using Markdown input, an HTML/CSS recipe, and WeasyPrint rendering. The dedicated `md to-pdf` implementation plan links both tracks so `md to-pdf` and `pdf to-markdown` do not collide over asset-directory or capability-reporting language.
 
@@ -458,6 +458,11 @@ None currently. The remaining ToC page-break control question is now recorded as
 
 - `docs/plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md` — dedicated implementation plan for the deterministic v1 `md to-pdf` workflow described by this research.
 - `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md` — related draft plan for the separate `pdf` command group. It should remain the owner for PDF-native workflows such as merge, split, image extraction/rendering, images-to-PDF, and PDF-to-Markdown extraction. This research informs the Markdown-owned plan instead of replacing that PDF plan.
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md` — implementation, renderer, asset policy, tests, and `doctor` evidence.
+- `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md` — public guide, README alignment, status closeout, and final validation evidence.
 
 ## Related Research
 

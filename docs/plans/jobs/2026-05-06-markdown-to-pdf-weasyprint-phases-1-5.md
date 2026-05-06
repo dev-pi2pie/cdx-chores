@@ -51,14 +51,16 @@ git diff --check
 
 ## Follow-Up
 
-- Add or update `docs/guides/` coverage for the public Markdown PDF usage workflow.
-- Check whether `README.md` command summaries should mention `md to-pdf` and `md pdf-template init`.
 - Revisit SVG fixture-level smoke coverage when WeasyPrint availability is stable enough in the local or CI environment.
-- Keep the research doc `in-progress` until implementation evidence and downstream docs are fully linked.
+- Phase 6 public guide, README alignment, and status closeout are tracked in `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md`.
 
 ## Related Plan
 
 - `docs/plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md`
+
+## Related Jobs
+
+- `docs/plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md`
 
 ## Related Research
 
