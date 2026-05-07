@@ -402,9 +402,10 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [x] Keep `auto` as the default discovery mode, with macOS preferring `fc-list` when available, Linux using fontconfig, and Windows using native registry discovery.
 - [x] Define `native` per platform before implementation, especially because Linux native discovery is still fontconfig.
 - [x] Keep this slice on `font list --debug`; broader external dependency checks belong to the existing top-level `doctor` command.
-- [x] Use concise normal-output info lines when `auto` chooses fontconfig or falls back.
+- [x] Use concise normal-output info lines only when default `auto` chooses fontconfig or falls back.
 - [x] Use sanitized failure messages only.
-- [ ] Add implementation tasks for `--discovery`, `--debug`, debug JSON shape, info text, and deterministic adapter-selection tests.
+- [x] Show sanitized failed attempts in text debug output and JSON debug output.
+- [ ] Add implementation tasks for `--discovery`, `--debug`, debug JSON shape, default `auto` info text, and deterministic adapter-selection tests.
 
 ### Phase 8: Docs and verification
 

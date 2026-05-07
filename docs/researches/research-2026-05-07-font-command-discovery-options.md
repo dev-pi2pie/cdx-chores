@@ -112,7 +112,7 @@ Suggested `native` behavior:
 
 Windows should not try fontconfig in `auto` or `native`. If a Windows user has MSYS2/Cygwin/fontconfig installed, they can opt into that later with `--discovery fontconfig`.
 
-### 3. Show concise info when `auto` makes a meaningful choice
+### 3. Show concise info for default `auto` choices
 
 Normal text output should let the user know when discovery did something non-obvious, without turning every run into a diagnostic report.
 
@@ -132,7 +132,9 @@ Adapter: macos-system-profiler
 Info: fontconfig was unavailable, so macOS native discovery was used.
 ```
 
-This text belongs in normal output because it explains why the result may differ from user expectations. It should stay short and action-oriented.
+This text belongs in normal output because `auto` is the default and can choose a non-native path or fallback path without an explicit user request. It should stay short and action-oriented.
+
+When the user explicitly passes `--discovery native` or `--discovery fontconfig`, normal output does not need the same explanatory info line. The user already selected that path.
 
 ### 4. Add debug output without changing normal output shape
 
@@ -195,6 +197,8 @@ Debug:
 - macos-system-profiler: success in 1840ms
 ```
 
+Failed attempts should appear in text debug output as well as JSON debug output. Hiding them from text output would make `--debug` less useful for the human troubleshooting path.
+
 ### 5. Keep dependency checks in top-level `doctor`
 
 This research should not introduce `font doctor`.
@@ -211,9 +215,10 @@ The clearest next implementation direction is:
 2. Keep `auto` as the default.
 3. Add `--debug` to `font list`.
 4. Include debug details in JSON only when `--debug` is present.
-5. Use concise normal-output info lines when `auto` chooses fontconfig or falls back.
+5. Use concise normal-output info lines only for default `auto` choices that use fontconfig or fall back.
 6. Use sanitized failure messages only.
-7. Keep broader dependency checks in the existing top-level `doctor` command.
+7. Show failed attempts in text debug output.
+8. Keep broader dependency checks in the existing top-level `doctor` command.
 
 This pattern avoids adding many flags while still giving users a way to verify whether `fc-list`, `system_profiler`, or Windows registry discovery was used.
 
@@ -231,13 +236,15 @@ Suggested test cases:
 - Windows `fontconfig` is explicit only.
 - `--json --debug` includes selected mode, selected adapter, attempts, statuses, and durations.
 - debug failure messages are sanitized and do not expose raw stderr.
+- text debug output includes sanitized failed attempts.
 - normal text output includes a concise info line when `auto` chooses fontconfig or falls back.
+- normal text output does not add the same info line when the user explicitly passes `--discovery native` or `--discovery fontconfig`.
 - normal text output does not show debug details unless `--debug` is present.
 
-## Open Questions
+## Resolved Questions
 
-1. Should failed attempts always appear in text debug output, or only in JSON debug output?
-2. Should normal-output info lines appear for every non-default adapter, or only for `auto` choosing fontconfig or falling back?
+1. Failed attempts should appear in text debug output and JSON debug output, using sanitized messages only.
+2. Normal-output info lines are for default `auto` choices. Explicit `--discovery` selections do not need extra explanatory info.
 
 ## Related Research
 

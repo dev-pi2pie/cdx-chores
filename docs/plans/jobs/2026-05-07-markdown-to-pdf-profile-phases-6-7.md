@@ -54,7 +54,8 @@ That research should settle:
 - the user-facing option name, now recommended as `--discovery auto|native|fontconfig`
 - `font list --debug` as the command-run diagnostic surface
 - JSON debug output shape for selected adapter, attempted adapters, durations, and sanitized failure details
-- short text info when `auto` chooses fontconfig or falls back
+- sanitized failed attempts in text debug output and JSON debug output
+- short text info when default `auto` chooses fontconfig or falls back
 - the platform policy for macOS, Linux, Windows, and explicit Windows fontconfig opt-in
 
 This should remain separate from glyph coverage and from broader external dependency checks. Discovery still reports candidate font faces only, while broader dependency checks belong to the existing top-level `doctor` command.
