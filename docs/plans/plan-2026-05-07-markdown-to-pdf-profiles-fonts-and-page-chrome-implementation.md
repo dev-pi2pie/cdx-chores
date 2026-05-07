@@ -1,7 +1,8 @@
 ---
 title: "Markdown to PDF profiles, fonts, and page chrome implementation"
 created-date: 2026-05-07
-status: draft
+modified-date: 2026-05-07
+status: active
 agent: codex
 ---
 
@@ -319,33 +320,33 @@ Keep `actionMdToPdf` as the orchestration boundary:
 
 ### Phase 1: Define profile model and validation
 
-- [ ] Add profile TypeScript types.
-- [ ] Add built-in mini profile defaults.
-- [ ] Add YAML and JSON profile parsing.
-- [ ] Add profile serialization.
-- [ ] Add unknown-key rejection.
-- [ ] Add `--meta key=value` parsing and validation.
-- [ ] Add merge order tests for CLI overrides, frontmatter, profile metadata, preset defaults, and mini profile fallback.
+- [x] Add profile TypeScript types.
+- [x] Add built-in mini profile defaults.
+- [x] Add YAML and JSON profile parsing.
+- [x] Add profile serialization.
+- [x] Add unknown-key rejection.
+- [x] Add `--meta key=value` parsing and validation.
+- [x] Add merge order tests for CLI overrides, frontmatter, profile metadata, preset defaults, and mini profile fallback.
 
 ### Phase 2: Add profile command surface
 
-- [ ] Add `--profile <path>` to `md to-pdf`.
-- [ ] Add `md pdf-profile init`.
-- [ ] Infer generated profile format from output extension.
-- [ ] Reject unknown profile extensions.
-- [ ] Require `--overwrite` for existing profile outputs.
-- [ ] Add command and action tests for YAML and JSON profile inputs.
+- [x] Add `--profile <path>` to `md to-pdf`.
+- [x] Add `md pdf-profile init`.
+- [x] Infer generated profile format from output extension.
+- [x] Reject unknown profile extensions.
+- [x] Require `--overwrite` for existing profile outputs.
+- [x] Add command and action tests for YAML and JSON profile inputs.
 
 ### Phase 3: Integrate page chrome and metadata
 
-- [ ] Generate header and footer CSS margin boxes from normalized profile fields.
-- [ ] Keep default header and footer empty in the mini profile.
-- [ ] Add opt-in `pageNumbers`.
-- [ ] Default page-number format to `{page}`.
-- [ ] Treat `{pages}` as document-wide only.
-- [ ] Suppress normal header/footer on cover pages.
-- [ ] Keep ToC page chrome empty by default.
-- [ ] Add fixture tests for no default page numbers and explicit page-number output.
+- [x] Generate header and footer CSS margin boxes from normalized profile fields.
+- [x] Keep default header and footer empty in the mini profile.
+- [x] Add opt-in `pageNumbers`.
+- [x] Default page-number format to `{page}`.
+- [x] Treat `{pages}` as document-wide only.
+- [x] Suppress normal header/footer on cover pages.
+- [x] Keep ToC page chrome empty by default.
+- [x] Add fixture tests for no default page numbers and explicit page-number output.
 
 ### Phase 4: Add cover page recipe support
 
@@ -395,7 +396,7 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Document language-marked spans as the advanced mixed-language path.
 - [ ] Document CJK as the first-class mixed-language target and Latin-extended/RTL as smoke coverage.
 - [ ] Document page-number defaults and `{pages}` constraints.
-- [ ] Add a job record when implementation starts.
+- [x] Add a job record when implementation starts.
 - [ ] Link completed implementation evidence back to this plan and the research doc before marking either complete.
 - [ ] Run focused Markdown PDF tests.
 - [ ] Run:
@@ -449,6 +450,6 @@ git diff --check
 
 ## Related Jobs
 
-- No job record exists for this profile implementation slice yet. Add one under `docs/plans/jobs/` when implementation starts.
+- [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - profile model, profile command surface, page chrome, metadata merge, and opt-in page-number implementation.
 - [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.

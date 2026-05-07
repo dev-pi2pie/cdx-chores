@@ -1,6 +1,7 @@
 ---
 title: "Markdown to PDF Profiles, Fonts, and Page Chrome"
 created-date: 2026-05-07
+modified-date: 2026-05-07
 status: draft
 agent: codex
 ---
@@ -641,5 +642,6 @@ Current first-slice recommendations:
 
 ## Related Jobs
 
+- [Markdown to PDF Profile Phases 1-3](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - first profile implementation slice for profile parsing, command surface, metadata merge, page chrome, and opt-in page numbers.
 - [Markdown to PDF WeasyPrint Phases 1-5](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - implementation, renderer, asset policy, tests, and `doctor` evidence for the first deterministic Markdown-to-PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - public guide, README alignment, status closeout, and final validation evidence for the first lane.

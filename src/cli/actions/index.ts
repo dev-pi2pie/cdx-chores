@@ -55,12 +55,14 @@ export type {
 } from "./data";
 export {
   actionMdFrontmatterToJson,
+  actionMdPdfProfileInit,
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,
 } from "./markdown";
 export type {
   MdFrontmatterToJsonOptions,
+  MdPdfProfileInitOptions,
   MdPdfTemplateInitOptions,
   MdToDocxOptions,
   MdToPdfOptions,

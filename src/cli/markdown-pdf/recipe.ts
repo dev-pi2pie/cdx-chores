@@ -1,8 +1,13 @@
 import type { NormalizedMarkdownPdfOptions } from "./validation";
+import { createMarkdownPdfPageChromeCss, type NormalizedMarkdownPdfProfile } from "./profile";
 
 export interface MarkdownPdfRecipe {
   templateHtml: string;
   styleCss: string;
+}
+
+export interface CreateMarkdownPdfRecipeInput {
+  profile?: NormalizedMarkdownPdfProfile;
 }
 
 const PRESET_CSS: Record<NormalizedMarkdownPdfOptions["preset"], string> = {
@@ -97,13 +102,17 @@ function tocPageBreakCss(options: NormalizedMarkdownPdfOptions): string {
 
   return `
 #TOC {
+  page: toc;
   ${before}
   ${after}
 }
 `;
 }
 
-export function createMarkdownPdfCss(options: NormalizedMarkdownPdfOptions): string {
+export function createMarkdownPdfCss(
+  options: NormalizedMarkdownPdfOptions,
+  input: CreateMarkdownPdfRecipeInput = {},
+): string {
   const { top, right, bottom, left } = options.margins;
 
   return `@page {
@@ -191,6 +200,7 @@ blockquote {
 }
 
 #TOC {
+  page: toc;
   margin: 1rem 0 1.5rem;
 }
 
@@ -204,13 +214,17 @@ blockquote {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(options)}
+${createMarkdownPdfPageChromeCss(input.profile)}
 ${PRESET_CSS[options.preset]}
 `;
 }
 
-export function createMarkdownPdfRecipe(options: NormalizedMarkdownPdfOptions): MarkdownPdfRecipe {
+export function createMarkdownPdfRecipe(
+  options: NormalizedMarkdownPdfOptions,
+  input: CreateMarkdownPdfRecipeInput = {},
+): MarkdownPdfRecipe {
   return {
     templateHtml: createMarkdownPdfTemplate(),
-    styleCss: createMarkdownPdfCss(options),
+    styleCss: createMarkdownPdfCss(options, input),
   };
 }

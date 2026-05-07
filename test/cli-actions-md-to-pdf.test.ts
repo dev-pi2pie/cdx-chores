@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { actionMdPdfTemplateInit, actionMdToPdf } from "../src/cli/actions";
+import { actionMdPdfProfileInit, actionMdPdfTemplateInit, actionMdToPdf } from "../src/cli/actions";
 import {
   createMarkdownPdfRecipe,
+  normalizeMarkdownPdfProfile,
   normalizeMarkdownPdfOptions,
+  readMarkdownPdfProfileFile,
   type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
 import type { ExecCommandResult } from "../src/cli/process";
@@ -140,6 +142,114 @@ describe("markdown PDF option normalization", () => {
   });
 });
 
+describe("markdown PDF profile normalization", () => {
+  test("merges profile metadata, frontmatter metadata, and CLI metadata overrides", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        page: {
+          size: "Letter",
+          margin: "12mm",
+        },
+        metadata: {
+          company: "Example Co.",
+          author: "Profile Author",
+        },
+        header: {
+          left: "{company}",
+          right: "{title}",
+        },
+        pageNumbers: {
+          enabled: true,
+        },
+      },
+      frontmatter: {
+        title: "Quarterly Report",
+        author: "Frontmatter Author",
+      },
+      meta: ["author=Noname"],
+    });
+
+    expect(result.recipeOptions).toMatchObject({
+      pageSize: "Letter",
+      margin: "12mm",
+    });
+    expect(result.profile.metadata).toMatchObject({
+      company: "Example Co.",
+      title: "Quarterly Report",
+      author: "Noname",
+    });
+    expect(result.profile.header.left).toBe("{company}");
+    expect(result.profile.pageNumbers).toMatchObject({
+      enabled: true,
+      position: "bottom-center",
+      format: "{page}",
+      scope: "body",
+    });
+  });
+
+  test("rejects unknown profile keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "page:\n  unexpected: true\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.page.unexpected",
+      });
+    });
+  });
+
+  test("loads JSON profiles and rejects top-level unknown keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const jsonProfilePath = join(fixtureDir, "pdf-profile.json");
+      const invalidProfilePath = join(fixtureDir, "invalid-profile.json");
+      await writeFile(
+        jsonProfilePath,
+        JSON.stringify({
+          page: {
+            size: "Letter",
+          },
+          pageNumbers: {
+            enabled: true,
+          },
+        }),
+        "utf8",
+      );
+      await writeFile(invalidProfilePath, JSON.stringify({ unknown: true }), "utf8");
+
+      const profile = await readMarkdownPdfProfileFile(jsonProfilePath);
+      expect(profile.page).toEqual({ size: "Letter" });
+
+      await expectCliError(() => readMarkdownPdfProfileFile(invalidProfilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.unknown",
+      });
+    });
+  });
+
+  test("rejects malformed profile content and non-object roots", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const malformedJsonPath = join(fixtureDir, "malformed.json");
+      const arrayYamlPath = join(fixtureDir, "array.yml");
+      await writeFile(malformedJsonPath, "{", "utf8");
+      await writeFile(arrayYamlPath, "- page\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(malformedJsonPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Failed to parse Markdown PDF profile JSON",
+      });
+      await expectCliError(() => readMarkdownPdfProfileFile(arrayYamlPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Markdown PDF profile must be a plain object",
+      });
+    });
+  });
+});
+
 describe("markdown PDF recipe generation", () => {
   test("generates report ToC page break CSS by default", () => {
     const recipe = createMarkdownPdfRecipe(
@@ -158,6 +268,71 @@ describe("markdown PDF recipe generation", () => {
     );
 
     expect(recipe.styleCss).not.toContain("break-after: page");
+  });
+
+  test("generates profile page chrome and page numbers", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        metadata: {
+          company: "Example Co.",
+          title: "Quarterly Report",
+        },
+        header: {
+          left: "{company}",
+          right: "{title}",
+        },
+        footer: {
+          left: "{author}",
+        },
+        pageNumbers: {
+          enabled: true,
+          format: "Page {page}",
+        },
+      },
+      frontmatter: {
+        author: "Noname",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain('@top-left {\n    content: "Example Co.";');
+    expect(recipe.styleCss).toContain('@top-right {\n    content: "Quarterly Report";');
+    expect(recipe.styleCss).toContain('@bottom-left {\n    content: "Noname";');
+    expect(recipe.styleCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+    expect(recipe.styleCss).toContain("@page toc");
+    expect(recipe.styleCss).not.toContain("counter(pages)");
+  });
+
+  test("keeps page numbers disabled by default", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {},
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).not.toContain("counter(page)");
+    expect(recipe.styleCss).not.toContain("@bottom-center");
+  });
+
+  test("honors explicit page-number positions", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        pageNumbers: {
+          enabled: true,
+          position: "top-right",
+          format: "{page}",
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain("@top-right {\n    content: counter(page);");
+    expect(recipe.styleCss).not.toContain("@bottom-center");
   });
 });
 
@@ -244,6 +419,70 @@ describe("cli action modules: md to-pdf", () => {
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--base-url") + 1]).toBe(
         fixtureDir,
       );
+    });
+  });
+
+  test("loads a YAML profile and applies profile page chrome CSS", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(
+        inputPath,
+        "---\ntitle: Quarterly Report\nauthor: Frontmatter Author\n---\n# Report\n",
+        "utf8",
+      );
+      await writeFile(
+        profilePath,
+        [
+          "page:",
+          "  size: Letter",
+          "  margin: 12mm",
+          "metadata:",
+          "  company: Example Co.",
+          "header:",
+          '  left: "{company}"',
+          '  right: "{title}"',
+          "pageNumbers:",
+          "  enabled: true",
+          '  format: "Page {page}"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        meta: ["author=Noname"],
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("size: Letter portrait");
+      expect(combinedCss).toContain("margin: 12mm 12mm 12mm 12mm");
+      expect(combinedCss).toContain('@top-left {\n    content: "Example Co.";');
+      expect(combinedCss).toContain('@top-right {\n    content: "Quarterly Report";');
+      expect(combinedCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
     });
   });
 
@@ -716,6 +955,112 @@ describe("cli action modules: md pdf-template init", () => {
   });
 });
 
+describe("cli action modules: md pdf-profile init", () => {
+  test("writes a default YAML profile file", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdPdfProfileInit(runtime, {
+        output: toRepoRelativePath(outputPath),
+      });
+
+      const profile = await readFile(outputPath, "utf8");
+      expect(profile).toContain("page:");
+      expect(profile).toContain("pageNumbers:");
+      expect(profile).toContain("enabled: false");
+      expect(stdout.text).toContain("Wrote Markdown PDF profile:");
+      expectNoStderr();
+    });
+  });
+
+  test("writes a JSON profile file with preset-derived values", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.json");
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdPdfProfileInit(runtime, {
+        output: toRepoRelativePath(outputPath),
+        preset: "wide-table",
+      });
+
+      const profile = JSON.parse(await readFile(outputPath, "utf8")) as {
+        page: { orientation: string; marginTop: string };
+      };
+      expect(profile.page.orientation).toBe("landscape");
+      expect(profile.page.marginTop).toBe("12mm");
+      expectNoStderr();
+    });
+  });
+
+  test("rejects unknown profile extensions", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.txt");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileInit(runtime, {
+            output: toRepoRelativePath(outputPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "must end with .yml, .yaml, or .json",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("refuses an existing profile file without overwrite", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(outputPath, "existing", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileInit(runtime, {
+            output: toRepoRelativePath(outputPath),
+          }),
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+          messageIncludes: "Output file already exists",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+});
+
+describe("cli command: md to-pdf", () => {
+  test("forwards --profile to the action layer", async () => {
+    await withTempFixtureDir("md-to-pdf-cli", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "unknown: true\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "to-pdf",
+        "--input",
+        toRepoRelativePath(inputPath),
+        "--profile",
+        toRepoRelativePath(profilePath),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Unknown Markdown PDF profile key: profile.unknown");
+    });
+  });
+});
+
 describe("cli command: md pdf-template init", () => {
   test("writes a template recipe from the command layer", async () => {
     await withTempFixtureDir("md-pdf-template-cli", async (fixtureDir) => {
@@ -754,6 +1099,28 @@ describe("cli command: md pdf-template init", () => {
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain("--margin must be a CSS length");
+    });
+  });
+});
+
+describe("cli command: md pdf-profile init", () => {
+  test("writes a profile file from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      const result = runCli([
+        "md",
+        "pdf-profile",
+        "init",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--preset",
+        "report",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Wrote Markdown PDF profile:");
+      expect(await readFile(outputPath, "utf8")).toContain("pageNumbers:");
     });
   });
 });
