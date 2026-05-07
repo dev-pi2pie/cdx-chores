@@ -1,6 +1,7 @@
 ---
 title: "Font Command Discovery Options"
 created-date: 2026-05-07
+modified-date: 2026-05-07
 status: completed
 agent: codex
 ---
@@ -249,6 +250,7 @@ Suggested test cases:
 ## Related Research
 
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md) - parent research for PDF profiles, font roles, mixed-language content, and page chrome.
+- [Font Inspect and Check Commands](research-2026-05-07-font-inspect-and-check-commands.md) - draft checkpoint for the next font command layer after `font list`.
 
 ## Related Plan
 

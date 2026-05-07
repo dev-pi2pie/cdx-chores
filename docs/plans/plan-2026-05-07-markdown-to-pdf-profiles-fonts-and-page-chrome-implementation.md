@@ -2,7 +2,7 @@
 title: "Markdown to PDF profiles, fonts, and page chrome implementation"
 created-date: 2026-05-07
 modified-date: 2026-05-07
-status: active
+status: completed
 agent: codex
 ---
 
@@ -409,12 +409,12 @@ Keep `actionMdToPdf` as the orchestration boundary:
 
 ### Phase 8: Docs and verification
 
-- [ ] Update the Markdown PDF usage guide with profile examples.
-- [ ] Document YAML as the primary profile format and JSON as automation-compatible.
-- [ ] Document fallback fonts as the basic path.
-- [ ] Document language-marked spans as the advanced mixed-language path.
-- [ ] Document CJK as the first-class mixed-language target and Latin-extended/RTL as smoke coverage.
-- [ ] Document page-number defaults and `{pages}` constraints.
+- [x] Update the Markdown PDF usage guide with profile examples.
+- [x] Document YAML as the primary profile format and JSON as automation-compatible.
+- [x] Document fallback fonts as the basic path.
+- [x] Document language-marked spans as the advanced mixed-language path.
+- [x] Document CJK as the first-class mixed-language target and Latin-extended/RTL as smoke coverage.
+- [x] Document page-number defaults and `{pages}` constraints.
 - [x] Add a job record when implementation starts.
 - [x] Link completed implementation evidence back to this plan and the research doc before marking either complete.
 - [x] Run focused Markdown PDF tests.
@@ -434,16 +434,17 @@ Completed evidence is linked by slice:
 - Phases 1-3: [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md)
 - Phases 4-5: [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md)
 - Phases 6-7: [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md)
+- Phase 8: [Markdown to PDF Profile Phase 8 Docs](jobs/2026-05-07-markdown-to-pdf-profile-phase-8-docs.md)
 
-Phase 6-7 validation evidence:
+Final validation evidence:
 
-- `bun test test/fonts.test.ts`
-- `bun test test/cli-actions-md-to-pdf.test.ts`
-- `bun test test/fonts.test.ts test/cli-actions-md-to-pdf.test.ts`
-- `bun run lint`
-- `bun run format:check`
-- `bun run build`
-- `git diff --check`
+- Passed `bun test test/fonts.test.ts test/cli-actions-md-to-pdf.test.ts` with 75 tests, 0 failures, and 378 assertions.
+- Passed `bun run lint` with 0 warnings and 0 errors.
+- Passed `bun run format:check`.
+- Passed `bun run build`.
+- Passed `git diff --check`.
+
+`bun run build` completed with the existing dynamic-import warning around `src/cli/prompts/path.ts`.
 
 ## Risks and Mitigations
 
@@ -463,7 +464,7 @@ Phase 6-7 validation evidence:
   Mitigation: keep platform adapters small, separate discovery from coverage, and make tests use controlled or mocked font inventory.
 
 - Risk: users cannot tell whether `font list` used `fc-list`, `system_profiler`, or Windows registry discovery.
-  Mitigation: add explicit adapter controls plus debug/doctor output that reports attempted tools and the selected adapter.
+  Mitigation: add explicit discovery controls plus `font list --debug` output that reports attempted tools and the selected adapter.
 
 - Risk: CJK and Nerd Font support is inferred from family names instead of actual glyph coverage.
   Mitigation: add coverage checks based on font-file inspection or controlled samples and report missing codepoints.
@@ -480,6 +481,7 @@ Phase 6-7 validation evidence:
 ## Related Research
 
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](../researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
+- [Font Inspect and Check Commands](../researches/research-2026-05-07-font-inspect-and-check-commands.md)
 - [Markdown to PDF with WeasyPrint](../researches/research-2026-05-06-markdown-to-pdf-weasyprint.md)
 - [PDF Backend Comparison for Merge, Split, and Image Workflows](../researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md)
 
@@ -493,5 +495,6 @@ Phase 6-7 validation evidence:
 - [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - profile model, profile command surface, page chrome, metadata merge, and opt-in page-number implementation.
 - [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
 - [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, initial `font list` command, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
+- [Markdown to PDF Profile Phase 8 Docs](jobs/2026-05-07-markdown-to-pdf-profile-phase-8-docs.md) - public guide/README profile documentation, status closeout, and final validation evidence.
 - [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.

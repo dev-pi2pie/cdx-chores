@@ -2,7 +2,7 @@
 title: "Markdown to PDF Profiles, Fonts, and Page Chrome"
 created-date: 2026-05-07
 modified-date: 2026-05-07
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 Extend the Markdown-to-PDF design discussion beyond the first WeasyPrint implementation by defining a deterministic PDF profile direction for fonts, mixed-language content, cover pages, headers, footers, and page numbers.
 
-This is a draft research note. It records the current design direction and open decisions, not a settled implementation contract.
+This research is completed. The related implementation plan and job records now provide evidence for the profile, font, mixed-language, page chrome, and documentation slices.
 
 ## Why This Research
 
@@ -144,7 +144,7 @@ pageNumbers:
 
 Profile files should support both human-authored and machine-generated workflows.
 
-Provisional format contract:
+Implemented format contract:
 
 | Format | Role |
 | --- | --- |
@@ -161,7 +161,7 @@ cdx-chores md to-pdf --input report.md --profile ./pdf-profile.yml
 cdx-chores md to-pdf --input report.md --profile ./pdf-profile.json
 ```
 
-Provisional validation direction:
+Implemented validation direction:
 
 - reject unknown profile extensions
 - parse the profile into one normalized internal model
@@ -230,18 +230,9 @@ pdf:
 ---
 ```
 
-Equivalent CLI shape can be considered later:
-
-```bash
-cdx-chores md to-pdf \
-  --input report.md \
-  --lang en-US \
-  --content-langs zh-Hant,ja,ko
-```
-
 `content-langs` should prepare and validate the profile, but it should not imply exact language boundaries in the content. Exact font switching still needs language-marked Markdown or HTML.
 
-Preferred Markdown syntax, pending fixture validation, should use Pandoc span attributes:
+Preferred Markdown syntax uses Pandoc span attributes:
 
 ```md
 English text with [日本語]{lang=ja}, [한국어]{lang=ko}, and [繁體中文]{lang=zh-Hant}.
@@ -334,14 +325,26 @@ type FontCoverage = {
 };
 ```
 
-Potential future CLI surface:
+Implemented first CLI surface:
 
 ```bash
-cdx-chores fonts list
-cdx-chores fonts inspect --family "Noto Sans CJK TC"
-cdx-chores fonts check --text "繁體中文 測試"
-cdx-chores fonts check --text "git  main " --require nerd
+cdx-chores font list
+cdx-chores font list --family "Noto Sans CJK TC"
+cdx-chores font list --discovery native
+cdx-chores font list --json --debug
 ```
+
+`fonts` is accepted as an alias, but public docs should prefer the singular `font` command group.
+
+Deferred command ideas, not implemented in this slice:
+
+```bash
+cdx-chores font inspect --family "Noto Sans CJK TC"
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
+cdx-chores font check --family "JetBrainsMono Nerd Font" --text "git  main " --require nerd
+```
+
+`inspect` and `check` require a later command plan because the completed slice only exposes candidate discovery and diagnostics through `font list`. Glyph coverage exists as a deterministic internal capability for Markdown-to-PDF profile checks and tests, not as a public `font check` command.
 
 For Markdown-to-PDF, the profile should consume this capability through warnings or failures:
 
@@ -360,7 +363,7 @@ Suggested check modes:
 
 ### 6. Cover pages fit profile-driven HTML/CSS better than PDF post-processing
 
-The current recommendation is to keep cover pages in the generated recipe model. That means rendering them as part of the Pandoc HTML and WeasyPrint CSS flow instead of adding a separate PDF post-processing step:
+The implemented direction keeps cover pages in the generated recipe model. That means rendering them as part of the Pandoc HTML and WeasyPrint CSS flow instead of adding a separate PDF post-processing step:
 
 ```html
 <section class="pdf-cover">
@@ -426,7 +429,7 @@ The first profile slice should avoid `proposal` and `technical` because style an
 
 ### 7. Headers, footers, and page numbers fit paged-media fields
 
-The current recommendation is to keep page chrome in the profile because users often need company names, authors, document titles, dates, or page numbers on every page.
+The implemented direction keeps page chrome in the profile because users often need company names, authors, document titles, dates, or page numbers on every page.
 
 Suggested profile controls:
 
@@ -588,15 +591,15 @@ Stable tests should assert generated profile normalization, HTML, and CSS behavi
 
 Optional WeasyPrint smoke coverage should run only when renderer/font availability is controlled. The reliable core fixture should not require a specific system font installation on every developer machine or CI environment.
 
-## Provisional Direction
+## Implemented Direction
 
-The current recommendation is to introduce a PDF profile concept as a follow-up to the deterministic Markdown-to-PDF lane:
+The implemented profile direction introduces a PDF profile concept as a follow-up to the deterministic Markdown-to-PDF lane:
 
 ```bash
 cdx-chores md to-pdf --input report.md --profile ./pdf-profile.yml
 ```
 
-Provisional profile stance:
+Implemented profile stance:
 
 - document YAML first
 - accept JSON for automation
@@ -613,15 +616,15 @@ Provisional profile stance:
 - fail on unknown profile keys by default
 - defer Interactive mode and Codex SDK helper behavior
 
-Current first-slice recommendations:
+Completed first-slice recommendations:
 
-- `pdf.content-langs` can be represented in frontmatter/profile data; a CLI `--content-langs` convenience can be considered with implementation, but is not required for the first profile shape.
+- `pdf.content-langs` can be represented in frontmatter/profile data; no CLI `--content-langs` convenience is required for this slice.
 - ToC pages should not inherit body headers by default.
 - Cover styles start with `plain` and `report`.
 - Metadata comes from frontmatter first, with profile metadata as reusable defaults and repeatable `--meta key=value` overrides.
 - The default mini profile emits no page numbers.
 
-## Current Recommendations
+## Final Recommendations
 
 1. Profile unknown keys should fail by default.
 2. ToC pages should avoid body headers by default; page numbers remain opt-in.
@@ -629,16 +632,18 @@ Current first-slice recommendations:
 4. Metadata should primarily come from frontmatter, with profile metadata as reusable defaults and repeatable `--meta key=value` as the concise CLI override path.
 5. Font work should use a cross-platform module with platform discovery adapters and deterministic coverage checks. The first implementation slice selected platform-command discovery; font-file parser selection is deferred and remains out of scope for that slice.
 6. Font command follow-up work should use `--discovery auto|native|fontconfig` for discovery selection and `font list --debug` for command-run diagnostics; broader dependency checks stay with the existing top-level `doctor` command.
+7. `font inspect` and `font check` should be treated as a pre-Codex-Helper checkpoint: inspect discovered metadata first, choose the coverage parser strategy next, then expose text/glyph checks before Helper tries to suggest profile fixes.
 
 ## Related Research
 
 - [Markdown to PDF with WeasyPrint](research-2026-05-06-markdown-to-pdf-weasyprint.md) - completed first-lane research for deterministic Markdown-to-PDF rendering through Pandoc HTML and WeasyPrint.
 - [Font Command Discovery Options](research-2026-05-07-font-command-discovery-options.md) - follow-up research for `font list` diagnostics, discovery selection, and platform-specific adapter behavior.
+- [Font Inspect and Check Commands](research-2026-05-07-font-inspect-and-check-commands.md) - draft checkpoint for adding `font inspect` and `font check` before Codex Helper font assistance.
 - [PDF Backend Comparison for Merge, Split, and Image Workflows](research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - related PDF backend context for the separate `pdf` command group.
 
 ## Related Plans
 
-- [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - draft implementation plan for the profile layer described by this research.
+- [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for the profile layer described by this research.
 - [Markdown to PDF WeasyPrint Implementation](../plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md) - implementation plan for the first deterministic `md to-pdf` workflow.
 - [PDF CLI Workflows Implementation](../plans/plan-2026-03-11-pdf-cli-workflows-implementation.md) - related draft plan for PDF-native workflows.
 
@@ -647,5 +652,6 @@ Current first-slice recommendations:
 - [Markdown to PDF Profile Phases 1-3](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - first profile implementation slice for profile parsing, command surface, metadata merge, page chrome, and opt-in page numbers.
 - [Markdown to PDF Profile Phases 4-5](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
 - [Markdown to PDF Profile Phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, initial `font list` command, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
+- [Markdown to PDF Profile Phase 8 Docs](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phase-8-docs.md) - public profile guide, README alignment, status closeout, and final validation evidence.
 - [Markdown to PDF WeasyPrint Phases 1-5](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - implementation, renderer, asset policy, tests, and `doctor` evidence for the first deterministic Markdown-to-PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - public guide, README alignment, status closeout, and final validation evidence for the first lane.
