@@ -398,11 +398,13 @@ Keep `actionMdToPdf` as the orchestration boundary:
 ### Phase 7 follow-up: Design font command diagnostics and adapter controls
 
 - [x] Draft follow-up research for font discovery option naming, platform behavior, and debug output shape.
-- [ ] Resolve the user-facing option name, with `--discovery auto|native|fontconfig` as the current research recommendation.
-- [ ] Keep `auto` as the default discovery mode, with macOS preferring `fc-list` when available, Linux using fontconfig, and Windows using native registry discovery.
-- [ ] Define `native` per platform before implementation, especially because Linux native discovery is still fontconfig.
-- [ ] Decide whether `font doctor` belongs in this slice or should remain separate from `font list --debug`.
-- [ ] Add implementation tasks only after the follow-up research settles the command pattern.
+- [x] Use `--discovery auto|native|fontconfig` as the user-facing selector.
+- [x] Keep `auto` as the default discovery mode, with macOS preferring `fc-list` when available, Linux using fontconfig, and Windows using native registry discovery.
+- [x] Define `native` per platform before implementation, especially because Linux native discovery is still fontconfig.
+- [x] Keep this slice on `font list --debug`; broader external dependency checks belong to the existing top-level `doctor` command.
+- [x] Use concise normal-output info lines when `auto` chooses fontconfig or falls back.
+- [x] Use sanitized failure messages only.
+- [ ] Add implementation tasks for `--discovery`, `--debug`, debug JSON shape, info text, and deterministic adapter-selection tests.
 
 ### Phase 8: Docs and verification
 

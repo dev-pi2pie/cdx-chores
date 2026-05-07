@@ -21,7 +21,7 @@ That behavior raises real user questions:
 - How can a user force the native platform path?
 - How can a user verify behavior when `fc-list` exists on macOS?
 - What should happen on Windows, where fontconfig is not normally present?
-- Should diagnostics live on `font list --debug`, a separate `font doctor`, or both?
+- What should normal text output say when `auto` chooses a fallback or non-native path?
 
 The implementation plan should not lock in ambiguous option wording until these questions are settled.
 
@@ -37,6 +37,7 @@ This research covers:
 
 This research does not cover:
 
+- a new `font doctor` command
 - glyph coverage implementation
 - font file parsing
 - PDF profile font fallback generation
@@ -111,7 +112,29 @@ Suggested `native` behavior:
 
 Windows should not try fontconfig in `auto` or `native`. If a Windows user has MSYS2/Cygwin/fontconfig installed, they can opt into that later with `--discovery fontconfig`.
 
-### 3. Add debug output without changing normal output
+### 3. Show concise info when `auto` makes a meaningful choice
+
+Normal text output should let the user know when discovery did something non-obvious, without turning every run into a diagnostic report.
+
+Example when macOS `auto` uses fontconfig:
+
+```text
+Discovery: auto
+Adapter: macos-fontconfig
+Info: using fontconfig because fc-list is available. Use --discovery native to force macOS system_profiler.
+```
+
+Example when macOS `auto` falls back to native discovery:
+
+```text
+Discovery: auto
+Adapter: macos-system-profiler
+Info: fontconfig was unavailable, so macOS native discovery was used.
+```
+
+This text belongs in normal output because it explains why the result may differ from user expectations. It should stay short and action-oriented.
+
+### 4. Add debug output without changing normal output shape
 
 Normal text output should stay concise. Diagnostics should be opt-in:
 
@@ -127,7 +150,9 @@ Debug output should answer:
 - attempted adapters
 - command duration
 - whether each attempt succeeded
-- failure detail for failed attempts
+- sanitized failure detail for failed attempts
+
+Debug output should not include raw command stderr. Raw stderr can be noisy and may expose local paths or environment details. The first implementation should use sanitized failure messages only.
 
 Suggested JSON shape:
 
@@ -142,7 +167,8 @@ Suggested JSON shape:
         "adapter": "fontconfig",
         "command": "fc-list",
         "status": "success",
-        "durationMs": 42
+        "durationMs": 42,
+        "message": "fontconfig discovery succeeded"
       }
     ]
   },
@@ -161,23 +187,21 @@ Debug:
 - fontconfig: success in 42ms
 ```
 
-### 4. Add `font doctor` only if it has a different job
+If an attempt fails, text output should use a sanitized message:
 
-`font list --debug` explains one command run. `font doctor` should exist only if it checks the environment more broadly:
-
-```bash
-cdx-chores font doctor
+```text
+Debug:
+- fontconfig: skipped in 8ms (fc-list was not available)
+- macos-system-profiler: success in 1840ms
 ```
 
-Possible `font doctor` responsibilities:
+### 5. Keep dependency checks in top-level `doctor`
 
-- report whether `fc-list` is available
-- report whether native discovery is available for the current platform
-- report command versions when available
-- report known limitations for the platform
-- avoid listing every installed font
+This research should not introduce `font doctor`.
 
-If this is too much for the next slice, start with `font list --debug` and defer `font doctor`.
+The repo already has a top-level `doctor` command for external dependency and capability checks. If font discovery needs a broader environment report later, it should be designed as part of that existing doctor surface instead of adding a second doctor concept under `font`.
+
+`font list --debug` has a narrower job: explain the discovery path for this command run.
 
 ## Provisional Decision
 
@@ -187,7 +211,9 @@ The clearest next implementation direction is:
 2. Keep `auto` as the default.
 3. Add `--debug` to `font list`.
 4. Include debug details in JSON only when `--debug` is present.
-5. Keep `font doctor` as a separate follow-up unless environment diagnostics become necessary immediately.
+5. Use concise normal-output info lines when `auto` chooses fontconfig or falls back.
+6. Use sanitized failure messages only.
+7. Keep broader dependency checks in the existing top-level `doctor` command.
 
 This pattern avoids adding many flags while still giving users a way to verify whether `fc-list`, `system_profiler`, or Windows registry discovery was used.
 
@@ -204,14 +230,14 @@ Suggested test cases:
 - Windows `auto` and `native` use registry discovery.
 - Windows `fontconfig` is explicit only.
 - `--json --debug` includes selected mode, selected adapter, attempts, statuses, and durations.
+- debug failure messages are sanitized and do not expose raw stderr.
+- normal text output includes a concise info line when `auto` chooses fontconfig or falls back.
 - normal text output does not show debug details unless `--debug` is present.
 
 ## Open Questions
 
-1. Should the user-facing option be named `--discovery`, `--source`, or `--adapter`?
-2. Should `font doctor` ship with the same slice as `--debug`, or remain a later diagnostic command?
-3. Should failed attempts always appear in text debug output, or only in JSON debug output?
-4. Should debug output include raw command stderr, or a sanitized failure message only?
+1. Should failed attempts always appear in text debug output, or only in JSON debug output?
+2. Should normal-output info lines appear for every non-default adapter, or only for `auto` choosing fontconfig or falling back?
 
 ## Related Research
 

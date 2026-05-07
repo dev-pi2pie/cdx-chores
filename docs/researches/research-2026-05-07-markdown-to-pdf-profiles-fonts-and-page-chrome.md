@@ -628,7 +628,7 @@ Current first-slice recommendations:
 3. Built-in cover styles should start with `plain` and `report`.
 4. Metadata should primarily come from frontmatter, with profile metadata as reusable defaults and repeatable `--meta key=value` as the concise CLI override path.
 5. Font work should use a cross-platform module with platform discovery adapters and deterministic coverage checks. The first implementation slice selected platform-command discovery; font-file parser selection is deferred and remains out of scope for that slice.
-6. Font command follow-up work should resolve diagnostics and discovery-selection wording in a dedicated research note before adding more command options.
+6. Font command follow-up work should use `--discovery auto|native|fontconfig` for discovery selection and `font list --debug` for command-run diagnostics; broader dependency checks stay with the existing top-level `doctor` command.
 
 ## Related Research
 

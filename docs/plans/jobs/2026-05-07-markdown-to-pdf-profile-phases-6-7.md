@@ -51,12 +51,13 @@ The initial `font list` command now exposes discovered font candidates, but adap
 
 That research should settle:
 
-- the user-facing option name, currently leaning toward `--discovery auto|native|fontconfig`
-- whether `font list --debug`, `font doctor`, or both should ship first
-- JSON debug output shape for selected adapter, attempted adapters, durations, and failure details
+- the user-facing option name, now recommended as `--discovery auto|native|fontconfig`
+- `font list --debug` as the command-run diagnostic surface
+- JSON debug output shape for selected adapter, attempted adapters, durations, and sanitized failure details
+- short text info when `auto` chooses fontconfig or falls back
 - the platform policy for macOS, Linux, Windows, and explicit Windows fontconfig opt-in
 
-This should remain separate from glyph coverage. Discovery still reports candidate font faces only.
+This should remain separate from glyph coverage and from broader external dependency checks. Discovery still reports candidate font faces only, while broader dependency checks belong to the existing top-level `doctor` command.
 
 ## Related Plan
 
