@@ -395,7 +395,7 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [x] Avoid asserting renderer-specific RTL layout quality.
 - [x] Keep all expanded fixture tests deterministic through mocked or controlled font inventory.
 
-### Phase 7 follow-up: Design font command diagnostics and adapter controls
+### Phase 7 follow-up: Completed font command diagnostics and adapter controls
 
 - [x] Draft follow-up research for font discovery option naming, platform behavior, and debug output shape.
 - [x] Use `--discovery auto|native|fontconfig` as the user-facing selector.
@@ -405,7 +405,7 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [x] Use concise normal-output info lines only when default `auto` chooses fontconfig or falls back.
 - [x] Use sanitized failure messages only.
 - [x] Show sanitized failed attempts in text debug output and JSON debug output.
-- [ ] Add implementation tasks for `--discovery`, `--debug`, debug JSON shape, default `auto` info text, and deterministic adapter-selection tests.
+- [x] Implement `--discovery`, `--debug`, debug JSON shape, default `auto` info text, and deterministic adapter-selection tests.
 
 ### Phase 8: Docs and verification
 

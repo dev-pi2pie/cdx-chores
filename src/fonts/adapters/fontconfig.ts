@@ -101,7 +101,7 @@ export const fontconfigFontAdapter: FontDiscoveryAdapter = {
     if (!result.ok) {
       return {
         faces: [],
-        warnings: [result.stderr.trim() || "fontconfig discovery failed."],
+        warnings: ["fontconfig discovery failed."],
       };
     }
     return {

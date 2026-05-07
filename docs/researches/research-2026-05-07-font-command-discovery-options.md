@@ -1,7 +1,7 @@
 ---
 title: "Font Command Discovery Options"
 created-date: 2026-05-07
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -207,9 +207,9 @@ The repo already has a top-level `doctor` command for external dependency and ca
 
 `font list --debug` has a narrower job: explain the discovery path for this command run.
 
-## Provisional Decision
+## Final Decision
 
-The clearest next implementation direction is:
+The implemented command pattern is:
 
 1. Add `--discovery auto|native|fontconfig`.
 2. Keep `auto` as the default.
@@ -222,9 +222,9 @@ The clearest next implementation direction is:
 
 This pattern avoids adding many flags while still giving users a way to verify whether `fc-list`, `system_profiler`, or Windows registry discovery was used.
 
-## Fixture Direction
+## Fixture Coverage
 
-Tests should stay adapter-driven and not depend on the developer machine's installed fonts.
+Tests stay adapter-driven and do not depend on the developer machine's installed fonts.
 
 Suggested test cases:
 
@@ -252,4 +252,8 @@ Suggested test cases:
 
 ## Related Plan
 
-- [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - implementation plan that should consume this follow-up research before adding more font command options.
+- [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - implementation plan that consumed this follow-up research for the completed Phase 7 font diagnostics work.
+
+## Related Job
+
+- [Markdown to PDF Profile Phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - completed implementation evidence for the font discovery diagnostics described by this research.

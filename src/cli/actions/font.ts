@@ -1,4 +1,10 @@
-import { discoverSystemFonts, type FontDiscoveryCommandRunner, type FontFace } from "../../fonts";
+import {
+  discoverSystemFonts,
+  type DiscoverFontsResult,
+  type FontDiscoveryCommandRunner,
+  type FontDiscoveryMode,
+  type FontFace,
+} from "../../fonts";
 import { getCliColors } from "../colors";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
@@ -8,6 +14,8 @@ export interface FontListOptions {
   json?: boolean;
   family?: string;
   limit?: number;
+  debug?: boolean;
+  discovery?: FontDiscoveryMode;
   runner?: FontDiscoveryCommandRunner;
 }
 
@@ -63,6 +71,18 @@ function uniqueFontFaces(faces: FontFace[]): FontFace[] {
   });
 }
 
+function fontDiscoveryInfo(discovery: DiscoverFontsResult): string[] {
+  if (discovery.selectionReason === "macos-auto-fontconfig") {
+    return [
+      "using fontconfig because fc-list is available. Use --discovery native to force macOS system_profiler.",
+    ];
+  }
+  if (discovery.selectionReason === "macos-auto-native-fallback") {
+    return ["fontconfig was unavailable, so macOS native discovery was used."];
+  }
+  return [];
+}
+
 export async function actionFontList(
   runtime: CliRuntime,
   options: FontListOptions = {},
@@ -70,8 +90,11 @@ export async function actionFontList(
   const limit = normalizeLimit(options.limit);
   const discovery = await discoverSystemFonts({
     platform: runtime.platform,
+    discovery: options.discovery,
+    includeAttempts: options.debug,
     runner: options.runner,
   });
+  const info = fontDiscoveryInfo(discovery);
   const familyFilter = options.family?.trim();
   const faces = uniqueFontFaces(discovery.faces)
     .filter((face) => matchesFamily(face, familyFilter))
@@ -83,7 +106,11 @@ export async function actionFontList(
       JSON.stringify(
         {
           adapter: discovery.adapter,
+          discovery: discovery.discovery,
           warnings: discovery.warnings,
+          ...(options.debug && discovery.attempts
+            ? { debug: { attempts: discovery.attempts } }
+            : {}),
           count: faces.length,
           fonts: faces,
         },
@@ -96,7 +123,22 @@ export async function actionFontList(
 
   const pc = getCliColors(runtime);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font list")));
+  printLine(runtime.stdout, `${pc.dim("Discovery:")} ${discovery.discovery}`);
   printLine(runtime.stdout, `${pc.dim("Adapter:")} ${discovery.adapter}`);
+  for (const message of info) {
+    printLine(runtime.stdout, `${pc.dim("Info:")} ${message}`);
+  }
+  if (options.debug && discovery.attempts) {
+    printLine(runtime.stdout, "");
+    printLine(runtime.stdout, pc.bold("Debug:"));
+    for (const attempt of discovery.attempts) {
+      const status = attempt.status === "success" ? "success" : "failed";
+      printLine(
+        runtime.stdout,
+        `- ${attempt.adapter}: ${status} in ${attempt.durationMs}ms (${attempt.message})`,
+      );
+    }
+  }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
       printLine(runtime.stderr, `Warning: ${warning}`);

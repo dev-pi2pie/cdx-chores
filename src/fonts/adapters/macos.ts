@@ -1,7 +1,6 @@
 import { extname } from "node:path";
 
 import type { FontDiscoveryAdapter, FontFace, FontFormat, FontStyle } from "../types";
-import { fontconfigFontAdapter } from "./fontconfig";
 
 interface MacosSystemProfilerFont {
   _name?: string;
@@ -88,19 +87,11 @@ export function parseMacosSystemProfilerFonts(stdout: string): FontFace[] {
 export const macosFontAdapter: FontDiscoveryAdapter = {
   name: "macos-system-profiler",
   async discover({ runner }) {
-    const fontconfigResult = await fontconfigFontAdapter.discover({ runner });
-    if (fontconfigResult.faces.length > 0) {
-      return {
-        ...fontconfigResult,
-        adapterName: "macos-fontconfig",
-      };
-    }
-
     const result = await runner("system_profiler", ["SPFontsDataType", "-json"]);
     if (!result.ok) {
       return {
         faces: [],
-        warnings: [result.stderr.trim() || "macOS font discovery failed."],
+        warnings: ["macOS font discovery failed."],
       };
     }
     try {

@@ -40,15 +40,34 @@ export interface FontDiscoveryAdapter {
   discover(input: FontDiscoveryAdapterInput): Promise<FontDiscoveryAdapterResult>;
 }
 
+export const FONT_DISCOVERY_MODES = ["auto", "native", "fontconfig"] as const;
+
+export type FontDiscoveryMode = (typeof FONT_DISCOVERY_MODES)[number];
+
+export type FontDiscoverySelectionReason = "macos-auto-fontconfig" | "macos-auto-native-fallback";
+
+export interface FontDiscoveryAttempt {
+  adapter: string;
+  command: string;
+  status: "success" | "failed";
+  durationMs: number;
+  message: string;
+}
+
 export interface DiscoverFontsInput {
   platform?: NodeJS.Platform;
   runner?: FontDiscoveryCommandRunner;
+  discovery?: FontDiscoveryMode;
+  includeAttempts?: boolean;
 }
 
 export interface DiscoverFontsResult {
   faces: FontFace[];
   warnings: string[];
   adapter: string;
+  discovery: FontDiscoveryMode;
+  selectionReason?: FontDiscoverySelectionReason;
+  attempts?: FontDiscoveryAttempt[];
 }
 
 export interface FontCodepointRange {

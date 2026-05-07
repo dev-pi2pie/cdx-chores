@@ -88,7 +88,7 @@ export const windowsFontAdapter: FontDiscoveryAdapter = {
     if (!result.ok) {
       return {
         faces: [],
-        warnings: [result.stderr.trim() || "Windows font discovery failed."],
+        warnings: ["Windows font discovery failed."],
       };
     }
     try {
