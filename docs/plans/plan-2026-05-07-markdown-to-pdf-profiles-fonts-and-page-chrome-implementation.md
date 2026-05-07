@@ -295,7 +295,13 @@ Initial responsibilities:
 - report missing codepoints
 - report likely Nerd Font glyph support for selected code samples
 
-The implementation must select a parser/discovery library or platform command strategy before adding strict coverage checks. Family names alone are not proof of renderability.
+Phase 6 uses platform-command discovery as the selected strategy for this plan slice:
+
+- macOS: `system_profiler SPFontsDataType -json`
+- Linux/fontconfig: `fc-list --format ...`
+- Windows: PowerShell registry read of installed font names/files
+
+Discovery remains candidate discovery only. Family names alone are not proof of renderability, so glyph decisions use controlled coverage inventories and sample text. Font-file parser selection is deferred and out of scope for this plan slice.
 
 ### Action and command wiring
 
@@ -370,23 +376,23 @@ Keep `actionMdToPdf` as the orchestration boundary:
 
 ### Phase 6: Add shared `src/fonts/` discovery and coverage
 
-- [ ] Add shared `src/fonts/` types.
-- [ ] Add platform discovery adapters for macOS, Linux, Windows, and fontconfig.
-- [ ] Choose and document the font-file parser or platform command strategy.
-- [ ] Add deterministic coverage checks for sample text.
-- [ ] Add mocked tests for missing CJK glyphs.
-- [ ] Add mocked tests for missing Nerd Font glyphs.
-- [ ] Avoid CI dependence on locally installed system fonts.
+- [x] Add shared `src/fonts/` types.
+- [x] Add platform discovery adapters for macOS, Linux, Windows, and fontconfig.
+- [x] Choose and document the font-file parser or platform command strategy.
+- [x] Add deterministic coverage checks for sample text.
+- [x] Add mocked tests for missing CJK glyphs.
+- [x] Add mocked tests for missing Nerd Font glyphs.
+- [x] Avoid CI dependence on locally installed system fonts.
 
 ### Phase 7: Expand mixed-language fixtures
 
-- [ ] Keep `zh-Hant`, `zh-Hans`, `ja`, and `ko` as first-class fixture cases.
-- [ ] Add one Latin-extended smoke case, such as `vi` or `pl`.
-- [ ] Add one RTL smoke case, such as `ar` or `he`.
-- [ ] Keep Nerd Font code glyphs in a separate code-font fixture path.
-- [ ] Assert profile normalization and generated CSS for the expanded language set.
-- [ ] Avoid asserting renderer-specific RTL layout quality.
-- [ ] Keep all expanded fixture tests deterministic through mocked or controlled font inventory.
+- [x] Keep `zh-Hant`, `zh-Hans`, `ja`, and `ko` as first-class fixture cases.
+- [x] Add one Latin-extended smoke case, such as `vi` or `pl`.
+- [x] Add one RTL smoke case, such as `ar` or `he`.
+- [x] Keep Nerd Font code glyphs in a separate code-font fixture path.
+- [x] Assert profile normalization and generated CSS for the expanded language set.
+- [x] Avoid asserting renderer-specific RTL layout quality.
+- [x] Keep all expanded fixture tests deterministic through mocked or controlled font inventory.
 
 ### Phase 8: Docs and verification
 
@@ -397,9 +403,9 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Document CJK as the first-class mixed-language target and Latin-extended/RTL as smoke coverage.
 - [ ] Document page-number defaults and `{pages}` constraints.
 - [x] Add a job record when implementation starts.
-- [ ] Link completed implementation evidence back to this plan and the research doc before marking either complete.
-- [ ] Run focused Markdown PDF tests.
-- [ ] Run:
+- [x] Link completed implementation evidence back to this plan and the research doc before marking either complete.
+- [x] Run focused Markdown PDF tests.
+- [x] Run:
 
 ```text
 bun run lint
@@ -407,6 +413,24 @@ bun run format:check
 bun run build
 git diff --check
 ```
+
+## Implementation Evidence
+
+Completed evidence is linked by slice:
+
+- Phases 1-3: [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md)
+- Phases 4-5: [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md)
+- Phases 6-7: [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md)
+
+Phase 6-7 validation evidence:
+
+- `bun test test/fonts.test.ts`
+- `bun test test/cli-actions-md-to-pdf.test.ts`
+- `bun test test/fonts.test.ts test/cli-actions-md-to-pdf.test.ts`
+- `bun run lint`
+- `bun run format:check`
+- `bun run build`
+- `git diff --check`
 
 ## Risks and Mitigations
 
@@ -452,5 +476,6 @@ git diff --check
 
 - [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - profile model, profile command surface, page chrome, metadata merge, and opt-in page-number implementation.
 - [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
+- [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
 - [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.
