@@ -297,7 +297,7 @@ Initial responsibilities:
 
 Phase 6 uses platform-command discovery as the selected strategy for this plan slice:
 
-- macOS: `system_profiler SPFontsDataType -json`
+- macOS: `fc-list --format ...` when available, with `system_profiler SPFontsDataType -json` as a fallback
 - Linux/fontconfig: `fc-list --format ...`
 - Windows: PowerShell registry read of installed font names/files
 
@@ -383,6 +383,7 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [x] Add mocked tests for missing CJK glyphs.
 - [x] Add mocked tests for missing Nerd Font glyphs.
 - [x] Avoid CI dependence on locally installed system fonts.
+- [x] Add initial `font list` command surface for discovered font candidates.
 
 ### Phase 7: Expand mixed-language fixtures
 
@@ -393,6 +394,15 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [x] Assert profile normalization and generated CSS for the expanded language set.
 - [x] Avoid asserting renderer-specific RTL layout quality.
 - [x] Keep all expanded fixture tests deterministic through mocked or controlled font inventory.
+
+### Phase 7 follow-up: Design font command diagnostics and adapter controls
+
+- [x] Draft follow-up research for font discovery option naming, platform behavior, and debug output shape.
+- [ ] Resolve the user-facing option name, with `--discovery auto|native|fontconfig` as the current research recommendation.
+- [ ] Keep `auto` as the default discovery mode, with macOS preferring `fc-list` when available, Linux using fontconfig, and Windows using native registry discovery.
+- [ ] Define `native` per platform before implementation, especially because Linux native discovery is still fontconfig.
+- [ ] Decide whether `font doctor` belongs in this slice or should remain separate from `font list --debug`.
+- [ ] Add implementation tasks only after the follow-up research settles the command pattern.
 
 ### Phase 8: Docs and verification
 
@@ -449,6 +459,9 @@ Phase 6-7 validation evidence:
 - Risk: font discovery differs across macOS, Linux, and Windows.
   Mitigation: keep platform adapters small, separate discovery from coverage, and make tests use controlled or mocked font inventory.
 
+- Risk: users cannot tell whether `font list` used `fc-list`, `system_profiler`, or Windows registry discovery.
+  Mitigation: add explicit adapter controls plus debug/doctor output that reports attempted tools and the selected adapter.
+
 - Risk: CJK and Nerd Font support is inferred from family names instead of actual glyph coverage.
   Mitigation: add coverage checks based on font-file inspection or controlled samples and report missing codepoints.
 
@@ -476,6 +489,6 @@ Phase 6-7 validation evidence:
 
 - [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - profile model, profile command surface, page chrome, metadata merge, and opt-in page-number implementation.
 - [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
-- [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
+- [Markdown to PDF Profile Phases 6-7](jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, initial `font list` command, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
 - [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.

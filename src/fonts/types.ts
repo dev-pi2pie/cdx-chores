@@ -32,6 +32,7 @@ export interface FontDiscoveryAdapterInput {
 export interface FontDiscoveryAdapterResult {
   faces: FontFace[];
   warnings: string[];
+  adapterName?: string;
 }
 
 export interface FontDiscoveryAdapter {

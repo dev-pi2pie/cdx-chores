@@ -1,12 +1,21 @@
 import { extname } from "node:path";
 
 import type { FontDiscoveryAdapter, FontFace, FontFormat, FontStyle } from "../types";
+import { fontconfigFontAdapter } from "./fontconfig";
 
 interface MacosSystemProfilerFont {
   _name?: string;
   family?: string;
   type?: string;
   path?: string;
+  style?: string;
+  typefaces?: MacosSystemProfilerTypeface[];
+}
+
+interface MacosSystemProfilerTypeface {
+  _name?: string;
+  family?: string;
+  fullname?: string;
   style?: string;
 }
 
@@ -43,28 +52,50 @@ function fontStyleFromText(value: string | undefined): FontStyle {
 
 export function parseMacosSystemProfilerFonts(stdout: string): FontFace[] {
   const parsed = JSON.parse(stdout) as { SPFontsDataType?: MacosSystemProfilerFont[] };
-  return (parsed.SPFontsDataType ?? [])
-    .map((font) => {
-      const fullName = font._name?.trim() ?? "";
-      const family = font.family?.trim() || fullName;
-      if (!family) {
-        return null;
-      }
-      return {
-        family,
-        fullName: fullName || family,
-        style: fontStyleFromText(font.style ?? fullName),
-        path: font.path,
-        format: fontFormatFromProfiler(font.type, font.path),
-        source: "system",
-      } satisfies FontFace;
-    })
-    .filter((font): font is FontFace => font !== null);
+  return (parsed.SPFontsDataType ?? []).flatMap((font) => {
+    const typefaces =
+      font.typefaces && font.typefaces.length > 0
+        ? font.typefaces
+        : [
+            {
+              _name: font._name,
+              family: font.family,
+              fullname: font._name,
+              style: font.style,
+            },
+          ];
+
+    return typefaces
+      .map((typeface) => {
+        const fullName = typeface.fullname?.trim() || typeface._name?.trim() || "";
+        const family = typeface.family?.trim() || font.family?.trim() || fullName;
+        if (!family) {
+          return null;
+        }
+        return {
+          family,
+          fullName: fullName || family,
+          style: fontStyleFromText(typeface.style ?? fullName),
+          path: font.path,
+          format: fontFormatFromProfiler(font.type, font.path),
+          source: "system",
+        } satisfies FontFace;
+      })
+      .filter((font): font is FontFace => font !== null);
+  });
 }
 
 export const macosFontAdapter: FontDiscoveryAdapter = {
   name: "macos-system-profiler",
   async discover({ runner }) {
+    const fontconfigResult = await fontconfigFontAdapter.discover({ runner });
+    if (fontconfigResult.faces.length > 0) {
+      return {
+        ...fontconfigResult,
+        adapterName: "macos-fontconfig",
+      };
+    }
+
     const result = await runner("system_profiler", ["SPFontsDataType", "-json"]);
     if (!result.ok) {
       return {

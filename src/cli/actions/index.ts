@@ -1,5 +1,7 @@
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
+export { actionFontList } from "./font";
+export type { FontListOptions } from "./font";
 export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
 export type { DataPreviewOptions } from "./data-preview";
 export { actionDataParquetPreview } from "./data-parquet-preview";

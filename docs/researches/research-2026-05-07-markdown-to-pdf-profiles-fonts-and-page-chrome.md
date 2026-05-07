@@ -628,10 +628,12 @@ Current first-slice recommendations:
 3. Built-in cover styles should start with `plain` and `report`.
 4. Metadata should primarily come from frontmatter, with profile metadata as reusable defaults and repeatable `--meta key=value` as the concise CLI override path.
 5. Font work should use a cross-platform module with platform discovery adapters and deterministic coverage checks. The first implementation slice selected platform-command discovery; font-file parser selection is deferred and remains out of scope for that slice.
+6. Font command follow-up work should resolve diagnostics and discovery-selection wording in a dedicated research note before adding more command options.
 
 ## Related Research
 
 - [Markdown to PDF with WeasyPrint](research-2026-05-06-markdown-to-pdf-weasyprint.md) - completed first-lane research for deterministic Markdown-to-PDF rendering through Pandoc HTML and WeasyPrint.
+- [Font Command Discovery Options](research-2026-05-07-font-command-discovery-options.md) - follow-up research for `font list` diagnostics, discovery selection, and platform-specific adapter behavior.
 - [PDF Backend Comparison for Merge, Split, and Image Workflows](research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - related PDF backend context for the separate `pdf` command group.
 
 ## Related Plans
@@ -644,6 +646,6 @@ Current first-slice recommendations:
 
 - [Markdown to PDF Profile Phases 1-3](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - first profile implementation slice for profile parsing, command surface, metadata merge, page chrome, and opt-in page numbers.
 - [Markdown to PDF Profile Phases 4-5](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
-- [Markdown to PDF Profile Phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
+- [Markdown to PDF Profile Phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md) - shared font module, initial `font list` command, platform command discovery adapters, deterministic coverage checks, and expanded mixed-language fixtures.
 - [Markdown to PDF WeasyPrint Phases 1-5](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - implementation, renderer, asset policy, tests, and `doctor` evidence for the first deterministic Markdown-to-PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - public guide, README alignment, status closeout, and final validation evidence for the first lane.
