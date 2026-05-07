@@ -500,7 +500,7 @@ Preferred CLI override shape:
 cdx-chores md to-pdf \
   --input report.md \
   --meta company="Example Co." \
-  --meta author="Nako"
+  --meta author="Noname"
 ```
 
 Resolution order:
@@ -612,7 +612,7 @@ Provisional profile stance:
 - fail on unknown profile keys by default
 - defer Interactive mode and Codex SDK helper behavior
 
-Settled first-slice decisions:
+Current first-slice recommendations:
 
 - `pdf.content-langs` can be represented in frontmatter/profile data; a CLI `--content-langs` convenience can be considered with implementation, but is not required for the first profile shape.
 - ToC pages should not inherit body headers by default.
@@ -620,7 +620,7 @@ Settled first-slice decisions:
 - Metadata comes from frontmatter first, with profile metadata as reusable defaults and repeatable `--meta key=value` overrides.
 - The default mini profile emits no page numbers.
 
-## Resolved Questions
+## Current Recommendations
 
 1. Profile unknown keys should fail by default.
 2. ToC pages should avoid body headers by default; page numbers remain opt-in.
@@ -635,6 +635,7 @@ Settled first-slice decisions:
 
 ## Related Plans
 
+- [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - draft implementation plan for the profile layer described by this research.
 - [Markdown to PDF WeasyPrint Implementation](../plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md) - implementation plan for the first deterministic `md to-pdf` workflow.
 - [PDF CLI Workflows Implementation](../plans/plan-2026-03-11-pdf-cli-workflows-implementation.md) - related draft plan for PDF-native workflows.
 

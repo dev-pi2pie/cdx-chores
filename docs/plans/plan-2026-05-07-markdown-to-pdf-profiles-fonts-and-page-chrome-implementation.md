@@ -1,0 +1,433 @@
+---
+title: "Markdown to PDF profiles, fonts, and page chrome implementation"
+created-date: 2026-05-07
+status: draft
+agent: codex
+---
+
+## Goal
+
+Implement a deterministic Markdown-to-PDF profile layer for reusable PDF rendering configuration, mixed-language font control, cover pages, headers, footers, page numbers, and concise metadata overrides.
+
+This plan builds on the completed `md to-pdf` WeasyPrint workflow. It should not introduce a new Interactive mode flow or Codex SDK helper.
+
+## Why This Plan
+
+The related research narrows the next Markdown PDF direction:
+
+- keep the existing direct `md to-pdf` path useful without requiring a profile file
+- add a built-in mini profile as the final fallback
+- document YAML profiles first while accepting JSON profiles for automation
+- keep profile fields declarative and reject unknown keys by default
+- support basic mixed-language documents through ordered font fallback
+- support advanced mixed-language control through document `lang`, `pdf.content-langs`, and explicit language-marked Markdown or HTML
+- keep cover styles to `plain` and `report` in the first slice
+- keep page numbers disabled by default and avoid `{pages}` unless document-wide numbering is explicitly requested
+- use repeatable `--meta key=value` for concise CLI metadata overrides
+- make font discovery and glyph coverage cross-platform, deterministic, and testable
+
+This plan turns those decisions into an implementation sequence.
+
+## Starting State
+
+The repository already has the first deterministic Markdown PDF lane:
+
+- `src/cli/commands/markdown.ts` exposes `md to-pdf` and `md pdf-template init`.
+- `src/cli/actions/markdown.ts` contains `actionMdToPdf` and `actionMdPdfTemplateInit`.
+- `src/cli/markdown-pdf/validation.ts` normalizes presets, page options, margins, ToC behavior, and remote-asset policy.
+- `src/cli/markdown-pdf/recipe.ts` generates the built-in Pandoc template and print CSS.
+- `src/cli/markdown-pdf/render.ts` orchestrates Pandoc and WeasyPrint rendering.
+- `doctor` already reports the `md.to-pdf` capability through Pandoc and WeasyPrint checks.
+
+There is no profile parser, no `--profile`, no `md pdf-profile init`, no page-chrome profile model, no reusable font module, and no mixed-language PDF fixture flow.
+
+## Scope
+
+### Profile input
+
+- Add `--profile <path>` to `md to-pdf`.
+- Accept `.yml`, `.yaml`, and `.json`.
+- Generate YAML by default for human-authored profiles.
+- Accept JSON for automation and generated-system input.
+- Reject unknown extensions.
+- Parse profiles into one normalized internal model.
+- Fail when the parsed profile is not a plain object.
+- Fail on unknown profile keys by default.
+- Keep raw CSS out of profile values; raw CSS remains `--css <path>`.
+
+### Profile materialization
+
+- Add:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.yml
+```
+
+- Infer the output format from `.yml`, `.yaml`, or `.json`.
+- Write the built-in mini profile by default.
+- Support `--preset <article|report|wide-table|compact|reader>` to materialize profile values derived from the existing Markdown PDF renderer presets defined in `src/cli/markdown-pdf/validation.ts`.
+- Require `--overwrite` when the profile output already exists.
+
+### Option precedence
+
+Use this order:
+
+```text
+CLI overrides
+  -> explicit profile file
+  -> preset values
+  -> built-in mini profile fallback
+```
+
+The built-in mini profile should keep profile-free usage stable:
+
+```yaml
+page:
+  size: A4
+  orientation: portrait
+  margin: 18mm
+
+fonts:
+  body:
+    default: serif
+  code:
+    default: monospace
+
+cover:
+  enabled: false
+
+header: {}
+footer: {}
+
+pageNumbers:
+  enabled: false
+```
+
+### Metadata
+
+- Prefer Markdown frontmatter for document-specific metadata.
+- Use profile `metadata` as reusable defaults.
+- Add repeatable `--meta key=value` as the concise CLI override path.
+- Avoid one-off metadata flags such as `--company`, `--author`, `--subtitle`, and `--date`.
+- Resolve metadata in this order:
+
+```text
+--meta key=value
+  -> Markdown frontmatter
+  -> profile metadata
+  -> derived defaults
+```
+
+### Page chrome
+
+- Add profile-controlled `header`, `footer`, and `pageNumbers` fields.
+- Keep page numbers disabled by default.
+- When page numbers are enabled, default to:
+
+```yaml
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "{page}"
+  scope: body
+```
+
+- Treat `{pages}` as document-wide total pages only.
+- Do not make `{pages}` part of the recommended default format.
+- Do not show normal header/footer on cover pages.
+- Do not make ToC pages inherit body headers by default.
+- Let body pages use configured header/footer and page numbers only when enabled.
+
+### Cover pages
+
+- Render cover pages through the generated HTML/CSS recipe, not PDF post-processing.
+- Start with only two built-in cover styles:
+  - `plain`
+  - `report`
+- Fixture the first combinations:
+  - `plain` portrait
+  - `report` portrait
+  - `report` landscape
+- Keep `proposal`, `technical`, and broader style combinations deferred.
+
+### Fonts and mixed language
+
+- Add a shared font module under `src/fonts/`.
+- Keep discovery separate from coverage.
+- Use platform-specific discovery adapters:
+
+```text
+src/fonts/
+  types.ts
+  discovery.ts
+  coverage.ts
+  adapters/
+    macos.ts
+    linux.ts
+    windows.ts
+    fontconfig.ts
+```
+
+- Treat OS discovery as candidate discovery, not proof of glyph support.
+- Add deterministic glyph coverage checks or controlled sample checks.
+- Support role-based profile fonts:
+  - body
+  - heading
+  - code
+  - page chrome, if needed by generated CSS
+- Support language/script-specific body fonts:
+  - `default`
+  - `zh-Hant`
+  - `zh-Hans`
+  - `ja`
+  - `ko`
+- Support code-symbol checks for Nerd Font private-use glyphs.
+- Keep automatic language detection out of the first slice.
+- Use document-level `lang` as one primary language only.
+- Use `pdf.content-langs` for expected mixed-language coverage.
+- Use explicit Pandoc span attributes or raw HTML `lang` markup for exact language-specific font switching.
+
+## Non-Goals
+
+- no Interactive mode Markdown PDF profile flow
+- no Codex SDK profile helper
+- no AI-generated raw CSS
+- no broad cover-theme system beyond `plain` and `report`
+- no `proposal` or `technical` cover style in the first implementation
+- no page numbers by default
+- no body-only `{pages}` total unless later renderer evidence proves it can be done cleanly
+- no automatic language detection or automatic language-span rewriting
+- no system-font-dependent CI tests
+- no broad metadata flag surface
+
+## Proposed Command Surface
+
+Render with an explicit profile:
+
+```bash
+cdx-chores md to-pdf --input report.md --profile ./pdf-profile.yml
+```
+
+Render with concise metadata overrides:
+
+```bash
+cdx-chores md to-pdf \
+  --input report.md \
+  --profile ./pdf-profile.yml \
+  --meta company="Example Co." \
+  --meta author="Noname"
+```
+
+Materialize the default mini profile:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.yml
+```
+
+Materialize a report-flavored profile:
+
+```bash
+cdx-chores md pdf-profile init \
+  --preset report \
+  --output ./report-profile.yml
+```
+
+Materialize JSON for automation:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.json
+```
+
+## Architecture
+
+### Profile module
+
+Add a dedicated module under `src/cli/markdown-pdf/profile/`:
+
+```text
+src/cli/markdown-pdf/profile/
+  defaults.ts
+  parse.ts
+  normalize.ts
+  schema.ts
+  serialize.ts
+```
+
+Responsibilities:
+
+- define the normalized profile model
+- define the built-in mini profile
+- read `.yml`, `.yaml`, and `.json`
+- serialize generated profile files
+- validate profile keys and value types
+- merge CLI overrides, profile, preset defaults, and mini profile defaults
+- expose normalized recipe inputs to the existing recipe module
+
+### Recipe integration
+
+Extend `src/cli/markdown-pdf/recipe.ts` so generated template/CSS can use:
+
+- metadata placeholders
+- cover page HTML
+- page-specific CSS for cover/body areas
+- header/footer margin boxes
+- opt-in page numbers
+- role and language-specific font stacks
+
+Keep generated recipe output deterministic and inspectable.
+
+### Font module
+
+Add `src/fonts/` as a shared module, not as a Markdown-only helper.
+
+Initial responsibilities:
+
+- list candidate font faces through platform adapters
+- normalize family, full name, style, weight, path, format, and source
+- inspect or mock glyph coverage for sample text
+- report missing codepoints
+- report likely Nerd Font glyph support for selected code samples
+
+The first implementation phase should select the parser/discovery libraries or platform command strategy. The plan should not assume that family names alone prove renderability.
+
+### Action and command wiring
+
+Extend `MdToPdfOptions` and command wiring with:
+
+- `profile?: string`
+- `meta?: string[]`
+
+Add `MdPdfProfileInitOptions` and `actionMdPdfProfileInit`.
+
+Keep `actionMdToPdf` as the orchestration boundary:
+
+- resolve paths
+- read input and frontmatter metadata
+- load and normalize profile
+- apply CLI metadata overrides
+- generate the recipe
+- call the existing Pandoc/WeasyPrint renderer
+- print existing success and warning messages
+
+## Phase Checklist
+
+### Phase 1: Define profile model and validation
+
+- [ ] Add profile TypeScript types.
+- [ ] Add built-in mini profile defaults.
+- [ ] Add YAML and JSON profile parsing.
+- [ ] Add profile serialization.
+- [ ] Add unknown-key rejection.
+- [ ] Add `--meta key=value` parsing and validation.
+- [ ] Add merge order tests for CLI overrides, frontmatter, profile metadata, preset defaults, and mini profile fallback.
+
+### Phase 2: Add profile command surface
+
+- [ ] Add `--profile <path>` to `md to-pdf`.
+- [ ] Add `md pdf-profile init`.
+- [ ] Infer generated profile format from output extension.
+- [ ] Reject unknown profile extensions.
+- [ ] Require `--overwrite` for existing profile outputs.
+- [ ] Add command and action tests for YAML and JSON profile inputs.
+
+### Phase 3: Integrate page chrome and metadata
+
+- [ ] Generate header and footer CSS margin boxes from normalized profile fields.
+- [ ] Keep default header and footer empty in the mini profile.
+- [ ] Add opt-in `pageNumbers`.
+- [ ] Default page-number format to `{page}`.
+- [ ] Treat `{pages}` as document-wide only.
+- [ ] Suppress normal header/footer on cover pages.
+- [ ] Avoid body headers on ToC pages by default.
+- [ ] Add fixture tests for no default page numbers and explicit page-number output.
+
+### Phase 4: Add cover page recipe support
+
+- [ ] Generate cover HTML from metadata and cover profile fields.
+- [ ] Add `plain` cover style.
+- [ ] Add `report` cover style.
+- [ ] Support portrait and landscape output through existing page options.
+- [ ] Add fixtures for `plain` portrait, `report` portrait, and `report` landscape.
+- [ ] Keep broader cover styles deferred.
+
+### Phase 5: Add font profile and mixed-language CSS
+
+- [ ] Add role-based font profile normalization.
+- [ ] Generate default font fallback stacks.
+- [ ] Generate `:lang(...)` CSS for configured language-specific fonts.
+- [ ] Preserve Latin-first body font order unless the profile says otherwise.
+- [ ] Support `pdf.content-langs` from frontmatter/profile data.
+- [ ] Fixture Pandoc span attributes such as `[日本語]{lang=ja}`.
+- [ ] Add tests for language-marked HTML and generated CSS.
+
+### Phase 6: Add cross-platform font discovery and coverage
+
+- [ ] Add shared `src/fonts/` types.
+- [ ] Add platform discovery adapters for macOS, Linux, Windows, and fontconfig.
+- [ ] Choose and document the font-file parser or platform command strategy.
+- [ ] Add deterministic coverage checks for sample text.
+- [ ] Add mocked tests for missing CJK glyphs.
+- [ ] Add mocked tests for missing Nerd Font glyphs.
+- [ ] Avoid CI dependence on locally installed system fonts.
+
+### Phase 7: Docs and verification
+
+- [ ] Update the Markdown PDF usage guide with profile examples.
+- [ ] Document YAML as the primary profile format and JSON as automation-compatible.
+- [ ] Document fallback fonts as the basic path.
+- [ ] Document language-marked spans as the advanced mixed-language path.
+- [ ] Document page-number defaults and `{pages}` constraints.
+- [ ] Add a job record when implementation starts.
+- [ ] Link completed implementation evidence back to this plan and the research doc before marking either complete.
+- [ ] Run focused Markdown PDF tests.
+- [ ] Run:
+
+```text
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+## Risks and Mitigations
+
+- Risk: profile files silently ignore misspelled keys.
+  Mitigation: fail on unknown keys by default and only consider lenient parsing later for generated-system compatibility.
+
+- Risk: metadata flags become a bloated command surface.
+  Mitigation: use repeatable `--meta key=value` instead of one flag per metadata field.
+
+- Risk: page numbering surprises users when a cover page exists.
+  Mitigation: keep page numbers disabled by default, default explicit page numbers to `{page}`, and reserve `{pages}` for document-wide totals.
+
+- Risk: cover style combinations expand too quickly.
+  Mitigation: start with `plain` and `report`, fixture both portrait and landscape through existing page orientation controls, and defer additional styles.
+
+- Risk: font discovery differs across macOS, Linux, and Windows.
+  Mitigation: keep platform adapters small, separate discovery from coverage, and make tests use controlled or mocked font inventory.
+
+- Risk: CJK and Nerd Font support is inferred from family names instead of actual glyph coverage.
+  Mitigation: add coverage checks based on font-file inspection or controlled samples and report missing codepoints.
+
+- Risk: automatic language detection creates incorrect spans or surprises document authors.
+  Mitigation: keep language detection out of the first slice and require explicit `lang` markup for exact font switching.
+
+- Risk: raw CSS through profile fields becomes an execution or injection surface.
+  Mitigation: keep profile values structured and leave raw CSS customization to explicit `--css` files.
+
+## Related Research
+
+- [Markdown to PDF Profiles, Fonts, and Page Chrome](../researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
+- [Markdown to PDF with WeasyPrint](../researches/research-2026-05-06-markdown-to-pdf-weasyprint.md)
+- [PDF Backend Comparison for Merge, Split, and Image Workflows](../researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md)
+
+## Related Plans
+
+- [Markdown to PDF WeasyPrint Implementation](plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md)
+- [PDF CLI Workflows Implementation](plan-2026-03-11-pdf-cli-workflows-implementation.md)
+
+## Related Jobs
+
+- No job record exists for this profile implementation slice yet. Add one under `docs/plans/jobs/` when implementation starts.
+- [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
+- [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.
