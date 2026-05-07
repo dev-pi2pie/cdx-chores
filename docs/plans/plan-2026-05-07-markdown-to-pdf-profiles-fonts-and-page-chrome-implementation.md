@@ -7,9 +7,9 @@ agent: codex
 
 ## Goal
 
-Implement a deterministic Markdown-to-PDF profile layer for reusable PDF rendering configuration, mixed-language font control, cover pages, headers, footers, page numbers, and concise metadata overrides.
+Implement a deterministic Markdown-to-PDF profile layer for reusable PDF rendering configuration, mixed-language font control, cover pages, page chrome, page numbers, and concise metadata overrides.
 
-This plan builds on the completed `md to-pdf` WeasyPrint workflow. It should not introduce a new Interactive mode flow or Codex SDK helper.
+This plan builds on the completed `md to-pdf` WeasyPrint workflow. It does not introduce Interactive mode or a Codex SDK helper.
 
 ## Why This Plan
 
@@ -21,10 +21,11 @@ The related research narrows the next Markdown PDF direction:
 - keep profile fields declarative and reject unknown keys by default
 - support basic mixed-language documents through ordered font fallback
 - support advanced mixed-language control through document `lang`, `pdf.content-langs`, and explicit language-marked Markdown or HTML
-- keep cover styles to `plain` and `report` in the first slice
+- keep cover styles to `plain` and `report` in this plan
 - keep page numbers disabled by default and avoid `{pages}` unless document-wide numbering is explicitly requested
 - use repeatable `--meta key=value` for concise CLI metadata overrides
-- make font discovery and glyph coverage cross-platform, deterministic, and testable
+- introduce a shared `src/fonts/` module for cross-platform discovery and deterministic coverage checks
+- fixture CJK, Latin-extended, RTL smoke, and Nerd Font cases without CI dependence on installed system fonts
 
 This plan turns those decisions into an implementation sequence.
 
@@ -79,7 +80,7 @@ CLI overrides
   -> built-in mini profile fallback
 ```
 
-The built-in mini profile should keep profile-free usage stable:
+The built-in mini profile keeps profile-free usage stable:
 
 ```yaml
 page:
@@ -134,9 +135,9 @@ pageNumbers:
 
 - Treat `{pages}` as document-wide total pages only.
 - Do not make `{pages}` part of the recommended default format.
-- Do not show normal header/footer on cover pages.
-- Do not make ToC pages inherit body headers by default.
-- Let body pages use configured header/footer and page numbers only when enabled.
+- Suppress normal header/footer and page numbers on cover pages.
+- Keep ToC page chrome empty by default.
+- Apply configured header/footer and page numbers to body pages only.
 
 ### Cover pages
 
@@ -148,12 +149,13 @@ pageNumbers:
   - `plain` portrait
   - `report` portrait
   - `report` landscape
-- Keep `proposal`, `technical`, and broader style combinations deferred.
+- Keep `proposal`, `technical`, and broader style combinations out of scope.
 
 ### Fonts and mixed language
 
 - Add a shared font module under `src/fonts/`.
-- Keep discovery separate from coverage.
+- Keep profile font normalization separate from system font discovery.
+- Keep font discovery separate from glyph coverage.
 - Use platform-specific discovery adapters:
 
 ```text
@@ -182,7 +184,10 @@ src/fonts/
   - `ja`
   - `ko`
 - Support code-symbol checks for Nerd Font private-use glyphs.
-- Keep automatic language detection out of the first slice.
+- Treat CJK as the first-class mixed-language target in this plan.
+- Add Latin-extended and RTL smoke cases to confirm the model is not CJK-only.
+- Limit RTL smoke coverage to profile normalization and generated HTML/CSS behavior.
+- Keep automatic language detection out of this plan.
 - Use document-level `lang` as one primary language only.
 - Use `pdf.content-langs` for expected mixed-language coverage.
 - Use explicit Pandoc span attributes or raw HTML `lang` markup for exact language-specific font switching.
@@ -193,10 +198,11 @@ src/fonts/
 - no Codex SDK profile helper
 - no AI-generated raw CSS
 - no broad cover-theme system beyond `plain` and `report`
-- no `proposal` or `technical` cover style in the first implementation
+- no `proposal` or `technical` cover style in this plan
 - no page numbers by default
-- no body-only `{pages}` total unless later renderer evidence proves it can be done cleanly
+- no body-only `{pages}` total without renderer evidence
 - no automatic language detection or automatic language-span rewriting
+- no deep RTL shaping or bidi layout guarantee in this plan
 - no system-font-dependent CI tests
 - no broad metadata flag surface
 
@@ -276,9 +282,9 @@ Extend `src/cli/markdown-pdf/recipe.ts` so generated template/CSS can use:
 
 Keep generated recipe output deterministic and inspectable.
 
-### Font module
+### Shared font module
 
-Add `src/fonts/` as a shared module, not as a Markdown-only helper.
+Add `src/fonts/` as a shared module, not as a Markdown-only helper. The Markdown PDF profile code consumes this module, but the module must not depend on Markdown PDF profile types.
 
 Initial responsibilities:
 
@@ -288,7 +294,7 @@ Initial responsibilities:
 - report missing codepoints
 - report likely Nerd Font glyph support for selected code samples
 
-The first implementation phase should select the parser/discovery libraries or platform command strategy. The plan should not assume that family names alone prove renderability.
+The implementation must select a parser/discovery library or platform command strategy before adding strict coverage checks. Family names alone are not proof of renderability.
 
 ### Action and command wiring
 
@@ -338,7 +344,7 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Default page-number format to `{page}`.
 - [ ] Treat `{pages}` as document-wide only.
 - [ ] Suppress normal header/footer on cover pages.
-- [ ] Avoid body headers on ToC pages by default.
+- [ ] Keep ToC page chrome empty by default.
 - [ ] Add fixture tests for no default page numbers and explicit page-number output.
 
 ### Phase 4: Add cover page recipe support
@@ -348,9 +354,9 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Add `report` cover style.
 - [ ] Support portrait and landscape output through existing page options.
 - [ ] Add fixtures for `plain` portrait, `report` portrait, and `report` landscape.
-- [ ] Keep broader cover styles deferred.
+- [ ] Keep broader cover styles out of scope.
 
-### Phase 5: Add font profile and mixed-language CSS
+### Phase 5: Add profile fonts and mixed-language CSS
 
 - [ ] Add role-based font profile normalization.
 - [ ] Generate default font fallback stacks.
@@ -359,8 +365,9 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Support `pdf.content-langs` from frontmatter/profile data.
 - [ ] Fixture Pandoc span attributes such as `[日本語]{lang=ja}`.
 - [ ] Add tests for language-marked HTML and generated CSS.
+- [ ] Keep this phase independent from real system font discovery.
 
-### Phase 6: Add cross-platform font discovery and coverage
+### Phase 6: Add shared `src/fonts/` discovery and coverage
 
 - [ ] Add shared `src/fonts/` types.
 - [ ] Add platform discovery adapters for macOS, Linux, Windows, and fontconfig.
@@ -370,12 +377,23 @@ Keep `actionMdToPdf` as the orchestration boundary:
 - [ ] Add mocked tests for missing Nerd Font glyphs.
 - [ ] Avoid CI dependence on locally installed system fonts.
 
-### Phase 7: Docs and verification
+### Phase 7: Expand mixed-language fixtures
+
+- [ ] Keep `zh-Hant`, `zh-Hans`, `ja`, and `ko` as first-class fixture cases.
+- [ ] Add one Latin-extended smoke case, such as `vi` or `pl`.
+- [ ] Add one RTL smoke case, such as `ar` or `he`.
+- [ ] Keep Nerd Font code glyphs in a separate code-font fixture path.
+- [ ] Assert profile normalization and generated CSS for the expanded language set.
+- [ ] Avoid asserting renderer-specific RTL layout quality.
+- [ ] Keep all expanded fixture tests deterministic through mocked or controlled font inventory.
+
+### Phase 8: Docs and verification
 
 - [ ] Update the Markdown PDF usage guide with profile examples.
 - [ ] Document YAML as the primary profile format and JSON as automation-compatible.
 - [ ] Document fallback fonts as the basic path.
 - [ ] Document language-marked spans as the advanced mixed-language path.
+- [ ] Document CJK as the first-class mixed-language target and Latin-extended/RTL as smoke coverage.
 - [ ] Document page-number defaults and `{pages}` constraints.
 - [ ] Add a job record when implementation starts.
 - [ ] Link completed implementation evidence back to this plan and the research doc before marking either complete.
@@ -392,7 +410,7 @@ git diff --check
 ## Risks and Mitigations
 
 - Risk: profile files silently ignore misspelled keys.
-  Mitigation: fail on unknown keys by default and only consider lenient parsing later for generated-system compatibility.
+  Mitigation: fail on unknown keys by default and keep lenient parsing out of this plan.
 
 - Risk: metadata flags become a bloated command surface.
   Mitigation: use repeatable `--meta key=value` instead of one flag per metadata field.
@@ -401,7 +419,7 @@ git diff --check
   Mitigation: keep page numbers disabled by default, default explicit page numbers to `{page}`, and reserve `{pages}` for document-wide totals.
 
 - Risk: cover style combinations expand too quickly.
-  Mitigation: start with `plain` and `report`, fixture both portrait and landscape through existing page orientation controls, and defer additional styles.
+  Mitigation: start with `plain` and `report`, fixture both portrait and landscape through existing page orientation controls, and leave additional styles out of scope.
 
 - Risk: font discovery differs across macOS, Linux, and Windows.
   Mitigation: keep platform adapters small, separate discovery from coverage, and make tests use controlled or mocked font inventory.
@@ -409,8 +427,11 @@ git diff --check
 - Risk: CJK and Nerd Font support is inferred from family names instead of actual glyph coverage.
   Mitigation: add coverage checks based on font-file inspection or controlled samples and report missing codepoints.
 
+- Risk: RTL smoke fixtures imply full bidi or shaping support.
+  Mitigation: document RTL as profile/CSS smoke coverage only until renderer-specific layout evidence exists.
+
 - Risk: automatic language detection creates incorrect spans or surprises document authors.
-  Mitigation: keep language detection out of the first slice and require explicit `lang` markup for exact font switching.
+  Mitigation: keep language detection out of this plan and require explicit `lang` markup for exact font switching.
 
 - Risk: raw CSS through profile fields becomes an execution or injection surface.
   Mitigation: keep profile values structured and leave raw CSS customization to explicit `--css` files.
