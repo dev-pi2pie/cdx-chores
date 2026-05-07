@@ -350,23 +350,23 @@ Keep `actionMdToPdf` as the orchestration boundary:
 
 ### Phase 4: Add cover page recipe support
 
-- [ ] Generate cover HTML from metadata and cover profile fields.
-- [ ] Add `plain` cover style.
-- [ ] Add `report` cover style.
-- [ ] Support portrait and landscape output through existing page options.
-- [ ] Add fixtures for `plain` portrait, `report` portrait, and `report` landscape.
-- [ ] Keep broader cover styles out of scope.
+- [x] Generate cover HTML from metadata and cover profile fields.
+- [x] Add `plain` cover style.
+- [x] Add `report` cover style.
+- [x] Support portrait and landscape output through existing page options.
+- [x] Add fixtures for `plain` portrait, `report` portrait, and `report` landscape.
+- [x] Keep broader cover styles out of scope.
 
 ### Phase 5: Add profile fonts and mixed-language CSS
 
-- [ ] Add role-based font profile normalization.
-- [ ] Generate default font fallback stacks.
-- [ ] Generate `:lang(...)` CSS for configured language-specific fonts.
-- [ ] Preserve Latin-first body font order unless the profile says otherwise.
-- [ ] Support `pdf.content-langs` from frontmatter/profile data.
-- [ ] Fixture Pandoc span attributes such as `[日本語]{lang=ja}`.
-- [ ] Add tests for language-marked HTML and generated CSS.
-- [ ] Keep this phase independent from real system font discovery.
+- [x] Add role-based font profile normalization.
+- [x] Generate default font fallback stacks.
+- [x] Generate `:lang(...)` CSS for configured language-specific fonts.
+- [x] Preserve Latin-first body font order unless the profile says otherwise.
+- [x] Support `pdf.content-langs` from frontmatter/profile data.
+- [x] Fixture Pandoc span attributes such as `[日本語]{lang=ja}`.
+- [x] Add tests for language-marked HTML and generated CSS.
+- [x] Keep this phase independent from real system font discovery.
 
 ### Phase 6: Add shared `src/fonts/` discovery and coverage
 
@@ -451,5 +451,6 @@ git diff --check
 ## Related Jobs
 
 - [Markdown to PDF Profile Phases 1-3](jobs/2026-05-07-markdown-to-pdf-profile-phases-1-3.md) - profile model, profile command surface, page chrome, metadata merge, and opt-in page-number implementation.
+- [Markdown to PDF Profile Phases 4-5](jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md) - cover recipe support, profile font normalization, mixed-language CSS, and language-marked fixture coverage.
 - [Markdown to PDF WeasyPrint Phases 1-5](jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - completed implementation evidence for the first deterministic Markdown PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - completed public documentation and validation evidence for the first deterministic Markdown PDF lane.

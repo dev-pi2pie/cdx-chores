@@ -92,6 +92,17 @@ function createRemoteInlineCssHtml(): string {
   ].join("");
 }
 
+function hasCommand(command: string): boolean {
+  const result = Bun.spawnSync({
+    cmd: ["/bin/sh", "-c", `command -v ${command}`],
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  return result.exitCode === 0;
+}
+
+const pandocTest = hasCommand("pandoc") ? test : test.skip;
+
 describe("markdown PDF option normalization", () => {
   test("normalizes default article options", () => {
     const options = normalizeMarkdownPdfOptions();
@@ -184,6 +195,79 @@ describe("markdown PDF profile normalization", () => {
       position: "bottom-center",
       format: "{page}",
       scope: "body",
+    });
+  });
+
+  test("normalizes cover fields, profile fonts, and content languages", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "report",
+          fields: {
+            title: "{company} Report",
+          },
+        },
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            ja: "Noto Serif CJK JP",
+          },
+          code: {
+            default: "JetBrains Mono",
+            symbols: "JetBrainsMono Nerd Font",
+          },
+        },
+        pdf: {
+          "content-langs": ["zh-Hant", "ja"],
+        },
+      },
+      frontmatter: {
+        pdf: {
+          "content-langs": ["ja", "ko"],
+        },
+      },
+    });
+
+    expect(result.profile.cover).toMatchObject({
+      enabled: true,
+      style: "report",
+      fields: {
+        title: "{company} Report",
+        subtitle: "{subtitle}",
+      },
+    });
+    expect(result.profile.fonts.body.default).toBe("Source Serif 4");
+    expect(result.profile.fonts.body["zh-Hant"]).toBe("Noto Serif CJK TC");
+    expect(result.profile.fonts.code.symbols).toBe("JetBrainsMono Nerd Font");
+    expect(result.profile.contentLangs).toEqual(["zh-Hant", "ja", "ko"]);
+  });
+
+  test("rejects non-language keys in body font mappings", () => {
+    expect(() =>
+      normalizeMarkdownPdfProfile({
+        profile: {
+          fonts: {
+            body: {
+              fallback: "Noto Serif",
+            },
+          },
+        },
+      }),
+    ).toThrow("profile.fonts.body.fallback must use default or a language tag");
+  });
+
+  test("rejects non-language body font keys while reading profile files", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "fonts:\n  body:\n    fallback: Noto Serif\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "profile.fonts.body.fallback must use default or a language tag",
+      });
     });
   });
 
@@ -332,7 +416,145 @@ describe("markdown PDF recipe generation", () => {
     });
 
     expect(recipe.styleCss).toContain("@top-right {\n    content: counter(page);");
-    expect(recipe.styleCss).not.toContain("@bottom-center");
+    expect(recipe.styleCss).not.toContain("@bottom-center {\n    content: counter(page);");
+  });
+
+  test("generates plain cover HTML and cover page CSS", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "plain",
+        },
+      },
+      frontmatter: {
+        title: "Quarterly Report",
+        subtitle: "Runtime Notes",
+        author: "Noname",
+        company: "Example Co.",
+        date: "2026-05-07",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.templateHtml).toContain('class="pdf-cover pdf-cover--plain"');
+    expect(recipe.templateHtml).toContain("Quarterly Report");
+    expect(recipe.templateHtml).toContain("Runtime Notes");
+    expect(recipe.templateHtml).toContain("Noname | Example Co. | 2026-05-07");
+    expect(recipe.styleCss).toContain("@page cover");
+    expect(recipe.styleCss).toContain("@top-left {\n    content: none;");
+    expect(recipe.styleCss).toContain("@bottom-center {\n    content: none;");
+    expect(recipe.styleCss).toContain(".pdf-cover");
+  });
+
+  test("generates report cover CSS with landscape page options", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "report",
+          fields: {
+            title: "{company} Engineering Report",
+          },
+        },
+      },
+      frontmatter: {
+        company: "Example Co.",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(
+      normalizeMarkdownPdfOptions({ orientation: "landscape" }),
+      {
+        profile: normalizedProfile.profile,
+      },
+    );
+
+    expect(recipe.templateHtml).toContain("Example Co. Engineering Report");
+    expect(recipe.templateHtml).toContain("pdf-cover--report");
+    expect(recipe.styleCss).toContain("size: A4 landscape");
+    expect(recipe.styleCss).toContain(".pdf-cover--report .pdf-cover__content");
+  });
+
+  test("generates profile font fallback stacks and language CSS", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            ja: "Noto Serif CJK JP",
+            ko: "Noto Serif CJK KR",
+          },
+          heading: {
+            default: "Source Sans 3",
+          },
+          code: {
+            default: "JetBrains Mono",
+            symbols: "JetBrainsMono Nerd Font",
+          },
+          pageChrome: {
+            default: "Source Sans 3",
+          },
+        },
+      },
+      frontmatter: {
+        pdf: {
+          "content-langs": ["zh-Hant", "zh-Hant", "ja"],
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain(
+      'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(zh-Hant) {\n  font-family: "Noto Serif CJK TC", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(ja) {\n  font-family: "Noto Serif CJK JP", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(ko) {\n  font-family: "Noto Serif CJK KR", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
+    );
+    expect(recipe.styleCss).toContain('@page {\n  font-family: "Source Sans 3", sans-serif;');
+    expect(recipe.styleCss.indexOf('"Source Serif 4"')).toBeLessThan(
+      recipe.styleCss.indexOf('"Noto Serif CJK TC"'),
+    );
+    expect(recipe.styleCss.match(/"Noto Serif CJK TC"/g)).toHaveLength(2);
+  });
+});
+
+describe("markdown PDF Pandoc language span fixture", () => {
+  pandocTest("preserves Pandoc span lang attributes in rendered HTML", async () => {
+    await withTempFixtureDir("md-to-pdf-pandoc-span", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "mixed-langs.md");
+      const outputPath = join(fixtureDir, "mixed-langs.html");
+      await writeFile(
+        inputPath,
+        "English [日本語]{lang=ja} and [繁體中文]{lang=zh-Hant}.\n",
+        "utf8",
+      );
+
+      const result = Bun.spawnSync({
+        cmd: ["pandoc", inputPath, "--from", "markdown", "--to", "html", "--output", outputPath],
+        cwd: fixtureDir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect(result.exitCode).toBe(0);
+
+      const html = await readFile(outputPath, "utf8");
+      expect(html).toMatch(/<span\s+lang="ja">日本語<\/span>/);
+      expect(html).toMatch(/<span\s+lang="zh-Hant">繁體中文<\/span>/);
+    });
   });
 });
 
@@ -481,6 +703,111 @@ describe("cli action modules: md to-pdf", () => {
       expect(combinedCss).toContain('@top-left {\n    content: "Example Co.";');
       expect(combinedCss).toContain('@top-right {\n    content: "Quarterly Report";');
       expect(combinedCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("loads cover and font profile settings into generated recipe files", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "mixed-report.md");
+      const htmlOutput = join(fixtureDir, "mixed-report.render.html");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      let renderedTemplate = "";
+      let pandocInputMarkdown = "";
+      await writeFile(
+        inputPath,
+        [
+          "---",
+          "title: Mixed Language Report",
+          "subtitle: Runtime Notes",
+          "author: Noname",
+          "company: Example Co.",
+          "pdf:",
+          "  content-langs:",
+          "    - zh-Hant",
+          "    - ja",
+          "---",
+          "# Report",
+          "",
+          "Latin text with [日本語]{lang=ja} and [繁體中文]{lang=zh-Hant}.",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        profilePath,
+        [
+          "cover:",
+          "  enabled: true",
+          "  style: report",
+          "fonts:",
+          "  body:",
+          '    default: "Source Serif 4"',
+          '    zh-Hant: "Noto Serif CJK TC"',
+          '    ja: "Noto Serif CJK JP"',
+          "  code:",
+          '    default: "JetBrains Mono"',
+          '    symbols: "JetBrainsMono Nerd Font"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({
+        html: '<html><body><span lang="ja">日本語</span><span lang="zh-Hant">繁體中文</span></body></html>',
+      });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const inputArg = args[0];
+          if (inputArg) {
+            pandocInputMarkdown = await readFile(inputArg, "utf8");
+          }
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        htmlOutput: toRepoRelativePath(htmlOutput),
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      const renderedHtml = await readFile(htmlOutput, "utf8");
+      expect(pandocInputMarkdown).toContain("[日本語]{lang=ja}");
+      expect(renderedHtml).toContain('<span lang="ja">日本語</span>');
+      expect(renderedHtml).toContain('<span lang="zh-Hant">繁體中文</span>');
+      expect(renderedTemplate).toContain('class="pdf-cover pdf-cover--report"');
+      expect(renderedTemplate).toContain("Mixed Language Report");
+      expect(renderedTemplate).toContain("Runtime Notes");
+      expect(combinedCss).toContain("@page cover");
+      expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
+      expect(combinedCss).toContain(
+        'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+      );
+      expect(combinedCss).toContain(":lang(ja)");
+      expect(combinedCss).toContain(
+        'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
+      );
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
     });

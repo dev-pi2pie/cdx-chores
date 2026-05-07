@@ -49,6 +49,32 @@ function pageNumberSlot(position: MarkdownPdfPageChromePosition): {
   };
 }
 
+function emptyMarginBoxes(): string {
+  return `  @top-left {
+    content: none;
+  }
+
+  @top-center {
+    content: none;
+  }
+
+  @top-right {
+    content: none;
+  }
+
+  @bottom-left {
+    content: none;
+  }
+
+  @bottom-center {
+    content: none;
+  }
+
+  @bottom-right {
+    content: none;
+  }`;
+}
+
 export function createMarkdownPdfPageChromeCss(
   profile: NormalizedMarkdownPdfProfile | undefined,
 ): string {
@@ -94,6 +120,9 @@ ${rules.join("\n\n")}
 }
 
 @page toc {
+${emptyMarginBoxes()}
 }
 `;
 }
+
+export { emptyMarginBoxes as createMarkdownPdfEmptyMarginBoxesCss };

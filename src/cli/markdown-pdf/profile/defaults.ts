@@ -42,4 +42,22 @@ export const DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE: NormalizedMarkdownPdfProfi
     format: "{page}",
     scope: "body",
   },
+  cover: {
+    enabled: false,
+    style: "plain",
+    fields: {
+      title: "{title}",
+      subtitle: "{subtitle}",
+      author: "{author}",
+      company: "{company}",
+      date: "{date}",
+    },
+  },
+  fonts: {
+    body: {},
+    heading: {},
+    code: {},
+    pageChrome: {},
+  },
+  contentLangs: [],
 };

@@ -17,6 +17,9 @@ export {
 export {
   DEFAULT_MARKDOWN_PDF_PROFILE,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+  createMarkdownPdfCoverCss,
+  createMarkdownPdfCoverHtml,
+  createMarkdownPdfFontCss,
   createMarkdownPdfPageChromeCss,
   createMarkdownPdfProfileConfig,
   inferMarkdownPdfProfileFormat,
@@ -28,11 +31,16 @@ export {
 } from "./profile";
 export type {
   MarkdownPdfMetadata,
+  MarkdownPdfCoverStyle,
+  MarkdownPdfFontConfig,
+  MarkdownPdfFontRole,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfCover,
+  NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./profile";

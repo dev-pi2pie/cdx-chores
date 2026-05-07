@@ -1,12 +1,18 @@
 import { CliError } from "../../errors";
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
+import { validateMarkdownPdfBodyFontKey } from "./schema";
 import type {
+  MarkdownPdfCoverStyle,
+  MarkdownPdfFontConfig,
+  MarkdownPdfFontRole,
   MarkdownPdfMetadata,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfCover,
+  NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
 } from "./types";
 
@@ -19,6 +25,8 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-center",
   "bottom-right",
 ]);
+const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
+const FONT_ROLES: MarkdownPdfFontRole[] = ["body", "heading", "code", "pageChrome"];
 
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -89,6 +97,19 @@ function readObject(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   return {};
+}
+
+function readStringArray(value: unknown, label: string): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new CliError(`${label} must be an array of strings.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return value.map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
 function stringValue(value: unknown, label: string): string | undefined {
@@ -177,6 +198,67 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
   };
 }
 
+function normalizeCover(value: unknown): NormalizedMarkdownPdfCover {
+  const input = readObject(value);
+  const style =
+    stringValue(input.style, "profile.cover.style") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.style;
+  if (!COVER_STYLES.has(style as MarkdownPdfCoverStyle)) {
+    throw new CliError("profile.cover.style must be one of: plain, report.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const fields = readObject(input.fields);
+  const defaultFields = DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.fields;
+  return {
+    enabled:
+      booleanValue(input.enabled, "profile.cover.enabled") ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.enabled,
+    style: style as MarkdownPdfCoverStyle,
+    fields: {
+      title: stringValue(fields.title, "profile.cover.fields.title") ?? defaultFields.title,
+      subtitle:
+        stringValue(fields.subtitle, "profile.cover.fields.subtitle") ?? defaultFields.subtitle,
+      author: stringValue(fields.author, "profile.cover.fields.author") ?? defaultFields.author,
+      company: stringValue(fields.company, "profile.cover.fields.company") ?? defaultFields.company,
+      date: stringValue(fields.date, "profile.cover.fields.date") ?? defaultFields.date,
+    },
+  };
+}
+
+function normalizeFontConfig(value: unknown, label: string): MarkdownPdfFontConfig {
+  const input = readObject(value);
+  const output: MarkdownPdfFontConfig = {};
+  for (const [key, font] of Object.entries(input)) {
+    output[key] = stringValue(font, `${label}.${key}`) ?? "";
+  }
+  return output;
+}
+
+function normalizeFonts(value: unknown): NormalizedMarkdownPdfFonts {
+  const input = readObject(value);
+  const fonts = Object.fromEntries(
+    FONT_ROLES.map((role) => [role, normalizeFontConfig(input[role], `profile.fonts.${role}`)]),
+  ) as NormalizedMarkdownPdfFonts;
+
+  for (const key of Object.keys(fonts.body)) {
+    validateMarkdownPdfBodyFontKey(key);
+  }
+
+  return fonts;
+}
+
+function contentLangsFromSource(source: Record<string, unknown>): string[] {
+  const pdf = readObject(source.pdf);
+  return readStringArray(pdf["content-langs"], "profile.pdf.content-langs");
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
 export function markdownPdfProfileToRecipeOptions(
   profile: Record<string, unknown> = {},
 ): NormalizeMarkdownPdfOptionsInput {
@@ -205,6 +287,9 @@ export function normalizeMarkdownPdfProfile(
   const profileMetadata = normalizeMetadata(profile.metadata, "profile.metadata");
   const frontmatterMetadata = normalizeMetadata(input.frontmatter, "Markdown frontmatter");
   const cliMetadata = parseMetaOverrides(input.meta);
+  const frontmatterContentLangs = input.frontmatter
+    ? contentLangsFromSource(input.frontmatter)
+    : [];
 
   return {
     profile: {
@@ -216,6 +301,9 @@ export function normalizeMarkdownPdfProfile(
       header: normalizeChromeSlots(profile.header, "profile.header"),
       footer: normalizeChromeSlots(profile.footer, "profile.footer"),
       pageNumbers: normalizePageNumbers(profile.pageNumbers),
+      cover: normalizeCover(profile.cover),
+      fonts: normalizeFonts(profile.fonts),
+      contentLangs: uniqueStrings([...contentLangsFromSource(profile), ...frontmatterContentLangs]),
     },
     recipeOptions: markdownPdfProfileToRecipeOptions(profile),
   };

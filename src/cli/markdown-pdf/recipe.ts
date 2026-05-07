@@ -1,5 +1,11 @@
 import type { NormalizedMarkdownPdfOptions } from "./validation";
-import { createMarkdownPdfPageChromeCss, type NormalizedMarkdownPdfProfile } from "./profile";
+import {
+  createMarkdownPdfCoverCss,
+  createMarkdownPdfCoverHtml,
+  createMarkdownPdfFontCss,
+  createMarkdownPdfPageChromeCss,
+  type NormalizedMarkdownPdfProfile,
+} from "./profile";
 
 export interface MarkdownPdfRecipe {
   templateHtml: string;
@@ -48,7 +54,8 @@ body {
 `,
 };
 
-export function createMarkdownPdfTemplate(): string {
+export function createMarkdownPdfTemplate(input: CreateMarkdownPdfRecipeInput = {}): string {
+  const coverHtml = createMarkdownPdfCoverHtml(input.profile);
   return `<!doctype html>
 <html lang="$if(lang)$$lang$$else$en$endif$">
 <head>
@@ -57,7 +64,7 @@ export function createMarkdownPdfTemplate(): string {
   <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
 </head>
 <body>
-$if(title)$
+${coverHtml}$if(title)$
 <header class="document-title">
   <h1 class="title">$title$</h1>
 $if(author)$
@@ -216,6 +223,8 @@ blockquote {
 ${tocPageBreakCss(options)}
 ${createMarkdownPdfPageChromeCss(input.profile)}
 ${PRESET_CSS[options.preset]}
+${createMarkdownPdfCoverCss(input.profile)}
+${createMarkdownPdfFontCss(input.profile)}
 `;
 }
 
@@ -224,7 +233,7 @@ export function createMarkdownPdfRecipe(
   input: CreateMarkdownPdfRecipeInput = {},
 ): MarkdownPdfRecipe {
   return {
-    templateHtml: createMarkdownPdfTemplate(),
+    templateHtml: createMarkdownPdfTemplate(input),
     styleCss: createMarkdownPdfCss(options, input),
   };
 }
