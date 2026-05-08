@@ -1,7 +1,7 @@
 ---
 title: "Font check command implementation"
 created-date: 2026-05-08
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -230,7 +230,7 @@ Missing `fc-list` should make `capabilities["font.discovery.fontconfig"]` false.
 
 This phase consumes the discovery and inspect metadata completed in the [Font inspect TTC index metadata follow-up](plan-2026-05-08-font-inspect-ttc-index-metadata-follow-up.md). `font check` may trust TTC coverage only when the selected face has a provider-backed index and `fc-query --index` reports identifying metadata that still matches the selected face.
 
-Status: Phase 5 is complete in the `font check` implementation. Phase 6 documentation traceability and Phase 7 doctor capability reporting remain open.
+Status: Phase 5 is complete in the `font check` implementation. Phase 6 documentation traceability and Phase 7 doctor capability reporting are complete.
 
 - [x] Extend font discovery metadata to preserve a provider-backed TTC face index when available.
 - [x] Complete the inspect-side TTC metadata follow-up before consuming TTC indexes in `font check`.
@@ -245,21 +245,21 @@ Status: Phase 5 is complete in the `font check` implementation. Phase 6 document
 
 ### Phase 6: Docs and Traceability
 
-- [ ] Update the Markdown PDF usage guide with `font check` examples and limitations.
-- [ ] Update related research with completed evidence after implementation.
-- [ ] Add a job record under `docs/plans/jobs/`.
-- [ ] Keep Codex Helper documented as a later consumer rather than a separate coverage implementation.
-- [ ] Run focused and broad validation before marking this plan complete.
+- [x] Update the Markdown PDF usage guide with `font check` examples and limitations.
+- [x] Update related research with completed evidence after implementation.
+- [x] Add a job record under `docs/plans/jobs/`.
+- [x] Keep Codex Helper documented as a later consumer rather than a separate coverage implementation.
+- [x] Run focused and broad validation before marking this plan complete.
 
 ### Phase 7: Doctor Capability Reporting
 
-- [ ] Add bounded root `doctor` reporting for optional fontconfig-backed font support.
-- [ ] Check `fc-list` for font discovery support.
-- [ ] Check `fc-query` for selected-file coverage support.
-- [ ] Report missing `fc-list` or `fc-query` as non-fatal optional capability gaps.
-- [ ] Include `font.discovery.fontconfig` and `font.coverage.fontconfig` JSON status under the `font` block.
-- [ ] Add `capabilities["font.discovery.fontconfig"]` and `capabilities["font.coverage.fontconfig"]`.
-- [ ] Add doctor tests for available and missing fontconfig commands.
+- [x] Add bounded root `doctor` reporting for optional fontconfig-backed font support.
+- [x] Check `fc-list` for font discovery support.
+- [x] Check `fc-query` for selected-file coverage support.
+- [x] Report missing `fc-list` or `fc-query` as non-fatal optional capability gaps.
+- [x] Include `font.discovery.fontconfig` and `font.coverage.fontconfig` JSON status under the `font` block.
+- [x] Add `capabilities["font.discovery.fontconfig"]` and `capabilities["font.coverage.fontconfig"]`.
+- [x] Add doctor tests for available and missing fontconfig commands.
 
 ## Validation
 
@@ -288,6 +288,17 @@ Phase 5 implementation validation on 2026-05-08:
 - `bun run format:check` - pass
 - `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
 - `node dist/esm/bin.mjs font check --family "PingFang TC" --text 繁體中文` - pass
+- `git diff --check` - pass
+
+Phase 6-7 completion validation on 2026-05-08:
+
+- `bun test test/cli-actions-doctor-markdown-video-deferred.test.ts` - 19 pass, 147 expect calls
+- `bun test test/fonts.test.ts` - 73 pass, 422 expect calls
+- `bun test` - 1023 pass, 4645 expect calls
+- `bun run lint` - 0 warnings, 0 errors
+- `bun run format:check` - pass
+- `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
+- `node dist/esm/bin.mjs doctor --json` - includes `font.discovery.fontconfig`, `font.coverage.fontconfig`, and matching capability keys
 - `git diff --check` - pass
 
 ## Risks

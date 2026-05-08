@@ -11,7 +11,7 @@ import {
   actionVideoGif,
   actionVideoResize,
 } from "../src/cli/actions";
-import { inspectCommand } from "../src/cli/deps";
+import { inspectCommand, type DependencyCommandRunner } from "../src/cli/deps";
 import type { ExecCommandResult } from "../src/cli/process";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -23,6 +23,18 @@ function ok(stdout = "", stderr = ""): ExecCommandResult {
     signal: null,
     stdout,
     stderr,
+  };
+}
+
+function doctorDependencyRunner(
+  statuses: Record<string, ExecCommandResult>,
+): DependencyCommandRunner {
+  return async (command) => {
+    const result = statuses[command];
+    if (!result) {
+      throw new Error(`spawn ${command} ENOENT`);
+    }
+    return result;
   };
 }
 
@@ -49,6 +61,8 @@ describe("cli action modules: doctor", () => {
     expect(Object.hasOwn(payload.capabilities, "data.query.csv")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.duckdb")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.codex")).toBe(true);
+    expect(Object.hasOwn(payload.capabilities, "font.discovery.fontconfig")).toBe(true);
+    expect(Object.hasOwn(payload.capabilities, "font.coverage.fontconfig")).toBe(true);
     expect(payload.query).toBeDefined();
     expect(typeof payload.query.available).toBe("boolean");
     if (payload.query.available) {
@@ -68,6 +82,47 @@ describe("cli action modules: doctor", () => {
     expect(typeof payload.queryCodex.configuredSupport).toBe("boolean");
     expect(typeof payload.queryCodex.authSessionAvailable).toBe("boolean");
     expect(typeof payload.queryCodex.readyToDraft).toBe("boolean");
+    expect(payload.font.discovery.fontconfig.command).toBe("fc-list");
+    expect(typeof payload.font.discovery.fontconfig.available).toBe("boolean");
+    expect(Object.hasOwn(payload.font.discovery.fontconfig, "version")).toBe(true);
+    expect(payload.font.coverage.fontconfig.command).toBe("fc-query");
+    expect(typeof payload.font.coverage.fontconfig.available).toBe("boolean");
+    expect(Object.hasOwn(payload.font.coverage.fontconfig, "version")).toBe(true);
+  });
+
+  test("actionDoctor emits deterministic font support JSON for optional fontconfig gaps", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+    await actionDoctor(runtime, {
+      json: true,
+      dependencyRunner: doctorDependencyRunner({
+        pandoc: ok("pandoc 3.9\n"),
+        ffmpeg: ok("ffmpeg version 8.0.1\n"),
+        weasyprint: ok("WeasyPrint version 67.0\n"),
+        "fc-query": ok("fontconfig version 2.15.0\n"),
+      }),
+    });
+
+    expectNoStderr();
+    const payload = JSON.parse(stdout.text);
+    expect(payload.font).toEqual({
+      discovery: {
+        fontconfig: {
+          command: "fc-list",
+          available: false,
+          version: null,
+        },
+      },
+      coverage: {
+        fontconfig: {
+          command: "fc-query",
+          available: true,
+          version: "2.15.0",
+        },
+      },
+    });
+    expect(payload.capabilities["font.discovery.fontconfig"]).toBe(false);
+    expect(payload.capabilities["font.coverage.fontconfig"]).toBe(true);
   });
 
   test("actionDoctor emits human-readable text report", async () => {
@@ -84,6 +139,9 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).toContain("md.to-pdf");
     expect(stdout.text).toContain("weasyprint");
     expect(stdout.text).toContain("video.gif");
+    expect(stdout.text).toContain("Font support:");
+    expect(stdout.text).toContain("fontconfig discovery:");
+    expect(stdout.text).toContain("fontconfig coverage:");
     expect(stdout.text).toContain("Data query formats:");
     expect(stdout.text).toContain("Data query Codex:");
     expect(stdout.text).toContain("csv: built-in DuckDB support=");
@@ -94,6 +152,23 @@ describe("cli action modules: doctor", () => {
     expect(stdout.text).not.toContain(
       "csv: detected support=yes, loadability=yes, installability=unknown",
     );
+  });
+
+  test("actionDoctor renders optional font support status text", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+    await actionDoctor(runtime, {
+      dependencyRunner: doctorDependencyRunner({
+        pandoc: ok("pandoc 3.9\n"),
+        ffmpeg: ok("ffmpeg version 8.0.1\n"),
+        weasyprint: ok("WeasyPrint version 67.0\n"),
+        "fc-query": ok("fontconfig version 2.15.0\n"),
+      }),
+    });
+
+    expectNoStderr();
+    expect(stdout.text).toContain("fontconfig discovery: unavailable");
+    expect(stdout.text).toContain("fontconfig coverage: available (2.15.0)");
   });
 
   test("actionDataDuckDbDoctor emits human-readable DuckDB extension report", async () => {
@@ -156,6 +231,30 @@ describe("cli action modules: doctor", () => {
         version: expectedVersion,
       });
     }
+  });
+
+  test("inspectCommand parses fontconfig version labels", async () => {
+    const status = await inspectCommand("fc-query", "darwin", async () =>
+      ok("fontconfig version 2.15.0\n"),
+    );
+
+    expect(status).toMatchObject({
+      available: true,
+      version: "2.15.0",
+    });
+  });
+
+  test("inspectCommand treats missing fontconfig commands as optional unavailable tools", async () => {
+    const status = await inspectCommand("fc-list", "darwin", async () => {
+      throw new Error("spawn fc-list ENOENT");
+    });
+
+    expect(status).toMatchObject({
+      name: "fc-list",
+      available: false,
+      version: null,
+      installHint: "brew install fontconfig",
+    });
   });
 });
 

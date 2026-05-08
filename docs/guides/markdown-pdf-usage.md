@@ -275,7 +275,7 @@ English text with <span lang="ja">日本語</span>.
 
 CJK is the first-class mixed-language target for this profile slice. Latin-extended and RTL content have smoke coverage for profile normalization and generated CSS, but this does not claim renderer-specific RTL shaping quality.
 
-## Font Discovery
+## Font Discovery And Coverage
 
 Use `font list` to discover candidate system font faces:
 
@@ -290,7 +290,17 @@ cdx-chores font inspect --family "Noto Sans CJK TC"
 cdx-chores font inspect --family "Noto Sans CJK TC" --json
 ```
 
-These commands report discovered candidates only; they do not prove glyph coverage for every character. Public `font check` coverage checks remain deferred until the dedicated command implementation lands.
+Use `font check` when you need coverage evidence for specific text before choosing profile fonts:
+
+```bash
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
+cdx-chores font check --family "JetBrainsMono Nerd Font" --text "git  main " --require nerd
+cdx-chores font check --family "Noto Sans CJK JP" --text-file ./samples/japanese.txt --json
+```
+
+`font check` requires exactly one of `--text` or `--text-file`. Text files are read as raw UTF-8 text, with no Markdown extraction or document parsing. Missing required glyph coverage exits `1`, usage errors exit `2`, and inconclusive checks exit `3`.
+
+Coverage checks use the selected discovered face and optional fontconfig `fc-query` support. A pass means the selected font file advertises the required codepoints. It does not guarantee shaping behavior, emoji presentation, fallback behavior, or final PDF renderer output. TTC collection checks require provider-backed face-index metadata; otherwise the result is inconclusive instead of a false failure.
 
 Discovery mode defaults to `auto`:
 
@@ -308,6 +318,7 @@ Use `--debug` to see the selected path and sanitized adapter attempts:
 cdx-chores font list --debug
 cdx-chores font list --json --debug
 cdx-chores font inspect --family "Noto Sans CJK TC" --debug
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試" --debug
 ```
 
 ## Custom Template And CSS

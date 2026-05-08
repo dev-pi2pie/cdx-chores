@@ -1,6 +1,7 @@
 import { inspectCodexEnvironment } from "../../adapters/codex/shared";
 import { getCliColors } from "../colors";
 import { inspectCommand } from "../deps";
+import type { DependencyCommandRunner } from "../deps";
 import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 import { inspectDataQueryExtensions } from "../duckdb/query";
 import type { CliRuntime } from "../types";
@@ -8,6 +9,7 @@ import { printLine } from "./shared";
 
 export interface DoctorOptions {
   json?: boolean;
+  dependencyRunner?: DependencyCommandRunner;
 }
 
 export async function actionDoctor(
@@ -15,10 +17,20 @@ export async function actionDoctor(
   options: DoctorOptions = {},
 ): Promise<void> {
   const pc = getCliColors(runtime);
-  const [pandoc, ffmpeg, weasyprint, queryExtensions, codexEnvironment] = await Promise.all([
-    inspectCommand("pandoc", runtime.platform),
-    inspectCommand("ffmpeg", runtime.platform),
-    inspectCommand("weasyprint", runtime.platform),
+  const [
+    pandoc,
+    ffmpeg,
+    weasyprint,
+    fontconfigDiscovery,
+    fontconfigCoverage,
+    queryExtensions,
+    codexEnvironment,
+  ] = await Promise.all([
+    inspectCommand("pandoc", runtime.platform, options.dependencyRunner),
+    inspectCommand("ffmpeg", runtime.platform, options.dependencyRunner),
+    inspectCommand("weasyprint", runtime.platform, options.dependencyRunner),
+    inspectCommand("fc-list", runtime.platform, options.dependencyRunner),
+    inspectCommand("fc-query", runtime.platform, options.dependencyRunner),
     inspectDataQueryExtensions(),
     inspectCodexEnvironment(),
   ]);
@@ -80,6 +92,25 @@ export async function actionDoctor(
     "data.query.sqlite": queryFormats.sqlite.loadability,
     "data.query.excel": queryFormats.excel.loadability,
     "data.query.codex": queryCodex.readyToDraft,
+    "font.discovery.fontconfig": fontconfigDiscovery.available,
+    "font.coverage.fontconfig": fontconfigCoverage.available,
+  };
+
+  const font = {
+    discovery: {
+      fontconfig: {
+        command: "fc-list",
+        available: fontconfigDiscovery.available,
+        version: fontconfigDiscovery.version,
+      },
+    },
+    coverage: {
+      fontconfig: {
+        command: "fc-query",
+        available: fontconfigCoverage.available,
+        version: fontconfigCoverage.version,
+      },
+    },
   };
 
   if (options.json) {
@@ -95,6 +126,7 @@ export async function actionDoctor(
         runtimeVersion: queryExtensions.runtimeVersion,
       },
       queryCodex,
+      font,
       capabilities,
     };
     printLine(runtime.stdout, JSON.stringify(payload, null, 2));
@@ -124,6 +156,17 @@ export async function actionDoctor(
       `- ${pc.bold(capability)}: ${available ? pc.green("available") : pc.red("unavailable")}`,
     );
   }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Font support:")));
+  const fontDiscoveryStatus = fontconfigDiscovery.available
+    ? pc.green(`available (${fontconfigDiscovery.version ?? "unknown version"})`)
+    : pc.red("unavailable");
+  const fontCoverageStatus = fontconfigCoverage.available
+    ? pc.green(`available (${fontconfigCoverage.version ?? "unknown version"})`)
+    : pc.red("unavailable");
+  printLine(runtime.stdout, `- ${pc.bold("fontconfig discovery")}: ${fontDiscoveryStatus}`);
+  printLine(runtime.stdout, `- ${pc.bold("fontconfig coverage")}: ${fontCoverageStatus}`);
 
   printLine(runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("Data query formats:")));

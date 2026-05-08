@@ -2,13 +2,13 @@
 title: "Font Inspect and Check Commands"
 created-date: 2026-05-07
 modified-date: 2026-05-08
-status: draft
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Record the follow-up research for adding `font inspect` and `font check` after the completed Markdown-to-PDF profile, font discovery, and diagnostics work.
+Record the research trail for adding `font inspect` and `font check` after the completed Markdown-to-PDF profile, font discovery, and diagnostics work.
 
 The related implementation plan delivered `font list` as the first public discovery slice. This research narrows the remaining command surfaces so follow-up work can avoid mixing three separate jobs:
 
@@ -16,40 +16,43 @@ The related implementation plan delivered `font list` as the first public discov
 - inspecting discovered font metadata
 - checking glyph coverage for specific text or special symbol requirements
 
-The immediate `font inspect` slice is captured in the related implementation plan. The first coverage-provider spike now proves enough behavior to draft `font check`; the public command remains deferred to its own implementation plan.
+The related implementation plans now cover `font inspect`, the coverage-provider spike, and the public `font check` command. This research records the command contracts and the limits that should remain visible to future Codex Helper orchestration.
 
 ## Current State
 
-The completed font command slice exposes candidate discovery through:
+The completed font command surface exposes candidate discovery, family inspection, and text-specific coverage checks through:
 
 ```bash
 cdx-chores font list
 cdx-chores font list --family "Noto Sans CJK TC"
 cdx-chores font list --discovery native
 cdx-chores font list --json --debug
+cdx-chores font inspect --family "Noto Sans CJK TC"
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
 ```
 
 `fonts` is accepted as an alias, but public docs prefer the singular `font` command group.
 
-The current command can answer:
+The current commands can answer:
 
 - which candidate font faces were discovered
 - which discovery mode was requested
 - which adapter was selected
 - which adapters were attempted when `--debug` is used
+- which discovered family metadata is available for a selected family
+- whether one selected discovered face advertises required codepoint coverage for specific text
 
-It cannot yet answer:
+They still cannot answer:
 
-- which discovered faces belong to one family in a structured detail view
-- which font file should be inspected for coverage
-- whether a selected font can render a given text sample
-- whether Nerd Font private-use glyphs are present
+- whether a selected font will render a text sample correctly in every renderer
+- whether shaping, fallback, emoji presentation, or PDF output will match a user's final document
+- whether app-bundled or CSS `@font-face` fonts are available outside system discovery
 
 ## Key Findings
 
-1. The completed Markdown-to-PDF plan established the discovery and coverage boundary, but the implemented public command currently covers discovery only.
-2. `font inspect` can build directly on `font list` discovery output, adapter selection, and debug behavior without needing a coverage-provider decision.
-3. `font check` has a useful proposed command shape, and the completed coverage-provider spike supports an optional `fontconfig` first slice with mocked `fc-query` fixtures.
+1. The completed Markdown-to-PDF plan established the discovery and coverage boundary, and the public font commands now cover discovery, inspection, and selected-file coverage checks.
+2. `font inspect` builds directly on `font list` discovery output, adapter selection, and debug behavior without claiming glyph coverage.
+3. `font check` has landed as an optional `fontconfig`-backed coverage slice with mocked `fc-query` fixtures and explicit inconclusive states.
 4. Codex Helper should depend on the shared font commands or modules later. It should not introduce separate font inspection or coverage logic.
 
 ## Sequencing Recommendation
@@ -223,7 +226,7 @@ Family names alone are not enough. A family can have multiple files, styles, wei
 
 All other outcomes must stay out of the false-failure path. They should be classified as `pass`, `inconclusive`, or usage errors according to the exit table above.
 
-When a family resolves to multiple faces, the deferred `font check` slice should select one face deterministically instead of probing faces until one passes. Proposed priority:
+When a family resolves to multiple faces, `font check` selects one face deterministically instead of probing faces until one passes. Priority:
 
 1. exact normalized family match before looser family matches
 2. inspectable file path before no usable path
@@ -497,23 +500,23 @@ Strict mode:
 - Keep the first `font check` slice at exit `1` for checked missing coverage, exit `2` for usage errors, and exit `3` for inconclusive checks.
 - Revisit `--strict` only if automation needs a mode that treats inconclusive checks as a failure.
 
-## Plan Readiness
+## Implementation Evidence
 
 This research supported a narrow `font inspect` implementation plan focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
 
-It is now enough for a dedicated `font check` implementation plan. The provider spike proved `fc-query` availability handling, charset parsing, checked-missing behavior, inconclusive behavior, TTC deferral, and mocked fixture coverage. Public command implementation remains pending.
+It also supported the dedicated `font check` implementation plan. The completed command covers `fc-query` availability handling, charset parsing, checked-missing behavior, inconclusive behavior, provider-backed TTC indexes, localized TTC metadata aliases, and mocked fixture coverage.
 
-Recommended implementation order:
+Completed implementation order:
 
 ```text
 font inspect first
   -> fontconfig coverage-provider spike with a job record (completed)
-  -> font check implementation plan (draft)
-  -> font check command
+  -> font check implementation plan
+  -> font check command with doctor capability reporting
   -> Codex Helper orchestration
 ```
 
-Do not start Codex Helper font assistance until at least `font inspect` is available and `font check` has either landed or has a documented coverage limitation that Helper can explain honestly.
+Codex Helper should consume the shared command/module contract later. It should not introduce separate font coverage logic that can drift from `font check`.
 
 ## Related Research
 
@@ -523,5 +526,5 @@ Do not start Codex Helper font assistance until at least `font inspect` is avail
 ## Related Plans
 
 - [Font Inspect Implementation and Coverage-Provider Follow-up](../plans/plan-2026-05-08-font-inspect-and-coverage-provider-follow-up.md) - completed implementation plan for the `font inspect` slice and coverage-provider follow-up record.
-- [Font Check Command Implementation](../plans/plan-2026-05-08-font-check-command-implementation.md) - draft implementation plan for the deferred public `font check` command.
+- [Font Check Command Implementation](../plans/plan-2026-05-08-font-check-command-implementation.md) - completed implementation plan for the public `font check` command and root doctor capability reporting.
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for profiles, initial font discovery, diagnostics, and docs.
