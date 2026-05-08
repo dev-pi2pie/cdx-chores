@@ -411,25 +411,56 @@ The `font check` direction should remain research guidance until the parser spik
 3. Do not add `--face-index` unless the parser spike proves TTC selection needs it immediately.
 4. Keep JSON examples as contract direction until parser behavior and reason-code coverage are proven.
 
-## Remaining Research Questions
+## Recommended Resolutions
 
-1. Prove parser viability with TTF and OTF files before implementing `font check`.
-2. Decide whether the selected parser can inspect TTC collections reliably enough for the first `font check` slice.
-3. Define the controlled fixture inventory for CJK, Latin-extended, RTL smoke, Nerd Font private-use glyphs, no-path faces, ambiguous families, and unsupported TTC behavior.
-4. Finalize the stable JSON reason-code set for inconclusive coverage.
-5. Decide in a later slice whether a separate `--strict` mode should map inconclusive checks to exit `1`. The first slice should keep plain inconclusive checks at exit `3`.
+Parser viability:
+
+- Spike `fontkit` first behind the internal `CoverageProvider` interface.
+- Accept `fontkit` for the first coverage implementation if it reliably answers TTF and OTF codepoint coverage under the current Node.js runtime target.
+- Keep `fontkit` types and parser-specific errors inside `src/fonts/` so another provider can replace it later.
+- If `fontkit` works for TTF and OTF but has edge-case limits, keep those limits in provider results and map unsupported cases to `inconclusive`.
+
+TTC handling:
+
+- Do not make TTC inspection a blocker for the first `font check` slice.
+- If the selected face resolves to a TTC collection and face-level inspection is not proven, return `inconclusive` with reason code `unsupported-ttc-collection`.
+- Do not add `--face-index` until there is evidence that users need it and the parser can honor it reliably.
+
+Fixture strategy:
+
+- Use mocked discovery inventories for command-level tests.
+- Use small real TTF and OTF fixtures for parser-backed coverage tests.
+- Use controlled coverage inventories for deterministic cross-platform command tests.
+- Use a mocked TTC discovery result to exercise the `inconclusive` path without requiring platform-installed TTC files.
+
+Initial JSON reason codes:
+
+- `no-inspectable-font-file`
+- `unsupported-font-format`
+- `unsupported-ttc-collection`
+- `parser-error`
+- `ambiguous-family`
+- `empty-required-codepoints`
+
+Missing glyphs should remain in `missingCodepoints`; they should not be modeled as reason codes.
+
+Strict mode:
+
+- Defer `--strict`.
+- Keep the first `font check` slice at exit `1` for checked missing coverage, exit `2` for usage errors, and exit `3` for inconclusive checks.
+- Revisit `--strict` only if automation needs a mode that treats inconclusive checks as a failure.
 
 ## Implementation Plan Readiness
 
 This research is solid enough to support a narrow `font inspect` implementation plan. The plan should stay focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
 
-It is not yet enough for a complete `font check` implementation plan. The command shape and exit-code direction are useful, but the coverage provider still needs a parser spike that proves TTF/OTF behavior, confirms or defers TTC collection support, and defines the controlled fixture inventory.
+It is not yet enough for a complete `font check` implementation plan. The command shape and exit-code direction are useful, and this research recommends the likely parser, TTC, fixture, reason-code, and strict-mode choices. The remaining gate is evidence: a short parser spike should prove TTF/OTF behavior, confirm or defer TTC collection support, and record the fixture inventory before the full `font check` plan is written.
 
 Recommended implementation order:
 
 ```text
 font inspect first
-  -> parser/coverage spike
+  -> parser/coverage spike with a job record
   -> font check
   -> Codex Helper orchestration
 ```
