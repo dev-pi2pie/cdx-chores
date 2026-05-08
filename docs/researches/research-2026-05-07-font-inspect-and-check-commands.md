@@ -16,7 +16,7 @@ The related implementation plan delivered `font list` as the first public discov
 - inspecting discovered font metadata
 - checking glyph coverage for specific text or special symbol requirements
 
-The immediate `font inspect` slice is captured in the related implementation plan. `font check` remains provisional until the coverage-provider behavior, TTC handling, controlled fixtures, and reason-code coverage are proven.
+The immediate `font inspect` slice is captured in the related implementation plan. The first coverage-provider spike now proves enough behavior to draft `font check`; the public command remains deferred to its own implementation plan.
 
 ## Current State
 
@@ -49,7 +49,7 @@ It cannot yet answer:
 
 1. The completed Markdown-to-PDF plan established the discovery and coverage boundary, but the implemented public command currently covers discovery only.
 2. `font inspect` can build directly on `font list` discovery output, adapter selection, and debug behavior without needing a coverage-provider decision.
-3. `font check` has a useful proposed command shape, but it should stay provisional until a coverage-provider spike proves real-file coverage behavior and the fixture strategy is defined.
+3. `font check` has a useful proposed command shape, and the completed coverage-provider spike supports an optional `fontconfig` first slice with mocked `fc-query` fixtures.
 4. Codex Helper should depend on the shared font commands or modules later. It should not introduce separate font inspection or coverage logic.
 
 ## Sequencing Recommendation
@@ -235,7 +235,7 @@ The command should report the checked face and path. If no inspectable face rema
 
 ## Coverage Provider Research
 
-`font check` should not start until the coverage-provider strategy is chosen and proven with a small spike.
+The coverage-provider spike chose optional `fontconfig` support as the first real-file coverage path.
 
 Recommended research direction: use a small internal coverage-provider interface.
 
@@ -243,8 +243,9 @@ Recommended research direction: use a small internal coverage-provider interface
 CoverageProvider
   -> optional fontconfig provider for real font files
   -> controlled fixture coverage for deterministic tests
-  -> parser-backed provider later if fontconfig is insufficient
 ```
+
+A parser-backed provider is a fallback-only contingency if a later spike proves that optional fontconfig coverage is not enough for important use cases. It is not the primary first-slice recommendation.
 
 The first real-file coverage candidate should be the system `fontconfig` CLI, specifically `fc-query` against the selected font file path. Do not use `fc-match` as proof of coverage: it can silently choose a fallback face and turn a missing glyph into a false pass. `font check` should first resolve a deterministic discovered face, then ask whether that concrete font file appears to contain the required codepoints.
 
@@ -275,9 +276,9 @@ Acceptable implementation paths for `font check`:
 | --- | --- |
 | optional fontconfig provider | `fc-query` can inspect a selected file path and expose charset coverage without adding a package dependency |
 | controlled fixture inventory | command tests need deterministic coverage behavior without relying on locally installed fonts or tools |
-| bundled parser library | fontconfig coverage is insufficient, unavailable on important platforms, or too hard to make deterministic |
+| fallback parser provider | later evidence shows fontconfig coverage is insufficient, unavailable on important platforms, or too hard to make deterministic |
 
-The first `font check` plan should carry the optional fontconfig path unless the provider spike disproves it. `fc-query` makes the command useful with real font files when the user has fontconfig installed; controlled inventories keep tests deterministic and avoid CI dependence on local font availability.
+The first `font check` plan should carry the optional fontconfig path. `fc-query` makes the command useful with real font files when the user has fontconfig installed; mocked `fc-query` output and controlled inventories keep tests deterministic and avoid CI dependence on local font availability.
 
 This direction has an important limitation: fontconfig charset coverage can show that a font advertises codepoint coverage, but it does not prove final rendering quality, shaping correctness, fallback behavior, emoji presentation, or PDF renderer behavior. `font check` should describe the result as coverage evidence, not as a guarantee that every renderer will draw the text correctly.
 
@@ -328,7 +329,7 @@ If the provider can inspect TTC collections reliably, `font inspect` should expo
 }
 ```
 
-`font check --json` should eventually return coverage results, but the exact reason-code set and provider-derived fields should remain provisional until the coverage spike:
+`font check --json` should eventually return coverage results. The exact field set should be finalized in the command implementation, but the provider spike established the initial reason-code set:
 
 ```json
 {
@@ -410,7 +411,7 @@ The related `font inspect` implementation plan should cover:
 4. Treat no matches as an empty discovery result, not as coverage proof.
 5. Keep Codex Helper out of this slice except as a later consumer of shared command behavior.
 
-The `font check` direction should remain research guidance until the provider spike is complete:
+The `font check` direction is ready to move into the dedicated command implementation plan:
 
 1. Require exactly one text source: `--text` or `--text-file`.
 2. Treat `--text-file` as raw UTF-8 text, not a parsed Markdown/HTML/document input; strip a leading BOM and exclude only `Cc` control characters from required coverage.
@@ -423,9 +424,9 @@ The `font check` direction should remain research guidance until the provider sp
 
 1. Favor a coverage-provider interface with an optional fontconfig provider for real font files and controlled fixture coverage for deterministic tests.
 2. Use `fc-query` against the selected font file path as the first real-file coverage candidate; do not use `fc-match` fallback matching as coverage proof.
-3. Keep `fontkit` or a local parser as a later replaceable provider only if fontconfig proves insufficient.
+3. Keep parser-backed coverage as a later contingency only if fontconfig proves insufficient.
 4. Do not add `--face-index` unless the provider spike proves TTC selection needs it immediately.
-5. Keep JSON examples as contract direction until provider behavior and reason-code coverage are proven.
+5. Keep JSON examples as contract direction until the command implementation finalizes output fields.
 
 ## Recommended Resolutions
 
@@ -436,7 +437,7 @@ Provider viability:
 - Query only the selected font file path. Do not use family fallback matching as coverage evidence.
 - Parse `fc-query` charset output into deterministic codepoint ranges before comparing required sample codepoints.
 - Return `inconclusive` with stable reason codes when `fc-query` fails, the charset output is unavailable, or the selected file cannot be inspected confidently.
-- Keep `fontkit` or a local parser as a later provider option if fontconfig coverage is too limited for the command's needs.
+- Keep parser-backed coverage as a later provider option only if fontconfig coverage is too limited for the command's needs.
 
 TTC handling:
 
@@ -473,16 +474,17 @@ Strict mode:
 
 ## Plan Readiness
 
-This research supports a narrow `font inspect` implementation plan focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
+This research supported a narrow `font inspect` implementation plan focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
 
-It is not yet enough for a complete `font check` implementation plan. The command shape and exit-code direction are useful, and this research recommends the provider, TTC, fixture, reason-code, and strict-mode choices to verify. The remaining gate is evidence: a short provider spike should prove `fc-query` availability handling, charset parsing, checked-missing behavior, inconclusive behavior, and the fixture inventory before the full `font check` plan is written.
+It is now enough for a dedicated `font check` implementation plan. The provider spike proved `fc-query` availability handling, charset parsing, checked-missing behavior, inconclusive behavior, TTC deferral, and mocked fixture coverage. Public command implementation remains pending.
 
 Recommended implementation order:
 
 ```text
 font inspect first
-  -> fontconfig coverage-provider spike with a job record
-  -> font check
+  -> fontconfig coverage-provider spike with a job record (completed)
+  -> font check implementation plan (draft)
+  -> font check command
   -> Codex Helper orchestration
 ```
 
@@ -495,5 +497,6 @@ Do not start Codex Helper font assistance until at least `font inspect` is avail
 
 ## Related Plans
 
-- [Font Inspect Implementation and Coverage-Provider Follow-up](../plans/plan-2026-05-08-font-inspect-and-coverage-parser-spike.md) - draft implementation plan for the `font inspect` slice and coverage-provider follow-up record.
+- [Font Inspect Implementation and Coverage-Provider Follow-up](../plans/plan-2026-05-08-font-inspect-and-coverage-provider-follow-up.md) - completed implementation plan for the `font inspect` slice and coverage-provider follow-up record.
+- [Font Check Command Implementation](../plans/plan-2026-05-08-font-check-command-implementation.md) - draft implementation plan for the deferred public `font check` command.
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for profiles, initial font discovery, diagnostics, and docs.

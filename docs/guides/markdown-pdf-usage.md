@@ -290,7 +290,7 @@ cdx-chores font inspect --family "Noto Sans CJK TC"
 cdx-chores font inspect --family "Noto Sans CJK TC" --json
 ```
 
-These commands report discovered candidates only; they do not prove glyph coverage for every character. Public `font check` coverage checks remain deferred until coverage-provider behavior is proven.
+These commands report discovered candidates only; they do not prove glyph coverage for every character. Public `font check` coverage checks remain deferred until the dedicated command implementation lands.
 
 Discovery mode defaults to `auto`:
 

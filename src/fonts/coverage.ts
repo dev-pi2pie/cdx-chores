@@ -2,7 +2,11 @@ import type {
   CheckFontCoverageInput,
   FontCodepointRange,
   FontCoverage,
+  FontCoverageInconclusiveReason,
   FontCoverageInventory,
+  FontCoverageProvider,
+  FontCoverageProviderInput,
+  FontCoverageProviderResult,
 } from "./types";
 
 const SCRIPT_RANGES: FontCodepointRange[] = [
@@ -44,6 +48,18 @@ function codepointLabel(codepoint: number): string {
   return `U+${codepoint.toString(16).toUpperCase().padStart(4, "0")}`;
 }
 
+function uniqueCodepoints(value: string): number[] {
+  return Array.from(new Set(codepoints(value)));
+}
+
+function isControlCodepoint(codepoint: number): boolean {
+  return codepoint <= 0x001f || (codepoint >= 0x007f && codepoint <= 0x009f);
+}
+
+function requiredCodepoints(value: string): number[] {
+  return uniqueCodepoints(value).filter((codepoint) => !isControlCodepoint(codepoint));
+}
+
 function isInRange(codepoint: number, range: FontCodepointRange): boolean {
   return codepoint >= range.start && codepoint <= range.end;
 }
@@ -53,6 +69,15 @@ function supportedByInventory(codepoint: number, inventory: FontCoverageInventor
     return true;
   }
   return inventory.supportedRanges?.some((range) => isInRange(codepoint, range)) ?? false;
+}
+
+function supportedByRanges(codepoint: number, ranges: FontCodepointRange[]): boolean {
+  return ranges.some((range) => isInRange(codepoint, range));
+}
+
+function fontPathFormat(path: string): string | undefined {
+  const match = /\.([a-z0-9]+)$/i.exec(path);
+  return match?.[1]?.toLowerCase();
 }
 
 function detectScripts(value: string): string[] {
@@ -82,6 +107,99 @@ function matchedNerdFontRanges(value: string): string[] {
 export function sampleTextForLanguage(language: string): string | undefined {
   return LANGUAGE_SAMPLE_TEXT[language];
 }
+
+export function parseFontconfigCharset(value: string): FontCodepointRange[] {
+  const ranges: FontCodepointRange[] = [];
+  const tokens = value.split(/[\s,]+/).filter(Boolean);
+
+  for (const token of tokens) {
+    const match = /^([0-9a-f]{1,6})(?:-([0-9a-f]{1,6}))?$/i.exec(token);
+    if (!match) {
+      continue;
+    }
+
+    const start = Number.parseInt(match[1] as string, 16);
+    const end = Number.parseInt((match[2] ?? match[1]) as string, 16);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+      continue;
+    }
+
+    ranges.push({
+      name: "fontconfig-charset",
+      start,
+      end,
+    });
+  }
+
+  return ranges;
+}
+
+export async function checkFontconfigCoverage(
+  input: FontCoverageProviderInput,
+): Promise<FontCoverageProviderResult> {
+  const face = input.face;
+  const path = face.path;
+  const checkedCodepoints = requiredCodepoints(input.text).map(codepointLabel);
+
+  const inconclusive = (reason: FontCoverageInconclusiveReason): FontCoverageProviderResult => ({
+    status: "inconclusive",
+    reason,
+    checkedCodepoints,
+    missingCodepoints: [],
+    face,
+    ...(path ? { path } : {}),
+  });
+
+  if (checkedCodepoints.length === 0) {
+    return inconclusive("empty-required-codepoints");
+  }
+
+  if (!path) {
+    return inconclusive("no-inspectable-font-file");
+  }
+
+  const format = face.format ?? fontPathFormat(path);
+  if (format === "ttc") {
+    return inconclusive("unsupported-ttc-collection");
+  }
+  if (format && !["ttf", "otf"].includes(format)) {
+    return inconclusive("unsupported-font-format");
+  }
+
+  const available = await input.runner("fc-query", ["--version"]);
+  if (!available.ok) {
+    return inconclusive("fontconfig-unavailable");
+  }
+
+  const queried = await input.runner("fc-query", ["--format=%{charset}\\n", path]);
+  if (!queried.ok) {
+    return inconclusive("fontconfig-query-failed");
+  }
+
+  const ranges = parseFontconfigCharset(queried.stdout);
+  if (ranges.length === 0) {
+    return inconclusive("fontconfig-charset-unavailable");
+  }
+
+  const required = requiredCodepoints(input.text);
+  const missingCodepoints = required
+    .filter((codepoint) => !supportedByRanges(codepoint, ranges))
+    .map(codepointLabel);
+
+  return {
+    status: "checked",
+    supportsText: missingCodepoints.length === 0,
+    checkedCodepoints,
+    missingCodepoints,
+    face,
+    path,
+  };
+}
+
+export const fontconfigCoverageProvider: FontCoverageProvider = {
+  name: "fontconfig",
+  check: checkFontconfigCoverage,
+};
 
 export function checkFontCoverage(input: CheckFontCoverageInput): FontCoverage {
   const matchedRanges = matchedNerdFontRanges(input.text);

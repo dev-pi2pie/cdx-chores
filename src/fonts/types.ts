@@ -101,3 +101,45 @@ export interface FontCoverage {
     matchedRanges: string[];
   };
 }
+
+export type FontCoverageInconclusiveReason =
+  | "no-inspectable-font-file"
+  | "fontconfig-unavailable"
+  | "fontconfig-query-failed"
+  | "fontconfig-charset-unavailable"
+  | "unsupported-font-format"
+  | "unsupported-ttc-collection"
+  | "empty-required-codepoints";
+
+export interface FontCoverageProviderInput {
+  face: FontFace;
+  text: string;
+  runner: FontDiscoveryCommandRunner;
+}
+
+export interface FontCoverageProviderCheckedResult {
+  status: "checked";
+  supportsText: boolean;
+  checkedCodepoints: string[];
+  missingCodepoints: string[];
+  face: FontFace;
+  path: string;
+}
+
+export interface FontCoverageProviderInconclusiveResult {
+  status: "inconclusive";
+  reason: FontCoverageInconclusiveReason;
+  checkedCodepoints: string[];
+  missingCodepoints: [];
+  face: FontFace;
+  path?: string;
+}
+
+export type FontCoverageProviderResult =
+  | FontCoverageProviderCheckedResult
+  | FontCoverageProviderInconclusiveResult;
+
+export interface FontCoverageProvider {
+  name: string;
+  check(input: FontCoverageProviderInput): Promise<FontCoverageProviderResult>;
+}

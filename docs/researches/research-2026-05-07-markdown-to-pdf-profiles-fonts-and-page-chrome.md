@@ -297,7 +297,7 @@ The cross-platform design should separate discovery from coverage:
 | macOS adapter | discover system font candidates through the platform registry or known font directories |
 | Linux adapter | prefer `fontconfig` when available, with known-directory fallback |
 | Windows adapter | discover fonts from known font directories and registry-compatible metadata where practical |
-| coverage parser | inspect actual font files or controlled samples for glyph support |
+| coverage provider | inspect actual font files or controlled samples for glyph support |
 
 Operating-system discovery should identify candidate faces, but it should not be treated as proof that a font can render a document. Glyph coverage checks need deterministic inspection or mocked fixtures so results are testable across platforms.
 
@@ -632,7 +632,7 @@ Completed first-slice recommendations:
 4. Metadata should primarily come from frontmatter, with profile metadata as reusable defaults and repeatable `--meta key=value` as the concise CLI override path.
 5. Font work should use a cross-platform module with platform discovery adapters and deterministic coverage checks. The first implementation slice selected platform-command discovery; font-file parser selection is deferred and remains out of scope for that slice.
 6. Font command follow-up work should use `--discovery auto|native|fontconfig` for discovery selection and `font list --debug` for command-run diagnostics; broader dependency checks stay with the existing top-level `doctor` command.
-7. `font inspect` and `font check` should be treated as a pre-Codex-Helper checkpoint: inspect discovered metadata first, choose the coverage parser strategy next, then expose text/glyph checks before Helper tries to suggest profile fixes.
+7. `font inspect` and `font check` should be treated as a pre-Codex-Helper checkpoint: inspect discovered metadata first, choose the coverage-provider strategy next, then expose text/glyph checks before Helper tries to suggest profile fixes.
 
 ## Related Research
 

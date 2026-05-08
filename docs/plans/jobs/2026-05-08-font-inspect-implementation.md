@@ -17,11 +17,11 @@ Implement the `font inspect` slice from the font inspect implementation and cove
 - Kept `font inspect` discovery-only; output states that coverage was not checked.
 - Added family-oriented matching with stable ordering and duplicate removal.
 - Added no-match behavior as an empty discovery result with exit `0`.
-- Updated the Markdown PDF usage guide with `font inspect` examples and kept `font check` documented as deferred until coverage-provider evidence exists.
+- Updated the Markdown PDF usage guide with `font inspect` examples and kept `font check` documented as deferred to the dedicated command implementation plan.
 
 ## Verification
 
-- Passed `bun test test/fonts.test.ts` with 40 tests.
+- Passed `bun test test/fonts.test.ts` with 50 tests after the coverage-provider follow-up.
 - Passed `bun run lint`.
 - Passed `bun run format:check`.
 - Passed `bun run build`.
@@ -31,7 +31,7 @@ Implement the `font inspect` slice from the font inspect implementation and cove
 
 ## Related Plan
 
-- [Font inspect implementation and coverage-provider follow-up](../plan-2026-05-08-font-inspect-and-coverage-parser-spike.md)
+- [Font inspect implementation and coverage-provider follow-up](../plan-2026-05-08-font-inspect-and-coverage-provider-follow-up.md)
 
 ## Related Research
 

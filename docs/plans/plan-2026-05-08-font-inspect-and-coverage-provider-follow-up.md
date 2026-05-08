@@ -1,7 +1,7 @@
 ---
 title: "Font inspect implementation and coverage-provider follow-up"
 created-date: 2026-05-08
-status: active
+status: completed
 agent: codex
 ---
 
@@ -163,13 +163,13 @@ Debug JSON should follow the completed `font list --debug` shape and include san
 ### Phase 5: Font Check Coverage Follow-up
 
 - [x] Create a small coverage-provider follow-up record before drafting `font check`.
-- [ ] Spike optional `fontconfig` support behind an internal `CoverageProvider` interface.
-- [ ] Prove `fc-query` availability handling, selected-file charset parsing, checked-missing behavior, and inconclusive behavior.
-- [ ] Record whether TTC support is usable or should remain `inconclusive` with `unsupported-ttc-collection`.
-- [ ] Record the fixture inventory for mocked `fc-query` output and controlled coverage tests.
-- [ ] Draft a dedicated `font check` implementation plan after the provider spike records enough evidence.
+- [x] Spike optional `fontconfig` support behind an internal `CoverageProvider` interface.
+- [x] Prove `fc-query` availability handling, selected-file charset parsing, checked-missing behavior, and inconclusive behavior.
+- [x] Record whether TTC support is usable or should remain `inconclusive` with `unsupported-ttc-collection`.
+- [x] Record the fixture inventory for mocked `fc-query` output and controlled coverage tests.
+- [x] Draft a dedicated `font check` implementation plan after the provider spike records enough evidence.
 
-Status note: the `font inspect` implementation and coverage-provider follow-up record are complete. The provider evaluation tasks remain open in the draft follow-up record because this slice intentionally did not add coverage logic or implement `font check`.
+Status note: the `font inspect` implementation and coverage-provider follow-up are complete. The provider spike added internal `fontconfig` coverage helpers and mocked `fc-query` tests, but this slice intentionally did not add the public `font check` command.
 
 ## Validation
 
@@ -198,4 +198,5 @@ Run broader validation if the implementation touches shared CLI registration, ex
 
 ## Related Plans
 
+- [Font Check Command Implementation](plan-2026-05-08-font-check-command-implementation.md)
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md)
