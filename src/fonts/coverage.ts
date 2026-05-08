@@ -44,7 +44,7 @@ function codepoints(value: string): number[] {
   return Array.from(value).map((character) => character.codePointAt(0) ?? 0);
 }
 
-function codepointLabel(codepoint: number): string {
+export function formatFontCodepoint(codepoint: number): string {
   return `U+${codepoint.toString(16).toUpperCase().padStart(4, "0")}`;
 }
 
@@ -56,7 +56,7 @@ function isControlCodepoint(codepoint: number): boolean {
   return codepoint <= 0x001f || (codepoint >= 0x007f && codepoint <= 0x009f);
 }
 
-function requiredCodepoints(value: string): number[] {
+export function requiredFontCoverageCodepoints(value: string): number[] {
   return uniqueCodepoints(value).filter((codepoint) => !isControlCodepoint(codepoint));
 }
 
@@ -139,7 +139,7 @@ export async function checkFontconfigCoverage(
 ): Promise<FontCoverageProviderResult> {
   const face = input.face;
   const path = face.path;
-  const checkedCodepoints = requiredCodepoints(input.text).map(codepointLabel);
+  const checkedCodepoints = requiredFontCoverageCodepoints(input.text).map(formatFontCodepoint);
 
   const inconclusive = (reason: FontCoverageInconclusiveReason): FontCoverageProviderResult => ({
     status: "inconclusive",
@@ -181,10 +181,10 @@ export async function checkFontconfigCoverage(
     return inconclusive("fontconfig-charset-unavailable");
   }
 
-  const required = requiredCodepoints(input.text);
+  const required = requiredFontCoverageCodepoints(input.text);
   const missingCodepoints = required
     .filter((codepoint) => !supportedByRanges(codepoint, ranges))
-    .map(codepointLabel);
+    .map(formatFontCodepoint);
 
   return {
     status: "checked",
@@ -210,7 +210,7 @@ export function checkFontCoverage(input: CheckFontCoverageInput): FontCoverage {
       family: input.family,
       status: "unknown",
       supportsText: false,
-      missingCodepoints: codepoints(input.text).map(codepointLabel),
+      missingCodepoints: codepoints(input.text).map(formatFontCodepoint),
       scripts: detectScripts(input.text),
       nerdFont: {
         detected: nerdFontDetected,
@@ -223,7 +223,7 @@ export function checkFontCoverage(input: CheckFontCoverageInput): FontCoverage {
     .filter(
       (codepoint) => !supportedByInventory(codepoint, input.inventory as FontCoverageInventory),
     )
-    .map(codepointLabel);
+    .map(formatFontCodepoint);
 
   const missingNerdFont = input.requireNerdFont && input.inventory.nerdFont !== true;
 

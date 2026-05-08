@@ -1,7 +1,7 @@
 ---
 title: "Font check command implementation"
 created-date: 2026-05-08
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -127,6 +127,7 @@ JSON output should carry the command contract:
 
 Initial JSON reason codes:
 
+- `no-matching-family`
 - `no-inspectable-font-file`
 - `fontconfig-unavailable`
 - `fontconfig-query-failed`
@@ -183,40 +184,40 @@ Missing `fc-list` should make `capabilities["font.discovery.fontconfig"]` false.
 
 ### Phase 1: Text Source and Required Codepoints
 
-- [ ] Add `--text`, `--text-file`, and `--require <kind>` command options.
-- [ ] Require exactly one text source.
-- [ ] Read `--text-file` as raw UTF-8 text and strip a leading BOM.
-- [ ] Reject invalid UTF-8 and unreadable files as usage errors.
-- [ ] Extract required codepoints while excluding only `Cc` controls.
-- [ ] Add tests for text source validation, BOM handling, control filtering, and invalid UTF-8.
+- [x] Add `--text`, `--text-file`, and `--require <kind>` command options.
+- [x] Require exactly one text source.
+- [x] Read `--text-file` as raw UTF-8 text and strip a leading BOM.
+- [x] Reject invalid UTF-8 and unreadable files as usage errors.
+- [x] Extract required codepoints while excluding only `Cc` controls.
+- [x] Add tests for text source validation, BOM handling, control filtering, and invalid UTF-8.
 
 ### Phase 2: Family Resolution and Face Selection
 
-- [ ] Reuse the `font inspect` matching helpers where possible.
-- [ ] Select one deterministic face:
+- [x] Reuse the `font inspect` matching helpers where possible.
+- [x] Select one deterministic face:
   - exact normalized family before looser matches
   - inspectable path before no path
   - normal or regular style before italic or oblique
   - weight closest to `400`
   - stable lexical order by full name and path
-- [ ] Return `inconclusive` for no inspectable selected path.
-- [ ] Add tests for deterministic face selection, no-match behavior, ambiguous matches, and no-path behavior.
+- [x] Return `inconclusive` for no inspectable selected path.
+- [x] Add tests for deterministic face selection, no-match behavior, ambiguous matches, and no-path behavior.
 
 ### Phase 3: Coverage Provider Wiring
 
-- [ ] Wire the selected face into the internal `fontconfigCoverageProvider`.
-- [ ] Map checked provider results to `pass` or `fail`.
-- [ ] Map provider inconclusive reasons to exit `3`.
-- [ ] Preserve TTC inspection as `unsupported-ttc-collection`.
-- [ ] Add tests for pass, fail, missing `fontconfig`, failed query, empty charset, unsupported format, and TTC paths.
+- [x] Wire the selected face into the internal `fontconfigCoverageProvider`.
+- [x] Map checked provider results to `pass` or `fail`.
+- [x] Map provider inconclusive reasons to exit `3`.
+- [x] Preserve TTC inspection as `unsupported-ttc-collection`.
+- [x] Add tests for pass, fail, missing `fontconfig`, failed query, empty charset, unsupported format, and TTC paths.
 
 ### Phase 4: Output and Debug
 
-- [ ] Implement text output for pass, fail, and inconclusive results.
-- [ ] Implement JSON output with stable fields.
-- [ ] Include checked face, path, checked codepoints, missing codepoints, warnings, result, and exit code.
-- [ ] Preserve sanitized discovery debug output when `--debug` is passed.
-- [ ] Add tests for text, JSON, debug, and warning output.
+- [x] Implement text output for pass, fail, and inconclusive results.
+- [x] Implement JSON output with stable fields.
+- [x] Include checked face, path, checked codepoints, missing codepoints, warnings, result, and exit code.
+- [x] Preserve sanitized discovery debug output when `--debug` is passed.
+- [x] Add tests for text, JSON, debug, and warning output.
 
 ### Phase 5: Docs and Traceability
 
@@ -247,6 +248,13 @@ bun run format:check
 ```
 
 Run broader validation if command registration, shared action helpers, or Markdown-to-PDF profile helpers change.
+
+Phase 1-4 validation on 2026-05-08:
+
+- `bun test test/fonts.test.ts` - 63 pass, 378 expect calls
+- `bun run lint` - 0 warnings, 0 errors
+- `bun run format:check` - pass
+- `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
 
 ## Risks
 

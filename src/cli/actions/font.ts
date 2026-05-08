@@ -1,13 +1,14 @@
 import {
   discoverSystemFonts,
-  type DiscoverFontsResult,
   type FontDiscoveryCommandRunner,
   type FontDiscoveryMode,
   type FontFace,
 } from "../../fonts";
+import { inspectFontFaces, matchesFontFamily, uniqueFontFaces } from "../../fonts/matching";
 import { getCliColors } from "../colors";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
+import { fontDiscoveryInfo, printFontDebugAttempts } from "./font-common";
 import { printLine } from "./shared";
 
 export interface FontListOptions {
@@ -25,11 +26,6 @@ export interface FontInspectOptions {
   debug?: boolean;
   discovery?: FontDiscoveryMode;
   runner?: FontDiscoveryCommandRunner;
-}
-
-interface MatchedFontFace {
-  face: FontFace;
-  matchRank: number;
 }
 
 interface FontInspectFaceOutput {
@@ -55,35 +51,8 @@ function normalizeLimit(value: number | undefined): number | undefined {
   return value;
 }
 
-function normalizeFontQuery(value: string): string {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function fontFamilyMatchRank(face: FontFace, family: string | undefined): number | undefined {
-  if (!family) {
-    return 0;
-  }
-  const needle = normalizeFontQuery(family);
-  const faceFamily = normalizeFontQuery(face.family);
-  const fullName = normalizeFontQuery(face.fullName);
-
-  if (faceFamily === needle) {
-    return 0;
-  }
-  if (fullName === needle) {
-    return 1;
-  }
-  if (faceFamily.includes(needle)) {
-    return 2;
-  }
-  if (fullName.includes(needle)) {
-    return 3;
-  }
-  return undefined;
-}
-
 function matchesFamily(face: FontFace, family: string | undefined): boolean {
-  return fontFamilyMatchRank(face, family) !== undefined;
+  return matchesFontFamily(face, family);
 }
 
 function fontFaceLabel(face: FontFace): string {
@@ -120,48 +89,6 @@ function formatFontFace(face: FontFace): string {
     : fontFaceLabel(face);
 }
 
-function uniqueFontFaces(faces: FontFace[]): FontFace[] {
-  const seen = new Set<string>();
-  return faces.filter((face) => {
-    const key = [
-      face.family,
-      face.fullName,
-      face.style,
-      face.weight ?? "",
-      face.path ?? "",
-      face.format ?? "",
-    ]
-      .join("\0")
-      .toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function sortFontFaces(left: FontFace, right: FontFace): number {
-  return (
-    left.family.localeCompare(right.family) ||
-    left.fullName.localeCompare(right.fullName) ||
-    left.style.localeCompare(right.style) ||
-    (left.weight ?? Number.MAX_SAFE_INTEGER) - (right.weight ?? Number.MAX_SAFE_INTEGER) ||
-    (left.path ?? "").localeCompare(right.path ?? "")
-  );
-}
-
-function inspectFontFaces(faces: FontFace[], family: string): FontFace[] {
-  const matched = uniqueFontFaces(faces).flatMap((face): MatchedFontFace[] => {
-    const matchRank = fontFamilyMatchRank(face, family);
-    return matchRank === undefined ? [] : [{ face, matchRank }];
-  });
-
-  return matched
-    .sort((left, right) => left.matchRank - right.matchRank || sortFontFaces(left.face, right.face))
-    .map((match) => match.face);
-}
-
 function serializeInspectFace(face: FontFace): FontInspectFaceOutput {
   return {
     family: face.family,
@@ -172,35 +99,6 @@ function serializeInspectFace(face: FontFace): FontInspectFaceOutput {
     ...(face.format !== undefined && face.format !== "unknown" ? { format: face.format } : {}),
     ...(face.path ? { path: face.path } : {}),
   };
-}
-
-function printDebugAttempts(runtime: CliRuntime, discovery: DiscoverFontsResult): void {
-  if (!discovery.attempts) {
-    return;
-  }
-
-  const pc = getCliColors(runtime);
-  printLine(runtime.stdout, "");
-  printLine(runtime.stdout, pc.bold("Debug:"));
-  for (const attempt of discovery.attempts) {
-    const status = attempt.status === "success" ? "success" : "failed";
-    printLine(
-      runtime.stdout,
-      `- ${attempt.adapter}: ${status} in ${attempt.durationMs}ms (${attempt.message})`,
-    );
-  }
-}
-
-function fontDiscoveryInfo(discovery: DiscoverFontsResult): string[] {
-  if (discovery.selectionReason === "macos-auto-fontconfig") {
-    return [
-      "using fontconfig because fc-list is available. Use --discovery native to force macOS system_profiler.",
-    ];
-  }
-  if (discovery.selectionReason === "macos-auto-native-fallback") {
-    return ["fontconfig was unavailable, so macOS native discovery was used."];
-  }
-  return [];
 }
 
 export async function actionFontList(
@@ -249,7 +147,7 @@ export async function actionFontList(
     printLine(runtime.stdout, `${pc.dim("Info:")} ${message}`);
   }
   if (options.debug) {
-    printDebugAttempts(runtime, discovery);
+    printFontDebugAttempts(runtime, discovery);
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
@@ -343,7 +241,7 @@ export async function actionFontInspect(
     printLine(runtime.stdout, `${pc.dim("Info:")} ${message}`);
   }
   if (options.debug) {
-    printDebugAttempts(runtime, discovery);
+    printFontDebugAttempts(runtime, discovery);
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {

@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
-import { actionFontInspect, actionFontList } from "../src/cli/actions";
+import { actionFontCheck, actionFontInspect, actionFontList } from "../src/cli/actions";
 import {
   checkFontconfigCoverage,
   fontconfigCoverageProvider,
@@ -16,7 +18,7 @@ import {
   sampleTextForLanguage,
 } from "../src/fonts";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { runCli } from "./helpers/cli-test-utils";
+import { createTempFixtureDir, runCli } from "./helpers/cli-test-utils";
 
 describe("font discovery", () => {
   test("discovers Linux fonts through fontconfig with an injected runner", async () => {
@@ -301,6 +303,46 @@ describe("font CLI", () => {
     expect(help.stdout).toContain("--debug");
     expect(help.stdout).toContain("--discovery <mode>");
     expect(help.stdout).toContain("--family <name>");
+  });
+
+  test("registers font check options through the command layer", () => {
+    const help = runCli(["font", "check", "--help"]);
+    const invalidRequire = runCli([
+      "font",
+      "check",
+      "--family",
+      "Latin",
+      "--text",
+      "A",
+      "--require",
+      "bogus",
+    ]);
+    const invalidDiscovery = runCli([
+      "font",
+      "check",
+      "--family",
+      "Latin",
+      "--text",
+      "A",
+      "--discovery",
+      "bogus",
+    ]);
+
+    expect(help.exitCode).toBe(0);
+    expect(help.stdout).toContain("Usage: cdx-chores font check [options]");
+    expect(help.stdout).toContain("--json");
+    expect(help.stdout).toContain("--debug");
+    expect(help.stdout).toContain("--discovery <mode>");
+    expect(help.stdout).toContain("--family <name>");
+    expect(help.stdout).toContain("--text <value>");
+    expect(help.stdout).toContain("--text-file <path>");
+    expect(help.stdout).toContain("--require <kind>");
+    expect(invalidRequire.exitCode).toBe(2);
+    expect(invalidRequire.stderr).toContain("--require must be one of: nerd");
+    expect(invalidDiscovery.exitCode).toBe(2);
+    expect(invalidDiscovery.stderr).toContain(
+      "--discovery must be one of: auto, native, fontconfig",
+    );
   });
 
   test("rejects invalid font discovery modes through the command layer", () => {
@@ -636,6 +678,823 @@ describe("font CLI", () => {
 
     expect(called).toBe(false);
     expectNoOutput();
+  });
+
+  test("rejects invalid font check inputs before discovery", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    let called = false;
+    const runner = async () => {
+      called = true;
+      return { ok: true, stdout: "", stderr: "" };
+    };
+
+    await expectCliError(() => actionFontCheck(runtime, { text: "A", runner }), {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+      messageIncludes: "--family is required for font check",
+    });
+    await expectCliError(() => actionFontCheck(runtime, { family: "Latin", runner }), {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+      messageIncludes: "requires exactly one of --text or --text-file",
+    });
+    await expectCliError(
+      () => actionFontCheck(runtime, { family: "Latin", text: "A", textFile: "a.txt", runner }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "requires exactly one of --text or --text-file",
+      },
+    );
+    await expectCliError(
+      () => actionFontCheck(runtime, { family: "Latin", text: "A", require: "emoji", runner }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--require must be one of: nerd",
+      },
+    );
+    expect(called).toBe(false);
+    expectNoOutput();
+  });
+
+  test("reads font check text files as raw UTF-8 and filters only controls", async () => {
+    const fixtureDir = await createTempFixtureDir("font-check-text");
+    const textPath = join(fixtureDir, "sample.txt");
+    await writeFile(textPath, Buffer.from([0xef, 0xbb, 0xbf, 0x41, 0x0a, 0x42, 0x09]));
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    await actionFontCheck(runtime, {
+      json: true,
+      family: "Latin",
+      textFile: textPath,
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041 0042\n", stderr: "" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      checkedCodepoints: string[];
+      missingCodepoints: string[];
+    };
+    expect(payload.result).toBe("pass");
+    expect(payload.checkedCodepoints).toEqual(["U+0041", "U+0042"]);
+    expect(payload.missingCodepoints).toEqual([]);
+    expectNoStderr();
+  });
+
+  test("rejects unreadable or invalid UTF-8 font check text files before discovery", async () => {
+    const fixtureDir = await createTempFixtureDir("font-check-invalid-text");
+    const invalidPath = join(fixtureDir, "invalid.txt");
+    await writeFile(invalidPath, Buffer.from([0xc3, 0x28]));
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    let called = false;
+    const runner = async () => {
+      called = true;
+      return { ok: true, stdout: "", stderr: "" };
+    };
+
+    await expectCliError(
+      () => actionFontCheck(runtime, { family: "Latin", textFile: invalidPath, runner }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Invalid UTF-8 in --text-file",
+      },
+    );
+    await expectCliError(
+      () =>
+        actionFontCheck(runtime, {
+          family: "Latin",
+          textFile: join(fixtureDir, "missing.txt"),
+          runner,
+        }),
+      {
+        code: "FILE_READ_ERROR",
+        exitCode: 2,
+        messageIncludes: "Failed to read --text-file",
+      },
+    );
+
+    expect(called).toBe(false);
+    expectNoOutput();
+  });
+
+  test("selects one deterministic font check face before checking coverage", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    const queriedPaths: string[] = [];
+    runtime.platform = "linux";
+
+    await actionFontCheck(runtime, {
+      json: true,
+      family: "Latin",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: [
+              "Latin\tLatin Italic\tItalic\t/fonts/Latin-Italic.ttf",
+              "Latin\tLatin Bold\tBold\t/fonts/Latin-Bold.ttf",
+              "Latin\tLatin Regular\tRegular\t/fonts/Latin-Regular.ttf",
+              "Latin\tLatin Aardvark\tRegular\t",
+              "",
+            ].join("\n"),
+            stderr: "",
+          };
+        }
+        if (args[0] !== "--version") {
+          queriedPaths.push(args[1] as string);
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as { checkedFace: string; path: string };
+    expect(payload.checkedFace).toBe("Latin Regular");
+    expect(payload.path).toBe("/fonts/Latin-Regular.ttf");
+    expect(queriedPaths).toEqual(["/fonts/Latin-Regular.ttf"]);
+    expectNoStderr();
+  });
+
+  test("keeps no-match and ambiguous font check family results inconclusive", async () => {
+    const noMatchRuntime = createActionTestRuntime();
+    noMatchRuntime.runtime.platform = "linux";
+    const noMatchResult = await actionFontCheck(noMatchRuntime.runtime, {
+      json: true,
+      family: "Missing",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: "Source Serif\tSource Serif Regular\tRegular\t/fonts/SourceSerif.otf\n",
+        stderr: "",
+      }),
+    });
+    const noMatchPayload = JSON.parse(noMatchRuntime.stdout.text) as {
+      result: string;
+      exitCode: number;
+      reason: string;
+      checkedFace: string | null;
+      warnings: string[];
+      info: string[];
+    };
+    expect(noMatchResult).toMatchObject({
+      result: "inconclusive",
+      exitCode: 3,
+      reason: "no-matching-family",
+    });
+    expect(noMatchPayload).toMatchObject({
+      result: "inconclusive",
+      exitCode: 3,
+      reason: "no-matching-family",
+      checkedFace: null,
+    });
+    expect(noMatchPayload.warnings).toEqual([]);
+    expect(noMatchPayload.info).toEqual([]);
+
+    const ambiguousRuntime = createActionTestRuntime();
+    ambiguousRuntime.runtime.platform = "linux";
+    const commands: string[] = [];
+    await actionFontCheck(ambiguousRuntime.runtime, {
+      json: true,
+      family: "Noto",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command) => {
+        commands.push(command);
+        return {
+          ok: true,
+          stdout: [
+            "Noto Sans\tNoto Sans Regular\tRegular\t/fonts/NotoSans.otf",
+            "Noto Serif\tNoto Serif Regular\tRegular\t/fonts/NotoSerif.otf",
+            "",
+          ].join("\n"),
+          stderr: "",
+        };
+      },
+    });
+    const ambiguousPayload = JSON.parse(ambiguousRuntime.stdout.text) as {
+      result: string;
+      exitCode: number;
+      reason: string;
+      checkedFace: string | null;
+      path: string | null;
+    };
+    expect(ambiguousPayload).toMatchObject({
+      result: "inconclusive",
+      exitCode: 3,
+      reason: "ambiguous-family",
+      checkedFace: null,
+      path: null,
+    });
+    expect(commands).toEqual(["fc-list"]);
+  });
+
+  test("reports selected no-path font check faces as inconclusive", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    const commands: string[] = [];
+    runtime.platform = "linux";
+
+    await actionFontCheck(runtime, {
+      json: true,
+      family: "Virtual",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command) => {
+        commands.push(command);
+        return {
+          ok: true,
+          stdout: "Virtual\tVirtual Regular\tRegular\t\n",
+          stderr: "",
+        };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      reason: string;
+      checkedFace: string;
+      path: string | null;
+    };
+    expect(payload).toMatchObject({
+      result: "inconclusive",
+      reason: "no-inspectable-font-file",
+      checkedFace: "Virtual Regular",
+      path: null,
+    });
+    expect(commands).toEqual(["fc-list"]);
+    expectNoStderr();
+  });
+
+  test("maps font check provider pass, fail, and nerd requirement results", async () => {
+    const passRuntime = createActionTestRuntime();
+    passRuntime.runtime.platform = "linux";
+    const pass = await actionFontCheck(passRuntime.runtime, {
+      json: true,
+      family: "Latin",
+      text: "AB",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041 0042\n", stderr: "" };
+      },
+    });
+    expect(pass).toMatchObject({ result: "pass", exitCode: 0 });
+    const passPayload = JSON.parse(passRuntime.stdout.text) as {
+      command: string;
+      family: string;
+      discovery: string;
+      adapter: string;
+      result: string;
+      exitCode: number;
+      checkedFace: string;
+      path: string;
+      reason: string | null;
+      checkedCodepoints: string[];
+      missingCodepoints: string[];
+      warnings: string[];
+      info: string[];
+    };
+    expect(passPayload).toMatchObject({
+      command: "font check",
+      family: "Latin",
+      discovery: "fontconfig",
+      adapter: "fontconfig",
+      result: "pass",
+      exitCode: 0,
+      checkedFace: "Latin Regular",
+      path: "/fonts/Latin.ttf",
+      reason: null,
+      checkedCodepoints: ["U+0041", "U+0042"],
+      missingCodepoints: [],
+      warnings: [],
+      info: [],
+    });
+
+    const failRuntime = createActionTestRuntime();
+    failRuntime.runtime.platform = "linux";
+    const fail = await actionFontCheck(failRuntime.runtime, {
+      json: true,
+      family: "Latin",
+      text: "AB",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+    const failPayload = JSON.parse(failRuntime.stdout.text) as {
+      command: string;
+      family: string;
+      discovery: string;
+      adapter: string;
+      result: string;
+      exitCode: number;
+      checkedFace: string;
+      path: string;
+      reason: string | null;
+      checkedCodepoints: string[];
+      missingCodepoints: string[];
+      warnings: string[];
+      info: string[];
+    };
+    expect(fail).toMatchObject({ result: "fail", exitCode: 1 });
+    expect(failPayload).toMatchObject({
+      command: "font check",
+      family: "Latin",
+      discovery: "fontconfig",
+      adapter: "fontconfig",
+      result: "fail",
+      exitCode: 1,
+      checkedFace: "Latin Regular",
+      path: "/fonts/Latin.ttf",
+      reason: null,
+      checkedCodepoints: ["U+0041", "U+0042"],
+      missingCodepoints: ["U+0042"],
+      warnings: [],
+      info: [],
+    });
+
+    const nerdRuntime = createActionTestRuntime();
+    nerdRuntime.runtime.platform = "linux";
+    await actionFontCheck(nerdRuntime.runtime, {
+      json: true,
+      family: "Latin",
+      text: "git",
+      require: "nerd",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0020-007e\n", stderr: "" };
+      },
+    });
+    const nerdPayload = JSON.parse(nerdRuntime.stdout.text) as {
+      requirements: string[];
+      missingCodepoints: string[];
+      warnings: string[];
+      info: string[];
+    };
+    expect(nerdPayload.requirements).toEqual(["nerd"]);
+    expect(nerdPayload.missingCodepoints).toEqual(["U+E0B0", "U+F418"]);
+    expect(nerdPayload.warnings).toEqual([]);
+    expect(nerdPayload.info).toEqual([]);
+  });
+
+  test("maps font check provider inconclusive reasons to exit 3", async () => {
+    const scenarios: Array<{
+      name: string;
+      facePath: string;
+      query: (args: string[]) => { ok: boolean; stdout: string; stderr: string };
+      reason: string;
+      expectedCommands: string[];
+    }> = [
+      {
+        name: "missing fontconfig",
+        facePath: "/fonts/Latin.ttf",
+        query: () => ({ ok: false, stdout: "", stderr: "missing" }),
+        reason: "fontconfig-unavailable",
+        expectedCommands: ["fc-list", "fc-query"],
+      },
+      {
+        name: "failed query",
+        facePath: "/fonts/Latin.ttf",
+        query: (args) =>
+          args[0] === "--version"
+            ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+            : { ok: false, stdout: "", stderr: "query failed" },
+        reason: "fontconfig-query-failed",
+        expectedCommands: ["fc-list", "fc-query", "fc-query"],
+      },
+      {
+        name: "empty charset",
+        facePath: "/fonts/Latin.ttf",
+        query: (args) =>
+          args[0] === "--version"
+            ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+            : { ok: true, stdout: "\n", stderr: "" },
+        reason: "fontconfig-charset-unavailable",
+        expectedCommands: ["fc-list", "fc-query", "fc-query"],
+      },
+      {
+        name: "unsupported format",
+        facePath: "/fonts/Latin.woff2",
+        query: () => {
+          throw new Error("fc-query should not be called");
+        },
+        reason: "unsupported-font-format",
+        expectedCommands: ["fc-list"],
+      },
+      {
+        name: "ttc",
+        facePath: "/fonts/System.ttc",
+        query: () => {
+          throw new Error("fc-query should not be called");
+        },
+        reason: "unsupported-ttc-collection",
+        expectedCommands: ["fc-list"],
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      const { runtime, stdout } = createActionTestRuntime();
+      const commands: string[] = [];
+      runtime.platform = "linux";
+      const result = await actionFontCheck(runtime, {
+        json: true,
+        family: "Latin",
+        text: "A",
+        discovery: "fontconfig",
+        runner: async (command, args) => {
+          commands.push(command);
+          if (command === "fc-list") {
+            return {
+              ok: true,
+              stdout: `Latin\tLatin Regular\tRegular\t${scenario.facePath}\n`,
+              stderr: "",
+            };
+          }
+          return scenario.query(args);
+        },
+      });
+      const payload = JSON.parse(stdout.text) as {
+        result: string;
+        exitCode: number;
+        reason: string;
+      };
+      expect(`${scenario.name}:${payload.reason}`).toBe(`${scenario.name}:${scenario.reason}`);
+      expect(result.exitCode).toBe(3);
+      expect(payload).toMatchObject({
+        result: "inconclusive",
+        exitCode: 3,
+        reason: scenario.reason,
+      });
+      expect(commands).toEqual(scenario.expectedCommands);
+    }
+  });
+
+  test("prints font check text output and warning output", async () => {
+    const passRuntime = createActionTestRuntime({ colorEnabled: false });
+    passRuntime.runtime.platform = "linux";
+
+    await actionFontCheck(passRuntime.runtime, {
+      family: "Latin",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+    expect(passRuntime.stdout.text).toContain("Result: pass");
+    expect(passRuntime.stdout.text).toContain("Checked face: Latin Regular");
+    passRuntime.expectNoStderr();
+
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "darwin";
+
+    await actionFontCheck(runtime, {
+      family: "Latin",
+      text: "AB",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
+        }
+        if (command === "system_profiler") {
+          return {
+            ok: true,
+            stdout: JSON.stringify({
+              SPFontsDataType: [
+                {
+                  _name: "Latin Regular",
+                  type: "TrueType",
+                  path: "/fonts/Latin.ttf",
+                  typefaces: [
+                    {
+                      family: "Latin",
+                      fullname: "Latin Regular",
+                      style: "Regular",
+                    },
+                  ],
+                },
+              ],
+            }),
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+
+    expect(stdout.text).toContain("cdx-chores font check");
+    expect(stdout.text).toContain("Family: Latin");
+    expect(stdout.text).toContain("Checked face: Latin Regular");
+    expect(stdout.text).toContain("Path: /fonts/Latin.ttf");
+    expect(stdout.text).toContain("Result: fail");
+    expect(stdout.text).toContain("Missing codepoints:");
+    expect(stdout.text).toContain("- U+0042");
+    expect(stdout.text).toContain(
+      "Info: fontconfig was unavailable, so macOS native discovery was used.",
+    );
+    expect(stdout.text).not.toContain("/private/path");
+    expectNoStderr();
+
+    const warningRuntime = createActionTestRuntime({ colorEnabled: false });
+    warningRuntime.runtime.platform = "linux";
+    await actionFontCheck(warningRuntime.runtime, {
+      family: "Missing",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({ ok: false, stdout: "", stderr: "/private/path/fc-list failed" }),
+    });
+    expect(warningRuntime.stdout.text).toContain("Result: inconclusive");
+    expect(warningRuntime.stderr.text).toContain("Warning: fontconfig discovery failed.");
+    expect(warningRuntime.stdout.text).not.toContain("/private/path");
+
+    const warningPayloadRuntime = createActionTestRuntime();
+    warningPayloadRuntime.runtime.platform = "linux";
+    await actionFontCheck(warningPayloadRuntime.runtime, {
+      json: true,
+      family: "Missing",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({ ok: false, stdout: "", stderr: "/private/path/fc-list failed" }),
+    });
+    const warningPayload = JSON.parse(warningPayloadRuntime.stdout.text) as {
+      warnings: string[];
+      info: string[];
+    };
+    expect(warningPayload.warnings).toEqual(["fontconfig discovery failed."]);
+    expect(warningPayload.info).toEqual([]);
+    warningPayloadRuntime.expectNoStderr();
+
+    const requirementRuntime = createActionTestRuntime({ colorEnabled: false });
+    requirementRuntime.runtime.platform = "linux";
+    await actionFontCheck(requirementRuntime.runtime, {
+      family: "Latin",
+      text: "git",
+      require: "nerd",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0020-007e\n", stderr: "" };
+      },
+    });
+    expect(requirementRuntime.stdout.text).toContain("Requirement: nerd");
+    expect(requirementRuntime.stdout.text).toContain("- U+E0B0");
+    expect(requirementRuntime.stdout.text).toContain("- U+F418");
+    requirementRuntime.expectNoStderr();
+
+    const debugRuntime = createActionTestRuntime({ colorEnabled: false });
+    debugRuntime.runtime.platform = "darwin";
+    await actionFontCheck(debugRuntime.runtime, {
+      debug: true,
+      family: "Latin",
+      text: "A",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
+        }
+        if (command === "system_profiler") {
+          return {
+            ok: true,
+            stdout: JSON.stringify({
+              SPFontsDataType: [
+                {
+                  _name: "Latin Regular",
+                  type: "TrueType",
+                  path: "/fonts/Latin.ttf",
+                  typefaces: [
+                    {
+                      family: "Latin",
+                      fullname: "Latin Regular",
+                      style: "Regular",
+                    },
+                  ],
+                },
+              ],
+            }),
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+    expect(debugRuntime.stdout.text).toContain("Debug:");
+    expect(debugRuntime.stdout.text).toMatch(
+      /- fontconfig: failed in \d+ms \(fc-list was not available or failed\.\)/,
+    );
+    expect(debugRuntime.stdout.text).toMatch(
+      /- macos-system-profiler: success in \d+ms \(macOS native discovery succeeded\.\)/,
+    );
+    expect(debugRuntime.stdout.text).not.toContain("/private/path");
+    debugRuntime.expectNoStderr();
+  });
+
+  test("prints selection-based font check inconclusive text output", async () => {
+    const noMatchRuntime = createActionTestRuntime({ colorEnabled: false });
+    noMatchRuntime.runtime.platform = "linux";
+    await actionFontCheck(noMatchRuntime.runtime, {
+      family: "Missing",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: "Latin\tLatin Regular\tRegular\t/fonts/Latin.ttf\n",
+        stderr: "",
+      }),
+    });
+    expect(noMatchRuntime.stdout.text).toContain("Checked face: (none)");
+    expect(noMatchRuntime.stdout.text).toContain("Result: inconclusive");
+    expect(noMatchRuntime.stdout.text).toContain(
+      "Reason: no discovered font face matched the requested family.",
+    );
+    noMatchRuntime.expectNoStderr();
+
+    const ambiguousRuntime = createActionTestRuntime({ colorEnabled: false });
+    ambiguousRuntime.runtime.platform = "linux";
+    await actionFontCheck(ambiguousRuntime.runtime, {
+      family: "Noto",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "Noto Sans\tNoto Sans Regular\tRegular\t/fonts/NotoSans.otf",
+          "Noto Serif\tNoto Serif Regular\tRegular\t/fonts/NotoSerif.otf",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+    expect(ambiguousRuntime.stdout.text).toContain(
+      "Reason: family query matched multiple discovered families. Use an exact family name.",
+    );
+    expect(ambiguousRuntime.stdout.text).toContain("Checked face: (none)");
+    expect(ambiguousRuntime.stdout.text).toContain("Result: inconclusive");
+    expect(ambiguousRuntime.stdout.text).not.toContain("Path:");
+    ambiguousRuntime.expectNoStderr();
+
+    const noPathRuntime = createActionTestRuntime({ colorEnabled: false });
+    noPathRuntime.runtime.platform = "linux";
+    await actionFontCheck(noPathRuntime.runtime, {
+      family: "Virtual",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: "Virtual\tVirtual Regular\tRegular\t\n",
+        stderr: "",
+      }),
+    });
+    expect(noPathRuntime.stdout.text).toContain("Checked face: Virtual Regular");
+    expect(noPathRuntime.stdout.text).toContain(
+      "Reason: matched font has no inspectable font file path.",
+    );
+    noPathRuntime.expectNoStderr();
+  });
+
+  test("prints font check inconclusive text output with a reason", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontCheck(runtime, {
+      family: "System",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: "System\tSystem Regular\tRegular\t/System/Library/Fonts/System.ttc\n",
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text).toContain("Result: inconclusive");
+    expect(stdout.text).toContain(
+      "Reason: matched font is a TTC collection, but this build cannot inspect individual collection faces yet.",
+    );
+    expectNoStderr();
+  });
+
+  test("prints font check debug JSON with sanitized discovery attempts", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "darwin";
+
+    await actionFontCheck(runtime, {
+      json: true,
+      debug: true,
+      family: "Source Serif 4",
+      text: "A",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
+        }
+        if (command === "system_profiler") {
+          return {
+            ok: true,
+            stdout: JSON.stringify({
+              SPFontsDataType: [
+                {
+                  _name: "Source Serif 4 Regular",
+                  type: "OpenType",
+                  path: "/System/Library/Fonts/SourceSerif4.otf",
+                  typefaces: [
+                    {
+                      family: "Source Serif 4",
+                      fullname: "Source Serif 4 Regular",
+                      style: "Regular",
+                    },
+                  ],
+                },
+              ],
+            }),
+            stderr: "",
+          };
+        }
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      warnings: string[];
+      info: string[];
+      debug: { attempts: Array<{ adapter: string; status: string; message: string }> };
+    };
+    expect(payload.result).toBe("pass");
+    expect(payload.warnings).toEqual([]);
+    expect(payload.info).toEqual([
+      "fontconfig was unavailable, so macOS native discovery was used.",
+    ]);
+    expect(payload.debug.attempts).toHaveLength(2);
+    expect(payload.debug.attempts[0]).toMatchObject({
+      adapter: "fontconfig",
+      status: "failed",
+      message: "fc-list was not available or failed.",
+    });
+    expect(stdout.text).not.toContain("/private/path");
+    expectNoStderr();
   });
 
   test("prints font inspect text output with multiple faces under one family", async () => {
