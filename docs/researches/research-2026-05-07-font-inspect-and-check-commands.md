@@ -1,6 +1,7 @@
 ---
 title: "Font Inspect and Check Commands"
 created-date: 2026-05-07
+modified-date: 2026-05-08
 status: draft
 agent: codex
 ---
@@ -72,6 +73,7 @@ Suggested responsibilities:
 
 - reuse `font list` discovery modes: `auto`, `native`, and `fontconfig`
 - find exact and normalized family-name matches
+- keep `--family` as the only first-slice selector
 - group discovered faces by family
 - show full name, style, weight, source, format, and path when available
 - show selected discovery mode, selected adapter, and warnings
@@ -99,6 +101,8 @@ Coverage: not checked. Use font check with --text when coverage support is avail
 
 `font inspect` should return no matches as a normal empty result, not as proof that the font is missing from every renderer. Discovery adapters can miss disabled fonts, app-bundled fonts, or fonts available only through CSS `@font-face`.
 
+Do not add `--full-name` in the first slice. It would behave like a stricter selector, but the more useful first command is a fuzzy family-oriented view that shows the discovered full names back to the user. Add a stricter selector later only if ambiguous family matches become painful in real usage.
+
 ### `font check`
 
 `font check` should answer whether a selected family or font face appears to cover a specific sample.
@@ -116,6 +120,7 @@ Suggested responsibilities:
 
 - require an explicit `--family` in the first public slice
 - accept exactly one text source: `--text` or `--text-file`
+- read `--text-file` as raw UTF-8 text only
 - resolve the family through the same discovery modes as `font list`
 - inspect candidate font files when paths are available
 - report missing codepoints in a deterministic format
@@ -137,7 +142,20 @@ Missing codepoints:
 - U+F418
 ```
 
-`font check` should report failure when required coverage is missing. A later implementation plan should decide whether that failure always maps to process exit code `1` in both text and JSON modes.
+`font check` should report failure when required coverage is missing. Missing required coverage should exit `1` in both text and JSON modes. Text output can stay concise and summary-oriented, while JSON output carries the structured details.
+
+Recommended exit behavior:
+
+| Result | Exit code | Meaning |
+| --- | ---: | --- |
+| `pass` | `0` | coverage was checked and all required codepoints were present |
+| `fail` | `1` | coverage was checked and required codepoints were missing |
+| usage error | `2` | invalid arguments, missing `--family`, missing text source, or conflicting text sources |
+| `inconclusive` | `3` | the command could not check coverage reliably |
+
+`inconclusive` is distinct from `fail`. A discovered family with no usable path, an unsupported font format, or unsupported TTC collection behavior should not be reported as a missing-glyph failure.
+
+Text files should be treated as raw text, not parsed documents. The first slice should support plain UTF-8 content from `--text-file`; `.txt` and `.md` are acceptable examples because both can be read as raw text, but Markdown syntax should not be interpreted. Strip a UTF-8 BOM if present and ignore non-rendered control characters when computing required codepoints.
 
 ## Coverage Boundary
 
@@ -157,9 +175,29 @@ font file or controlled coverage inventory -> sample text -> missing codepoints
 
 Family names alone are not enough. A family can have multiple files, styles, weights, region-specific CJK variants, or app-specific font availability.
 
+`font check` should fail only when all of these are true:
+
+- a matching inspectable font file was found
+- required codepoints were extracted from the sample
+- the inspected font file lacks one or more required codepoints
+
+Everything else is `pass`, `inconclusive`, or a usage error.
+
+When a family resolves to multiple faces, the first public slice should select the best normal face for checking, typically regular, normal style, weight `400`. The command should report the checked face and path. Do not silently aggregate regular, bold, and italic faces into one synthetic family coverage result unless a later command explicitly labels that mode.
+
 ## Parser Checkpoint
 
-`font check` should not start until the coverage parser strategy is chosen.
+`font check` should not start until the coverage parser strategy is chosen and proven with a small spike.
+
+Recommended strategy: use a hybrid coverage provider.
+
+```text
+CoverageProvider
+  -> parser-backed coverage for real font files
+  -> controlled fixture coverage for deterministic tests
+```
+
+The first parser candidate should be a Node-compatible font parser that can inspect common TTF and OTF files. `fontkit` is the first candidate to investigate, but the command contract should not depend on direct `fontkit` APIs. Keep the parser behind a small internal interface so another parser can replace it if runtime compatibility, TTC handling, or package health becomes a problem.
 
 Minimum parser requirements:
 
@@ -178,7 +216,29 @@ Acceptable first implementation paths:
 | controlled fixture inventory | parser choice is still unsettled, but profile tests need deterministic coverage behavior |
 | hybrid path | real parser for direct file checks, controlled inventory for cross-platform command tests |
 
+Use the hybrid path for the first implementation plan. Parser-backed checks make the command useful with real font files; controlled inventories keep tests deterministic and avoid CI dependence on locally installed fonts.
+
 `font check` should document limitations clearly if TTC collections, variable fonts, or color emoji fonts are not fully covered in the first slice.
+
+TTC collections need special handling. If the first parser cannot inspect the selected face inside a TTC collection, do not fake coverage and do not report a missing-glyph failure. Return `inconclusive` with a clear reason:
+
+```text
+Result: inconclusive
+Reason: matched font is a TTC collection, but this build cannot inspect individual collection faces yet.
+Path: /path/to/fonts/SystemFont.ttc
+```
+
+JSON should use a stable reason code:
+
+```json
+{
+  "result": "inconclusive",
+  "reason": "unsupported-ttc-collection",
+  "path": "/path/to/fonts/SystemFont.ttc"
+}
+```
+
+If the parser can inspect TTC collections reliably, `font inspect` should expose enough face metadata for `font check` to select the intended normal face. Do not add `--face-index` in the first slice unless TTC support proves impossible without it.
 
 ## JSON Contract Direction
 
@@ -214,6 +274,9 @@ Acceptable first implementation paths:
   "text": "git \uE0A0 main \uF418",
   "requirements": ["nerd"],
   "result": "fail",
+  "exitCode": 1,
+  "checkedFace": "JetBrainsMono Nerd Font Regular",
+  "path": "/path/to/fonts/JetBrainsMonoNerdFont-Regular.ttf",
   "missingCodepoints": ["U+E0A0", "U+F418"],
   "warnings": []
 }
@@ -253,6 +316,8 @@ Suggested fixtures:
 - one code font with Nerd Font private-use glyph coverage
 - one discovered face with no usable file path
 - one ambiguous family with multiple candidate faces
+- one TTC collection fixture or mocked TTC discovery result that returns `inconclusive`
+- one UTF-8 text-file fixture, including BOM handling if easy to isolate
 
 Suggested test cases:
 
@@ -261,19 +326,35 @@ Suggested test cases:
 - `font inspect --debug` reuses sanitized discovery attempts.
 - `font inspect` no-match output is empty but not a coverage failure.
 - `font check` rejects missing `--family`.
+- `font check` rejects missing text source.
 - `font check` rejects simultaneous `--text` and `--text-file`.
 - `font check` reports missing CJK codepoints.
 - `font check --require nerd` reports missing private-use glyphs.
 - `font check` handles a discovered face with no usable path as an inconclusive check, not a false pass.
+- `font check` reports unsupported TTC inspection as `inconclusive`.
+- `font check` exits `1` for missing coverage in text and JSON modes.
+- `font check` exits `3` for inconclusive coverage.
+- `font check --text-file` reads raw UTF-8 text without parsing Markdown.
 - `font check --json` is deterministic across platforms with mocked coverage inventory.
 
-## Open Questions
+## Resolved Decisions
 
-1. Which parser or coverage strategy should be selected before `font check` implementation?
-2. Should `font inspect` allow `--full-name` in the first slice, or only `--family`?
-3. Should `font check` use exit code `1` for missing required coverage in all text and JSON modes?
-4. Should `font check` accept stdin as a later text source, or keep the first slice to `--text` and `--text-file`?
-5. How should TTC collection limitations be shown if the first parser cannot inspect every face inside a collection?
+1. Use a hybrid coverage strategy: parser-backed checks for real font files, controlled fixture coverage for deterministic tests.
+2. Investigate a Node-compatible parser such as `fontkit` first, but wrap it behind an internal coverage provider interface.
+3. Keep `font inspect` to `--family` in the first slice; do not add `--full-name` yet.
+4. Missing required coverage exits `1` in both text and JSON modes.
+5. Keep text mode concise and summary-oriented; use JSON for full structured details.
+6. Support `--text` and `--text-file` only in the first slice.
+7. Treat `--text-file` as raw UTF-8 text, not a parsed Markdown/HTML/document input.
+8. Return `inconclusive` for unsupported TTC collection inspection instead of a false failure.
+9. Use exit code `3` for `inconclusive` in the first slice.
+10. Do not add `--face-index` unless the parser spike proves TTC selection needs it immediately.
+
+## Remaining Checkpoints
+
+1. Prove parser viability with TTF and OTF files before implementing `font check`.
+2. Decide whether the selected parser can inspect TTC collections reliably enough for the first `font check` slice.
+3. Decide in a later slice whether a separate `--strict` mode should map inconclusive checks to exit `1`. The first slice should keep plain inconclusive checks at exit `3`.
 
 ## Checkpoint Decision
 
