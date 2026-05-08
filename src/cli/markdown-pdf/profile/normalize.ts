@@ -5,7 +5,6 @@ import { validateMarkdownPdfBodyFontKey } from "./schema";
 import type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
-  MarkdownPdfFontRole,
   MarkdownPdfMetadata,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
@@ -26,7 +25,6 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-right",
 ]);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
-const FONT_ROLES: MarkdownPdfFontRole[] = ["body", "heading", "code", "pageChrome"];
 
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -142,7 +140,7 @@ function numberValue(value: unknown, label: string): number | undefined {
   if (value === undefined) {
     return undefined;
   }
-  if (!Number.isInteger(value)) {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
     throw new CliError(`${label} must be an integer.`, {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -239,9 +237,12 @@ function normalizeFontConfig(value: unknown, label: string): MarkdownPdfFontConf
 
 function normalizeFonts(value: unknown): NormalizedMarkdownPdfFonts {
   const input = readObject(value);
-  const fonts = Object.fromEntries(
-    FONT_ROLES.map((role) => [role, normalizeFontConfig(input[role], `profile.fonts.${role}`)]),
-  ) as NormalizedMarkdownPdfFonts;
+  const fonts: NormalizedMarkdownPdfFonts = {
+    body: normalizeFontConfig(input.body, "profile.fonts.body"),
+    heading: normalizeFontConfig(input.heading, "profile.fonts.heading"),
+    code: normalizeFontConfig(input.code, "profile.fonts.code"),
+    pageChrome: normalizeFontConfig(input.pageChrome, "profile.fonts.pageChrome"),
+  };
 
   for (const key of Object.keys(fonts.body)) {
     validateMarkdownPdfBodyFontKey(key);
