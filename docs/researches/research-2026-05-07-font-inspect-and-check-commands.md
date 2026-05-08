@@ -8,13 +8,15 @@ agent: codex
 
 ## Goal
 
-Define the checkpoint for adding `font inspect` and `font check` after the completed `font list` discovery slice, but before any Codex Helper workflow tries to suggest or repair Markdown-to-PDF profile fonts.
+Record the follow-up research for adding `font inspect` and `font check` after the completed Markdown-to-PDF profile, font discovery, and diagnostics work.
 
-This is a research checkpoint, not an implementation plan. Its purpose is to settle the command contract far enough that a later plan can stay narrow and avoid mixing three separate jobs:
+The related implementation plan delivered `font list` as the first public discovery slice. This research narrows the next command surfaces so future work can avoid mixing three separate jobs:
 
 - discovering installed font candidates
 - inspecting discovered font metadata
 - checking glyph coverage for specific text or special symbol requirements
+
+The immediate planning target is `font inspect`. `font check` remains provisional until parser behavior, TTC handling, controlled fixtures, and reason-code coverage are proven.
 
 ## Current State
 
@@ -43,7 +45,14 @@ It cannot yet answer:
 - whether a selected font can render a given text sample
 - whether Nerd Font private-use glyphs are present
 
-## Timing Recommendation
+## Key Findings
+
+1. The completed Markdown-to-PDF plan established the discovery and coverage boundary, but the implemented public command currently covers discovery only.
+2. `font inspect` is ready for a narrow implementation plan because it can build directly on `font list` discovery output, adapter selection, and debug behavior without needing a parser-backed coverage decision.
+3. `font check` has a useful proposed command shape, but it should stay provisional until a parser spike proves real-file coverage behavior and the fixture strategy is defined.
+4. Codex Helper should depend on the shared font commands or modules later. It should not introduce separate font inspection or coverage logic.
+
+## Sequencing Recommendation
 
 `font inspect` and `font check` should be designed as stable CLI/module surfaces before Codex Helper font assistance grows beyond orchestration.
 
@@ -55,7 +64,7 @@ Recommended order:
 2. Implement `font check` after the coverage module has deterministic fixtures and a selected parser or controlled coverage strategy.
 3. Let Codex Helper orchestrate `font list`, `font inspect`, and `font check` later.
 
-## Command Split
+## Command Direction
 
 ### `font inspect`
 
@@ -75,7 +84,7 @@ cdx-chores font inspect --family "Noto Sans CJK TC" --json
 cdx-chores font inspect --family "Noto Sans CJK TC" --discovery native --debug
 ```
 
-Suggested responsibilities:
+Recommended first-slice responsibilities:
 
 - reuse `font list` discovery modes: `auto`, `native`, and `fontconfig`
 - find exact and normalized family-name matches
@@ -105,7 +114,32 @@ Faces:
 Coverage: not checked. Use font check with --text when coverage support is available.
 ```
 
-`font inspect` should return no matches as a normal empty result, not as proof that the font is missing from every renderer. Discovery adapters can miss disabled fonts, app-bundled fonts, or fonts available only through CSS `@font-face`.
+`font inspect` should return no matches as a normal empty discovery result with exit `0`, not as proof that the font is missing from every renderer. Discovery adapters can miss disabled fonts, app-bundled fonts, or fonts available only through CSS `@font-face`.
+
+Suggested no-match text output:
+
+```text
+cdx-chores font inspect
+Family: Example Missing Family
+Discovery: auto
+Adapter: macos-fontconfig
+
+Faces: 0
+Coverage: not checked.
+```
+
+In JSON mode, no matches should use an empty `matches` array and preserve any discovery warnings:
+
+```json
+{
+  "command": "font inspect",
+  "family": "Example Missing Family",
+  "discovery": "auto",
+  "adapter": "macos-fontconfig",
+  "matches": [],
+  "warnings": []
+}
+```
 
 Do not add `--full-name` in the first slice. It would behave like a stricter selector, but the more useful first command is a family-oriented view that shows the discovered full names back to the user. Add a stricter selector later only if ambiguous family matches become painful in real usage.
 
@@ -113,7 +147,7 @@ Do not add `--full-name` in the first slice. It would behave like a stricter sel
 
 `font check` should answer whether a selected family appears to cover a specific sample. It should come after `font inspect` and after the parser or coverage-provider strategy has proof behind it.
 
-Future command shape:
+Provisional command shape:
 
 ```bash
 cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
@@ -122,7 +156,7 @@ cdx-chores font check --family "Noto Sans Arabic" --text "مرحبا" --lang ar
 cdx-chores font check --family "Noto Sans CJK JP" --text-file ./samples/japanese.txt --json
 ```
 
-Suggested responsibilities:
+Tentative first-slice responsibilities:
 
 - require an explicit `--family` in the first public slice
 - accept exactly one text source: `--text` or `--text-file`
@@ -134,7 +168,7 @@ Suggested responsibilities:
 - support `--require nerd` for private-use coding glyph samples
 - support JSON output for automation and profile-helper use
 
-Suggested text output shape:
+Provisional text output shape:
 
 ```text
 cdx-chores font check
@@ -150,7 +184,7 @@ Missing codepoints:
 
 `font check` should report failure when required coverage is missing. Missing required coverage should exit `1` in both text and JSON modes. Text output can stay concise and summary-oriented, while JSON output carries the structured details.
 
-Recommended exit behavior:
+Provisional exit behavior:
 
 | Result | Exit code | Meaning |
 | --- | ---: | --- |
@@ -165,7 +199,7 @@ Text files should be treated as raw text, not parsed documents. The first slice 
 
 ## Coverage Boundary
 
-The implementation must keep discovery and coverage separate.
+Future implementation must keep discovery and coverage separate.
 
 Discovery can produce candidate faces:
 
@@ -189,9 +223,17 @@ Family names alone are not enough. A family can have multiple files, styles, wei
 
 All other outcomes must stay out of the false-failure path. They should be classified as `pass`, `inconclusive`, or usage errors according to the exit table above.
 
-When a family resolves to multiple faces, the first public slice should select the best normal face for checking, typically regular, normal style, weight `400`. The command should report the checked face and path. Do not silently aggregate regular, bold, and italic faces into one synthetic family coverage result unless a later command explicitly labels that mode.
+When a family resolves to multiple faces, the future `font check` slice should select one face deterministically instead of probing faces until one passes. Proposed priority:
 
-## Parser Checkpoint
+1. exact normalized family match before looser family matches
+2. inspectable file path before no usable path
+3. normal or regular style before italic, oblique, or other styles
+4. weight closest to `400`, with the lower weight first on ties
+5. stable lexical order by full name, then path
+
+The command should report the checked face and path. If no inspectable face remains after family resolution, return `inconclusive` rather than a missing-glyph failure. Do not silently aggregate regular, bold, and italic faces into one synthetic family coverage result unless a later command explicitly labels that mode.
+
+## Parser Research
 
 `font check` should not start until the coverage parser strategy is chosen and proven with a small spike.
 
@@ -214,7 +256,7 @@ Minimum parser requirements:
 - no CI dependency on the developer machine's installed fonts
 - graceful reporting when a discovered face has no usable path
 
-Acceptable first implementation paths:
+Acceptable future implementation paths:
 
 | Path | Use when |
 | --- | --- |
@@ -222,7 +264,7 @@ Acceptable first implementation paths:
 | controlled fixture inventory | parser choice is still unsettled, but profile tests need deterministic coverage behavior |
 | hybrid path | real parser for direct file checks, controlled inventory for cross-platform command tests |
 
-Carry the hybrid path into the first implementation plan unless the parser spike disproves it. Parser-backed checks make the command useful with real font files; controlled inventories keep tests deterministic and avoid CI dependence on locally installed fonts.
+A future `font check` plan should carry the hybrid path unless the parser spike disproves it. Parser-backed checks make the command useful with real font files; controlled inventories keep tests deterministic and avoid CI dependence on locally installed fonts.
 
 `font check` should document limitations clearly if TTC collections, variable fonts, or color emoji fonts are not fully covered in the first slice.
 
@@ -246,7 +288,7 @@ JSON should use a stable reason code:
 
 If the parser can inspect TTC collections reliably, `font inspect` should expose enough face metadata for `font check` to select the intended normal face. Do not add `--face-index` in the first slice unless TTC support proves impossible without it.
 
-## JSON Contract Direction
+## JSON Direction
 
 `font inspect --json` should return discovered metadata:
 
@@ -271,7 +313,7 @@ If the parser can inspect TTC collections reliably, `font inspect` should expose
 }
 ```
 
-`font check --json` should return coverage results:
+`font check --json` should eventually return coverage results, but the exact reason-code set and parser-derived fields should remain provisional until the coverage spike:
 
 ```json
 {
@@ -308,7 +350,7 @@ cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
 
 Codex Helper can later use the same commands to explain why a profile warning happened and suggest profile edits. That should be orchestration over the shared command/module contract, not separate font logic.
 
-## Fixture Direction
+## Fixture Research Direction
 
 Future tests should avoid depending on real installed fonts.
 
@@ -325,7 +367,7 @@ Suggested fixtures:
 - one TTC collection fixture or mocked TTC discovery result that returns `inconclusive`
 - one UTF-8 text-file fixture, including BOM and control-character handling if easy to isolate
 
-Evidence needed before an implementation plan:
+Evidence a future implementation should produce:
 
 - `font inspect` groups multiple faces under one family.
 - `font inspect --json` returns structured face metadata.
@@ -343,19 +385,24 @@ Evidence needed before an implementation plan:
 - `font check --text-file` reads raw UTF-8 text without parsing Markdown and excludes only `Cc` controls from required coverage.
 - `font check --json` is deterministic across platforms with mocked coverage inventory.
 
-## Settled Contract Direction
+## Direction for the Next Plan
+
+The next implementation plan can safely cover:
 
 1. Implement `font inspect` before `font check`.
 2. Keep `font inspect` to `--family` in the first slice; do not add `--full-name` yet.
-3. Defer `font check` until the parser or coverage-provider strategy has proof behind it.
-4. Require exactly one `font check` text source: `--text` or `--text-file`.
-5. Treat `--text-file` as raw UTF-8 text, not a parsed Markdown/HTML/document input; strip a leading BOM and exclude only `Cc` control characters from required coverage.
-6. Missing required coverage exits `1` in both text and JSON modes.
-7. Usage errors exit `2`.
-8. Inconclusive checks exit `3`.
-9. Return `inconclusive` for unsupported TTC collection inspection instead of a false failure.
-10. Keep text mode concise and summary-oriented; use JSON for full structured details.
-11. Keep Codex Helper dependent on the shared CLI/module contract instead of giving it separate font parsing or coverage logic.
+3. Reuse `font list` discovery modes, adapter metadata, warnings, and sanitized debug attempts.
+4. Treat no matches as an empty discovery result, not as coverage proof.
+5. Keep Codex Helper out of this slice except as a later consumer of shared command behavior.
+
+The `font check` direction should remain research guidance until the parser spike is complete:
+
+1. Require exactly one text source: `--text` or `--text-file`.
+2. Treat `--text-file` as raw UTF-8 text, not a parsed Markdown/HTML/document input; strip a leading BOM and exclude only `Cc` control characters from required coverage.
+3. Use exit `1` for checked missing required coverage, exit `2` for usage errors, and exit `3` for inconclusive checks.
+4. Return `inconclusive` for unsupported TTC collection inspection instead of a false failure.
+5. Keep text mode concise and summary-oriented; use JSON for full structured details once reason codes are proven.
+6. Keep Codex Helper dependent on the shared CLI/module contract instead of giving it separate font parsing or coverage logic.
 
 ## Provisional Research Direction
 
@@ -364,19 +411,25 @@ Evidence needed before an implementation plan:
 3. Do not add `--face-index` unless the parser spike proves TTC selection needs it immediately.
 4. Keep JSON examples as contract direction until parser behavior and reason-code coverage are proven.
 
-## Remaining Checkpoints
+## Remaining Research Questions
 
 1. Prove parser viability with TTF and OTF files before implementing `font check`.
 2. Decide whether the selected parser can inspect TTC collections reliably enough for the first `font check` slice.
-3. Decide in a later slice whether a separate `--strict` mode should map inconclusive checks to exit `1`. The first slice should keep plain inconclusive checks at exit `3`.
+3. Define the controlled fixture inventory for CJK, Latin-extended, RTL smoke, Nerd Font private-use glyphs, no-path faces, ambiguous families, and unsupported TTC behavior.
+4. Finalize the stable JSON reason-code set for inconclusive coverage.
+5. Decide in a later slice whether a separate `--strict` mode should map inconclusive checks to exit `1`. The first slice should keep plain inconclusive checks at exit `3`.
 
-## Checkpoint Decision
+## Implementation Plan Readiness
 
-The next implementation checkpoint should be:
+This research is solid enough to support a narrow `font inspect` implementation plan. The plan should stay focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
+
+It is not yet enough for a complete `font check` implementation plan. The command shape and exit-code direction are useful, but the coverage provider still needs a parser spike that proves TTF/OTF behavior, confirms or defers TTC collection support, and defines the controlled fixture inventory.
+
+Recommended implementation order:
 
 ```text
 font inspect first
-  -> parser/coverage strategy decision
+  -> parser/coverage spike
   -> font check
   -> Codex Helper orchestration
 ```
@@ -388,6 +441,6 @@ Do not start Codex Helper font assistance until at least `font inspect` is avail
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md) - parent profile and mixed-language font research.
 - [Font Command Discovery Options](research-2026-05-07-font-command-discovery-options.md) - completed `font list` discovery selector and debug-output research.
 
-## Related Plan
+## Related Plans
 
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for profiles, initial font discovery, diagnostics, and docs.
