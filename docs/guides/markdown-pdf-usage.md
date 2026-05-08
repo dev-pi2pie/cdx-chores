@@ -61,11 +61,13 @@ The default preset is `article`.
 
 Supported presets:
 
-- `article`: general notes and short articles
-- `report`: longer documents with ToC-friendly spacing
-- `wide-table`: landscape output for wide tables or matrix-style documents
-- `compact`: dense internal references
-- `reader`: screen-reading oriented PDFs with larger type
+| Preset | Best for | Default orientation | Default margins |
+| ------ | -------- | ------------------- | --------------- |
+| `article` | General notes and short articles | `portrait` | `18mm` |
+| `report` | Longer documents with ToC-friendly spacing | `portrait` | `18mm` |
+| `wide-table` | Wide tables or matrix-style documents | `landscape` | `12mm` |
+| `compact` | Dense internal references | `portrait` | `12mm` |
+| `reader` | Screen-reading oriented PDFs with larger type | `portrait` | `20mm` top/bottom, `22mm` left/right |
 
 Example:
 
@@ -142,7 +144,7 @@ cdx-chores md to-pdf \
   --profile ./pdf-profile.yml
 ```
 
-Generate a starter profile with the same pattern as `md pdf-template init`:
+Generate a starter profile:
 
 ```bash
 cdx-chores md pdf-profile init --output ./pdf-profile.yml
@@ -166,6 +168,8 @@ cdx-chores md pdf-profile init \
 
 Unknown profile keys fail by default so misspelled settings do not silently change the output.
 
+`md pdf-profile init --preset <name>` stores profile values derived from the preset. It does not currently store the preset name itself. For example, a generated `wide-table` profile preserves derived page shape such as landscape orientation and margins, but later rendering still uses the default `article` preset CSS unless `--preset wide-table` is also passed to `md to-pdf`.
+
 Profile metadata provides reusable defaults. Markdown frontmatter should hold document-specific values, and repeatable `--meta key=value` is the concise CLI override path:
 
 ```bash
@@ -184,6 +188,18 @@ Precedence is:
   -> profile metadata
   -> derived defaults
 ```
+
+## Profiles, Templates, And Overrides
+
+Profiles are declarative settings consumed by the built-in Markdown PDF recipe. Template and CSS files are lower-level recipe overrides.
+
+`md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
+
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, covers, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+
+When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
+
+A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile cover settings will not appear in the rendered PDF.
 
 ## Covers And Page Chrome
 
@@ -247,7 +263,7 @@ fonts:
     symbols: "JetBrainsMono Nerd Font"
 ```
 
-Fallback is the basic path. It helps occasional CJK text render without marking every phrase.
+Fallback is the basic path. It helps occasional CJK text render without marking every phrase. Use CSS generic names exactly as `serif`, `sans-serif`, or `monospace` when a generic fallback is intended.
 
 For exact mixed-language font assignment, keep document-level `lang` singular and mark language-specific spans or blocks:
 
@@ -346,7 +362,7 @@ cdx-chores md to-pdf \
   --css ./pdf-template/style.css
 ```
 
-When `--css` is provided, default CSS is applied first and user CSS is applied after it.
+When `--css` is provided, generated CSS is applied first and user CSS is applied after it. This means custom CSS can override preset and profile-generated styles.
 
 Use `--no-default-css` to render with only custom CSS:
 
