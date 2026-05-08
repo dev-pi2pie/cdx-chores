@@ -139,12 +139,12 @@ Initial JSON reason codes:
 
 Missing glyphs should remain in `missingCodepoints`; they should not be modeled as reason codes.
 
-Phase 5 indexed TTC support should add these reason codes:
+Indexed TTC support uses these additional reason codes:
 
 - `ttc-face-index-unavailable`
 - `ttc-face-mismatch`
 
-Use `ttc-face-index-unavailable` when a TTC face has no provider-backed index. Use `ttc-face-mismatch` when `fc-query --index` metadata does not match the selected face. Keep using `unsupported-ttc-collection` only when indexed TTC probing is not implemented for the selected provider.
+Use `ttc-face-index-unavailable` when a TTC face has no provider-backed index. Use `ttc-face-mismatch` when `fc-query --index` metadata does not match the selected face. Keep `unsupported-ttc-collection` reserved for providers that cannot attempt indexed TTC probing.
 
 ## Doctor Capability Contract
 
@@ -215,7 +215,7 @@ Missing `fc-list` should make `capabilities["font.discovery.fontconfig"]` false.
 - [x] Wire the selected face into the internal `fontconfigCoverageProvider`.
 - [x] Map checked provider results to `pass` or `fail`.
 - [x] Map provider inconclusive reasons to exit `3`.
-- [x] Preserve TTC inspection as `unsupported-ttc-collection`.
+- [x] Preserve TTC paths as inconclusive before indexed support.
 - [x] Add tests for pass, fail, missing `fontconfig`, failed query, empty charset, unsupported format, and TTC paths.
 
 ### Phase 4: Output and Debug
@@ -228,18 +228,20 @@ Missing `fc-list` should make `capabilities["font.discovery.fontconfig"]` false.
 
 ### Phase 5: TTC Indexed Collection Support
 
-This is a cross-plan follow-up between discovery, `font inspect`, and `font check`. It should not be treated as required to finish the current Phase 1-4 `font check` slice. The check command can only consume TTC indexes after the [Font inspect TTC index metadata follow-up](plan-2026-05-08-font-inspect-ttc-index-metadata-follow-up.md) preserves them in discovery and exposes them in inspect output for audit.
+This phase consumes the discovery and inspect metadata completed in the [Font inspect TTC index metadata follow-up](plan-2026-05-08-font-inspect-ttc-index-metadata-follow-up.md). `font check` may trust TTC coverage only when the selected face has a provider-backed index and `fc-query --index` reports identifying metadata that still matches the selected face.
+
+Status: Phase 5 is complete in the `font check` implementation. Phase 6 documentation traceability and Phase 7 doctor capability reporting remain open.
 
 - [x] Extend font discovery metadata to preserve a provider-backed TTC face index when available.
 - [x] Complete the inspect-side TTC metadata follow-up before consuming TTC indexes in `font check`.
-- [ ] Select TTC faces in `font check` through the same deterministic family/style/weight rules, using the discovered face index as provider metadata.
-- [ ] Query indexed TTC faces with `fc-query --index <faceIndex> --format=%{charset}\n <path>`.
-- [ ] Before trusting TTC coverage, query identifying metadata for the same index and verify it still matches the selected face.
-- [ ] Return `inconclusive` with `ttc-face-index-unavailable` when a TTC face has no usable provider-backed index.
-- [ ] Return `inconclusive` with `ttc-face-mismatch` when indexed metadata does not match the selected face.
-- [ ] Use the existing `fontconfig-query-failed` reason when `fc-query --index` fails after a face index is available.
-- [ ] Keep path-only TTC checks inconclusive; do not treat a collection path as proof that the selected face was checked.
-- [ ] Add mocked `fc-list`/`fc-query --index` tests for TTC pass, fail, missing index, metadata mismatch, query failure, and JSON/text reason output.
+- [x] Select TTC faces in `font check` through the same deterministic family/style/weight rules, using the discovered face index as provider metadata.
+- [x] Query indexed TTC faces with `fc-query --index <faceIndex> --format=%{charset}\n <path>`.
+- [x] Before trusting TTC coverage, query identifying metadata for the same index and verify it still matches the selected face.
+- [x] Return `inconclusive` with `ttc-face-index-unavailable` when a TTC face has no usable provider-backed index.
+- [x] Return `inconclusive` with `ttc-face-mismatch` when indexed metadata does not match the selected face.
+- [x] Use the existing `fontconfig-query-failed` reason when `fc-query --index` fails after a face index is available.
+- [x] Keep path-only TTC checks inconclusive; do not treat a collection path as proof that the selected face was checked.
+- [x] Add mocked `fc-list`/`fc-query --index` tests for TTC pass, fail, missing index, metadata mismatch, query failure, and JSON/text reason output.
 
 ### Phase 6: Docs and Traceability
 
@@ -278,11 +280,21 @@ Phase 1-4 validation on 2026-05-08:
 - `bun run format:check` - pass
 - `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
 
+Phase 5 implementation validation on 2026-05-08:
+
+- `bun test test/fonts.test.ts` - 73 pass, 422 expect calls
+- `bun test` - 1019 pass, 4625 expect calls
+- `bun run lint` - 0 warnings, 0 errors
+- `bun run format:check` - pass
+- `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
+- `node dist/esm/bin.mjs font check --family "PingFang TC" --text 繁體中文` - pass
+- `git diff --check` - pass
+
 ## Risks
 
 - `fc-query` availability is platform-dependent. Missing `fontconfig` must be inconclusive, not a false missing-glyph failure.
 - `fc-query` charset output proves advertised codepoint coverage only. It does not prove renderer shaping, fallback, emoji presentation, or PDF output.
-- TTC face-level inspection requires a stable selected-face index. Path-only TTC checks must remain inconclusive until indexed probing and identity verification are implemented.
+- TTC coverage still depends on a provider-backed selected-face index. Path-only TTC checks must remain inconclusive because a collection path alone does not prove which face was checked.
 - Family fallback matching through `fc-match` can create false passes and should not be used as proof of selected-face coverage.
 - `doctor` must stay read-only. It should report optional fontconfig capability status and remediation guidance without installing tools or changing user configuration.
 

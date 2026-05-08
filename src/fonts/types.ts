@@ -110,6 +110,8 @@ export type FontCoverageInconclusiveReason =
   | "fontconfig-charset-unavailable"
   | "unsupported-font-format"
   | "unsupported-ttc-collection"
+  | "ttc-face-index-unavailable"
+  | "ttc-face-mismatch"
   | "empty-required-codepoints";
 
 export interface FontCoverageProviderInput {

@@ -182,6 +182,8 @@ const INCONCLUSIVE_REASON_MESSAGES: Record<FontCheckInconclusiveReason, string> 
   "unsupported-font-format": "matched font file format is not supported for coverage checks yet.",
   "unsupported-ttc-collection":
     "matched font is a TTC collection, but this build cannot inspect individual collection faces yet.",
+  "ttc-face-index-unavailable": "matched TTC face has no provider-backed face index.",
+  "ttc-face-mismatch": "indexed TTC metadata does not match the selected face.",
   "empty-required-codepoints": "the text source did not contain required printable codepoints.",
 };
 

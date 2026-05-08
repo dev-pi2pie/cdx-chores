@@ -1165,7 +1165,7 @@ describe("font CLI", () => {
         query: () => {
           throw new Error("fc-query should not be called");
         },
-        reason: "unsupported-ttc-collection",
+        reason: "ttc-face-index-unavailable",
         expectedCommands: ["fc-list"],
       },
     ];
@@ -1464,9 +1464,191 @@ describe("font CLI", () => {
     });
 
     expect(stdout.text).toContain("Result: inconclusive");
-    expect(stdout.text).toContain(
-      "Reason: matched font is a TTC collection, but this build cannot inspect individual collection faces yet.",
-    );
+    expect(stdout.text).toContain("Checked face: System Regular");
+    expect(stdout.text).toContain("Path: /System/Library/Fonts/System.ttc");
+    expect(stdout.text).toContain("Reason: matched TTC face has no provider-backed face index.");
+    expectNoStderr();
+  });
+
+  test("prints font check TTC mismatch text output with selected face context", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontCheck(runtime, {
+      family: "System",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "System\tSystem Regular\tRegular\t/System/Library/Fonts/System.ttc\t4\n",
+            stderr: "",
+          };
+        }
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        return { ok: true, stdout: "Other\tOther Regular\n", stderr: "" };
+      },
+    });
+
+    expect(stdout.text).toContain("Result: inconclusive");
+    expect(stdout.text).toContain("Checked face: System Regular");
+    expect(stdout.text).toContain("Path: /System/Library/Fonts/System.ttc");
+    expect(stdout.text).toContain("Reason: indexed TTC metadata does not match the selected face.");
+    expectNoStderr();
+  });
+
+  test("prints font check TTC JSON inconclusive output for indexed face mismatch", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    const commands: Array<{ command: string; args: string[] }> = [];
+    runtime.platform = "linux";
+
+    const result = await actionFontCheck(runtime, {
+      json: true,
+      family: "System",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        commands.push({ command, args });
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "System\tSystem Regular\tRegular\t/System/Library/Fonts/System.ttc\t4\n",
+            stderr: "",
+          };
+        }
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        return { ok: true, stdout: "Other\tOther Regular\n", stderr: "" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      exitCode: number;
+      reason: string;
+    };
+    expect(result.exitCode).toBe(3);
+    expect(payload).toMatchObject({
+      result: "inconclusive",
+      exitCode: 3,
+      reason: "ttc-face-mismatch",
+    });
+    expect(commands).toEqual([
+      {
+        command: "fc-list",
+        args: ["--format", "%{family}\t%{fullname}\t%{style}\t%{file}\t%{index}\n"],
+      },
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "4",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/System.ttc",
+        ],
+      },
+    ]);
+    expectNoStderr();
+  });
+
+  test("maps indexed TTC query failure through font check JSON output", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    const result = await actionFontCheck(runtime, {
+      json: true,
+      family: "System",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout: "System\tSystem Regular\tRegular\t/System/Library/Fonts/System.ttc\t4\n",
+            stderr: "",
+          };
+        }
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return { ok: true, stdout: "System\tSystem Regular\n", stderr: "" };
+        }
+        return { ok: false, stdout: "", stderr: "query failed" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      exitCode: number;
+      reason: string;
+      checkedFace: string;
+      path: string;
+    };
+    expect(result.exitCode).toBe(3);
+    expect(payload).toMatchObject({
+      result: "inconclusive",
+      exitCode: 3,
+      reason: "fontconfig-query-failed",
+      checkedFace: "System Regular",
+      path: "/System/Library/Fonts/System.ttc",
+    });
+    expectNoStderr();
+  });
+
+  test("passes font check for localized TTC metadata aliases", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    const result = await actionFontCheck(runtime, {
+      json: true,
+      family: "PingFang TC",
+      text: "繁體中文",
+      discovery: "fontconfig",
+      runner: async (command, args) => {
+        if (command === "fc-list") {
+          return {
+            ok: true,
+            stdout:
+              "PingFang TC\tPingFang TC Regular,蘋方-繁 標準體,苹方-繁 常规体\tRegular\t/System/Library/Fonts/PingFang.ttc\t2\n",
+            stderr: "",
+          };
+        }
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return {
+            ok: true,
+            stdout:
+              "PingFang TC,蘋方-繁,苹方-繁\tPingFang TC Regular,蘋方-繁 標準體,苹方-繁 常规体\n",
+            stderr: "",
+          };
+        }
+        return { ok: true, stdout: "4e00-9fff\n", stderr: "" };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      result: string;
+      exitCode: number;
+      reason: string | null;
+      checkedFace: string;
+      path: string;
+    };
+    expect(result.exitCode).toBe(0);
+    expect(payload).toMatchObject({
+      result: "pass",
+      exitCode: 0,
+      reason: null,
+      checkedFace: "PingFang TC Regular,蘋方-繁 標準體,苹方-繁 常规体",
+      path: "/System/Library/Fonts/PingFang.ttc",
+    });
     expectNoStderr();
   });
 
@@ -2367,7 +2549,143 @@ describe("font coverage", () => {
     ]);
   });
 
-  test("keeps TTC coverage inconclusive until face-level inspection is proven", async () => {
+  test("checks indexed TTC coverage through matching face metadata", async () => {
+    const passCalls: Array<{ command: string; args: string[] }> = [];
+    const pass = await checkFontconfigCoverage({
+      face: {
+        family: "System TTC",
+        fullName: "System TTC Regular",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/System.ttc",
+      },
+      text: "A",
+      runner: async (command, args) => {
+        passCalls.push({ command, args });
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return { ok: true, stdout: "System TTC\tSystem TTC Regular\n", stderr: "" };
+        }
+        return { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+
+    const failCalls: Array<{ command: string; args: string[] }> = [];
+    const fail = await checkFontconfigCoverage({
+      face: {
+        family: "System TTC",
+        fullName: "System TTC Regular",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/System.ttc",
+      },
+      text: "AB",
+      runner: async (command, args) => {
+        failCalls.push({ command, args });
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return { ok: true, stdout: "System TTC\tSystem TTC Regular\n", stderr: "" };
+        }
+        return { ok: true, stdout: "0041\n", stderr: "" };
+      },
+    });
+
+    expect(pass).toMatchObject({
+      status: "checked",
+      supportsText: true,
+      checkedCodepoints: ["U+0041"],
+      missingCodepoints: [],
+      path: "/System/Library/Fonts/System.ttc",
+    });
+    expect(passCalls).toEqual([
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "2",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/System.ttc",
+        ],
+      },
+      {
+        command: "fc-query",
+        args: ["--index", "2", "--format=%{charset}\\n", "/System/Library/Fonts/System.ttc"],
+      },
+    ]);
+    expect(fail).toMatchObject({
+      status: "checked",
+      supportsText: false,
+      checkedCodepoints: ["U+0041", "U+0042"],
+      missingCodepoints: ["U+0042"],
+    });
+    expect(failCalls).toEqual(passCalls);
+  });
+
+  test("accepts localized comma-separated TTC metadata aliases from fontconfig", async () => {
+    const calls: Array<{ command: string; args: string[] }> = [];
+    const result = await checkFontconfigCoverage({
+      face: {
+        family: "PingFang TC",
+        fullName: "PingFang TC Regular,蘋方-繁 標準體,苹方-繁 常规体",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/PingFang.ttc",
+      },
+      text: "繁體中文",
+      runner: async (command, args) => {
+        calls.push({ command, args });
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return {
+            ok: true,
+            stdout:
+              "PingFang TC,蘋方-繁,苹方-繁\tPingFang TC Regular,蘋方-繁 標準體,苹方-繁 常规体\n",
+            stderr: "",
+          };
+        }
+        return { ok: true, stdout: "4e00-9fff\n", stderr: "" };
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: "checked",
+      supportsText: true,
+      checkedCodepoints: ["U+7E41", "U+9AD4", "U+4E2D", "U+6587"],
+      missingCodepoints: [],
+      path: "/System/Library/Fonts/PingFang.ttc",
+    });
+    expect(calls).toEqual([
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "2",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/PingFang.ttc",
+        ],
+      },
+      {
+        command: "fc-query",
+        args: ["--index", "2", "--format=%{charset}\\n", "/System/Library/Fonts/PingFang.ttc"],
+      },
+    ]);
+  });
+
+  test("keeps TTC coverage inconclusive without a provider-backed face index", async () => {
     const result = await checkFontconfigCoverage({
       face: {
         family: "System TTC",
@@ -2385,7 +2703,7 @@ describe("font coverage", () => {
 
     expect(result).toMatchObject({
       status: "inconclusive",
-      reason: "unsupported-ttc-collection",
+      reason: "ttc-face-index-unavailable",
       path: "/System/Library/Fonts/System.ttc",
     });
   });
@@ -2407,8 +2725,131 @@ describe("font coverage", () => {
 
     expect(result).toMatchObject({
       status: "inconclusive",
-      reason: "unsupported-ttc-collection",
+      reason: "ttc-face-index-unavailable",
       path: "/System/Library/Fonts/System.ttc",
     });
+  });
+
+  test("keeps indexed TTC coverage inconclusive when metadata does not match selected face", async () => {
+    const calls: Array<{ command: string; args: string[] }> = [];
+    const result = await checkFontconfigCoverage({
+      face: {
+        family: "System TTC",
+        fullName: "System TTC Regular",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/System.ttc",
+      },
+      text: "A",
+      runner: async (command, args) => {
+        calls.push({ command, args });
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: true, stdout: "Other TTC\tOther TTC Regular\n", stderr: "" };
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: "inconclusive",
+      reason: "ttc-face-mismatch",
+      path: "/System/Library/Fonts/System.ttc",
+    });
+    expect(calls).toEqual([
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "2",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/System.ttc",
+        ],
+      },
+    ]);
+  });
+
+  test("returns fontconfig query failure for indexed TTC metadata and charset failures", async () => {
+    const metadataFailureCalls: Array<{ command: string; args: string[] }> = [];
+    const metadataFailure = await checkFontconfigCoverage({
+      face: {
+        family: "System TTC",
+        fullName: "System TTC Regular",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/System.ttc",
+      },
+      text: "A",
+      runner: async (command, args) => {
+        metadataFailureCalls.push({ command, args });
+        return args[0] === "--version"
+          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+          : { ok: false, stdout: "", stderr: "query failed" };
+      },
+    });
+
+    const charsetFailureCalls: Array<{ command: string; args: string[] }> = [];
+    const charsetFailure = await checkFontconfigCoverage({
+      face: {
+        family: "System TTC",
+        fullName: "System TTC Regular",
+        style: "normal",
+        source: "system",
+        format: "ttc",
+        faceIndex: 2,
+        path: "/System/Library/Fonts/System.ttc",
+      },
+      text: "A",
+      runner: async (command, args) => {
+        charsetFailureCalls.push({ command, args });
+        if (args[0] === "--version") {
+          return { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" };
+        }
+        if (args.includes("--format=%{family}\t%{fullname}\\n")) {
+          return { ok: true, stdout: "System TTC\tSystem TTC Regular\n", stderr: "" };
+        }
+        return { ok: false, stdout: "", stderr: "query failed" };
+      },
+    });
+
+    expect(metadataFailure).toMatchObject({
+      status: "inconclusive",
+      reason: "fontconfig-query-failed",
+    });
+    expect(metadataFailureCalls).toEqual([
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "2",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/System.ttc",
+        ],
+      },
+    ]);
+    expect(charsetFailure).toMatchObject({
+      status: "inconclusive",
+      reason: "fontconfig-query-failed",
+    });
+    expect(charsetFailureCalls).toEqual([
+      { command: "fc-query", args: ["--version"] },
+      {
+        command: "fc-query",
+        args: [
+          "--index",
+          "2",
+          "--format=%{family}\t%{fullname}\\n",
+          "/System/Library/Fonts/System.ttc",
+        ],
+      },
+      {
+        command: "fc-query",
+        args: ["--index", "2", "--format=%{charset}\\n", "/System/Library/Fonts/System.ttc"],
+      },
+    ]);
   });
 });

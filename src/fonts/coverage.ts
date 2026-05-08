@@ -40,6 +40,9 @@ const LANGUAGE_SAMPLE_TEXT: Record<string, string> = {
 
 export const NERD_FONT_SAMPLE_TEXT = "git \uE0B0 main \uF418";
 
+const FONTCONFIG_CHARSET_FORMAT = "%{charset}\\n";
+const FONTCONFIG_TTC_IDENTITY_FORMAT = "%{family}\t%{fullname}\\n";
+
 function codepoints(value: string): number[] {
   return Array.from(value).map((character) => character.codePointAt(0) ?? 0);
 }
@@ -78,6 +81,49 @@ function supportedByRanges(codepoint: number, ranges: FontCodepointRange[]): boo
 function fontPathFormat(path: string): string | undefined {
   const match = /\.([a-z0-9]+)$/i.exec(path);
   return match?.[1]?.toLowerCase();
+}
+
+function normalizeFontMetadata(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function fontconfigMetadataCandidates(value: string): string[] {
+  return value.split(",").map(normalizeFontMetadata).filter(Boolean);
+}
+
+function fontconfigMetadataMatches(value: string | undefined, expected: string): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalizedValue = normalizeFontMetadata(value);
+  const normalizedExpected = normalizeFontMetadata(expected);
+  if (normalizedValue === normalizedExpected) {
+    return true;
+  }
+
+  const valueCandidates = new Set(fontconfigMetadataCandidates(value));
+  return fontconfigMetadataCandidates(expected).some((candidate) => valueCandidates.has(candidate));
+}
+
+function parseFontconfigTtcIdentity(value: string): { family?: string; fullName?: string } {
+  const [line = ""] = value.split(/\r?\n/, 1);
+  const [family, fullName] = line.split("\t");
+  return {
+    family: family?.trim(),
+    fullName: fullName?.trim(),
+  };
+}
+
+function fontconfigTtcIdentityMatches(input: {
+  stdout: string;
+  family: string;
+  fullName: string;
+}): boolean {
+  const identity = parseFontconfigTtcIdentity(input.stdout);
+  return (
+    fontconfigMetadataMatches(identity.family, input.family) &&
+    fontconfigMetadataMatches(identity.fullName, input.fullName)
+  );
 }
 
 function detectScripts(value: string): string[] {
@@ -160,9 +206,10 @@ export async function checkFontconfigCoverage(
 
   const format = face.format ?? fontPathFormat(path);
   if (format === "ttc") {
-    return inconclusive("unsupported-ttc-collection");
-  }
-  if (format && !["ttf", "otf"].includes(format)) {
+    if (face.faceIndex === undefined) {
+      return inconclusive("ttc-face-index-unavailable");
+    }
+  } else if (format && !["ttf", "otf"].includes(format)) {
     return inconclusive("unsupported-font-format");
   }
 
@@ -171,7 +218,34 @@ export async function checkFontconfigCoverage(
     return inconclusive("fontconfig-unavailable");
   }
 
-  const queried = await input.runner("fc-query", ["--format=%{charset}\\n", path]);
+  const isTtc = format === "ttc";
+  if (isTtc) {
+    const identity = await input.runner("fc-query", [
+      "--index",
+      String(face.faceIndex),
+      `--format=${FONTCONFIG_TTC_IDENTITY_FORMAT}`,
+      path,
+    ]);
+    if (!identity.ok) {
+      return inconclusive("fontconfig-query-failed");
+    }
+    if (
+      !fontconfigTtcIdentityMatches({
+        stdout: identity.stdout,
+        family: face.family,
+        fullName: face.fullName,
+      })
+    ) {
+      return inconclusive("ttc-face-mismatch");
+    }
+  }
+
+  const queried = await input.runner(
+    "fc-query",
+    isTtc
+      ? ["--index", String(face.faceIndex), `--format=${FONTCONFIG_CHARSET_FORMAT}`, path]
+      : [`--format=${FONTCONFIG_CHARSET_FORMAT}`, path],
+  );
   if (!queried.ok) {
     return inconclusive("fontconfig-query-failed");
   }
