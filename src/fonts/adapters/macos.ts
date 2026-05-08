@@ -64,23 +64,24 @@ export function parseMacosSystemProfilerFonts(stdout: string): FontFace[] {
             },
           ];
 
-    return typefaces
-      .map((typeface) => {
-        const fullName = typeface.fullname?.trim() || typeface._name?.trim() || "";
-        const family = typeface.family?.trim() || font.family?.trim() || fullName;
-        if (!family) {
-          return null;
-        }
-        return {
-          family,
-          fullName: fullName || family,
-          style: fontStyleFromText(typeface.style ?? fullName),
-          path: font.path,
-          format: fontFormatFromProfiler(font.type, font.path),
-          source: "system",
-        } satisfies FontFace;
-      })
-      .filter((font): font is FontFace => font !== null);
+    return typefaces.flatMap((typeface): FontFace[] => {
+      const fullName = typeface.fullname?.trim() || typeface._name?.trim() || "";
+      const family = typeface.family?.trim() || font.family?.trim() || fullName;
+      if (!family) {
+        return [];
+      }
+      const face: FontFace = {
+        family,
+        fullName: fullName || family,
+        style: fontStyleFromText(typeface.style ?? fullName),
+        format: fontFormatFromProfiler(font.type, font.path),
+        source: "system",
+      };
+      if (font.path !== undefined) {
+        face.path = font.path;
+      }
+      return [face];
+    });
   });
 }
 

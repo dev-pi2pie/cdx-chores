@@ -55,23 +55,24 @@ function resolveWindowsFontPath(value: string | undefined): string | undefined {
 export function parseWindowsFontRegistry(stdout: string): FontFace[] {
   const parsed = JSON.parse(stdout) as WindowsRegistryFont | WindowsRegistryFont[] | null;
   const entries = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
-  return entries
-    .map((entry) => {
-      const fullName = stripRegistrySuffix(entry.name ?? "");
-      if (!fullName) {
-        return null;
-      }
-      const path = resolveWindowsFontPath(entry.value);
-      return {
-        family: fullName,
-        fullName,
-        style: fontStyleFromName(fullName),
-        path,
-        format: fontFormatFromValue(entry.value),
-        source: "system",
-      } satisfies FontFace;
-    })
-    .filter((font): font is FontFace => font !== null);
+  return entries.flatMap((entry): FontFace[] => {
+    const fullName = stripRegistrySuffix(entry.name ?? "");
+    if (!fullName) {
+      return [];
+    }
+    const path = resolveWindowsFontPath(entry.value);
+    const face: FontFace = {
+      family: fullName,
+      fullName,
+      style: fontStyleFromName(fullName),
+      format: fontFormatFromValue(entry.value),
+      source: "system",
+    };
+    if (path !== undefined) {
+      face.path = path;
+    }
+    return [face];
+  });
 }
 
 export const windowsFontAdapter: FontDiscoveryAdapter = {

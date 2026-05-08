@@ -9,11 +9,21 @@ export type VideoGifProfile = (typeof VIDEO_GIF_PROFILE_VALUES)[number];
 export const VIDEO_GIF_LOOK_VALUES = ["faithful", "vibrant"] as const;
 export type VideoGifLook = (typeof VIDEO_GIF_LOOK_VALUES)[number];
 
-export interface ResolvedVideoGifContract {
-  mode: VideoGifMode;
-  profile: VideoGifProfile | undefined;
-  look: VideoGifLook | undefined;
+export interface ResolvedCompressedVideoGifContract {
+  mode: "compressed";
+  profile: undefined;
+  look: undefined;
 }
+
+export interface ResolvedQualityVideoGifContract {
+  mode: "quality";
+  profile: VideoGifProfile;
+  look: VideoGifLook;
+}
+
+export type ResolvedVideoGifContract =
+  | ResolvedCompressedVideoGifContract
+  | ResolvedQualityVideoGifContract;
 
 export interface VideoGifProfileFilterConfig {
   paletteGen: string;
