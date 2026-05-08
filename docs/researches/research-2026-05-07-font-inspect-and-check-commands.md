@@ -10,13 +10,13 @@ agent: codex
 
 Record the follow-up research for adding `font inspect` and `font check` after the completed Markdown-to-PDF profile, font discovery, and diagnostics work.
 
-The related implementation plan delivered `font list` as the first public discovery slice. This research narrows the next command surfaces so future work can avoid mixing three separate jobs:
+The related implementation plan delivered `font list` as the first public discovery slice. This research narrows the remaining command surfaces so follow-up work can avoid mixing three separate jobs:
 
 - discovering installed font candidates
 - inspecting discovered font metadata
 - checking glyph coverage for specific text or special symbol requirements
 
-The immediate planning target is `font inspect`. `font check` remains provisional until parser behavior, TTC handling, controlled fixtures, and reason-code coverage are proven.
+The immediate `font inspect` slice is captured in the related implementation plan. `font check` remains provisional until parser behavior, TTC handling, controlled fixtures, and reason-code coverage are proven.
 
 ## Current State
 
@@ -48,7 +48,7 @@ It cannot yet answer:
 ## Key Findings
 
 1. The completed Markdown-to-PDF plan established the discovery and coverage boundary, but the implemented public command currently covers discovery only.
-2. `font inspect` is ready for a narrow implementation plan because it can build directly on `font list` discovery output, adapter selection, and debug behavior without needing a parser-backed coverage decision.
+2. `font inspect` can build directly on `font list` discovery output, adapter selection, and debug behavior without needing a parser-backed coverage decision.
 3. `font check` has a useful proposed command shape, but it should stay provisional until a parser spike proves real-file coverage behavior and the fixture strategy is defined.
 4. Codex Helper should depend on the shared font commands or modules later. It should not introduce separate font inspection or coverage logic.
 
@@ -223,7 +223,7 @@ Family names alone are not enough. A family can have multiple files, styles, wei
 
 All other outcomes must stay out of the false-failure path. They should be classified as `pass`, `inconclusive`, or usage errors according to the exit table above.
 
-When a family resolves to multiple faces, the future `font check` slice should select one face deterministically instead of probing faces until one passes. Proposed priority:
+When a family resolves to multiple faces, the deferred `font check` slice should select one face deterministically instead of probing faces until one passes. Proposed priority:
 
 1. exact normalized family match before looser family matches
 2. inspectable file path before no usable path
@@ -256,7 +256,7 @@ Minimum parser requirements:
 - no CI dependency on the developer machine's installed fonts
 - graceful reporting when a discovered face has no usable path
 
-Acceptable future implementation paths:
+Acceptable implementation paths for `font check`:
 
 | Path | Use when |
 | --- | --- |
@@ -264,7 +264,7 @@ Acceptable future implementation paths:
 | controlled fixture inventory | parser choice is still unsettled, but profile tests need deterministic coverage behavior |
 | hybrid path | real parser for direct file checks, controlled inventory for cross-platform command tests |
 
-A future `font check` plan should carry the hybrid path unless the parser spike disproves it. Parser-backed checks make the command useful with real font files; controlled inventories keep tests deterministic and avoid CI dependence on locally installed fonts.
+The `font check` plan should carry the hybrid path unless the parser spike disproves it. Parser-backed checks make the command useful with real font files; controlled inventories keep tests deterministic and avoid CI dependence on locally installed fonts.
 
 `font check` should document limitations clearly if TTC collections, variable fonts, or color emoji fonts are not fully covered in the first slice.
 
@@ -352,7 +352,7 @@ Codex Helper can later use the same commands to explain why a profile warning ha
 
 ## Fixture Research Direction
 
-Future tests should avoid depending on real installed fonts.
+Tests should avoid depending on real installed fonts.
 
 Suggested fixtures:
 
@@ -367,7 +367,7 @@ Suggested fixtures:
 - one TTC collection fixture or mocked TTC discovery result that returns `inconclusive`
 - one UTF-8 text-file fixture, including BOM and control-character handling if easy to isolate
 
-Evidence a future implementation should produce:
+Evidence implementation should produce:
 
 - `font inspect` groups multiple faces under one family.
 - `font inspect --json` returns structured face metadata.
@@ -385,9 +385,9 @@ Evidence a future implementation should produce:
 - `font check --text-file` reads raw UTF-8 text without parsing Markdown and excludes only `Cc` controls from required coverage.
 - `font check --json` is deterministic across platforms with mocked coverage inventory.
 
-## Direction for the Next Plan
+## Direction for the Inspect Plan
 
-The next implementation plan can safely cover:
+The related `font inspect` implementation plan should cover:
 
 1. Implement `font inspect` before `font check`.
 2. Keep `font inspect` to `--family` in the first slice; do not add `--full-name` yet.
@@ -450,9 +450,9 @@ Strict mode:
 - Keep the first `font check` slice at exit `1` for checked missing coverage, exit `2` for usage errors, and exit `3` for inconclusive checks.
 - Revisit `--strict` only if automation needs a mode that treats inconclusive checks as a failure.
 
-## Implementation Plan Readiness
+## Plan Readiness
 
-This research is solid enough to support a narrow `font inspect` implementation plan. The plan should stay focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
+This research supports a narrow `font inspect` implementation plan focused on family-based inspection, JSON/text output, discovery-mode reuse, debug output, no-match behavior, and shared metadata formatting from `font list`.
 
 It is not yet enough for a complete `font check` implementation plan. The command shape and exit-code direction are useful, and this research recommends the likely parser, TTC, fixture, reason-code, and strict-mode choices. The remaining gate is evidence: a short parser spike should prove TTF/OTF behavior, confirm or defer TTC collection support, and record the fixture inventory before the full `font check` plan is written.
 
@@ -474,4 +474,5 @@ Do not start Codex Helper font assistance until at least `font inspect` is avail
 
 ## Related Plans
 
+- [Font Inspect and Coverage Parser Spike Implementation](../plans/plan-2026-05-08-font-inspect-and-coverage-parser-spike.md) - draft implementation plan for the `font inspect` slice and parser spike record.
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for profiles, initial font discovery, diagnostics, and docs.
