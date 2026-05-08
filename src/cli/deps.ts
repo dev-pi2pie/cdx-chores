@@ -1,8 +1,8 @@
 import { CliError } from "./errors";
 import { execCommand, type ExecCommandResult } from "./process";
 
-type DependencyCommand = "pandoc" | "ffmpeg" | "weasyprint";
-type DependencyCommandRunner = (
+export type DependencyCommand = "pandoc" | "ffmpeg" | "weasyprint" | "fc-list" | "fc-query";
+export type DependencyCommandRunner = (
   command: string,
   args: string[],
   options?: { cwd?: string },
@@ -53,6 +53,10 @@ function parseWeasyPrintVersion(output: string): string | null {
   return parseFirstLineWithPattern(output, /^weasyprint\s+([^\s:]+)/i);
 }
 
+function parseFontconfigVersion(output: string): string | null {
+  return parseFirstLineWithPattern(output, /^fontconfig\s+version\s+([^\s]+)/i);
+}
+
 const DEPENDENCIES: Record<DependencyCommand, DependencyDescriptor> = {
   pandoc: {
     installHints: {
@@ -85,6 +89,24 @@ const DEPENDENCIES: Record<DependencyCommand, DependencyDescriptor> = {
       { args: ["--version"], output: commandOutput },
     ],
     parseVersion: parseWeasyPrintVersion,
+  },
+  "fc-list": {
+    installHints: {
+      darwin: "brew install fontconfig",
+      win32: "Install fontconfig and ensure fc-list is on PATH",
+      default: "Install fontconfig via your package manager",
+    },
+    probes: [{ args: ["--version"], output: commandOutput }],
+    parseVersion: parseFontconfigVersion,
+  },
+  "fc-query": {
+    installHints: {
+      darwin: "brew install fontconfig",
+      win32: "Install fontconfig and ensure fc-query is on PATH",
+      default: "Install fontconfig via your package manager",
+    },
+    probes: [{ args: ["--version"], output: commandOutput }],
+    parseVersion: parseFontconfigVersion,
   },
 };
 

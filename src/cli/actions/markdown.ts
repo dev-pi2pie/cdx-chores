@@ -7,8 +7,13 @@ import { CliError } from "../errors";
 import { readTextFileRequired, writeTextFileSafe } from "../file-io";
 import {
   createMarkdownPdfRecipe,
+  createMarkdownPdfProfileConfig,
+  inferMarkdownPdfProfileFormat,
+  normalizeMarkdownPdfProfile,
   normalizeMarkdownPdfOptions,
+  readMarkdownPdfProfileFile,
   renderMarkdownPdf,
+  serializeMarkdownPdfProfile,
   type MarkdownPdfProcessRunner,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../markdown-pdf";
@@ -67,6 +72,8 @@ export async function actionMdToDocx(runtime: CliRuntime, options: MdToDocxOptio
 export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   input: string;
   output?: string;
+  profile?: string;
+  meta?: string[];
   template?: string;
   css?: string;
   noDefaultCss?: boolean;
@@ -76,6 +83,11 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
 }
 
 export interface MdPdfTemplateInitOptions extends NormalizeMarkdownPdfOptionsInput {
+  output: string;
+  overwrite?: boolean;
+}
+
+export interface MdPdfProfileInitOptions extends NormalizeMarkdownPdfOptionsInput {
   output: string;
   overwrite?: boolean;
 }
@@ -118,6 +130,14 @@ function isNotFoundError(error: unknown): boolean {
   );
 }
 
+function definedRecipeOptions(
+  input: NormalizeMarkdownPdfOptionsInput,
+): NormalizeMarkdownPdfOptionsInput {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined),
+  ) as NormalizeMarkdownPdfOptionsInput;
+}
+
 async function ensureExistingFile(path: string, label: string): Promise<void> {
   let stats: Awaited<ReturnType<typeof stat>>;
   try {
@@ -156,11 +176,26 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   const customTemplatePath = templateInput ? resolveFromCwd(runtime, templateInput) : undefined;
   const cssInput = options.css?.trim();
   const customCssPath = cssInput ? resolveFromCwd(runtime, cssInput) : undefined;
-
-  const normalizedOptions = normalizeMarkdownPdfOptions(options);
-  const recipe = createMarkdownPdfRecipe(normalizedOptions);
+  const profileInput = options.profile?.trim();
+  const profilePath = profileInput ? resolveFromCwd(runtime, profileInput) : undefined;
 
   await ensureFileExists(inputPath, "Input");
+  const rawMarkdown = await readTextFileRequired(inputPath);
+  const parsedMarkdown = parseMarkdown(rawMarkdown);
+  const profileData = profilePath ? await readMarkdownPdfProfileFile(profilePath) : undefined;
+  const normalizedProfile = normalizeMarkdownPdfProfile({
+    profile: profileData,
+    frontmatter: parsedMarkdown.data,
+    meta: options.meta,
+  });
+  const normalizedOptions = normalizeMarkdownPdfOptions({
+    ...normalizedProfile.recipeOptions,
+    ...definedRecipeOptions(options),
+  });
+  const recipe = createMarkdownPdfRecipe(normalizedOptions, {
+    profile: normalizedProfile.profile,
+  });
+
   if (customTemplatePath) {
     await ensureExistingFile(customTemplatePath, "Template");
   }
@@ -265,6 +300,23 @@ export async function actionMdPdfTemplateInit(
     runtime.stdout,
     `Wrote Markdown PDF template: ${displayPath(runtime, outputDirectory)}`,
   );
+}
+
+export async function actionMdPdfProfileInit(
+  runtime: CliRuntime,
+  options: MdPdfProfileInitOptions,
+): Promise<void> {
+  const outputPath = resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path"));
+  const format = inferMarkdownPdfProfileFormat(outputPath);
+  const normalizedOptions = normalizeMarkdownPdfOptions(options);
+  const profile = createMarkdownPdfProfileConfig(normalizedOptions);
+  const serialized = serializeMarkdownPdfProfile(profile, format);
+
+  await writeTextFileSafe(outputPath, serialized, {
+    overwrite: options.overwrite,
+  });
+
+  printLine(runtime.stdout, `Wrote Markdown PDF profile: ${displayPath(runtime, outputPath)}`);
 }
 
 export interface MdFrontmatterToJsonOptions {

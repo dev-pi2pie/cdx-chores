@@ -1,5 +1,9 @@
 export { actionDoctor } from "./doctor";
 export type { DoctorOptions } from "./doctor";
+export { actionFontCheck } from "./font-check";
+export type { FontCheckOptions, FontCheckActionResult } from "./font-check";
+export { actionFontInspect, actionFontList } from "./font";
+export type { FontInspectOptions, FontListOptions } from "./font";
 export { actionDataPreview, loadDataPreviewSource } from "./data-preview";
 export type { DataPreviewOptions } from "./data-preview";
 export { actionDataParquetPreview } from "./data-parquet-preview";
@@ -55,12 +59,14 @@ export type {
 } from "./data";
 export {
   actionMdFrontmatterToJson,
+  actionMdPdfProfileInit,
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,
 } from "./markdown";
 export type {
   MdFrontmatterToJsonOptions,
+  MdPdfProfileInitOptions,
   MdPdfTemplateInitOptions,
   MdToDocxOptions,
   MdToPdfOptions,

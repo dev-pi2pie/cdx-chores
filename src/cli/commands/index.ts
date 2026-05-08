@@ -4,6 +4,7 @@ import { actionDoctor } from "../actions";
 import { runInteractiveMode } from "../interactive";
 import type { CliRuntime } from "../types";
 import { registerDataCommands } from "./data";
+import { registerFontCommands } from "./font";
 import { registerMarkdownCommands } from "./markdown";
 import { registerRenameCommands } from "./rename";
 import { registerVideoCommands } from "./video";
@@ -25,6 +26,7 @@ export function registerCliCommands(program: Command, runtime: CliRuntime): void
     });
 
   registerDataCommands(program, runtime);
+  registerFontCommands(program, runtime);
   registerMarkdownCommands(program, runtime);
   registerRenameCommands(program, runtime);
   registerVideoCommands(program, runtime);

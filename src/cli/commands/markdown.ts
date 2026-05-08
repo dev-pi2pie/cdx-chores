@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import {
   actionMdFrontmatterToJson,
+  actionMdPdfProfileInit,
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,
@@ -32,6 +33,8 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
   overwrite?: boolean;
   template?: string;
   css?: string;
+  profile?: string;
+  meta?: string[];
   noDefaultCss?: boolean;
   defaultCss?: boolean;
   htmlOutput?: string;
@@ -41,6 +44,15 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
 interface MarkdownPdfTemplateInitCliOptions extends MarkdownPdfRecipeCliOptions {
   output: string;
   overwrite?: boolean;
+}
+
+interface MarkdownPdfProfileInitCliOptions extends MarkdownPdfRecipeCliOptions {
+  output: string;
+  overwrite?: boolean;
+}
+
+function collectStringOption(value: string, previous: string[] = []): string[] {
+  return [...previous, value];
 }
 
 function applyMarkdownPdfRecipeOptions(command: Command): Command {
@@ -55,7 +67,7 @@ function applyMarkdownPdfRecipeOptions(command: Command): Command {
     .option("--margin-right <length>", "Set right page margin")
     .option("--margin-bottom <length>", "Set bottom page margin")
     .option("--margin-left <length>", "Set left page margin")
-    .option("--toc", "Generate a table of contents", false)
+    .option("--toc", "Generate a table of contents")
     .option("--toc-depth <n>", "Table of contents depth", (value) =>
       parsePositiveIntegerOption(value, "--toc-depth"),
     )
@@ -71,7 +83,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
   applyCommonFileOptions(
     mdCommand
       .command("to-docx")
-      .description("Convert Markdown to DOCX using pandoc")
+      .description("Convert Markdown to DOCX using Pandoc")
       .requiredOption("-i, --input <path>", "Input Markdown file")
       .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
         await actionMdToDocx(runtime, options);
@@ -86,6 +98,12 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .requiredOption("-i, --input <path>", "Input Markdown file")
         .option("--template <path>", "Custom Pandoc HTML template")
         .option("--css <path>", "Custom print stylesheet")
+        .option("--profile <path>", "Markdown PDF profile file (.yml, .yaml, .json)")
+        .option(
+          "--meta <key=value>",
+          "Metadata override for profile placeholders",
+          collectStringOption,
+        )
         .option("--no-default-css", "Do not apply the built-in default stylesheet")
         .option("--html-output <path>", "Write the intermediate rendered HTML")
         .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
@@ -108,6 +126,19 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       .option("--overwrite", "Overwrite recipe files if they already exist", false)
       .action(async (options: MarkdownPdfTemplateInitCliOptions) => {
         await actionMdPdfTemplateInit(runtime, options);
+      }),
+  );
+
+  applyMarkdownPdfRecipeOptions(
+    mdCommand
+      .command("pdf-profile")
+      .description("Manage Markdown PDF profiles")
+      .command("init")
+      .description("Write a Markdown PDF profile file")
+      .requiredOption("-o, --output <path>", "Output profile file")
+      .option("--overwrite", "Overwrite the profile file if it already exists", false)
+      .action(async (options: MarkdownPdfProfileInitCliOptions) => {
+        await actionMdPdfProfileInit(runtime, options);
       }),
   );
 

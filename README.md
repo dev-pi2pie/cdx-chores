@@ -51,7 +51,7 @@ Runtime requirement:
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
 | `data` | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
-| `md` | `to-docx`, `to-pdf`, `pdf-template init`, `frontmatter-to-json` | Markdown conversion, PDF recipe generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
+| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-template init`, `frontmatter-to-json` | Markdown conversion, PDF profile/template generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
 | `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
@@ -212,6 +212,13 @@ Markdown to PDF with a report ToC:
 
 ```bash
 cdx-chores md to-pdf -i ./report.md --preset report --toc --toc-depth 3
+```
+
+Generate and use a reusable Markdown PDF profile:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.yml
+cdx-chores md to-pdf -i ./report.md --profile ./pdf-profile.yml --meta author="Noname"
 ```
 
 Generate editable Markdown PDF template files:

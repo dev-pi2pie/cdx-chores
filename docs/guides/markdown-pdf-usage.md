@@ -1,13 +1,14 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
+modified-date: 2026-05-08
 status: completed
 agent: codex
 ---
 
 ## Goal
 
-Document the current `md to-pdf` and `md pdf-template init` workflow for rendering Markdown into PDF through Pandoc-generated HTML and WeasyPrint.
+Document the current `md to-pdf`, `md pdf-profile init`, and `md pdf-template init` workflow for rendering Markdown into PDF through Pandoc-generated HTML and WeasyPrint.
 
 ## Requirements
 
@@ -60,11 +61,13 @@ The default preset is `article`.
 
 Supported presets:
 
-- `article`: general notes and short articles
-- `report`: longer documents with ToC-friendly spacing
-- `wide-table`: landscape output for wide tables or matrix-style documents
-- `compact`: dense internal references
-- `reader`: screen-reading oriented PDFs with larger type
+| Preset | Best for | Default orientation | Default margins |
+| ------ | -------- | ------------------- | --------------- |
+| `article` | General notes and short articles | `portrait` | `18mm` |
+| `report` | Longer documents with ToC-friendly spacing | `portrait` | `18mm` |
+| `wide-table` | Wide tables or matrix-style documents | `landscape` | `12mm` |
+| `compact` | Dense internal references | `portrait` | `12mm` |
+| `reader` | Screen-reading oriented PDFs with larger type | `portrait` | `20mm` top/bottom, `22mm` left/right |
 
 Example:
 
@@ -131,6 +134,209 @@ cdx-chores md to-pdf \
 
 The HTML file is written only when `--html-output` is passed.
 
+## Profiles
+
+Profiles capture reusable PDF rendering settings in a declarative file. Use a profile when the same page size, metadata, cover, header/footer, page-number, or font settings should apply across documents:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./pdf-profile.yml
+```
+
+Generate a starter profile:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.yml
+```
+
+The output extension chooses the profile format. YAML is the primary documented format for human-authored profiles, and JSON is accepted for automation:
+
+```bash
+cdx-chores md pdf-profile init --output ./pdf-profile.json
+cdx-chores md to-pdf --input ./report.md --profile ./pdf-profile.json
+```
+
+Use `--preset` to generate a profile from a built-in PDF preset, and `--overwrite` when replacing an existing profile file:
+
+```bash
+cdx-chores md pdf-profile init \
+  --preset report \
+  --output ./report-profile.yml \
+  --overwrite
+```
+
+Unknown profile keys fail by default so misspelled settings do not silently change the output.
+
+`md pdf-profile init --preset <name>` stores profile values derived from the preset. It does not currently store the preset name itself. For example, a generated `wide-table` profile preserves derived page shape such as landscape orientation and margins, but later rendering still uses the default `article` preset CSS unless `--preset wide-table` is also passed to `md to-pdf`.
+
+Profile metadata provides reusable defaults. Markdown frontmatter should hold document-specific values, and repeatable `--meta key=value` is the concise CLI override path:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./pdf-profile.yml \
+  --meta company="Example Co." \
+  --meta author="Noname"
+```
+
+Precedence is:
+
+```text
+--meta key=value
+  -> Markdown frontmatter
+  -> profile metadata
+  -> derived defaults
+```
+
+## Profiles, Templates, And Overrides
+
+Profiles are declarative settings consumed by the built-in Markdown PDF recipe. Template and CSS files are lower-level recipe overrides.
+
+`md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
+
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, covers, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+
+When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
+
+A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile cover settings will not appear in the rendered PDF.
+
+## Covers And Page Chrome
+
+Cover pages are rendered as part of the generated HTML/CSS recipe. The first built-in profile styles are:
+
+- `plain`
+- `report`
+
+Example:
+
+```yaml
+cover:
+  enabled: true
+  style: report
+  fields:
+    title: "{title}"
+    subtitle: "{subtitle}"
+    author: "{author}"
+    company: "{company}"
+    date: "{date}"
+```
+
+Headers and footers use deterministic placeholder fields:
+
+```yaml
+header:
+  left: "{company}"
+  right: "{title}"
+
+footer:
+  left: "{author}"
+  right: "{date}"
+```
+
+Page numbers are disabled by default. Enable them explicitly:
+
+```yaml
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "{page}"
+  scope: body
+```
+
+`{page}` is the current PDF page number. `{pages}` is the document-wide total page count, so it is not part of the recommended default format. Cover and ToC pages do not receive the normal body page chrome by default.
+
+## Profile Fonts And Mixed Language
+
+Most mixed-language documents should start with ordered fallback fonts. Put the Latin/body default first when Latin text should keep the primary body font:
+
+```yaml
+fonts:
+  body:
+    default: "Source Serif 4"
+    zh-Hant: "Noto Serif CJK TC"
+    zh-Hans: "Noto Serif CJK SC"
+    ja: "Noto Serif CJK JP"
+    ko: "Noto Serif CJK KR"
+  code:
+    default: "JetBrains Mono"
+    symbols: "JetBrainsMono Nerd Font"
+```
+
+Fallback is the basic path. It helps occasional CJK text render without marking every phrase. Use CSS generic names exactly as `serif`, `sans-serif`, or `monospace` when a generic fallback is intended.
+
+For exact mixed-language font assignment, keep document-level `lang` singular and mark language-specific spans or blocks:
+
+```markdown
+---
+title: Mixed Language Report
+lang: en-US
+pdf:
+  content-langs:
+    - zh-Hant
+    - ja
+    - ko
+---
+
+English text with [繁體中文]{lang=zh-Hant}, [日本語]{lang=ja}, and [한국어]{lang=ko}.
+```
+
+Raw HTML works as an escape hatch:
+
+```markdown
+English text with <span lang="ja">日本語</span>.
+```
+
+`pdf.content-langs` declares expected content languages for profile preparation and validation. It does not detect or rewrite language boundaries. Exact font switching still requires language-marked Markdown or HTML.
+
+CJK is the first-class mixed-language target for this profile slice. Latin-extended and RTL content have smoke coverage for profile normalization and generated CSS, but this does not claim renderer-specific RTL shaping quality.
+
+## Font Discovery And Coverage
+
+Use `font list` to discover candidate system font faces:
+
+```bash
+cdx-chores font list --family "Noto"
+```
+
+Use `font inspect` when you need the discovered metadata for one family:
+
+```bash
+cdx-chores font inspect --family "Noto Sans CJK TC"
+cdx-chores font inspect --family "Noto Sans CJK TC" --json
+```
+
+Use `font check` when you need coverage evidence for specific text before choosing profile fonts:
+
+```bash
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
+cdx-chores font check --family "JetBrainsMono Nerd Font" --text "git  main " --require nerd
+cdx-chores font check --family "Noto Sans CJK JP" --text-file ./samples/japanese.txt --json
+```
+
+`font check` requires exactly one of `--text` or `--text-file`. Text files are read as raw UTF-8 text, with no Markdown extraction or document parsing. Missing required glyph coverage exits `1`, usage errors exit `2`, and inconclusive checks exit `3`.
+
+Coverage checks use the selected discovered face and optional fontconfig `fc-query` support. A pass means the selected font file advertises the required codepoints. It does not guarantee shaping behavior, emoji presentation, fallback behavior, or final PDF renderer output. TTC collection checks require provider-backed face-index metadata; otherwise the result is inconclusive instead of a false failure.
+
+Discovery mode defaults to `auto`:
+
+```bash
+cdx-chores font list --discovery auto
+cdx-chores font list --discovery native
+cdx-chores font list --discovery fontconfig
+```
+
+On macOS, `auto` uses `fc-list` when available and falls back to `system_profiler`. Linux uses fontconfig. Windows uses native registry discovery unless `fontconfig` is requested explicitly.
+
+Use `--debug` to see the selected path and sanitized adapter attempts:
+
+```bash
+cdx-chores font list --debug
+cdx-chores font list --json --debug
+cdx-chores font inspect --family "Noto Sans CJK TC" --debug
+cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試" --debug
+```
+
 ## Custom Template And CSS
 
 Materialize the built-in recipe:
@@ -156,7 +362,7 @@ cdx-chores md to-pdf \
   --css ./pdf-template/style.css
 ```
 
-When `--css` is provided, default CSS is applied first and user CSS is applied after it.
+When `--css` is provided, generated CSS is applied first and user CSS is applied after it. This means custom CSS can override preset and profile-generated styles.
 
 Use `--no-default-css` to render with only custom CSS:
 
@@ -199,5 +405,8 @@ cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 ## Related Docs
 
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
+- `docs/researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md`
+- `docs/researches/research-2026-05-07-font-command-discovery-options.md`
 - `docs/plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md`
+- `docs/plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md`
 - `docs/researches/research-2026-05-06-markdown-to-pdf-weasyprint.md`

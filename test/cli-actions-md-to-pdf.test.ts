@@ -2,12 +2,17 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { actionMdPdfTemplateInit, actionMdToPdf } from "../src/cli/actions";
+import { actionMdPdfProfileInit, actionMdPdfTemplateInit, actionMdToPdf } from "../src/cli/actions";
 import {
   createMarkdownPdfRecipe,
+  normalizeMarkdownPdfProfile,
   normalizeMarkdownPdfOptions,
+  readMarkdownPdfProfileFile,
   type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
+import { checkMarkdownPdfProfileFontCoverage } from "../src/cli/markdown-pdf/profile/font-coverage";
+import { checkFontCoverage, type CheckFontCoverageInput } from "../src/fonts";
+import type { FontCoverageInventory } from "../src/fonts";
 import type { ExecCommandResult } from "../src/cli/process";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -90,6 +95,17 @@ function createRemoteInlineCssHtml(): string {
   ].join("");
 }
 
+function hasCommand(command: string): boolean {
+  const result = Bun.spawnSync({
+    cmd: ["/bin/sh", "-c", `command -v ${command}`],
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  return result.exitCode === 0;
+}
+
+const pandocTest = hasCommand("pandoc") ? test : test.skip;
+
 describe("markdown PDF option normalization", () => {
   test("normalizes default article options", () => {
     const options = normalizeMarkdownPdfOptions();
@@ -140,6 +156,187 @@ describe("markdown PDF option normalization", () => {
   });
 });
 
+describe("markdown PDF profile normalization", () => {
+  test("merges profile metadata, frontmatter metadata, and CLI metadata overrides", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        page: {
+          size: "Letter",
+          margin: "12mm",
+        },
+        metadata: {
+          company: "Example Co.",
+          author: "Profile Author",
+        },
+        header: {
+          left: "{company}",
+          right: "{title}",
+        },
+        pageNumbers: {
+          enabled: true,
+        },
+      },
+      frontmatter: {
+        title: "Quarterly Report",
+        author: "Frontmatter Author",
+      },
+      meta: ["author=Noname"],
+    });
+
+    expect(result.recipeOptions).toMatchObject({
+      pageSize: "Letter",
+      margin: "12mm",
+    });
+    expect(result.profile.metadata).toMatchObject({
+      company: "Example Co.",
+      title: "Quarterly Report",
+      author: "Noname",
+    });
+    expect(result.profile.header.left).toBe("{company}");
+    expect(result.profile.pageNumbers).toMatchObject({
+      enabled: true,
+      position: "bottom-center",
+      format: "{page}",
+      scope: "body",
+    });
+  });
+
+  test("normalizes cover fields, profile fonts, and content languages", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "report",
+          fields: {
+            title: "{company} Report",
+          },
+        },
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            ja: "Noto Serif CJK JP",
+          },
+          code: {
+            default: "JetBrains Mono",
+            symbols: "JetBrainsMono Nerd Font",
+          },
+        },
+        pdf: {
+          "content-langs": ["zh-Hant", "ja"],
+        },
+      },
+      frontmatter: {
+        pdf: {
+          "content-langs": ["ja", "ko"],
+        },
+      },
+    });
+
+    expect(result.profile.cover).toMatchObject({
+      enabled: true,
+      style: "report",
+      fields: {
+        title: "{company} Report",
+        subtitle: "{subtitle}",
+      },
+    });
+    expect(result.profile.fonts.body.default).toBe("Source Serif 4");
+    expect(result.profile.fonts.body["zh-Hant"]).toBe("Noto Serif CJK TC");
+    expect(result.profile.fonts.code.symbols).toBe("JetBrainsMono Nerd Font");
+    expect(result.profile.contentLangs).toEqual(["zh-Hant", "ja", "ko"]);
+  });
+
+  test("rejects non-language keys in body font mappings", () => {
+    expect(() =>
+      normalizeMarkdownPdfProfile({
+        profile: {
+          fonts: {
+            body: {
+              fallback: "Noto Serif",
+            },
+          },
+        },
+      }),
+    ).toThrow("profile.fonts.body.fallback must use default or a language tag");
+  });
+
+  test("rejects non-language body font keys while reading profile files", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "fonts:\n  body:\n    fallback: Noto Serif\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "profile.fonts.body.fallback must use default or a language tag",
+      });
+    });
+  });
+
+  test("rejects unknown profile keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "page:\n  unexpected: true\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.page.unexpected",
+      });
+    });
+  });
+
+  test("loads JSON profiles and rejects top-level unknown keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const jsonProfilePath = join(fixtureDir, "pdf-profile.json");
+      const invalidProfilePath = join(fixtureDir, "invalid-profile.json");
+      await writeFile(
+        jsonProfilePath,
+        JSON.stringify({
+          page: {
+            size: "Letter",
+          },
+          pageNumbers: {
+            enabled: true,
+          },
+        }),
+        "utf8",
+      );
+      await writeFile(invalidProfilePath, JSON.stringify({ unknown: true }), "utf8");
+
+      const profile = await readMarkdownPdfProfileFile(jsonProfilePath);
+      expect(profile.page).toEqual({ size: "Letter" });
+
+      await expectCliError(() => readMarkdownPdfProfileFile(invalidProfilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.unknown",
+      });
+    });
+  });
+
+  test("rejects malformed profile content and non-object roots", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const malformedJsonPath = join(fixtureDir, "malformed.json");
+      const arrayYamlPath = join(fixtureDir, "array.yml");
+      await writeFile(malformedJsonPath, "{", "utf8");
+      await writeFile(arrayYamlPath, "- page\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(malformedJsonPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Failed to parse Markdown PDF profile JSON",
+      });
+      await expectCliError(() => readMarkdownPdfProfileFile(arrayYamlPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Markdown PDF profile must be a plain object",
+      });
+    });
+  });
+});
+
 describe("markdown PDF recipe generation", () => {
   test("generates report ToC page break CSS by default", () => {
     const recipe = createMarkdownPdfRecipe(
@@ -158,6 +355,379 @@ describe("markdown PDF recipe generation", () => {
     );
 
     expect(recipe.styleCss).not.toContain("break-after: page");
+  });
+
+  test("generates profile page chrome and page numbers", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        metadata: {
+          company: "Example Co.",
+          title: "Quarterly Report",
+        },
+        header: {
+          left: "{company}",
+          right: "{title}",
+        },
+        footer: {
+          left: "{author}",
+        },
+        pageNumbers: {
+          enabled: true,
+          format: "Page {page}",
+        },
+      },
+      frontmatter: {
+        author: "Noname",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain('@top-left {\n    content: "Example Co.";');
+    expect(recipe.styleCss).toContain('@top-right {\n    content: "Quarterly Report";');
+    expect(recipe.styleCss).toContain('@bottom-left {\n    content: "Noname";');
+    expect(recipe.styleCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+    expect(recipe.styleCss).toContain("@page toc");
+    expect(recipe.styleCss).not.toContain("counter(pages)");
+  });
+
+  test("keeps page numbers disabled by default", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {},
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).not.toContain("counter(page)");
+    expect(recipe.styleCss).not.toContain("@bottom-center");
+  });
+
+  test("honors explicit page-number positions", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        pageNumbers: {
+          enabled: true,
+          position: "top-right",
+          format: "{page}",
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain("@top-right {\n    content: counter(page);");
+    expect(recipe.styleCss).not.toContain("@bottom-center {\n    content: counter(page);");
+  });
+
+  test("generates plain cover HTML and cover page CSS", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "plain",
+        },
+      },
+      frontmatter: {
+        title: "Quarterly Report",
+        subtitle: "Runtime Notes",
+        author: "Noname",
+        company: "Example Co.",
+        date: "2026-05-07",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.templateHtml).toContain('class="pdf-cover pdf-cover--plain"');
+    expect(recipe.templateHtml).toContain("Quarterly Report");
+    expect(recipe.templateHtml).toContain("Runtime Notes");
+    expect(recipe.templateHtml).toContain("Noname | Example Co. | 2026-05-07");
+    expect(recipe.styleCss).toContain("@page cover");
+    expect(recipe.styleCss).toContain("@top-left {\n    content: none;");
+    expect(recipe.styleCss).toContain("@bottom-center {\n    content: none;");
+    expect(recipe.styleCss).toContain(".pdf-cover");
+  });
+
+  test("generates report cover CSS with landscape page options", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "report",
+          fields: {
+            title: "{company} Engineering Report",
+          },
+        },
+      },
+      frontmatter: {
+        company: "Example Co.",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(
+      normalizeMarkdownPdfOptions({ orientation: "landscape" }),
+      {
+        profile: normalizedProfile.profile,
+      },
+    );
+
+    expect(recipe.templateHtml).toContain("Example Co. Engineering Report");
+    expect(recipe.templateHtml).toContain("pdf-cover--report");
+    expect(recipe.styleCss).toContain("size: A4 landscape");
+    expect(recipe.styleCss).toContain(".pdf-cover--report .pdf-cover__content");
+  });
+
+  test("generates profile font fallback stacks and language CSS", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            ja: "Noto Serif CJK JP",
+            ko: "Noto Serif CJK KR",
+          },
+          heading: {
+            default: "Source Sans 3",
+          },
+          code: {
+            default: "JetBrains Mono",
+            symbols: "JetBrainsMono Nerd Font",
+          },
+          pageChrome: {
+            default: "Source Sans 3",
+          },
+        },
+      },
+      frontmatter: {
+        pdf: {
+          "content-langs": ["zh-Hant", "zh-Hant", "ja"],
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.styleCss).toContain(
+      'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(zh-Hant) {\n  font-family: "Noto Serif CJK TC", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(ja) {\n  font-family: "Noto Serif CJK JP", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      ':lang(ko) {\n  font-family: "Noto Serif CJK KR", "Source Serif 4", serif;',
+    );
+    expect(recipe.styleCss).toContain(
+      'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
+    );
+    expect(recipe.styleCss).toContain('@page {\n  font-family: "Source Sans 3", sans-serif;');
+    expect(recipe.styleCss.indexOf('"Source Serif 4"')).toBeLessThan(
+      recipe.styleCss.indexOf('"Noto Serif CJK TC"'),
+    );
+    expect(recipe.styleCss.match(/"Noto Serif CJK TC"/g)).toHaveLength(2);
+  });
+
+  test("generates expanded mixed-language CSS without assuming renderer RTL quality", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            "zh-Hans": "Noto Serif CJK SC",
+            ja: "Noto Serif CJK JP",
+            ko: "Noto Serif CJK KR",
+            vi: "Source Serif Vietnamese",
+            pl: "Source Serif Polish",
+            ar: "Noto Naskh Arabic",
+            he: "Noto Serif Hebrew",
+          },
+        },
+        pdf: {
+          "content-langs": ["zh-Hant", "zh-Hans", "ja", "ko", "vi", "pl", "ar", "he"],
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(normalizedProfile.profile.contentLangs).toEqual([
+      "zh-Hant",
+      "zh-Hans",
+      "ja",
+      "ko",
+      "vi",
+      "pl",
+      "ar",
+      "he",
+    ]);
+    expect(recipe.styleCss).toContain(
+      'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK SC", "Noto Serif CJK JP", "Noto Serif CJK KR", "Source Serif Vietnamese", "Source Serif Polish", "Noto Naskh Arabic", "Noto Serif Hebrew", serif;',
+    );
+    expect(recipe.styleCss).toContain(":lang(zh-Hant)");
+    expect(recipe.styleCss).toContain(":lang(zh-Hans)");
+    expect(recipe.styleCss).toContain(":lang(ja)");
+    expect(recipe.styleCss).toContain(":lang(ko)");
+    expect(recipe.styleCss).toContain(":lang(vi)");
+    expect(recipe.styleCss).toContain(":lang(pl)");
+    expect(recipe.styleCss).toContain(":lang(ar)");
+    expect(recipe.styleCss).toContain(":lang(he)");
+  });
+
+  test("checks Markdown PDF profile fonts with labeled controlled coverage results", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: {
+            default: "Source Serif 4",
+            "zh-Hant": "Noto Serif CJK TC",
+            vi: "Source Serif Vietnamese",
+            pl: "Source Serif Polish",
+            he: "Noto Serif Hebrew",
+          },
+          code: {
+            symbols: "JetBrainsMono Nerd Font",
+          },
+        },
+        pdf: {
+          "content-langs": ["zh-Hant", "vi", "pl", "he"],
+        },
+      },
+    });
+    const checkedInputs: CheckFontCoverageInput[] = [];
+    const inventories: FontCoverageInventory[] = [
+      {
+        family: "Noto Serif CJK TC",
+        supportedRanges: [{ name: "latin", start: 0x0000, end: 0x007f }],
+      },
+      {
+        family: "Source Serif Vietnamese",
+        supportedRanges: [
+          { name: "latin", start: 0x0000, end: 0x007f },
+          { name: "latin-extended", start: 0x0100, end: 0x024f },
+          { name: "latin-extended-additional", start: 0x1e00, end: 0x1eff },
+        ],
+      },
+      {
+        family: "Source Serif Polish",
+        supportedRanges: [{ name: "latin-polish", start: 0x0000, end: 0x024f }],
+      },
+      {
+        family: "Noto Serif Hebrew",
+        supportedRanges: [{ name: "hebrew", start: 0x0590, end: 0x05ff }],
+      },
+      {
+        family: "JetBrainsMono Nerd Font",
+        supportedRanges: [{ name: "latin", start: 0x0000, end: 0x007f }],
+        nerdFont: false,
+      },
+    ];
+
+    const result = checkMarkdownPdfProfileFontCoverage({
+      profile: normalizedProfile.profile,
+      inventories,
+      checker: (input) => {
+        checkedInputs.push(input);
+        return checkFontCoverage(input);
+      },
+    });
+
+    expect(result.warnings).toHaveLength(2);
+    expect(result.results.map((entry) => [entry.role, entry.language, entry.family])).toEqual([
+      ["body", "zh-Hant", "Noto Serif CJK TC"],
+      ["body", "vi", "Source Serif Vietnamese"],
+      ["body", "pl", "Source Serif Polish"],
+      ["body", "he", "Noto Serif Hebrew"],
+      ["code", undefined, "JetBrainsMono Nerd Font"],
+    ]);
+    expect(checkedInputs.map((input) => input.text)).toEqual([
+      "繁體中文測試",
+      "Tiếng Việt",
+      "Zażółć gęślą jaźń",
+      "עברית",
+      "git \uE0B0 main \uF418",
+    ]);
+    expect(result.results[1]).toMatchObject({
+      role: "body",
+      language: "vi",
+      family: "Source Serif Vietnamese",
+      coverage: {
+        status: "known",
+        supportsText: true,
+        missingCodepoints: [],
+      },
+    });
+    expect(result.results[2]).toMatchObject({
+      role: "body",
+      language: "pl",
+      family: "Source Serif Polish",
+      coverage: {
+        status: "known",
+        supportsText: true,
+        missingCodepoints: [],
+      },
+    });
+    expect(result.results[3]).toMatchObject({
+      role: "body",
+      language: "he",
+      family: "Noto Serif Hebrew",
+      coverage: {
+        status: "known",
+        supportsText: true,
+        missingCodepoints: [],
+        scripts: ["hebrew"],
+      },
+    });
+    expect(result.results[4]).toMatchObject({
+      role: "code",
+      family: "JetBrainsMono Nerd Font",
+      coverage: {
+        status: "known",
+        supportsText: false,
+      },
+    });
+    expect(result.warnings[0]?.role).toBe("body");
+    expect(result.warnings[0]?.language).toBe("zh-Hant");
+    expect(result.warnings[0]?.message).toContain("zh-Hant");
+    expect(result.warnings[0]?.coverage.missingCodepoints.length).toBeGreaterThan(0);
+    expect(result.warnings[1]?.role).toBe("code");
+    expect(result.warnings[1]?.message).toContain("Nerd Font glyphs");
+    expect(result.warnings[1]?.coverage.missingCodepoints).toContain("U+E0B0");
+    expect(result.warnings[1]?.coverage.missingCodepoints).toContain("U+F418");
+  });
+});
+
+describe("markdown PDF Pandoc language span fixture", () => {
+  pandocTest("preserves Pandoc span lang attributes in rendered HTML", async () => {
+    await withTempFixtureDir("md-to-pdf-pandoc-span", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "mixed-langs.md");
+      const outputPath = join(fixtureDir, "mixed-langs.html");
+      await writeFile(
+        inputPath,
+        "English [日本語]{lang=ja} and [繁體中文]{lang=zh-Hant}.\n",
+        "utf8",
+      );
+
+      const result = Bun.spawnSync({
+        cmd: ["pandoc", inputPath, "--from", "markdown", "--to", "html", "--output", outputPath],
+        cwd: fixtureDir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect(result.exitCode).toBe(0);
+
+      const html = await readFile(outputPath, "utf8");
+      expect(html).toMatch(/<span\s+lang="ja">日本語<\/span>/);
+      expect(html).toMatch(/<span\s+lang="zh-Hant">繁體中文<\/span>/);
+    });
   });
 });
 
@@ -244,6 +814,175 @@ describe("cli action modules: md to-pdf", () => {
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--base-url") + 1]).toBe(
         fixtureDir,
       );
+    });
+  });
+
+  test("loads a YAML profile and applies profile page chrome CSS", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(
+        inputPath,
+        "---\ntitle: Quarterly Report\nauthor: Frontmatter Author\n---\n# Report\n",
+        "utf8",
+      );
+      await writeFile(
+        profilePath,
+        [
+          "page:",
+          "  size: Letter",
+          "  margin: 12mm",
+          "metadata:",
+          "  company: Example Co.",
+          "header:",
+          '  left: "{company}"',
+          '  right: "{title}"',
+          "pageNumbers:",
+          "  enabled: true",
+          '  format: "Page {page}"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        meta: ["author=Noname"],
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("size: Letter portrait");
+      expect(combinedCss).toContain("margin: 12mm 12mm 12mm 12mm");
+      expect(combinedCss).toContain('@top-left {\n    content: "Example Co.";');
+      expect(combinedCss).toContain('@top-right {\n    content: "Quarterly Report";');
+      expect(combinedCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("loads cover and font profile settings into generated recipe files", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "mixed-report.md");
+      const htmlOutput = join(fixtureDir, "mixed-report.render.html");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      let renderedTemplate = "";
+      let pandocInputMarkdown = "";
+      await writeFile(
+        inputPath,
+        [
+          "---",
+          "title: Mixed Language Report",
+          "subtitle: Runtime Notes",
+          "author: Noname",
+          "company: Example Co.",
+          "pdf:",
+          "  content-langs:",
+          "    - zh-Hant",
+          "    - ja",
+          "---",
+          "# Report",
+          "",
+          "Latin text with [日本語]{lang=ja} and [繁體中文]{lang=zh-Hant}.",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        profilePath,
+        [
+          "cover:",
+          "  enabled: true",
+          "  style: report",
+          "fonts:",
+          "  body:",
+          '    default: "Source Serif 4"',
+          '    zh-Hant: "Noto Serif CJK TC"',
+          '    ja: "Noto Serif CJK JP"',
+          "  code:",
+          '    default: "JetBrains Mono"',
+          '    symbols: "JetBrainsMono Nerd Font"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({
+        html: '<html><body><span lang="ja">日本語</span><span lang="zh-Hant">繁體中文</span></body></html>',
+      });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const inputArg = args[0];
+          if (inputArg) {
+            pandocInputMarkdown = await readFile(inputArg, "utf8");
+          }
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        htmlOutput: toRepoRelativePath(htmlOutput),
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      const renderedHtml = await readFile(htmlOutput, "utf8");
+      expect(pandocInputMarkdown).toContain("[日本語]{lang=ja}");
+      expect(renderedHtml).toContain('<span lang="ja">日本語</span>');
+      expect(renderedHtml).toContain('<span lang="zh-Hant">繁體中文</span>');
+      expect(renderedTemplate).toContain('class="pdf-cover pdf-cover--report"');
+      expect(renderedTemplate).toContain("Mixed Language Report");
+      expect(renderedTemplate).toContain("Runtime Notes");
+      expect(combinedCss).toContain("@page cover");
+      expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
+      expect(combinedCss).toContain(
+        'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+      );
+      expect(combinedCss).toContain(":lang(ja)");
+      expect(combinedCss).toContain(
+        'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
+      );
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
     });
   });
 
@@ -716,6 +1455,112 @@ describe("cli action modules: md pdf-template init", () => {
   });
 });
 
+describe("cli action modules: md pdf-profile init", () => {
+  test("writes a default YAML profile file", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdPdfProfileInit(runtime, {
+        output: toRepoRelativePath(outputPath),
+      });
+
+      const profile = await readFile(outputPath, "utf8");
+      expect(profile).toContain("page:");
+      expect(profile).toContain("pageNumbers:");
+      expect(profile).toContain("enabled: false");
+      expect(stdout.text).toContain("Wrote Markdown PDF profile:");
+      expectNoStderr();
+    });
+  });
+
+  test("writes a JSON profile file with preset-derived values", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.json");
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdPdfProfileInit(runtime, {
+        output: toRepoRelativePath(outputPath),
+        preset: "wide-table",
+      });
+
+      const profile = JSON.parse(await readFile(outputPath, "utf8")) as {
+        page: { orientation: string; marginTop: string };
+      };
+      expect(profile.page.orientation).toBe("landscape");
+      expect(profile.page.marginTop).toBe("12mm");
+      expectNoStderr();
+    });
+  });
+
+  test("rejects unknown profile extensions", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.txt");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileInit(runtime, {
+            output: toRepoRelativePath(outputPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "must end with .yml, .yaml, or .json",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+
+  test("refuses an existing profile file without overwrite", async () => {
+    await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(outputPath, "existing", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileInit(runtime, {
+            output: toRepoRelativePath(outputPath),
+          }),
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+          messageIncludes: "Output file already exists",
+        },
+      );
+
+      expectNoOutput();
+    });
+  });
+});
+
+describe("cli command: md to-pdf", () => {
+  test("forwards --profile to the action layer", async () => {
+    await withTempFixtureDir("md-to-pdf-cli", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "unknown: true\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "to-pdf",
+        "--input",
+        toRepoRelativePath(inputPath),
+        "--profile",
+        toRepoRelativePath(profilePath),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Unknown Markdown PDF profile key: profile.unknown");
+    });
+  });
+});
+
 describe("cli command: md pdf-template init", () => {
   test("writes a template recipe from the command layer", async () => {
     await withTempFixtureDir("md-pdf-template-cli", async (fixtureDir) => {
@@ -754,6 +1599,28 @@ describe("cli command: md pdf-template init", () => {
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain("--margin must be a CSS length");
+    });
+  });
+});
+
+describe("cli command: md pdf-profile init", () => {
+  test("writes a profile file from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-profile.yml");
+      const result = runCli([
+        "md",
+        "pdf-profile",
+        "init",
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--preset",
+        "report",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Wrote Markdown PDF profile:");
+      expect(await readFile(outputPath, "utf8")).toContain("pageNumbers:");
     });
   });
 });
