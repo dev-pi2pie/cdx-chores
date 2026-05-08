@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontList } from "../src/cli/actions";
+import { actionFontInspect, actionFontList } from "../src/cli/actions";
 import {
   checkFontCoverage,
   discoverSystemFonts,
@@ -287,8 +287,26 @@ describe("font CLI", () => {
     expect(invalidLimit.stderr).toContain("--limit must be a positive integer");
   });
 
+  test("registers font inspect options through the command layer", () => {
+    const help = runCli(["font", "inspect", "--help"]);
+
+    expect(help.exitCode).toBe(0);
+    expect(help.stdout).toContain("Usage: cdx-chores font inspect [options]");
+    expect(help.stdout).toContain("--json");
+    expect(help.stdout).toContain("--debug");
+    expect(help.stdout).toContain("--discovery <mode>");
+    expect(help.stdout).toContain("--family <name>");
+  });
+
   test("rejects invalid font discovery modes through the command layer", () => {
     const result = runCli(["font", "list", "--discovery", "bogus"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--discovery must be one of: auto, native, fontconfig");
+  });
+
+  test("rejects invalid font inspect discovery modes through the command layer", () => {
+    const result = runCli(["font", "inspect", "--family", "Noto", "--discovery", "bogus"]);
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("--discovery must be one of: auto, native, fontconfig");
@@ -566,6 +584,568 @@ describe("font CLI", () => {
 
     expect(called).toBe(false);
     expectNoOutput();
+  });
+
+  test("rejects font inspect without a family before discovery", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    let called = false;
+
+    await expectCliError(
+      () =>
+        actionFontInspect(runtime, {
+          runner: async () => {
+            called = true;
+            return { ok: true, stdout: "", stderr: "" };
+          },
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--family is required for font inspect",
+      },
+    );
+
+    expect(called).toBe(false);
+    expectNoOutput();
+  });
+
+  test("rejects font inspect with a blank family before discovery", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    let called = false;
+
+    await expectCliError(
+      () =>
+        actionFontInspect(runtime, {
+          family: "   ",
+          runner: async () => {
+            called = true;
+            return { ok: true, stdout: "", stderr: "" };
+          },
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--family is required for font inspect",
+      },
+    );
+
+    expect(called).toBe(false);
+    expectNoOutput();
+  });
+
+  test("prints font inspect text output with multiple faces under one family", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "PingFang TC",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "PingFang TC\tPingFang TC Regular\tRegular\t/System/Library/Fonts/PingFang.ttc",
+          "PingFang TC\tPingFang TC Semibold\tSemibold\t/System/Library/Fonts/PingFang.ttc",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text).toContain("cdx-chores font inspect");
+    expect(stdout.text).toContain("Family: PingFang TC");
+    expect(stdout.text).toContain("Discovery: auto");
+    expect(stdout.text).toContain("Adapter: linux-fontconfig");
+    expect(stdout.text).toContain("Faces:");
+    expect(stdout.text.indexOf("- PingFang TC Regular")).toBeLessThan(
+      stdout.text.indexOf("- PingFang TC Semibold"),
+    );
+    expect(stdout.text).toContain("- PingFang TC Regular");
+    expect(stdout.text).toContain("  style: normal");
+    expect(stdout.text).toContain("  source: system");
+    expect(stdout.text).toContain("  format: ttc");
+    expect(stdout.text).toContain("- PingFang TC Semibold");
+    expect(stdout.text).toContain("  weight: 600");
+    expect(stdout.text).toContain("Coverage: not checked.");
+    expectNoStderr();
+  });
+
+  test("prints font inspect JSON with structured matches", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      json: true,
+      family: "Noto Sans CJK TC",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "Noto Sans CJK TC\tNoto Sans CJK TC Bold\tBold\t/usr/share/fonts/NotoSansCJK-Bold.otf",
+          "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      command: string;
+      family: string;
+      adapter: string;
+      discovery: string;
+      warnings: string[];
+      matches: Array<{
+        family: string;
+        fullName: string;
+        style: string;
+        weight: number;
+        source: string;
+        format: string;
+        path: string;
+      }>;
+    };
+    expect(payload.command).toBe("font inspect");
+    expect(payload.family).toBe("Noto Sans CJK TC");
+    expect(payload.adapter).toBe("linux-fontconfig");
+    expect(payload.discovery).toBe("auto");
+    expect(payload.warnings).toEqual([]);
+    expect(payload.matches).toHaveLength(1);
+    expect(payload.matches[0]).toMatchObject({
+      family: "Noto Sans CJK TC",
+      fullName: "Noto Sans CJK TC Bold",
+      style: "normal",
+      weight: 700,
+      source: "system",
+      format: "otf",
+      path: "/usr/share/fonts/NotoSansCJK-Bold.otf",
+    });
+    expectNoStderr();
+  });
+
+  test("omits unavailable optional font inspect metadata", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "Virtual Family",
+      runner: async () => ({
+        ok: true,
+        stdout: "Virtual Family\tVirtual Family Regular\tRegular\t\n",
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text).toContain("- Virtual Family Regular");
+    expect(stdout.text).toContain("  style: normal");
+    expect(stdout.text).toContain("  source: system");
+    expect(stdout.text).not.toContain("format:");
+    expect(stdout.text).not.toContain("path:");
+    expectNoStderr();
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Virtual Family",
+      runner: async () => ({
+        ok: true,
+        stdout: "Virtual Family\tVirtual Family Regular\tRegular\t\n",
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      matches: Array<{ format?: string; path?: string }>;
+    };
+    expect(payload.matches[0]).not.toHaveProperty("format");
+    expect(payload.matches[0]).not.toHaveProperty("path");
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("matches font inspect by full name and prints family groups", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "  noto   sans cjk tc regular  ",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "Noto Sans CJK TC\tNoto Sans CJK TC Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf",
+          "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text).toContain("Family: noto   sans cjk tc regular");
+    expect(stdout.text).toContain("Family group: Noto Sans CJK TC");
+    expect(stdout.text).toContain("- Noto Sans CJK TC Regular");
+    expectNoStderr();
+  });
+
+  test("orders font inspect family groups deterministically", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "Noto",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "Noto Serif\tNoto Serif Regular\tRegular\t/usr/share/fonts/NotoSerif-Regular.otf",
+          "Noto Sans\tNoto Sans Regular\tRegular\t/usr/share/fonts/NotoSans-Regular.otf",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text.indexOf("Family group: Noto Sans")).toBeLessThan(
+      stdout.text.indexOf("Family group: Noto Serif"),
+    );
+    expect(stdout.text.indexOf("- Noto Sans Regular")).toBeLessThan(
+      stdout.text.indexOf("- Noto Serif Regular"),
+    );
+    expectNoStderr();
+  });
+
+  test("prints font inspect no-match text and JSON as empty discovery results", async () => {
+    const textRuntime = createActionTestRuntime({ colorEnabled: false });
+    textRuntime.runtime.platform = "linux";
+
+    await actionFontInspect(textRuntime.runtime, {
+      family: "Missing Family",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+
+    expect(textRuntime.stdout.text).toContain("Family: Missing Family");
+    expect(textRuntime.stdout.text).toContain("Faces: 0");
+    expect(textRuntime.stdout.text).toContain("Coverage: not checked.");
+    textRuntime.expectNoStderr();
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Missing Family",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      command: string;
+      family: string;
+      discovery: string;
+      adapter: string;
+      matches: unknown[];
+      warnings: unknown[];
+    };
+    expect(payload.command).toBe("font inspect");
+    expect(payload.family).toBe("Missing Family");
+    expect(payload.discovery).toBe("auto");
+    expect(payload.adapter).toBe("linux-fontconfig");
+    expect(payload.matches).toEqual([]);
+    expect(payload.warnings).toEqual([]);
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("preserves font inspect discovery warnings in text and JSON output", async () => {
+    const textRuntime = createActionTestRuntime({ colorEnabled: false });
+    textRuntime.runtime.platform = "linux";
+
+    await actionFontInspect(textRuntime.runtime, {
+      family: "Missing Family",
+      discovery: "fontconfig",
+      runner: async () => ({ ok: false, stdout: "", stderr: "fc-list failed" }),
+    });
+
+    expect(textRuntime.stdout.text).toContain("Faces: 0");
+    expect(textRuntime.stderr.text).toContain("Warning: fontconfig discovery failed.");
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Missing Family",
+      discovery: "fontconfig",
+      runner: async () => ({ ok: false, stdout: "", stderr: "fc-list failed" }),
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      warnings: string[];
+      matches: unknown[];
+    };
+    expect(payload.warnings).toEqual(["fontconfig discovery failed."]);
+    expect(payload.matches).toEqual([]);
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("preserves font inspect warnings with debug attempts", async () => {
+    const { runtime, stdout, stderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "Missing Family",
+      discovery: "fontconfig",
+      debug: true,
+      runner: async () => ({ ok: false, stdout: "", stderr: "fc-list failed" }),
+    });
+
+    expect(stdout.text).toContain("Debug:");
+    expect(stdout.text).toMatch(
+      /- fontconfig: failed in \d+ms \(fc-list was not available or failed\.\)/,
+    );
+    expect(stdout.text).toContain("Faces: 0");
+    expect(stderr.text).toContain("Warning: fontconfig discovery failed.");
+  });
+
+  test("prints font inspect debug output with sanitized discovery attempts", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    const commands: string[] = [];
+    runtime.platform = "darwin";
+
+    await actionFontInspect(runtime, {
+      family: "Source Serif 4",
+      debug: true,
+      runner: async (command) => {
+        commands.push(command);
+        if (command === "fc-list") {
+          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
+        }
+        return {
+          ok: true,
+          stdout: JSON.stringify({
+            SPFontsDataType: [
+              {
+                _name: "Source Serif 4 Regular",
+                type: "OpenType",
+                path: "/System/Library/Fonts/SourceSerif4.otf",
+                typefaces: [
+                  {
+                    family: "Source Serif 4",
+                    fullname: "Source Serif 4 Regular",
+                    style: "Regular",
+                  },
+                ],
+              },
+            ],
+          }),
+          stderr: "",
+        };
+      },
+    });
+
+    expect(commands).toEqual(["fc-list", "system_profiler"]);
+    expect(stdout.text).toContain("Debug:");
+    expect(stdout.text).toMatch(
+      /- fontconfig: failed in \d+ms \(fc-list was not available or failed\.\)/,
+    );
+    expect(stdout.text).toMatch(
+      /- macos-system-profiler: success in \d+ms \(macOS native discovery succeeded\.\)/,
+    );
+    expect(stdout.text).not.toContain("/private/path");
+    expectNoStderr();
+  });
+
+  test("prints font inspect debug JSON with sanitized discovery attempts", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "darwin";
+
+    await actionFontInspect(runtime, {
+      family: "Source Serif 4",
+      json: true,
+      debug: true,
+      runner: async (command) => {
+        if (command === "fc-list") {
+          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
+        }
+        return {
+          ok: true,
+          stdout: JSON.stringify({
+            SPFontsDataType: [
+              {
+                _name: "Source Serif 4 Regular",
+                type: "OpenType",
+                path: "/System/Library/Fonts/SourceSerif4.otf",
+                typefaces: [
+                  {
+                    family: "Source Serif 4",
+                    fullname: "Source Serif 4 Regular",
+                    style: "Regular",
+                  },
+                ],
+              },
+            ],
+          }),
+          stderr: "",
+        };
+      },
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      adapter: string;
+      discovery: string;
+      warnings: string[];
+      debug: { attempts: Array<{ adapter: string; status: string; message: string }> };
+    };
+    expect(payload.adapter).toBe("macos-system-profiler");
+    expect(payload.discovery).toBe("auto");
+    expect(payload.warnings).toEqual([]);
+    expect(payload.debug.attempts).toHaveLength(2);
+    expect(payload.debug.attempts[0]).toMatchObject({
+      adapter: "fontconfig",
+      status: "failed",
+      message: "fc-list was not available or failed.",
+    });
+    expect(payload.debug.attempts[1]).toMatchObject({
+      adapter: "macos-system-profiler",
+      status: "success",
+      message: "macOS native discovery succeeded.",
+    });
+    expect(stdout.text).not.toContain("/private/path");
+    expectNoStderr();
+  });
+
+  test("prints font inspect auto discovery info in text and JSON", async () => {
+    const textRuntime = createActionTestRuntime({ colorEnabled: false });
+    textRuntime.runtime.platform = "darwin";
+
+    await actionFontInspect(textRuntime.runtime, {
+      family: "PingFang TC",
+      runner: async (command) => {
+        expect(command).toBe("fc-list");
+        return {
+          ok: true,
+          stdout: "PingFang TC\tPingFang TC Regular\tRegular\t/System/Library/Fonts/PingFang.ttc\n",
+          stderr: "",
+        };
+      },
+    });
+
+    expect(textRuntime.stdout.text).toContain(
+      "Info: using fontconfig because fc-list is available. Use --discovery native to force macOS system_profiler.",
+    );
+    textRuntime.expectNoStderr();
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "darwin";
+    await actionFontInspect(jsonRuntime.runtime, {
+      family: "PingFang TC",
+      json: true,
+      runner: async (command) => {
+        expect(command).toBe("fc-list");
+        return {
+          ok: true,
+          stdout: "PingFang TC\tPingFang TC Regular\tRegular\t/System/Library/Fonts/PingFang.ttc\n",
+          stderr: "",
+        };
+      },
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as { info: string[] };
+    expect(payload.info).toEqual([
+      "using fontconfig because fc-list is available. Use --discovery native to force macOS system_profiler.",
+    ]);
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("preserves font inspect warnings in debug JSON output", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "Missing Family",
+      discovery: "fontconfig",
+      json: true,
+      debug: true,
+      runner: async () => ({ ok: false, stdout: "", stderr: "fc-list failed" }),
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      warnings: string[];
+      matches: unknown[];
+      debug: { attempts: Array<{ adapter: string; status: string; message: string }> };
+    };
+    expect(payload.warnings).toEqual(["fontconfig discovery failed."]);
+    expect(payload.matches).toEqual([]);
+    expect(payload.debug.attempts).toHaveLength(1);
+    expect(payload.debug.attempts[0]).toMatchObject({
+      adapter: "fontconfig",
+      status: "failed",
+      message: "fc-list was not available or failed.",
+    });
+    expect(stdout.text).not.toContain("fc-list failed");
+    expectNoStderr();
+  });
+
+  test("passes explicit discovery mode through font inspect", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    const commands: string[] = [];
+    runtime.platform = "darwin";
+
+    await actionFontInspect(runtime, {
+      family: "Source Serif 4",
+      discovery: "native",
+      runner: async (command) => {
+        commands.push(command);
+        return {
+          ok: true,
+          stdout: JSON.stringify({
+            SPFontsDataType: [
+              {
+                _name: "Source Serif 4 Regular",
+                type: "OpenType",
+                path: "/System/Library/Fonts/SourceSerif4.otf",
+                typefaces: [
+                  {
+                    family: "Source Serif 4",
+                    fullname: "Source Serif 4 Regular",
+                    style: "Regular",
+                  },
+                ],
+              },
+            ],
+          }),
+          stderr: "",
+        };
+      },
+    });
+
+    expect(commands).toEqual(["system_profiler"]);
+    expect(stdout.text).toContain("Discovery: native");
+    expect(stdout.text).toContain("Adapter: macos-system-profiler");
+    expectNoStderr();
+  });
+
+  test("removes duplicate font inspect entries", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "PingFang TC",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "PingFang TC\tPingFang TC Regular\tRegular\t/System/Library/Fonts/PingFang.ttc",
+          "PingFang TC\tPingFang TC Regular\tRegular\t/System/Library/Fonts/PingFang.ttc",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text.match(/PingFang TC Regular/g)).toHaveLength(1);
+    expectNoStderr();
   });
 });
 

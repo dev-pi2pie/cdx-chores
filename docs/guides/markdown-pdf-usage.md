@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-05-07
+modified-date: 2026-05-08
 status: completed
 agent: codex
 ---
@@ -277,13 +277,20 @@ CJK is the first-class mixed-language target for this profile slice. Latin-exten
 
 ## Font Discovery
 
-Use `font list` to inspect candidate system font faces:
+Use `font list` to discover candidate system font faces:
 
 ```bash
 cdx-chores font list --family "Noto"
 ```
 
-The command reports discovered candidates only; it does not prove glyph coverage for every character.
+Use `font inspect` when you need the discovered metadata for one family:
+
+```bash
+cdx-chores font inspect --family "Noto Sans CJK TC"
+cdx-chores font inspect --family "Noto Sans CJK TC" --json
+```
+
+These commands report discovered candidates only; they do not prove glyph coverage for every character. Public `font check` coverage checks remain deferred until coverage-provider behavior is proven.
 
 Discovery mode defaults to `auto`:
 
@@ -300,6 +307,7 @@ Use `--debug` to see the selected path and sanitized adapter attempts:
 ```bash
 cdx-chores font list --debug
 cdx-chores font list --json --debug
+cdx-chores font inspect --family "Noto Sans CJK TC" --debug
 ```
 
 ## Custom Template And CSS
