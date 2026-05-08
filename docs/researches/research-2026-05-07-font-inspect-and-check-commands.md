@@ -249,16 +249,19 @@ A parser-backed provider is a fallback-only contingency if a later spike proves 
 
 The first real-file coverage candidate should be the system `fontconfig` CLI, specifically `fc-query` against the selected font file path. Do not use `fc-match` as proof of coverage: it can silently choose a fallback face and turn a missing glyph into a false pass. `font check` should first resolve a deterministic discovered face, then ask whether that concrete font file appears to contain the required codepoints.
 
+TTC collections require an additional face-index proof. A `.ttc` path alone identifies the collection, not the selected face inside that collection. Fontconfig can expose an `%{index}` value during discovery and `fc-query` supports `--index <faceIndex>`. A TTC follow-up should preserve that discovered index as provider metadata, query the exact indexed face, and verify the indexed face metadata still matches the selected face before trusting charset coverage.
+
 Proposed runtime flow:
 
 1. Resolve the family through existing discovery.
 2. Select one deterministic face and path from the resolved family.
 3. Return `inconclusive` with reason code `no-inspectable-font-file` when no selected path is available.
 4. Return `inconclusive` with reason code `fontconfig-unavailable` when `fc-query` is unavailable.
-5. Return `inconclusive` with reason code `unsupported-ttc-collection` when the selected file is a TTC collection and face-level inspection is not proven.
-6. Run `fc-query` against the selected file path and parse its charset output.
-7. Compare required sample codepoints against the parsed charset.
-8. Exit `1` only when coverage was checked and required codepoints are missing.
+5. Return `inconclusive` with reason code `unsupported-ttc-collection` when the selected file is a TTC collection and indexed face-level inspection is not available.
+6. For a TTC follow-up, require a discovered face index, query with `fc-query --index <faceIndex>`, and verify the indexed metadata matches the selected face before parsing charset coverage.
+7. Run `fc-query` against the selected file path or indexed TTC face and parse its charset output.
+8. Compare required sample codepoints against the parsed charset.
+9. Exit `1` only when coverage was checked and required codepoints are missing.
 
 Minimum provider requirements:
 
@@ -302,7 +305,17 @@ JSON should use a stable reason code:
 }
 ```
 
-If the provider can inspect TTC collections reliably, `font inspect` should expose enough face metadata for `font check` to select the intended normal face. Do not add `--face-index` in the first slice unless TTC support proves impossible without it.
+The TTC support follow-up should prefer provider-supplied indexes over a public `--face-index` option. This is a cross-plan dependency: discovery must preserve the provider-backed index, `font inspect` must expose it for audit, and `font check` should consume it only after those metadata surfaces exist. The inspect-side ownership is captured in the [Font Inspect TTC Index Metadata Follow-up](../plans/plan-2026-05-08-font-inspect-ttc-index-metadata-follow-up.md).
+
+1. Extend fontconfig discovery to parse `%{index}` and store it on the discovered face as provider metadata.
+2. Complete the inspect-side TTC metadata follow-up so the selected TTC face index is visible in text and JSON output.
+3. Use `fc-query --index <faceIndex> --format=%{charset}\n <path>` for charset probing.
+4. Query identifying metadata with the same index and compare it with the selected `family` and `fullName` before trusting coverage.
+5. Return `inconclusive` with `ttc-face-index-unavailable` when the selected TTC face lacks a provider-backed index.
+6. Return `inconclusive` with `ttc-face-mismatch` when indexed metadata does not match the selected face.
+7. Use the existing `fontconfig-query-failed` reason when indexed `fc-query` fails after a face index is available.
+
+Do not add `--face-index` unless later evidence shows users need manual override and the provider can honor it reliably.
 
 ## JSON Direction
 
@@ -443,6 +456,12 @@ TTC handling:
 
 - Do not make TTC inspection a blocker for the first `font check` slice.
 - If the selected face resolves to a TTC collection and face-level inspection is not proven, return `inconclusive` with reason code `unsupported-ttc-collection`.
+- Add a follow-up implementation phase for indexed TTC support through fontconfig metadata:
+  - parse `%{index}` during `fc-list` discovery
+  - preserve the index on discovered faces and expose it through `font inspect`
+  - probe coverage with `fc-query --index <faceIndex>`
+  - verify the indexed face identity before trusting charset coverage
+- Keep TTC checks inconclusive when no face index is available or the indexed metadata does not match the selected face.
 - Do not add `--face-index` until there is evidence that users need it and the provider can honor it reliably.
 
 Fixture strategy:
@@ -464,6 +483,11 @@ Initial JSON reason codes:
 - `unsupported-ttc-collection`
 - `ambiguous-family`
 - `empty-required-codepoints`
+
+Indexed TTC follow-up reason codes:
+
+- `ttc-face-index-unavailable`
+- `ttc-face-mismatch`
 
 Missing glyphs should remain in `missingCodepoints`; they should not be modeled as reason codes.
 
