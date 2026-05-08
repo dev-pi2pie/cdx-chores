@@ -11,6 +11,7 @@ export interface FontFace {
   weight?: number;
   path?: string;
   format?: FontFormat;
+  faceIndex?: number;
   source: FontSource;
 }
 

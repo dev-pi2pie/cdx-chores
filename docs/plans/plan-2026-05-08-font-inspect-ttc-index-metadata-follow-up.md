@@ -1,7 +1,7 @@
 ---
 title: "Font inspect TTC index metadata follow-up"
 created-date: 2026-05-08
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -34,22 +34,32 @@ TTC coverage needs a selected face index, not only a collection path. This follo
 
 ### Phase 1: Discovery Metadata
 
-- [ ] Add optional face-index metadata to the internal font face model.
-- [ ] Parse `%{index}` from fontconfig discovery output.
-- [ ] Preserve missing or unparseable indexes as absent metadata, not a usage error.
-- [ ] Add parser tests for indexed TTC rows and non-indexed rows.
+- [x] Add optional face-index metadata to the internal font face model.
+- [x] Parse `%{index}` from fontconfig discovery output.
+- [x] Preserve missing or unparseable indexes as absent metadata, not a usage error.
+- [x] Add parser tests for indexed TTC rows and non-indexed rows.
 
 ### Phase 2: Inspect Output
 
-- [ ] Include face index in `font inspect` text details when present.
-- [ ] Include face index in `font inspect --json` matches when present.
-- [ ] Add inspect output tests for TTC faces with indexes.
+- [x] Include face index in `font inspect` text details when present.
+- [x] Include face index in `font inspect --json` matches when present.
+- [x] Add inspect output tests for TTC faces with indexes.
 
 ### Phase 3: Handoff To Font Check
 
-- [ ] Update the font check implementation plan once inspect metadata is available.
-- [ ] Keep `font check` path-only TTC behavior inconclusive until indexed probing is implemented.
-- [ ] Record validation evidence before marking this follow-up complete.
+- [x] Update the font check implementation plan once inspect metadata is available.
+- [x] Keep `font check` path-only TTC behavior inconclusive until indexed probing is implemented.
+- [x] Record validation evidence before marking this follow-up complete.
+
+## Validation
+
+Completed on 2026-05-08:
+
+- `bun test test/fonts.test.ts` - 65 pass, 393 expect calls
+- `bun run lint` - 0 warnings, 0 errors
+- `bun run format:check` - pass
+- `bun run build` - pass, with the existing `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/cli/prompts/path.ts`
+- `git diff --check` - pass
 
 ## Related Plans
 

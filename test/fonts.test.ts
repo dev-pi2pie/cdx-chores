@@ -27,10 +27,11 @@ describe("font discovery", () => {
       runner: async (command, args) => {
         expect(command).toBe("fc-list");
         expect(args).toContain("--format");
+        expect(args[1]).toContain("%{index}");
         return {
           ok: true,
           stdout:
-            "Noto Serif CJK TC,Noto Serif CJK TC Black\tNoto Serif CJK TC\tRegular\t/usr/share/fonts/noto/NotoSerifCJK-Regular.ttc\n",
+            "Noto Serif CJK TC,Noto Serif CJK TC Black\tNoto Serif CJK TC\tRegular\t/usr/share/fonts/noto/NotoSerifCJK-Regular.ttc\t2\n",
           stderr: "",
         };
       },
@@ -43,6 +44,7 @@ describe("font discovery", () => {
       fullName: "Noto Serif CJK TC",
       style: "normal",
       format: "ttc",
+      faceIndex: 2,
       source: "system",
     });
   });
@@ -63,6 +65,39 @@ describe("font discovery", () => {
         source: "system",
       },
     ]);
+  });
+
+  test("parses optional fontconfig face indexes", () => {
+    const faces = parseFontconfigList(
+      [
+        "Inter\tInter Thin\tThin\t/Users/user/Fonts/Inter.ttc\t0",
+        "Inter\tInter Bold\tBold\t/Users/user/Fonts/Inter.ttc\t14",
+        "Inter\tInter Regular\tRegular\t/Users/user/Fonts/Inter.ttc\t",
+        "Inter\tInter Italic\tItalic\t/Users/user/Fonts/Inter.ttc\tbad-index",
+        "",
+      ].join("\n"),
+    );
+
+    expect(faces[0]).toMatchObject({
+      family: "Inter",
+      fullName: "Inter Thin",
+      style: "normal",
+      weight: 100,
+      path: "/Users/user/Fonts/Inter.ttc",
+      format: "ttc",
+      faceIndex: 0,
+    });
+    expect(faces[1]).toMatchObject({
+      family: "Inter",
+      fullName: "Inter Bold",
+      style: "normal",
+      weight: 700,
+      path: "/Users/user/Fonts/Inter.ttc",
+      format: "ttc",
+      faceIndex: 14,
+    });
+    expect(faces[2]).not.toHaveProperty("faceIndex");
+    expect(faces[3]).not.toHaveProperty("faceIndex");
   });
 
   test("parses macOS system profiler font output", () => {
@@ -1584,6 +1619,57 @@ describe("font CLI", () => {
     expectNoStderr();
   });
 
+  test("prints font inspect TTC face indexes in text and JSON output", async () => {
+    const textRuntime = createActionTestRuntime({ colorEnabled: false });
+    textRuntime.runtime.platform = "linux";
+
+    await actionFontInspect(textRuntime.runtime, {
+      family: "Inter",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "Inter\tInter Bold\tBold\t/Users/user/Fonts/Inter.ttc\t14",
+          "Inter\tInter Regular\tRegular\t/Users/user/Fonts/Inter.ttc\t20",
+          "Inter\tInter Regular\tRegular\t/Users/user/Fonts/Inter.ttc\t0",
+          "Inter\tInter Regular\tRegular\t/Users/user/Fonts/Inter.ttc\t20",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(textRuntime.stdout.text).toContain("- Inter Regular");
+    expect(textRuntime.stdout.text.indexOf("  face index: 0")).toBeLessThan(
+      textRuntime.stdout.text.indexOf("  face index: 20"),
+    );
+    expect(textRuntime.stdout.text).toContain("  face index: 20");
+    expect(textRuntime.stdout.text).toContain("- Inter Bold");
+    expect(textRuntime.stdout.text).toContain("  face index: 14");
+    textRuntime.expectNoStderr();
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Inter",
+      runner: async () => ({
+        ok: true,
+        stdout: "Inter\tInter Regular\tRegular\t/Users/user/Fonts/Inter.ttc\t0\n",
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      matches: Array<{ format?: string; faceIndex?: number; path?: string }>;
+    };
+    expect(payload.matches[0]).toMatchObject({
+      format: "ttc",
+      faceIndex: 0,
+      path: "/Users/user/Fonts/Inter.ttc",
+    });
+    jsonRuntime.expectNoStderr();
+  });
+
   test("omits unavailable optional font inspect metadata", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
     runtime.platform = "linux";
@@ -1601,6 +1687,7 @@ describe("font CLI", () => {
     expect(stdout.text).toContain("  style: normal");
     expect(stdout.text).toContain("  source: system");
     expect(stdout.text).not.toContain("format:");
+    expect(stdout.text).not.toContain("face index:");
     expect(stdout.text).not.toContain("path:");
     expectNoStderr();
 
@@ -1617,9 +1704,10 @@ describe("font CLI", () => {
     });
 
     const payload = JSON.parse(jsonRuntime.stdout.text) as {
-      matches: Array<{ format?: string; path?: string }>;
+      matches: Array<{ format?: string; faceIndex?: number; path?: string }>;
     };
     expect(payload.matches[0]).not.toHaveProperty("format");
+    expect(payload.matches[0]).not.toHaveProperty("faceIndex");
     expect(payload.matches[0]).not.toHaveProperty("path");
     jsonRuntime.expectNoStderr();
   });

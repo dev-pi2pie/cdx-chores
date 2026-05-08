@@ -35,6 +35,7 @@ interface FontInspectFaceOutput {
   weight?: number;
   source: FontFace["source"];
   format?: Exclude<FontFace["format"], "unknown">;
+  faceIndex?: number;
   path?: string;
 }
 
@@ -76,6 +77,9 @@ function fontFaceDetailEntries(face: FontFace): Array<[string, string]> {
   if (face.format !== undefined && face.format !== "unknown") {
     entries.push(["format", face.format]);
   }
+  if (face.faceIndex !== undefined) {
+    entries.push(["face index", String(face.faceIndex)]);
+  }
   if (face.path) {
     entries.push(["path", face.path]);
   }
@@ -97,6 +101,7 @@ function serializeInspectFace(face: FontFace): FontInspectFaceOutput {
     ...(face.weight !== undefined ? { weight: face.weight } : {}),
     source: face.source,
     ...(face.format !== undefined && face.format !== "unknown" ? { format: face.format } : {}),
+    ...(face.faceIndex !== undefined ? { faceIndex: face.faceIndex } : {}),
     ...(face.path ? { path: face.path } : {}),
   };
 }

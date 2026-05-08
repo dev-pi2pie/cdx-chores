@@ -230,8 +230,8 @@ Missing `fc-list` should make `capabilities["font.discovery.fontconfig"]` false.
 
 This is a cross-plan follow-up between discovery, `font inspect`, and `font check`. It should not be treated as required to finish the current Phase 1-4 `font check` slice. The check command can only consume TTC indexes after the [Font inspect TTC index metadata follow-up](plan-2026-05-08-font-inspect-ttc-index-metadata-follow-up.md) preserves them in discovery and exposes them in inspect output for audit.
 
-- [ ] Extend font discovery metadata to preserve a provider-backed TTC face index when available.
-- [ ] Complete the inspect-side TTC metadata follow-up before consuming TTC indexes in `font check`.
+- [x] Extend font discovery metadata to preserve a provider-backed TTC face index when available.
+- [x] Complete the inspect-side TTC metadata follow-up before consuming TTC indexes in `font check`.
 - [ ] Select TTC faces in `font check` through the same deterministic family/style/weight rules, using the discovered face index as provider metadata.
 - [ ] Query indexed TTC faces with `fc-query --index <faceIndex> --format=%{charset}\n <path>`.
 - [ ] Before trusting TTC coverage, query identifying metadata for the same index and verify it still matches the selected face.

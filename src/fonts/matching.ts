@@ -50,6 +50,7 @@ export function matchesFontFamily(face: FontFace, family: string | undefined): b
 export function uniqueFontFaces(faces: FontFace[]): FontFace[] {
   const seen = new Set<string>();
   return faces.filter((face) => {
+    // Provider metadata is part of identity so separate faces in a TTC collection are not collapsed.
     const key = [
       face.family,
       face.fullName,
@@ -57,6 +58,7 @@ export function uniqueFontFaces(faces: FontFace[]): FontFace[] {
       face.weight ?? "",
       face.path ?? "",
       face.format ?? "",
+      face.faceIndex ?? "",
     ]
       .join("\0")
       .toLowerCase();
@@ -78,6 +80,10 @@ export function sortFontFaces(left: FontFace, right: FontFace): number {
   );
 }
 
+function compareFontProviderMetadata(left: FontFace, right: FontFace): number {
+  return (left.faceIndex ?? Number.MAX_SAFE_INTEGER) - (right.faceIndex ?? Number.MAX_SAFE_INTEGER);
+}
+
 export function inspectFontFaces(faces: FontFace[], family: string): FontFace[] {
   const matched = uniqueFontFaces(faces).flatMap((face): MatchedFontFace[] => {
     const matchRank = fontFamilyMatchRank(face, family);
@@ -85,7 +91,12 @@ export function inspectFontFaces(faces: FontFace[], family: string): FontFace[] 
   });
 
   return matched
-    .sort((left, right) => left.matchRank - right.matchRank || sortFontFaces(left.face, right.face))
+    .sort(
+      (left, right) =>
+        left.matchRank - right.matchRank ||
+        sortFontFaces(left.face, right.face) ||
+        compareFontProviderMetadata(left.face, right.face),
+    )
     .map((match) => match.face);
 }
 
@@ -128,6 +139,7 @@ function compareFontCheckSelection(left: MatchedFontFace, right: MatchedFontFace
     (left.face.weight ?? 400) - (right.face.weight ?? 400),
     left.face.fullName.localeCompare(right.face.fullName),
     (left.face.path ?? "").localeCompare(right.face.path ?? ""),
+    compareFontProviderMetadata(left.face, right.face),
   ];
   return comparisons.find((comparison) => comparison !== 0) ?? 0;
 }

@@ -2,6 +2,16 @@ import { extname } from "node:path";
 
 import type { FontDiscoveryAdapter, FontFace, FontFormat, FontStyle } from "../types";
 
+const FONTCONFIG_LIST_FORMAT = "%{family}\t%{fullname}\t%{style}\t%{file}\t%{index}\n";
+
+interface FontconfigListRow {
+  rawFamily: string;
+  rawFullName: string | undefined;
+  rawStyle: string | undefined;
+  rawPath: string | undefined;
+  rawFaceIndex: string | undefined;
+}
+
 function fontFormatFromPath(path: string | undefined): FontFormat {
   const extension = extname(path ?? "").toLowerCase();
   if (extension === ".ttf") {
@@ -68,23 +78,48 @@ function firstFontFamily(value: string): string {
   );
 }
 
+function fontFaceIndexFromText(value: string | undefined): number | undefined {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return undefined;
+  }
+  if (!/^\d+$/.test(normalized)) {
+    return undefined;
+  }
+  const index = Number.parseInt(normalized, 10);
+  return Number.isSafeInteger(index) && index >= 0 ? index : undefined;
+}
+
+function parseFontconfigListRow(line: string): FontconfigListRow {
+  const [rawFamily = "", rawFullName, rawStyle, rawPath, rawFaceIndex] = line.split("\t");
+  return {
+    rawFamily,
+    rawFullName,
+    rawStyle,
+    rawPath,
+    rawFaceIndex,
+  };
+}
+
 export function parseFontconfigList(stdout: string): FontFace[] {
   const faces: FontFace[] = [];
   for (const line of stdout.split(/\r?\n/)) {
-    const [rawFamily, rawFullName, rawStyle, rawPath] = line.split("\t");
-    const family = firstFontFamily(rawFamily ?? "");
+    const row = parseFontconfigListRow(line);
+    const family = firstFontFamily(row.rawFamily);
     if (!family) {
       continue;
     }
-    const styleText = rawStyle?.trim() ?? "";
-    const path = rawPath?.trim() || undefined;
+    const styleText = row.rawStyle?.trim() ?? "";
+    const path = row.rawPath?.trim() || undefined;
+    const faceIndex = fontFaceIndexFromText(row.rawFaceIndex);
     faces.push({
       family,
-      fullName: rawFullName?.trim() || family,
+      fullName: row.rawFullName?.trim() || family,
       style: fontStyleFromText(styleText),
       weight: fontWeightFromText(styleText),
       path,
       format: fontFormatFromPath(path),
+      ...(faceIndex !== undefined ? { faceIndex } : {}),
       source: "system",
     });
   }
@@ -94,10 +129,7 @@ export function parseFontconfigList(stdout: string): FontFace[] {
 export const fontconfigFontAdapter: FontDiscoveryAdapter = {
   name: "fontconfig",
   async discover({ runner }) {
-    const result = await runner("fc-list", [
-      "--format",
-      "%{family}\t%{fullname}\t%{style}\t%{file}\n",
-    ]);
+    const result = await runner("fc-list", ["--format", FONTCONFIG_LIST_FORMAT]);
     if (!result.ok) {
       return {
         faces: [],
