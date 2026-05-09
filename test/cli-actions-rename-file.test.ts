@@ -207,6 +207,30 @@ describe("cli action modules: rename file", () => {
     });
   });
 
+  test("actionRenameFile rejects directory input paths", async () => {
+    await withRenameWorkspace(async (fixtureDir) => {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-directory");
+      await mkdir(dirPath, { recursive: true });
+
+      await expectCliError(
+        () =>
+          actionRenameFile(runtime, {
+            path: toRepoRelativePath(dirPath),
+            dryRun: true,
+          }),
+        {
+          code: "FILE_NOT_FOUND",
+          exitCode: 2,
+          messageIncludes: "Input file not found:",
+        },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(stderr.text).toBe("");
+    });
+  });
+
   test("actionRenameFile codex mode shows progress and fallback messaging when Codex returns an error", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
       const { runtime, stdout, stderr } = createCapturedRuntime();
@@ -291,6 +315,48 @@ describe("cli action modules: rename file", () => {
 
       const csvText = await readFile(result.planCsvPath!, "utf8");
       expect(csvText).toContain("weekly sync notes");
+    });
+  });
+
+  test("actionRenameFile codex auto reports unsupported files without analyzer calls", async () => {
+    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { filePath: videoPath } = await createRenameFileFixture(
+        fixtureDir,
+        "rename-file-codex-auto-unsupported",
+        "clip.mp4",
+        {
+          content: "fake-video",
+        },
+      );
+
+      let imageCalls = 0;
+      let docCalls = 0;
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(videoPath),
+        prefix: "media",
+        dryRun: true,
+        codex: true,
+        codexImagesTitleSuggester: async () => {
+          imageCalls += 1;
+          return { suggestions: [] };
+        },
+        codexDocsTitleSuggester: async () => {
+          docCalls += 1;
+          return { suggestions: [] };
+        },
+      });
+      trackPlanCsv(result.planCsvPath);
+
+      expect(stderr.text).toBe("");
+      expect(result.changed).toBe(true);
+      expect(imageCalls).toBe(0);
+      expect(docCalls).toBe(0);
+      expect(stdout.text).toContain(
+        "Codex note: this file is not a supported Codex analyzer input; deterministic rename is used.",
+      );
+      expect(stdout.text).toContain("- clip.mp4 -> media-");
+      expect(stdout.text).toContain("Dry run only. No files were renamed.");
     });
   });
 

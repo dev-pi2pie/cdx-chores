@@ -6,8 +6,8 @@ import {
   detectDataQueryInputFormat,
   type DataQueryInputFormat,
   type DataQueryRelationBinding,
+  getMultiObjectSourceDisplayLabel,
 } from "../../duckdb/query";
-import { getMultiObjectSourceDisplayLabel } from "../../duckdb/query/formats";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import type { DataQueryInteractiveScope } from "./types";

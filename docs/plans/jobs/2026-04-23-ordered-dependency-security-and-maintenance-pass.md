@@ -1,7 +1,7 @@
 ---
 title: "Apply ordered dependency security and maintenance pass"
 created-date: 2026-04-23
-modified-date: 2026-05-01
+modified-date: 2026-05-09
 status: completed
 agent: Codex
 ---
@@ -60,6 +60,31 @@ Additional notes:
 - Preserved the existing manifest style: caret range for `@openai/codex-sdk`, exact versions for `oxfmt` and `oxlint`.
 - Verification for this follow-up: `bun audit` passed with `No vulnerabilities found`; `bun run lint` passed with `0` warnings and `0` errors; `bun run format:check` passed; `bun run build` passed on `tsdown v0.21.10`; focused Codex/PDF/DOCX adapter tests passed with `25` passing tests and `0` failures; full `bun test` passed with `892` passing tests and `0` failures.
 - This follow-up leaves the rest of the 2026-04-23 dependency pass unchanged.
+
+## Follow-Up Note 2026-05-09
+
+- Raised the advertised Node.js runtime floor from `>=22.5.0` to `>=22.18.0` in `package.json` and `README.md`.
+- Updated `@openai/codex-sdk` from `^0.128.0` to `^0.130.0`.
+- Updated runtime parsing/rendering dependencies:
+  - `fast-xml-parser` from `5.7.2` to `5.7.3`
+  - `pdfjs-dist` from `^5.6.205` to `^5.7.284`
+  - `yaml` from `^2.8.2` to `^2.8.4`
+- Updated dev tooling:
+  - `@types/node` from `25.6.0` to `25.6.2`
+  - `oxfmt` from `0.47.0` to `0.48.0`
+  - `oxlint` from `1.62.0` to `1.63.0`
+  - `tsdown` from `0.21.10` to `0.22.0`
+- Kept the `@xmldom/xmldom: 0.8.13` override because `mammoth@1.12.0` still reaches `@xmldom/xmldom` through a broad `^0.8.6` transitive range.
+- The Node floor increase intentionally unblocks the newer `pdfjs-dist`, Oxc tooling, and `tsdown` releases whose package metadata requires newer Node 22 baselines.
+- Verification for this follow-up:
+  - `bun audit` passed with `No vulnerabilities found`.
+  - `bun run lint` passed with `0` warnings and `0` errors after removing two imports that `oxlint@1.63.0` now reports as unused.
+  - `bun run format:check` passed.
+  - `bun run build` passed on `tsdown v0.22.0`; the existing ineffective dynamic import warning remains non-blocking.
+  - Focused DOCX/PDF/Codex/Markdown PDF tests passed with `108` passing tests and `0` failures.
+  - Full `bun test` passed with `1023` passing tests and `0` failures.
+  - `bun tsc --noEmit` passed.
+  - `git diff --check` passed.
 
 ## Verification
 

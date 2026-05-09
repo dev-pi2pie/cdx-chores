@@ -30,6 +30,7 @@ export interface InteractiveHarnessScenario {
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
   dataQueryCodexErrorMessage?: string;
   dataQueryDetectedFormat?: string;
+  dataQueryMocks?: boolean;
   dataQueryHeaderSuggestionErrorMessage?: string;
   dataQueryHeaderSuggestions?: Array<Record<string, unknown>>;
   dataQueryIntrospection?: Record<string, unknown>;
@@ -43,6 +44,7 @@ export interface InteractiveHarnessScenario {
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;
+  cleanupAnalyzerThrowMessage?: string;
   cleanupAnalysisReportPath?: string;
   captureCleanupSuggestInput?: boolean;
   captureCleanupCollectInput?: boolean;

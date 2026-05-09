@@ -14,6 +14,7 @@ import {
   type DataStackSchemaModeOption,
 } from "../../../data-stack/types";
 import { resolveFromCwd } from "../../../path-utils";
+import { promptRequiredPathWithConfig } from "../../../prompts/path";
 import type { CliRuntime } from "../../../types";
 import type { InteractivePathPromptContext } from "../../shared";
 
@@ -178,7 +179,6 @@ async function collectInteractiveStackSources(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<InteractiveDataStackSourcePath[]> {
-  const { promptRequiredPathWithConfig } = await import("../../../prompts/path");
   const sources: InteractiveDataStackSourcePath[] = [];
 
   while (true) {

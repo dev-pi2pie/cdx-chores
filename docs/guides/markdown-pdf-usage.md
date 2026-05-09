@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-05-08
+modified-date: 2026-05-09
 status: completed
 agent: codex
 ---
@@ -254,16 +254,18 @@ Most mixed-language documents should start with ordered fallback fonts. Put the 
 fonts:
   body:
     default: "Source Serif 4"
-    zh-Hant: "Noto Serif CJK TC"
-    zh-Hans: "Noto Serif CJK SC"
-    ja: "Noto Serif CJK JP"
-    ko: "Noto Serif CJK KR"
+    zh-Hant: "Noto Serif TC"
+    zh-Hans: "Noto Serif SC"
+    ja: "Noto Serif JP"
+    ko: "Noto Serif KR"
   code:
     default: "JetBrains Mono"
     symbols: "JetBrainsMono Nerd Font"
 ```
 
 Fallback is the basic path. It helps occasional CJK text render without marking every phrase. Use CSS generic names exactly as `serif`, `sans-serif`, or `monospace` when a generic fallback is intended.
+
+Google Fonts specimen pages use display names such as `Noto Sans Japanese`, `Noto Serif Traditional Chinese`, and `Noto Serif Korean`, while their CSS family names are usually the short language-code forms such as `Noto Sans JP`, `Noto Serif TC`, and `Noto Serif KR`. Local OS packages can still expose families with `CJK` in the name, such as `Noto Serif CJK JP`. Use the exact family returned by local font discovery in the profile.
 
 For exact mixed-language font assignment, keep document-level `lang` singular and mark language-specific spans or blocks:
 
@@ -302,16 +304,16 @@ cdx-chores font list --family "Noto"
 Use `font inspect` when you need the discovered metadata for one family:
 
 ```bash
-cdx-chores font inspect --family "Noto Sans CJK TC"
-cdx-chores font inspect --family "Noto Sans CJK TC" --json
+cdx-chores font inspect --family "Noto Sans JP"
+cdx-chores font inspect --family "Noto Sans JP" --json
 ```
 
 Use `font check` when you need coverage evidence for specific text before choosing profile fonts:
 
 ```bash
-cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試"
+cdx-chores font check --family "Noto Sans TC" --text "繁體中文 測試"
 cdx-chores font check --family "JetBrainsMono Nerd Font" --text "git  main " --require nerd
-cdx-chores font check --family "Noto Sans CJK JP" --text-file ./samples/japanese.txt --json
+cdx-chores font check --family "Noto Sans JP" --text-file ./samples/japanese.txt --json
 ```
 
 `font check` requires exactly one of `--text` or `--text-file`. Text files are read as raw UTF-8 text, with no Markdown extraction or document parsing. Missing required glyph coverage exits `1`, usage errors exit `2`, and inconclusive checks exit `3`.
@@ -333,8 +335,8 @@ Use `--debug` to see the selected path and sanitized adapter attempts:
 ```bash
 cdx-chores font list --debug
 cdx-chores font list --json --debug
-cdx-chores font inspect --family "Noto Sans CJK TC" --debug
-cdx-chores font check --family "Noto Sans CJK TC" --text "繁體中文 測試" --debug
+cdx-chores font inspect --family "Noto Sans JP" --debug
+cdx-chores font check --family "Noto Sans TC" --text "繁體中文 測試" --debug
 ```
 
 ## Custom Template And CSS

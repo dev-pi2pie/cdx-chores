@@ -2,12 +2,7 @@ import { randomUUID } from "node:crypto";
 import { relative } from "node:path";
 
 import { CliError } from "../../errors";
-import {
-  ensureNonEmptyString,
-  isRecord,
-  normalizeArtifactPath,
-  normalizeOptionalPositiveInteger,
-} from "../header-mapping/normalize";
+import { ensureNonEmptyString, normalizeArtifactPath } from "../header-mapping/normalize";
 import type { DataSourceShapeInputReference } from "./types";
 
 export {

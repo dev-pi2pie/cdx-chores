@@ -2,7 +2,11 @@ import { formatPathForDisplay } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { getCliColors } from "../colors";
 import type { DataPreviewRow } from "../data-preview/source";
+import type { DataQueryInputFormat } from "../duckdb/query";
 import { getDisplayWidth, truncateAndPadToDisplayWidth } from "../text-display-width";
+import { printLine } from "../actions/shared";
+import type { DataQueryCodexDraft } from "./parse";
+import { buildCodexIntrospectionView, type DataQueryCodexIntrospection } from "./view";
 
 export interface RenderDataQueryOptions {
   bodyStartRow?: number;
@@ -169,4 +173,63 @@ export function renderDataQuery(
   ];
 
   return { lines };
+}
+
+export function renderDataQueryCodexDraft(options: {
+  draft: DataQueryCodexDraft;
+  format: DataQueryInputFormat;
+  intent: string;
+  introspection: DataQueryCodexIntrospection;
+  runtime: CliRuntime;
+}): void {
+  const pc = getCliColors(options.runtime);
+  const view = buildCodexIntrospectionView(options.introspection);
+
+  const lines = [
+    ...view.renderContextLines({
+      format: options.format,
+      intent: options.intent,
+      pc,
+    }),
+    `${pc.bold(pc.cyan("Schema"))}:`,
+    ...view.relations.flatMap((relation) =>
+      view.mode === "workspace"
+        ? [
+            `- ${pc.bold(relation.alias)} ${pc.dim(`(source: ${relation.source})`)}`,
+            ...(relation.columns.length > 0
+              ? relation.columns.map(
+                  (column) => `  - ${pc.bold(column.name)}: ${pc.dim(column.type)}`,
+                )
+              : [`  - ${pc.dim("(no columns available)")}`]),
+          ]
+        : relation.columns.length > 0
+          ? relation.columns.map((column) => `- ${pc.bold(column.name)}: ${pc.dim(column.type)}`)
+          : [`- ${pc.dim("(no columns available)")}`],
+    ),
+    `${pc.bold(pc.cyan("Sample Rows"))}:`,
+    ...view.relations.flatMap((relation) =>
+      view.mode === "workspace"
+        ? [
+            `- ${pc.bold(relation.alias)}:`,
+            ...(relation.sampleRows.length > 0
+              ? relation.sampleRows.map(
+                  (row, index) => `  - ${pc.dim(`${index + 1}.`)} ${pc.white(JSON.stringify(row))}`,
+                )
+              : [`  - ${pc.dim("(no sample rows available)")}`]),
+          ]
+        : relation.sampleRows.length > 0
+          ? relation.sampleRows.map(
+              (row, index) => `- ${pc.dim(`${index + 1}.`)} ${pc.white(JSON.stringify(row))}`,
+            )
+          : [`- ${pc.dim("(no sample rows available)")}`],
+    ),
+    `${pc.bold(pc.cyan("Codex Summary"))}: ${pc.white(options.draft.reasoningSummary)}`,
+    "",
+    `${pc.bold(pc.green("SQL"))}:`,
+    pc.yellow(options.draft.sql),
+  ];
+
+  for (const line of lines) {
+    printLine(options.runtime.stdout, line);
+  }
 }

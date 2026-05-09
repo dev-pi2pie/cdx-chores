@@ -43,7 +43,7 @@ cdx-chores
 
 Runtime requirement:
 
-- Node.js `>= 22.5.0`
+- Node.js `>= 22.18.0`
 
 ## Command Overview
 

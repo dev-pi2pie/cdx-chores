@@ -183,6 +183,9 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
       if (context.scenario.cleanupAnalyzerErrorMessage) {
         return { errorMessage: context.scenario.cleanupAnalyzerErrorMessage };
       }
+      if (context.scenario.cleanupAnalyzerThrowMessage) {
+        throw new Error(context.scenario.cleanupAnalyzerThrowMessage);
+      }
 
       return {
         suggestion: context.scenario.cleanupAnalyzerSuggestion ?? {
