@@ -44,11 +44,11 @@ describe("font CLI inspect output", () => {
 
     await actionFontInspect(runtime, {
       json: true,
-      family: "Noto Sans CJK TC",
+      family: "Noto Sans TC",
       runner: async () => ({
         ok: true,
         stdout: [
-          "Noto Sans CJK TC\tNoto Sans CJK TC Bold\tBold\t/usr/share/fonts/NotoSansCJK-Bold.otf",
+          "Noto Sans TC\tNoto Sans TC Bold\tBold\t/usr/share/fonts/NotoSansTC-Bold.otf",
           "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf",
           "",
         ].join("\n"),
@@ -73,19 +73,19 @@ describe("font CLI inspect output", () => {
       }>;
     };
     expect(payload.command).toBe("font inspect");
-    expect(payload.family).toBe("Noto Sans CJK TC");
+    expect(payload.family).toBe("Noto Sans TC");
     expect(payload.adapter).toBe("linux-fontconfig");
     expect(payload.discovery).toBe("auto");
     expect(payload.warnings).toEqual([]);
     expect(payload.matches).toHaveLength(1);
     expect(payload.matches[0]).toMatchObject({
-      family: "Noto Sans CJK TC",
-      fullName: "Noto Sans CJK TC Bold",
+      family: "Noto Sans TC",
+      fullName: "Noto Sans TC Bold",
       style: "normal",
       weight: 700,
       source: "system",
       format: "otf",
-      path: "/usr/share/fonts/NotoSansCJK-Bold.otf",
+      path: "/usr/share/fonts/NotoSansTC-Bold.otf",
     });
     expectNoStderr();
   });

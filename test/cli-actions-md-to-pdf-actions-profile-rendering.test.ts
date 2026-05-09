@@ -46,8 +46,8 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           "fonts:",
           "  body:",
           '    default: "Source Serif 4"',
-          '    zh-Hant: "Noto Serif CJK TC"',
-          '    ja: "Noto Serif CJK JP"',
+          '    zh-Hant: "Noto Serif TC"',
+          '    ja: "Noto Serif JP"',
           "  code:",
           '    default: "JetBrains Mono"',
           '    symbols: "JetBrainsMono Nerd Font"',
@@ -103,7 +103,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(combinedCss).toContain("@page cover");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
       expect(combinedCss).toContain(
-        'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+        'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif JP", serif;',
       );
       expect(combinedCss).toContain(":lang(ja)");
       expect(combinedCss).toContain(

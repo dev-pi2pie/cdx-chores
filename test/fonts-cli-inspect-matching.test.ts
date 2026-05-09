@@ -8,11 +8,11 @@ describe("font CLI inspect matching", () => {
     runtime.platform = "linux";
 
     await actionFontInspect(runtime, {
-      family: "  noto   sans cjk tc regular  ",
+      family: "  noto   sans tc regular  ",
       runner: async () => ({
         ok: true,
         stdout: [
-          "Noto Sans CJK TC\tNoto Sans CJK TC Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf",
+          "Noto Sans TC\tNoto Sans TC Regular\tRegular\t/usr/share/fonts/NotoSansTC-Regular.otf",
           "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf",
           "",
         ].join("\n"),
@@ -20,9 +20,9 @@ describe("font CLI inspect matching", () => {
       }),
     });
 
-    expect(stdout.text).toContain("Family: noto   sans cjk tc regular");
-    expect(stdout.text).toContain("Family group: Noto Sans CJK TC");
-    expect(stdout.text).toContain("- Noto Sans CJK TC Regular");
+    expect(stdout.text).toContain("Family: noto   sans tc regular");
+    expect(stdout.text).toContain("Family group: Noto Sans TC");
+    expect(stdout.text).toContain("- Noto Sans TC Regular");
     expectNoStderr();
   });
 

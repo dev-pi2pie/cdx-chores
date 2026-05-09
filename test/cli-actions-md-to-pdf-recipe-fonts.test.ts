@@ -15,9 +15,9 @@ describe("markdown PDF recipe generation: fonts", () => {
         fonts: {
           body: {
             default: "Source Serif 4",
-            "zh-Hant": "Noto Serif CJK TC",
-            ja: "Noto Serif CJK JP",
-            ko: "Noto Serif CJK KR",
+            "zh-Hant": "Noto Serif TC",
+            ja: "Noto Serif JP",
+            ko: "Noto Serif KR",
           },
           heading: {
             default: "Source Sans 3",
@@ -42,25 +42,25 @@ describe("markdown PDF recipe generation: fonts", () => {
     });
 
     expect(recipe.styleCss).toContain(
-      'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK JP", serif;',
+      'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif JP", serif;',
     );
     expect(recipe.styleCss).toContain(
-      ':lang(zh-Hant) {\n  font-family: "Noto Serif CJK TC", "Source Serif 4", serif;',
+      ':lang(zh-Hant) {\n  font-family: "Noto Serif TC", "Source Serif 4", serif;',
     );
     expect(recipe.styleCss).toContain(
-      ':lang(ja) {\n  font-family: "Noto Serif CJK JP", "Source Serif 4", serif;',
+      ':lang(ja) {\n  font-family: "Noto Serif JP", "Source Serif 4", serif;',
     );
     expect(recipe.styleCss).toContain(
-      ':lang(ko) {\n  font-family: "Noto Serif CJK KR", "Source Serif 4", serif;',
+      ':lang(ko) {\n  font-family: "Noto Serif KR", "Source Serif 4", serif;',
     );
     expect(recipe.styleCss).toContain(
       'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
     );
     expect(recipe.styleCss).toContain('@page {\n  font-family: "Source Sans 3", sans-serif;');
     expect(recipe.styleCss.indexOf('"Source Serif 4"')).toBeLessThan(
-      recipe.styleCss.indexOf('"Noto Serif CJK TC"'),
+      recipe.styleCss.indexOf('"Noto Serif TC"'),
     );
-    expect(recipe.styleCss.match(/"Noto Serif CJK TC"/g)).toHaveLength(2);
+    expect(recipe.styleCss.match(/"Noto Serif TC"/g)).toHaveLength(2);
   });
 
   test("generates expanded mixed-language CSS without assuming renderer RTL quality", () => {
@@ -69,10 +69,10 @@ describe("markdown PDF recipe generation: fonts", () => {
         fonts: {
           body: {
             default: "Source Serif 4",
-            "zh-Hant": "Noto Serif CJK TC",
-            "zh-Hans": "Noto Serif CJK SC",
-            ja: "Noto Serif CJK JP",
-            ko: "Noto Serif CJK KR",
+            "zh-Hant": "Noto Serif TC",
+            "zh-Hans": "Noto Serif SC",
+            ja: "Noto Serif JP",
+            ko: "Noto Serif KR",
             vi: "Source Serif Vietnamese",
             pl: "Source Serif Polish",
             ar: "Noto Naskh Arabic",
@@ -99,7 +99,7 @@ describe("markdown PDF recipe generation: fonts", () => {
       "he",
     ]);
     expect(recipe.styleCss).toContain(
-      'font-family: "Source Serif 4", "Noto Serif CJK TC", "Noto Serif CJK SC", "Noto Serif CJK JP", "Noto Serif CJK KR", "Source Serif Vietnamese", "Source Serif Polish", "Noto Naskh Arabic", "Noto Serif Hebrew", serif;',
+      'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif SC", "Noto Serif JP", "Noto Serif KR", "Source Serif Vietnamese", "Source Serif Polish", "Noto Naskh Arabic", "Noto Serif Hebrew", serif;',
     );
     expect(recipe.styleCss).toContain(":lang(zh-Hant)");
     expect(recipe.styleCss).toContain(":lang(zh-Hans)");
@@ -117,7 +117,7 @@ describe("markdown PDF recipe generation: fonts", () => {
         fonts: {
           body: {
             default: "Source Serif 4",
-            "zh-Hant": "Noto Serif CJK TC",
+            "zh-Hant": "Noto Serif TC",
             vi: "Source Serif Vietnamese",
             pl: "Source Serif Polish",
             he: "Noto Serif Hebrew",
@@ -134,7 +134,7 @@ describe("markdown PDF recipe generation: fonts", () => {
     const checkedInputs: CheckFontCoverageInput[] = [];
     const inventories: FontCoverageInventory[] = [
       {
-        family: "Noto Serif CJK TC",
+        family: "Noto Serif TC",
         supportedRanges: [{ name: "latin", start: 0x0000, end: 0x007f }],
       },
       {
@@ -171,7 +171,7 @@ describe("markdown PDF recipe generation: fonts", () => {
 
     expect(result.warnings).toHaveLength(2);
     expect(result.results.map((entry) => [entry.role, entry.language, entry.family])).toEqual([
-      ["body", "zh-Hant", "Noto Serif CJK TC"],
+      ["body", "zh-Hant", "Noto Serif TC"],
       ["body", "vi", "Source Serif Vietnamese"],
       ["body", "pl", "Source Serif Polish"],
       ["body", "he", "Noto Serif Hebrew"],

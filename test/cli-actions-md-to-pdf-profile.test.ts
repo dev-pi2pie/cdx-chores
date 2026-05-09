@@ -64,8 +64,8 @@ describe("markdown PDF profile normalization", () => {
         fonts: {
           body: {
             default: "Source Serif 4",
-            "zh-Hant": "Noto Serif CJK TC",
-            ja: "Noto Serif CJK JP",
+            "zh-Hant": "Noto Serif TC",
+            ja: "Noto Serif JP",
           },
           code: {
             default: "JetBrains Mono",
@@ -92,7 +92,7 @@ describe("markdown PDF profile normalization", () => {
       },
     });
     expect(result.profile.fonts.body.default).toBe("Source Serif 4");
-    expect(result.profile.fonts.body["zh-Hant"]).toBe("Noto Serif CJK TC");
+    expect(result.profile.fonts.body["zh-Hant"]).toBe("Noto Serif TC");
     expect(result.profile.fonts.code.symbols).toBe("JetBrainsMono Nerd Font");
     expect(result.profile.contentLangs).toEqual(["zh-Hant", "ja", "ko"]);
   });
