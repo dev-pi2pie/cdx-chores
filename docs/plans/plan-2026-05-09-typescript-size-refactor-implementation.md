@@ -2,7 +2,7 @@
 title: "TypeScript size refactor implementation"
 created-date: 2026-05-09
 modified-date: 2026-05-09
-status: active
+status: completed
 agent: codex
 ---
 
@@ -32,6 +32,7 @@ This plan turns the size scan into a phased implementation path. It intentionall
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-5.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-6.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-7.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-8.md`
 
 ## Why This Plan
 
@@ -194,11 +195,11 @@ bun run build
 
 ### Phase 8: Final review and closeout
 
-- [ ] rerun the over-300-line scan and record remaining intentional exceptions
-- [ ] review public import surfaces for accidental deep imports
-- [ ] review test layout for duplicated setup or scattered behavior coverage
-- [ ] update this plan checklist and create implementation job records as phases land
-- [ ] record final validation evidence
+- [x] rerun the over-300-line scan and record remaining intentional exceptions
+- [x] review public import surfaces for accidental deep imports
+- [x] review test layout for duplicated setup or scattered behavior coverage
+- [x] update this plan checklist and create implementation job records as phases land
+- [x] record final validation evidence
 
 Closeout verification:
 
@@ -209,6 +210,13 @@ bun run format:check
 bun run build
 git diff --check
 ```
+
+Phase 8 closeout:
+
+- The final over-300-line scan found 21 `src` files and 20 `test` files still above the threshold. The remaining `src` files are intentional exceptions for now: prompt state machines, data-stack contracts, narrow command/action modules, or cohesive utility modules already called out in the deferral list.
+- Public import-surface review found no accidental deep imports into newly extracted internals. The only direct test import into an extracted rename module is the intentional `src/cli/actions/rename/codex/testing` facade.
+- Test-layout review found that the largest pre-refactor suites were already split by behavior surface. The exact remaining over-threshold test inventory is recorded in the Phase 8 job record and deferred as behavior-owned data-stack, video, UX, release, prompt-state-machine, or narrow fixture-heavy coverage rather than Phase 8 movement.
+- Final evidence is recorded in `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-8.md`.
 
 ## Intentional Deferrals
 

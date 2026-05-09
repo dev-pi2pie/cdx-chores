@@ -1,5 +1,6 @@
 import { mock } from "bun:test";
 
+import { getMultiObjectSourceDisplayLabel } from "../../../../../src/cli/duckdb/query";
 import type { HarnessRunnerContext } from "../../context";
 import { duckdbQueryModuleUrl } from "../../module-urls";
 import { getScenarioWorkspaceIntrospection } from "./workspace";
@@ -57,6 +58,7 @@ export function installDuckDbQueryMock(context: HarnessRunnerContext): void {
         .trim()
         .toUpperCase(),
     quoteSqlIdentifier: (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`,
+    getMultiObjectSourceDisplayLabel,
     createDuckDbConnection: async () => ({
       closeSync() {},
     }),

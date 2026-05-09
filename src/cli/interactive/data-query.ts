@@ -1,8 +1,10 @@
+// Compatibility facade for the legacy flat module path. Keep the owned exports
+// sourced from the folder facade so callers do not depend on extracted modules.
 export {
+  collectInteractiveIntrospection,
   promptDelimitedHeaderMode,
   promptInteractiveInputFormat,
   promptOptionalSourceSelection,
-} from "./data-query/source-selection";
-export { collectInteractiveIntrospection } from "./data-query/source-shape";
-export { reviewInteractiveHeaderMappings } from "./data-query/header-review";
-export { runInteractiveDataQuery } from "./data-query/index";
+  reviewInteractiveHeaderMappings,
+  runInteractiveDataQuery,
+} from "./data-query/index";

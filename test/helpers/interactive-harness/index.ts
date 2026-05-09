@@ -2,6 +2,8 @@ import { REPO_ROOT } from "../cli-test-utils";
 import { interactiveHarnessRunnerPath } from "./module-urls";
 import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
 
+export type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
+
 export function runInteractiveHarness(
   scenario: InteractiveHarnessScenario,
   options: { allowFailure?: boolean } = {},
