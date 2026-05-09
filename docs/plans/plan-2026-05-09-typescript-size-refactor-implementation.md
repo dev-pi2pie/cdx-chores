@@ -30,6 +30,7 @@ This plan turns the size scan into a phased implementation path. It intentionall
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-3.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-4.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-5.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-6.md`
 
 ## Why This Plan
 
@@ -161,16 +162,16 @@ bun run lint
 
 ### Phase 6: Split large behavior-owned test suites
 
-- [ ] split `test/fonts.test.ts` into discovery, CLI, and coverage suites
-- [ ] split `test/cli-actions-md-to-pdf.test.ts` into options, profile, recipe, actions, and commands suites
-- [ ] split `test/cli-interactive-routing.test.ts` by top-level menu family after feature-specific routing coverage is preserved
-- [ ] keep one smoke case per major top-level route in the shared routing suite
-- [ ] avoid changing assertions while moving tests unless a helper extraction makes the assertion clearer
+- [x] split `test/fonts.test.ts` into discovery, CLI, and coverage suites
+- [x] split `test/cli-actions-md-to-pdf.test.ts` into options, profile, recipe, actions, and commands suites
+- [x] split `test/cli-interactive-routing.test.ts` by top-level menu family after feature-specific routing coverage is preserved
+- [x] keep one smoke case per major top-level route in the shared routing suite
+- [x] avoid changing assertions while moving tests unless a helper extraction makes the assertion clearer
 
 Focused verification:
 
 ```bash
-bun test test/fonts.test.ts test/cli-actions-md-to-pdf.test.ts test/cli-interactive-routing.test.ts
+bun test test/fonts*.test.ts test/cli-actions-md-to-pdf*.test.ts test/cli-interactive-routing*.test.ts
 bun run lint
 ```
 
