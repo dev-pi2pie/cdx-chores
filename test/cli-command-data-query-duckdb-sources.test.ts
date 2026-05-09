@@ -1,4 +1,3 @@
-/* oxlint-disable no-unused-vars */
 import {
   chmod,
   readFile,
