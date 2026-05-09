@@ -26,6 +26,8 @@ This plan turns the size scan into a phased implementation path. It intentionall
 ## Implementation Records
 
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-1.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-2.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-3.md`
 
 ## Why This Plan
 
@@ -89,36 +91,36 @@ bun run lint
 
 ### Phase 2: Split rename Codex action
 
-- [ ] move `src/cli/actions/rename/codex.ts` to `src/cli/actions/rename/codex/index.ts`
-- [ ] extract file eligibility and candidate selection into `src/cli/actions/rename/codex/candidates.ts`
-- [ ] extract analyzer construction and execution into `src/cli/actions/rename/codex/analyzer.ts`
-- [ ] extract progress lifecycle into `src/cli/actions/rename/codex/progress.ts`
-- [ ] extract terminal summaries into `src/cli/actions/rename/codex/summary.ts`
-- [ ] preserve exported option/result types used by callers and tests
-- [ ] verify rename Codex action tests
+- [x] move `src/cli/actions/rename/codex.ts` to `src/cli/actions/rename/codex/index.ts`
+- [x] extract file eligibility and candidate selection into `src/cli/actions/rename/codex/candidates.ts`
+- [x] extract analyzer construction and execution into `src/cli/actions/rename/codex/analyzer.ts`
+- [x] extract progress lifecycle into `src/cli/actions/rename/codex/progress.ts`
+- [x] extract terminal summaries into `src/cli/actions/rename/codex/summary.ts`
+- [x] preserve exported option/result types used by callers and tests
+- [x] verify rename Codex action tests
 
 Focused verification:
 
 ```bash
-bun test test/cli-actions-rename-batch-codex-auto.test.ts test/cli-actions-rename-batch-codex-docs.test.ts test/cli-actions-rename-batch-codex-images.test.ts
+bun test test/cli-actions-rename-codex-internals.test.ts test/cli-actions-rename-file.test.ts test/cli-actions-rename-batch-codex-auto.test.ts test/cli-actions-rename-batch-codex-docs.test.ts test/cli-actions-rename-batch-codex-images.test.ts
 bun run lint
 ```
 
 ### Phase 3: Split rename interactive flow
 
-- [ ] move cleanup prompt and analyzer review helpers out of `src/cli/interactive/rename-cleanup.ts`
-- [ ] create `src/cli/interactive/rename-cleanup/settings-prompts.ts`
-- [ ] create `src/cli/interactive/rename-cleanup/analyzer-review.ts`
-- [ ] create `src/cli/interactive/rename-cleanup/codex-suggestion.ts`
-- [ ] create `src/cli/interactive/rename-cleanup/artifact-retention.ts`
-- [ ] keep `runInteractiveRenameCleanup` as the facade export
-- [ ] extract `src/cli/interactive/rename.ts` pattern, batch, file, and cleanup branches only after cleanup is stable
-- [ ] split `test/cli-interactive-rename.test.ts` into behavior-owned rename interactive suites
+- [x] move cleanup prompt and analyzer review helpers out of `src/cli/interactive/rename-cleanup.ts`
+- [x] create `src/cli/interactive/rename-cleanup/settings-prompts.ts`
+- [x] create `src/cli/interactive/rename-cleanup/analyzer-review.ts`
+- [x] create `src/cli/interactive/rename-cleanup/codex-suggestion.ts`
+- [x] create `src/cli/interactive/rename-cleanup/artifact-retention.ts`
+- [x] keep `runInteractiveRenameCleanup` as the facade export
+- [x] extract `src/cli/interactive/rename.ts` pattern, batch, file, and cleanup branches only after cleanup is stable
+- [x] split `test/cli-interactive-rename.test.ts` into behavior-owned rename interactive suites
 
 Focused verification:
 
 ```bash
-bun test test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-codex.test.ts
+bun test test/cli-interactive-rename.test.ts test/cli-interactive-rename-cleanup.test.ts test/cli-interactive-rename-cleanup-codex.test.ts test/cli-interactive-rename-cleanup-codex-timestamp.test.ts test/cli-interactive-rename-cleanup-analyzer-review.test.ts test/cli-interactive-rename-cleanup-analyzer-rendering.test.ts test/cli-interactive-rename-cleanup-retention.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-codex.test.ts
 bun run lint
 ```
 
