@@ -207,6 +207,30 @@ describe("cli action modules: rename file", () => {
     });
   });
 
+  test("actionRenameFile rejects directory input paths", async () => {
+    await withRenameWorkspace(async (fixtureDir) => {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-file-directory");
+      await mkdir(dirPath, { recursive: true });
+
+      await expectCliError(
+        () =>
+          actionRenameFile(runtime, {
+            path: toRepoRelativePath(dirPath),
+            dryRun: true,
+          }),
+        {
+          code: "FILE_NOT_FOUND",
+          exitCode: 2,
+          messageIncludes: "Input file not found:",
+        },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(stderr.text).toBe("");
+    });
+  });
+
   test("actionRenameFile codex mode shows progress and fallback messaging when Codex returns an error", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
       const { runtime, stdout, stderr } = createCapturedRuntime();

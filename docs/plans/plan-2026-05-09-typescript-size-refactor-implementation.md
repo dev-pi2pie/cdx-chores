@@ -1,7 +1,8 @@
 ---
 title: "TypeScript size refactor implementation"
 created-date: 2026-05-09
-status: draft
+modified-date: 2026-05-09
+status: active
 agent: codex
 ---
 
@@ -21,6 +22,10 @@ This plan turns the size scan into a phased implementation path. It intentionall
 
 - `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
 - `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+
+## Implementation Records
+
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-1.md`
 
 ## Why This Plan
 
@@ -67,13 +72,13 @@ Out of scope:
 
 ### Phase 1: Split rename planner core
 
-- [ ] move `src/cli/rename/planner.ts` to `src/cli/rename/planner/index.ts`
-- [ ] extract template parsing and token validation into `src/cli/rename/planner/pattern.ts`
-- [ ] extract directory traversal and candidate entry collection into `src/cli/rename/planner/entries.ts`
-- [ ] extract serial allocation helpers into `src/cli/rename/planner/serial.ts`
-- [ ] extract base-name rendering and collision-safe naming into `src/cli/rename/planner/render.ts`
-- [ ] keep `planBatchRename` and `planSingleRename` as the public facade exports
-- [ ] verify rename planner, template, preview, and apply tests
+- [x] move `src/cli/rename/planner.ts` to `src/cli/rename/planner/index.ts`
+- [x] extract template parsing and token validation into `src/cli/rename/planner/pattern.ts`
+- [x] extract directory traversal and candidate entry collection into `src/cli/rename/planner/entries.ts`
+- [x] extract serial allocation helpers into `src/cli/rename/planner/serial.ts`
+- [x] extract base-name rendering and collision-safe naming into `src/cli/rename/planner/render.ts`
+- [x] keep `planBatchRename` and `planSingleRename` as the public facade exports
+- [x] verify rename planner, template, preview, and apply tests
 
 Focused verification:
 
