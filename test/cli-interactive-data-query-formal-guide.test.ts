@@ -66,6 +66,38 @@ describe("interactive data query formal-guide helpers", () => {
     ).toBe('select "id", "name"\nfrom file\norder by "name" asc\nlimit 25');
   });
 
+  test("renders grouped sum aggregate SQL deterministically", () => {
+    expect(
+      buildFormalGuideSql({
+        aggregateColumn: "hours",
+        aggregateKind: "sum",
+        filters: [],
+        groupByColumns: ["team"],
+        orderBySpecs: [{ column: "summary_value", direction: "desc" }],
+        selectAllColumns: false,
+        selectedColumns: [],
+      }),
+    ).toBe(
+      'select "team", sum("hours") as summary_value\nfrom file\ngroup by "team"\norder by "summary_value" desc',
+    );
+  });
+
+  test("renders non-count aggregate aliases consistently", () => {
+    for (const aggregateKind of ["avg", "min", "max"] as const) {
+      expect(
+        buildFormalGuideSql({
+          aggregateColumn: "score",
+          aggregateKind,
+          filters: [],
+          groupByColumns: [],
+          orderBySpecs: [],
+          selectAllColumns: false,
+          selectedColumns: [],
+        }),
+      ).toBe(`select ${aggregateKind}("score") as summary_value\nfrom file`);
+    }
+  });
+
   test("renders new special filter operators deterministically", () => {
     expect(
       buildFormalGuideSql({

@@ -28,6 +28,8 @@ This plan turns the size scan into a phased implementation path. It intentionall
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-1.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-2.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-3.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-4.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-5.md`
 
 ## Why This Plan
 
@@ -126,34 +128,34 @@ bun run lint
 
 ### Phase 4: Split data-query action and Codex core
 
-- [ ] move `src/cli/actions/data-query.ts` to `src/cli/actions/data-query/index.ts`
-- [ ] extract option validation into `src/cli/actions/data-query/validate.ts`
-- [ ] extract source shape and workspace resolution into `src/cli/actions/data-query/shape-resolution.ts`
-- [ ] extract header suggestion handling into `src/cli/actions/data-query/header-suggestion.ts`
-- [ ] extract result output writing/rendering into `src/cli/actions/data-query/output.ts`
-- [ ] keep `actionDataQuery` as the facade export
-- [ ] split `src/cli/data-query/codex.ts` into `view.ts`, `prompt.ts`, `parse.ts`, `render.ts`, and `runner.ts`
-- [ ] verify action and Codex query suites
+- [x] move `src/cli/actions/data-query.ts` to `src/cli/actions/data-query/index.ts`
+- [x] extract option validation into `src/cli/actions/data-query/validate.ts`
+- [x] extract source shape and workspace resolution into `src/cli/actions/data-query/shape-resolution.ts`
+- [x] extract header suggestion handling into `src/cli/actions/data-query/header-suggestion.ts`
+- [x] extract result output writing/rendering into `src/cli/actions/data-query/output.ts`
+- [x] keep `actionDataQuery` as the facade export
+- [x] split `src/cli/data-query/codex.ts` into `view.ts`, `prompt.ts`, `parse.ts`, `render.ts`, and `runner.ts`
+- [x] verify action and Codex query suites
 
 Focused verification:
 
 ```bash
-bun test test/cli-actions-data-query.test.ts test/cli-actions-data-query-codex.test.ts test/cli-command-data-query-codex.test.ts
+bun test test/cli-actions-data-query*.test.ts test/cli-command-data-query-codex*.test.ts
 bun run lint
 ```
 
 ### Phase 5: Split data-query interactive and extract flow
 
-- [ ] split `src/cli/interactive/data-query/source-shape.ts` into Excel prompts, introspection rendering, suspicion detection, and Codex shape collection
-- [ ] split `src/cli/interactive/data-query/sql/formal-guide.ts` into operators, SQL builder, and prompt collection
-- [ ] split `src/cli/interactive/data/extract.ts` into session, review, output, and facade modules
-- [ ] split `test/helpers/interactive-harness/mocks/data-query.ts` into focused query, workspace, Codex, and source-shape helpers
-- [ ] split data-query and data-extract command/action tests by behavior surface
+- [x] split `src/cli/interactive/data-query/source-shape.ts` into Excel prompts, introspection rendering, suspicion detection, and Codex shape collection
+- [x] split `src/cli/interactive/data-query/sql/formal-guide.ts` into operators, SQL builder, and prompt collection
+- [x] split `src/cli/interactive/data/extract.ts` into session, review, output, and facade modules
+- [x] split `test/helpers/interactive-harness/mocks/data-query.ts` into focused query, workspace, Codex, and source-shape helpers
+- [x] split data-query and data-extract command/action tests by behavior surface
 
 Focused verification:
 
 ```bash
-bun test test/cli-actions-data-query.test.ts test/cli-command-data-query.test.ts test/cli-actions-data-extract.test.ts test/cli-command-data-extract.test.ts test/data-source-shape.test.ts
+bun test test/cli-command-data-query.test.ts test/cli-command-data-query-workspace.test.ts test/cli-command-data-query-duckdb-sources.test.ts test/cli-command-data-query-shape.test.ts test/cli-command-data-query-source-shape.test.ts test/cli-command-data-query-validation.test.ts test/cli-command-data-query-headers.test.ts test/cli-command-data-query-duckdb-lifecycle.test.ts test/cli-actions-data-extract*.test.ts test/cli-command-data-extract*.test.ts test/data-source-shape.test.ts
 bun run lint
 ```
 
