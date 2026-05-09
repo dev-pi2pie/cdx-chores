@@ -1,0 +1,210 @@
+---
+title: "TypeScript size refactor implementation"
+created-date: 2026-05-09
+status: draft
+agent: codex
+---
+
+## Goal
+
+Refactor the current oversized TypeScript source and test files into concise, modular files without changing CLI behavior, prompt wording, output contracts, or public import surfaces.
+
+This plan turns the size scan into a phased implementation path. It intentionally starts with the highest-value mixed-responsibility rename modules, then moves through data-query, tests, and lower-risk secondary cleanups.
+
+## Related Research
+
+- `docs/researches/research-2026-05-09-typescript-size-refactor-scan.md`
+- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+
+## Related Plans
+
+- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+
+## Why This Plan
+
+The current line-count scan shows many files above 300 lines, but not every large file should move first. The highest-value targets are files where size also reflects mixed responsibilities and day-to-day maintenance risk.
+
+The plan follows these rules:
+
+- split feature lanes, not random line ranges
+- keep existing imports stable through folder `index.ts` facades
+- separate pure logic from interactive terminal flow
+- keep test movement paired with the behavior it protects
+- defer cohesive contract modules and prompt state machines unless a concrete change requires them
+
+## Scope
+
+In scope:
+
+- behavior-preserving module splits for rename, data-query, data-extract, Markdown action, and selected utility modules
+- test suite splits for the large rename, data-query, data-extract, font, Markdown PDF, and routing suites
+- helper extraction where repeated setup hides the assertion contract
+- focused validation after each phase
+
+Out of scope:
+
+- command behavior changes
+- prompt copy changes
+- output format changes
+- artifact schema changes
+- dependency upgrades
+- broad package layout changes outside the affected feature folders
+
+## Implementation Rules
+
+- Use folder modules with `index.ts` facades when replacing a public file path.
+- Preserve current exported function names and current caller import style where practical.
+- Do not introduce deep imports from extracted internals outside the owning feature folder.
+- Keep `src/cli/actions/*` as direct action orchestration.
+- Keep `src/cli/interactive/*` as prompt and terminal orchestration.
+- Keep domain helpers under their existing feature folders.
+- Run focused tests after each slice before widening.
+- Run `bun run lint`, `bun run format:check`, and `bun run build` before closeout.
+
+## Phase Checklist
+
+### Phase 1: Split rename planner core
+
+- [ ] move `src/cli/rename/planner.ts` to `src/cli/rename/planner/index.ts`
+- [ ] extract template parsing and token validation into `src/cli/rename/planner/pattern.ts`
+- [ ] extract directory traversal and candidate entry collection into `src/cli/rename/planner/entries.ts`
+- [ ] extract serial allocation helpers into `src/cli/rename/planner/serial.ts`
+- [ ] extract base-name rendering and collision-safe naming into `src/cli/rename/planner/render.ts`
+- [ ] keep `planBatchRename` and `planSingleRename` as the public facade exports
+- [ ] verify rename planner, template, preview, and apply tests
+
+Focused verification:
+
+```bash
+bun test test/cli-fs-utils-rename-template.test.ts test/cli-rename-preview.test.ts test/cli-actions-rename-file.test.ts test/cli-actions-rename-apply-validation.test.ts
+bun run lint
+```
+
+### Phase 2: Split rename Codex action
+
+- [ ] move `src/cli/actions/rename/codex.ts` to `src/cli/actions/rename/codex/index.ts`
+- [ ] extract file eligibility and candidate selection into `src/cli/actions/rename/codex/candidates.ts`
+- [ ] extract analyzer construction and execution into `src/cli/actions/rename/codex/analyzer.ts`
+- [ ] extract progress lifecycle into `src/cli/actions/rename/codex/progress.ts`
+- [ ] extract terminal summaries into `src/cli/actions/rename/codex/summary.ts`
+- [ ] preserve exported option/result types used by callers and tests
+- [ ] verify rename Codex action tests
+
+Focused verification:
+
+```bash
+bun test test/cli-actions-rename-batch-codex-auto.test.ts test/cli-actions-rename-batch-codex-docs.test.ts test/cli-actions-rename-batch-codex-images.test.ts
+bun run lint
+```
+
+### Phase 3: Split rename interactive flow
+
+- [ ] move cleanup prompt and analyzer review helpers out of `src/cli/interactive/rename-cleanup.ts`
+- [ ] create `src/cli/interactive/rename-cleanup/settings-prompts.ts`
+- [ ] create `src/cli/interactive/rename-cleanup/analyzer-review.ts`
+- [ ] create `src/cli/interactive/rename-cleanup/codex-suggestion.ts`
+- [ ] create `src/cli/interactive/rename-cleanup/artifact-retention.ts`
+- [ ] keep `runInteractiveRenameCleanup` as the facade export
+- [ ] extract `src/cli/interactive/rename.ts` pattern, batch, file, and cleanup branches only after cleanup is stable
+- [ ] split `test/cli-interactive-rename.test.ts` into behavior-owned rename interactive suites
+
+Focused verification:
+
+```bash
+bun test test/cli-interactive-rename.test.ts test/cli-actions-rename-cleanup-single.test.ts test/cli-actions-rename-cleanup-codex.test.ts
+bun run lint
+```
+
+### Phase 4: Split data-query action and Codex core
+
+- [ ] move `src/cli/actions/data-query.ts` to `src/cli/actions/data-query/index.ts`
+- [ ] extract option validation into `src/cli/actions/data-query/validate.ts`
+- [ ] extract source shape and workspace resolution into `src/cli/actions/data-query/shape-resolution.ts`
+- [ ] extract header suggestion handling into `src/cli/actions/data-query/header-suggestion.ts`
+- [ ] extract result output writing/rendering into `src/cli/actions/data-query/output.ts`
+- [ ] keep `actionDataQuery` as the facade export
+- [ ] split `src/cli/data-query/codex.ts` into `view.ts`, `prompt.ts`, `parse.ts`, `render.ts`, and `runner.ts`
+- [ ] verify action and Codex query suites
+
+Focused verification:
+
+```bash
+bun test test/cli-actions-data-query.test.ts test/cli-actions-data-query-codex.test.ts test/cli-command-data-query-codex.test.ts
+bun run lint
+```
+
+### Phase 5: Split data-query interactive and extract flow
+
+- [ ] split `src/cli/interactive/data-query/source-shape.ts` into Excel prompts, introspection rendering, suspicion detection, and Codex shape collection
+- [ ] split `src/cli/interactive/data-query/sql/formal-guide.ts` into operators, SQL builder, and prompt collection
+- [ ] split `src/cli/interactive/data/extract.ts` into session, review, output, and facade modules
+- [ ] split `test/helpers/interactive-harness/mocks/data-query.ts` into focused query, workspace, Codex, and source-shape helpers
+- [ ] split data-query and data-extract command/action tests by behavior surface
+
+Focused verification:
+
+```bash
+bun test test/cli-actions-data-query.test.ts test/cli-command-data-query.test.ts test/cli-actions-data-extract.test.ts test/cli-command-data-extract.test.ts test/data-source-shape.test.ts
+bun run lint
+```
+
+### Phase 6: Split large behavior-owned test suites
+
+- [ ] split `test/fonts.test.ts` into discovery, CLI, and coverage suites
+- [ ] split `test/cli-actions-md-to-pdf.test.ts` into options, profile, recipe, actions, and commands suites
+- [ ] split `test/cli-interactive-routing.test.ts` by top-level menu family after feature-specific routing coverage is preserved
+- [ ] keep one smoke case per major top-level route in the shared routing suite
+- [ ] avoid changing assertions while moving tests unless a helper extraction makes the assertion clearer
+
+Focused verification:
+
+```bash
+bun test test/fonts.test.ts test/cli-actions-md-to-pdf.test.ts test/cli-interactive-routing.test.ts
+bun run lint
+```
+
+### Phase 7: Secondary source cleanups
+
+- [ ] split `src/cli/actions/markdown.ts` into per-command action modules
+- [ ] split `src/cli/duckdb/xlsx-sources.ts` into ZIP, workbook, and worksheet helpers if data-query source-shape work still exposes this as a bottleneck
+- [ ] review `src/cli/commands/rename.ts`, `src/cli/rename-plan-csv.ts`, and `src/cli/rename-preview.ts` after rename phases land
+- [ ] leave prompt state machines (`path-inline.ts`, `text-inline.ts`) untouched unless surrounding tests are cleaner and a concrete change requires movement
+
+Focused verification:
+
+```bash
+bun test
+bun run lint
+```
+
+### Phase 8: Final review and closeout
+
+- [ ] rerun the over-300-line scan and record remaining intentional exceptions
+- [ ] review public import surfaces for accidental deep imports
+- [ ] review test layout for duplicated setup or scattered behavior coverage
+- [ ] update this plan checklist and create implementation job records as phases land
+- [ ] record final validation evidence
+
+Closeout verification:
+
+```bash
+bun test
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+## Intentional Deferrals
+
+- `src/cli/prompts/path-inline.ts` and `src/cli/prompts/text-inline.ts` are state-machine modules. Refactor them only with strong focused coverage and a concrete need.
+- `src/cli/data-stack/plan/parse.ts` and `src/cli/data-stack/codex-report/validation.ts` are contract-heavy modules from a recent refactor. Keep them stable unless data-stack work resumes.
+- `src/cli/markdown-pdf/profile/normalize.ts`, `src/fonts/coverage.ts`, and `src/utils/exif.ts` are cohesive enough to defer.
+
+## Review Notes
+
+- The first implementation wave should be rename-only. Mixing rename, data-query, and Markdown PDF movement in one branch would make review too expensive.
+- Test splits should generally follow source splits, except for very large suites where moving tests first can make later source work easier to verify.
+- Any behavior change discovered during refactor should become a separate fix or follow-up plan rather than being hidden inside a file split.
