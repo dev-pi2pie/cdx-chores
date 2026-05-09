@@ -31,6 +31,7 @@ This plan turns the size scan into a phased implementation path. It intentionall
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-4.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-5.md`
 - `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-6.md`
+- `docs/plans/jobs/2026-05-09-typescript-size-refactor-phase-7.md`
 
 ## Why This Plan
 
@@ -177,16 +178,18 @@ bun run lint
 
 ### Phase 7: Secondary source cleanups
 
-- [ ] split `src/cli/actions/markdown.ts` into per-command action modules
-- [ ] split `src/cli/duckdb/xlsx-sources.ts` into ZIP, workbook, and worksheet helpers if data-query source-shape work still exposes this as a bottleneck
-- [ ] review `src/cli/commands/rename.ts`, `src/cli/rename-plan-csv.ts`, and `src/cli/rename-preview.ts` after rename phases land
-- [ ] leave prompt state machines (`path-inline.ts`, `text-inline.ts`) untouched unless surrounding tests are cleaner and a concrete change requires movement
+- [x] split `src/cli/actions/markdown.ts` into per-command action modules
+- [x] split `src/cli/duckdb/xlsx-sources.ts` into ZIP, workbook, and worksheet helpers
+- [x] review `src/cli/commands/rename.ts`, `src/cli/rename-plan-csv.ts`, and `src/cli/rename-preview.ts` after rename phases land
+- [x] leave prompt state machines (`path-inline.ts`, `text-inline.ts`) untouched unless surrounding tests are cleaner and a concrete change requires movement
 
 Focused verification:
 
 ```bash
 bun test
 bun run lint
+bun run format:check
+bun run build
 ```
 
 ### Phase 8: Final review and closeout

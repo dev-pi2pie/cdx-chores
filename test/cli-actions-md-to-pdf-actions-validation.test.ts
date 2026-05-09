@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
@@ -74,6 +74,88 @@ describe("cli action modules: md to-pdf validation", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "--html-output must be different",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expectNoOutput();
+    });
+  });
+
+  test("rejects missing custom template before dependency execution", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const templatePath = join(fixtureDir, "missing-template.html");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            template: toRepoRelativePath(templatePath),
+            runner,
+          }),
+        {
+          code: "FILE_NOT_FOUND",
+          exitCode: 2,
+          messageIncludes: "Template file not found",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expectNoOutput();
+    });
+  });
+
+  test("rejects custom CSS directories before dependency execution", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const cssPath = join(fixtureDir, "styles");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await mkdir(cssPath);
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(cssPath),
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "CSS path is not a file",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expectNoOutput();
+    });
+  });
+
+  test("rejects missing profile files before dependency execution", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "missing-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            profile: toRepoRelativePath(profilePath),
+            runner,
+          }),
+        {
+          code: "FILE_READ_ERROR",
+          exitCode: 2,
+          messageIncludes: "Failed to read file:",
         },
       );
 
