@@ -33,7 +33,7 @@ That baseline is useful, but it does not answer the presentation needs for techn
 - a small Shiki light-theme allowlist instead of broad theme customization
 - clear opt-in or opt-out behavior that does not confuse users with too many engine choices
 
-This research records the preferred product direction before a separate implementation plan is drafted. Specific flag names, profile keys, parser choices, and fallback behavior remain provisional until that plan is written.
+This research records the preferred product direction before a separate implementation plan is drafted. The HTML transform dependency choice is now `parse5`; specific flag names, profile keys, and some fallback details remain provisional until that plan is written.
 
 Status note: this research is `in-progress` because the Shiki direction is the active recommendation, but it still requires an implementation spike and PDF fixture review before it can be marked completed.
 
@@ -164,7 +164,7 @@ code:
   theme: github-light
 ```
 
-`github-light` is the preferred candidate default because it is familiar for Markdown and code documents and is a light theme suitable for PDF review and printing.
+`github-light` is the first-slice default because it is familiar for Markdown and code documents and is a light theme suitable for PDF review and printing.
 
 `code.theme` should be optional when `code.highlight` is enabled. If omitted, the first slice should default to `github-light`. If present, the value should be one of the supported Shiki bundled light theme IDs. Unknown, dark, or non-allowlisted values should fail validation with a clear message instead of silently falling back to `github-light`.
 
@@ -192,7 +192,7 @@ The migration contract for preexisting materialized templates should be document
 - no automatic in-place template mutation should happen during `md to-pdf`
 - a template-version marker can be considered later if future code-block features require command-time warnings or automated upgrade guidance
 
-The first slice should not accept every Shiki bundled theme or custom theme file. Instead, it should validate a small allowlist of light bundled themes after fixture review. Candidate allowlist:
+The first slice should not accept every Shiki bundled theme or custom theme file. Instead, it should validate this initial allowlist of Shiki bundled light themes:
 
 - `github-light`
 - `light-plus`
@@ -200,7 +200,7 @@ The first slice should not accept every Shiki bundled theme or custom theme file
 - `vitesse-light`
 - `catppuccin-latte`
 
-Dark themes, arbitrary bundled theme names, and custom theme JSON files should be deferred until there is a clear user need and a documented validation/error contract.
+Dark themes, arbitrary bundled theme names, and custom theme JSON files should be deferred until there is a clear user need and a documented validation/error contract. Fixture review can still remove non-default themes from this allowlist before implementation if they prove unreadable in PDF output, but `github-light` should remain the default first-slice theme unless the implementation plan explicitly replaces it with another named Shiki bundled light theme and updates the default/validation contract at the same time.
 
 ### 5. Let Shiki own token markup, and let the PDF stylesheet own block layout
 
@@ -226,7 +226,7 @@ The repo-owned stylesheet should still control:
 Candidate baseline stylesheet direction:
 
 ```css
-pre.shiki {
+pre.cdx-code {
   background: #f6f8fa;
   border: 0.6pt solid #d8dee4;
   border-radius: 3pt;
@@ -237,7 +237,11 @@ pre.shiki {
   font-size: 8.8pt;
 }
 
-pre.shiki code {
+pre.cdx-code--highlighted.shiki {
+  background: #f6f8fa;
+}
+
+code.cdx-code__content {
   font-family: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;
 }
 ```
@@ -290,13 +294,13 @@ Shiki's transformer package already provides notation-based and metadata-based p
 
 ### 7. Add the minimum dependencies needed for the chosen pipeline
 
-The first Shiki implementation likely needs Shiki as the highlighter dependency:
+The first Shiki implementation should use Shiki plus `parse5`:
 
 ```bash
-bun add shiki
+bun add shiki parse5
 ```
 
-Because the published CLI would use Shiki at runtime, this dependency would belong in `dependencies`, not `devDependencies`.
+Because the published CLI would use Shiki and the HTML transform at runtime, both dependencies would belong in `dependencies`, not `devDependencies`.
 
 The pipeline also needs a safe way to transform Pandoc HTML:
 
@@ -310,7 +314,9 @@ Pandoc HTML
   -> WeasyPrint
 ```
 
-`parse5` is a reasonable low-level parser/serializer candidate. `cheerio` is a reasonable ergonomic alternative. This research does not choose between them; the implementation plan should choose one after a small spike against real Pandoc-generated HTML.
+Use `parse5` for the HTML parse/serialize step. The transform only needs a narrow deterministic pass over Pandoc-generated HTML, not a jQuery-like querying API. `parse5` keeps the dependency purpose explicit and avoids implying a broader Unified, rehype, or browser-DOM pipeline.
+
+Do not hand-roll the HTML parser. Code blocks can contain escaped HTML, angle brackets, quotes, nested spans, and attributes in varying order. String replacement would make the transform fragile before WeasyPrint sees the document.
 
 The implementation plan should also define the language extraction rules explicitly. Candidate first-slice rules:
 
@@ -319,7 +325,7 @@ The implementation plan should also define the language extraction rules explici
 3. Prefer classes with `language-<id>` when present.
 4. Otherwise ignore structural classes such as `sourceCode` and use the first remaining language-like class.
 5. Normalize common aliases before calling Shiki, starting with `js -> javascript`, `ts -> typescript`, `jsx -> jsx`, `tsx -> tsx`, `sh -> shellscript`, `bash -> shellscript`, `zsh -> shellscript`, `yml -> yaml`, `md -> markdown`, and `py -> python`.
-6. If no language can be resolved, keep the block plain.
+6. If no language can be resolved, keep the block plain. Do not introduce a default language option in the first slice.
 7. If Shiki does not support the resolved language, keep the block plain and preserve the normal code-block CSS hooks.
 
 The first slice should not add `rehype-pretty-code` because the current pipeline is not a Unified/remark/rehype pipeline. That package may become relevant only if the project intentionally introduces a rehype transform layer later.
@@ -333,9 +339,9 @@ The implementation plan should define what happens when highlighting cannot be a
 Candidate behavior:
 
 - unknown or unsupported language: render the block without token colors but keep the normal code-block stylesheet
-- Shiki initialization failure: fail the command when `--code-highlight` was explicitly requested
+- Shiki initialization failure: fail the command whenever highlighting is enabled, whether it was enabled by profile or CLI
 - HTML parse or serialize failure: fail the command because the generated document cannot be transformed safely
-- per-block Shiki render failure for a resolved supported language: fail the command when highlighting is enabled, because silently dropping one block to plain output would hide a renderer bug or theme incompatibility
+- per-block Shiki render failure for a resolved supported language: fail the command whenever highlighting is enabled, because silently dropping one block to plain output would hide a renderer bug or theme incompatibility
 - missing optional transformer support: fail validation if the profile requests a feature that is not implemented
 - no language on a fenced block: keep the block plain
 - `--no-code-highlight`: bypass Shiki entirely
@@ -369,16 +375,14 @@ Recommended planning stance:
 - keep Pandoc-native highlighting out of the public option model
 - keep `fonts.code` as the source of truth for code font stacks
 - use Shiki for token colors and code-block metadata
+- use `parse5` for the post-Pandoc HTML parse/serialize transform
 - use the repo-owned PDF stylesheet for all print layout details
 - expose only a small Shiki light-theme allowlist at first
 - defer arbitrary theme selection, custom theme files, line numbers, line highlights, and diff notation until the base Shiki path is proven
 
 ## Open Questions
 
-1. Which Shiki bundled light themes should be included in the first allowlist after fixture review?
-2. Should no-language fenced blocks stay plain, or should they use a default language only when explicitly configured?
-3. Should line numbers be a global profile option only, or should per-block Markdown metadata also be supported?
-4. Which HTML transform dependency is better for this repo after a spike: `parse5` or `cheerio`?
+1. Should line numbers be a global profile option only, or should per-block Markdown metadata also be supported?
 
 ## Related Research
 
