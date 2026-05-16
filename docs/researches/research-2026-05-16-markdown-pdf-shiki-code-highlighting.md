@@ -10,7 +10,7 @@ agent: codex
 
 Explore the preferred direction for styled code blocks in `md to-pdf` when the pipeline continues to use Pandoc for Markdown-to-HTML conversion and WeasyPrint for PDF rendering.
 
-The main question is whether code highlighting should be exposed as multiple highlighter engines, such as Pandoc-native highlighting and Shiki, or whether the product surface should choose one supported highlighting path. This draft records the current recommendation from discussion, but it should still be validated by a small implementation spike and PDF fixture review before becoming a plan contract.
+The main question is whether code highlighting should be exposed as multiple highlighter engines, such as Pandoc-native highlighting and Shiki, or whether the product surface should choose one supported highlighting path. This research records the current first-slice contract for the follow-up implementation plan.
 
 ## Why This Research
 
@@ -33,9 +33,9 @@ That baseline is useful, but it does not answer the presentation needs for techn
 - a small Shiki light-theme allowlist instead of broad theme customization
 - clear opt-in or opt-out behavior that does not confuse users with too many engine choices
 
-This research records the preferred product direction before a separate implementation plan is drafted. The HTML transform dependency choice is now `parse5`; specific flag names, profile keys, and some fallback details remain provisional until that plan is written.
+This research records the preferred product direction before a separate implementation plan is drafted. The first-slice contracts below settle the highlighter choice, profile shape, theme allowlist, parser dependency, fixture strategy, and fallback behavior. Implementation details such as exact helper function names and test file organization belong in the follow-up plan.
 
-Status note: this research is `in-progress` because the Shiki direction is the active recommendation, but it still requires an implementation spike and PDF fixture review before it can be marked completed.
+Status note: this research is `in-progress` because the product contract is settled for planning, but completion still requires linked implementation-spike evidence and PDF fixture review evidence.
 
 ## Scope
 
@@ -47,6 +47,7 @@ This research covers:
 - how code font settings should continue to work
 - a staged path for line numbers, line highlights, and diff blocks
 - dependency and pipeline implications
+- fixture and example strategy for Markdown code-block visual review
 
 This research does not implement:
 
@@ -56,6 +57,7 @@ This research does not implement:
 - HTML parsing or serialization
 - fixture PDF updates
 - public guide updates
+- fixture generation scripts
 
 ## Current State
 
@@ -105,7 +107,7 @@ Pandoc-native highlighting can remain an internal fallback idea or historical co
 
 ### 2. Keep the first public option simple
 
-The first public surface should probably be a boolean-style feature, not an engine selector:
+The first public surface should be a boolean-style feature, not an engine selector:
 
 ```bash
 cdx-chores md to-pdf --input report.md --code-highlight
@@ -138,7 +140,7 @@ That selector would imply long-term support for multiple rendering engines. The 
 
 ### 3. Keep highlighting opt-in until PDF fixtures prove the default
 
-The first implementation should likely keep highlighting opt-in.
+The first implementation should keep highlighting opt-in.
 
 Reasons:
 
@@ -154,9 +156,9 @@ After the feature has fixture evidence, the project can reconsider whether speci
 
 PDF output should prefer light themes because PDFs are often printed, shared, or read in document viewers.
 
-The public contract should probably use Shiki's existing bundled theme IDs instead of introducing a repo-owned alias such as `print-light`. That keeps the profile aligned with Shiki terminology and avoids a second theme naming layer.
+The public contract should use Shiki's existing bundled theme IDs instead of introducing a repo-owned alias such as `print-light`. That keeps the profile aligned with Shiki terminology and avoids a second theme naming layer.
 
-Candidate first-slice shape:
+First-slice shape:
 
 ```yaml
 code:
@@ -172,7 +174,7 @@ When `code.highlight` is false or omitted, `code.theme` should be inert because 
 
 `md pdf-template init` should emit the stable code-block and Shiki hook CSS regardless of whether highlighting is enabled in a profile at that moment. Those selectors are inert for plain code blocks, but keeping them in the materialized stylesheet means users can later toggle `code.highlight` without regenerating the template only to pick up the default code-block CSS. Users who render with `--no-default-css` or heavily customized template CSS still own those hooks themselves.
 
-The candidate first-slice hook contract should be:
+The first-slice hook contract should be:
 
 - `pre.cdx-code` for every code block that the Markdown PDF recipe normalizes
 - `pre.cdx-code--plain` for plain code blocks
@@ -194,7 +196,7 @@ The migration contract for preexisting materialized templates should be document
 - no automatic in-place template mutation should happen during `md to-pdf`
 - a template-version marker can be considered later if future code-block features require command-time warnings or automated upgrade guidance
 
-The first slice should not accept every Shiki bundled theme or custom theme file. Instead, it should validate this initial allowlist of Shiki bundled light themes:
+The first slice should not accept every Shiki bundled theme or custom theme file. Instead, it should validate this fixed initial allowlist of Shiki bundled light themes:
 
 - `github-light`
 - `light-plus`
@@ -202,7 +204,7 @@ The first slice should not accept every Shiki bundled theme or custom theme file
 - `vitesse-light`
 - `catppuccin-latte`
 
-Dark themes, arbitrary bundled theme names, and custom theme JSON files should be deferred until there is a clear user need and a documented validation/error contract. Fixture review can still remove non-default themes from this allowlist before implementation if they prove unreadable in PDF output, but `github-light` should remain the default first-slice theme unless the implementation plan explicitly replaces it with another named Shiki bundled light theme and updates the default/validation contract at the same time.
+Dark themes, arbitrary bundled theme names, and custom theme JSON files should be deferred until there is a clear user need and a documented validation/error contract. Fixture review should validate this fixed allowlist rather than mutate it during implementation. Any later theme-list change should be a follow-up doc and plan update.
 
 ### 5. Let Shiki own token markup, and let the PDF stylesheet own block layout
 
@@ -225,7 +227,7 @@ The repo-owned stylesheet should still control:
 - diff added/removed line background
 - print contrast
 
-Candidate baseline stylesheet direction:
+Baseline stylesheet direction:
 
 ```css
 pre.cdx-code {
@@ -285,7 +287,7 @@ First-slice line-number behavior should be tied to highlighted Shiki output:
 - wrapping should preserve visual association between a number and its source line, using the repo-owned code-block stylesheet rather than inline Shiki layout styles
 - page breaks inside long numbered blocks should remain acceptable; avoiding split code blocks can be considered later if fixture review shows poor output
 
-Numbered blocks should use this candidate markup shape:
+Numbered blocks should use this markup shape:
 
 ```html
 <pre class="cdx-code cdx-code--highlighted cdx-code--numbered shiki">
@@ -362,11 +364,115 @@ The first slice should not add `rehype-pretty-code` because the current pipeline
 
 `@shikijs/transformers` should be treated as a follow-up dependency unless the first slice intentionally includes line highlighting or diff notation.
 
-### 8. Define explicit fallback behavior
+### 8. Review Shiki transformer styles as follow-up examples
 
-The implementation plan should define what happens when highlighting cannot be applied. The following behavior is a candidate contract, not a completed command guarantee.
+The first Shiki slice should reserve CSS hooks for line highlight and diff states, but it should not enable Shiki transformer notation yet. Shiki's common transformer package includes diff notation such as `[!code ++]` / `[!code --]` and highlight notation such as `[!code highlight]`; those transformers apply classes and require project CSS for visual styling.[^shiki-transformers]
 
-Candidate behavior:
+The follow-up transformer review should cover at least:
+
+- diff added and removed lines
+- single highlighted lines
+- multi-line highlight ranges
+- word highlights
+- focused lines
+- combinations with profile-controlled line numbers
+- behavior in long wrapped lines and page breaks
+
+When that follow-up starts, add Markdown examples and smoke outputs instead of testing only hand-written HTML snippets. Candidate follow-up fixture names:
+
+- `code-transformer-diff.md`
+- `code-transformer-highlight-line.md`
+- `code-transformer-highlight-word.md`
+- `code-transformer-focus.md`
+- `code-transformer-line-numbers-combined.md`
+
+Those follow-up examples should reuse the same code-block hook family and should map transformer output into repo-owned classes such as `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted`.
+
+### 9. Add deterministic Markdown fixtures and playground examples
+
+The Shiki slice should include committed Markdown fixture inputs, not only unit-test strings. The current repo already uses generator scripts under `scripts/` and manual smoke artifacts under `examples/playground/` for data and document workflows, while stable document fixtures live under `test/fixtures/docs/`. Code-block PDF styling should follow the same split:
+
+- committed test fixtures under `test/fixtures/docs/markdown-pdf-code/`
+- ignored manual smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
+- a generator script at `scripts/generate-markdown-pdf-code-fixtures.mjs`
+
+The generator command contract should mirror existing fixture scripts:
+
+```bash
+node scripts/generate-markdown-pdf-code-fixtures.mjs seed
+node scripts/generate-markdown-pdf-code-fixtures.mjs clean
+node scripts/generate-markdown-pdf-code-fixtures.mjs reset
+node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
+```
+
+Responsibilities:
+
+- `seed` writes or refreshes the committed Markdown/profile fixtures under `test/fixtures/docs/markdown-pdf-code/`
+- `clean` removes generated manual smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
+- `reset` runs `clean` and then `seed`
+- `smoke` writes regenerated HTML and PDF outputs under `examples/playground/.tmp-tests/markdown-pdf-code/` when local Pandoc and WeasyPrint dependencies are available
+
+Manual smoke outputs should be regenerated on demand and should not be committed. The committed source fixtures should stay small enough for review and deterministic unit tests.
+
+The committed fixture Markdown should be small, deterministic, and useful for both HTML transform tests and PDF fixture review. Required first-slice files:
+
+- `code-basic.md` with TypeScript, JSON, Bash, YAML, Markdown, and Python fences
+- `code-plain-and-unsupported.md` with no-language and unsupported-language fences that should stay plain
+- `code-wrapping.md` with long lines, long strings, and indentation-sensitive examples
+- `code-line-numbers.md` paired with `profiles/code-line-numbers.yml`, which enables `code.highlight` and `code.lineNumbers`
+- `code-mixed-content.md` with prose, lists, tables, inline code, and several code blocks on one page
+
+Required committed layout:
+
+```text
+test/fixtures/docs/markdown-pdf-code/
+  code-basic.md
+  code-plain-and-unsupported.md
+  code-wrapping.md
+  code-line-numbers.md
+  code-mixed-content.md
+  profiles/
+    code-highlight-default.yml
+    code-highlight-alt-theme.yml
+    code-line-numbers.yml
+```
+
+The generator script should write or refresh those Markdown/profile fixtures and, when local dependencies are available, can also generate playground PDFs and HTML snapshots for manual visual review. Generated playground PDFs should stay out of stable tests unless the repo intentionally adds renderer-backed PDF golden review later.
+
+Required smoke output layout:
+
+```text
+examples/playground/.tmp-tests/markdown-pdf-code/
+  html/
+    code-basic.html
+    code-plain-and-unsupported.html
+    code-wrapping.html
+    code-line-numbers.html
+    code-mixed-content.html
+  pdf/
+    code-basic.pdf
+    code-plain-and-unsupported.pdf
+    code-wrapping.pdf
+    code-line-numbers.pdf
+    code-mixed-content.pdf
+```
+
+`smoke` should skip with a clear console message and exit `0` when Pandoc or WeasyPrint is missing, because this is a local visual-review helper rather than the stable test gate. If Shiki or `parse5` is missing after implementation, `smoke` should fail because those are package dependencies.
+
+The first automated tests should assert the intermediate HTML contract rather than depend on local WeasyPrint rendering:
+
+- `pre.cdx-code` and `code.cdx-code__content` hooks are present
+- highlighted blocks receive `pre.cdx-code--highlighted.shiki`
+- plain and unsupported-language blocks receive plain hooks and no Shiki token spans
+- profile code fonts still generate CSS that targets highlighted blocks
+- `code.lineNumbers` creates `pre.cdx-code--numbered`, `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content`
+- `--html-output` writes transformed HTML only after the Shiki transform succeeds
+
+Manual PDF review should cover at least the default `github-light` theme, one alternate allowlisted light theme, profile code fonts, long wrapped code lines, and profile-controlled line numbers.
+
+### 10. Define explicit fallback behavior
+
+The first-slice fallback behavior should be:
 
 - unknown or unsupported language: render the block without token colors but keep the normal code-block stylesheet
 - Shiki initialization failure: fail the command whenever highlighting is enabled, whether it was enabled by profile or CLI
@@ -384,14 +490,14 @@ When a Shiki-enabled transform fails before WeasyPrint runs, `md to-pdf` should 
 
 Adopt Shiki as the recommended highlighter direction for `md to-pdf`, with no public Pandoc-highlighting engine selector in the first plan unless the implementation spike discovers a blocker.
 
-Candidate first-slice product contract:
+First-slice product contract:
 
 ```bash
 cdx-chores md to-pdf --input report.md --code-highlight
 cdx-chores md to-pdf --input report.md --no-code-highlight
 ```
 
-Candidate first-slice profile contract:
+First-slice profile contract:
 
 ```yaml
 code:
@@ -413,6 +519,19 @@ Recommended planning stance:
 ## Open Questions
 
 No open questions remain for the first Shiki highlighting slice. Line highlights, diff notation, custom themes, and per-block line-number overrides are deferred follow-up topics.
+
+## Completion Evidence
+
+This research can move to `completed` after the follow-up implementation plan or job records link evidence for:
+
+- Shiki and `parse5` dependency installation
+- committed fixture generation under `test/fixtures/docs/markdown-pdf-code/`
+- transform-level tests for every required first-slice fixture
+- validation tests for the fixed theme allowlist, `github-light` defaulting, and invalid theme failures
+- profile and CLI precedence tests for `--code-highlight`, `--no-code-highlight`, `code.highlight`, and `code.lineNumbers`
+- smoke generator `seed`, `clean`, `reset`, and `smoke` behavior
+- `smoke` skip behavior when Pandoc or WeasyPrint is missing
+- manual PDF review for the required smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
 
 ## Related Research
 
