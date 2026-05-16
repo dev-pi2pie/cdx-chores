@@ -2,6 +2,7 @@ export { createMarkdownPdfCss, createMarkdownPdfRecipe, createMarkdownPdfTemplat
 export type { CreateMarkdownPdfRecipeInput, MarkdownPdfRecipe } from "./recipe";
 export { renderMarkdownPdf } from "./render";
 export type {
+  MarkdownPdfCodeHighlighter,
   MarkdownPdfProcessRunner,
   RenderMarkdownPdfInput,
   RenderMarkdownPdfResult,

@@ -9,6 +9,7 @@ import {
   readMarkdownPdfProfileFile,
   renderMarkdownPdf,
   resolveMarkdownPdfCodeOptions,
+  type MarkdownPdfCodeHighlighter,
   type MarkdownPdfProcessRunner,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
@@ -30,6 +31,7 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   codeHighlight?: boolean;
   overwrite?: boolean;
   runner?: MarkdownPdfProcessRunner;
+  codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
 
 export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions): Promise<void> {
@@ -102,6 +104,7 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     options: normalizedOptions,
     code: codeOptions,
     runner,
+    codeHighlighter: options.codeHighlighter,
   });
 
   if (result.warnings.length > 0) {

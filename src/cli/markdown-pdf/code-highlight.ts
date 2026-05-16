@@ -1,10 +1,12 @@
-import { parse, parseFragment, serialize, type DefaultTreeAdapterTypes } from "parse5";
+import { html, parse, parseFragment, serialize, type DefaultTreeAdapterTypes } from "parse5";
 import { createHighlighter } from "shiki";
 
 import { CliError } from "../errors";
+import { MARKDOWN_PDF_CODE_CLASSES } from "./code-style";
 import { MARKDOWN_PDF_CODE_THEMES, type EffectiveMarkdownPdfCodeOptions } from "./profile";
 
 type Parse5Node = DefaultTreeAdapterTypes.Node;
+type Parse5ChildNode = DefaultTreeAdapterTypes.ChildNode;
 type Parse5Element = DefaultTreeAdapterTypes.Element;
 type Parse5ParentNode = DefaultTreeAdapterTypes.ParentNode;
 
@@ -60,6 +62,10 @@ function setAttr(node: Parse5Element, name: string, value: string): void {
 function addClasses(node: Parse5Element, classes: string[]): void {
   const current = attrValue(node, "class")?.split(/\s+/).filter(Boolean) ?? [];
   setAttr(node, "class", Array.from(new Set([...current, ...classes])).join(" "));
+}
+
+function hasClass(node: Parse5Element, className: string): boolean {
+  return attrValue(node, "class")?.split(/\s+/).includes(className) === true;
 }
 
 function stripFontFamilyStyle(node: Parse5Element): void {
@@ -157,8 +163,8 @@ function normalizeCodeLanguage(language: string | undefined): string | undefined
 }
 
 function markPlainBlock(block: CodeBlock): void {
-  addClasses(block.pre, ["cdx-code", "cdx-code--plain"]);
-  addClasses(block.code, ["cdx-code__content"]);
+  addClasses(block.pre, [MARKDOWN_PDF_CODE_CLASSES.block, MARKDOWN_PDF_CODE_CLASSES.plainBlock]);
+  addClasses(block.code, [MARKDOWN_PDF_CODE_CLASSES.content]);
 }
 
 function copyAttrIfMissing(source: Parse5Element, target: Parse5Element, name: string): void {
@@ -180,14 +186,93 @@ function parseSinglePreFragment(html: string): Parse5Element {
   return pre;
 }
 
-function applyHighlightedBlock(block: CodeBlock, highlightedPre: Parse5Element): void {
-  addClasses(highlightedPre, ["cdx-code", "cdx-code--highlighted"]);
+function createSpanElement(attrs: Parse5Element["attrs"] = []): Parse5Element {
+  return {
+    nodeName: "span",
+    tagName: "span",
+    attrs,
+    namespaceURI: html.NS.HTML,
+    parentNode: null,
+    childNodes: [],
+  };
+}
+
+function createTextNode(value: string): DefaultTreeAdapterTypes.TextNode {
+  return {
+    nodeName: "#text",
+    parentNode: null,
+    value,
+  };
+}
+
+function createLineNumberElement(lineNumber: number): Parse5Element {
+  const node = createSpanElement([
+    { name: "class", value: MARKDOWN_PDF_CODE_CLASSES.lineNumber },
+    { name: "aria-hidden", value: "true" },
+  ]);
+  const text = createTextNode(String(lineNumber));
+  text.parentNode = node;
+  node.childNodes = [text];
+  return node;
+}
+
+function createLineContentElement(childNodes: Parse5ChildNode[]): Parse5Element {
+  const content = createSpanElement([
+    { name: "class", value: MARKDOWN_PDF_CODE_CLASSES.lineContent },
+  ]);
+  content.childNodes = childNodes;
+  for (const child of childNodes) {
+    child.parentNode = content;
+  }
+  return content;
+}
+
+function applyLineNumbers(highlightedPre: Parse5Element): void {
+  const code = highlightedPre.childNodes.find((node) => isElement(node) && node.tagName === "code");
+  if (!code || !isElement(code)) {
+    return;
+  }
+
+  const lineNodes = code.childNodes.filter(
+    (node): node is Parse5Element =>
+      isElement(node) && hasClass(node, MARKDOWN_PDF_CODE_CLASSES.shikiLine),
+  );
+  if (lineNodes.length === 0) {
+    return;
+  }
+
+  addClasses(highlightedPre, [MARKDOWN_PDF_CODE_CLASSES.numberedBlock]);
+  const numberedLines = lineNodes.map((line, index) => {
+    const number = createLineNumberElement(index + 1);
+    const content = createLineContentElement(line.childNodes);
+    addClasses(line, [MARKDOWN_PDF_CODE_CLASSES.line]);
+    setAttr(line, "data-line", String(index + 1));
+    line.childNodes = [number, content];
+    number.parentNode = line;
+    content.parentNode = line;
+    return line;
+  });
+  code.childNodes = numberedLines;
+}
+
+function applyHighlightedBlock(
+  block: CodeBlock,
+  highlightedPre: Parse5Element,
+  options: EffectiveMarkdownPdfCodeOptions,
+): void {
+  addClasses(highlightedPre, [
+    MARKDOWN_PDF_CODE_CLASSES.block,
+    MARKDOWN_PDF_CODE_CLASSES.highlightedBlock,
+  ]);
   copyAttrIfMissing(block.pre, highlightedPre, "id");
+  if (options.lineNumbers) {
+    applyLineNumbers(highlightedPre);
+  }
   stripFontFamilyStyle(highlightedPre);
 
   for (const node of highlightedPre.childNodes) {
     if (isElement(node) && node.tagName === "code") {
-      addClasses(node, ["cdx-code__content"]);
+      addClasses(node, [MARKDOWN_PDF_CODE_CLASSES.content]);
     }
   }
 
@@ -211,7 +296,7 @@ function transformCodeBlocks(
     const highlightedPre = parseSinglePreFragment(
       renderer.render(collectText(block.code), language, options.theme),
     );
-    applyHighlightedBlock(block, highlightedPre);
+    applyHighlightedBlock(block, highlightedPre, options);
   }
 
   return serialize(document);
@@ -257,7 +342,7 @@ export async function highlightMarkdownPdfCodeBlocks(
     }
     const message = error instanceof Error ? error.message : String(error);
     throw new CliError(`Failed to highlight Markdown PDF code blocks: ${message}`, {
-      code: "INVALID_INPUT",
+      code: "MARKDOWN_PDF_CODE_HIGHLIGHT_FAILED",
       exitCode: 1,
     });
   } finally {

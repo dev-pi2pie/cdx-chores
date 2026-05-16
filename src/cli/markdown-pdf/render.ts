@@ -10,6 +10,7 @@ import type { EffectiveMarkdownPdfCodeOptions } from "./profile";
 import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
+export type MarkdownPdfCodeHighlighter = typeof highlightMarkdownPdfCodeBlocks;
 
 export interface RenderMarkdownPdfInput {
   inputPath: string;
@@ -24,6 +25,7 @@ export interface RenderMarkdownPdfInput {
   options: NormalizedMarkdownPdfOptions;
   code?: EffectiveMarkdownPdfCodeOptions;
   runner?: MarkdownPdfProcessRunner;
+  codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
 
 export interface RenderMarkdownPdfResult {
@@ -163,7 +165,7 @@ async function createFinalHtml(
   if (!input.code?.highlight) {
     return pandocHtml;
   }
-  return await highlightMarkdownPdfCodeBlocks(pandocHtml, input.code);
+  return await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code);
 }
 
 export async function renderMarkdownPdf(

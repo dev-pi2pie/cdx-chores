@@ -296,8 +296,8 @@ The parent `examples/playground/.gitignore` already ignores `examples/playground
 - no custom Shiki theme JSON files
 - no dark-theme support in the first slice
 - no `rehype-pretty-code`
-- no `@shikijs/transformers`
-- no diff/highlight-line transformer notation in the first slice
+- no `@shikijs/transformers` in phases 1-6
+- no diff/highlight-line transformer notation before Phase 6.5
 - no per-block line-number overrides
 - no default language for no-language fences
 - no mutation of existing materialized templates during `md to-pdf`
@@ -362,13 +362,13 @@ bun test test/cli-actions-md-to-pdf-code-highlight*.test.ts
 
 ### Phase 4: Line Numbers And CSS Hooks
 
-- [ ] Generate `pre.cdx-code--numbered` markup when `code.lineNumbers` is enabled.
-- [ ] Generate `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content`.
-- [ ] Keep unsupported and no-language blocks unnumbered.
-- [ ] Add default CSS for `cdx-code` hooks.
-- [ ] Keep legacy `pre` and `code` selectors.
-- [ ] Ensure profile `fonts.code` still controls highlighted and numbered blocks.
-- [ ] Update `md pdf-template init` generated CSS with the same hook selectors.
+- [x] Generate `pre.cdx-code--numbered` markup when `code.lineNumbers` is enabled.
+- [x] Generate `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content`.
+- [x] Keep unsupported and no-language blocks unnumbered.
+- [x] Add default CSS for `cdx-code` hooks.
+- [x] Keep legacy `pre` and `code` selectors.
+- [x] Ensure profile `fonts.code` still controls highlighted and numbered blocks.
+- [x] Update `md pdf-template init` generated CSS with the same hook selectors.
 
 Verification:
 
@@ -380,8 +380,8 @@ bun test test/cli-actions-md-to-pdf-recipe*.test.ts test/cli-actions-md-to-pdf-c
 
 - [x] Insert the Shiki transform after Pandoc HTML generation and before remote-asset scanning.
 - [x] Write `--html-output` only after the Shiki transform succeeds.
-- [ ] Leave the target PDF untouched when transform fails before WeasyPrint.
-- [ ] Clean temporary files on transform/render failure.
+- [x] Leave the target PDF untouched when transform fails before WeasyPrint.
+- [x] Clean temporary files on transform/render failure.
 - [x] Preserve current behavior when highlighting is disabled.
 - [x] Confirm `--no-code-highlight` bypasses the transform.
 
@@ -393,12 +393,12 @@ bun test test/cli-actions-md-to-pdf-actions*.test.ts
 
 ### Phase 6: Fixture Tests And Smoke Review
 
-- [ ] Add transform-level tests for every required committed fixture.
-- [ ] Assert code hooks and Shiki classes in transformed HTML.
-- [ ] Assert unsupported/no-language blocks stay plain.
-- [ ] Assert line-number markup for `code-line-numbers.md`.
-- [ ] Assert profile code fonts override highlighted block typography.
-- [ ] Run smoke output generation locally.
+- [x] Add transform-level tests for every required committed fixture.
+- [x] Assert code hooks and Shiki classes in transformed HTML.
+- [x] Assert unsupported/no-language blocks stay plain.
+- [x] Assert line-number markup for `code-line-numbers.md`.
+- [x] Assert profile code fonts override highlighted block typography.
+- [x] Run smoke output generation locally. The command skipped cleanly because Pandoc or WeasyPrint was unavailable in the local environment.
 - [ ] Manually review smoke PDFs for:
   - default `github-light`
   - one alternate allowlisted light theme
@@ -414,11 +414,49 @@ node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
 bun test test/cli-actions-md-to-pdf*.test.ts
 ```
 
+### Phase 6.5: Transformer Notation Support
+
+This phase adds opt-in Shiki transformer notation after the base Shiki path and fixture coverage are stable, but before public documentation closeout.
+
+- [ ] Add `@shikijs/transformers` as a runtime dependency.
+- [ ] Extend the top-level profile `code` section with an explicit transformer-notation option, likely `code.transformerNotation`.
+- [ ] Keep transformer notation disabled by default.
+- [ ] Require effective `code.highlight: true` when transformer notation is enabled, except explicit `--no-code-highlight` should disable both highlighting and transformer notation for that render.
+- [ ] Wire selected Shiki notation transformers into the existing post-Pandoc transform only for successfully highlighted blocks.
+- [ ] Support line highlight notation such as `[!code highlight]`.
+- [ ] Support diff insertion notation such as `[!code ++]`.
+- [ ] Support diff deletion notation such as `[!code --]`.
+- [ ] Confirm transformer marker comments are removed from rendered code.
+- [ ] Map transformer output into repo-owned classes:
+  - `.cdx-code-line--highlighted`
+  - `.cdx-code-line--inserted`
+  - `.cdx-code-line--deleted`
+- [ ] Keep no-language and unsupported-language blocks plain and uninterpreted.
+- [ ] Verify transformer notation works with profile-controlled line numbers.
+- [ ] Add committed fixtures:
+  - `code-transformer-highlight-line.md`
+  - `code-transformer-diff.md`
+  - `code-transformer-line-numbers-combined.md`
+- [ ] Add generator smoke cases for the transformer fixtures.
+- [ ] Add transform-level tests using real Pandoc-emitted fixture HTML when Pandoc is available.
+- [ ] Add profile and CLI precedence tests for transformer notation, including explicit `--no-code-highlight`.
+- [ ] Add manual smoke review coverage for highlighted lines, inserted lines, deleted lines, and combined line numbers.
+
+Verification:
+
+```bash
+node scripts/generate-markdown-pdf-code-fixtures.mjs reset
+node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
+bun test test/cli-actions-md-to-pdf*.test.ts
+bun tsc --noEmit
+```
+
 ### Phase 7: Documentation And Closeout
 
 - [ ] Update `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document `--code-highlight`, `--no-code-highlight`, and profile `code`.
 - [ ] Document the fixed light-theme allowlist.
+- [ ] Document `code.transformerNotation` if Phase 6.5 lands before closeout.
 - [ ] Document old template migration through `md pdf-template init --overwrite` or manual CSS copy.
 - [ ] Document fixture generator usage if relevant to contributor workflows.
 - [x] Add a job record under `docs/plans/jobs/`.
@@ -434,19 +472,16 @@ bun run build
 git diff --check
 ```
 
-## Deferred Follow-Up: Transformer Styles
+## Deferred Follow-Up: Additional Transformer Styles
 
-Diff lines, highlighted lines, word highlights, focus, custom themes, and per-block line-number overrides are not part of this implementation.
+Phase 6.5 covers the first transformer notation slice for highlighted, inserted, and deleted lines. Word highlights, focus notation, custom themes, and per-block line-number overrides remain deferred.
 
-Create a separate follow-up research or plan before enabling `@shikijs/transformers`. That follow-up should fixture:
+A later follow-up should fixture:
 
-- `code-transformer-diff.md`
-- `code-transformer-highlight-line.md`
 - `code-transformer-highlight-word.md`
 - `code-transformer-focus.md`
-- `code-transformer-line-numbers-combined.md`
 
-The follow-up should map transformer output into repo-owned classes such as:
+Transformer output should continue to map into repo-owned classes such as:
 
 - `.cdx-code-line--highlighted`
 - `.cdx-code-line--inserted`
@@ -480,3 +515,4 @@ The follow-up should map transformer output into repo-owned classes such as:
 ## Related Job Records
 
 - [Markdown PDF Shiki code highlighting phases 1-3](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
+- [Markdown PDF Shiki code highlighting phases 4-6](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)

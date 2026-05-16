@@ -1,4 +1,5 @@
 import type { NormalizedMarkdownPdfOptions } from "./validation";
+import { createMarkdownPdfCodeCss } from "./code-style";
 import {
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
@@ -198,6 +199,8 @@ pre {
 code {
   font-family: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;
 }
+
+${createMarkdownPdfCodeCss()}
 
 blockquote {
   border-left: 3pt solid #d0d7de;
