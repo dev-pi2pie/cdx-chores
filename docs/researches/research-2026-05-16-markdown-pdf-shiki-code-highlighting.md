@@ -393,7 +393,7 @@ Those follow-up examples should reuse the same code-block hook family and should
 The Shiki slice should include committed Markdown fixture inputs, not only unit-test strings. The current repo already uses generator scripts under `scripts/` and manual smoke artifacts under `examples/playground/` for data and document workflows, while stable document fixtures live under `test/fixtures/docs/`. Code-block PDF styling should follow the same split:
 
 - committed test fixtures under `test/fixtures/docs/markdown-pdf-code/`
-- ignored manual smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
+- ignored manual smoke outputs under `examples/playground/markdown-pdf-code/`
 - a generator script at `scripts/generate-markdown-pdf-code-fixtures.mjs`
 
 The generator command contract should mirror existing fixture scripts:
@@ -408,11 +408,13 @@ node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
 Responsibilities:
 
 - `seed` writes or refreshes the committed Markdown/profile fixtures under `test/fixtures/docs/markdown-pdf-code/`
-- `clean` removes generated manual smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
+- `clean` removes generated manual smoke outputs under `examples/playground/markdown-pdf-code/`
 - `reset` runs `clean` and then `seed`
-- `smoke` writes regenerated HTML and PDF outputs under `examples/playground/.tmp-tests/markdown-pdf-code/` when local Pandoc and WeasyPrint dependencies are available
+- `smoke` writes regenerated HTML and PDF outputs under `examples/playground/markdown-pdf-code/` when local Pandoc and WeasyPrint dependencies are available
 
 Manual smoke outputs should be regenerated on demand and should not be committed. The committed source fixtures should stay small enough for review and deterministic unit tests.
+
+The parent `examples/playground/.gitignore` already ignores unlisted playground directories, so the generator does not need to create a nested `.gitignore` inside `examples/playground/markdown-pdf-code/`.
 
 The committed fixture Markdown should be small, deterministic, and useful for both HTML transform tests and PDF fixture review. Required first-slice files:
 
@@ -442,7 +444,7 @@ The generator script should write or refresh those Markdown/profile fixtures and
 Required smoke output layout:
 
 ```text
-examples/playground/.tmp-tests/markdown-pdf-code/
+examples/playground/markdown-pdf-code/
   html/
     code-basic.html
     code-plain-and-unsupported.html
@@ -531,7 +533,7 @@ This research can move to `completed` after the follow-up implementation plan or
 - profile and CLI precedence tests for `--code-highlight`, `--no-code-highlight`, `code.highlight`, and `code.lineNumbers`
 - smoke generator `seed`, `clean`, `reset`, and `smoke` behavior
 - `smoke` skip behavior when Pandoc or WeasyPrint is missing
-- manual PDF review for the required smoke outputs under `examples/playground/.tmp-tests/markdown-pdf-code/`
+- manual PDF review for the required smoke outputs under `examples/playground/markdown-pdf-code/`
 
 ## Related Research
 
