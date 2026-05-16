@@ -178,7 +178,9 @@ The candidate first-slice hook contract should be:
 - `pre.cdx-code--plain` for plain code blocks
 - `pre.cdx-code--highlighted.shiki` for Shiki-highlighted blocks
 - `code.cdx-code__content` for the code content element
-- `.cdx-code-line`, `.cdx-code-line-number`, `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted` reserved for later line-number, line-highlight, and diff support
+- `pre.cdx-code--numbered` for highlighted blocks with profile-controlled line numbers
+- `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content` for numbered line layout
+- `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted` reserved for later line-highlight and diff support
 
 The built-in `md to-pdf` default stylesheet and the generated `md pdf-template init` `style.css` should use the same hook names. Existing materialized templates created before this feature should continue to render, but they are not guaranteed to receive the new Shiki block-layout defaults unless users regenerate the template or add equivalent CSS manually.
 
@@ -256,7 +258,7 @@ Recommended planning stages:
 
 1. Highlight fenced code blocks with language classes from Pandoc HTML.
 2. Preserve profile-controlled code fonts and light-theme block styling.
-3. Add optional line numbers after the basic PDF layout is stable.
+3. Add optional profile-controlled line numbers after the basic PDF layout is stable.
 4. Add highlighted-line notation, such as fenced code metadata, after parser behavior is proven.
 5. Add diff block styling and transformer support.
 
@@ -269,6 +271,34 @@ code:
   lineNumbers: false
   wrap: true
 ```
+
+The first line-number slice should support profile-level line numbers only. It should not add per-block Markdown metadata overrides until there is evidence that documents need mixed line-number behavior.
+
+First-slice line-number behavior should be tied to highlighted Shiki output:
+
+- `code.lineNumbers: true` requires effective highlighting to be enabled
+- if `code.lineNumbers: true` is set while effective highlighting is disabled, profile validation should fail with a clear message, except when `--no-code-highlight` explicitly disables highlighting for that render
+- when `--no-code-highlight` is passed, line numbers are explicitly disabled for that render because the user requested plain code output
+- numbered output applies only to blocks that Shiki transforms successfully
+- no-language blocks and unsupported-language blocks stay plain and unnumbered
+- line numbers should be generated during the same post-Pandoc transform that adds Shiki markup
+- wrapping should preserve visual association between a number and its source line, using the repo-owned code-block stylesheet rather than inline Shiki layout styles
+- page breaks inside long numbered blocks should remain acceptable; avoiding split code blocks can be considered later if fixture review shows poor output
+
+Numbered blocks should use this candidate markup shape:
+
+```html
+<pre class="cdx-code cdx-code--highlighted cdx-code--numbered shiki">
+  <code class="cdx-code__content">
+    <span class="cdx-code-line" data-line="1">
+      <span class="cdx-code-line-number" aria-hidden="true">1</span>
+      <span class="cdx-code-line-content">const input = "report.md";</span>
+    </span>
+  </code>
+</pre>
+```
+
+Wrapped continuation text should remain inside `.cdx-code-line-content`; the stylesheet should align wrapped continuation lines under the content column, not under the line-number column. The transform should not create separate continuation-line elements.
 
 Line-level emphasis should usually live in Markdown, not global profile settings. For example:
 
@@ -378,11 +408,11 @@ Recommended planning stance:
 - use `parse5` for the post-Pandoc HTML parse/serialize transform
 - use the repo-owned PDF stylesheet for all print layout details
 - expose only a small Shiki light-theme allowlist at first
-- defer arbitrary theme selection, custom theme files, line numbers, line highlights, and diff notation until the base Shiki path is proven
+- defer arbitrary theme selection, custom theme files, line highlights, diff notation, and per-block line-number overrides until the base Shiki path is proven
 
 ## Open Questions
 
-1. Should line numbers be a global profile option only, or should per-block Markdown metadata also be supported?
+No open questions remain for the first Shiki highlighting slice. Line highlights, diff notation, custom themes, and per-block line-number overrides are deferred follow-up topics.
 
 ## Related Research
 
