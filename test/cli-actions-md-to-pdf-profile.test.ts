@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { normalizeMarkdownPdfProfile, readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
+import {
+  normalizeMarkdownPdfProfile,
+  readMarkdownPdfProfileFile,
+  resolveMarkdownPdfCodeOptions,
+} from "../src/cli/markdown-pdf";
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -95,6 +99,86 @@ describe("markdown PDF profile normalization", () => {
     expect(result.profile.fonts.body["zh-Hant"]).toBe("Noto Serif TC");
     expect(result.profile.fonts.code.symbols).toBe("JetBrainsMono Nerd Font");
     expect(result.profile.contentLangs).toEqual(["zh-Hant", "ja", "ko"]);
+  });
+
+  test("normalizes code highlighting settings", () => {
+    const defaults = normalizeMarkdownPdfProfile();
+    expect(defaults.profile.code).toEqual({
+      highlight: false,
+      theme: "github-light",
+      lineNumbers: false,
+    });
+
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        code: {
+          highlight: true,
+          theme: "light-plus",
+          lineNumbers: true,
+        },
+      },
+    });
+
+    expect(result.profile.code).toEqual({
+      highlight: true,
+      theme: "light-plus",
+      lineNumbers: true,
+    });
+  });
+
+  test("resolves CLI code highlight overrides after profile normalization", () => {
+    const profile = normalizeMarkdownPdfProfile({
+      profile: {
+        code: {
+          highlight: false,
+          lineNumbers: true,
+        },
+      },
+    }).profile;
+
+    expect(resolveMarkdownPdfCodeOptions({ profile: profile.code, cliHighlight: true })).toEqual({
+      highlight: true,
+      theme: "github-light",
+      lineNumbers: true,
+    });
+    expect(resolveMarkdownPdfCodeOptions({ profile: profile.code, cliHighlight: false })).toEqual({
+      highlight: false,
+      theme: "github-light",
+      lineNumbers: false,
+    });
+    expect(() => resolveMarkdownPdfCodeOptions({ profile: profile.code })).toThrow(
+      "profile.code.lineNumbers requires code.highlight",
+    );
+  });
+
+  test("rejects invalid code theme values", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "code:\n  theme: github-dark\n", "utf8");
+
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(profilePath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.code.theme must be one of",
+        },
+      );
+    });
+  });
+
+  test("rejects unknown code profile keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "code:\n  hilight: true\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.code.hilight",
+      });
+    });
   });
 
   test("rejects non-language keys in body font mappings", () => {

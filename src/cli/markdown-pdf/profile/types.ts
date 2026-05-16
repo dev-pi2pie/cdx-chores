@@ -4,6 +4,24 @@ export type MarkdownPdfProfileFormat = "json" | "yaml";
 
 export type MarkdownPdfMetadata = Record<string, string>;
 
+export const MARKDOWN_PDF_CODE_THEMES = [
+  "github-light",
+  "light-plus",
+  "min-light",
+  "vitesse-light",
+  "catppuccin-latte",
+] as const;
+
+export type MarkdownPdfCodeTheme = (typeof MARKDOWN_PDF_CODE_THEMES)[number];
+
+export interface NormalizedMarkdownPdfCode {
+  highlight: boolean;
+  theme: MarkdownPdfCodeTheme;
+  lineNumbers: boolean;
+}
+
+export type EffectiveMarkdownPdfCodeOptions = NormalizedMarkdownPdfCode;
+
 export type MarkdownPdfPageChromePosition =
   | "top-left"
   | "top-center"
@@ -52,6 +70,7 @@ export interface NormalizedMarkdownPdfFonts {
 
 export interface NormalizedMarkdownPdfProfile {
   metadata: MarkdownPdfMetadata;
+  code: NormalizedMarkdownPdfCode;
   header: MarkdownPdfPageChromeSlots;
   footer: MarkdownPdfPageChromeSlots;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;

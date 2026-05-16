@@ -164,6 +164,78 @@ describe("cli action modules: md to-pdf validation", () => {
     });
   });
 
+  test("rejects profile-only code line numbers without effective highlighting", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "code:\n  lineNumbers: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            profile: toRepoRelativePath(profilePath),
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.code.lineNumbers requires code.highlight",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expectNoOutput();
+    });
+  });
+
+  test("allows explicit code highlight CLI overrides for profile line numbers", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "code:\n  lineNumbers: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        codeHighlight: true,
+        runner,
+      });
+
+      expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("disables profile code line numbers when no-code-highlight is explicit", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "code:\n  lineNumbers: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        codeHighlight: false,
+        runner,
+      });
+
+      expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
   test("rejects existing html output without overwrite", async () => {
     await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

@@ -13,6 +13,7 @@ const ROOT_KEYS = new Set([
   "header",
   "footer",
   "pageNumbers",
+  "code",
 ]);
 const PAGE_KEYS = new Set([
   "size",
@@ -30,6 +31,7 @@ const COVER_KEYS = new Set(["enabled", "style", "fields"]);
 const COVER_FIELD_KEYS = new Set(["title", "subtitle", "author", "company", "date"]);
 const CHROME_KEYS = new Set(["left", "center", "right"]);
 const PAGE_NUMBER_KEYS = new Set(["enabled", "position", "format", "scope"]);
+const CODE_KEYS = new Set(["highlight", "theme", "lineNumbers"]);
 const PDF_KEYS = new Set(["content-langs"]);
 const FONT_ROLE_KEYS = new Set(["body", "heading", "code", "pageChrome"]);
 const LANGUAGE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
@@ -150,5 +152,10 @@ export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>
   const pageNumbers = assertOptionalObject(profile.pageNumbers, "profile.pageNumbers");
   if (pageNumbers) {
     assertAllowedKeys(pageNumbers, PAGE_NUMBER_KEYS, "profile.pageNumbers");
+  }
+
+  const code = assertOptionalObject(profile.code, "profile.code");
+  if (code) {
+    assertAllowedKeys(code, CODE_KEYS, "profile.code");
   }
 }

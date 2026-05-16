@@ -29,9 +29,9 @@ The related research settles the first-slice product contract:
 
 The plan turns that contract into an implementation sequence without pulling in deferred transformer notation such as highlighted-line or diff metadata.
 
-## Starting State
+## Implementation State
 
-The repository already has:
+Before this plan started, the repository already had:
 
 - `md to-pdf` rendering through Pandoc standalone HTML and WeasyPrint PDF output.
 - `md pdf-template init` materializing `template.html` and `style.css`.
@@ -41,16 +41,24 @@ The repository already has:
 - remote-asset scanning before WeasyPrint invocation.
 - document fixtures under `test/fixtures/docs/`.
 - fixture generator scripts under `scripts/`.
-- ignored manual smoke workspaces under `examples/playground/`, including the planned `examples/playground/markdown-pdf-code/` output directory.
-- runtime dependencies on `shiki` and `parse5` for the planned code-block transform.
+- ignored manual smoke workspaces under `examples/playground/`.
 
-The repository does not yet have:
+Completed in this slice:
 
 - a top-level `code` profile section.
 - `--code-highlight` / `--no-code-highlight` CLI flags.
-- a post-Pandoc code-block HTML transform.
-- Shiki code-block CSS hooks.
-- Markdown PDF code-block fixtures or generator scripts.
+- runtime dependencies on `shiki` and `parse5`.
+- a standalone Shiki code-block HTML transform module using `parse5`.
+- Shiki code-block CSS hook classes in transform output.
+- Markdown PDF code-block fixtures and generator scripts.
+- initial Phase 5 render wiring for highlighted code before remote-asset scanning, `--html-output`, and WeasyPrint.
+
+Remaining after this slice:
+
+- line-number markup generation.
+- default/template CSS updates for the code hooks.
+- broader transform failure cleanup assertions.
+- guide documentation and full closeout evidence.
 
 ## Scope
 
@@ -300,12 +308,12 @@ The parent `examples/playground/.gitignore` already ignores `examples/playground
 ### Phase 1: Dependencies And Fixture Foundation
 
 - [x] Add `shiki` and `parse5` to runtime dependencies.
-- [ ] Add `scripts/generate-markdown-pdf-code-fixtures.mjs`.
-- [ ] Implement `seed`, `clean`, `reset`, and `smoke`.
-- [ ] Add required committed Markdown/profile fixtures.
-- [ ] Ensure smoke outputs live under `examples/playground/markdown-pdf-code/`.
-- [ ] Verify `clean` only removes the code smoke output directory.
-- [ ] Verify `smoke` skips cleanly when Pandoc or WeasyPrint is missing.
+- [x] Add `scripts/generate-markdown-pdf-code-fixtures.mjs`.
+- [x] Implement `seed`, `clean`, `reset`, and `smoke`.
+- [x] Add required committed Markdown/profile fixtures.
+- [x] Ensure smoke outputs live under `examples/playground/markdown-pdf-code/`.
+- [x] Verify `clean` only removes the code smoke output directory.
+- [x] Verify `smoke` skips cleanly when Pandoc or WeasyPrint is missing.
 
 Verification:
 
@@ -316,15 +324,15 @@ node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
 
 ### Phase 2: Profile And CLI Options
 
-- [ ] Extend profile schema with top-level `code`.
-- [ ] Normalize `code.highlight`, `code.theme`, and `code.lineNumbers`.
-- [ ] Validate the fixed light-theme allowlist.
-- [ ] Default omitted `code.theme` to `github-light` when highlighting is enabled.
-- [ ] Validate `code.theme` even when highlighting is disabled.
-- [ ] Enforce `code.lineNumbers: true` with effective highlighting, except explicit `--no-code-highlight`.
-- [ ] Add `--code-highlight` and `--no-code-highlight` to `md to-pdf`.
-- [ ] Implement CLI override precedence.
-- [ ] Add profile and CLI option tests.
+- [x] Extend profile schema with top-level `code`.
+- [x] Normalize `code.highlight`, `code.theme`, and `code.lineNumbers`.
+- [x] Validate the fixed light-theme allowlist.
+- [x] Default omitted `code.theme` to `github-light` when highlighting is enabled.
+- [x] Validate `code.theme` even when highlighting is disabled.
+- [x] Enforce `code.lineNumbers: true` with effective highlighting, except explicit `--no-code-highlight`.
+- [x] Add `--code-highlight` and `--no-code-highlight` to `md to-pdf`.
+- [x] Implement CLI override precedence.
+- [x] Add profile and CLI option tests.
 
 Verification:
 
@@ -334,17 +342,17 @@ bun test test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-o
 
 ### Phase 3: Shiki Transform Module
 
-- [ ] Add a Markdown PDF code-transform module.
-- [ ] Use `parse5` to parse and serialize Pandoc-generated HTML.
-- [ ] Find `pre > code` blocks.
-- [ ] Extract and normalize language classes.
-- [ ] Initialize Shiki for the fixed theme allowlist and required languages.
-- [ ] Render supported code blocks through Shiki.
-- [ ] Preserve plain output for no-language and unsupported-language blocks.
-- [ ] Add `cdx-code` hook classes.
-- [ ] Strip any Shiki `font-family` declarations.
-- [ ] Fail on HTML parse/serialize failures.
-- [ ] Fail on Shiki initialization or supported-language render failures when highlighting is enabled.
+- [x] Add a Markdown PDF code-transform module.
+- [x] Use `parse5` to parse and serialize Pandoc-generated HTML.
+- [x] Find `pre > code` blocks.
+- [x] Extract and normalize language classes.
+- [x] Initialize Shiki for the fixed theme allowlist and required languages.
+- [x] Render supported code blocks through Shiki.
+- [x] Preserve plain output for no-language and unsupported-language blocks.
+- [x] Add `cdx-code` hook classes.
+- [x] Strip any Shiki `font-family` declarations.
+- [x] Fail on HTML parse/serialize failures.
+- [x] Fail on Shiki initialization or supported-language render failures when highlighting is enabled.
 
 Verification:
 
@@ -370,12 +378,12 @@ bun test test/cli-actions-md-to-pdf-recipe*.test.ts test/cli-actions-md-to-pdf-c
 
 ### Phase 5: Render Integration And Failure Semantics
 
-- [ ] Insert the Shiki transform after Pandoc HTML generation and before remote-asset scanning.
-- [ ] Write `--html-output` only after the Shiki transform succeeds.
+- [x] Insert the Shiki transform after Pandoc HTML generation and before remote-asset scanning.
+- [x] Write `--html-output` only after the Shiki transform succeeds.
 - [ ] Leave the target PDF untouched when transform fails before WeasyPrint.
 - [ ] Clean temporary files on transform/render failure.
-- [ ] Preserve current behavior when highlighting is disabled.
-- [ ] Confirm `--no-code-highlight` bypasses the transform.
+- [x] Preserve current behavior when highlighting is disabled.
+- [x] Confirm `--no-code-highlight` bypasses the transform.
 
 Verification:
 
@@ -413,8 +421,8 @@ bun test test/cli-actions-md-to-pdf*.test.ts
 - [ ] Document the fixed light-theme allowlist.
 - [ ] Document old template migration through `md pdf-template init --overwrite` or manual CSS copy.
 - [ ] Document fixture generator usage if relevant to contributor workflows.
-- [ ] Add a job record under `docs/plans/jobs/`.
-- [ ] Link the job record to this plan and the research doc.
+- [x] Add a job record under `docs/plans/jobs/`.
+- [x] Link the job record to this plan and the research doc.
 - [ ] Update the research doc status only after implementation evidence is linked.
 
 Verification:
@@ -468,3 +476,7 @@ The follow-up should map transformer output into repo-owned classes such as:
 
 - [Markdown to PDF with WeasyPrint implementation](plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md)
 - [Markdown to PDF profiles, fonts, and page chrome implementation](plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md)
+
+## Related Job Records
+
+- [Markdown PDF Shiki code highlighting phases 1-3](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)

@@ -22,10 +22,20 @@ export const DEFAULT_MARKDOWN_PDF_PROFILE: Record<string, unknown> = {
   pageNumbers: {
     enabled: false,
   },
+  code: {
+    highlight: false,
+    theme: "github-light",
+    lineNumbers: false,
+  },
 };
 
 export const DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE: NormalizedMarkdownPdfProfile = {
   metadata: {},
+  code: {
+    highlight: false,
+    theme: "github-light",
+    lineNumbers: false,
+  },
   header: {
     left: "",
     center: "",

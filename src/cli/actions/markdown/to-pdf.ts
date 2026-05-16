@@ -8,6 +8,7 @@ import {
   normalizeMarkdownPdfOptions,
   readMarkdownPdfProfileFile,
   renderMarkdownPdf,
+  resolveMarkdownPdfCodeOptions,
   type MarkdownPdfProcessRunner,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
@@ -26,6 +27,7 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   css?: string;
   noDefaultCss?: boolean;
   htmlOutput?: string;
+  codeHighlight?: boolean;
   overwrite?: boolean;
   runner?: MarkdownPdfProcessRunner;
 }
@@ -57,6 +59,10 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   const normalizedOptions = normalizeMarkdownPdfOptions({
     ...normalizedProfile.recipeOptions,
     ...definedRecipeOptions(options),
+  });
+  const codeOptions = resolveMarkdownPdfCodeOptions({
+    profile: normalizedProfile.profile.code,
+    cliHighlight: options.codeHighlight,
   });
   const recipe = createMarkdownPdfRecipe(normalizedOptions, {
     profile: normalizedProfile.profile,
@@ -94,6 +100,7 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     htmlOutputPath,
     overwrite: options.overwrite,
     options: normalizedOptions,
+    code: codeOptions,
     runner,
   });
 

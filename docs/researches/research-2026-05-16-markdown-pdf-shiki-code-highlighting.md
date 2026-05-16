@@ -548,6 +548,7 @@ This research can move to `completed` after the follow-up implementation plan or
 - [Markdown to PDF with WeasyPrint phases 1-5](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md)
 - [Markdown to PDF profile phases 4-5](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-4-5.md)
 - [Markdown to PDF profile phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md)
+- [Markdown PDF Shiki code highlighting phases 1-3](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
 
 ## References
 
