@@ -42,10 +42,10 @@ The repository already has:
 - document fixtures under `test/fixtures/docs/`.
 - fixture generator scripts under `scripts/`.
 - ignored manual smoke workspaces under `examples/playground/`, including the planned `examples/playground/markdown-pdf-code/` output directory.
+- runtime dependencies on `shiki` and `parse5` for the planned code-block transform.
 
 The repository does not yet have:
 
-- Shiki or `parse5` dependencies.
 - a top-level `code` profile section.
 - `--code-highlight` / `--no-code-highlight` CLI flags.
 - a post-Pandoc code-block HTML transform.
@@ -56,7 +56,7 @@ The repository does not yet have:
 
 ### Dependencies
 
-- Add runtime dependencies:
+- Runtime dependencies have been added with:
 
 ```bash
 bun add shiki parse5
@@ -299,7 +299,7 @@ The parent `examples/playground/.gitignore` already ignores `examples/playground
 
 ### Phase 1: Dependencies And Fixture Foundation
 
-- [ ] Add `shiki` and `parse5` to runtime dependencies.
+- [x] Add `shiki` and `parse5` to runtime dependencies.
 - [ ] Add `scripts/generate-markdown-pdf-code-fixtures.mjs`.
 - [ ] Implement `seed`, `clean`, `reset`, and `smoke`.
 - [ ] Add required committed Markdown/profile fixtures.
