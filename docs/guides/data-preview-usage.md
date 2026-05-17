@@ -194,7 +194,7 @@ Current stable boundary:
   - `--rows`
   - `--offset`
   - `--columns`
-- `--contains` is intentionally not supported in `v0.1.2`
+- `--contains` is intentionally not supported in `v0.1.3`
 - SQL is out of scope for this action
 
 Command shape:

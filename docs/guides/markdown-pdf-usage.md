@@ -29,6 +29,10 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
+## Current Release Boundary
+
+In `v0.1.3`, Markdown PDF profile and template workflows are direct CLI flows. Interactive Markdown PDF and Codex-assisted PDF helper flows are deferred to a later release.
+
 ## Basic Render
 
 Render a Markdown file to a PDF next to the source:
