@@ -1,7 +1,7 @@
 ---
 title: "Rename Timestamp Format Matrix"
 created-date: 2026-03-01
-modified-date: 2026-04-01
+modified-date: 2026-05-17
 status: completed
 agent: codex
 ---
@@ -12,7 +12,7 @@ Provide one compact reference for the current rename timestamp placeholders and 
 
 ## Status
 
-This guide documents the stable `v0.1.2` timestamp placeholder contract.
+This guide documents the stable `v0.1.3` timestamp placeholder contract.
 
 Current behavior is implemented:
 

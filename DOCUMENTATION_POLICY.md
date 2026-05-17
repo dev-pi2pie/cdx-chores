@@ -64,6 +64,43 @@ Archive link-handling rules:
 - historical labeling is required only for guide docs and other user-facing reference docs, not for archived docs or job-record traceability links
 - when a doc is archived because it is `superseded`, add a short status note that points readers to the newer primary doc when applicable
 
+### Guide Documents
+
+Use guide docs for user-facing reference material, current command usage, output contracts, architecture notes, and accepted operational guidance.
+
+Location:
+
+```text
+docs/guides/<short-title>.md
+```
+
+Notes:
+
+- Keep guide docs focused on the current shipped or accepted reader-facing contract.
+- Use `modified-date` when a later substantive update changes the documented behavior, status, or reader-facing guidance.
+- Do not update `modified-date` for link-only or formatting-only maintenance unless the reader-facing meaning changes.
+- When adding front matter to an older guide, use git history to preserve the original `created-date` when practical.
+
+Front-matter format:
+
+```yaml
+---
+title: "<guide title>"
+created-date: YYYY-MM-DD
+modified-date: YYYY-MM-DD # optional
+status: draft | completed | blocked | cancelled | superseded
+agent: <agent name>
+---
+```
+
+Guide status guidance:
+
+- `draft` — the guide is still being drafted, or the documented reader-facing contract is not settled
+- `completed` — the guide documents the current shipped or accepted reader-facing contract
+- `blocked` — the guide should be completed, but is waiting on a decision or dependency
+- `cancelled` — the guide was intentionally stopped and should not be used as guidance
+- `superseded` — a newer guide replaced this guide as the primary reference
+
 ### Archived Follow-Up Rule
 
 When new work is related to an archived doc:

@@ -1,3 +1,11 @@
+---
+title: "Data Stack Usage"
+created-date: 2026-04-24
+modified-date: 2026-04-28
+status: completed
+agent: codex
+---
+
 ## `data stack`
 
 `data stack` assembles one logical table from multiple local files or directories, then materializes the merged result to `.csv`, `.tsv`, or `.json`.

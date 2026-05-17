@@ -4,9 +4,20 @@ import {
   normalizeMarkdownPdfOptions,
   normalizeMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_CODE_FONT_SELECTORS } from "../src/cli/markdown-pdf/code-style";
 import { checkMarkdownPdfProfileFontCoverage } from "../src/cli/markdown-pdf/profile/font-coverage";
 import { checkFontCoverage, type CheckFontCoverageInput } from "../src/fonts";
 import type { FontCoverageInventory } from "../src/fonts";
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function cssRuleBody(css: string, selector: string): string {
+  const match = css.match(new RegExp(`${escapeRegExp(selector)}\\s*\\{([^}]*)\\}`));
+  expect(match?.[1]).toBeDefined();
+  return match?.[1] ?? "";
+}
 
 describe("markdown PDF recipe generation: fonts", () => {
   test("generates profile font fallback stacks and language CSS", () => {
@@ -53,6 +64,7 @@ describe("markdown PDF recipe generation: fonts", () => {
     expect(recipe.styleCss).toContain(
       ':lang(ko) {\n  font-family: "Noto Serif KR", "Source Serif 4", serif;',
     );
+    expect(recipe.styleCss).toContain(`${MARKDOWN_PDF_CODE_FONT_SELECTORS} {`);
     expect(recipe.styleCss).toContain(
       'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
     );
@@ -61,6 +73,20 @@ describe("markdown PDF recipe generation: fonts", () => {
       recipe.styleCss.indexOf('"Noto Serif TC"'),
     );
     expect(recipe.styleCss.match(/"Noto Serif TC"/g)).toHaveLength(2);
+  });
+
+  test("includes default code hook CSS for highlighted and numbered blocks", () => {
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions());
+
+    expect(cssRuleBody(recipe.styleCss, "pre")).toContain("background:");
+    expect(cssRuleBody(recipe.styleCss, "code")).toContain("font-family:");
+    expect(cssRuleBody(recipe.styleCss, "pre.cdx-code--highlighted")).toContain("border-color:");
+    expect(cssRuleBody(recipe.styleCss, "pre.cdx-code--numbered")).toContain("padding:");
+    expect(cssRuleBody(recipe.styleCss, ".cdx-code-line-number")).toContain("text-align: right");
+    expect(cssRuleBody(recipe.styleCss, ".cdx-code-line-content")).toContain("white-space:");
+    expect(cssRuleBody(recipe.styleCss, ".cdx-code-line--highlighted")).toContain("background:");
+    expect(cssRuleBody(recipe.styleCss, ".cdx-code-line--inserted")).toContain("background:");
+    expect(cssRuleBody(recipe.styleCss, ".cdx-code-line--deleted")).toContain("background:");
   });
 
   test("generates expanded mixed-language CSS without assuming renderer RTL quality", () => {

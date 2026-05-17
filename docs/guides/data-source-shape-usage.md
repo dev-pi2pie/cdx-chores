@@ -1,10 +1,18 @@
+---
+title: "Data Source Shape Usage"
+created-date: 2026-03-20
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## Data Source Shape
 
 Use this guide for the reviewed source-shape artifact contract and the current shape-first workflow shared across `data extract` and `data query`.
 
 Use `docs/guides/data-schema-and-mapping-usage.md` for semantic header-mapping artifacts.
 
-As of `v0.1.2`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
+As of `v0.1.3`, the shipped direct-CLI split is: `data extract` produces reviewed source-shape artifacts, `data extract` and `data query` can both replay them, and `data query codex` still stays on explicit shape flags instead of artifact replay.
 
 Current stable contract:
 
@@ -92,7 +100,7 @@ If `--write-source-shape` is omitted, the CLI generates a filename in the shared
 
 `data query` and `data extract` now share the same reviewed source-shape replay contract.
 
-Current shipped behavior in `v0.1.2`:
+Current shipped behavior in `v0.1.3`:
 
 - `data extract` can generate reviewed source-shape artifacts
 - `data extract` can replay `--source-shape <path>`
