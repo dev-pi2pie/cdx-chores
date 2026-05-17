@@ -2,6 +2,7 @@ export { createMarkdownPdfCss, createMarkdownPdfRecipe, createMarkdownPdfTemplat
 export type { CreateMarkdownPdfRecipeInput, MarkdownPdfRecipe } from "./recipe";
 export { renderMarkdownPdf } from "./render";
 export type {
+  MarkdownPdfCodeHighlighter,
   MarkdownPdfProcessRunner,
   RenderMarkdownPdfInput,
   RenderMarkdownPdfResult,
@@ -17,6 +18,7 @@ export {
 export {
   DEFAULT_MARKDOWN_PDF_PROFILE,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+  MARKDOWN_PDF_CODE_THEMES,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
@@ -26,10 +28,13 @@ export {
   markdownPdfProfileToRecipeOptions,
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
+  resolveMarkdownPdfCodeOptions,
   serializeMarkdownPdfProfile,
   validateMarkdownPdfProfileShape,
 } from "./profile";
 export type {
+  EffectiveMarkdownPdfCodeOptions,
+  MarkdownPdfCodeTheme,
   MarkdownPdfMetadata,
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
@@ -39,6 +44,7 @@ export type {
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,

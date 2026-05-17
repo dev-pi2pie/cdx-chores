@@ -5,9 +5,12 @@ import { basename, dirname, join } from "node:path";
 import { CliError } from "../errors";
 import { ensureParentDir, readTextFileRequired, writeTextFileSafe } from "../file-io";
 import { execCommand, type ExecCommandResult } from "../process";
+import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
+import type { EffectiveMarkdownPdfCodeOptions } from "./profile";
 import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
+export type MarkdownPdfCodeHighlighter = typeof highlightMarkdownPdfCodeBlocks;
 
 export interface RenderMarkdownPdfInput {
   inputPath: string;
@@ -20,7 +23,9 @@ export interface RenderMarkdownPdfInput {
   htmlOutputPath?: string;
   overwrite?: boolean;
   options: NormalizedMarkdownPdfOptions;
+  code?: EffectiveMarkdownPdfCodeOptions;
   runner?: MarkdownPdfProcessRunner;
+  codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
 
 export interface RenderMarkdownPdfResult {
@@ -152,6 +157,17 @@ async function createTempFile(dir: string, name: string, content: string): Promi
   return path;
 }
 
+async function createFinalHtml(
+  input: RenderMarkdownPdfInput,
+  pandocHtmlPath: string,
+): Promise<string> {
+  const pandocHtml = await readTextFileRequired(pandocHtmlPath);
+  if (!input.code?.highlight) {
+    return pandocHtml;
+  }
+  return await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code);
+}
+
 export async function renderMarkdownPdf(
   input: RenderMarkdownPdfInput,
 ): Promise<RenderMarkdownPdfResult> {
@@ -165,7 +181,8 @@ export async function renderMarkdownPdf(
       input.noDefaultCss || !input.defaultCss
         ? undefined
         : await createTempFile(tempDir, "style.css", input.defaultCss);
-    const htmlPath = join(tempDir, `${basename(input.inputPath)}.render.html`);
+    const pandocHtmlPath = join(tempDir, `${basename(input.inputPath)}.pandoc.html`);
+    const finalHtmlPath = join(tempDir, `${basename(input.inputPath)}.render.html`);
     const cssPaths = [defaultCssPath, input.customCssPath].filter(
       (path): path is string => typeof path === "string" && path.length > 0,
     );
@@ -180,7 +197,7 @@ export async function renderMarkdownPdf(
       "--template",
       templatePath,
       "--output",
-      htmlPath,
+      pandocHtmlPath,
     ];
     if (input.options.toc) {
       pandocArgs.push("--toc", "--toc-depth", String(input.options.tocDepth));
@@ -191,7 +208,9 @@ export async function renderMarkdownPdf(
       throw formatProcessFailure("pandoc", pandoc);
     }
 
-    const html = await readTextFileRequired(htmlPath);
+    const html = await createFinalHtml(input, pandocHtmlPath);
+    await writeFile(finalHtmlPath, html, "utf8");
+
     await rejectRemoteAssetsWhenDisabled(html, cssPaths, input.options.allowRemoteAssets);
 
     if (input.htmlOutputPath) {
@@ -203,7 +222,7 @@ export async function renderMarkdownPdf(
     for (const cssPath of cssPaths) {
       weasyprintArgs.push("--stylesheet", cssPath);
     }
-    weasyprintArgs.push(htmlPath, input.outputPath);
+    weasyprintArgs.push(finalHtmlPath, input.outputPath);
 
     const weasyprint = await runner("weasyprint", weasyprintArgs, {
       cwd: dirname(input.inputPath),

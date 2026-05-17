@@ -39,6 +39,7 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
   defaultCss?: boolean;
   htmlOutput?: string;
   allowRemoteAssets?: boolean;
+  codeHighlight?: boolean;
 }
 
 interface MarkdownPdfTemplateInitCliOptions extends MarkdownPdfRecipeCliOptions {
@@ -107,6 +108,8 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .option("--no-default-css", "Do not apply the built-in default stylesheet")
         .option("--html-output <path>", "Write the intermediate rendered HTML")
         .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
+        .option("--code-highlight", "Enable Shiki code highlighting")
+        .option("--no-code-highlight", "Disable Shiki code highlighting")
         .action(async (options: MarkdownPdfCliOptions) => {
           await actionMdToPdf(runtime, {
             ...options,

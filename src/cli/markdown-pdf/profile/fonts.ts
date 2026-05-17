@@ -1,4 +1,5 @@
 import type { MarkdownPdfFontConfig, NormalizedMarkdownPdfProfile } from "./types";
+import { MARKDOWN_PDF_CODE_FONT_SELECTORS } from "../code-style";
 
 const GENERIC_FONT_FAMILIES = new Set([
   "serif",
@@ -72,7 +73,7 @@ export function createMarkdownPdfFontCss(
     profile.fonts.code.symbols ?? "",
   ]);
   if (codeFonts.length > 0) {
-    rules.push(`pre, code {
+    rules.push(`${MARKDOWN_PDF_CODE_FONT_SELECTORS} {
   font-family: ${fontStack(codeFonts, "monospace")};
 }`);
   }

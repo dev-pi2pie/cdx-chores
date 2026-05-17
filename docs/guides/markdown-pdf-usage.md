@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-05-09
+modified-date: 2026-05-17
 status: completed
 agent: codex
 ---
@@ -134,6 +134,87 @@ cdx-chores md to-pdf \
 
 The HTML file is written only when `--html-output` is passed.
 
+## Code Highlighting
+
+Code highlighting is off by default. Enable Shiki highlighting for a render with:
+
+```bash
+cdx-chores md to-pdf --input ./report.md --code-highlight
+```
+
+Disable highlighting explicitly, even when a profile enables it:
+
+```bash
+cdx-chores md to-pdf --input ./report.md --profile ./pdf-profile.yml --no-code-highlight
+```
+
+The public highlighter route is Shiki. Pandoc still converts Markdown to standalone HTML, but `md to-pdf` does not expose Pandoc-native highlighting as a separate user-facing engine.
+
+When highlighting is enabled, fenced code blocks that resolve to a bundled Shiki language are highlighted. Common aliases such as `js`, `ts`, `bash`, `yml`, `md`, `py`, `c++`, and `c#` are resolved through Shiki's bundled language metadata. Fences without a language, or with a language name that Shiki does not bundle, remain plain.
+
+Use the profile `code` section for reusable code-block settings:
+
+```yaml
+code:
+  highlight: true
+  theme: github-light
+  lineNumbers: true
+  transformerNotation: true
+```
+
+`code.highlight` defaults to `false`. `code.theme` defaults to `github-light` when highlighting is enabled. `code.lineNumbers` and `code.transformerNotation` default to `false`.
+
+Supported Shiki light themes are:
+
+- `github-light`
+- `light-plus`
+- `min-light`
+- `vitesse-light`
+- `catppuccin-latte`
+
+Unknown, dark, or non-allowlisted theme names fail validation instead of silently falling back. `--code-highlight` can enable highlighting for a profile that leaves `code.highlight` false, while `--no-code-highlight` disables highlighting, line numbers, and transformer notation for that render.
+
+Line numbers are profile-only:
+
+```yaml
+code:
+  highlight: true
+  lineNumbers: true
+```
+
+`code.lineNumbers: true` requires effective highlighting. Plain code fences and unknown-language fences remain plain and unnumbered.
+
+Transformer notation is also profile-only and requires effective highlighting:
+
+```yaml
+code:
+  highlight: true
+  transformerNotation: true
+```
+
+Supported notation examples:
+
+````markdown
+```ts
+const highlighted = true; // [!code highlight]
+const removed = false; // [!code --]
+const inserted = true; // [!code ++]
+```
+````
+
+Shiki range suffixes are supported for the enabled notation types:
+
+````markdown
+```ts
+const first = true; // [!code highlight:2]
+const second = true;
+```
+````
+
+Transformer marker comments are removed from highlighted output. When transformer notation is disabled, those comments remain ordinary code text.
+
+`fonts.code` remains the source of truth for code typography. Shiki supplies token colors and line metadata, while the generated PDF stylesheet owns block layout, wrapping, line-number columns, and highlighted/diff line backgrounds.
+
 ## Profiles
 
 Profiles capture reusable PDF rendering settings in a declarative file. Use a profile when the same page size, metadata, cover, header/footer, page-number, or font settings should apply across documents:
@@ -200,6 +281,8 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
 
 A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile cover settings will not appear in the rendered PDF.
+
+Templates generated before Shiki code highlighting was added continue to render, but their `style.css` may not include the newer `.cdx-code` hook styles for highlighted blocks, line numbers, and transformer notation. To pick up the built-in code-block styling, regenerate the template with `md pdf-template init --overwrite` or copy the code-block CSS from a newly generated template.
 
 ## Covers And Page Chrome
 
@@ -374,6 +457,23 @@ cdx-chores md to-pdf \
   --css ./pdf-template/style.css \
   --no-default-css
 ```
+
+When rendering highlighted code with `--no-default-css`, custom CSS owns the `.cdx-code` hook styling. Include rules for `pre.cdx-code`, `code.cdx-code__content`, `.cdx-code-line`, `.cdx-code-line-number`, `.cdx-code-line-content`, `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted` if the document uses highlighted code, line numbers, or transformer notation.
+
+## Code Highlighting Fixture Smoke
+
+The repository includes a small fixture generator for Markdown PDF code-block review:
+
+```bash
+node scripts/generate-markdown-pdf-code-fixtures.mjs seed
+node scripts/generate-markdown-pdf-code-fixtures.mjs reset
+node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
+node scripts/generate-markdown-pdf-code-fixtures.mjs clean
+```
+
+`seed` refreshes committed Markdown/profile fixtures under `test/fixtures/docs/markdown-pdf-code/`. `reset` refreshes those fixtures and removes local smoke output. `smoke` writes local HTML/PDF review artifacts under `examples/playground/markdown-pdf-code/` when both Pandoc and WeasyPrint are available. `clean` removes those local smoke artifacts.
+
+Smoke output is for manual visual review and is not committed.
 
 ## Images And Assets
 

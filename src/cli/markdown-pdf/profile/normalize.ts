@@ -3,6 +3,8 @@ import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
 import { validateMarkdownPdfBodyFontKey } from "./schema";
 import type {
+  EffectiveMarkdownPdfCodeOptions,
+  MarkdownPdfCodeTheme,
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfMetadata,
@@ -10,10 +12,12 @@ import type {
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
 } from "./types";
+import { MARKDOWN_PDF_CODE_THEMES } from "./types";
 
 const META_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
@@ -25,6 +29,7 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-right",
 ]);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
+const CODE_THEMES = new Set<MarkdownPdfCodeTheme>(MARKDOWN_PDF_CODE_THEMES);
 
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -226,6 +231,76 @@ function normalizeCover(value: unknown): NormalizedMarkdownPdfCover {
   };
 }
 
+function normalizeCode(value: unknown): NormalizedMarkdownPdfCode {
+  const input = readObject(value);
+  const theme =
+    stringValue(input.theme, "profile.code.theme") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.theme;
+  if (!CODE_THEMES.has(theme as MarkdownPdfCodeTheme)) {
+    throw new CliError(
+      `profile.code.theme must be one of: ${MARKDOWN_PDF_CODE_THEMES.join(", ")}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return {
+    highlight:
+      booleanValue(input.highlight, "profile.code.highlight") ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.highlight,
+    theme: theme as MarkdownPdfCodeTheme,
+    lineNumbers:
+      booleanValue(input.lineNumbers, "profile.code.lineNumbers") ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.lineNumbers,
+    transformerNotation:
+      booleanValue(input.transformerNotation, "profile.code.transformerNotation") ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.transformerNotation,
+  };
+}
+
+export function resolveMarkdownPdfCodeOptions(input: {
+  profile: NormalizedMarkdownPdfCode;
+  cliHighlight?: boolean;
+}): EffectiveMarkdownPdfCodeOptions {
+  if (input.cliHighlight === false) {
+    return {
+      ...input.profile,
+      highlight: false,
+      lineNumbers: false,
+      transformerNotation: false,
+    };
+  }
+
+  const highlight = input.cliHighlight === true ? true : input.profile.highlight;
+  if (input.profile.lineNumbers && !highlight) {
+    throw new CliError(
+      "profile.code.lineNumbers requires code.highlight: true or --code-highlight.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+  if (input.profile.transformerNotation && !highlight) {
+    throw new CliError(
+      "profile.code.transformerNotation requires code.highlight: true or --code-highlight.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return {
+    ...input.profile,
+    highlight,
+    lineNumbers: highlight ? input.profile.lineNumbers : false,
+    transformerNotation: highlight ? input.profile.transformerNotation : false,
+  };
+}
+
 function normalizeFontConfig(value: unknown, label: string): MarkdownPdfFontConfig {
   const input = readObject(value);
   const output: MarkdownPdfFontConfig = {};
@@ -299,6 +374,7 @@ export function normalizeMarkdownPdfProfile(
         ...frontmatterMetadata,
         ...cliMetadata,
       },
+      code: normalizeCode(profile.code),
       header: normalizeChromeSlots(profile.header, "profile.header"),
       footer: normalizeChromeSlots(profile.footer, "profile.footer"),
       pageNumbers: normalizePageNumbers(profile.pageNumbers),
