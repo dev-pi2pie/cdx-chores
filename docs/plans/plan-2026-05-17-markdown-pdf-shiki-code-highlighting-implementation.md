@@ -24,7 +24,7 @@ The related research settles the first-slice product contract:
 - validate a fixed light-theme allowlist
 - keep `fonts.code` as the source of truth for code typography
 - use `parse5` for post-Pandoc HTML parsing and serialization
-- keep no-language and unsupported-language blocks plain
+- keep no-language and non-bundled-language blocks plain
 - support profile-only line numbers for successfully highlighted blocks
 - support opt-in transformer notation for highlighted lines and diff rows
 - add deterministic Markdown fixtures and playground smoke outputs
@@ -151,19 +151,9 @@ Language extraction rules:
 3. Prefer `language-<id>` classes.
 4. Ignore structural classes such as `sourceCode`.
 5. Use the first remaining language-like class.
-6. Normalize aliases:
-   - `js -> javascript`
-   - `ts -> typescript`
-   - `jsx -> jsx`
-   - `tsx -> tsx`
-   - `sh -> shellscript`
-   - `bash -> shellscript`
-   - `zsh -> shellscript`
-   - `yml -> yaml`
-   - `md -> markdown`
-   - `py -> python`
+6. Normalize aliases through Shiki's bundled language metadata.
 7. No resolved language stays plain.
-8. Unsupported Shiki language stays plain.
+8. Unknown or non-bundled language stays plain.
 
 ### Code-block hooks and CSS
 
@@ -204,7 +194,7 @@ code:
 Rules:
 
 - line numbers apply only to successfully Shiki-transformed blocks.
-- no-language and unsupported-language blocks remain plain and unnumbered.
+- no-language and non-bundled-language blocks remain plain and unnumbered.
 - line numbers are generated during the post-Pandoc transform.
 - wrapped continuation text stays inside `.cdx-code-line-content`.
 - the stylesheet aligns wrapped continuation text under the content column, not under the line-number column.
@@ -348,9 +338,9 @@ bun test test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-o
 - [x] Use `parse5` to parse and serialize Pandoc-generated HTML.
 - [x] Find `pre > code` blocks.
 - [x] Extract and normalize language classes.
-- [x] Initialize Shiki for the fixed theme allowlist and required languages.
+- [x] Initialize Shiki for the fixed theme allowlist and detected bundled languages.
 - [x] Render supported code blocks through Shiki.
-- [x] Preserve plain output for no-language and unsupported-language blocks.
+- [x] Preserve plain output for no-language and non-bundled-language blocks.
 - [x] Add `cdx-code` hook classes.
 - [x] Strip any Shiki `font-family` declarations.
 - [x] Fail on HTML parse/serialize failures.
@@ -366,7 +356,7 @@ bun test test/cli-actions-md-to-pdf-code-highlight*.test.ts
 
 - [x] Generate `pre.cdx-code--numbered` markup when `code.lineNumbers` is enabled.
 - [x] Generate `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content`.
-- [x] Keep unsupported and no-language blocks unnumbered.
+- [x] Keep non-bundled and no-language blocks unnumbered.
 - [x] Add default CSS for `cdx-code` hooks.
 - [x] Keep legacy `pre` and `code` selectors.
 - [x] Ensure profile `fonts.code` still controls highlighted and numbered blocks.
@@ -397,7 +387,7 @@ bun test test/cli-actions-md-to-pdf-actions*.test.ts
 
 - [x] Add transform-level tests for every required committed fixture.
 - [x] Assert code hooks and Shiki classes in transformed HTML.
-- [x] Assert unsupported/no-language blocks stay plain.
+- [x] Assert non-bundled/no-language blocks stay plain.
 - [x] Assert line-number markup for `code-line-numbers.md`.
 - [x] Assert profile code fonts override highlighted block typography.
 - [x] Run smoke output generation locally. The command skipped cleanly because Pandoc or WeasyPrint was unavailable in the local environment.
@@ -434,7 +424,7 @@ This phase adds opt-in Shiki transformer notation after the base Shiki path and 
   - `.cdx-code-line--highlighted`
   - `.cdx-code-line--inserted`
   - `.cdx-code-line--deleted`
-- [x] Keep no-language and unsupported-language blocks plain and uninterpreted.
+- [x] Keep no-language and non-bundled-language blocks plain and uninterpreted.
 - [x] Verify transformer notation works with profile-controlled line numbers.
 - [x] Add committed fixtures:
   - `code-transformer-highlight-line.md`
@@ -497,8 +487,9 @@ Transformer output should continue to map into repo-owned classes such as:
 - `--no-code-highlight` disables Shiki, line numbers, and transformer notation even when the profile enables them.
 - profile `code.highlight`, `code.theme`, `code.lineNumbers`, and `code.transformerNotation` validate deterministically.
 - the fixed theme allowlist is enforced.
+- bundled Shiki language IDs and aliases are eligible for highlighting.
 - `fonts.code` controls highlighted and numbered block typography.
-- no-language and unsupported-language blocks remain plain.
+- no-language and non-bundled-language blocks remain plain.
 - transformer notation supports highlighted, inserted, and deleted line classes when explicitly enabled.
 - transform failures do not leave partial target PDFs or premature `--html-output` files.
 - required Markdown/profile fixtures exist and are generated by the fixture script.
@@ -522,3 +513,4 @@ Transformer output should continue to map into repo-owned classes such as:
 - [Markdown PDF Shiki code highlighting phases 4-6](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
 - [Markdown PDF Shiki code highlighting phase 6.5](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)
 - [Markdown PDF Shiki code highlighting phase 7 docs](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-7-docs.md)
+- [Markdown PDF Shiki bundled language support](jobs/2026-05-17-markdown-pdf-shiki-bundled-language-support.md)

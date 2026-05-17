@@ -1,8 +1,12 @@
 import { html, parse, parseFragment, serialize, type DefaultTreeAdapterTypes } from "parse5";
-import { createHighlighter } from "shiki";
+import { createHighlighter, type BundledLanguage } from "shiki";
 import { transformerNotationDiff, transformerNotationHighlight } from "@shikijs/transformers";
 
 import { CliError } from "../errors";
+import {
+  isMarkdownPdfCodeStructuralClass,
+  normalizeMarkdownPdfShikiLanguage,
+} from "./code-language";
 import { MARKDOWN_PDF_CODE_CLASSES } from "./code-style";
 import { MARKDOWN_PDF_CODE_THEMES, type EffectiveMarkdownPdfCodeOptions } from "./profile";
 
@@ -10,26 +14,6 @@ type Parse5Node = DefaultTreeAdapterTypes.Node;
 type Parse5ChildNode = DefaultTreeAdapterTypes.ChildNode;
 type Parse5Element = DefaultTreeAdapterTypes.Element;
 type Parse5ParentNode = DefaultTreeAdapterTypes.ParentNode;
-
-const CODE_LANGUAGE_SUPPORT = [
-  { language: "javascript", aliases: ["js"] },
-  { language: "typescript", aliases: ["ts"] },
-  { language: "jsx", aliases: [] },
-  { language: "tsx", aliases: [] },
-  { language: "shellscript", aliases: ["sh", "bash", "zsh"] },
-  { language: "yaml", aliases: ["yml"] },
-  { language: "markdown", aliases: ["md"] },
-  { language: "python", aliases: ["py"] },
-] as const;
-
-const CODE_LANGUAGES = CODE_LANGUAGE_SUPPORT.map(({ language }) => language);
-
-const LANGUAGE_ALIASES = new Map<string, string>(
-  CODE_LANGUAGE_SUPPORT.flatMap(({ language, aliases }) => [
-    [language, language],
-    ...aliases.map((alias) => [alias, language] as const),
-  ]),
-);
 
 interface CodeBlock {
   parent: Parse5ParentNode;
@@ -39,8 +23,8 @@ interface CodeBlock {
 }
 
 interface MarkdownPdfCodeRenderer {
-  supportedLanguages: Set<string>;
-  render(code: string, language: string, options: EffectiveMarkdownPdfCodeOptions): string;
+  supportedLanguages: Set<BundledLanguage>;
+  render(code: string, language: BundledLanguage, options: EffectiveMarkdownPdfCodeOptions): string;
 }
 
 function isElement(node: Parse5Node): node is Parse5Element {
@@ -133,7 +117,7 @@ function classTokens(...nodes: Parse5Element[]): string[] {
 
 function findSupportedLanguageToken(tokens: string[]): string | undefined {
   for (const token of tokens) {
-    const language = LANGUAGE_ALIASES.get(token.toLowerCase());
+    const language = normalizeMarkdownPdfShikiLanguage(token);
     if (language) {
       return language;
     }
@@ -151,16 +135,15 @@ function extractCodeLanguage(block: CodeBlock): string | undefined {
   }
 
   if (classes.includes("sourceCode")) {
-    return findSupportedLanguageToken(classes.filter((token) => token !== "sourceCode"));
+    return findSupportedLanguageToken(
+      classes.filter((token) => !isMarkdownPdfCodeStructuralClass(token)),
+    );
   }
   return undefined;
 }
 
-function normalizeCodeLanguage(language: string | undefined): string | undefined {
-  if (!language) {
-    return undefined;
-  }
-  return LANGUAGE_ALIASES.get(language) ?? language;
+function extractBundledCodeLanguage(block: CodeBlock): BundledLanguage | undefined {
+  return normalizeMarkdownPdfShikiLanguage(extractCodeLanguage(block));
 }
 
 function markPlainBlock(block: CodeBlock): void {
@@ -308,7 +291,7 @@ function transformCodeBlocks(
   renderer: MarkdownPdfCodeRenderer,
 ): string {
   for (const block of findCodeBlocks(document)) {
-    const language = normalizeCodeLanguage(extractCodeLanguage(block));
+    const language = extractBundledCodeLanguage(block);
     if (!language || !renderer.supportedLanguages.has(language)) {
       markPlainBlock(block);
       continue;
@@ -321,6 +304,19 @@ function transformCodeBlocks(
   }
 
   return serialize(document);
+}
+
+function collectBundledCodeLanguages(
+  document: DefaultTreeAdapterTypes.Document,
+): BundledLanguage[] {
+  const languages = new Set<BundledLanguage>();
+  for (const block of findCodeBlocks(document)) {
+    const language = extractBundledCodeLanguage(block);
+    if (language) {
+      languages.add(language);
+    }
+  }
+  return Array.from(languages);
 }
 
 export async function highlightMarkdownPdfCodeBlocks(
@@ -342,12 +338,20 @@ export async function highlightMarkdownPdfCodeBlocks(
     });
   }
 
+  const languages = collectBundledCodeLanguages(document);
+  if (languages.length === 0) {
+    for (const block of findCodeBlocks(document)) {
+      markPlainBlock(block);
+    }
+    return serialize(document);
+  }
+
   const highlighter = await createHighlighter({
     themes: [...MARKDOWN_PDF_CODE_THEMES],
-    langs: [...CODE_LANGUAGES],
+    langs: languages,
   });
   const renderer: MarkdownPdfCodeRenderer = {
-    supportedLanguages: new Set(highlighter.getLoadedLanguages()),
+    supportedLanguages: new Set(languages),
     render: (code, language, codeOptions) =>
       highlighter.codeToHtml(code, {
         lang: language,

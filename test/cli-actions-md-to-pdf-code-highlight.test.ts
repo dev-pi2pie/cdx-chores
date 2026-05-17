@@ -54,7 +54,7 @@ describe("markdown PDF Shiki code highlighting", () => {
     expect(result).not.toContain("font-family");
   });
 
-  test("marks no-language and unsupported-language blocks as plain", async () => {
+  test("marks no-language and non-bundled-language blocks as plain", async () => {
     const html = [
       "<html><body>",
       "<pre><code>plain text</code></pre>",
@@ -89,6 +89,24 @@ describe("markdown PDF Shiki code highlighting", () => {
 
     expect(result).toContain(MARKDOWN_PDF_CODE_CLASSES.highlightedBlock);
     expect(result).toContain("shiki");
+  });
+
+  test("highlights bundled Shiki languages beyond the smoke fixture set", async () => {
+    const html = [
+      "<html><body>",
+      '<pre><code class="language-json">{"ok":true}</code></pre>',
+      '<pre><code class="language-rust">let ok = true;</code></pre>',
+      '<pre><code class="language-c++">auto ok = true;</code></pre>',
+      "</body></html>",
+    ].join("");
+
+    const result = await highlightMarkdownPdfCodeBlocks(html, CODE_OPTIONS);
+
+    expect(
+      result.match(new RegExp(MARKDOWN_PDF_CODE_CLASSES.highlightedBlock, "g")) ?? [],
+    ).toHaveLength(3);
+    expect(result).toContain("shiki");
+    expect(result).toContain("ok");
   });
 
   test("generates profile-controlled line number markup for highlighted blocks", async () => {

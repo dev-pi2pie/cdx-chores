@@ -20,7 +20,7 @@ This job finishes the automated implementation and test coverage for phases 4-6.
 ## Changes
 
 - Added profile-controlled numbered code markup for successfully highlighted Shiki blocks.
-- Added `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content` wrappers while keeping no-language and unsupported-language blocks plain and unnumbered.
+- Added `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content` wrappers while keeping no-language and non-bundled-language blocks plain and unnumbered.
 - Added default recipe CSS for highlighted, plain, numbered, and reserved transformer hook classes while preserving the legacy `pre` and `code` fallback selectors.
 - Centralized Markdown PDF code hook class names and default hook CSS in `src/cli/markdown-pdf/code-style.ts`.
 - Extended profile code-font CSS so `fonts.code` explicitly covers numbered-line wrappers as well as `pre` and `code`.

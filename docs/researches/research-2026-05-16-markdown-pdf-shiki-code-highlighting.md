@@ -39,6 +39,8 @@ Status note: this research is `completed` because the implementation plan, job r
 
 Phase 7 note: the public usage guide and implementation job records now document the Shiki code-highlighting surface. Manual PDF review used existing generated smoke outputs under `examples/playground/markdown-pdf-code/`, with Quick Look previews for highlighted-line, diff, and combined line-number transformer cases.
 
+Bundled-language correction: the implementation now resolves languages through Shiki's bundled language metadata instead of a hand-maintained small language allowlist. Fences without a language, or with names Shiki does not bundle, still remain plain.
+
 ## Scope
 
 This research covers:
@@ -287,7 +289,7 @@ First-slice line-number behavior should be tied to highlighted Shiki output:
 - if `code.lineNumbers: true` is set while effective highlighting is disabled, profile validation should fail with a clear message, except when `--no-code-highlight` explicitly disables highlighting for that render
 - when `--no-code-highlight` is passed, line numbers are explicitly disabled for that render because the user requested plain code output
 - numbered output applies only to blocks that Shiki transforms successfully
-- no-language blocks and unsupported-language blocks stay plain and unnumbered
+- no-language blocks and non-bundled-language blocks stay plain and unnumbered
 - line numbers should be generated during the same post-Pandoc transform that adds Shiki markup
 - wrapping should preserve visual association between a number and its source line, using the repo-owned code-block stylesheet rather than inline Shiki layout styles
 - page breaks inside long numbered blocks should remain acceptable; avoiding split code blocks can be considered later if fixture review shows poor output
@@ -361,9 +363,9 @@ The implementation plan should also define the language extraction rules explici
 2. Read language candidates from the `code` class list first, then the parent `pre` class list.
 3. Prefer classes with `language-<id>` when present.
 4. Otherwise ignore structural classes such as `sourceCode` and use the first remaining language-like class.
-5. Normalize common aliases before calling Shiki, starting with `js -> javascript`, `ts -> typescript`, `jsx -> jsx`, `tsx -> tsx`, `sh -> shellscript`, `bash -> shellscript`, `zsh -> shellscript`, `yml -> yaml`, `md -> markdown`, and `py -> python`.
+5. Normalize aliases through Shiki's bundled language metadata before calling Shiki.
 6. If no language can be resolved, keep the block plain. Do not introduce a default language option in the first slice.
-7. If Shiki does not support the resolved language, keep the block plain and preserve the normal code-block CSS hooks.
+7. If Shiki does not bundle the resolved language, keep the block plain and preserve the normal code-block CSS hooks.
 
 The first slice should not add `rehype-pretty-code` because the current pipeline is not a Unified/remark/rehype pipeline. That package may become relevant only if the project intentionally introduces a rehype transform layer later.
 
@@ -393,7 +395,7 @@ Transformer notation should follow the same effective-highlighting gate as line 
 - `code.transformerNotation: true` requires effective highlighting to be enabled
 - if `code.transformerNotation: true` is set while effective highlighting is disabled, profile validation should fail with a clear message, except when `--no-code-highlight` explicitly disables highlighting for that render
 - when `--no-code-highlight` is passed, transformer notation is explicitly disabled for that render because the user requested plain code output
-- no-language blocks and unsupported-language blocks stay plain and uninterpreted
+- no-language blocks and non-bundled-language blocks stay plain and uninterpreted
 - transformer marker comments should be removed from rendered highlighted code
 
 Word highlights, focus notation, custom Shiki themes, and per-block line-number overrides remain deferred until the PDF fixture review shows real demand.
@@ -429,7 +431,7 @@ The parent `examples/playground/.gitignore` already ignores unlisted playground 
 The committed fixture Markdown should be small, deterministic, and useful for both HTML transform tests and PDF fixture review. Required first-slice files:
 
 - `code-basic.md` with TypeScript, JSON, Bash, YAML, Markdown, and Python fences
-- `code-plain-and-unsupported.md` with no-language and unsupported-language fences that should stay plain
+- `code-plain-and-unsupported.md` with no-language and non-bundled-language fences that should stay plain
 - `code-wrapping.md` with long lines, long strings, and indentation-sensitive examples
 - `code-line-numbers.md` paired with `profiles/code-line-numbers.yml`, which enables `code.highlight` and `code.lineNumbers`
 - `code-mixed-content.md` with prose, lists, tables, inline code, and several code blocks on one page
@@ -475,7 +477,7 @@ The first automated tests should assert the intermediate HTML contract rather th
 
 - `pre.cdx-code` and `code.cdx-code__content` hooks are present
 - highlighted blocks receive `pre.cdx-code--highlighted.shiki`
-- plain and unsupported-language blocks receive plain hooks and no Shiki token spans
+- plain and non-bundled-language blocks receive plain hooks and no Shiki token spans
 - profile code fonts still generate CSS that targets highlighted blocks
 - `code.lineNumbers` creates `pre.cdx-code--numbered`, `.cdx-code-line`, `.cdx-code-line-number`, and `.cdx-code-line-content`
 - `--html-output` writes transformed HTML only after the Shiki transform succeeds
@@ -486,7 +488,7 @@ Manual PDF review should cover at least the default `github-light` theme, one al
 
 The first-slice fallback behavior should be:
 
-- unknown or unsupported language: render the block without token colors but keep the normal code-block stylesheet
+- unknown or non-bundled language: render the block without token colors but keep the normal code-block stylesheet
 - Shiki initialization failure: fail the command whenever highlighting is enabled, whether it was enabled by profile or CLI
 - HTML parse or serialize failure: fail the command because the generated document cannot be transformed safely
 - per-block Shiki render failure for a resolved supported language: fail the command whenever highlighting is enabled, because silently dropping one block to plain output would hide a renderer bug or theme incompatibility
@@ -494,7 +496,7 @@ The first-slice fallback behavior should be:
 - no language on a fenced block: keep the block plain
 - `--no-code-highlight`: bypass Shiki entirely
 
-This keeps explicit user requests honest without making unannotated or unsupported-language code blocks fragile. Plain fallback is for normal content limitations, not for broken HTML transformation or unexpected Shiki execution failures.
+This keeps explicit user requests honest without making unannotated or non-bundled-language code blocks fragile. Plain fallback is for normal content limitations, not for broken HTML transformation or unexpected Shiki execution failures.
 
 When a Shiki-enabled transform fails before WeasyPrint runs, `md to-pdf` should leave the target PDF untouched because rendering has not started. If a later implementation moves any PDF write through a temporary output path, failures should clean up that temporary file before reporting the error. The command should not leave a partial Shiki-transformed HTML artifact unless the user explicitly requested `--html-output`; in that case, the HTML output should be written only after the transform succeeds.
 
@@ -564,6 +566,7 @@ This research is completed with linked evidence for:
 - [Markdown PDF Shiki code highlighting phases 4-6](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
 - [Markdown PDF Shiki code highlighting phase 6.5](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)
 - [Markdown PDF Shiki code highlighting phase 7 docs](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-7-docs.md)
+- [Markdown PDF Shiki bundled language support](../plans/jobs/2026-05-17-markdown-pdf-shiki-bundled-language-support.md)
 
 ## Related Guides
 

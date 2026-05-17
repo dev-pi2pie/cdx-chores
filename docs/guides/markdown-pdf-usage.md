@@ -150,6 +150,8 @@ cdx-chores md to-pdf --input ./report.md --profile ./pdf-profile.yml --no-code-h
 
 The public highlighter route is Shiki. Pandoc still converts Markdown to standalone HTML, but `md to-pdf` does not expose Pandoc-native highlighting as a separate user-facing engine.
 
+When highlighting is enabled, fenced code blocks that resolve to a bundled Shiki language are highlighted. Common aliases such as `js`, `ts`, `bash`, `yml`, `md`, `py`, `c++`, and `c#` are resolved through Shiki's bundled language metadata. Fences without a language, or with a language name that Shiki does not bundle, remain plain.
+
 Use the profile `code` section for reusable code-block settings:
 
 ```yaml
@@ -180,7 +182,7 @@ code:
   lineNumbers: true
 ```
 
-`code.lineNumbers: true` requires effective highlighting. Plain code fences and unsupported-language fences remain plain and unnumbered.
+`code.lineNumbers: true` requires effective highlighting. Plain code fences and unknown-language fences remain plain and unnumbered.
 
 Transformer notation is also profile-only and requires effective highlighting:
 

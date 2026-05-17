@@ -24,7 +24,7 @@ This job stops before line-number markup generation, CSS/template updates, and b
 - Added top-level profile `code.highlight`, `code.theme`, and `code.lineNumbers` normalization and validation.
 - Added the fixed light-theme allowlist: `github-light`, `light-plus`, `min-light`, `vitesse-light`, and `catppuccin-latte`.
 - Added `--code-highlight` and `--no-code-highlight` command options.
-- Added a standalone `parse5` + Shiki transform module that classifies `pre > code` blocks, highlights supported languages, marks no-language and unsupported-language blocks as plain, adds `cdx-code` hook classes, and strips `font-family` styles from Shiki output.
+- Added a standalone `parse5` + Shiki transform module that classifies `pre > code` blocks, highlights Shiki bundled languages, marks no-language and non-bundled-language blocks as plain, adds `cdx-code` hook classes, and strips `font-family` styles from Shiki output.
 - Wired the transform into `md to-pdf` after Pandoc HTML generation and before remote-asset scanning, `--html-output`, and WeasyPrint.
 - Added coverage that `--no-code-highlight` bypasses the transform even when the profile enables highlighting.
 

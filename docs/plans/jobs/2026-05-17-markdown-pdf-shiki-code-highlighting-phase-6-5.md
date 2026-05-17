@@ -21,7 +21,7 @@ This job covers the automated Phase 6.5 implementation and regression coverage f
 - Wired Shiki notation transformers for `[!code highlight]`, `[!code ++]`, and `[!code --]`.
 - Covered Shiki `:N` range suffixes for highlighted, inserted, and deleted lines.
 - Mapped transformer output to repo-owned line classes: `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted`.
-- Kept no-language and unsupported-language blocks plain and uninterpreted.
+- Kept no-language and non-bundled-language blocks plain and uninterpreted.
 - Extended fixture generation with transformer notation examples, including combined notation and profile-controlled line numbers.
 - Adjusted fixture body headings to use scenario-oriented `##` subheadings so smoke outputs do not visually repeat the frontmatter document title.
 
