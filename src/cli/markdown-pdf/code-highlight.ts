@@ -1,6 +1,11 @@
 import { html, parse, parseFragment, serialize, type DefaultTreeAdapterTypes } from "parse5";
 import { createHighlighter, type BundledLanguage } from "shiki";
-import { transformerNotationDiff, transformerNotationHighlight } from "@shikijs/transformers";
+import {
+  transformerNotationDiff,
+  transformerNotationErrorLevel,
+  transformerNotationFocus,
+  transformerNotationHighlight,
+} from "@shikijs/transformers";
 
 import { CliError } from "../errors";
 import {
@@ -253,6 +258,19 @@ function createCodeTransformers(options: EffectiveMarkdownPdfCodeOptions) {
     transformerNotationDiff({
       classLineAdd: MARKDOWN_PDF_CODE_CLASSES.lineInserted,
       classLineRemove: MARKDOWN_PDF_CODE_CLASSES.lineDeleted,
+      classActivePre: "",
+      classActiveCode: "",
+    }),
+    transformerNotationFocus({
+      classActiveLine: MARKDOWN_PDF_CODE_CLASSES.lineFocused,
+      classActivePre: "",
+      classActiveCode: "",
+    }),
+    transformerNotationErrorLevel({
+      classMap: {
+        error: MARKDOWN_PDF_CODE_CLASSES.lineError,
+        warning: MARKDOWN_PDF_CODE_CLASSES.lineWarning,
+      },
       classActivePre: "",
       classActiveCode: "",
     }),

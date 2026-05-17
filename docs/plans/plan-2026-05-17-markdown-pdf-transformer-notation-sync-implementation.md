@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF transformer notation sync implementation"
 created-date: 2026-05-17
-status: draft
+modified-date: 2026-05-17
+status: completed
 agent: codex
 ---
 
@@ -81,7 +82,7 @@ That keeps this follow-up narrow. It should finish the line-state notation famil
 - Add committed fixtures under `test/fixtures/docs/markdown-pdf-code/`:
   - `code-transformer-focus.md`
   - `code-transformer-error-warning.md`
-  - `code-transformer-line-numbers-states-combined.md`
+  - `code-transformer-line-numbers-combined.md`
 - Update `scripts/generate-markdown-pdf-code-fixtures.mjs` so the fixtures are reproducible.
 - Extend `test/markdown-pdf-code-fixture-generator.test.ts` for the new fixture names.
 - Extend `test/cli-actions-md-to-pdf-code-highlight.test.ts` to verify:
@@ -136,34 +137,34 @@ Until that implementation evidence exists, the changelog should only claim highl
 
 ### Phase 1: Transform and CSS
 
-- [ ] Import and wire `transformerNotationFocus`.
-- [ ] Import and wire `transformerNotationErrorLevel`.
-- [ ] Map focus/error/warning output to repo-owned classes.
-- [ ] Add generated CSS for focused, error, and warning line states using the selected light backgrounds.
-- [ ] Confirm existing highlighted/inserted/deleted output is unchanged.
+- [x] Import and wire `transformerNotationFocus`.
+- [x] Import and wire `transformerNotationErrorLevel`.
+- [x] Map focus/error/warning output to repo-owned classes.
+- [x] Add generated CSS for focused, error, and warning line states using the selected light backgrounds.
+- [x] Confirm existing highlighted/inserted/deleted output is unchanged.
 
 ### Phase 2: Fixtures
 
-- [ ] Add Markdown fixtures for focus and error/warning notation.
-- [ ] Add a combined line-number fixture for multiple line states.
-- [ ] Update the fixture generator without changing its command surface.
-- [ ] Update generator tests for the new fixture names and profile content.
-- [ ] Regenerate committed fixture files through the generator.
+- [x] Add Markdown fixtures for focus and error/warning notation.
+- [x] Add a combined line-number fixture for multiple line states.
+- [x] Update the fixture generator without changing its command surface.
+- [x] Update generator tests for the new fixture names and profile content.
+- [x] Regenerate committed fixture files through the generator.
 
 ### Phase 3: Regression Tests
 
-- [ ] Add transform-level tests for focus notation.
-- [ ] Add transform-level tests for error and warning notation.
-- [ ] Add range-form tests for focus, error, and warning notation.
-- [ ] Add line-number combination tests for the new states.
-- [ ] Keep the disabled-transformer tests proving marker comments remain ordinary code text.
+- [x] Add transform-level tests for focus notation.
+- [x] Add transform-level tests for error and warning notation.
+- [x] Add range-form tests for focus, error, and warning notation.
+- [x] Add line-number combination tests for the new states.
+- [x] Keep the disabled-transformer tests proving marker comments remain ordinary code text.
 
 ### Phase 4: Docs and Final Release Check
 
-- [ ] Update the Markdown PDF usage guide with the supported notation list.
-- [ ] Update custom CSS guidance with the new class names.
-- [ ] Update `CHANGELOGS/v0.1.3.md` to the fuller wording only after tests pass.
-- [ ] Record implementation evidence in `docs/plans/jobs/2026-05-17-markdown-pdf-transformer-notation-sync.md`.
+- [x] Update the Markdown PDF usage guide with the supported notation list.
+- [x] Update custom CSS guidance with the new class names.
+- [x] Update `CHANGELOGS/v0.1.3.md` to the fuller wording only after tests pass.
+- [x] Record implementation evidence in `docs/plans/jobs/2026-05-17-markdown-pdf-transformer-notation-sync.md`.
 
 ## Acceptance Criteria
 
@@ -206,4 +207,4 @@ node scripts/generate-markdown-pdf-code-fixtures.mjs smoke
 
 ## Related Job Records
 
-- Planned: `docs/plans/jobs/2026-05-17-markdown-pdf-transformer-notation-sync.md`
+- [Markdown PDF transformer notation sync](jobs/2026-05-17-markdown-pdf-transformer-notation-sync.md)

@@ -203,8 +203,24 @@ Supported notation examples:
 const highlighted = true; // [!code highlight]
 const removed = false; // [!code --]
 const inserted = true; // [!code ++]
+const focused = true; // [!code focus]
+const failed = false; // [!code error]
+const maybe = true; // [!code warning]
 ```
 ````
+
+### Shiki Transformer Support
+
+Markdown PDF code highlighting enables a narrow Shiki transformer subset:
+
+| Shiki transformer | Syntax | Markdown PDF support |
+| --- | --- | --- |
+| `transformerNotationHighlight` | `[!code highlight]`, `[!code highlight:N]` | Supported |
+| `transformerNotationDiff` | `[!code ++]`, `[!code --]`, `[!code ++:N]`, `[!code --:N]` | Supported |
+| `transformerNotationFocus` | `[!code focus]`, `[!code focus:N]` | Supported |
+| `transformerNotationErrorLevel` | `[!code error]`, `[!code warning]`, `[!code error:N]`, `[!code warning:N]` | Supported for `error` and `warning`; `info` is not enabled |
+| `transformerMetaHighlight` | Code-fence meta such as ```` ```js {1,3-4}```` | Not supported |
+| `transformerNotationWordHighlight` | `[!code word:...]` | Not supported |
 
 Shiki range suffixes are supported for the enabled notation types:
 
@@ -212,12 +228,20 @@ Shiki range suffixes are supported for the enabled notation types:
 ```ts
 const first = true; // [!code highlight:2]
 const second = true;
+const focusStart = true; // [!code focus:2]
+const focusEnd = true;
 ```
 ````
 
+### Range Suffixes
+
+In notation such as `[!code focus:N]`, `N` is a positive line count. The count starts at the line where the marker appears, so `focus:1` affects only that line, `focus:2` affects that line and the next line, and `focus:3` affects three lines total.
+
+This matches Shiki's transformer notation behavior. The [Shiki transformer docs](https://shiki.style/packages/transformers) show `highlight:3`, `highlight:1`, and `focus:3` examples for applying one marker across multiple lines. Use `N` as `1` or higher; `0` has no useful line-state meaning and should not be used.
+
 Transformer marker comments are removed from highlighted output. When transformer notation is disabled, those comments remain ordinary code text.
 
-`fonts.code` remains the source of truth for code typography. Shiki supplies token colors and line metadata, while the generated PDF stylesheet owns block layout, wrapping, line-number columns, and highlighted/diff line backgrounds.
+`fonts.code` remains the source of truth for code typography. Shiki supplies token colors and line metadata, while the generated PDF stylesheet owns block layout, wrapping, line-number columns, and highlighted, inserted, deleted, focused, error, and warning line backgrounds.
 
 ## Profiles
 
@@ -462,7 +486,7 @@ cdx-chores md to-pdf \
   --no-default-css
 ```
 
-When rendering highlighted code with `--no-default-css`, custom CSS owns the `.cdx-code` hook styling. Include rules for `pre.cdx-code`, `code.cdx-code__content`, `.cdx-code-line`, `.cdx-code-line-number`, `.cdx-code-line-content`, `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted` if the document uses highlighted code, line numbers, or transformer notation.
+When rendering highlighted code with `--no-default-css`, custom CSS owns the `.cdx-code` hook styling. Include rules for `pre.cdx-code`, `code.cdx-code__content`, `.cdx-code-line`, `.cdx-code-line-number`, `.cdx-code-line-content`, `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, `.cdx-code-line--deleted`, `.cdx-code-line--focused`, `.cdx-code-line--error`, and `.cdx-code-line--warning` if the document uses highlighted code, line numbers, or transformer notation.
 
 ## Code Highlighting Fixture Smoke
 
