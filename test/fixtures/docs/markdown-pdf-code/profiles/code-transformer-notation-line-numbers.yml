@@ -1,0 +1,5 @@
+code:
+  highlight: true
+  theme: github-light
+  lineNumbers: true
+  transformerNotation: true

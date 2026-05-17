@@ -18,6 +18,7 @@ export interface NormalizedMarkdownPdfCode {
   highlight: boolean;
   theme: MarkdownPdfCodeTheme;
   lineNumbers: boolean;
+  transformerNotation: boolean;
 }
 
 export type EffectiveMarkdownPdfCodeOptions = NormalizedMarkdownPdfCode;

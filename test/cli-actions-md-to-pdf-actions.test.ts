@@ -131,9 +131,13 @@ describe("cli action modules: md to-pdf rendering", () => {
       const profilePath = join(fixtureDir, "pdf-profile.yml");
       const htmlOutput = join(fixtureDir, "report.render.html");
       const html =
-        '<html><body><pre><code class="language-js">const x = 1;</code></pre></body></html>';
-      await writeFile(inputPath, "# Report\n\n```js\nconst x = 1;\n```\n", "utf8");
-      await writeFile(profilePath, "code:\n  highlight: true\n", "utf8");
+        '<html><body><pre><code class="language-js">const x = 1; // [!code ++]</code></pre></body></html>';
+      await writeFile(inputPath, "# Report\n\n```js\nconst x = 1; // [!code ++]\n```\n", "utf8");
+      await writeFile(
+        profilePath,
+        ["code:", "  highlight: true", "  transformerNotation: true", ""].join("\n"),
+        "utf8",
+      );
 
       const { runner } = createPdfRunner({ html });
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
@@ -147,6 +151,7 @@ describe("cli action modules: md to-pdf rendering", () => {
       });
 
       expect(await readFile(htmlOutput, "utf8")).toBe(html);
+      expect(await readFile(htmlOutput, "utf8")).toContain("[!code ++]");
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
     });

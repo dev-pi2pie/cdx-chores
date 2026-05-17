@@ -53,15 +53,32 @@ describe("markdown PDF code fixture generator", () => {
         expect(
           await readFile(join(fixtureDir, "profiles/code-line-numbers.yml"), "utf8"),
         ).toContain("lineNumbers: true");
+        expect(
+          await readFile(join(fixtureDir, "profiles/code-transformer-notation.yml"), "utf8"),
+        ).toContain("transformerNotation: true");
+        const combinedTransformerProfile = await readFile(
+          join(fixtureDir, "profiles/code-transformer-notation-line-numbers.yml"),
+          "utf8",
+        );
+        expect(combinedTransformerProfile).toContain("lineNumbers: true");
+        expect(combinedTransformerProfile).toContain("transformerNotation: true");
+        expect(
+          await readFile(join(fixtureDir, "code-transformer-line-numbers-combined.md"), "utf8"),
+        ).toContain("[!code highlight]");
         expect(await listRelativeFiles(fixtureDir)).toEqual([
           "code-basic.md",
           "code-line-numbers.md",
           "code-mixed-content.md",
           "code-plain-and-unsupported.md",
+          "code-transformer-diff.md",
+          "code-transformer-highlight-line.md",
+          "code-transformer-line-numbers-combined.md",
           "code-wrapping.md",
           "profiles/code-highlight-alt-theme.yml",
           "profiles/code-highlight-default.yml",
           "profiles/code-line-numbers.yml",
+          "profiles/code-transformer-notation-line-numbers.yml",
+          "profiles/code-transformer-notation.yml",
         ]);
       });
     });

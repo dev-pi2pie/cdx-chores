@@ -25,9 +25,10 @@ The related research settles the first-slice product contract:
 - use `parse5` for post-Pandoc HTML parsing and serialization
 - keep no-language and unsupported-language blocks plain
 - support profile-only line numbers for successfully highlighted blocks
+- support opt-in transformer notation for highlighted lines and diff rows
 - add deterministic Markdown fixtures and playground smoke outputs
 
-The plan turns that contract into an implementation sequence without pulling in deferred transformer notation such as highlighted-line or diff metadata.
+The plan turns that contract into an implementation sequence while keeping the public surface small: one Shiki path, profile-only line-number and transformer-notation options, and repo-owned PDF CSS hooks.
 
 ## Implementation State
 
@@ -48,6 +49,7 @@ Completed in this slice:
 - a top-level `code` profile section.
 - `--code-highlight` / `--no-code-highlight` CLI flags.
 - runtime dependencies on `shiki` and `parse5`.
+- runtime dependency on `@shikijs/transformers` for Phase 6.5 notation support.
 - a standalone Shiki code-block HTML transform module using `parse5`.
 - Shiki code-block CSS hook classes in transform output.
 - Markdown PDF code-block fixtures and generator scripts.
@@ -55,9 +57,7 @@ Completed in this slice:
 
 Remaining after this slice:
 
-- line-number markup generation.
-- default/template CSS updates for the code hooks.
-- broader transform failure cleanup assertions.
+- manual PDF review of transformer notation in a local environment with both Pandoc and WeasyPrint available.
 - guide documentation and full closeout evidence.
 
 ## Scope
@@ -74,7 +74,7 @@ bun add shiki parse5
 - Do not add `cheerio`.
 - Do not hand-roll an HTML parser.
 - Do not add `rehype-pretty-code`.
-- Do not add `@shikijs/transformers` in the first slice.
+- Keep `@shikijs/transformers` scoped to the explicit Phase 6.5 notation feature.
 
 ### Profile contract
 
@@ -418,28 +418,29 @@ bun test test/cli-actions-md-to-pdf*.test.ts
 
 This phase adds opt-in Shiki transformer notation after the base Shiki path and fixture coverage are stable, but before public documentation closeout.
 
-- [ ] Add `@shikijs/transformers` as a runtime dependency.
-- [ ] Extend the top-level profile `code` section with an explicit transformer-notation option, likely `code.transformerNotation`.
-- [ ] Keep transformer notation disabled by default.
-- [ ] Require effective `code.highlight: true` when transformer notation is enabled, except explicit `--no-code-highlight` should disable both highlighting and transformer notation for that render.
-- [ ] Wire selected Shiki notation transformers into the existing post-Pandoc transform only for successfully highlighted blocks.
-- [ ] Support line highlight notation such as `[!code highlight]`.
-- [ ] Support diff insertion notation such as `[!code ++]`.
-- [ ] Support diff deletion notation such as `[!code --]`.
-- [ ] Confirm transformer marker comments are removed from rendered code.
-- [ ] Map transformer output into repo-owned classes:
+- [x] Add `@shikijs/transformers` as a runtime dependency.
+- [x] Extend the top-level profile `code` section with an explicit transformer-notation option, `code.transformerNotation`.
+- [x] Keep transformer notation disabled by default.
+- [x] Require effective `code.highlight: true` when transformer notation is enabled, except explicit `--no-code-highlight` should disable both highlighting and transformer notation for that render.
+- [x] Wire selected Shiki notation transformers into the existing post-Pandoc transform only for successfully highlighted blocks.
+- [x] Support line highlight notation such as `[!code highlight]`.
+- [x] Support diff insertion notation such as `[!code ++]`.
+- [x] Support diff deletion notation such as `[!code --]`.
+- [x] Support Shiki `:N` range suffixes for highlighted, inserted, and deleted lines.
+- [x] Confirm transformer marker comments are removed from rendered code.
+- [x] Map transformer output into repo-owned classes:
   - `.cdx-code-line--highlighted`
   - `.cdx-code-line--inserted`
   - `.cdx-code-line--deleted`
-- [ ] Keep no-language and unsupported-language blocks plain and uninterpreted.
-- [ ] Verify transformer notation works with profile-controlled line numbers.
-- [ ] Add committed fixtures:
+- [x] Keep no-language and unsupported-language blocks plain and uninterpreted.
+- [x] Verify transformer notation works with profile-controlled line numbers.
+- [x] Add committed fixtures:
   - `code-transformer-highlight-line.md`
   - `code-transformer-diff.md`
   - `code-transformer-line-numbers-combined.md`
-- [ ] Add generator smoke cases for the transformer fixtures.
-- [ ] Add transform-level tests using real Pandoc-emitted fixture HTML when Pandoc is available.
-- [ ] Add profile and CLI precedence tests for transformer notation, including explicit `--no-code-highlight`.
+- [x] Add generator smoke cases for the transformer fixtures.
+- [x] Add transform-level tests using real Pandoc-emitted fixture HTML when Pandoc is available.
+- [x] Add profile and CLI precedence tests for transformer notation, including explicit `--no-code-highlight`.
 - [ ] Add manual smoke review coverage for highlighted lines, inserted lines, deleted lines, and combined line numbers.
 
 Verification:
@@ -491,11 +492,12 @@ Transformer output should continue to map into repo-owned classes such as:
 
 - `md to-pdf` renders existing documents unchanged when highlighting is not enabled.
 - `--code-highlight` produces Shiki-highlighted HTML before WeasyPrint.
-- `--no-code-highlight` disables Shiki and line numbers even when the profile enables them.
-- profile `code.highlight`, `code.theme`, and `code.lineNumbers` validate deterministically.
+- `--no-code-highlight` disables Shiki, line numbers, and transformer notation even when the profile enables them.
+- profile `code.highlight`, `code.theme`, `code.lineNumbers`, and `code.transformerNotation` validate deterministically.
 - the fixed theme allowlist is enforced.
 - `fonts.code` controls highlighted and numbered block typography.
 - no-language and unsupported-language blocks remain plain.
+- transformer notation supports highlighted, inserted, and deleted line classes when explicitly enabled.
 - transform failures do not leave partial target PDFs or premature `--html-output` files.
 - required Markdown/profile fixtures exist and are generated by the fixture script.
 - smoke output generation is deterministic or skips cleanly when local render dependencies are missing.
@@ -516,3 +518,4 @@ Transformer output should continue to map into repo-owned classes such as:
 
 - [Markdown PDF Shiki code highlighting phases 1-3](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
 - [Markdown PDF Shiki code highlighting phases 4-6](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
+- [Markdown PDF Shiki code highlighting phase 6.5](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)

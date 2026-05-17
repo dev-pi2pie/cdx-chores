@@ -254,6 +254,9 @@ function normalizeCode(value: unknown): NormalizedMarkdownPdfCode {
     lineNumbers:
       booleanValue(input.lineNumbers, "profile.code.lineNumbers") ??
       DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.lineNumbers,
+    transformerNotation:
+      booleanValue(input.transformerNotation, "profile.code.transformerNotation") ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.transformerNotation,
   };
 }
 
@@ -266,6 +269,7 @@ export function resolveMarkdownPdfCodeOptions(input: {
       ...input.profile,
       highlight: false,
       lineNumbers: false,
+      transformerNotation: false,
     };
   }
 
@@ -279,11 +283,21 @@ export function resolveMarkdownPdfCodeOptions(input: {
       },
     );
   }
+  if (input.profile.transformerNotation && !highlight) {
+    throw new CliError(
+      "profile.code.transformerNotation requires code.highlight: true or --code-highlight.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
 
   return {
     ...input.profile,
     highlight,
     lineNumbers: highlight ? input.profile.lineNumbers : false,
+    transformerNotation: highlight ? input.profile.transformerNotation : false,
   };
 }
 

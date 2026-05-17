@@ -1,5 +1,6 @@
 import { html, parse, parseFragment, serialize, type DefaultTreeAdapterTypes } from "parse5";
 import { createHighlighter } from "shiki";
+import { transformerNotationDiff, transformerNotationHighlight } from "@shikijs/transformers";
 
 import { CliError } from "../errors";
 import { MARKDOWN_PDF_CODE_CLASSES } from "./code-style";
@@ -39,7 +40,7 @@ interface CodeBlock {
 
 interface MarkdownPdfCodeRenderer {
   supportedLanguages: Set<string>;
-  render(code: string, language: string, theme: EffectiveMarkdownPdfCodeOptions["theme"]): string;
+  render(code: string, language: string, options: EffectiveMarkdownPdfCodeOptions): string;
 }
 
 function isElement(node: Parse5Node): node is Parse5Element {
@@ -255,6 +256,26 @@ function applyLineNumbers(highlightedPre: Parse5Element): void {
   code.childNodes = numberedLines;
 }
 
+function createCodeTransformers(options: EffectiveMarkdownPdfCodeOptions) {
+  if (!options.transformerNotation) {
+    return [];
+  }
+
+  return [
+    transformerNotationHighlight({
+      classActiveLine: MARKDOWN_PDF_CODE_CLASSES.lineHighlighted,
+      classActivePre: "",
+      classActiveCode: "",
+    }),
+    transformerNotationDiff({
+      classLineAdd: MARKDOWN_PDF_CODE_CLASSES.lineInserted,
+      classLineRemove: MARKDOWN_PDF_CODE_CLASSES.lineDeleted,
+      classActivePre: "",
+      classActiveCode: "",
+    }),
+  ];
+}
+
 function applyHighlightedBlock(
   block: CodeBlock,
   highlightedPre: Parse5Element,
@@ -294,7 +315,7 @@ function transformCodeBlocks(
     }
 
     const highlightedPre = parseSinglePreFragment(
-      renderer.render(collectText(block.code), language, options.theme),
+      renderer.render(collectText(block.code), language, options),
     );
     applyHighlightedBlock(block, highlightedPre, options);
   }
@@ -327,10 +348,11 @@ export async function highlightMarkdownPdfCodeBlocks(
   });
   const renderer: MarkdownPdfCodeRenderer = {
     supportedLanguages: new Set(highlighter.getLoadedLanguages()),
-    render: (code, language, theme) =>
+    render: (code, language, codeOptions) =>
       highlighter.codeToHtml(code, {
         lang: language,
-        theme,
+        theme: codeOptions.theme,
+        transformers: createCodeTransformers(codeOptions),
       }),
   };
 

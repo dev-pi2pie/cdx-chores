@@ -164,6 +164,8 @@ First-slice shape:
 code:
   highlight: true
   theme: github-light
+  lineNumbers: false
+  transformerNotation: false
 ```
 
 `github-light` is the first-slice default because it is familiar for Markdown and code documents and is a light theme suitable for PDF review and printing.
@@ -261,8 +263,8 @@ Recommended planning stages:
 1. Highlight fenced code blocks with language classes from Pandoc HTML.
 2. Preserve profile-controlled code fonts and light-theme block styling.
 3. Add optional profile-controlled line numbers after the basic PDF layout is stable.
-4. Add highlighted-line notation, such as fenced code metadata, after parser behavior is proven.
-5. Add diff block styling and transformer support.
+4. Add opt-in transformer notation for highlighted lines and diff rows after parser behavior is proven.
+5. Defer richer transformer features such as word highlights, focus notation, and custom theme files.
 
 Possible future profile shape:
 
@@ -271,6 +273,7 @@ code:
   highlight: true
   theme: github-light
   lineNumbers: false
+  transformerNotation: false
   wrap: true
 ```
 
@@ -362,31 +365,36 @@ The implementation plan should also define the language extraction rules explici
 
 The first slice should not add `rehype-pretty-code` because the current pipeline is not a Unified/remark/rehype pipeline. That package may become relevant only if the project intentionally introduces a rehype transform layer later.
 
-`@shikijs/transformers` should be treated as a follow-up dependency unless the first slice intentionally includes line highlighting or diff notation.
+`@shikijs/transformers` should be added when the implementation intentionally enables line highlighting or diff notation. That keeps the base Shiki dependency set small until the notation feature has a profile switch and fixtures.
 
-### 8. Review Shiki transformer styles as follow-up examples
+### 8. Add opt-in Shiki transformer notation for line and diff styles
 
-The first Shiki slice should reserve CSS hooks for line highlight and diff states, but it should not enable Shiki transformer notation yet. Shiki's common transformer package includes diff notation such as `[!code ++]` / `[!code --]` and highlight notation such as `[!code highlight]`; those transformers apply classes and require project CSS for visual styling.[^shiki-transformers]
+The first transformer slice should stay opt-in through `code.transformerNotation`. Shiki's common transformer package includes diff notation such as `[!code ++]` / `[!code --]` and highlight notation such as `[!code highlight]`; those transformers apply classes and require project CSS for visual styling.[^shiki-transformers]
 
-The follow-up transformer review should cover at least:
+The initial transformer notation support should cover:
 
 - diff added and removed lines
 - single highlighted lines
-- multi-line highlight ranges
-- word highlights
-- focused lines
+- Shiki `:N` range suffixes for highlighted, added, and removed lines
 - combinations with profile-controlled line numbers
-- behavior in long wrapped lines and page breaks
 
-When that follow-up starts, add Markdown examples and smoke outputs instead of testing only hand-written HTML snippets. Candidate follow-up fixture names:
+The first transformer notation support should use committed Markdown examples and smoke outputs instead of testing only hand-written HTML snippets. Required transformer fixture names:
 
 - `code-transformer-diff.md`
 - `code-transformer-highlight-line.md`
-- `code-transformer-highlight-word.md`
-- `code-transformer-focus.md`
 - `code-transformer-line-numbers-combined.md`
 
-Those follow-up examples should reuse the same code-block hook family and should map transformer output into repo-owned classes such as `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted`.
+Those examples should reuse the same code-block hook family and should map transformer output into repo-owned classes such as `.cdx-code-line--highlighted`, `.cdx-code-line--inserted`, and `.cdx-code-line--deleted`.
+
+Transformer notation should follow the same effective-highlighting gate as line numbers:
+
+- `code.transformerNotation: true` requires effective highlighting to be enabled
+- if `code.transformerNotation: true` is set while effective highlighting is disabled, profile validation should fail with a clear message, except when `--no-code-highlight` explicitly disables highlighting for that render
+- when `--no-code-highlight` is passed, transformer notation is explicitly disabled for that render because the user requested plain code output
+- no-language blocks and unsupported-language blocks stay plain and uninterpreted
+- transformer marker comments should be removed from rendered highlighted code
+
+Word highlights, focus notation, custom Shiki themes, and per-block line-number overrides remain deferred until the PDF fixture review shows real demand.
 
 ### 9. Add deterministic Markdown fixtures and playground examples
 
@@ -516,21 +524,23 @@ Recommended planning stance:
 - use `parse5` for the post-Pandoc HTML parse/serialize transform
 - use the repo-owned PDF stylesheet for all print layout details
 - expose only a small Shiki light-theme allowlist at first
-- defer arbitrary theme selection, custom theme files, line highlights, diff notation, and per-block line-number overrides until the base Shiki path is proven
+- support line numbers and basic transformer notation through profile-only opt-ins
+- defer arbitrary theme selection, custom theme files, word highlights, focus notation, and per-block line-number overrides until the base Shiki path is proven
 
 ## Open Questions
 
-No open questions remain for the first Shiki highlighting slice. Line highlights, diff notation, custom themes, and per-block line-number overrides are deferred follow-up topics.
+No open questions remain for the first Shiki highlighting slice. Word highlights, focus notation, custom themes, and per-block line-number overrides are deferred follow-up topics.
 
 ## Completion Evidence
 
 This research can move to `completed` after the follow-up implementation plan or job records link evidence for:
 
-- Shiki and `parse5` dependency installation
+- Shiki, `parse5`, and `@shikijs/transformers` dependency installation
 - committed fixture generation under `test/fixtures/docs/markdown-pdf-code/`
 - transform-level tests for every required first-slice fixture
 - validation tests for the fixed theme allowlist, `github-light` defaulting, and invalid theme failures
-- profile and CLI precedence tests for `--code-highlight`, `--no-code-highlight`, `code.highlight`, and `code.lineNumbers`
+- profile and CLI precedence tests for `--code-highlight`, `--no-code-highlight`, `code.highlight`, `code.lineNumbers`, and `code.transformerNotation`
+- transform-level tests for highlighted-line and diff transformer notation fixtures
 - smoke generator `seed`, `clean`, `reset`, and `smoke` behavior
 - `smoke` skip behavior when Pandoc or WeasyPrint is missing
 - manual PDF review for the required smoke outputs under `examples/playground/markdown-pdf-code/`
@@ -550,6 +560,7 @@ This research can move to `completed` after the follow-up implementation plan or
 - [Markdown to PDF profile phases 6-7](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phases-6-7.md)
 - [Markdown PDF Shiki code highlighting phases 1-3](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
 - [Markdown PDF Shiki code highlighting phases 4-6](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
+- [Markdown PDF Shiki code highlighting phase 6.5](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)
 
 ## References
 

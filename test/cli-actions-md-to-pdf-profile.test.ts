@@ -107,6 +107,7 @@ describe("markdown PDF profile normalization", () => {
       highlight: false,
       theme: "github-light",
       lineNumbers: false,
+      transformerNotation: false,
     });
 
     const result = normalizeMarkdownPdfProfile({
@@ -115,6 +116,7 @@ describe("markdown PDF profile normalization", () => {
           highlight: true,
           theme: "light-plus",
           lineNumbers: true,
+          transformerNotation: true,
         },
       },
     });
@@ -123,6 +125,7 @@ describe("markdown PDF profile normalization", () => {
       highlight: true,
       theme: "light-plus",
       lineNumbers: true,
+      transformerNotation: true,
     });
   });
 
@@ -132,6 +135,7 @@ describe("markdown PDF profile normalization", () => {
         code: {
           highlight: false,
           lineNumbers: true,
+          transformerNotation: true,
         },
       },
     }).profile;
@@ -140,14 +144,42 @@ describe("markdown PDF profile normalization", () => {
       highlight: true,
       theme: "github-light",
       lineNumbers: true,
+      transformerNotation: true,
     });
     expect(resolveMarkdownPdfCodeOptions({ profile: profile.code, cliHighlight: false })).toEqual({
       highlight: false,
       theme: "github-light",
       lineNumbers: false,
+      transformerNotation: false,
     });
     expect(() => resolveMarkdownPdfCodeOptions({ profile: profile.code })).toThrow(
       "profile.code.lineNumbers requires code.highlight",
+    );
+  });
+
+  test("rejects profile-only transformer notation without effective highlighting", () => {
+    const profile = normalizeMarkdownPdfProfile({
+      profile: {
+        code: {
+          transformerNotation: true,
+        },
+      },
+    }).profile;
+
+    expect(resolveMarkdownPdfCodeOptions({ profile: profile.code, cliHighlight: true })).toEqual({
+      highlight: true,
+      theme: "github-light",
+      lineNumbers: false,
+      transformerNotation: true,
+    });
+    expect(resolveMarkdownPdfCodeOptions({ profile: profile.code, cliHighlight: false })).toEqual({
+      highlight: false,
+      theme: "github-light",
+      lineNumbers: false,
+      transformerNotation: false,
+    });
+    expect(() => resolveMarkdownPdfCodeOptions({ profile: profile.code })).toThrow(
+      "profile.code.transformerNotation requires code.highlight",
     );
   });
 

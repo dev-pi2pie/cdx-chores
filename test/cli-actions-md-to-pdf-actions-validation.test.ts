@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
@@ -231,6 +231,71 @@ describe("cli action modules: md to-pdf validation", () => {
       });
 
       expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
+      expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("rejects profile-only transformer notation without effective highlighting", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, "code:\n  transformerNotation: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            profile: toRepoRelativePath(profilePath),
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.code.transformerNotation requires code.highlight",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expectNoOutput();
+    });
+  });
+
+  test("disables profile transformer notation when no-code-highlight is explicit", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const htmlOutput = join(fixtureDir, "report.render.html");
+      const html =
+        '<html><body><pre><code class="language-js">const added = true; // [!code ++]</code></pre></body></html>';
+      await writeFile(
+        inputPath,
+        "# Report\n\n```js\nconst added = true; // [!code ++]\n```\n",
+        "utf8",
+      );
+      await writeFile(
+        profilePath,
+        ["code:", "  highlight: true", "  transformerNotation: true", ""].join("\n"),
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        htmlOutput: toRepoRelativePath(htmlOutput),
+        codeHighlight: false,
+        runner,
+      });
+
+      expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
+      expect(await readFile(htmlOutput, "utf8")).toBe(html);
+      expect(await readFile(htmlOutput, "utf8")).toContain("[!code ++]");
+      expect(await readFile(htmlOutput, "utf8")).not.toContain("cdx-code-line--inserted");
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
     });
