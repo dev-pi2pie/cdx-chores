@@ -1,3 +1,11 @@
+---
+title: "Data DuckDB Usage"
+created-date: 2026-03-12
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## `data duckdb`
 
 `data duckdb` is the explicit DuckDB lifecycle lane for inspecting and installing the DuckDB extensions used by `data query` and `data extract`.

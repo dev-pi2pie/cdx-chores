@@ -1,3 +1,11 @@
+---
+title: "Data Source Shape Usage"
+created-date: 2026-03-20
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## Data Source Shape
 
 Use this guide for the reviewed source-shape artifact contract and the current shape-first workflow shared across `data extract` and `data query`.

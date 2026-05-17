@@ -2,7 +2,7 @@
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
 modified-date: 2026-05-17
-status: draft
+status: completed
 agent: codex
 ---
 

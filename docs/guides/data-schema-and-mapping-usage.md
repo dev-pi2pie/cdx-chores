@@ -1,3 +1,11 @@
+---
+title: "Data Schema And Mapping Usage"
+created-date: 2026-03-18
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## Data Schema And Mapping
 
 Use this guide for the shared header-mapping artifact contract behind reviewed semantic header suggestions used by `data query` and `data extract`.

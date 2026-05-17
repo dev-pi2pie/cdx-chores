@@ -1,3 +1,11 @@
+---
+title: "Interactive Data Query Usage"
+created-date: 2026-03-11
+modified-date: 2026-04-24
+status: completed
+agent: codex
+---
+
 ## Interactive `data query`
 
 Use interactive mode when you want the CLI to inspect the input first, then help you author or review SQL before execution.

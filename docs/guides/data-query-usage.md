@@ -1,3 +1,11 @@
+---
+title: "Data Query Usage"
+created-date: 2026-03-10
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## `data query`
 
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file.

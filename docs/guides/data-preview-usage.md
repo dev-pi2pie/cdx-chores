@@ -1,3 +1,11 @@
+---
+title: "Data Preview Usage"
+created-date: 2026-03-09
+modified-date: 2026-05-17
+status: completed
+agent: codex
+---
+
 ## `data preview`
 
 `data preview` is the first read-only tabular inspection command in `cdx-chores`.
