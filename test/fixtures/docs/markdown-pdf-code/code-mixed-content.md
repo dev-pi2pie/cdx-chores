@@ -12,8 +12,8 @@ code:
   theme: github-light
 ```
 
-| Name | Value |
-| --- | --- |
+| Name      | Value   |
+| --------- | ------- |
 | highlight | enabled |
 
 ```bash

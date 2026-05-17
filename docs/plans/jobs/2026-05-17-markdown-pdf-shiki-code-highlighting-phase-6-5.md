@@ -11,7 +11,7 @@ Implement opt-in Shiki transformer notation for Markdown PDF code blocks after t
 
 ## Scope
 
-This job covers the automated Phase 6.5 implementation and regression coverage for highlighted-line and diff notation. Manual PDF review remains open in the parent plan because the smoke command skipped cleanly when Pandoc or WeasyPrint was unavailable.
+This job covers the automated Phase 6.5 implementation and regression coverage for highlighted-line and diff notation. Manual PDF review was later completed during Phase 7 using existing generated smoke outputs under `examples/playground/markdown-pdf-code/`.
 
 ## Changes
 
@@ -30,7 +30,7 @@ This job covers the automated Phase 6.5 implementation and regression coverage f
 - `node scripts/generate-markdown-pdf-code-fixtures.mjs reset` refreshed the committed fixtures.
 - `node scripts/generate-markdown-pdf-code-fixtures.mjs smoke` exited successfully and skipped because Pandoc or WeasyPrint was unavailable.
 
-Manual review of generated PDFs still needs a local environment with both Pandoc and WeasyPrint available.
+Manual review of the generated transformer PDFs was later recorded in the Phase 7 docs job.
 
 ## Verification
 

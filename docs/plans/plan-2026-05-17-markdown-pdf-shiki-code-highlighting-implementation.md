@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Shiki code highlighting implementation"
 created-date: 2026-05-17
-status: draft
+modified-date: 2026-05-17
+status: completed
 agent: codex
 ---
 
@@ -30,6 +31,8 @@ The related research settles the first-slice product contract:
 
 The plan turns that contract into an implementation sequence while keeping the public surface small: one Shiki path, profile-only line-number and transformer-notation options, and repo-owned PDF CSS hooks.
 
+Status note: automated implementation, tests, public documentation, and manual PDF smoke review are complete. The smoke command currently skips in this shell because `weasyprint` is not on `PATH`, but existing generated HTML/PDF smoke artifacts under `examples/playground/markdown-pdf-code/` were inspected with Quick Look previews.
+
 ## Implementation State
 
 Before this plan started, the repository already had:
@@ -57,8 +60,7 @@ Completed in this slice:
 
 Remaining after this slice:
 
-- manual PDF review of transformer notation in a local environment with both Pandoc and WeasyPrint available.
-- guide documentation and full closeout evidence.
+- none for the planned Shiki highlighting slice.
 
 ## Scope
 
@@ -441,7 +443,7 @@ This phase adds opt-in Shiki transformer notation after the base Shiki path and 
 - [x] Add generator smoke cases for the transformer fixtures.
 - [x] Add transform-level tests using real Pandoc-emitted fixture HTML when Pandoc is available.
 - [x] Add profile and CLI precedence tests for transformer notation, including explicit `--no-code-highlight`.
-- [ ] Add manual smoke review coverage for highlighted lines, inserted lines, deleted lines, and combined line numbers.
+- [x] Add manual smoke review coverage for highlighted lines, inserted lines, deleted lines, and combined line numbers. Existing generated PDFs under `examples/playground/markdown-pdf-code/pdf/` were inspected through Quick Look previews.
 
 Verification:
 
@@ -454,15 +456,15 @@ bun tsc --noEmit
 
 ### Phase 7: Documentation And Closeout
 
-- [ ] Update `docs/guides/markdown-pdf-usage.md`.
-- [ ] Document `--code-highlight`, `--no-code-highlight`, and profile `code`.
-- [ ] Document the fixed light-theme allowlist.
-- [ ] Document `code.transformerNotation` if Phase 6.5 lands before closeout.
-- [ ] Document old template migration through `md pdf-template init --overwrite` or manual CSS copy.
-- [ ] Document fixture generator usage if relevant to contributor workflows.
+- [x] Update `docs/guides/markdown-pdf-usage.md`.
+- [x] Document `--code-highlight`, `--no-code-highlight`, and profile `code`.
+- [x] Document the fixed light-theme allowlist.
+- [x] Document `code.transformerNotation` if Phase 6.5 lands before closeout.
+- [x] Document old template migration through `md pdf-template init --overwrite` or manual CSS copy.
+- [x] Document fixture generator usage if relevant to contributor workflows.
 - [x] Add a job record under `docs/plans/jobs/`.
 - [x] Link the job record to this plan and the research doc.
-- [ ] Update the research doc status only after implementation evidence is linked.
+- [x] Review the research doc status after implementation evidence is linked. Status is `completed` after manual PDF smoke review evidence was recorded.
 
 Verification:
 
@@ -519,3 +521,4 @@ Transformer output should continue to map into repo-owned classes such as:
 - [Markdown PDF Shiki code highlighting phases 1-3](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
 - [Markdown PDF Shiki code highlighting phases 4-6](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
 - [Markdown PDF Shiki code highlighting phase 6.5](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)
+- [Markdown PDF Shiki code highlighting phase 7 docs](jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-7-docs.md)

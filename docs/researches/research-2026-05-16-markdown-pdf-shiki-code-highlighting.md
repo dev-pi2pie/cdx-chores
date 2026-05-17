@@ -2,7 +2,7 @@
 title: "Markdown PDF Shiki Code Highlighting"
 created-date: 2026-05-16
 modified-date: 2026-05-17
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -35,7 +35,9 @@ That baseline is useful, but it does not answer the presentation needs for techn
 
 This research records the preferred product direction before a separate implementation plan is drafted. The first-slice contracts below settle the highlighter choice, profile shape, theme allowlist, parser dependency, fixture strategy, and fallback behavior. Implementation details such as exact helper function names and test file organization belong in the follow-up plan.
 
-Status note: this research is `in-progress` because the product contract is settled for planning, but completion still requires linked implementation-spike evidence and PDF fixture review evidence.
+Status note: this research is `completed` because the implementation plan, job records, public guide, automated tests, and manual PDF smoke review evidence are linked.
+
+Phase 7 note: the public usage guide and implementation job records now document the Shiki code-highlighting surface. Manual PDF review used existing generated smoke outputs under `examples/playground/markdown-pdf-code/`, with Quick Look previews for highlighted-line, diff, and combined line-number transformer cases.
 
 ## Scope
 
@@ -533,7 +535,7 @@ No open questions remain for the first Shiki highlighting slice. Word highlights
 
 ## Completion Evidence
 
-This research can move to `completed` after the follow-up implementation plan or job records link evidence for:
+This research is completed with linked evidence for:
 
 - Shiki, `parse5`, and `@shikijs/transformers` dependency installation
 - committed fixture generation under `test/fixtures/docs/markdown-pdf-code/`
@@ -561,6 +563,11 @@ This research can move to `completed` after the follow-up implementation plan or
 - [Markdown PDF Shiki code highlighting phases 1-3](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-1-3.md)
 - [Markdown PDF Shiki code highlighting phases 4-6](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phases-4-6.md)
 - [Markdown PDF Shiki code highlighting phase 6.5](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-6-5.md)
+- [Markdown PDF Shiki code highlighting phase 7 docs](../plans/jobs/2026-05-17-markdown-pdf-shiki-code-highlighting-phase-7-docs.md)
+
+## Related Guides
+
+- [Markdown PDF Usage](../guides/markdown-pdf-usage.md)
 
 ## References
 

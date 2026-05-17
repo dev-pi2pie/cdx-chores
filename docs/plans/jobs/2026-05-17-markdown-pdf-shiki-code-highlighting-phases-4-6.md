@@ -15,7 +15,7 @@ Implement the next Markdown PDF Shiki code-highlighting slice:
 
 ## Scope
 
-This job finishes the automated implementation and test coverage for phases 4-6. Manual PDF review remains blocked in this environment because the smoke command skipped cleanly when Pandoc or WeasyPrint was unavailable.
+This job finishes the automated implementation and test coverage for phases 4-6. Manual PDF review was later completed during Phase 7 using existing generated smoke outputs under `examples/playground/markdown-pdf-code/`.
 
 ## Changes
 
@@ -32,7 +32,7 @@ This job finishes the automated implementation and test coverage for phases 4-6.
 - `node scripts/generate-markdown-pdf-code-fixtures.mjs reset` refreshed the committed fixtures.
 - `node scripts/generate-markdown-pdf-code-fixtures.mjs smoke` exited successfully and skipped because Pandoc or WeasyPrint was unavailable.
 
-Manual review of generated PDFs still needs a local environment with both Pandoc and WeasyPrint available.
+Manual review of generated code-highlight PDFs was later recorded in the Phase 7 docs job.
 
 ## Verification
 
