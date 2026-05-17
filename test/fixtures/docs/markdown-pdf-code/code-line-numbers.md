@@ -2,7 +2,7 @@
 title: Code Line Numbers
 ---
 
-# Code Line Numbers
+## Numbered Python Block
 
 ```python
 def greet(name):

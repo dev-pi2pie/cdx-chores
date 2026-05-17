@@ -2,7 +2,7 @@
 title: Mixed Code Content
 ---
 
-# Mixed Code Content
+## Mixed Content Around Code
 
 Intro paragraph before code.
 
@@ -12,8 +12,8 @@ code:
   theme: github-light
 ```
 
-| Name      | Value   |
-| --------- | ------- |
+| Name | Value |
+| --- | --- |
 | highlight | enabled |
 
 ```bash

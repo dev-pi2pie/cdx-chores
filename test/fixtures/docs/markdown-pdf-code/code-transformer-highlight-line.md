@@ -2,7 +2,7 @@
 title: Code Transformer Highlight Line
 ---
 
-# Code Transformer Highlight Line
+## Highlighted Line Example
 
 ```ts
 const normal = true;

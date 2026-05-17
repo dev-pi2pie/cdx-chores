@@ -2,7 +2,7 @@
 title: Code Transformer Diff
 ---
 
-# Code Transformer Diff
+## Inserted And Deleted Lines
 
 ```ts
 const before = false; // [!code --]

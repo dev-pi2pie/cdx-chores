@@ -2,7 +2,7 @@
 title: Code Transformer Line Numbers Combined
 ---
 
-# Code Transformer Line Numbers Combined
+## Transformer Lines With Numbers
 
 ```ts
 const highlighted = true; // [!code highlight]
