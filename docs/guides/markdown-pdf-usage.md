@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-05-17
+modified-date: 2026-06-04
 status: completed
 agent: codex
 ---
@@ -31,7 +31,7 @@ cdx-chores doctor --json
 
 ## Current Release Boundary
 
-In `v0.1.3`, Markdown PDF profile and template workflows are direct CLI flows. Interactive Markdown PDF and Codex-assisted PDF helper flows are deferred to a later release.
+In `v0.1.4`, Markdown PDF profile and template workflows are direct CLI flows. Interactive Markdown PDF and Codex-assisted PDF helper flows are deferred to a later release.
 
 ## Basic Render
 
