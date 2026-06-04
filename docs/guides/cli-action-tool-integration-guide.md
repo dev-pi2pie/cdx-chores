@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-05-17
+modified-date: 2026-06-04
 status: completed
 agent: codex
 ---
@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration Guidance (Current + Planned)
 
-Codex SDK baseline for `v0.1.3`: `0.130.0`
+Codex SDK baseline for `v0.1.4`: `0.137.0`
 
 `@openai/codex-sdk` is now used in runtime code for rename-time semantic image title suggestions via `src/adapters/codex/image-rename-titles.ts`.
 
