@@ -88,7 +88,9 @@ function expectLineTextWithoutState(html: string, text: string, className: strin
 }
 
 function expectNumberedLineState(html: string, lineNumber: number, className: string): void {
-  const line = lineElements(html).find((node) => attrValue(node, "data-line") === String(lineNumber));
+  const line = lineElements(html).find(
+    (node) => attrValue(node, "data-line") === String(lineNumber),
+  );
   expect(line).toBeDefined();
   expect(classList(line as Parse5Element)).toContain(className);
 }
@@ -575,11 +577,7 @@ describe("markdown PDF Shiki code highlighting", () => {
         expect(result).toContain(MARKDOWN_PDF_CODE_CLASSES.lineContent);
       }
       for (const expectedLineState of fixtureCase.expectedNumberedLineStates ?? []) {
-        expectNumberedLineState(
-          result,
-          expectedLineState.lineNumber,
-          expectedLineState.className,
-        );
+        expectNumberedLineState(result, expectedLineState.lineNumber, expectedLineState.className);
       }
     }
   });
