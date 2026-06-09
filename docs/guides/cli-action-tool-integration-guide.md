@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration Guidance (Current + Planned)
 
-Codex SDK baseline for `v0.1.4`: `0.137.0`
+Codex SDK baseline for `v0.1.5-canary.1`: `0.138.0`
 
 `@openai/codex-sdk` is now used in runtime code for rename-time semantic image title suggestions via `src/adapters/codex/image-rename-titles.ts`.
 
@@ -77,9 +77,9 @@ When adding or expanding Codex-backed features:
   - fallback behavior
   - capability/eligibility checks (when modality/file-type scope matters)
 
-Recommended shape for image rename assistance:
+Recommended shape for rename semantic assistance:
 
-- rename action module (`src/cli/actions/rename/codex.ts`) coordinates semantic title suggestions through Codex adapters
+- rename Codex modules (`src/cli/actions/rename/codex/**`) coordinate semantic title suggestions through Codex adapters
 - Codex adapter returns normalized structured suggestions (not raw SDK responses)
 - action applies deterministic slug/length/collision handling before file operations
 
@@ -110,9 +110,9 @@ Design rule for rename:
 
 Current scope note:
 
-- Codex semantic rename in this project is currently limited to supported static image files
+- Codex semantic rename in this project currently supports eligible static images through `--codex-images` and eligible document/PDF/DOCX/text-like inputs through `--codex-docs`
 - audio/video semantic analysis is deferred for Codex-assisted rename based on current Codex model support docs
-- docs-like semantic analysis is a future analyzer path and should not be implied by `--codex-images` today
+- document semantic analysis remains separate from image semantic analysis and should not be implied by `--codex-images` today
 
 See also:
 
