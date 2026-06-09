@@ -105,7 +105,7 @@ async function suggestSingleBatch(options: {
     return { suggestions: [] };
   }
 
-  const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run(
     [
       {

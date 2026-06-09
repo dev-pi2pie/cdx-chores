@@ -2,8 +2,6 @@ import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { Codex } from "@openai/codex-sdk";
-
 import { sleep } from "../../utils/sleep";
 
 export interface CodexEnvironmentInspection {
@@ -65,10 +63,11 @@ export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export function startCodexReadOnlyThread(
+export async function startCodexReadOnlyThread(
   workingDirectory: string,
   options: { codexPathOverride?: string } = {},
 ) {
+  const { Codex } = await import("@openai/codex-sdk");
   const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
   const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
   return codex.startThread({
