@@ -179,7 +179,7 @@ async function runSourceShapePrompt(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_SOURCE_SHAPE_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DATA_SOURCE_SHAPE_TIMEOUT_MS),

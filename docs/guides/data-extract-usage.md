@@ -1,3 +1,11 @@
+---
+title: "Data Extract Usage"
+created-date: 2026-03-18
+modified-date: 2026-04-24
+status: completed
+agent: codex
+---
+
 ## `data extract`
 
 `data extract` materializes one shaped logical table from one local input file into a clean `.csv`, `.tsv`, or `.json` artifact.

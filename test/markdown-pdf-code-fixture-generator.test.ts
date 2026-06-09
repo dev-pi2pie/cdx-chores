@@ -65,12 +65,23 @@ describe("markdown PDF code fixture generator", () => {
         expect(
           await readFile(join(fixtureDir, "code-transformer-line-numbers-combined.md"), "utf8"),
         ).toContain("[!code highlight]");
+        expect(await readFile(join(fixtureDir, "code-transformer-focus.md"), "utf8")).toContain(
+          "[!code focus:2]",
+        );
+        const errorWarningFixture = await readFile(
+          join(fixtureDir, "code-transformer-error-warning.md"),
+          "utf8",
+        );
+        expect(errorWarningFixture).toContain("[!code error:2]");
+        expect(errorWarningFixture).toContain("[!code warning:2]");
         expect(await listRelativeFiles(fixtureDir)).toEqual([
           "code-basic.md",
           "code-line-numbers.md",
           "code-mixed-content.md",
           "code-plain-and-unsupported.md",
           "code-transformer-diff.md",
+          "code-transformer-error-warning.md",
+          "code-transformer-focus.md",
           "code-transformer-highlight-line.md",
           "code-transformer-line-numbers-combined.md",
           "code-wrapping.md",

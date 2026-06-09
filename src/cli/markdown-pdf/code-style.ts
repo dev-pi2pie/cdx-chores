@@ -11,6 +11,9 @@ export const MARKDOWN_PDF_CODE_CLASSES = {
   lineHighlighted: "cdx-code-line--highlighted",
   lineInserted: "cdx-code-line--inserted",
   lineDeleted: "cdx-code-line--deleted",
+  lineFocused: "cdx-code-line--focused",
+  lineError: "cdx-code-line--error",
+  lineWarning: "cdx-code-line--warning",
 } as const;
 
 export const MARKDOWN_PDF_CODE_FONT_SELECTORS = [
@@ -78,6 +81,18 @@ pre.${classes.numberedBlock} code.${classes.content} {
 
 .${classes.lineDeleted} {
   background: #ffebe9;
+}
+
+.${classes.lineFocused} {
+  background: #ddf4ff;
+}
+
+.${classes.lineError} {
+  background: #ffd7d5;
+}
+
+.${classes.lineWarning} {
+  background: #fff1b8;
 }
 `;
 }
