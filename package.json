@@ -49,7 +49,7 @@
   "dependencies": {
     "@duckdb/node-api": "^1.5.3-r.3",
     "@inquirer/prompts": "8.5.2",
-    "@openai/codex-sdk": "^0.138.0",
+    "@openai/codex-sdk": "^0.139.0",
     "@shikijs/transformers": "^4.2.0",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.8.0",
