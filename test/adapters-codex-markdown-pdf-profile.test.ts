@@ -241,7 +241,10 @@ describe("Markdown PDF Codex profile adapter", () => {
           throw new Error("invalid_json_schema response_format");
         },
       }),
-    ).rejects.toThrow(MarkdownPdfCodexProfileError);
+    ).rejects.toMatchObject({
+      kind: "structured-output-schema",
+      name: "MarkdownPdfCodexProfileError",
+    });
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
@@ -308,6 +311,20 @@ describe("Markdown PDF Codex profile adapter", () => {
           }),
       }),
     ).rejects.toThrow("selected_candidate_id must be a non-empty string");
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        runner: async () =>
+          JSON.stringify({
+            decision_mode: "no-usable-profile",
+            selected_candidate_id: "none",
+            accepted_fields: { toc: { enabled: true } },
+            reasoning: "No profile should be written.",
+            warnings: [],
+            unmatched_directions: [],
+          }),
+      }),
+    ).rejects.toThrow("accepted_fields must be empty for no-usable-profile");
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
