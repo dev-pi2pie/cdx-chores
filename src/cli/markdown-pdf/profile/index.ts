@@ -2,6 +2,7 @@ export { DEFAULT_MARKDOWN_PDF_PROFILE, DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE }
 export { MARKDOWN_PDF_CODE_THEMES } from "./types";
 export { createMarkdownPdfCoverCss, createMarkdownPdfCoverHtml } from "./cover";
 export { createMarkdownPdfFontCss } from "./fonts";
+export { normalizeMarkdownPdfProfileIdentity } from "./identity";
 export { createMarkdownPdfProfileConfig } from "./materialize";
 export {
   normalizeMarkdownPdfProfile,

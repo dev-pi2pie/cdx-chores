@@ -162,8 +162,61 @@ describe("cli action modules: md to-pdf profile rendering", () => {
 
       const combinedCss = renderedStyles.join("\n");
       expect(combinedCss).toContain("size: A4 landscape");
+      expect(combinedCss).toContain("margin: 12mm 12mm 12mm 12mm;");
       expect(combinedCss).toContain('font: 9.5pt/1.45 "Noto Sans", "Arial", sans-serif;');
       expect(combinedCss).toContain("table, pre, code");
+      expectNoStderr();
+    });
+  });
+
+  test("lets an explicit CLI preset override profile preset replay", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-cli-preset-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Report\n\nBody.\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: wide-table",
+          "  preset: wide-table",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        preset: "reader",
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("margin: 20mm 22mm 20mm 22mm;");
+      expect(combinedCss).toContain('font: 12pt/1.65 "Noto Serif", "Georgia", serif;');
+      expect(combinedCss).not.toContain('font: 9.5pt/1.45 "Noto Sans", "Arial", sans-serif;');
       expectNoStderr();
     });
   });

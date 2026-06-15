@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import { MARKDOWN_PDF_PRESETS } from "../validation";
+import { normalizeMarkdownPdfProfileIdentity } from "./identity";
 import type { MarkdownPdfProfileFormat } from "./types";
 
 const ROOT_KEYS = new Set([
@@ -38,7 +38,6 @@ const CODE_KEYS = new Set(["highlight", "theme", "lineNumbers", "transformerNota
 const PDF_KEYS = new Set(["content-langs"]);
 const FONT_ROLE_KEYS = new Set(["body", "heading", "code", "pageChrome"]);
 const LANGUAGE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
-const MARKDOWN_PDF_PRESET_VALUES = new Set<string>(MARKDOWN_PDF_PRESETS);
 
 export function inferMarkdownPdfProfileFormat(path: string): MarkdownPdfProfileFormat {
   const extension = extname(path).toLowerCase();
@@ -108,17 +107,7 @@ export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>
   const identity = assertOptionalObject(profile.profile, "profile.profile");
   if (identity) {
     assertAllowedKeys(identity, PROFILE_IDENTITY_KEYS, "profile.profile");
-    if (identity.preset !== undefined) {
-      if (typeof identity.preset !== "string" || !MARKDOWN_PDF_PRESET_VALUES.has(identity.preset)) {
-        throw new CliError(
-          `profile.profile.preset must be one of: ${MARKDOWN_PDF_PRESETS.join(", ")}.`,
-          {
-            code: "INVALID_INPUT",
-            exitCode: 2,
-          },
-        );
-      }
-    }
+    normalizeMarkdownPdfProfileIdentity(identity);
   }
 
   const page = assertOptionalObject(profile.page, "profile.page");

@@ -253,9 +253,12 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
-  test("rejects invalid profile identity preset values", async () => {
+  test("rejects invalid profile identity values", async () => {
     await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
       const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const sourcePath = join(fixtureDir, "bad-source.yml");
+      const createdAtPath = join(fixtureDir, "bad-created-at.yml");
+      const unknownKeyPath = join(fixtureDir, "unknown-identity-key.yml");
       await writeFile(
         profilePath,
         [
@@ -268,11 +271,60 @@ describe("markdown PDF profile normalization", () => {
         ].join("\n"),
         "utf8",
       );
+      await writeFile(
+        sourcePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: init",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        createdAtPath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  createdAt: not-a-date",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        unknownKeyPath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "  cretedAt: 2026-06-15T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
 
       await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
         code: "INVALID_INPUT",
         exitCode: 2,
         messageIncludes: "profile.profile.preset must be one of",
+      });
+      await expectCliError(() => readMarkdownPdfProfileFile(sourcePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "profile.profile.source must be codex",
+      });
+      await expectCliError(() => readMarkdownPdfProfileFile(createdAtPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
+      });
+      await expectCliError(() => readMarkdownPdfProfileFile(unknownKeyPath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.profile.cretedAt",
       });
     });
   });
@@ -359,7 +411,7 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
-  test("serializes profile identity in JSON and YAML profiles", () => {
+  test("serializes profile identity in JSON and YAML profiles", async () => {
     const profile = {
       profile: {
         id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
@@ -373,13 +425,15 @@ describe("markdown PDF profile normalization", () => {
       },
     };
 
-    expect(serializeMarkdownPdfProfile(profile, "json")).toContain(
-      '"id": "md-pdf-profile-20260615T081500Z-a1b2c3d4"',
-    );
-    expect(serializeMarkdownPdfProfile(profile, "yaml")).toContain(
-      "id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
-    );
-    expect(serializeMarkdownPdfProfile(profile, "yaml")).toContain("preset: article");
+    await withTempFixtureDir("md-pdf-profile-serialize", async (fixtureDir) => {
+      const jsonPath = join(fixtureDir, "profile.json");
+      const yamlPath = join(fixtureDir, "profile.yml");
+      await writeFile(jsonPath, serializeMarkdownPdfProfile(profile, "json"), "utf8");
+      await writeFile(yamlPath, serializeMarkdownPdfProfile(profile, "yaml"), "utf8");
+
+      await expect(readMarkdownPdfProfileFile(jsonPath)).resolves.toEqual(profile);
+      await expect(readMarkdownPdfProfileFile(yamlPath)).resolves.toEqual(profile);
+    });
   });
 
   test("rejects malformed profile content and non-object roots", async () => {
