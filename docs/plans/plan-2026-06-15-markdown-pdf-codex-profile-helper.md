@@ -422,7 +422,9 @@ No interactive confirmation prompt should be required in the direct CLI path.
 - [x] Validate and write a deterministic base derivative when only `--base-profile` is supplied.
 - [x] Allow Codex-assisted mode when any target signal exists: input path, intent, or font hint.
 - [x] Record signal mode in Codex reports when a report is written.
-- [x] Add tests for positional input parity, input conflict errors, intent-only mode, base-only deterministic mode, no-signal deterministic fallback, and generated no-input output paths.
+- [x] Bump the Codex report artifact version for the signal-mode contract and validate signal/input metadata consistency.
+- [x] Reject direct, symlink, and hardlink source/sink collisions across Markdown input, base profile, profile output, and Codex report output.
+- [x] Add tests for positional input parity, input conflict errors, intent-only mode, font-hint signal handling, base-only deterministic mode, no-signal deterministic fallback, generated no-input output paths, report metadata validation, and alias-path collisions.
 
 Phase 6 focused validation:
 

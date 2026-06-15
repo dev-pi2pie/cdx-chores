@@ -13,8 +13,13 @@ import { MARKDOWN_PDF_PROFILE_ROOT_KEYS } from "../profile/schema";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-profile-report";
-export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 1;
+export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 2;
 const MARKDOWN_PDF_CODEX_SIGNAL_MODE_VALUES = new Set<string>(MARKDOWN_PDF_CODEX_SIGNAL_MODES);
+const MARKDOWN_PDF_CODEX_INPUTLESS_SIGNAL_MODES = new Set<string>([
+  "basic-default",
+  "base-only-deterministic",
+  "hint-only",
+]);
 
 export interface MarkdownPdfCodexReportBaseProfile {
   candidateId: string;
@@ -177,6 +182,27 @@ function validateReportArtifact(value: unknown): MarkdownPdfCodexReportArtifact 
   }
   if (!MARKDOWN_PDF_CODEX_SIGNAL_MODE_VALUES.has(artifact.signalMode)) {
     throw new Error("Markdown PDF Codex report signal mode is invalid.");
+  }
+  const hasInputPath = Boolean(artifact.input?.path);
+  const hasInputSha256 = Boolean(artifact.input?.sha256);
+  if (hasInputPath !== hasInputSha256) {
+    throw new Error("Markdown PDF Codex report input metadata is incomplete.");
+  }
+  if (artifact.signalMode === "document-informed" && !hasInputPath) {
+    throw new Error("Markdown PDF Codex report document-informed mode requires input metadata.");
+  }
+  if (MARKDOWN_PDF_CODEX_INPUTLESS_SIGNAL_MODES.has(artifact.signalMode) && hasInputPath) {
+    throw new Error(
+      "Markdown PDF Codex report inputless signal mode cannot include input metadata.",
+    );
+  }
+  if (hasInputPath && artifact.documentSignals?.available !== true) {
+    throw new Error(
+      "Markdown PDF Codex report input metadata requires available document signals.",
+    );
+  }
+  if (!hasInputPath && artifact.documentSignals?.available === true) {
+    throw new Error("Markdown PDF Codex report available document signals require input metadata.");
   }
   if (artifact.result?.status !== "success" && artifact.result?.status !== "failed") {
     throw new Error("Markdown PDF Codex report result status is invalid.");

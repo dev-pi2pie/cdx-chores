@@ -301,6 +301,28 @@ describe("cli command: md pdf-profile codex", () => {
     });
   });
 
+  test("treats blank-only font hints as no signal from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-blank-font-hint", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "profile.yml");
+
+      const result = runCli([
+        "md",
+        "pdf-profile",
+        "codex",
+        "--font-hint",
+        "   ",
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Signal mode: basic-default");
+      expect(result.stdout).toContain("Decision: deterministic");
+      expect(result.stderr).toContain("Wrote Markdown PDF profile:");
+      expect(await readFile(outputPath, "utf8")).toContain("source: deterministic");
+    });
+  });
+
   test("rejects conflicting positional and explicit Codex profile inputs from the command layer", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-cli-input-conflict", async (fixtureDir) => {
       const firstInputPath = join(fixtureDir, "one.md");

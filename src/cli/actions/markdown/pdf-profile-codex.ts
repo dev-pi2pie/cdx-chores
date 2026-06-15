@@ -54,9 +54,13 @@ export interface MdPdfProfileCodexOptions {
   codexReportOutput?: string;
   overwrite?: boolean;
   codexRunner?: MarkdownPdfCodexProfileRunner;
+  profileUidFactory?: (now: Date) => string;
 }
 
-export type MdPdfProfileCodexCliOptions = Omit<MdPdfProfileCodexOptions, "codexRunner">;
+export type MdPdfProfileCodexCliOptions = Omit<
+  MdPdfProfileCodexOptions,
+  "codexRunner" | "profileUidFactory"
+>;
 
 type MarkdownPdfCodexReportBaseInput = {
   createdAt: string;
@@ -86,7 +90,10 @@ function strictUtcIso(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-function createProfileUid(now: Date): string {
+function createProfileUid(now: Date, profileUidFactory?: (now: Date) => string): string {
+  if (profileUidFactory) {
+    return profileUidFactory(now);
+  }
   return `md-pdf-profile-${formatUtcFileDateTimeISO(now)}-${randomUUID().slice(0, 8)}`;
 }
 
@@ -109,6 +116,30 @@ function samePath(left: string | undefined, right: string | undefined): boolean 
   return Boolean(left && right && resolve(left) === resolve(right));
 }
 
+async function existingPathIdentity(
+  path: string | undefined,
+): Promise<{ dev: number; ino: number } | undefined> {
+  if (!path) {
+    return undefined;
+  }
+  try {
+    const stats = await stat(path);
+    return { dev: stats.dev, ino: stats.ino };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function samePathIdentity(
+  left: { dev: number; ino: number } | undefined,
+  right: { dev: number; ino: number } | undefined,
+): boolean {
+  return Boolean(left && right && left.dev === right.dev && left.ino === right.ino);
+}
+
 function assertDifferentPaths(input: {
   left: string | undefined;
   leftLabel: string;
@@ -119,6 +150,25 @@ function assertDifferentPaths(input: {
     return;
   }
   throw new CliError(`${input.leftLabel} cannot be the same path as ${input.rightLabel}.`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
+async function assertDifferentExistingFiles(input: {
+  left: string | undefined;
+  leftLabel: string;
+  right: string | undefined;
+  rightLabel: string;
+}): Promise<void> {
+  const [leftIdentity, rightIdentity] = await Promise.all([
+    existingPathIdentity(input.left),
+    existingPathIdentity(input.right),
+  ]);
+  if (!samePathIdentity(leftIdentity, rightIdentity)) {
+    return;
+  }
+  throw new CliError(`${input.leftLabel} cannot be the same file as ${input.rightLabel}.`, {
     code: "INVALID_INPUT",
     exitCode: 2,
   });
@@ -191,9 +241,10 @@ async function resolveGeneratedProfileOutputPath(
   runtime: CliRuntime,
   inputPath: string | undefined,
   now: Date,
+  profileUidFactory?: (now: Date) => string,
 ): Promise<{ profileId: string; outputPath: string }> {
   for (let attempt = 0; attempt < 10; attempt += 1) {
-    const profileId = createProfileUid(now);
+    const profileId = createProfileUid(now, profileUidFactory);
     const outputPath = inputPath
       ? generatedProfilePath(inputPath, profileId)
       : generatedProfilePathWithoutInput(runtime, profileId);
@@ -410,10 +461,10 @@ export async function actionMdPdfProfileCodex(
   const createdAt = strictUtcIso(now);
   const outputResolution = options.output
     ? {
-        profileId: createProfileUid(now),
+        profileId: createProfileUid(now, options.profileUidFactory),
         outputPath: resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path")),
       }
-    : await resolveGeneratedProfileOutputPath(runtime, inputPath, now);
+    : await resolveGeneratedProfileOutputPath(runtime, inputPath, now, options.profileUidFactory);
   const reportOutputPath = options.codexReportOutput
     ? resolveFromCwd(runtime, options.codexReportOutput)
     : reportRequested(options)
@@ -463,6 +514,36 @@ export async function actionMdPdfProfileCodex(
   if (reportOutputPath) {
     await assertWritableOutputPath(reportOutputPath, { overwrite: options.overwrite });
   }
+  await assertDifferentExistingFiles({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: outputResolution.outputPath,
+    rightLabel: "--output",
+  });
+  await assertDifferentExistingFiles({
+    left: outputResolution.outputPath,
+    leftLabel: "--output",
+    right: inputPath,
+    rightLabel: "Markdown input",
+  });
+  await assertDifferentExistingFiles({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: inputPath,
+    rightLabel: "Markdown input",
+  });
+  await assertDifferentExistingFiles({
+    left: outputResolution.outputPath,
+    leftLabel: "--output",
+    right: baseProfilePath,
+    rightLabel: "--base-profile",
+  });
+  await assertDifferentExistingFiles({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: baseProfilePath,
+    rightLabel: "--base-profile",
+  });
 
   printLine(runtime.stderr, "Collecting Markdown PDF profile signals...");
   const candidates = createMarkdownPdfProfileCandidates();
