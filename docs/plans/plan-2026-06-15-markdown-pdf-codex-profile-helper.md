@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Implement the direct `md pdf-profile codex` helper for generating and refining replayable Markdown PDF profiles from bounded document facts, font facts, user intent, and Codex structured recommendations.
+Implement the direct `md pdf-profile codex` helper for generating and refining replayable Markdown PDF profiles from bounded document facts, font facts, user intent, base-profile input, and Codex structured recommendations.
 
 This plan intentionally does not implement Interactive mode. Interactive Markdown PDF planning starts only after the direct helper contract is implemented and verified.
 
@@ -55,16 +55,16 @@ Missing pieces:
 Add:
 
 ```bash
-cdx-chores md pdf-profile codex \
-  --input report.md \
+cdx-chores md pdf-profile codex report.md \
   --intent "wide table report with ToC and readable code" \
   --output report-profile.yml
 ```
 
 Options:
 
-- `--input <path>`: required Markdown input.
-- `--intent <text>`: required general rendering direction.
+- `[input]`: optional positional Markdown sample used to collect bounded document signals.
+- `--input <path>`: optional explicit Markdown sample path; equivalent to positional input.
+- `--intent <text>`: optional general rendering direction.
 - `--font-hint <text>`: optional, repeatable font preference hint.
 - `--base-profile <path>`: optional existing Markdown PDF profile to refine.
 - `--output <path>`: optional profile output path; generated `.yml` path when omitted.
@@ -74,6 +74,35 @@ Options:
 - `--overwrite`: allow overwriting selected output artifacts.
 
 Do not add extra user-facing hint flags just to expose prompt-internal categories. General direction stays in `--intent`; font preference stays in `--font-hint`.
+
+Signal ladder:
+
+```text
+Inputs
+  |
+  +-- [path] ---------- target signal: document facts
+  +-- --intent -------- target signal: direction
+  +-- --font-hint ----- target signal: font preference
+  +-- --base-profile -- source signal: starting profile
+  |
+  v
+Decision
+  |
+  +-- any target signal? ----> Codex helper receives bounded payload
+  |
+  +-- base-profile only? ---> deterministic base derivative, Codex skipped
+  |
+  +-- no signals? ----------> deterministic basic profile, Codex skipped
+```
+
+Rules:
+
+- positional input and `--input <path>` are aliases.
+- conflicting normalized positional and `--input` paths fail before collecting signals.
+- any target signal is enough to enter Codex-assisted mode.
+- `--base-profile` alone is a source signal only; validate and write a deterministic derivative without calling Codex.
+- no path, no intent, no font hint, and no base profile returns a deterministic basic profile without calling Codex.
+- signal mode should be classified for diagnostics and tests.
 
 ### Profile Identity And Preset Replay
 
@@ -91,14 +120,15 @@ profile:
 Rules:
 
 - `profile.id` is required for Codex-generated profiles.
-- `profile.source` is `codex` for this helper.
+- `profile.source` is `codex` for Codex-assisted outputs.
+- `profile.source` is `deterministic` for outputs that skip Codex, including no-signal basic-default and base-only deterministic derivatives.
 - `profile.basedOn` records the selected candidate or base identity.
 - `profile.preset` records replayable preset behavior when the selected candidate is preset-backed.
 - `profile.createdAt` uses the existing UTC timestamp style used by generated artifacts.
 - `md to-pdf --profile <path>` consumes `profile.preset` before renderer preset defaults.
 - unknown keys inside `profile` fail validation.
 - older valid profiles without `profile` remain loadable as base profiles and normal render profiles.
-- `profile.source` accepts `codex` in v1. Future deterministic `pdf-profile init` identity can add another source value later.
+- `profile.source` accepts `codex` and `deterministic` after the signal-ladder follow-up.
 - `.json` profile output must support the same identity and preset replay behavior as `.yml` and `.yaml` profile output.
 
 Replay precedence:
@@ -140,7 +170,7 @@ Local profile-template catalogs remain out of scope for this first pass.
 
 ### Document And Font Signals
 
-Collect bounded deterministic signals before calling Codex:
+Collect bounded deterministic signals before calling Codex when a Markdown sample is available:
 
 - Markdown frontmatter `lang`.
 - frontmatter `pdf.content-langs`.
@@ -154,6 +184,8 @@ Collect bounded deterministic signals before calling Codex:
 - user `--font-hint` values.
 
 If a signal cannot be collected cheaply or safely, mark it inconclusive. Do not guess.
+
+No-path runs should record document facts as absent rather than inconclusive. They may still call Codex when a target signal exists, such as `--intent` or `--font-hint`. `--base-profile` alone should not call Codex.
 
 Signal caps for v1:
 
@@ -182,10 +214,11 @@ The adapter should receive:
 
 - profile candidate summaries
 - selected base profile content summary
-- document signal summary
-- font summary
-- user intent
-- user font hints
+- available document signal summary
+- available font summary
+- optional user intent
+- optional user font hints
+- signal mode
 - supported profile schema summary
 
 The adapter should return structured data, not arbitrary YAML text:
@@ -269,7 +302,8 @@ The implementation should use the existing read-only Codex adapter pattern and s
 Profile output:
 
 - respect custom `--output`
-- otherwise derive a generated `.yml` path from the input stem and profile UID
+- otherwise derive a generated `.yml` path from the input stem and profile UID when input exists
+- otherwise derive a generated `.yml` path from the profile UID
 - reject unsupported profile output extensions
 - require `--overwrite` when writing over an existing profile
 
@@ -288,7 +322,8 @@ Report JSON should include:
 - artifact type and report artifact ID
 - matching profile ID
 - profile output path as displayed
-- input fingerprint or bounded summary
+- signal mode
+- input fingerprint or bounded summary when a Markdown path is supplied
 - intent and font hints
 - deterministic signal summary
 - font summary and warnings
@@ -305,16 +340,16 @@ Report JSON should include:
 
 Normal execution should:
 
-- collect signals
-- call Codex
+- collect available signals
+- call Codex when at least one target signal exists
 - validate the proposed profile
 - print a concise proposed-profile summary
 - write selected artifacts
 
 `--dry-run` should:
 
-- collect signals
-- call Codex
+- collect available signals
+- call Codex when at least one target signal exists
 - validate the proposed profile
 - print the same proposed-profile summary and warnings
 - display the output paths that would be used
@@ -375,7 +410,21 @@ No interactive confirmation prompt should be required in the direct CLI path.
 - [x] Keep reports advisory-only.
 - [x] Add report validation and collision tests.
 
-### Phase 6: Documentation And Guide Updates
+### Phase 6: Optional Input And Signal-Ladder Contract
+
+- [ ] Add optional positional input support for `md pdf-profile codex [input]`.
+- [ ] Keep `--input <path>` as an explicit alias for script-friendly usage.
+- [ ] Reject conflicting positional and `--input` paths before collecting signals.
+- [ ] Make `--intent` optional now that no-signal requests can fall back deterministically.
+- [ ] Add signal-mode classification for document-informed, hint-only, mixed-with-base, base-only-deterministic, and basic-default runs.
+- [ ] Extend profile source validation so basic-default output can use `profile.source: deterministic`.
+- [ ] Skip Codex and produce a deterministic basic profile when no signal exists.
+- [ ] Validate and write a deterministic base derivative when only `--base-profile` is supplied.
+- [ ] Allow Codex-assisted mode when any target signal exists: input path, intent, or font hint.
+- [ ] Record signal mode in Codex reports when a report is written.
+- [ ] Add tests for positional input parity, input conflict errors, intent-only mode, base-only deterministic mode, no-signal deterministic fallback, and generated no-input output paths.
+
+### Phase 7: Documentation And Guide Updates
 
 - [ ] Update Markdown PDF user guidance after behavior is implemented.
 - [ ] Document direct helper examples.
@@ -400,6 +449,8 @@ No interactive confirmation prompt should be required in the direct CLI path.
 Focused automated coverage:
 
 - command registration and option validation
+- optional positional input and `--input` parity
+- conflicting positional and `--input` path rejection
 - profile schema validation for `profile` identity and preset replay
 - JSON profile identity and preset replay parity
 - old-profile compatibility without `profile`
@@ -410,6 +461,7 @@ Focused automated coverage:
 - `default` versus preset-backed `article` candidate distinction
 - invalid base-profile rejection before Codex
 - document signal collection with bounded samples
+- no-path signal-mode behavior
 - no raw document snippets, raw remote URLs, or local font paths in Codex input
 - font summary and coverage warning handling
 - Codex unavailable path
@@ -420,6 +472,7 @@ Focused automated coverage:
 - explicit and generated collision behavior
 - `--dry-run` non-writing profile behavior
 - optional report writing and report/profile UID matching
+- deterministic no-signal basic-profile fallback without a Codex call
 - deterministic render replay from a generated profile
 
 Expected commands during implementation:
@@ -436,6 +489,10 @@ Manual smoke coverage should use `examples/playground/` for temporary Markdown i
 ## Acceptance Criteria
 
 - `cdx-chores md pdf-profile codex` can generate a validated profile from built-in candidates.
+- `cdx-chores md pdf-profile codex <path>` and `--input <path>` share the same document-signal contract.
+- `cdx-chores md pdf-profile codex` without signals produces a deterministic basic profile without calling Codex.
+- one target signal, such as input path, `--intent`, or `--font-hint`, is enough to enter Codex-assisted mode.
+- `--base-profile` alone produces a deterministic derivative without calling Codex.
 - `--base-profile <path>` can refine an existing valid profile without mutating it.
 - generated profiles include `profile.id`, `source`, `basedOn`, `preset` when applicable, and `createdAt`.
 - `md to-pdf --profile <generated-profile>` replays the selected preset behavior.

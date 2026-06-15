@@ -99,7 +99,7 @@ Recommended workflow:
 
 ```bash
 cdx-chores md pdf-profile codex \
-  --input report.md \
+  report.md \
   --intent "landscape internal report with wide tables, ToC, and readable code blocks" \
   --output ./report-profile.yml
 
@@ -121,7 +121,7 @@ This follows the existing reviewed-assist pattern used by data workflows, especi
 The first Codex helper should live under the profile noun group:
 
 ```bash
-cdx-chores md pdf-profile codex --input report.md --intent "..." --output report-profile.yml
+cdx-chores md pdf-profile codex report.md --intent "..." --output report-profile.yml
 ```
 
 This is preferred over `md pdf-profile suggest` because `suggest` hides the Codex dependency and makes the command sound like a deterministic heuristic. It is also preferred over `md to-pdf --codex` for the first slice because adapting a profile and rendering a PDF are different decisions.
@@ -133,7 +133,7 @@ Recommended command roles:
 | Surface | Role |
 | --- | --- |
 | `md pdf-profile init` | deterministic starter profile |
-| `md pdf-profile codex` | Codex-assisted profile template selection and adaptation from intent and document facts |
+| `md pdf-profile codex [path]` | Codex-assisted profile template selection and adaptation from available signals |
 | `md to-pdf --profile <path>` | deterministic render from an accepted profile |
 | `md pdf-template init` | low-level editable HTML/CSS recipe snapshot |
 
@@ -173,20 +173,42 @@ Codex decision
   -> output structured profile fields
 ```
 
+The helper should split target signals from source signals. The Markdown path, intent, and font hints tell Codex what to optimize toward. The base profile tells the helper where to start. Codex-assisted mode needs at least one target signal; a base profile alone should stay deterministic because it does not define a useful adaptation direction.
+
+```text
+Inputs
+  |
+  +-- [path] ---------- target signal: document facts
+  +-- --intent -------- target signal: direction
+  +-- --font-hint ----- target signal: font preference
+  +-- --base-profile -- source signal: starting profile
+  |
+  v
+Decision
+  |
+  +-- any target signal? ----> Codex helper receives bounded payload
+  |
+  +-- base-profile only? ---> deterministic base derivative, Codex skipped
+  |
+  +-- no signals? ----------> deterministic basic profile, Codex skipped
+```
+
+`md pdf-profile codex report.md` and `md pdf-profile codex --input report.md` should be equivalent. If both are supplied, conflicting normalized paths should fail before collecting signals. If no path is supplied but `--intent` or `--font-hint` is present, the helper can still ask Codex to adapt from the candidate catalog and available target signals. If only `--base-profile` is supplied, the helper should validate and write a deterministic derivative or normalized copy with a new profile identity, without calling Codex. If no path, intent, font hint, or base profile is supplied, the helper should return the same kind of deterministic basic profile that `md pdf-profile init` can create, without calling Codex.
+
 The direct CLI should stay small. General rendering direction belongs in `--intent`; font preference belongs in `--font-hint`. The helper can derive internal decision categories from those inputs, document signals, and font facts, then report how the categories mapped to supported profile fields.
 
 Recommended prompt-design boundary:
 
 ```text
 User-facing CLI
-  --input report.md
+  [report.md] or --input report.md
   --intent "internal review packet with dense tables and readable code"
   --font-hint "prefer Noto Serif CJK TC"
           |
           v
 Deterministic collectors
-  document signals
-  font summaries
+  available document signals
+  available font summaries
   candidate profile catalog
           |
           v
@@ -355,14 +377,13 @@ If a signal cannot be collected cheaply or safely, it should be marked inconclus
 Recommended direct CLI shape:
 
 ```bash
-cdx-chores md pdf-profile codex \
-  --input report.md \
+cdx-chores md pdf-profile codex report.md \
   --intent "Traditional Chinese and English client report with code examples" \
   --font-hint "prefer Noto CJK if available" \
   --output report-profile.yml
 ```
 
-`--font-hint` should be optional and repeatable. The default helper path should still work from document facts and local font summaries.
+`--input <path>` should remain as an explicit alias for script-friendly usage. `--font-hint` should be optional and repeatable. The default helper path should work from whichever signals are available. When no Markdown path is available, document facts are absent rather than guessed.
 
 Common hint signals should be structured before they reach Codex. Interactive mode can ask friendly questions, but the helper should reduce the answers into stable fields such as:
 
@@ -431,16 +452,18 @@ This top-level `profile` section is the confirmed identity home for Markdown PDF
 
 Identity rules:
 
-- `md pdf-profile codex` always creates a profile ID.
+- `md pdf-profile codex` always creates a profile ID when it writes a profile.
 - The ID stays stable if the profile file is moved, copied, or reused from another root directory.
 - The short UID suffix may be used in generated filenames for readability.
 - Custom output paths are respected; identity still lives inside the profile.
+- Codex-assisted outputs use `profile.source: codex`.
+- Outputs that skip Codex use `profile.source: deterministic`, including the no-signal basic profile and base-only deterministic derivative paths.
 - If `--base-profile <path>` points to a valid profile with `profile.id`, the generated derivative should keep a link to that base identity in the Codex report and create a new `profile.id` for the derivative.
 - If `--base-profile <path>` points to a valid older profile without `profile.id`, the helper should treat the base identity as missing, generate a new `profile.id` for the derivative, and record the base as an untracked base profile in the optional Codex report.
 - If a built-in preset candidate is selected, `basedOn` should use the preset-backed candidate name, such as `wide-table`.
 - If a built-in preset candidate is selected, `preset` should store the replayable renderer preset consumed by `md to-pdf --profile`.
 - If no clear base candidate is available but a conservative fallback profile is still valid, `basedOn` should use `default`.
-- Future non-Codex profile identity for `md pdf-profile init` can be considered separately, but it is not required for the first helper.
+- Future identity for `md pdf-profile init` can reuse the deterministic source value, but wiring identity into `init` is not required for the first helper.
 
 ### 9. Codex diagnostic report should be optional and linked by the same UID
 
@@ -470,7 +493,7 @@ When `--output` is custom and `--keep-codex-report` is set:
 
 ```bash
 cdx-chores md pdf-profile codex \
-  --input report.md \
+  report.md \
   --intent "wide table report with ToC" \
   --output ./profiles/client-report.yml \
   --keep-codex-report
@@ -487,7 +510,7 @@ When both paths are explicit:
 
 ```bash
 cdx-chores md pdf-profile codex \
-  --input report.md \
+  report.md \
   --intent "wide table report with ToC" \
   --output ./profiles/client-report.yml \
   --codex-report-output ./profiles/client-report.codex-report.json
@@ -510,7 +533,8 @@ The Codex report JSON should include:
 - report artifact ID
 - matching profile ID
 - profile output path as displayed by the CLI
-- input document fingerprint or bounded document summary
+- signal mode, such as document-informed, hint-only, mixed-with-base, base-only-deterministic, or basic-default
+- input document fingerprint or bounded document summary when a Markdown path is supplied
 - user intent
 - optional font hints
 - deterministic document facts
@@ -534,7 +558,7 @@ However, it should still support preview-before-write behavior through a non-wri
 
 ```bash
 cdx-chores md pdf-profile codex \
-  --input report.md \
+  report.md \
   --intent "wide table report with ToC" \
   --dry-run
 ```
@@ -544,7 +568,7 @@ Recommended direct behavior:
 - normal execution prints a concise proposed-profile summary, validates the profile, and writes selected artifacts
 - `--dry-run` still runs the helper and validation path, but prints the proposed-profile summary and warnings without writing a profile
 - `--dry-run --keep-codex-report` may write the diagnostic report while still skipping the profile write
-- if no `--output` is provided, both normal execution and `--dry-run` should display the derived output path that would be used
+- if no `--output` is provided, both normal execution and `--dry-run` should display the derived output path that would be used; path-backed runs can derive from the input stem, while no-path runs should derive from the profile UID
 - `--keep-codex-report` writes diagnostic history only when the user requests it
 - `--codex-report-output` implies `--keep-codex-report`
 - `--overwrite` controls overwriting both profile and selected report outputs for v1
@@ -626,6 +650,15 @@ Scope:
 - `--dry-run`, `--output`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`
 - optional Codex diagnostic report JSON
 - focused tests for unavailable Codex, invalid structured output, overwrite behavior, and deterministic replay through `md to-pdf --profile`
+
+Follow-up in the first plan:
+
+- optional positional Markdown path support
+- `--input <path>` parity and conflict validation
+- signal-mode classification
+- intent-only Codex adaptation
+- base-only deterministic derivative without a Codex call
+- deterministic basic-profile fallback without a Codex call when no signals exist
 
 Sequencing checklist:
 
