@@ -338,8 +338,8 @@ function uniqueStrings(values: string[]): string[] {
 }
 
 export function markdownPdfProfileToRecipeOptions(
-  profile: Record<string, unknown> = {},
-  identity?: NormalizedMarkdownPdfProfileIdentity,
+  profile: Record<string, unknown>,
+  identity: NormalizedMarkdownPdfProfileIdentity | undefined,
 ): NormalizeMarkdownPdfOptionsInput {
   const page = readObject(profile.page);
   const toc = readObject(profile.toc);
