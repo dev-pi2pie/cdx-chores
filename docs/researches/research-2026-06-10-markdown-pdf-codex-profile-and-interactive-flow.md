@@ -263,6 +263,23 @@ The optional Codex report should explain:
 
 The profile itself can keep only concise provenance, such as `source: codex` and `basedOn: wide-table`, while the report carries the detailed reasoning.
 
+The Codex response contract should follow the strict patch pattern already used by `data stack`, not an open object fragment. A free-form `accepted_fields` object is too loose for strict structured-output validation because nested objects must be explicitly closed. The direct helper should instead ask Codex for bounded profile patches:
+
+```text
+decision_mode
+selected_candidate_id
+accepted_patches[]
+  op: replace
+  path: enum of supported Markdown PDF profile paths
+  value: bounded primitive, string array, or closed object value
+reasoning
+warnings
+fallback_reason
+unmatched_directions
+```
+
+The implementation can still apply those patches by converting them into the existing profile merge path, but the external Codex contract should be enum-backed, closed, and API-valid before Interactive mode depends on it.
+
 Recommended v1 candidate catalog:
 
 | Candidate | `basedOn` value | Source |
@@ -640,7 +657,7 @@ Scope:
 - `--base-profile <path>` refinement from an existing validated profile
 - Markdown structure and profile-signal introspection
 - font summary and font-check orchestration
-- bounded Codex structured output
+- bounded, strict Codex structured output using enum-backed profile patches
 - decision modes, including conservative fallback and no usable profile
 - schema-supported preset identity and profile replay through `md to-pdf --profile`
 - profile identity schema extension
@@ -659,11 +676,13 @@ Follow-up in the first plan:
 - intent-only Codex adaptation
 - base-only deterministic derivative without a Codex call
 - deterministic basic-profile fallback without a Codex call when no signals exist
+- strict structured-output patch contract that replaces open accepted-field fragments
 
 Sequencing checklist:
 
 - [x] Record the research decision for the direct Codex profile helper.
 - [x] Draft the first implementation plan for `md pdf-profile codex`.
+- [ ] Replace the open Codex accepted-field fragment with a strict patch contract.
 - [ ] Implement and verify `md pdf-profile codex`.
 - [ ] Update this research if implementation changes the helper API, artifact identity, preset replay, or report sidecar contract.
 - [ ] Draft the Interactive-mode implementation plan.
@@ -678,6 +697,7 @@ The second plan must not be drafted against guesses. Before drafting it, verify 
 - preset identity replays through `md to-pdf --profile`
 - optional Codex reports link to the same profile UID
 - decision modes are implemented for `adapted`, `conservative-fallback`, and `no-usable-profile`
+- real Codex-assisted runs use a strict structured-output schema, not an open object fragment
 - `--dry-run`, `--output`, `--overwrite`, `--keep-codex-report`, and `--codex-report-output` behavior is settled
 - focused tests cover unavailable Codex, invalid Codex output, invalid base profiles, overwrite collisions, and deterministic render replay
 

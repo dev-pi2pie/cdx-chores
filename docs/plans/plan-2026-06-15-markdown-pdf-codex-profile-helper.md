@@ -226,14 +226,23 @@ The adapter should return structured data, not arbitrary YAML text:
 
 - decision mode: `adapted`, `conservative-fallback`, or `no-usable-profile`
 - selected base candidate
-- accepted profile fields
+- accepted profile patches
 - preset identity when preset-backed
 - concise reasoning
 - warnings
 - fallback reason when relevant
 - unmatched intent directions when profile/template settings cannot represent them
 
-Validate the structured response before serializing a profile. Reject unknown profile fields and invalid enum values.
+Accepted patches should use a strict schema-compatible contract:
+
+```text
+accepted_patches[]
+  op: replace
+  path: enum of supported Markdown PDF profile paths
+  value: bounded primitive, string array, or closed object value
+```
+
+This follows the `data stack` Codex-report precedent: Codex recommends bounded changes through enum-backed paths instead of returning an arbitrary nested object. Validate the structured response before serializing a profile. Reject unknown patch paths, unsupported value types, and invalid enum values.
 
 Shared decision and report types should be defined with the adapter contract so parsing and report serialization do not diverge later.
 
@@ -241,8 +250,8 @@ Adaptation rules:
 
 ```text
 base = selectedCandidate.fullProfile
-accepted = validateCodexAcceptedFields(codex.acceptedFields)
-proposed = mergeBounded(base, accepted)
+patches = validateCodexAcceptedPatches(codex.acceptedPatches)
+proposed = applyBoundedPatches(base, patches)
 validate(proposed)
 write(proposed + profile identity metadata)
 ```
@@ -250,7 +259,7 @@ write(proposed + profile identity metadata)
 Rules:
 
 - start from the selected base candidate's full profile object
-- apply only schema-valid field updates from Codex
+- apply only schema-valid replace patches from Codex
 - keep unspecified fields from the base profile
 - disallow deletion and reset semantics in v1
 - for `--base-profile`, use the loaded profile as the base object
@@ -332,7 +341,7 @@ Report JSON should include:
 - base profile identity or untracked-base note
 - decision mode
 - changes from base
-- accepted profile fields
+- accepted profile patches
 - unmatched directions
 - fallback reason when relevant
 - validation warnings
@@ -392,6 +401,11 @@ No interactive confirmation prompt should be required in the direct CLI path.
 - [x] Support unavailable Codex and invalid structured output paths.
 - [x] Add adapter unit tests with stubs.
 
+Phase 3 follow-up note:
+
+- The first adapter implementation used an open `accepted_fields` object and validated it after Codex returned.
+- Phase 6.1 replaces that object fragment with a strict patch contract because real structured-output schema validation rejects open nested objects before Codex can generate a response.
+
 ### Phase 4: Action And Command Wiring
 
 - [x] Add `actionMdPdfProfileCodex`.
@@ -446,6 +460,27 @@ Phase 6 working-directory hotfix note on 2026-06-15:
 - This could fail before the profile prompt reached Codex when the temporary directory was not a trusted Git repository.
 - The focused job record is `docs/plans/jobs/2026-06-15-markdown-pdf-codex-profile-phase-6-hotfix.md`.
 
+### Phase 6.1: Strict Structured Output Patch Contract
+
+- [ ] Replace open `accepted_fields` output with strict `accepted_patches`.
+- [ ] Define enum-backed Markdown PDF profile patch paths for the first supported adaptation surface.
+- [ ] Keep patch operations to `replace` only.
+- [ ] Support only bounded value schemas that structured-output validation accepts.
+- [ ] Convert accepted patches into the existing profile merge/application path.
+- [ ] Preserve final `validateMarkdownPdfProfileShape` validation before writing or reporting success.
+- [ ] Update the Codex prompt to ask for patches, not arbitrary profile fragments.
+- [ ] Update decision/report types so reports explain accepted patches and derived changes from the base profile.
+- [ ] Add regression coverage for the schema shape so open object fragments cannot return.
+- [ ] Verify a real Codex-assisted command no longer fails with `invalid_json_schema` for the output schema.
+- [ ] Add a Phase 6.1 job record after implementation and validation.
+
+Phase 6.1 rationale:
+
+- `data query` works because its Codex output schema is a closed object with fixed `sql` and `reasoning_summary` properties.
+- `data stack` works because recommendations use closed nested objects and enum-backed patch paths.
+- `md pdf-profile codex` reached the real structured-output request after the Phase 6 working-directory hotfix, then failed because `accepted_fields: { type: "object" }` was an open object fragment.
+- The fix should align the Markdown PDF helper with the `data stack` patch-contract pattern instead of chasing nested `additionalProperties: false` errors across a wide profile schema.
+
 ### Phase 7: Documentation And Guide Updates
 
 - [ ] Update Markdown PDF user guidance after behavior is implemented.
@@ -488,6 +523,7 @@ Focused automated coverage:
 - font summary and coverage warning handling
 - Codex unavailable path
 - invalid Codex structured output path
+- strict structured-output schema compatibility for accepted patches
 - bounded merge semantics preserving unspecified base fields
 - `adapted`, `conservative-fallback`, and `no-usable-profile` behavior
 - generated output path and UID behavior
