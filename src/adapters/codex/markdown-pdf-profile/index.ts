@@ -147,3 +147,4 @@ export type {
   MarkdownPdfCodexProfileRunner,
   MarkdownPdfCodexReportPayload,
 } from "./types";
+export { MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS } from "./value-domains";

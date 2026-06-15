@@ -39,6 +39,7 @@ import {
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
+import { startDirectCodexProgress } from "../codex-progress";
 import { assertNonEmpty, displayPath, printLine } from "../shared";
 import type { MarkdownPdfCodexProfileResult } from "../../../adapters/codex/markdown-pdf-profile/types";
 
@@ -636,7 +637,10 @@ export async function actionMdPdfProfileCodex(
     return;
   }
 
-  printLine(runtime.stderr, "Requesting Codex Markdown PDF profile recommendation...");
+  const codexProgress = startDirectCodexProgress(
+    runtime.stderr,
+    "Requesting Codex Markdown PDF profile recommendation",
+  );
 
   try {
     const result = await suggestMarkdownPdfProfileWithCodex({
@@ -653,6 +657,7 @@ export async function actionMdPdfProfileCodex(
     });
 
     if (!result.profile) {
+      codexProgress.stop("error");
       const failure: MarkdownPdfCodexReportFailure = {
         kind: "no-usable-profile",
         message: "Codex did not find a usable Markdown PDF profile.",
@@ -676,6 +681,9 @@ export async function actionMdPdfProfileCodex(
       });
     }
 
+    codexProgress.stop(
+      result.decision.decisionMode === "conservative-fallback" ? "fallback" : "done",
+    );
     await finalizeSuccessfulProfileDecision({
       decisionLabel: result.decision.decisionMode,
       displayOutputPath,
@@ -691,6 +699,7 @@ export async function actionMdPdfProfileCodex(
       selectedCandidate: selected,
     });
   } catch (error) {
+    codexProgress.stop("error");
     if (isNoUsableProfileError(error)) {
       throw error;
     }

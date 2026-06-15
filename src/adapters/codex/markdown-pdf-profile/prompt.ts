@@ -1,4 +1,5 @@
 import type { MarkdownPdfCodexProfileRequest } from "./types";
+import { MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS } from "./value-domains";
 
 export function buildMarkdownPdfProfileCodexPrompt(
   request: MarkdownPdfCodexProfileRequest,
@@ -10,6 +11,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
+    patchValueDomains: MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS,
     signalMode: request.signalMode,
     supportedSchemaSummary: request.supportedSchemaSummary,
   };
@@ -22,6 +24,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Select one candidate by id.",
     "- Do not write YAML, CSS, HTML, file paths, or raw Markdown snippets.",
     "- Use accepted_patches for small replace patches against allowed Markdown PDF profile paths.",
+    "- For paths listed in patchValueDomains, use only those exact values.",
     "- Do not return profile objects or arbitrary nested fields.",
     "- Prefer small adaptations over broad rewrites.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",

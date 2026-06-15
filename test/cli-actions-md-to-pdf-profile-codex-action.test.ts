@@ -79,6 +79,68 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("shows and clears TTY Codex progress on success", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-success", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: adaptedRunner("article"),
+        dryRun: true,
+        input: "report.md",
+        intent: "article profile",
+        output: "profile.yml",
+      });
+
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... -",
+      );
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... done\n",
+      );
+      expect(stdout.text).toContain("Decision: adapted");
+    });
+  });
+
+  test("shows and clears TTY Codex progress on errors", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-error", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () => {
+              throw new Error("network unavailable");
+            },
+            input: "report.md",
+            intent: "article profile",
+            output: "profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "unavailable",
+        },
+      );
+
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... -",
+      );
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... error\n",
+      );
+    });
+  });
+
   test("dry-run previews without writing the profile but can keep a report", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-dry-run", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
@@ -952,6 +1014,48 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(invalidApplicationReport.result.failure).toMatchObject({
         kind: "invalid-application",
       });
+    });
+  });
+
+  test("rejects invalid Codex patch value domains before writing the profile", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-invalid-patch-domain", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "invalid-domain-report.json",
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "adapted",
+                selected_candidate_id: "default",
+                accepted_patches: [{ op: "replace", path: "/cover/style", value: "modern" }],
+                reasoning: "Use a modern cover.",
+                warnings: [],
+                fallback_reason: "",
+                unmatched_directions: [],
+              }),
+            input: "report.md",
+            intent: "clean pdf with a proper cover page",
+            output: "profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "/cover/style must be one of: plain, report",
+        },
+      );
+
+      await expect(readFile(join(fixtureDir, "profile.yml"), "utf8")).rejects.toThrow();
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "invalid-domain-report.json"),
+      );
+      expect(report.result.failure).toMatchObject({ kind: "invalid-application" });
+      expect(report.result.failure?.message).toContain("/cover/style");
     });
   });
 

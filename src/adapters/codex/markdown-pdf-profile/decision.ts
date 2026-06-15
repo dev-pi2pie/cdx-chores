@@ -11,6 +11,7 @@ import {
   type MarkdownPdfCodexProfilePatch,
   type MarkdownPdfCodexProfileResult,
 } from "./types";
+import { validateMarkdownPdfCodexPatchValueDomain } from "./value-domains";
 
 const ACCEPTED_PATCH_PATHS = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
 
@@ -143,7 +144,12 @@ function applyAcceptedProfilePatches(
   acceptedPatches: readonly MarkdownPdfCodexProfilePatch[],
 ): Record<string, unknown> {
   const merged = structuredClone(base) as Record<string, unknown>;
-  for (const patch of acceptedPatches) {
+  for (const [index, patch] of acceptedPatches.entries()) {
+    validateMarkdownPdfCodexPatchValueDomain({
+      context: `accepted_patches[${index}].value`,
+      path: patch.path,
+      value: patch.value,
+    });
     const segments = patch.path.slice(1).split("/");
     let target = merged;
     for (const segment of segments.slice(0, -1)) {

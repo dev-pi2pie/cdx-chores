@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS,
   MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
@@ -58,6 +59,11 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("wide table report");
     expect(prompt).toContain("candidateSummaries");
     expect(prompt).toContain("selectedBaseProfileSummary");
+    expect(prompt).toContain("patchValueDomains");
+    expect(prompt).toContain("/cover/style");
+    expect(prompt).toContain("plain");
+    expect(prompt).toContain("/pageNumbers/position");
+    expect(prompt).toContain("bottom-center");
     expect(prompt).toContain("supportedSchemaSummary");
     expect(prompt).toContain("fonts.body.default");
     expect(prompt).toContain("Always include fallback_reason");
@@ -83,6 +89,21 @@ describe("Markdown PDF Codex profile adapter", () => {
     const patchSchema = MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items;
     expect(patchSchema.properties.path.enum).toContain("/toc/enabled");
     expect(patchSchema.properties.value.type).not.toContain("object");
+    expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS).toContainEqual({
+      path: "/cover/style",
+      values: ["plain", "report"],
+    });
+    expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS).toContainEqual({
+      path: "/pageNumbers/position",
+      values: [
+        "top-left",
+        "top-center",
+        "top-right",
+        "bottom-left",
+        "bottom-center",
+        "bottom-right",
+      ],
+    });
   });
 
   test("starts the default Codex runner in the request working directory", async () => {
@@ -237,6 +258,34 @@ describe("Markdown PDF Codex profile adapter", () => {
         },
       }),
     ).toThrow("profile.toc.depth");
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: requestBase.candidates,
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/cover/style", value: "modern" }],
+          decisionMode: "adapted",
+          reasoning: "bad",
+          selectedCandidateId: "wide-table",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow("accepted_patches[0].value for /cover/style must be one of: plain, report");
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: requestBase.candidates,
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/pageNumbers/position", value: "bottom" }],
+          decisionMode: "adapted",
+          reasoning: "bad",
+          selectedCandidateId: "wide-table",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow(
+      "accepted_patches[0].value for /pageNumbers/position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right",
+    );
     expect(() =>
       applyMarkdownPdfCodexDecision({
         candidates: requestBase.candidates,
