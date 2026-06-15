@@ -1,8 +1,8 @@
 ---
 title: "Markdown PDF Codex profile helper implementation"
 created-date: 2026-06-15
-modified-date: 2026-06-15
-status: draft
+modified-date: 2026-06-16
+status: active
 agent: codex
 ---
 
@@ -474,6 +474,13 @@ Phase 6 working-directory hotfix note on 2026-06-15:
 - [x] Add regression coverage for the schema shape so open object fragments cannot return.
 - [x] Record the live Codex verification limit: sandboxed smoke is blocked before a remote structured-output response, and unsandboxed verification was rejected by policy because it would disclose README-derived signals externally.
 - [x] Add a Phase 6.1 job record after implementation and validation.
+- [ ] Add the strict structured-output required-property hotfix for `fallback_reason`.
+- [ ] Make every key under the output schema `properties` appear in `required`.
+- [ ] Represent absent `fallback_reason` with a schema-valid empty string or nullable value.
+- [ ] Normalize empty `fallback_reason` back to an omitted decision/report value.
+- [ ] Update prompt wording so Codex always returns the required `fallback_reason` field.
+- [ ] Add regression coverage for the required-property schema rule.
+- [ ] Re-run the real command smoke and record whether it reaches the next validation boundary.
 
 Phase 6.1 rationale:
 
@@ -481,6 +488,7 @@ Phase 6.1 rationale:
 - `data stack` works because recommendations use closed nested objects and enum-backed patch paths.
 - `md pdf-profile codex` reached the real structured-output request after the Phase 6 working-directory hotfix, then failed because `accepted_fields: { type: "object" }` was an open object fragment.
 - The fix should align the Markdown PDF helper with the `data stack` patch-contract pattern instead of chasing nested `additionalProperties: false` errors across a wide profile schema.
+- The next strict-schema failure is a required-property rule: Codex structured output requires every key declared in `properties`, including `fallback_reason`, to be present in `required`.
 
 Phase 6.1 focused job record:
 
