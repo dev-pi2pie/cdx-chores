@@ -523,6 +523,31 @@ Phase 6.2 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-2-patch-value-domains.md`
 
+### Phase 6.3: Renderer Compatibility And Style Decision Policy
+
+- [ ] Replace cover-page CSS that emits WeasyPrint viewport-unit warnings with paged-media-safe layout CSS.
+- [ ] Add regression coverage proving enabled cover profiles do not emit `min-height: 100vh`.
+- [ ] Add candidate-summary traits so Codex sees the behavioral cost of each candidate, including cover, ToC, page numbers, code highlighting, density, and intended use.
+- [ ] Add bounded style-policy prompt facts that keep profiles reusable and conservative.
+- [ ] Add feature trigger rules for cover, ToC, page numbers, and code highlighting.
+- [ ] Add renderer compatibility prompt facts that tell Codex not to select settings known to produce renderer warnings.
+- [ ] Keep style and renderer guidance prompt-internal; do not add new public hint flags beyond `--intent` and `--font-hint`.
+- [ ] Tune page-number guidance so Codex enables page numbers only for explicit intent or long-form document signals.
+- [ ] Avoid total-page formats in Codex decisions until total-page semantics are deterministic and documented.
+- [ ] Add focused tests for prompt facts, candidate traits, cover CSS compatibility, and conservative page-number selection.
+- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [ ] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
+- [ ] Add a Phase 6.3 job record after implementation and validation.
+
+Phase 6.3 rationale:
+
+- Phase 6.2 made Codex patch values schema-valid and profile-valid, but valid profile values can still route into renderer warnings or over-eager document chrome.
+- A live replay using a Codex-generated profile selected `cover.enabled: true` and `cover.style: report`; the deterministic cover CSS then emitted WeasyPrint warnings for `min-height: 100vh`.
+- That warning is a renderer compatibility bug, not raw Codex CSS generation. Valid cover profiles should render without known warnings.
+- The same replay showed that page numbers need a clearer decision policy. Codex should not infer full report chrome from soft wording such as clean, proper, polished, or professional unless document signals or explicit intent justify it.
+- Candidate summaries currently expose only coarse identity and field presence. Codex needs compact candidate traits so it can understand that selecting a preset may also enable cover, ToC, page numbers, and code highlighting.
+- The fix should remain internal to candidate facts, prompt facts, renderer CSS, and tests. It should not introduce broad style-hint flags or make the CLI surface larger.
+
 ### Phase 7: Documentation And Guide Updates
 
 - [ ] Update Markdown PDF user guidance after behavior is implemented.
