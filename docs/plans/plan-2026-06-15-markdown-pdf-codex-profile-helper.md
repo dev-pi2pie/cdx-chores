@@ -494,6 +494,31 @@ Phase 6.1 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-1-strict-patch-contract.md`
 
+### Phase 6.2: Patch Value Domains And Progress Feedback
+
+- [ ] Add enum/value-domain metadata for Codex patch paths with constrained profile values.
+- [ ] Include allowed values in the bounded Codex prompt facts instead of adding new CLI hint flags.
+- [ ] Validate enum-sensitive patch values before profile application with path-specific error context.
+- [ ] Cover the observed invalid `/cover/style` patch value path.
+- [ ] Cover the observed invalid `/pageNumbers/position` patch value path.
+- [ ] Decide and implement the invalid-patch handling policy: fail closed, drop invalid patches with warnings, or conservative fallback.
+- [ ] Keep selected-candidate validation fail-closed when Codex selects an unknown candidate.
+- [ ] Add Codex waiting progress feedback for the direct `md pdf-profile codex` helper.
+- [ ] Reuse or extract the existing direct-command TTY spinner pattern from rename Codex progress.
+- [ ] Keep progress output TTY-only or safely single-line on non-TTY streams.
+- [ ] Ensure progress stops and clears on success, fallback, and all error paths.
+- [ ] Add focused tests for value-domain handling and progress cleanup.
+- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [ ] Verify no generated profile, report, or replay artifacts are staged or committed.
+- [ ] Add a Phase 6.2 job record after implementation and validation.
+
+Phase 6.2 rationale:
+
+- Phase 6.1 made the structured-output schema API-valid.
+- Live runs then reached profile application and exposed semantic patch-value failures, such as invalid `profile.cover.style` and `profile.pageNumbers.position` values.
+- Those failures are value-domain contract gaps, not structured-output schema-shape gaps.
+- Direct CLI users also need visible progress while Codex is running; `rename` Codex progress is the closest existing direct-command precedent.
+
 ### Phase 7: Documentation And Guide Updates
 
 - [ ] Update Markdown PDF user guidance after behavior is implemented.
