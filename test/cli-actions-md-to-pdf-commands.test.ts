@@ -270,10 +270,17 @@ describe("cli command: md pdf-profile init", () => {
 describe("cli command: md pdf-profile codex", () => {
   test("documents the direct Codex profile helper options", () => {
     const result = runCli(["md", "pdf-profile", "codex", "--help"]);
+    const normalizedStdout = result.stdout.replace(/\s+/g, " ");
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Usage: cdx-chores md pdf-profile codex [options] [input]");
+    expect(normalizedStdout).toContain(
+      "Draft a reusable Markdown PDF profile from sample signals, hints, or fallback defaults",
+    );
+    expect(result.stdout).toContain("input");
+    expect(normalizedStdout).toContain("Markdown sample for document-informed profile signals");
     expect(result.stdout).toContain("-i, --input <path>");
+    expect(result.stdout).toContain("Same as the input argument; useful in scripts");
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--font-hint <text>");
     expect(result.stdout).toContain("--base-profile <path>");

@@ -173,9 +173,11 @@ export function registerMarkdownCommands(
 
   pdfProfileCommand
     .command("codex")
-    .argument("[input]", "Sample Markdown file used to collect bounded profile signals")
-    .description("Use Codex to draft a reusable Markdown PDF profile")
-    .option("-i, --input <path>", "Explicit Markdown sample path")
+    .argument("[input]", "Markdown sample for document-informed profile signals")
+    .description(
+      "Draft a reusable Markdown PDF profile from sample signals, hints, or fallback defaults",
+    )
+    .option("-i, --input <path>", "Same as the input argument; useful in scripts")
     .option("--intent <text>", "Rendering direction for the reusable profile")
     .option("--font-hint <text>", "Optional font preference hint", collectStringOption)
     .option("--base-profile <path>", "Existing Markdown PDF profile to refine")

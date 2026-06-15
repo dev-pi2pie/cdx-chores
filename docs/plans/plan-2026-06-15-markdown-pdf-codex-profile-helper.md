@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Codex profile helper implementation"
 created-date: 2026-06-15
+modified-date: 2026-06-15
 status: draft
 agent: codex
 ---
@@ -431,6 +432,12 @@ Phase 6 focused validation:
 ```bash
 bun test test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts
 ```
+
+Phase 6 follow-up note on 2026-06-15:
+
+- Help text now presents `[input]` as the normal Markdown sample form and `--input <path>` as the script-friendly equivalent.
+- The command description now mentions sample signals, hints, and fallback defaults so no-signal deterministic fallback is not misread as always invoking Codex.
+- No behavior changed in this follow-up.
 
 ### Phase 7: Documentation And Guide Updates
 
