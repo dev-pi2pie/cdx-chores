@@ -274,34 +274,23 @@ describe("Markdown PDF Codex profile adapter", () => {
         },
       }),
     ).toThrow("profile.toc.depth");
-    expect(() =>
-      applyMarkdownPdfCodexDecision({
-        candidates: requestBase.candidates,
-        decision: {
-          acceptedPatches: [{ op: "replace", path: "/cover/style", value: "modern" }],
-          decisionMode: "adapted",
-          reasoning: "bad",
-          selectedCandidateId: "wide-table",
-          unmatchedDirections: [],
-          warnings: [],
-        },
-      }),
-    ).toThrow("accepted_patches[0].value for /cover/style must be one of: plain, report");
-    expect(() =>
-      applyMarkdownPdfCodexDecision({
-        candidates: requestBase.candidates,
-        decision: {
-          acceptedPatches: [{ op: "replace", path: "/pageNumbers/position", value: "bottom" }],
-          decisionMode: "adapted",
-          reasoning: "bad",
-          selectedCandidateId: "wide-table",
-          unmatchedDirections: [],
-          warnings: [],
-        },
-      }),
-    ).toThrow(
-      "accepted_patches[0].value for /pageNumbers/position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right",
-    );
+    for (const domain of MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS) {
+      expect(() =>
+        applyMarkdownPdfCodexDecision({
+          candidates: requestBase.candidates,
+          decision: {
+            acceptedPatches: [{ op: "replace", path: domain.path, value: "__invalid__" }],
+            decisionMode: "adapted",
+            reasoning: "bad",
+            selectedCandidateId: "wide-table",
+            unmatchedDirections: [],
+            warnings: [],
+          },
+        }),
+      ).toThrow(
+        `accepted_patches[0].value for ${domain.path} must be one of: ${domain.values.join(", ")}`,
+      );
+    }
     for (const value of [true, 1, ["plain"]]) {
       expect(() =>
         applyMarkdownPdfCodexDecision({

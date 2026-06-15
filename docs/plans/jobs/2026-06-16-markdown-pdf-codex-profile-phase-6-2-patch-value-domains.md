@@ -53,6 +53,32 @@ The response schema constrained patch paths, but each patch value still used a b
   - completed successfully
 - `bun run build`
   - completed successfully
+
+## Final Review Follow-Up
+
+The final full-range review found two additional test coverage gaps:
+
+- The baseline non-TTY success path did not assert the plain request-progress line after progress output moved behind the shared helper.
+- Value-domain rejection coverage did not exercise every finite-domain path.
+
+Final follow-up changes:
+
+- Added a non-TTY success assertion for `Requesting Codex Markdown PDF profile recommendation...`.
+- Parameterized invalid string-value rejection across every `MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS` entry.
+
+Final follow-up evidence:
+
+- `bun test test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-rename-codex-internals.test.ts`
+  - 49 pass, 0 fail
+  - 304 assertions
+- `bun run format:check`
+  - all matched files use the correct format
+- `bun run lint`
+  - completed successfully
+- `git diff --check`
+  - completed successfully
+- `bun run build`
+  - completed successfully
 - `node dist/esm/bin.mjs md pdf-profile codex README.md --intent "clean pdf with a proper cover page" --dry-run`
   - used `--dry-run` without report flags, so no profile or report artifact was requested
   - sandboxed smoke reached Codex initialization and stopped at the app-server permission boundary: `failed to initialize in-process app-server client: Operation not permitted`

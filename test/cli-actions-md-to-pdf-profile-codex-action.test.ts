@@ -53,6 +53,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(stdout.text).toContain("Based on: wide-table");
       expect(stdout.text).toContain("Preset: wide-table");
       expect(stderr.text).toContain("Collecting Markdown PDF profile signals");
+      expect(stderr.text).toContain("Requesting Codex Markdown PDF profile recommendation...");
       expect(stderr.text).toContain("Wrote Markdown PDF profile: profile.yml");
       const profile = await readMarkdownPdfProfileFile(outputPath);
       const profileIdentity = profile.profile as Record<string, string>;
