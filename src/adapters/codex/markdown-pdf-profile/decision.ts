@@ -1,18 +1,18 @@
-import {
-  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
-  validateMarkdownPdfProfileShape,
-} from "../../../cli/markdown-pdf/profile/schema";
+import { validateMarkdownPdfProfileShape } from "../../../cli/markdown-pdf/profile/schema";
 import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/profile/candidates";
+import { normalizeMarkdownPdfProfile } from "../../../cli/markdown-pdf/profile/normalize";
 import {
   MARKDOWN_PDF_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_CODEX_PATCH_PATHS,
   type MarkdownPdfCodexDecision,
   type MarkdownPdfCodexDecisionMode,
+  type MarkdownPdfCodexPatchPath,
+  type MarkdownPdfCodexPatchValue,
+  type MarkdownPdfCodexProfilePatch,
   type MarkdownPdfCodexProfileResult,
 } from "./types";
 
-const ACCEPTED_PROFILE_ROOT_KEYS = new Set(
-  MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter((key) => key !== "profile"),
-);
+const ACCEPTED_PATCH_PATHS = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
 
 function parseRecord(value: unknown, context: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -48,6 +48,44 @@ function parseStringArray(value: unknown, context: string): string[] {
   });
 }
 
+function parsePatchPath(value: unknown, context: string): MarkdownPdfCodexPatchPath {
+  if (typeof value === "string" && ACCEPTED_PATCH_PATHS.has(value)) {
+    return value as MarkdownPdfCodexPatchPath;
+  }
+  throw new Error(
+    `Markdown PDF Codex response ${context} must be one of: ${MARKDOWN_PDF_CODEX_PATCH_PATHS.join(", ")}.`,
+  );
+}
+
+function parsePatchValue(value: unknown, context: string): MarkdownPdfCodexPatchValue {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    (Array.isArray(value) && value.every((item) => typeof item === "string"))
+  ) {
+    return structuredClone(value) as MarkdownPdfCodexPatchValue;
+  }
+  throw new Error(
+    `Markdown PDF Codex response ${context} must be a string, number, boolean, or string array.`,
+  );
+}
+
+function parseAcceptedPatch(value: unknown, context: string): MarkdownPdfCodexProfilePatch {
+  const patch = parseRecord(value, context);
+  if (patch.op !== "replace") {
+    throw new Error(`Markdown PDF Codex response ${context}.op must be replace.`);
+  }
+  if (!("value" in patch)) {
+    throw new Error(`Markdown PDF Codex response ${context}.value is required.`);
+  }
+  return {
+    op: "replace",
+    path: parsePatchPath(patch.path, `${context}.path`),
+    value: parsePatchValue(patch.value, `${context}.value`),
+  };
+}
+
 function parseDecisionMode(value: unknown): MarkdownPdfCodexDecisionMode {
   if (
     typeof value === "string" &&
@@ -60,37 +98,33 @@ function parseDecisionMode(value: unknown): MarkdownPdfCodexDecisionMode {
   );
 }
 
-function validateAcceptedFields(value: unknown): Record<string, unknown> {
-  const acceptedFields = parseRecord(value, "accepted_fields");
-  for (const key of Object.keys(acceptedFields)) {
-    if (!ACCEPTED_PROFILE_ROOT_KEYS.has(key)) {
-      throw new Error(`Markdown PDF Codex response accepted_fields.${key} is not supported.`);
-    }
+function parseAcceptedPatches(value: unknown): MarkdownPdfCodexProfilePatch[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Markdown PDF Codex response accepted_patches must be an array.");
   }
-  validateMarkdownPdfProfileShape(acceptedFields);
-  return acceptedFields;
+  return value.map((patch, index) => parseAcceptedPatch(patch, `accepted_patches[${index}]`));
 }
 
 export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPdfCodexDecision {
   const parsed = parseRecord(JSON.parse(finalResponse), "root");
   const decisionMode = parseDecisionMode(parsed.decision_mode);
   const selectedCandidateId = parseString(parsed.selected_candidate_id, "selected_candidate_id");
-  const acceptedFields = validateAcceptedFields(parsed.accepted_fields);
+  const acceptedPatches = parseAcceptedPatches(parsed.accepted_patches);
   if (decisionMode === "no-usable-profile") {
     if (selectedCandidateId !== "none") {
       throw new Error(
         "Markdown PDF Codex response selected_candidate_id must be none for no-usable-profile.",
       );
     }
-    if (Object.keys(acceptedFields).length > 0) {
+    if (acceptedPatches.length > 0) {
       throw new Error(
-        "Markdown PDF Codex response accepted_fields must be empty for no-usable-profile.",
+        "Markdown PDF Codex response accepted_patches must be empty for no-usable-profile.",
       );
     }
   }
 
   return {
-    acceptedFields,
+    acceptedPatches,
     decisionMode,
     fallbackReason: parseOptionalString(parsed.fallback_reason, "fallback_reason"),
     reasoning: parseString(parsed.reasoning, "reasoning"),
@@ -100,39 +134,33 @@ export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPd
   };
 }
 
-function mergeProfileSection(base: unknown, update: unknown): unknown {
-  if (update === undefined) {
-    return structuredClone(base);
-  }
-  if (
-    base &&
-    update &&
-    typeof base === "object" &&
-    typeof update === "object" &&
-    !Array.isArray(base) &&
-    !Array.isArray(update)
-  ) {
-    const merged: Record<string, unknown> = structuredClone(base) as Record<string, unknown>;
-    for (const [key, value] of Object.entries(update as Record<string, unknown>)) {
-      if (value !== undefined) {
-        merged[key] = mergeProfileSection(merged[key], value);
-      }
-    }
-    return merged;
-  }
-  return structuredClone(update);
-}
-
-function mergeAcceptedProfileFields(
+function applyAcceptedProfilePatches(
   base: Record<string, unknown>,
-  acceptedFields: Record<string, unknown>,
+  acceptedPatches: readonly MarkdownPdfCodexProfilePatch[],
 ): Record<string, unknown> {
   const merged = structuredClone(base) as Record<string, unknown>;
-  for (const key of ACCEPTED_PROFILE_ROOT_KEYS) {
-    if (Object.hasOwn(acceptedFields, key)) {
-      merged[key] = mergeProfileSection(merged[key], acceptedFields[key]);
+  for (const patch of acceptedPatches) {
+    const segments = patch.path.slice(1).split("/");
+    let target = merged;
+    for (const segment of segments.slice(0, -1)) {
+      const existing = target[segment];
+      if (typeof existing !== "object" || existing === null || Array.isArray(existing)) {
+        throw new Error(
+          `Markdown PDF Codex response accepted_patches path cannot replace nested value at ${patch.path}.`,
+        );
+      }
+      target = target[segment] as Record<string, unknown>;
     }
+    const last = segments.at(-1);
+    if (!last) {
+      throw new Error(
+        `Markdown PDF Codex response accepted_patches path is invalid: ${patch.path}`,
+      );
+    }
+    target[last] = structuredClone(patch.value);
   }
+  validateMarkdownPdfProfileShape(merged);
+  normalizeMarkdownPdfProfile({ profile: merged });
   return merged;
 }
 
@@ -156,10 +184,11 @@ export function applyMarkdownPdfCodexDecision(options: {
   }
 
   const candidate = selectedCandidate(options.candidates, options.decision.selectedCandidateId);
-  const profile = mergeAcceptedProfileFields(
+  const profile = applyAcceptedProfilePatches(
     candidate.fullProfile,
-    options.decision.acceptedFields,
+    options.decision.acceptedPatches,
   );
   validateMarkdownPdfProfileShape(profile);
+  normalizeMarkdownPdfProfile({ profile });
   return { decision: options.decision, profile };
 }

@@ -239,7 +239,7 @@ Accepted patches should use a strict schema-compatible contract:
 accepted_patches[]
   op: replace
   path: enum of supported Markdown PDF profile paths
-  value: bounded primitive, string array, or closed object value
+  value: bounded primitive or string array
 ```
 
 This follows the `data stack` Codex-report precedent: Codex recommends bounded changes through enum-backed paths instead of returning an arbitrary nested object. Validate the structured response before serializing a profile. Reject unknown patch paths, unsupported value types, and invalid enum values.
@@ -462,17 +462,18 @@ Phase 6 working-directory hotfix note on 2026-06-15:
 
 ### Phase 6.1: Strict Structured Output Patch Contract
 
-- [ ] Replace open `accepted_fields` output with strict `accepted_patches`.
-- [ ] Define enum-backed Markdown PDF profile patch paths for the first supported adaptation surface.
-- [ ] Keep patch operations to `replace` only.
-- [ ] Support only bounded value schemas that structured-output validation accepts.
-- [ ] Convert accepted patches into the existing profile merge/application path.
-- [ ] Preserve final `validateMarkdownPdfProfileShape` validation before writing or reporting success.
-- [ ] Update the Codex prompt to ask for patches, not arbitrary profile fragments.
-- [ ] Update decision/report types so reports explain accepted patches and derived changes from the base profile.
-- [ ] Add regression coverage for the schema shape so open object fragments cannot return.
-- [ ] Verify a real Codex-assisted command no longer fails with `invalid_json_schema` for the output schema.
-- [ ] Add a Phase 6.1 job record after implementation and validation.
+- [x] Replace open `accepted_fields` output with strict `accepted_patches`.
+- [x] Define enum-backed Markdown PDF profile patch paths for the first supported adaptation surface.
+- [x] Keep patch operations to `replace` only.
+- [x] Support only bounded value schemas that structured-output validation accepts.
+- [x] Convert accepted patches into the existing profile application path.
+- [x] Preserve final `validateMarkdownPdfProfileShape` validation before writing or reporting success.
+- [x] Add profile normalization validation so invalid patch values fail before reporting success.
+- [x] Update the Codex prompt to ask for patches, not arbitrary profile fragments.
+- [x] Update decision/report types so reports explain accepted patches and derived changes from the base profile.
+- [x] Add regression coverage for the schema shape so open object fragments cannot return.
+- [x] Record the live Codex verification limit: sandboxed smoke is blocked before a remote structured-output response, and unsandboxed verification was rejected by policy because it would disclose README-derived signals externally.
+- [x] Add a Phase 6.1 job record after implementation and validation.
 
 Phase 6.1 rationale:
 
@@ -480,6 +481,10 @@ Phase 6.1 rationale:
 - `data stack` works because recommendations use closed nested objects and enum-backed patch paths.
 - `md pdf-profile codex` reached the real structured-output request after the Phase 6 working-directory hotfix, then failed because `accepted_fields: { type: "object" }` was an open object fragment.
 - The fix should align the Markdown PDF helper with the `data stack` patch-contract pattern instead of chasing nested `additionalProperties: false` errors across a wide profile schema.
+
+Phase 6.1 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-1-strict-patch-contract.md`
 
 ### Phase 7: Documentation And Guide Updates
 

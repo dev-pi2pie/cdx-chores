@@ -6,10 +6,11 @@ import type {
   MarkdownPdfCodexProfileResult,
   MarkdownPdfCodexProfileRunner,
 } from "./types";
+import { MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
 
 const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 30_000;
 
-const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
+export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   type: "object",
   properties: {
     decision_mode: {
@@ -17,7 +18,22 @@ const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
       enum: ["adapted", "conservative-fallback", "no-usable-profile"],
     },
     selected_candidate_id: { type: "string" },
-    accepted_fields: { type: "object" },
+    accepted_patches: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          op: { type: "string", enum: ["replace"] },
+          path: { type: "string", enum: [...MARKDOWN_PDF_CODEX_PATCH_PATHS] },
+          value: {
+            type: ["string", "number", "boolean", "array"],
+            items: { type: "string" },
+          },
+        },
+        required: ["op", "path", "value"],
+        additionalProperties: false,
+      },
+    },
     reasoning: { type: "string" },
     warnings: { type: "array", items: { type: "string" } },
     fallback_reason: { type: "string" },
@@ -26,7 +42,7 @@ const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   required: [
     "decision_mode",
     "selected_candidate_id",
-    "accepted_fields",
+    "accepted_patches",
     "reasoning",
     "warnings",
     "unmatched_directions",

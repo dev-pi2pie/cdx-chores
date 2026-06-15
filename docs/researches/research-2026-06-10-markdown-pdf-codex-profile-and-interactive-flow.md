@@ -271,14 +271,14 @@ selected_candidate_id
 accepted_patches[]
   op: replace
   path: enum of supported Markdown PDF profile paths
-  value: bounded primitive, string array, or closed object value
+  value: bounded primitive or string array
 reasoning
 warnings
 fallback_reason
 unmatched_directions
 ```
 
-The implementation can still apply those patches by converting them into the existing profile merge path, but the external Codex contract should be enum-backed, closed, and API-valid before Interactive mode depends on it.
+The implementation can still apply those patches by converting them into a profile application step, but the external Codex contract should be enum-backed, closed, and API-valid before Interactive mode depends on it.
 
 Recommended v1 candidate catalog:
 

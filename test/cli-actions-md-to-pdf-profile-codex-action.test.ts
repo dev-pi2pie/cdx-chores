@@ -14,9 +14,10 @@ function adaptedRunner(candidateId = "wide-table") {
     JSON.stringify({
       decision_mode: "adapted",
       selected_candidate_id: candidateId,
-      accepted_fields: {
-        toc: { enabled: true, depth: 2 },
-      },
+      accepted_patches: [
+        { op: "replace", path: "/toc/enabled", value: true },
+        { op: "replace", path: "/toc/depth", value: 2 },
+      ],
       reasoning: "The document has enough structure for a reusable profile.",
       warnings: [],
       unmatched_directions: [],
@@ -64,13 +65,16 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(profile.toc).toMatchObject({ enabled: true, depth: 2 });
 
       const report = await readMarkdownPdfCodexReportArtifact(reportPath);
-      expect(report.artifact.version).toBe(2);
+      expect(report.artifact.version).toBe(3);
       expect(report.artifact.advisoryOnly).toBe(true);
       expect(report.profile.id).toBe(profileIdentity.id);
       expect(report.input.path).toBe("report.md");
       expect(report.signalMode).toBe("document-informed");
       expect(report.result.status).toBe("success");
-      expect(report.result.acceptedFields).toEqual({ toc: { enabled: true, depth: 2 } });
+      expect(report.result.acceptedPatches).toEqual([
+        { op: "replace", path: "/toc/enabled", value: true },
+        { op: "replace", path: "/toc/depth", value: 2 },
+      ]);
     });
   });
 
@@ -728,7 +732,7 @@ describe("cli action modules: md pdf-profile codex", () => {
               JSON.stringify({
                 decision_mode: "no-usable-profile",
                 selected_candidate_id: "none",
-                accepted_fields: {},
+                accepted_patches: [],
                 reasoning: "Template-only request.",
                 warnings: [],
                 unmatched_directions: ["custom CSS"],
@@ -768,7 +772,7 @@ describe("cli action modules: md pdf-profile codex", () => {
               JSON.stringify({
                 decision_mode: "no-usable-profile",
                 selected_candidate_id: "none",
-                accepted_fields: {},
+                accepted_patches: [],
                 reasoning: "Template-only request.",
                 warnings: [],
                 unmatched_directions: ["custom CSS"],
@@ -801,7 +805,7 @@ describe("cli action modules: md pdf-profile codex", () => {
           JSON.stringify({
             decision_mode: "conservative-fallback",
             selected_candidate_id: "default",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "Facts are weak.",
             warnings: ["Using default profile."],
             fallback_reason: "No strong layout signal.",
@@ -921,7 +925,7 @@ describe("cli action modules: md pdf-profile codex", () => {
               JSON.stringify({
                 decision_mode: "adapted",
                 selected_candidate_id: "missing",
-                accepted_fields: {},
+                accepted_patches: [],
                 reasoning: "bad candidate",
                 warnings: [],
                 unmatched_directions: [],

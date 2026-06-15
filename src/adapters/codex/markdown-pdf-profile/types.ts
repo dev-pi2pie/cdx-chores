@@ -26,6 +26,56 @@ export const MARKDOWN_PDF_CODEX_SIGNAL_MODES = [
 
 export type MarkdownPdfCodexSignalMode = (typeof MARKDOWN_PDF_CODEX_SIGNAL_MODES)[number];
 
+export const MARKDOWN_PDF_CODEX_PATCH_PATHS = [
+  "/page/size",
+  "/page/orientation",
+  "/page/margin",
+  "/page/marginX",
+  "/page/marginY",
+  "/page/marginTop",
+  "/page/marginRight",
+  "/page/marginBottom",
+  "/page/marginLeft",
+  "/toc/enabled",
+  "/toc/depth",
+  "/toc/pageBreak",
+  "/pdf/content-langs",
+  "/fonts/body/default",
+  "/fonts/heading/default",
+  "/fonts/code/default",
+  "/fonts/pageChrome/default",
+  "/cover/enabled",
+  "/cover/style",
+  "/cover/fields/title",
+  "/cover/fields/subtitle",
+  "/cover/fields/author",
+  "/cover/fields/company",
+  "/cover/fields/date",
+  "/header/left",
+  "/header/center",
+  "/header/right",
+  "/footer/left",
+  "/footer/center",
+  "/footer/right",
+  "/pageNumbers/enabled",
+  "/pageNumbers/position",
+  "/pageNumbers/format",
+  "/pageNumbers/scope",
+  "/code/highlight",
+  "/code/theme",
+  "/code/lineNumbers",
+  "/code/transformerNotation",
+] as const;
+
+export type MarkdownPdfCodexPatchPath = (typeof MARKDOWN_PDF_CODEX_PATCH_PATHS)[number];
+export type MarkdownPdfCodexPatchValue = string | number | boolean | string[];
+
+export interface MarkdownPdfCodexProfilePatch {
+  op: "replace";
+  path: MarkdownPdfCodexPatchPath;
+  value: MarkdownPdfCodexPatchValue;
+}
+
 export interface MarkdownPdfCodexProfileRequest {
   candidates: MarkdownPdfProfileCandidate[];
   documentSignals: MarkdownPdfDocumentSignals;
@@ -39,7 +89,7 @@ export interface MarkdownPdfCodexProfileRequest {
 }
 
 export interface MarkdownPdfCodexDecision {
-  acceptedFields: Record<string, unknown>;
+  acceptedPatches: MarkdownPdfCodexProfilePatch[];
   decisionMode: MarkdownPdfCodexDecisionMode;
   fallbackReason?: string;
   reasoning: string;

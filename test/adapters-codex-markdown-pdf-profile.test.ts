@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
 } from "../src/adapters/codex/markdown-pdf-profile";
@@ -62,6 +63,23 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).not.toContain("fullProfile");
   });
 
+  test("uses a strict patch response schema without open nested objects", () => {
+    expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties).toHaveProperty("accepted_patches");
+    expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties).not.toHaveProperty(
+      "accepted_fields",
+    );
+    expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.additionalProperties).toBe(false);
+    expect(
+      MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items,
+    ).toMatchObject({
+      additionalProperties: false,
+      required: ["op", "path", "value"],
+    });
+    const patchSchema = MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items;
+    expect(patchSchema.properties.path.enum).toContain("/toc/enabled");
+    expect(patchSchema.properties.value.type).not.toContain("object");
+  });
+
   test("starts the default Codex runner in the request working directory", async () => {
     let capturedThreadOptions: unknown;
 
@@ -74,7 +92,7 @@ describe("Markdown PDF Codex profile adapter", () => {
               finalResponse: JSON.stringify({
                 decision_mode: "adapted",
                 selected_candidate_id: "wide-table",
-                accepted_fields: {},
+                accepted_patches: [],
                 reasoning: "Wide table candidate matches the table facts.",
                 warnings: [],
                 unmatched_directions: [],
@@ -104,10 +122,11 @@ describe("Markdown PDF Codex profile adapter", () => {
         JSON.stringify({
           decision_mode: "adapted",
           selected_candidate_id: "wide-table",
-          accepted_fields: {
-            toc: { enabled: true, depth: 2 },
-            fonts: { body: { default: "Source Serif 4" } },
-          },
+          accepted_patches: [
+            { op: "replace", path: "/toc/enabled", value: true },
+            { op: "replace", path: "/toc/depth", value: 2 },
+            { op: "replace", path: "/fonts/body/default", value: "Source Serif 4" },
+          ],
           reasoning: "Wide table candidate matches the table facts.",
           warnings: [],
           unmatched_directions: [],
@@ -144,7 +163,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         JSON.stringify({
           decision_mode: "conservative-fallback",
           selected_candidate_id: "default",
-          accepted_fields: {},
+          accepted_patches: [],
           reasoning: "Facts are weak.",
           warnings: ["Using default profile."],
           fallback_reason: "No strong layout signals.",
@@ -157,7 +176,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         JSON.stringify({
           decision_mode: "no-usable-profile",
           selected_candidate_id: "none",
-          accepted_fields: {},
+          accepted_patches: [],
           reasoning: "No profile should be written.",
           warnings: [],
           unmatched_directions: ["unsupported custom CSS"],
@@ -170,49 +189,63 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(noProfile.decision.unmatchedDirections).toEqual(["unsupported custom CSS"]);
   });
 
-  test("rejects unsupported accepted fields and unknown candidates", () => {
+  test("rejects unsupported accepted patches and unknown candidates", () => {
     expect(() =>
       parseMarkdownPdfCodexDecision(
         JSON.stringify({
           decision_mode: "adapted",
           selected_candidate_id: "default",
-          accepted_fields: { profile: { id: "bad" } },
+          accepted_patches: [{ op: "replace", path: "/profile/id", value: "bad" }],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
         }),
       ),
-    ).toThrow("accepted_fields.profile is not supported");
+    ).toThrow("accepted_patches[0].path must be one of");
     expect(() =>
       parseMarkdownPdfCodexDecision(
         JSON.stringify({
           decision_mode: "adapted",
           selected_candidate_id: "default",
-          accepted_fields: { page: { unsupported: "bad" } },
+          accepted_patches: [{ op: "replace", path: "/page/unsupported", value: "bad" }],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
         }),
       ),
-    ).toThrow("profile.page.unsupported");
+    ).toThrow("accepted_patches[0].path must be one of");
     expect(() =>
-      parseMarkdownPdfCodexDecision(
-        JSON.stringify({
-          decision_mode: "adapted",
-          selected_candidate_id: "default",
-          accepted_fields: { fonts: { body: { fallback: "Bad Font" } } },
+      applyMarkdownPdfCodexDecision({
+        candidates: requestBase.candidates,
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/toc/depth", value: "not-a-number" }],
+          decisionMode: "adapted",
           reasoning: "bad",
+          selectedCandidateId: "wide-table",
+          unmatchedDirections: [],
           warnings: [],
-          unmatched_directions: [],
-        }),
-      ),
-    ).toThrow("profile.fonts.body.fallback");
+        },
+      }),
+    ).toThrow("profile.toc.depth");
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: requestBase.candidates,
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/pdf/content-langs", value: ["en"] }],
+          decisionMode: "adapted",
+          reasoning: "bad",
+          selectedCandidateId: "default",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow("path cannot replace nested value");
 
     expect(() =>
       applyMarkdownPdfCodexDecision({
         candidates: requestBase.candidates,
         decision: {
-          acceptedFields: {},
+          acceptedPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "missing",
@@ -275,7 +308,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "adapted",
             selected_candidate_id: "default",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "missing arrays",
           }),
       }),
@@ -287,7 +320,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "adapted",
             selected_candidate_id: "default",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "bad warnings",
             warnings: "nope",
             unmatched_directions: [],
@@ -301,7 +334,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "adapted",
             selected_candidate_id: "default",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "blank warning",
             warnings: [" "],
             unmatched_directions: [],
@@ -315,7 +348,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "other",
             selected_candidate_id: "default",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "bad mode",
             warnings: [],
             unmatched_directions: [],
@@ -341,13 +374,13 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "no-usable-profile",
             selected_candidate_id: "none",
-            accepted_fields: { toc: { enabled: true } },
+            accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
             reasoning: "No profile should be written.",
             warnings: [],
             unmatched_directions: [],
           }),
       }),
-    ).rejects.toThrow("accepted_fields must be empty for no-usable-profile");
+    ).rejects.toThrow("accepted_patches must be empty for no-usable-profile");
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
@@ -355,7 +388,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           JSON.stringify({
             decision_mode: "adapted",
             selected_candidate_id: "missing",
-            accepted_fields: {},
+            accepted_patches: [],
             reasoning: "bad candidate",
             warnings: [],
             unmatched_directions: [],
