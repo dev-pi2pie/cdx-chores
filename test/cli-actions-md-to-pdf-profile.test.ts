@@ -258,6 +258,9 @@ describe("markdown PDF profile normalization", () => {
       const profilePath = join(fixtureDir, "pdf-profile.yml");
       const sourcePath = join(fixtureDir, "bad-source.yml");
       const createdAtPath = join(fixtureDir, "bad-created-at.yml");
+      const dateOnlyCreatedAtPath = join(fixtureDir, "date-only-created-at.yml");
+      const invalidCalendarCreatedAtPath = join(fixtureDir, "invalid-calendar-created-at.yml");
+      const idPath = join(fixtureDir, "bad-id.yml");
       const unknownKeyPath = join(fixtureDir, "unknown-identity-key.yml");
       await writeFile(
         profilePath,
@@ -289,6 +292,39 @@ describe("markdown PDF profile normalization", () => {
           "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
           "  source: codex",
           "  createdAt: not-a-date",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        dateOnlyCreatedAtPath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  createdAt: 2026-06-15",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        invalidCalendarCreatedAtPath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  createdAt: 2026-02-31T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        idPath,
+        [
+          "profile:",
+          "  id: profile-1",
+          "  source: codex",
+          "  createdAt: 2026-06-15T08:15:00Z",
           "",
         ].join("\n"),
         "utf8",
@@ -331,6 +367,37 @@ describe("markdown PDF profile normalization", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
+        },
+      );
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({
+            profile: await readMarkdownPdfProfileFile(dateOnlyCreatedAtPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
+        },
+      );
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({
+            profile: await readMarkdownPdfProfileFile(invalidCalendarCreatedAtPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
+        },
+      );
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(idPath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.id must use md-pdf-profile-YYYYMMDDTHHMMSSZ-xxxxxxxx",
         },
       );
       await expectCliError(() => readMarkdownPdfProfileFile(unknownKeyPath), {

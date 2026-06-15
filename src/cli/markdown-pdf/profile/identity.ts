@@ -3,6 +3,8 @@ import { MARKDOWN_PDF_PRESETS, type MarkdownPdfPreset } from "../validation";
 import type { NormalizedMarkdownPdfProfileIdentity } from "./types";
 
 const MARKDOWN_PDF_PRESET_VALUES = new Set<string>(MARKDOWN_PDF_PRESETS);
+const PROFILE_ID_PATTERN = /^md-pdf-profile-\d{8}T\d{6}Z-[a-f0-9]{8}$/;
+const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
 function readObject(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -48,13 +50,24 @@ export function normalizeMarkdownPdfProfileIdentity(
       exitCode: 2,
     });
   }
+  if (!PROFILE_ID_PATTERN.test(id)) {
+    throw new CliError("profile.profile.id must use md-pdf-profile-YYYYMMDDTHHMMSSZ-xxxxxxxx.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   if (source !== "codex") {
     throw new CliError("profile.profile.source must be codex.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
   }
-  if (Number.isNaN(Date.parse(createdAt))) {
+  const createdAtDate = new Date(createdAt);
+  if (
+    !UTC_TIMESTAMP_PATTERN.test(createdAt) ||
+    Number.isNaN(createdAtDate.getTime()) ||
+    createdAtDate.toISOString() !== createdAt.replace("Z", ".000Z")
+  ) {
     throw new CliError("profile.profile.createdAt must be an ISO date-time string.", {
       code: "INVALID_INPUT",
       exitCode: 2,
