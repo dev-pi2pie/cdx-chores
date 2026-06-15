@@ -147,6 +147,179 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("accepts positional input as the Markdown sample signal", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-positional", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody\n", "utf8");
+      let prompt = "";
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async (options) => {
+          prompt = options.prompt;
+          return await adaptedRunner("article")();
+        },
+        output: "profile.yml",
+        positionalInput: "report.md",
+      });
+
+      expect(prompt).toContain('"signalMode": "document-informed"');
+      expect(prompt).toContain('"available": true');
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.profile).toMatchObject({ source: "codex", preset: "article" });
+    });
+  });
+
+  test("rejects conflicting positional and explicit input paths before calling Codex", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-input-conflict", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "one.md"), "# One\n", "utf8");
+      await writeFile(join(fixtureDir, "two.md"), "# Two\n", "utf8");
+      let codexCalls = 0;
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () => {
+              codexCalls += 1;
+              return await adaptedRunner("article")();
+            },
+            input: "one.md",
+            output: "profile.yml",
+            positionalInput: "two.md",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Positional input and --input",
+        },
+      );
+      expect(codexCalls).toBe(0);
+    });
+  });
+
+  test("runs intent-only Codex mode without recording input fingerprint fields", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-intent-only", async (fixtureDir) => {
+      let prompt = "";
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async (options) => {
+          prompt = options.prompt;
+          return await adaptedRunner("reader")();
+        },
+        dryRun: true,
+        intent: "screen reader profile",
+        keepCodexReport: true,
+      });
+
+      expect(prompt).toContain('"signalMode": "hint-only"');
+      expect(prompt).toContain('"available": false');
+      const profileMatch = stdout.text.match(
+        /Profile: (md-pdf-profile-20260615T081500Z-[a-f0-9]{8}\.yml)/,
+      );
+      expect(profileMatch?.[1]).toBeDefined();
+      const profilePath = profileMatch?.[1] ?? "";
+      const reportPath = profilePath.replace(/\.yml$/, "-codex-report.json");
+      const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, reportPath));
+      expect(report.signalMode).toBe("hint-only");
+      expect(report.input.path).toBeUndefined();
+      expect(report.input.sha256).toBeUndefined();
+    });
+  });
+
+  test("derives a deterministic base profile without calling Codex for base-only mode", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-base-only", async (fixtureDir) => {
+      const basePath = join(fixtureDir, "base.yml");
+      const outputPath = join(fixtureDir, "derived.yml");
+      await writeFile(
+        basePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260610T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: reader",
+          "  preset: reader",
+          "  createdAt: 2026-06-10T08:15:00Z",
+          "toc:",
+          "  enabled: true",
+          "  depth: 3",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const baseBefore = await readFile(basePath, "utf8");
+      let codexCalls = 0;
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.yml",
+        codexReportOutput: "base-only-report.json",
+        codexRunner: async () => {
+          codexCalls += 1;
+          return await adaptedRunner("base-profile")();
+        },
+        output: "derived.yml",
+      });
+
+      expect(codexCalls).toBe(0);
+      expect(stdout.text).toContain("Signal mode: base-only-deterministic");
+      expect(await readFile(basePath, "utf8")).toBe(baseBefore);
+      const derived = await readMarkdownPdfProfileFile(outputPath);
+      expect(derived.profile).toMatchObject({
+        basedOn: "md-pdf-profile-20260610T081500Z-a1b2c3d4",
+        preset: "reader",
+        source: "deterministic",
+      });
+      expect(derived.toc).toMatchObject({ enabled: true, depth: 3 });
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "base-only-report.json"),
+      );
+      expect(report.signalMode).toBe("base-only-deterministic");
+      expect(report.selectedBase.candidateId).toBe("base-profile");
+    });
+  });
+
+  test("derives generated no-input paths for no-signal deterministic fallback", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-no-signal", async (fixtureDir) => {
+      let codexCalls = 0;
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async () => {
+          codexCalls += 1;
+          return await adaptedRunner("default")();
+        },
+        dryRun: true,
+        keepCodexReport: true,
+      });
+
+      expect(codexCalls).toBe(0);
+      expect(stdout.text).toContain("Signal mode: basic-default");
+      const profileMatch = stdout.text.match(
+        /Profile: (md-pdf-profile-20260615T081500Z-[a-f0-9]{8}\.yml)/,
+      );
+      expect(profileMatch?.[1]).toBeDefined();
+      const profilePath = profileMatch?.[1] ?? "";
+      const reportPath = profilePath.replace(/\.yml$/, "-codex-report.json");
+      expect(await readdir(fixtureDir)).toEqual([reportPath]);
+      const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, reportPath));
+      expect(report.signalMode).toBe("basic-default");
+      expect(report.input.path).toBeUndefined();
+    });
+  });
+
   test("uses a base profile as the strongest candidate without mutating it", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-base", async (fixtureDir) => {
       const basePath = join(fixtureDir, "base.yml");

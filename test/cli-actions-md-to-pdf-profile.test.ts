@@ -155,6 +155,26 @@ describe("markdown PDF profile normalization", () => {
     expect(result.recipeOptions.preset).toBe("wide-table");
   });
 
+  test("normalizes deterministic profile identity sources", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        profile: {
+          id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          source: "deterministic",
+          basedOn: "default",
+          createdAt: "2026-06-15T08:15:00Z",
+        },
+      },
+    });
+
+    expect(result.profile.identity).toMatchObject({
+      id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+      source: "deterministic",
+      basedOn: "default",
+      createdAt: "2026-06-15T08:15:00Z",
+    });
+  });
+
   test("keeps older profiles without profile identity valid", () => {
     const result = normalizeMarkdownPdfProfile({
       profile: {
@@ -359,7 +379,7 @@ describe("markdown PDF profile normalization", () => {
         {
           code: "INVALID_INPUT",
           exitCode: 2,
-          messageIncludes: "profile.profile.source must be codex",
+          messageIncludes: "profile.profile.source must be codex or deterministic",
         },
       );
       await expectCliError(

@@ -16,6 +16,13 @@ export const MARKDOWN_PDF_CODEX_DECISION_MODES = [
 
 export type MarkdownPdfCodexDecisionMode = (typeof MARKDOWN_PDF_CODEX_DECISION_MODES)[number];
 
+export type MarkdownPdfCodexSignalMode =
+  | "document-informed"
+  | "hint-only"
+  | "mixed-with-base"
+  | "base-only-deterministic"
+  | "basic-default";
+
 export interface MarkdownPdfCodexProfileRequest {
   candidates: MarkdownPdfProfileCandidate[];
   documentSignals: MarkdownPdfDocumentSignals;
@@ -23,6 +30,7 @@ export interface MarkdownPdfCodexProfileRequest {
   fontSignals: MarkdownPdfFontSignals;
   intent?: string;
   selectedBaseProfileSummary?: MarkdownPdfProfileCandidateSummary;
+  signalMode: MarkdownPdfCodexSignalMode;
   supportedSchemaSummary: string[];
   workingDirectory: string;
 }

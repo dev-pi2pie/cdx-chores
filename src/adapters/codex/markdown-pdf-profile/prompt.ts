@@ -10,6 +10,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
+    signalMode: request.signalMode,
     supportedSchemaSummary: request.supportedSchemaSummary,
   };
 

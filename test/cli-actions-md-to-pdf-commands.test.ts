@@ -272,7 +272,8 @@ describe("cli command: md pdf-profile codex", () => {
     const result = runCli(["md", "pdf-profile", "codex", "--help"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Usage: cdx-chores md pdf-profile codex [options]");
+    expect(result.stdout).toContain("Usage: cdx-chores md pdf-profile codex [options] [input]");
+    expect(result.stdout).toContain("-i, --input <path>");
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--font-hint <text>");
     expect(result.stdout).toContain("--base-profile <path>");
@@ -280,22 +281,23 @@ describe("cli command: md pdf-profile codex", () => {
     expect(result.stderr).toBe("");
   });
 
-  test("requires intent at the command layer", async () => {
-    await withTempFixtureDir("md-pdf-profile-codex-cli-required", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "report.md");
-      await writeFile(inputPath, "# Report\n", "utf8");
+  test("allows no-signal deterministic profile creation from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-basic", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "profile.yml");
 
       const result = runCli([
         "md",
         "pdf-profile",
         "codex",
-        "--input",
-        toRepoRelativePath(inputPath),
+        "--output",
+        toRepoRelativePath(outputPath),
       ]);
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stdout).toBe("");
-      expect(result.stderr).toContain("required option '--intent <text>' not specified");
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Signal mode: basic-default");
+      expect(result.stdout).toContain("Decision: deterministic");
+      expect(result.stderr).toContain("Wrote Markdown PDF profile:");
+      expect(await readFile(outputPath, "utf8")).toContain("source: deterministic");
     });
   });
 });

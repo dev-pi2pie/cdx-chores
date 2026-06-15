@@ -49,6 +49,7 @@ export interface MarkdownPdfScriptSignals {
 }
 
 export interface MarkdownPdfDocumentSignals {
+  available: boolean;
   headings: MarkdownPdfHeadingSignals;
   tables: MarkdownPdfTableSignals;
   codeFences: MarkdownPdfCodeFenceSignals;
@@ -68,6 +69,18 @@ export interface MarkdownPdfFontFamilySignal {
 export interface MarkdownPdfFontSignals {
   families: MarkdownPdfFontFamilySignal[];
   overflowFamilyCount: number;
+}
+
+export function createAbsentMarkdownPdfDocumentSignals(): MarkdownPdfDocumentSignals {
+  return {
+    available: false,
+    headings: { total: 0, maxDepth: 0, byDepth: {} },
+    tables: { scannedRows: 0, maxColumns: 0, maxLineWidth: 0, overflowRows: 0 },
+    codeFences: { languages: [], unlabeledCount: 0, overflowLanguageCount: 0 },
+    assets: { localCount: 0, remoteCount: 0, dataUriCount: 0 },
+    frontmatter: { pdfContentLangs: [], metadataKeys: [] },
+    scripts: { scannedChars: 0, truncated: false, buckets: {} },
+  };
 }
 
 function incrementBucket(buckets: Record<string, number>, bucket: string): void {
@@ -252,6 +265,7 @@ function collectFrontmatterSignals(
 export function collectMarkdownPdfDocumentSignals(markdown: string): MarkdownPdfDocumentSignals {
   const parsed = parseMarkdown(markdown);
   return {
+    available: true,
     headings: collectHeadingSignals(parsed.content),
     tables: collectTableSignals(parsed.content),
     codeFences: collectCodeFenceSignals(parsed.content),

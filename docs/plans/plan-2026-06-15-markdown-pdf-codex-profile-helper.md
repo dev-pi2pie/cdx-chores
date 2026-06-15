@@ -412,17 +412,23 @@ No interactive confirmation prompt should be required in the direct CLI path.
 
 ### Phase 6: Optional Input And Signal-Ladder Contract
 
-- [ ] Add optional positional input support for `md pdf-profile codex [input]`.
-- [ ] Keep `--input <path>` as an explicit alias for script-friendly usage.
-- [ ] Reject conflicting positional and `--input` paths before collecting signals.
-- [ ] Make `--intent` optional now that no-signal requests can fall back deterministically.
-- [ ] Add signal-mode classification for document-informed, hint-only, mixed-with-base, base-only-deterministic, and basic-default runs.
-- [ ] Extend profile source validation so basic-default output can use `profile.source: deterministic`.
-- [ ] Skip Codex and produce a deterministic basic profile when no signal exists.
-- [ ] Validate and write a deterministic base derivative when only `--base-profile` is supplied.
-- [ ] Allow Codex-assisted mode when any target signal exists: input path, intent, or font hint.
-- [ ] Record signal mode in Codex reports when a report is written.
-- [ ] Add tests for positional input parity, input conflict errors, intent-only mode, base-only deterministic mode, no-signal deterministic fallback, and generated no-input output paths.
+- [x] Add optional positional input support for `md pdf-profile codex [input]`.
+- [x] Keep `--input <path>` as an explicit alias for script-friendly usage.
+- [x] Reject conflicting positional and `--input` paths before collecting signals.
+- [x] Make `--intent` optional now that no-signal requests can fall back deterministically.
+- [x] Add signal-mode classification for document-informed, hint-only, mixed-with-base, base-only-deterministic, and basic-default runs.
+- [x] Extend profile source validation so basic-default output can use `profile.source: deterministic`.
+- [x] Skip Codex and produce a deterministic basic profile when no signal exists.
+- [x] Validate and write a deterministic base derivative when only `--base-profile` is supplied.
+- [x] Allow Codex-assisted mode when any target signal exists: input path, intent, or font hint.
+- [x] Record signal mode in Codex reports when a report is written.
+- [x] Add tests for positional input parity, input conflict errors, intent-only mode, base-only deterministic mode, no-signal deterministic fallback, and generated no-input output paths.
+
+Phase 6 focused validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts
+```
 
 ### Phase 7: Documentation And Guide Updates
 

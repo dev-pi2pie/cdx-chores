@@ -46,14 +46,15 @@ export interface MarkdownPdfCodexReportArtifact {
     identity: NormalizedMarkdownPdfProfileIdentity;
   };
   input: {
-    path: string;
-    sha256: string;
+    path?: string;
+    sha256?: string;
   };
   request: Pick<MarkdownPdfCodexProfileRequest, "intent" | "fontHints">;
   candidates: MarkdownPdfCodexProfileRequest["candidates"][number]["summary"][];
   selectedBase: MarkdownPdfCodexReportBaseProfile;
   documentSignals: MarkdownPdfCodexProfileRequest["documentSignals"];
   fontSignals: MarkdownPdfCodexProfileRequest["fontSignals"];
+  signalMode: MarkdownPdfCodexProfileRequest["signalMode"];
   result: {
     status: "success" | "failed";
     decision?: MarkdownPdfCodexDecision;
@@ -99,10 +100,10 @@ function selectedBaseProfile(
 
 export function createMarkdownPdfCodexReportArtifact(input: {
   createdAt: string;
-  displayInputPath: string;
+  displayInputPath?: string;
   displayProfileOutputPath: string;
   displayBaseProfilePath?: string;
-  inputSha256: string;
+  inputSha256?: string;
   profileIdentity: NormalizedMarkdownPdfProfileIdentity;
   request: MarkdownPdfCodexProfileRequest;
   selectedCandidate?: MarkdownPdfProfileCandidate;
@@ -126,8 +127,8 @@ export function createMarkdownPdfCodexReportArtifact(input: {
       identity: input.profileIdentity,
     },
     input: {
-      path: input.displayInputPath,
-      sha256: input.inputSha256,
+      ...(input.displayInputPath ? { path: input.displayInputPath } : {}),
+      ...(input.inputSha256 ? { sha256: input.inputSha256 } : {}),
     },
     request: {
       intent: input.request.intent,
@@ -137,6 +138,7 @@ export function createMarkdownPdfCodexReportArtifact(input: {
     selectedBase: selectedBaseProfile(input.selectedCandidate, input.displayBaseProfilePath),
     documentSignals: input.request.documentSignals,
     fontSignals: input.request.fontSignals,
+    signalMode: input.request.signalMode,
     result: {
       status,
       decision,

@@ -5,7 +5,7 @@ export type MarkdownPdfProfileFormat = "json" | "yaml";
 
 export type MarkdownPdfMetadata = Record<string, string>;
 
-export type MarkdownPdfProfileSource = "codex";
+export type MarkdownPdfProfileSource = "codex" | "deterministic";
 
 export interface NormalizedMarkdownPdfProfileIdentity {
   id: string;

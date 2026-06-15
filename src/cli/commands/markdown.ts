@@ -151,9 +151,10 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
 
   pdfProfileCommand
     .command("codex")
+    .argument("[input]", "Sample Markdown file used to collect bounded profile signals")
     .description("Use Codex to draft a reusable Markdown PDF profile")
-    .requiredOption("-i, --input <path>", "Input Markdown file")
-    .requiredOption("--intent <text>", "Rendering direction for the reusable profile")
+    .option("-i, --input <path>", "Explicit Markdown sample path")
+    .option("--intent <text>", "Rendering direction for the reusable profile")
     .option("--font-hint <text>", "Optional font preference hint", collectStringOption)
     .option("--base-profile <path>", "Existing Markdown PDF profile to refine")
     .option("-o, --output <path>", "Output profile file (.yml, .yaml, .json)")
@@ -161,8 +162,8 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
     .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
     .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
     .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
-    .action(async (options: MdPdfProfileCodexCliOptions) => {
-      await actionMdPdfProfileCodex(runtime, options);
+    .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
+      await actionMdPdfProfileCodex(runtime, { ...options, positionalInput: input });
     });
 
   mdCommand
