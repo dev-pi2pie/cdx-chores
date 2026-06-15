@@ -1,8 +1,7 @@
 import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 import { sleep } from "../../utils/sleep";
 

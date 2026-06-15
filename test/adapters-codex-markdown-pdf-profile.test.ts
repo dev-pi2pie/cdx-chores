@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
 } from "../src/adapters/codex/markdown-pdf-profile";
 import {
@@ -179,6 +180,11 @@ describe("Markdown PDF Codex profile adapter", () => {
     );
     expect(
       classifyMarkdownPdfCodexProfileFailure(new Error("invalid_json_schema response_format")),
+    ).toBe("unavailable");
+    expect(
+      classifyMarkdownPdfCodexProfileFailure(
+        new MarkdownPdfCodexProfileError("bad", "structured-output-schema"),
+      ),
     ).toBe("structured-output-schema");
     expect(classifyMarkdownPdfCodexProfileFailure(new Error('{"unrelated":true}'))).toBe(
       "unavailable",
@@ -192,6 +198,14 @@ describe("Markdown PDF Codex profile adapter", () => {
         runner: async () => "not json",
       }),
     ).rejects.toThrow();
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        runner: async () => {
+          throw new Error("invalid_json_schema response_format");
+        },
+      }),
+    ).rejects.toThrow(MarkdownPdfCodexProfileError);
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
@@ -218,6 +232,20 @@ describe("Markdown PDF Codex profile adapter", () => {
           }),
       }),
     ).rejects.toThrow("warnings must be an array");
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        runner: async () =>
+          JSON.stringify({
+            decision_mode: "adapted",
+            selected_candidate_id: "default",
+            accepted_fields: {},
+            reasoning: "blank warning",
+            warnings: [" "],
+            unmatched_directions: [],
+          }),
+      }),
+    ).rejects.toThrow("warnings[0] must not be empty");
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,

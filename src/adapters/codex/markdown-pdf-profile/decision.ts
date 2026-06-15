@@ -45,7 +45,13 @@ function parseStringArray(value: unknown, context: string): string[] {
   if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
     throw new Error(`Markdown PDF Codex response ${context} must be an array of strings.`);
   }
-  return value.map((item) => item.trim()).filter((item) => item.length > 0);
+  return value.map((item, index) => {
+    const trimmed = item.trim();
+    if (trimmed.length === 0) {
+      throw new Error(`Markdown PDF Codex response ${context}[${index}] must not be empty.`);
+    }
+    return trimmed;
+  });
 }
 
 function parseDecisionMode(value: unknown): MarkdownPdfCodexDecisionMode {
