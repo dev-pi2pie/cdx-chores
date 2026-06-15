@@ -3,15 +3,17 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
+  createMarkdownPdfProfileCandidates,
+  loadMarkdownPdfBaseProfileCandidate,
+} from "../src/cli/markdown-pdf/profile/candidates";
+import {
   MARKDOWN_PDF_SIGNAL_CODE_LANGUAGE_LIMIT,
   MARKDOWN_PDF_SIGNAL_FONT_FAMILY_LIMIT,
   MARKDOWN_PDF_SIGNAL_TABLE_ROW_LIMIT,
   MARKDOWN_PDF_SIGNAL_TEXT_LIMIT,
   collectMarkdownPdfDocumentSignals,
   collectMarkdownPdfFontSignals,
-  createMarkdownPdfProfileCandidates,
-  loadMarkdownPdfBaseProfileCandidate,
-} from "../src/cli/markdown-pdf/profile";
+} from "../src/cli/markdown-pdf/profile/signals";
 import { normalizeMarkdownPdfProfile } from "../src/cli/markdown-pdf";
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
