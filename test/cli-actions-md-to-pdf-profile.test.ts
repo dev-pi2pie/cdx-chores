@@ -3,6 +3,8 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
+  createMarkdownPdfProfileConfig,
+  normalizeMarkdownPdfOptions,
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
   resolveMarkdownPdfCodeOptions,
@@ -519,6 +521,26 @@ describe("markdown PDF profile normalization", () => {
 
       await expect(readMarkdownPdfProfileFile(jsonPath)).resolves.toEqual(profile);
       await expect(readMarkdownPdfProfileFile(yamlPath)).resolves.toEqual(profile);
+    });
+  });
+
+  test("composes profile config with optional identity for generated profiles", () => {
+    const identity = {
+      id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+      source: "codex" as const,
+      basedOn: "wide-table",
+      preset: "wide-table" as const,
+      createdAt: "2026-06-15T08:15:00Z",
+    };
+    const profile = createMarkdownPdfProfileConfig(
+      normalizeMarkdownPdfOptions({ preset: "wide-table" }),
+      { identity },
+    );
+
+    expect(profile.profile).toEqual(identity);
+    expect(profile.page).toMatchObject({
+      orientation: "landscape",
+      marginTop: "12mm",
     });
   });
 
