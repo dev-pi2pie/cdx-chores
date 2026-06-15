@@ -1,4 +1,7 @@
-import { validateMarkdownPdfProfileShape } from "../../../cli/markdown-pdf/profile/schema";
+import {
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  validateMarkdownPdfProfileShape,
+} from "../../../cli/markdown-pdf/profile/schema";
 import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/profile/candidates";
 import {
   MARKDOWN_PDF_CODEX_DECISION_MODES,
@@ -7,18 +10,9 @@ import {
   type MarkdownPdfCodexProfileResult,
 } from "./types";
 
-const ACCEPTED_PROFILE_ROOT_KEYS = new Set([
-  "page",
-  "toc",
-  "metadata",
-  "pdf",
-  "fonts",
-  "cover",
-  "header",
-  "footer",
-  "pageNumbers",
-  "code",
-]);
+const ACCEPTED_PROFILE_ROOT_KEYS = new Set(
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter((key) => key !== "profile"),
+);
 
 function parseRecord(value: unknown, context: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -80,12 +74,20 @@ function validateAcceptedFields(value: unknown): Record<string, unknown> {
 export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPdfCodexDecision {
   const parsed = parseRecord(JSON.parse(finalResponse), "root");
   const decisionMode = parseDecisionMode(parsed.decision_mode);
-  const selectedCandidateId =
-    decisionMode === "no-usable-profile"
-      ? (parseOptionalString(parsed.selected_candidate_id, "selected_candidate_id") ?? "none")
-      : parseString(parsed.selected_candidate_id, "selected_candidate_id");
-  const acceptedFields =
-    decisionMode === "no-usable-profile" ? {} : validateAcceptedFields(parsed.accepted_fields);
+  const selectedCandidateId = parseString(parsed.selected_candidate_id, "selected_candidate_id");
+  const acceptedFields = validateAcceptedFields(parsed.accepted_fields);
+  if (decisionMode === "no-usable-profile") {
+    if (selectedCandidateId !== "none") {
+      throw new Error(
+        "Markdown PDF Codex response selected_candidate_id must be none for no-usable-profile.",
+      );
+    }
+    if (Object.keys(acceptedFields).length > 0) {
+      throw new Error(
+        "Markdown PDF Codex response accepted_fields must be empty for no-usable-profile.",
+      );
+    }
+  }
 
   return {
     acceptedFields,

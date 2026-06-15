@@ -3,7 +3,7 @@ import { extname } from "node:path";
 import { CliError } from "../../errors";
 import type { MarkdownPdfProfileFormat } from "./types";
 
-const ROOT_KEYS = new Set([
+export const MARKDOWN_PDF_PROFILE_ROOT_KEYS = [
   "profile",
   "page",
   "toc",
@@ -15,7 +15,9 @@ const ROOT_KEYS = new Set([
   "footer",
   "pageNumbers",
   "code",
-]);
+] as const;
+
+const ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
 const PROFILE_IDENTITY_KEYS = new Set(["id", "source", "basedOn", "preset", "createdAt"]);
 const PAGE_KEYS = new Set([
   "size",

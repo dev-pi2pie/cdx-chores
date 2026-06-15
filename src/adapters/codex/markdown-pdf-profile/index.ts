@@ -34,6 +34,17 @@ const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+export function createMarkdownPdfProfileCodexThreadOptions(workingDirectory: string) {
+  return {
+    workingDirectory,
+    sandboxMode: "read-only" as const,
+    approvalPolicy: "never" as const,
+    modelReasoningEffort: "low" as const,
+    networkAccessEnabled: false,
+    webSearchMode: "disabled" as const,
+  };
+}
+
 async function runMarkdownPdfProfileCodexPrompt(options: {
   prompt: string;
   timeoutMs?: number;
@@ -47,14 +58,9 @@ async function runMarkdownPdfProfileCodexPrompt(options: {
       const { Codex } = await import("@openai/codex-sdk");
       const codexPathOverride = getCodexPathOverrideFromEnv();
       const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
-      const thread = codex.startThread({
-        workingDirectory,
-        sandboxMode: "read-only",
-        approvalPolicy: "never",
-        modelReasoningEffort: "low",
-        networkAccessEnabled: false,
-        webSearchMode: "disabled",
-      });
+      const thread = codex.startThread(
+        createMarkdownPdfProfileCodexThreadOptions(workingDirectory),
+      );
       const turn = await thread.run([{ type: "text", text: prompt }], {
         outputSchema,
         signal,
@@ -64,7 +70,11 @@ async function runMarkdownPdfProfileCodexPrompt(options: {
   });
 }
 
-export type MarkdownPdfCodexProfileFailureKind = "structured-output-schema" | "unavailable";
+export type MarkdownPdfCodexProfileFailureKind =
+  | "structured-output-schema"
+  | "malformed-output"
+  | "invalid-application"
+  | "unavailable";
 
 export class MarkdownPdfCodexProfileError extends Error {
   constructor(
@@ -117,13 +127,21 @@ export async function suggestMarkdownPdfProfileWithCodex(
   }
   try {
     const decision = parseMarkdownPdfCodexDecision(finalResponse);
-    return applyMarkdownPdfCodexDecision({
-      candidates: request.candidates,
-      decision,
-    });
+    try {
+      return applyMarkdownPdfCodexDecision({
+        candidates: request.candidates,
+        decision,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new MarkdownPdfCodexProfileError(message, "invalid-application");
+    }
   } catch (error) {
+    if (error instanceof MarkdownPdfCodexProfileError) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : String(error);
-    throw new MarkdownPdfCodexProfileError(message, "structured-output-schema");
+    throw new MarkdownPdfCodexProfileError(message, "malformed-output");
   }
 }
 

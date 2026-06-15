@@ -23,7 +23,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- accepted_fields must contain only schema-supported Markdown PDF profile fields.",
     "- Prefer small adaptations over broad rewrites.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
-    "- Use no-usable-profile only when no profile should be written.",
+    "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none and accepted_fields to {}.",
     "- Keep reasoning short and grounded in the facts.",
     "",
     "Deterministic facts:",

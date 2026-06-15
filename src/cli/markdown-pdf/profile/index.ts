@@ -12,7 +12,11 @@ export {
 export { createMarkdownPdfPageChromeCss } from "./page-chrome";
 export { resolveMarkdownPdfPlaceholderText } from "./placeholders";
 export { readMarkdownPdfProfileFile } from "./parse";
-export { inferMarkdownPdfProfileFormat, validateMarkdownPdfProfileShape } from "./schema";
+export {
+  inferMarkdownPdfProfileFormat,
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  validateMarkdownPdfProfileShape,
+} from "./schema";
 export { serializeMarkdownPdfProfile } from "./serialize";
 export type {
   EffectiveMarkdownPdfCodeOptions,

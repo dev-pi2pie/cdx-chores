@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  createMarkdownPdfProfileCodexThreadOptions,
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
 } from "../src/adapters/codex/markdown-pdf-profile";
@@ -36,6 +37,15 @@ const requestBase = {
   fontHints: ["prefer system serif"],
   fontSignals: { families: [], overflowFamilyCount: 0 },
   intent: "wide table report",
+  selectedBaseProfileSummary: {
+    basedOn: "wide-table",
+    fields: ["page", "toc"],
+    id: "wide-table",
+    kind: "preset" as const,
+    label: "wide-table preset profile",
+    preset: "wide-table" as const,
+    presetBacked: true,
+  },
   supportedSchemaSummary: ["page.orientation", "toc.enabled", "fonts.body.default"],
   workingDirectory: "/repo",
 };
@@ -47,7 +57,21 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("Return JSON only");
     expect(prompt).toContain("wide table report");
     expect(prompt).toContain("candidateSummaries");
+    expect(prompt).toContain("selectedBaseProfileSummary");
+    expect(prompt).toContain("supportedSchemaSummary");
+    expect(prompt).toContain("fonts.body.default");
     expect(prompt).not.toContain("fullProfile");
+  });
+
+  test("uses read-only prompt-only Codex thread options", () => {
+    expect(createMarkdownPdfProfileCodexThreadOptions("/tmp/prompt-only")).toEqual({
+      approvalPolicy: "never",
+      modelReasoningEffort: "low",
+      networkAccessEnabled: false,
+      sandboxMode: "read-only",
+      webSearchMode: "disabled",
+      workingDirectory: "/tmp/prompt-only",
+    });
   });
 
   test("parses and applies adapted profile fields with bounded merge semantics", async () => {
@@ -109,6 +133,8 @@ describe("Markdown PDF Codex profile adapter", () => {
       runner: async () =>
         JSON.stringify({
           decision_mode: "no-usable-profile",
+          selected_candidate_id: "none",
+          accepted_fields: {},
           reasoning: "No profile should be written.",
           warnings: [],
           unmatched_directions: ["unsupported custom CSS"],
@@ -186,6 +212,16 @@ describe("Markdown PDF Codex profile adapter", () => {
         new MarkdownPdfCodexProfileError("bad", "structured-output-schema"),
       ),
     ).toBe("structured-output-schema");
+    expect(
+      classifyMarkdownPdfCodexProfileFailure(
+        new MarkdownPdfCodexProfileError("bad", "malformed-output"),
+      ),
+    ).toBe("malformed-output");
+    expect(
+      classifyMarkdownPdfCodexProfileFailure(
+        new MarkdownPdfCodexProfileError("bad", "invalid-application"),
+      ),
+    ).toBe("invalid-application");
     expect(classifyMarkdownPdfCodexProfileFailure(new Error('{"unrelated":true}'))).toBe(
       "unavailable",
     );
@@ -197,7 +233,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         ...requestBase,
         runner: async () => "not json",
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ kind: "malformed-output" });
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
@@ -265,6 +301,18 @@ describe("Markdown PDF Codex profile adapter", () => {
         ...requestBase,
         runner: async () =>
           JSON.stringify({
+            decision_mode: "no-usable-profile",
+            reasoning: "No profile should be written.",
+            warnings: [],
+            unmatched_directions: [],
+          }),
+      }),
+    ).rejects.toThrow("selected_candidate_id must be a non-empty string");
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        runner: async () =>
+          JSON.stringify({
             decision_mode: "adapted",
             selected_candidate_id: "missing",
             accepted_fields: {},
@@ -273,6 +321,6 @@ describe("Markdown PDF Codex profile adapter", () => {
             unmatched_directions: [],
           }),
       }),
-    ).rejects.toThrow("selected unknown candidate");
+    ).rejects.toMatchObject({ kind: "invalid-application" });
   });
 });
