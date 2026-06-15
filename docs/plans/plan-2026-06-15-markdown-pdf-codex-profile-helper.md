@@ -347,14 +347,14 @@ No interactive confirmation prompt should be required in the direct CLI path.
 
 ### Phase 3: Codex Adapter
 
-- [ ] Define shared decision and report TypeScript types used by adapter parsing and report serialization.
-- [ ] Add Markdown PDF profile prompt construction.
-- [ ] Call Codex through the existing adapter style.
-- [ ] Parse structured recommendations.
-- [ ] Validate decision modes and accepted fields.
-- [ ] Implement bounded base-profile merge semantics with no deletion or reset behavior in v1.
-- [ ] Support unavailable Codex and invalid structured output paths.
-- [ ] Add adapter unit tests with stubs.
+- [x] Define shared decision and report TypeScript types used by adapter parsing and report serialization.
+- [x] Add Markdown PDF profile prompt construction.
+- [x] Call Codex through the existing adapter style.
+- [x] Parse structured recommendations.
+- [x] Validate decision modes and accepted fields.
+- [x] Implement bounded base-profile merge semantics with no deletion or reset behavior in v1.
+- [x] Support unavailable Codex and invalid structured output paths.
+- [x] Add adapter unit tests with stubs.
 
 ### Phase 4: Action And Command Wiring
 
