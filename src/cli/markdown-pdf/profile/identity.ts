@@ -6,11 +6,19 @@ const MARKDOWN_PDF_PRESET_VALUES = new Set<string>(MARKDOWN_PDF_PRESETS);
 const PROFILE_ID_PATTERN = /^md-pdf-profile-\d{8}T\d{6}Z-[a-f0-9]{8}$/;
 const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
-function readObject(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
+function assertIdentityObject(value: unknown): Record<string, unknown> {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
     return value as Record<string, unknown>;
   }
-  return {};
+  throw new CliError("profile.profile must be a plain object.", {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
 }
 
 function stringValue(value: unknown, label: string): string | undefined {
@@ -33,13 +41,41 @@ function stringValue(value: unknown, label: string): string | undefined {
   return trimmed;
 }
 
+function isStrictUtcTimestamp(value: string): boolean {
+  if (!UTC_TIMESTAMP_PATTERN.test(value)) {
+    return false;
+  }
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value.replace("Z", ".000Z");
+}
+
+function assertProfileId(value: string): void {
+  if (PROFILE_ID_PATTERN.test(value)) {
+    return;
+  }
+  throw new CliError("profile.profile.id must use md-pdf-profile-YYYYMMDDTHHMMSSZ-xxxxxxxx.", {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
+function assertCreatedAt(value: string): void {
+  if (isStrictUtcTimestamp(value)) {
+    return;
+  }
+  throw new CliError("profile.profile.createdAt must be an ISO date-time string.", {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
 export function normalizeMarkdownPdfProfileIdentity(
   value: unknown,
 ): NormalizedMarkdownPdfProfileIdentity | undefined {
   if (value === undefined) {
     return undefined;
   }
-  const input = readObject(value);
+  const input = assertIdentityObject(value);
   const id = stringValue(input.id, "profile.profile.id");
   const source = stringValue(input.source, "profile.profile.source");
   const createdAt = stringValue(input.createdAt, "profile.profile.createdAt");
@@ -50,29 +86,14 @@ export function normalizeMarkdownPdfProfileIdentity(
       exitCode: 2,
     });
   }
-  if (!PROFILE_ID_PATTERN.test(id)) {
-    throw new CliError("profile.profile.id must use md-pdf-profile-YYYYMMDDTHHMMSSZ-xxxxxxxx.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
+  assertProfileId(id);
   if (source !== "codex") {
     throw new CliError("profile.profile.source must be codex.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
   }
-  const createdAtDate = new Date(createdAt);
-  if (
-    !UTC_TIMESTAMP_PATTERN.test(createdAt) ||
-    Number.isNaN(createdAtDate.getTime()) ||
-    createdAtDate.toISOString() !== createdAt.replace("Z", ".000Z")
-  ) {
-    throw new CliError("profile.profile.createdAt must be an ISO date-time string.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
+  assertCreatedAt(createdAt);
 
   const preset = stringValue(input.preset, "profile.profile.preset");
   if (preset && !MARKDOWN_PDF_PRESET_VALUES.has(preset)) {

@@ -419,6 +419,13 @@ describe("markdown PDF profile normalization", () => {
         },
       }),
     ).toThrow("profile.profile requires id, source, and createdAt");
+    expect(() =>
+      normalizeMarkdownPdfProfile({
+        profile: {
+          profile: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+        },
+      }),
+    ).toThrow("profile.profile must be a plain object");
   });
 
   test("rejects non-language keys in body font mappings", () => {
