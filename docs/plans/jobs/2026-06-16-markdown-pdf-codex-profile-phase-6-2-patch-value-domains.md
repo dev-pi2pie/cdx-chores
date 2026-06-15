@@ -61,3 +61,29 @@ The response schema constrained patch paths, but each patch value still used a b
 
 - `git status --short --untracked-files=all` after the smoke run showed only source, test, and documentation changes plus the new source files.
 - No generated Markdown PDF profile, Codex report, or replay artifact was staged or committed.
+
+## Post-Commit Review Follow-Up
+
+The Phase 6.2 post-commit review found missing coverage around progress status branches and non-string invalid patch values, plus a maintainability concern about branch-local progress stopping.
+
+Follow-up changes:
+
+- Centralized direct Codex progress stopping around the Codex request with one `finally` block.
+- Added TTY progress coverage for conservative fallback decisions.
+- Added TTY progress coverage for no-usable-profile decisions, including a single `error` stop.
+- Added non-TTY progress coverage through the shared rename progress surface.
+- Added value-domain coverage for non-string invalid values.
+- Added a contract assertion that the current finite-domain patch paths stay explicit and remain accepted patch paths.
+
+Follow-up evidence:
+
+- `bun test test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-rename-codex-internals.test.ts`
+  - 49 pass, 0 fail
+- `bun run format:check`
+  - all matched files use the correct format
+- `bun run lint`
+  - completed successfully
+- `git diff --check`
+  - completed successfully
+- `bun run build`
+  - completed successfully

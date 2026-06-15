@@ -141,6 +141,82 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("shows fallback TTY Codex progress for conservative fallback decisions", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-fallback", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stdout, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async () =>
+          JSON.stringify({
+            decision_mode: "conservative-fallback",
+            selected_candidate_id: "default",
+            accepted_patches: [],
+            reasoning: "Facts are weak.",
+            warnings: ["Using default profile."],
+            fallback_reason: "No strong layout signal.",
+            unmatched_directions: [],
+          }),
+        dryRun: true,
+        input: "report.md",
+        intent: "unclear profile",
+        output: "profile.yml",
+      });
+
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... fallback\n",
+      );
+      expect(stderr.text).not.toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... error\n",
+      );
+      expect(stdout.text).toContain("Decision: conservative-fallback");
+    });
+  });
+
+  test("shows one error TTY Codex progress stop for no usable profile decisions", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-no-usable", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "no-usable-profile",
+                selected_candidate_id: "none",
+                accepted_patches: [],
+                reasoning: "No reusable profile fits.",
+                warnings: [],
+                fallback_reason: "Unsupported custom layout request.",
+                unmatched_directions: ["custom layout"],
+              }),
+            input: "report.md",
+            intent: "custom layout",
+            output: "profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_NO_USABLE_PROFILE",
+          exitCode: 1,
+          messageIncludes: "did not find a usable",
+        },
+      );
+
+      const errorStop =
+        "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... error\n";
+      const errorStops = stderr.text.split(errorStop).length - 1;
+      expect(errorStops).toBe(1);
+    });
+  });
+
   test("dry-run previews without writing the profile but can keep a report", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-dry-run", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

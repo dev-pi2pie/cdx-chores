@@ -12,6 +12,7 @@ import {
   parseMarkdownPdfCodexDecision,
 } from "../src/adapters/codex/markdown-pdf-profile/decision";
 import { buildMarkdownPdfProfileCodexPrompt } from "../src/adapters/codex/markdown-pdf-profile/prompt";
+import { MARKDOWN_PDF_CODEX_PATCH_PATHS } from "../src/adapters/codex/markdown-pdf-profile/types";
 import {
   createMarkdownPdfProfileCandidates,
   type MarkdownPdfProfileCandidate,
@@ -104,6 +105,21 @@ describe("Markdown PDF Codex profile adapter", () => {
         "bottom-right",
       ],
     });
+    expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS.map((domain) => domain.path).sort()).toEqual(
+      [
+        "/code/theme",
+        "/cover/style",
+        "/page/orientation",
+        "/page/size",
+        "/pageNumbers/position",
+        "/pageNumbers/scope",
+        "/toc/pageBreak",
+      ].sort(),
+    );
+    const acceptedPatchPaths = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
+    for (const domain of MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS) {
+      expect(acceptedPatchPaths.has(domain.path)).toBe(true);
+    }
   });
 
   test("starts the default Codex runner in the request working directory", async () => {
@@ -286,6 +302,21 @@ describe("Markdown PDF Codex profile adapter", () => {
     ).toThrow(
       "accepted_patches[0].value for /pageNumbers/position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right",
     );
+    for (const value of [true, 1, ["plain"]]) {
+      expect(() =>
+        applyMarkdownPdfCodexDecision({
+          candidates: requestBase.candidates,
+          decision: {
+            acceptedPatches: [{ op: "replace", path: "/cover/style", value }],
+            decisionMode: "adapted",
+            reasoning: "bad",
+            selectedCandidateId: "wide-table",
+            unmatchedDirections: [],
+            warnings: [],
+          },
+        }),
+      ).toThrow("accepted_patches[0].value for /cover/style must be one of: plain, report");
+    }
     expect(() =>
       applyMarkdownPdfCodexDecision({
         candidates: requestBase.candidates,
