@@ -279,4 +279,23 @@ describe("cli command: md pdf-profile codex", () => {
     expect(result.stdout).toContain("--keep-codex-report");
     expect(result.stderr).toBe("");
   });
+
+  test("requires intent at the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-required", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-profile",
+        "codex",
+        "--input",
+        toRepoRelativePath(inputPath),
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("required option '--intent <text>' not specified");
+    });
+  });
 });

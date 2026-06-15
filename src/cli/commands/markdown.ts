@@ -8,6 +8,7 @@ import {
   actionMdToDocx,
   actionMdToPdf,
 } from "../actions";
+import type { MdPdfProfileCodexCliOptions } from "../actions/markdown";
 import { applyCommonFileOptions } from "../options/common";
 import { parsePositiveIntegerOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
@@ -50,18 +51,6 @@ interface MarkdownPdfTemplateInitCliOptions extends MarkdownPdfRecipeCliOptions 
 
 interface MarkdownPdfProfileInitCliOptions extends MarkdownPdfRecipeCliOptions {
   output: string;
-  overwrite?: boolean;
-}
-
-interface MarkdownPdfProfileCodexCliOptions {
-  input: string;
-  intent: string;
-  fontHint?: string[];
-  baseProfile?: string;
-  output?: string;
-  dryRun?: boolean;
-  keepCodexReport?: boolean;
-  codexReportOutput?: string;
   overwrite?: boolean;
 }
 
@@ -172,7 +161,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
     .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
     .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
     .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
-    .action(async (options: MarkdownPdfProfileCodexCliOptions) => {
+    .action(async (options: MdPdfProfileCodexCliOptions) => {
       await actionMdPdfProfileCodex(runtime, options);
     });
 

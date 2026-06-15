@@ -67,6 +67,7 @@ export {
 } from "./markdown";
 export type {
   MdFrontmatterToJsonOptions,
+  MdPdfProfileCodexCliOptions,
   MdPdfProfileCodexOptions,
   MdPdfProfileInitOptions,
   MdPdfTemplateInitOptions,

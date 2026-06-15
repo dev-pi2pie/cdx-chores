@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 
 import type {
   MarkdownPdfCodexDecision,
@@ -7,6 +8,7 @@ import type {
 } from "../../../adapters/codex/markdown-pdf-profile";
 import { readTextFileRequired, writeTextFileSafe } from "../../file-io";
 import type { MarkdownPdfProfileCandidate } from "../profile/candidates";
+import { MARKDOWN_PDF_PROFILE_ROOT_KEYS } from "../profile/schema";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-profile-report";
@@ -76,10 +78,9 @@ function changedTopLevelFields(
   if (!baseProfile || !profile) {
     return [];
   }
-  const fields = new Set([...Object.keys(baseProfile), ...Object.keys(profile)]);
-  fields.delete("profile");
-  return [...fields]
-    .filter((field) => JSON.stringify(baseProfile[field]) !== JSON.stringify(profile[field]))
+  return MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter((field) => field !== "profile")
+    .filter((field) => Object.hasOwn(baseProfile, field) || Object.hasOwn(profile, field))
+    .filter((field) => !isDeepStrictEqual(baseProfile[field], profile[field]))
     .sort();
 }
 

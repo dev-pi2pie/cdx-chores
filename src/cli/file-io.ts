@@ -1,4 +1,5 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, mkdir, open, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 import { CliError } from "./errors";
@@ -26,8 +27,14 @@ export async function writeTextFileSafe(
 ): Promise<void> {
   const overwrite = options.overwrite ?? false;
   try {
+    const outputStats = await lstat(path);
+    if (outputStats.isSymbolicLink()) {
+      throw new CliError(`Output path is a symlink and cannot be written safely: ${path}`, {
+        code: "OUTPUT_SYMLINK",
+        exitCode: 2,
+      });
+    }
     if (!overwrite) {
-      await stat(path);
       throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
         code: "OUTPUT_EXISTS",
         exitCode: 2,
@@ -40,13 +47,21 @@ export async function writeTextFileSafe(
   }
 
   await ensureParentDir(path);
+  const noFollow = constants.O_NOFOLLOW ?? 0;
+  const flags = overwrite
+    ? constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | noFollow
+    : constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | noFollow;
+  let handle;
   try {
-    await writeFile(path, content, "utf8");
+    handle = await open(path, flags, 0o666);
+    await handle.writeFile(content, "utf8");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new CliError(`Failed to write file: ${path} (${message})`, {
       code: "FILE_WRITE_ERROR",
       exitCode: 2,
     });
+  } finally {
+    await handle?.close();
   }
 }

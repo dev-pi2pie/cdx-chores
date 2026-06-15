@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { stat } from "node:fs/promises";
-import { extname, join, parse, resolve } from "node:path";
+import { lstat, stat } from "node:fs/promises";
+import { extname, join, parse, relative, resolve } from "node:path";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
   type MarkdownPdfCodexProfileRunner,
 } from "../../../adapters/codex/markdown-pdf-profile";
@@ -49,6 +50,8 @@ export interface MdPdfProfileCodexOptions {
   overwrite?: boolean;
   codexRunner?: MarkdownPdfCodexProfileRunner;
 }
+
+export type MdPdfProfileCodexCliOptions = Omit<MdPdfProfileCodexOptions, "codexRunner">;
 
 const SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
   (key) => key !== "profile",
@@ -103,12 +106,51 @@ function selectedCandidate(
   return candidates.find((candidate) => candidate.summary.id === selectedCandidateId);
 }
 
+function requireSelectedCandidate(
+  candidates: MarkdownPdfProfileCandidate[],
+  selectedCandidateId: string,
+): MarkdownPdfProfileCandidate {
+  const candidate = selectedCandidate(candidates, selectedCandidateId);
+  if (candidate) {
+    return candidate;
+  }
+  throw new MarkdownPdfCodexProfileError(
+    `Markdown PDF Codex response selected unknown candidate: ${selectedCandidateId}.`,
+    "invalid-application",
+  );
+}
+
 async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path);
     return true;
   } catch {
     return false;
+  }
+}
+
+async function assertWritableOutputPath(
+  path: string,
+  options: { overwrite?: boolean },
+): Promise<void> {
+  try {
+    const outputStats = await lstat(path);
+    if (outputStats.isSymbolicLink()) {
+      throw new CliError(`Output path is a symlink and cannot be written safely: ${path}`, {
+        code: "OUTPUT_SYMLINK",
+        exitCode: 2,
+      });
+    }
+    if (!options.overwrite) {
+      throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
+        code: "OUTPUT_EXISTS",
+        exitCode: 2,
+      });
+    }
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
   }
 }
 
@@ -130,18 +172,27 @@ async function resolveGeneratedProfileOutputPath(
 }
 
 function createProfileIdentity(input: {
+  basedOn: string;
   createdAt: string;
   profileId: string;
   selectedCandidate?: MarkdownPdfProfileCandidate;
 }): NormalizedMarkdownPdfProfileIdentity {
+  const basedOn =
+    input.selectedCandidate?.summary.basedOn ??
+    input.selectedCandidate?.summary.id ??
+    input.basedOn;
   return {
     id: input.profileId,
     source: "codex",
-    basedOn:
-      input.selectedCandidate?.summary.basedOn ?? input.selectedCandidate?.summary.id ?? "none",
+    basedOn,
     preset: input.selectedCandidate?.summary.preset,
     createdAt: input.createdAt,
   };
+}
+
+function persistedReportPath(runtime: CliRuntime, path: string): string {
+  const value = relative(runtime.cwd, path);
+  return value.length > 0 ? value : ".";
 }
 
 function profileWithIdentity(
@@ -238,23 +289,11 @@ export async function actionMdPdfProfileCodex(
       exitCode: 2,
     });
   }
-  if (!options.dryRun && !options.overwrite && (await pathExists(outputResolution.outputPath))) {
-    throw new CliError(
-      `Output file already exists: ${outputResolution.outputPath}. Use --overwrite to replace it.`,
-      {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      },
-    );
+  if (!options.dryRun) {
+    await assertWritableOutputPath(outputResolution.outputPath, { overwrite: options.overwrite });
   }
-  if (reportOutputPath && !options.overwrite && (await pathExists(reportOutputPath))) {
-    throw new CliError(
-      `Output file already exists: ${reportOutputPath}. Use --overwrite to replace it.`,
-      {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      },
-    );
+  if (reportOutputPath) {
+    await assertWritableOutputPath(reportOutputPath, { overwrite: options.overwrite });
   }
 
   printLine(runtime.stderr, "Collecting Markdown PDF profile signals...");
@@ -294,10 +333,11 @@ export async function actionMdPdfProfileCodex(
   };
 
   printLine(runtime.stderr, "Requesting Codex Markdown PDF profile recommendation...");
-  const displayInputPath = displayPath(runtime, inputPath);
   const displayOutputPath = displayPath(runtime, outputResolution.outputPath);
-  const displayBaseProfilePath = baseProfileCandidate?.path
-    ? displayPath(runtime, baseProfileCandidate.path)
+  const reportInputPath = persistedReportPath(runtime, inputPath);
+  const reportOutputProfilePath = persistedReportPath(runtime, outputResolution.outputPath);
+  const reportBaseProfilePath = baseProfileCandidate?.path
+    ? persistedReportPath(runtime, baseProfileCandidate.path)
     : undefined;
   const profileIdentityBase = {
     createdAt,
@@ -305,9 +345,9 @@ export async function actionMdPdfProfileCodex(
   };
   const reportBase = {
     createdAt,
-    displayBaseProfilePath,
-    displayInputPath,
-    displayProfileOutputPath: displayOutputPath,
+    displayBaseProfilePath: reportBaseProfilePath,
+    displayInputPath: reportInputPath,
+    displayProfileOutputPath: reportOutputProfilePath,
     inputSha256: fingerprintMarkdownPdfCodexInput(markdown),
     request,
   };
@@ -317,8 +357,14 @@ export async function actionMdPdfProfileCodex(
       ...request,
       runner: options.codexRunner,
     });
-    const selected = selectedCandidate(candidates, result.decision.selectedCandidateId);
-    const identity = createProfileIdentity({ ...profileIdentityBase, selectedCandidate: selected });
+    const selected = result.profile
+      ? requireSelectedCandidate(candidates, result.decision.selectedCandidateId)
+      : selectedCandidate(candidates, result.decision.selectedCandidateId);
+    const identity = createProfileIdentity({
+      ...profileIdentityBase,
+      basedOn: "none",
+      selectedCandidate: selected,
+    });
 
     if (!result.profile) {
       const failure: MarkdownPdfCodexReportFailure = {
@@ -397,7 +443,7 @@ export async function actionMdPdfProfileCodex(
       await writeFailureReportIfRequested({
         failure,
         overwrite: options.overwrite,
-        profileIdentity: createProfileIdentity(profileIdentityBase),
+        profileIdentity: createProfileIdentity({ ...profileIdentityBase, basedOn: "none" }),
         reportBase,
         reportOutputPath,
         runtime,
@@ -414,7 +460,7 @@ export async function actionMdPdfProfileCodex(
     await writeFailureReportIfRequested({
       failure,
       overwrite: options.overwrite,
-      profileIdentity: createProfileIdentity(profileIdentityBase),
+      profileIdentity: createProfileIdentity({ ...profileIdentityBase, basedOn: "none" }),
       reportBase,
       reportOutputPath,
       runtime,

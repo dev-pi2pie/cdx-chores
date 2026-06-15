@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { lstat, readdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -100,6 +100,53 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("derives profile and report paths when output is omitted", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-generated", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: adaptedRunner("reader"),
+        dryRun: true,
+        input: "report.md",
+        intent: "reader profile",
+        keepCodexReport: true,
+      });
+
+      const profileMatch = stdout.text.match(
+        /Profile: (report-md-pdf-profile-20260615T081500Z-[a-f0-9]{8}\.yml)/,
+      );
+      expect(profileMatch?.[1]).toBeDefined();
+      const profilePath = profileMatch?.[1] ?? "";
+      const expectedReportPath = profilePath.replace(/\.yml$/, "-codex-report.json");
+      expect(await readdir(fixtureDir)).toContain(expectedReportPath);
+      await expect(readFile(join(fixtureDir, profilePath), "utf8")).rejects.toThrow();
+    });
+  });
+
+  test("dry-run without report flags does not write artifacts", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-dry-run-no-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: adaptedRunner("article"),
+        dryRun: true,
+        input: "report.md",
+        intent: "article profile",
+        output: "profile.yml",
+      });
+
+      expect(await readdir(fixtureDir)).toEqual(["report.md"]);
+    });
+  });
+
   test("uses a base profile as the strongest candidate without mutating it", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-base", async (fixtureDir) => {
       const basePath = join(fixtureDir, "base.yml");
@@ -123,6 +170,7 @@ describe("cli action modules: md pdf-profile codex", () => {
         ].join("\n"),
         "utf8",
       );
+      const baseBefore = await readFile(basePath, "utf8");
 
       const { runtime } = createActionTestRuntime({
         cwd: fixtureDir,
@@ -136,13 +184,13 @@ describe("cli action modules: md pdf-profile codex", () => {
         output: "adapted.yml",
       });
 
-      const base = await readFile(basePath, "utf8");
-      expect(base).toContain("id: md-pdf-profile-20260610T081500Z-a1b2c3d4");
+      expect(await readFile(basePath, "utf8")).toBe(baseBefore);
       const adapted = await readMarkdownPdfProfileFile(outputPath);
       expect(adapted.profile).toMatchObject({
         basedOn: "md-pdf-profile-20260610T081500Z-a1b2c3d4",
         preset: "reader",
       });
+      expect(adapted.page).toMatchObject({ size: "A4", orientation: "portrait" });
       expect(adapted.toc).toMatchObject({ enabled: true, depth: 2 });
     });
   });
@@ -224,6 +272,75 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("does not write a no-usable-profile report without report flags", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-no-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Unsupported\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "no-usable-profile",
+                selected_candidate_id: "none",
+                accepted_fields: {},
+                reasoning: "Template-only request.",
+                warnings: [],
+                unmatched_directions: ["custom CSS"],
+              }),
+            input: "report.md",
+            intent: "custom CSS template",
+            output: "profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_NO_USABLE_PROFILE",
+          exitCode: 1,
+        },
+      );
+
+      expect(await readdir(fixtureDir)).toEqual(["report.md"]);
+    });
+  });
+
+  test("prints conservative fallback details and records fallback reports", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-fallback", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "fallback-report.json",
+        codexRunner: async () =>
+          JSON.stringify({
+            decision_mode: "conservative-fallback",
+            selected_candidate_id: "default",
+            accepted_fields: {},
+            reasoning: "Facts are weak.",
+            warnings: ["Using default profile."],
+            fallback_reason: "No strong layout signal.",
+            unmatched_directions: [],
+          }),
+        input: "report.md",
+        intent: "unclear profile",
+        output: "profile.yml",
+      });
+
+      expect(stdout.text).toContain("Decision: conservative-fallback");
+      expect(stdout.text).toContain("Fallback reason: No strong layout signal.");
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "fallback-report.json"),
+      );
+      expect(report.result.fallbackReason).toBe("No strong layout signal.");
+      expect(report.result.warnings).toEqual(["Using default profile."]);
+    });
+  });
+
   test("writes an unavailable failure report when requested", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-unavailable", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
@@ -287,6 +404,127 @@ describe("cli action modules: md pdf-profile codex", () => {
       );
       expect(report.result.status).toBe("failed");
       expect(report.result.failure).toMatchObject({ kind: "malformed-output" });
+    });
+  });
+
+  test("writes structured-output and invalid-application failure reports", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-failure-kinds", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "schema-report.json",
+            codexRunner: async () => {
+              throw new Error("invalid_json_schema response_format");
+            },
+            input: "report.md",
+            intent: "report",
+            output: "schema-profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "structured output",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "invalid-application-report.json",
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "adapted",
+                selected_candidate_id: "missing",
+                accepted_fields: {},
+                reasoning: "bad candidate",
+                warnings: [],
+                unmatched_directions: [],
+              }),
+            input: "report.md",
+            intent: "report",
+            output: "invalid-application-profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "could not be applied",
+        },
+      );
+
+      const schemaReport = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "schema-report.json"),
+      );
+      const invalidApplicationReport = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "invalid-application-report.json"),
+      );
+      expect(schemaReport.result.failure).toMatchObject({ kind: "structured-output-schema" });
+      expect(invalidApplicationReport.result.failure).toMatchObject({
+        kind: "invalid-application",
+      });
+    });
+  });
+
+  test("stores relative report paths even when display paths are absolute", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-relative-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        displayPathStyle: "absolute",
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "codex-report.json",
+        codexRunner: adaptedRunner("article"),
+        input: "report.md",
+        intent: "article profile",
+        output: "profile.yml",
+      });
+
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "codex-report.json"),
+      );
+      expect(report.input.path).toBe("report.md");
+      expect(report.profile.outputPath).toBe("profile.yml");
+    });
+  });
+
+  test("rejects symlink report outputs without replacing the target profile", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-symlink", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "profile.json");
+      const reportAliasPath = join(fixtureDir, "alias-report.json");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      await writeFile(profilePath, '{"original":true}\n', "utf8");
+      await symlink(profilePath, reportAliasPath);
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "alias-report.json",
+            codexRunner: adaptedRunner("article"),
+            input: "report.md",
+            intent: "article profile",
+            output: "profile.json",
+            overwrite: true,
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "symlink",
+        },
+      );
+
+      expect((await lstat(reportAliasPath)).isSymbolicLink()).toBe(true);
+      expect(await readFile(profilePath, "utf8")).toBe('{"original":true}\n');
     });
   });
 
