@@ -252,6 +252,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       const reportPath = profilePath.replace(/\.yml$/, "-codex-report.json");
       const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, reportPath));
       expect(report.signalMode).toBe("hint-only");
+      expect(report.documentSignals.available).toBe(false);
       expect(report.input.path).toBeUndefined();
       expect(report.input.sha256).toBeUndefined();
     });
@@ -296,6 +297,30 @@ describe("cli action modules: md pdf-profile codex", () => {
           return await adaptedRunner("reader")();
         },
         fontHint: ["  ", "\t"],
+        output: "profile.yml",
+      });
+
+      expect(codexCalls).toBe(0);
+      expect(stdout.text).toContain("Signal mode: basic-default");
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.profile).toMatchObject({ source: "deterministic" });
+    });
+  });
+
+  test("ignores blank-only intent for deterministic fallback", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-blank-intent", async (fixtureDir) => {
+      let codexCalls = 0;
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async () => {
+          codexCalls += 1;
+          return await adaptedRunner("reader")();
+        },
+        intent: "   ",
         output: "profile.yml",
       });
 
@@ -462,6 +487,53 @@ describe("cli action modules: md pdf-profile codex", () => {
         join(fixtureDir, "mixed-report.json"),
       );
       expect(report.signalMode).toBe("mixed-with-base");
+      expect(report.selectedBase.candidateId).toBe("base-profile");
+    });
+  });
+
+  test("records mixed-with-base signal mode for base profile refinements with font hints", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-mixed-base-font-hint", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260610T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: reader",
+          "  preset: reader",
+          "  createdAt: 2026-06-10T08:15:00Z",
+          "toc:",
+          "  enabled: false",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      let prompt = "";
+      let codexCalls = 0;
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.yml",
+        codexReportOutput: "mixed-font-report.json",
+        codexRunner: async (options) => {
+          codexCalls += 1;
+          prompt = options.prompt;
+          return await adaptedRunner("base-profile")();
+        },
+        fontHint: ["prefer Noto Serif CJK TC"],
+        output: "adapted.yml",
+      });
+
+      expect(codexCalls).toBe(1);
+      expect(prompt).toContain('"signalMode": "mixed-with-base"');
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "mixed-font-report.json"),
+      );
+      expect(report.signalMode).toBe("mixed-with-base");
+      expect(report.documentSignals.available).toBe(false);
       expect(report.selectedBase.candidateId).toBe("base-profile");
     });
   });
