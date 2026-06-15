@@ -288,8 +288,28 @@ function collectConfiguredFamilies(
   ].filter((item) => item.family.trim().length > 0);
 }
 
-function coverageKey(result: MarkdownPdfProfileFontCoverageResult): string {
-  return `${result.role}:${result.language ?? "default"}:${result.family.trim().toLowerCase()}`;
+function sameFamily(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+function coverageForFamily(
+  family: MarkdownPdfFontFamilySignal,
+  results: MarkdownPdfProfileFontCoverageResult[],
+): MarkdownPdfProfileFontCoverageResult | undefined {
+  if (family.role === "body" && family.key !== "default") {
+    return results.find(
+      (result) =>
+        result.role === "body" &&
+        result.language === family.key &&
+        sameFamily(result.family, family.family),
+    );
+  }
+  if (family.role === "code" && family.key === "symbols") {
+    return results.find(
+      (result) => result.role === "code" && sameFamily(result.family, family.family),
+    );
+  }
+  return undefined;
 }
 
 export function collectMarkdownPdfFontSignals(
@@ -300,11 +320,8 @@ export function collectMarkdownPdfFontSignals(
     inventories: input.inventories,
     checker: input.checker,
   });
-  const coverageByKey = new Map(coverage.results.map((result) => [coverageKey(result), result]));
   const families = collectConfiguredFamilies(input.profile).map((family) => {
-    const coverageResult = coverageByKey.get(
-      `${family.role}:${family.role === "body" && family.key !== "default" ? family.key : "default"}:${family.family.trim().toLowerCase()}`,
-    );
+    const coverageResult = coverageForFamily(family, coverage.results);
     return {
       ...family,
       coverageStatus: coverageResult?.coverage.status,

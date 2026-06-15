@@ -41,8 +41,12 @@ function topLevelFields(profile: Record<string, unknown>): string[] {
     .sort();
 }
 
+function cloneProfile(profile: Record<string, unknown>): Record<string, unknown> {
+  return structuredClone(profile) as Record<string, unknown>;
+}
+
 function createDefaultCandidate(): MarkdownPdfProfileCandidate {
-  const fullProfile = { ...DEFAULT_MARKDOWN_PDF_PROFILE };
+  const fullProfile = cloneProfile(DEFAULT_MARKDOWN_PDF_PROFILE);
   return {
     summary: {
       id: "default",
@@ -56,7 +60,9 @@ function createDefaultCandidate(): MarkdownPdfProfileCandidate {
 }
 
 function createPresetCandidate(preset: MarkdownPdfPreset): MarkdownPdfProfileCandidate {
-  const fullProfile = createMarkdownPdfProfileConfig(normalizeMarkdownPdfOptions({ preset }));
+  const fullProfile = cloneProfile(
+    createMarkdownPdfProfileConfig(normalizeMarkdownPdfOptions({ preset })),
+  );
   return {
     summary: {
       id: preset,
@@ -79,7 +85,7 @@ export async function loadMarkdownPdfBaseProfileCandidate(
   input: LoadMarkdownPdfBaseProfileCandidateInput,
 ): Promise<MarkdownPdfProfileCandidate> {
   const path = resolve(input.cwd ?? process.cwd(), input.path);
-  const fullProfile = await readMarkdownPdfProfileFile(path);
+  const fullProfile = cloneProfile(await readMarkdownPdfProfileFile(path));
   const normalized = normalizeMarkdownPdfProfile({ profile: fullProfile });
   const identity = normalized.profile.identity;
   const basedOn = identity?.id ?? identity?.basedOn ?? "untracked-base-profile";
