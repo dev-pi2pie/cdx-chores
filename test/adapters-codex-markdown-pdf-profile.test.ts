@@ -60,6 +60,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("selectedBaseProfileSummary");
     expect(prompt).toContain("supportedSchemaSummary");
     expect(prompt).toContain("fonts.body.default");
+    expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("fullProfile");
   });
 
@@ -69,6 +70,10 @@ describe("Markdown PDF Codex profile adapter", () => {
       "accepted_fields",
     );
     expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.additionalProperties).toBe(false);
+    expect(new Set(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required)).toEqual(
+      new Set(Object.keys(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties)),
+    );
+    expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required).toContain("fallback_reason");
     expect(
       MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items,
     ).toMatchObject({
@@ -95,6 +100,7 @@ describe("Markdown PDF Codex profile adapter", () => {
                 accepted_patches: [],
                 reasoning: "Wide table candidate matches the table facts.",
                 warnings: [],
+                fallback_reason: "",
                 unmatched_directions: [],
               }),
             }),
@@ -129,11 +135,13 @@ describe("Markdown PDF Codex profile adapter", () => {
           ],
           reasoning: "Wide table candidate matches the table facts.",
           warnings: [],
+          fallback_reason: "",
           unmatched_directions: [],
         }),
     });
 
     expect(result.decision.decisionMode).toBe("adapted");
+    expect(result.decision.fallbackReason).toBeUndefined();
     expect(result.profile?.toc).toEqual({ enabled: true, depth: 2, pageBreak: "auto" });
     expect(result.profile?.page).toMatchObject({
       orientation: "landscape",
@@ -179,6 +187,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           accepted_patches: [],
           reasoning: "No profile should be written.",
           warnings: [],
+          fallback_reason: " ",
           unmatched_directions: ["unsupported custom CSS"],
         }),
     });
@@ -186,6 +195,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(fallback.profile).toBeDefined();
     expect(fallback.decision.fallbackReason).toBe("No strong layout signals.");
     expect(noProfile.profile).toBeUndefined();
+    expect(noProfile.decision.fallbackReason).toBeUndefined();
     expect(noProfile.decision.unmatchedDirections).toEqual(["unsupported custom CSS"]);
   });
 

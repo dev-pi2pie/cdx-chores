@@ -20,6 +20,7 @@ function adaptedRunner(candidateId = "wide-table") {
       ],
       reasoning: "The document has enough structure for a reusable profile.",
       warnings: [],
+      fallback_reason: "",
       unmatched_directions: [],
     });
 }

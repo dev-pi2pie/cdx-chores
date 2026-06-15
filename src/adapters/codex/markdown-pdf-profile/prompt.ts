@@ -26,6 +26,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Prefer small adaptations over broad rewrites.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none and accepted_patches to [].",
+    "- Always include fallback_reason; use an empty string when no fallback reason applies.",
     "- Keep reasoning short and grounded in the facts.",
     "",
     "Deterministic facts:",

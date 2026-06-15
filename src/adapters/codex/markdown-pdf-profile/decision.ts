@@ -32,7 +32,11 @@ function parseOptionalString(value: unknown, context: string): string | undefine
   if (value === undefined) {
     return undefined;
   }
-  return parseString(value, context);
+  if (typeof value !== "string") {
+    throw new Error(`Markdown PDF Codex response ${context} must be a string.`);
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function parseStringArray(value: unknown, context: string): string[] {

@@ -474,13 +474,13 @@ Phase 6 working-directory hotfix note on 2026-06-15:
 - [x] Add regression coverage for the schema shape so open object fragments cannot return.
 - [x] Record the live Codex verification limit: sandboxed smoke is blocked before a remote structured-output response, and unsandboxed verification was rejected by policy because it would disclose README-derived signals externally.
 - [x] Add a Phase 6.1 job record after implementation and validation.
-- [ ] Add the strict structured-output required-property hotfix for `fallback_reason`.
-- [ ] Make every key under the output schema `properties` appear in `required`.
-- [ ] Represent absent `fallback_reason` with a schema-valid empty string or nullable value.
-- [ ] Normalize empty `fallback_reason` back to an omitted decision/report value.
-- [ ] Update prompt wording so Codex always returns the required `fallback_reason` field.
-- [ ] Add regression coverage for the required-property schema rule.
-- [ ] Re-run the real command smoke and record whether it reaches the next validation boundary.
+- [x] Add the strict structured-output required-property hotfix for `fallback_reason`.
+- [x] Make every key under the output schema `properties` appear in `required`.
+- [x] Represent absent `fallback_reason` with a schema-valid empty string.
+- [x] Normalize empty `fallback_reason` back to an omitted decision/report value.
+- [x] Update prompt wording so Codex always returns the required `fallback_reason` field.
+- [x] Add regression coverage for the required-property schema rule.
+- [x] Re-run the real command smoke and record whether it reaches the next validation boundary.
 
 Phase 6.1 rationale:
 

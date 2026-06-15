@@ -45,6 +45,7 @@ export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
     "accepted_patches",
     "reasoning",
     "warnings",
+    "fallback_reason",
     "unmatched_directions",
   ],
   additionalProperties: false,

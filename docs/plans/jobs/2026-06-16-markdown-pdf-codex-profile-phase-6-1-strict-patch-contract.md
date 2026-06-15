@@ -58,3 +58,30 @@ The bug happened because the first adapter implementation asked Codex for `accep
 - The report artifact version was bumped because the success payload now records `acceptedPatches` instead of `acceptedFields`.
 - Prism review found that the first patch application draft could silently create missing parent objects. The implementation was tightened so replace patches require an existing parent object, and regression coverage was added.
 - Telescope review found that the first job record overstated live verification. The evidence now records the sandbox and policy limits instead of claiming a full external Codex response was exercised.
+
+## Required-Property Follow-Up
+
+The next live run exposed a second strict structured-output schema rule:
+
+```text
+In context=(), 'required' is required to be supplied and to be an array including every key in properties. Missing 'fallback_reason'.
+```
+
+The follow-up fix keeps `fallback_reason` in the schema as a required string field. Codex should return an empty string when no fallback reason applies, and the adapter normalizes blank values back to an omitted decision/report value.
+
+Additional focused evidence:
+
+- `bun test test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts`
+  - 76 pass, 0 fail
+  - covers the all-properties-required schema rule, blank `fallback_reason` normalization, prompt wording, action fixtures that mirror the stricter schema, command wiring, profile normalization, and candidate/signal helpers
+- `bun run format:check`
+  - all matched files use the correct format
+- `bun run lint`
+  - completed successfully
+- `git diff --check`
+  - completed successfully
+- `bun run build`
+  - completed successfully
+- `node dist/esm/bin.mjs md pdf-profile codex README.md --intent "clean pdf with a proper cover page" --dry-run`
+  - used `--dry-run` without report flags, so no profile or report artifact was written
+  - sandboxed smoke still stops before a remote structured-output response on the app-server permission error: `failed to initialize in-process app-server client: Operation not permitted`
