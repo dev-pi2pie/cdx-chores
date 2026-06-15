@@ -146,7 +146,7 @@ Recommended helper pipeline:
 profile candidates
   -> built-in default profile
   -> built-in preset-derived profiles
-  -> optional existing/base profile later
+  -> user supplied base profile from --base-profile <path>
   -> optional local profile templates later
 
 document signals
@@ -160,7 +160,6 @@ document signals
 user hints
   -> intent
   -> font hints
-  -> style hints
 
 font facts
   -> available font families
@@ -172,6 +171,41 @@ Codex decision
   -> apply bounded changes
   -> output structured profile fields
 ```
+
+The direct CLI should stay small. General rendering direction belongs in `--intent`; font preference belongs in `--font-hint`. The helper can derive internal decision categories from those inputs, document signals, and font facts, then report how the categories mapped to supported profile fields.
+
+Recommended prompt-design boundary:
+
+```text
+User-facing CLI
+  --input report.md
+  --intent "internal review packet with dense tables and readable code"
+  --font-hint "prefer Noto Serif CJK TC"
+          |
+          v
+Deterministic collectors
+  document signals
+  font summaries
+  candidate profile catalog
+          |
+          v
+Codex prompt contract
+  interpret intent as:
+    purpose: review | reading | print | archive | presentation
+    density: compact | balanced | spacious
+    table priority: low | medium | high
+    code priority: low | medium | high
+    locale/script needs: derived from document + font facts
+  select base profile candidate
+  produce only supported profile fields
+          |
+          v
+Validated artifacts
+  profile.yml
+  optional codex-report.json
+```
+
+This prevents CLI flag bloat while preserving the useful reasoning layer. New user-facing hint flags should not be added just to mirror prompt categories. If a direction cannot be represented by the current profile schema or template behavior, the helper should not invent an unsupported field. It should leave the profile valid and, when the report is requested, list the unmatched direction in the report.
 
 This model makes fallback behavior part of the normal decision tree. If signals are weak, Codex can choose a conservative base candidate and explain that choice instead of needing a separate `--fallback-profile` option.
 
@@ -216,8 +250,18 @@ Recommended v1 candidate catalog:
 | wide-table preset profile | `wide-table` | profile values plus preset behavior for `wide-table` |
 | compact preset profile | `compact` | profile values plus preset behavior for `compact` |
 | reader preset profile | `reader` | profile values plus preset behavior for `reader` |
+| user supplied base profile | existing profile identity when present; generated profile UID when absent | profile loaded from `--base-profile <path>` |
 
-Existing/base-profile refinement and local profile-template catalogs are useful later, but the first helper should not require them. The v1 catalog should be generated from the same defaults, preset validation, and recipe behavior used by current `md to-pdf` and `md pdf-profile init` paths.
+The first helper should support `--base-profile <path>` so Codex can refine an existing profile instead of forcing every assisted run to start from a built-in candidate. Local profile-template catalogs remain outside the first pass. The v1 catalog should be generated from the same defaults, preset validation, and recipe behavior used by current `md to-pdf` and `md pdf-profile init` paths, plus the single loaded base profile when the user provides one.
+
+Recommended `--base-profile` behavior:
+
+- load and validate the base profile before collecting Codex recommendations
+- treat the base profile as the strongest candidate when it is valid
+- preserve existing fields unless Codex has document facts or user intent that justify a bounded change
+- record the base profile path as a displayed path in the optional Codex report, not as a raw private absolute path
+- reject invalid base profiles before calling Codex
+- keep `--output` separate from `--base-profile` so the helper writes a reviewed derivative instead of mutating the source profile in place
 
 ### 4. `pdf-profile` and `pdf-template` must stay distinct
 
@@ -271,15 +315,11 @@ That matters for the Codex helper because many user intents map directly to pres
 - "screen reading copy" maps naturally to `reader`
 - "dense internal notes" maps naturally to `compact`
 
-If `md pdf-profile codex` writes only derived fields, the generated profile may not be a complete replayable rendering decision. The first implementation plan should therefore resolve one of these contracts before treating Codex profiles as fully replayable:
+If `md pdf-profile codex` writes only derived fields, the generated profile may not be a complete replayable rendering decision. The first implementation plan should add a schema-supported preset identity field and teach `md to-pdf --profile <path>` to consume it before treating Codex profiles as fully replayable.
 
-1. add a schema-supported preset identity field and teach `md to-pdf --profile <path>` to consume it
-2. keep preset identity outside the profile and require `md to-pdf --profile <path> --preset <name>` when preset CSS matters
-3. constrain the first helper to profile fields that are currently replayable and clearly warn when a preset-like intent cannot be fully captured
+This direction makes a Codex-generated profile self-contained and aligns with the preset-persistence follow-up already recorded for Markdown PDF profiles.
 
-The preferred direction is option 1, because it makes a Codex-generated profile self-contained and aligns with the deferred preset-persistence follow-up already recorded for Markdown PDF profiles.
-
-This is not just about storing a label. Presets affect renderer behavior through generated CSS and recipe choices, including typography, table sizing, spacing, and other layout rules that cannot be fully captured by copying only a few page fields. A Codex-selected base candidate therefore needs replayable preset identity or an explicit warning that the selected base cannot be fully replayed from the profile alone.
+This is not just about storing a label. Presets affect renderer behavior through generated CSS and recipe choices, including typography, table sizing, spacing, and other layout rules that cannot be fully captured by copying only a few page fields. A Codex-selected base candidate therefore needs replayable preset identity.
 
 ### 6. Codex font choices need deterministic signals, not prompt-only guessing
 
@@ -349,7 +389,7 @@ Recommended output categories:
 
 - selected base profile or preset
 - decision mode
-- preset identity, if the first helper plan resolves preset persistence in the profile schema
+- preset identity for replayable preset-backed profiles
 - page settings
 - ToC settings
 - code highlighting settings
@@ -565,11 +605,12 @@ Scope:
 
 - `md pdf-profile codex` command surface
 - profile candidate selection and bounded adaptation
+- `--base-profile <path>` refinement from an existing validated profile
 - Markdown structure and profile-signal introspection
 - font summary and font-check orchestration
 - bounded Codex structured output
 - decision modes, including conservative fallback and no usable profile
-- preset persistence decision, preferably schema-supported preset identity
+- schema-supported preset identity and profile replay through `md to-pdf --profile`
 - profile identity schema extension
 - deterministic profile serialization
 - adapter boundary under the existing Codex adapter layer
@@ -615,9 +656,9 @@ This keeps the command provider-neutral, but the repo currently has Codex-specif
 
 This would generate or edit raw HTML/CSS recipe files. It remains deferred because it creates a larger review surface and turns assistant output into low-level rendering code. Profile fields are the safer first abstraction.
 
-### `--base-profile <path>` in v1
+### Creation-only profile helper
 
-Refining an existing profile is useful, but it can be deferred unless implementation planning finds that creation-only profiles are too limiting. The first helper can still leave this as an explicit follow-up if the creation contract, identity, preset persistence, and report artifacts are already substantial enough.
+A helper that only creates profiles from built-in candidates would be simpler, but it would force users to abandon existing profile work whenever they want Codex assistance. The first helper should support both built-in candidate selection and refinement from `--base-profile <path>` so the reviewed artifact can evolve from a known profile.
 
 ### `--print-profile`
 
@@ -629,25 +670,25 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 
 ## Open Questions
 
-1. Should `--font-hint` be the only dedicated hint flag, or should there also be a more general repeatable `--style-hint`?
-2. Should the helper support a `--base-profile <path>` refinement mode in the first implementation, or should that be a follow-up after profile creation works?
-3. Should the profile identity section keep the current recommended `profile` name, or should implementation review choose `artifact` or another schema-supported key?
-4. Should Interactive mode expose `pdf-template init` as a main Markdown action or only inside the advanced branch of `md:to-pdf`?
+1. Confirm the schema-supported profile identity section name before implementation.
+2. Decide where Interactive mode should expose `pdf-template init` in the Markdown menu flow.
 
 ## Recommendations
 
 1. Draft and implement the Codex helper plan first.
 2. Use `md pdf-profile codex` as the direct command name.
 3. Frame the helper as profile candidate selection plus bounded adaptation, not blank profile generation.
-4. Keep Codex output bounded to structured profile fields and decision metadata.
-5. Resolve preset persistence in the first helper plan, preferably by adding schema-supported preset identity.
-6. Add a schema-supported profile identity section for Codex-generated profiles.
-7. Keep Codex report JSON optional and linked by the profile UID.
-8. Derive Codex report sidecar paths from the actual profile output path when the user provides custom `--output`.
-9. Reject explicit same-file collisions among profile and report outputs; fall back for generated path collisions.
-10. Use document facts and font-check summaries as Codex inputs; do not rely on prompt text alone for font choices.
-11. Make conservative fallback a visible Codex decision mode, not a separate direct CLI option.
-12. Keep Interactive mode as a later plan that reuses the direct helper contract.
+4. Support `--base-profile <path>` in the first helper so Codex can refine an existing validated profile.
+5. Keep Codex output bounded to structured profile fields and decision metadata.
+6. Resolve preset persistence in the first helper plan by adding schema-supported preset identity.
+7. Add a schema-supported profile identity section for Codex-generated profiles.
+8. Keep Codex report JSON optional and linked by the profile UID.
+9. Derive Codex report sidecar paths from the actual profile output path when the user provides custom `--output`.
+10. Reject explicit same-file collisions among profile and report outputs; fall back for generated path collisions.
+11. Use document facts and font-check summaries as Codex inputs; do not rely on prompt text alone for font choices.
+12. Keep the first helper hint surface limited to `--intent` for general direction and `--font-hint` for font preference; do not add extra hint flags just to expose prompt-internal categories.
+13. Make conservative fallback a visible Codex decision mode, not a separate direct CLI option.
+14. Keep Interactive mode as a later plan that reuses the direct helper contract.
 
 ## Related Research
 
