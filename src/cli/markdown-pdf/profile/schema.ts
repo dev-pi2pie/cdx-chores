@@ -1,7 +1,6 @@
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import { normalizeMarkdownPdfProfileIdentity } from "./identity";
 import type { MarkdownPdfProfileFormat } from "./types";
 
 const ROOT_KEYS = new Set([
@@ -107,7 +106,6 @@ export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>
   const identity = assertOptionalObject(profile.profile, "profile.profile");
   if (identity) {
     assertAllowedKeys(identity, PROFILE_IDENTITY_KEYS, "profile.profile");
-    normalizeMarkdownPdfProfileIdentity(identity);
   }
 
   const page = assertOptionalObject(profile.page, "profile.page");

@@ -13,6 +13,7 @@ import type {
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
@@ -338,7 +339,7 @@ function uniqueStrings(values: string[]): string[] {
 
 export function markdownPdfProfileToRecipeOptions(
   profile: Record<string, unknown> = {},
-  identity = normalizeMarkdownPdfProfileIdentity(profile.profile),
+  identity?: NormalizedMarkdownPdfProfileIdentity,
 ): NormalizeMarkdownPdfOptionsInput {
   const page = readObject(profile.page);
   const toc = readObject(profile.toc);

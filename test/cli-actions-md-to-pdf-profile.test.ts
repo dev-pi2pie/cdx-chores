@@ -306,21 +306,33 @@ describe("markdown PDF profile normalization", () => {
         "utf8",
       );
 
-      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "profile.profile.preset must be one of",
-      });
-      await expectCliError(() => readMarkdownPdfProfileFile(sourcePath), {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "profile.profile.source must be codex",
-      });
-      await expectCliError(() => readMarkdownPdfProfileFile(createdAtPath), {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
-      });
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(profilePath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.preset must be one of",
+        },
+      );
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(sourcePath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.source must be codex",
+        },
+      );
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(createdAtPath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.profile.createdAt must be an ISO date-time string",
+        },
+      );
       await expectCliError(() => readMarkdownPdfProfileFile(unknownKeyPath), {
         code: "INVALID_INPUT",
         exitCode: 2,
