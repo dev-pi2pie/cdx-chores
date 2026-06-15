@@ -1,5 +1,4 @@
 import { validateMarkdownPdfProfileShape } from "../../../cli/markdown-pdf/profile/schema";
-import { normalizeMarkdownPdfProfile } from "../../../cli/markdown-pdf/profile/normalize";
 import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/profile/candidates";
 import {
   MARKDOWN_PDF_CODEX_DECISION_MODES,
@@ -74,21 +73,26 @@ function validateAcceptedFields(value: unknown): Record<string, unknown> {
 
 export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPdfCodexDecision {
   const parsed = parseRecord(JSON.parse(finalResponse), "root");
+  const decisionMode = parseDecisionMode(parsed.decision_mode);
+  const selectedCandidateId =
+    decisionMode === "no-usable-profile"
+      ? (parseOptionalString(parsed.selected_candidate_id, "selected_candidate_id") ?? "none")
+      : parseString(parsed.selected_candidate_id, "selected_candidate_id");
+  const acceptedFields =
+    decisionMode === "no-usable-profile" ? {} : validateAcceptedFields(parsed.accepted_fields);
+
   return {
-    acceptedFields: validateAcceptedFields(parsed.accepted_fields ?? {}),
-    decisionMode: parseDecisionMode(parsed.decision_mode),
+    acceptedFields,
+    decisionMode,
     fallbackReason: parseOptionalString(parsed.fallback_reason, "fallback_reason"),
     reasoning: parseString(parsed.reasoning, "reasoning"),
-    selectedCandidateId: parseString(parsed.selected_candidate_id, "selected_candidate_id"),
-    unmatchedDirections: parseStringArray(
-      parsed.unmatched_directions ?? [],
-      "unmatched_directions",
-    ),
-    warnings: parseStringArray(parsed.warnings ?? [], "warnings"),
+    selectedCandidateId,
+    unmatchedDirections: parseStringArray(parsed.unmatched_directions, "unmatched_directions"),
+    warnings: parseStringArray(parsed.warnings, "warnings"),
   };
 }
 
-function mergeProfileValue(base: unknown, update: unknown): unknown {
+function mergeProfileSection(base: unknown, update: unknown): unknown {
   if (update === undefined) {
     return structuredClone(base);
   }
@@ -103,12 +107,25 @@ function mergeProfileValue(base: unknown, update: unknown): unknown {
     const merged: Record<string, unknown> = structuredClone(base) as Record<string, unknown>;
     for (const [key, value] of Object.entries(update as Record<string, unknown>)) {
       if (value !== undefined) {
-        merged[key] = mergeProfileValue(merged[key], value);
+        merged[key] = mergeProfileSection(merged[key], value);
       }
     }
     return merged;
   }
   return structuredClone(update);
+}
+
+function mergeAcceptedProfileFields(
+  base: Record<string, unknown>,
+  acceptedFields: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = structuredClone(base) as Record<string, unknown>;
+  for (const key of ACCEPTED_PROFILE_ROOT_KEYS) {
+    if (Object.hasOwn(acceptedFields, key)) {
+      merged[key] = mergeProfileSection(merged[key], acceptedFields[key]);
+    }
+  }
+  return merged;
 }
 
 function selectedCandidate(
@@ -131,11 +148,10 @@ export function applyMarkdownPdfCodexDecision(options: {
   }
 
   const candidate = selectedCandidate(options.candidates, options.decision.selectedCandidateId);
-  const profile = mergeProfileValue(
+  const profile = mergeAcceptedProfileFields(
     candidate.fullProfile,
     options.decision.acceptedFields,
-  ) as Record<string, unknown>;
+  );
   validateMarkdownPdfProfileShape(profile);
-  normalizeMarkdownPdfProfile({ profile });
   return { decision: options.decision, profile };
 }

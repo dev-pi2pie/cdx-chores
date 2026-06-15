@@ -1,6 +1,6 @@
-import { startCodexReadOnlyThread } from "../shared";
-import { applyMarkdownPdfCodexDecision, parseMarkdownPdfCodexDecision } from "./decision";
+import { getCodexPathOverrideFromEnv, runCodexPromptOnly } from "../shared";
 import { buildMarkdownPdfProfileCodexPrompt } from "./prompt";
+import { applyMarkdownPdfCodexDecision, parseMarkdownPdfCodexDecision } from "./decision";
 import type {
   MarkdownPdfCodexProfileRequest,
   MarkdownPdfCodexProfileResult,
@@ -39,12 +39,29 @@ async function runMarkdownPdfProfileCodexPrompt(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
-  const turn = await thread.run([{ type: "text", text: options.prompt }], {
+  return await runCodexPromptOnly({
     outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
+    prompt: options.prompt,
+    timeoutMs: options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
+    work: async ({ outputSchema, prompt, signal, workingDirectory }) => {
+      const { Codex } = await import("@openai/codex-sdk");
+      const codexPathOverride = getCodexPathOverrideFromEnv();
+      const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
+      const thread = codex.startThread({
+        workingDirectory,
+        sandboxMode: "read-only",
+        approvalPolicy: "never",
+        modelReasoningEffort: "low",
+        networkAccessEnabled: false,
+        webSearchMode: "disabled",
+      });
+      const turn = await thread.run([{ type: "text", text: prompt }], {
+        outputSchema,
+        signal,
+      });
+      return turn.finalResponse;
+    },
   });
-  return turn.finalResponse;
 }
 
 export type MarkdownPdfCodexProfileFailureKind = "structured-output-schema" | "unavailable";
@@ -56,8 +73,7 @@ export function classifyMarkdownPdfCodexProfileFailure(
   if (
     message.includes("invalid_json_schema") ||
     message.includes("invalid_request_error") ||
-    message.includes("response_format") ||
-    message.trim().startsWith("{")
+    message.includes("response_format")
   ) {
     return "structured-output-schema";
   }
@@ -83,8 +99,6 @@ export async function suggestMarkdownPdfProfileWithCodex(
   });
 }
 
-export { applyMarkdownPdfCodexDecision, parseMarkdownPdfCodexDecision };
-export { buildMarkdownPdfProfileCodexPrompt };
 export type {
   MarkdownPdfCodexDecision,
   MarkdownPdfCodexDecisionMode,
