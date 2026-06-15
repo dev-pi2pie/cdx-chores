@@ -523,6 +523,20 @@ describe("cli action modules: md pdf-profile codex", () => {
       await expect(readMarkdownPdfCodexReportArtifact(documentReportPath)).rejects.toThrow(
         "document-informed mode requires input metadata",
       );
+      documentReport.input = { path: "report.md" };
+      await writeFile(documentReportPath, `${JSON.stringify(documentReport, null, 2)}\n`, "utf8");
+      await expect(readMarkdownPdfCodexReportArtifact(documentReportPath)).rejects.toThrow(
+        "input metadata is incomplete",
+      );
+      documentReport.input = { path: "report.md", sha256: "abc" };
+      documentReport.documentSignals = {
+        ...(documentReport.documentSignals as object),
+        available: false,
+      };
+      await writeFile(documentReportPath, `${JSON.stringify(documentReport, null, 2)}\n`, "utf8");
+      await expect(readMarkdownPdfCodexReportArtifact(documentReportPath)).rejects.toThrow(
+        "input metadata requires available document signals",
+      );
 
       const hintReport = JSON.parse(await readFile(hintReportPath, "utf8")) as Record<
         string,
@@ -532,6 +546,12 @@ describe("cli action modules: md pdf-profile codex", () => {
       await writeFile(hintReportPath, `${JSON.stringify(hintReport, null, 2)}\n`, "utf8");
       await expect(readMarkdownPdfCodexReportArtifact(hintReportPath)).rejects.toThrow(
         "inputless signal mode cannot include input metadata",
+      );
+      hintReport.input = {};
+      hintReport.documentSignals = { ...(hintReport.documentSignals as object), available: true };
+      await writeFile(hintReportPath, `${JSON.stringify(hintReport, null, 2)}\n`, "utf8");
+      await expect(readMarkdownPdfCodexReportArtifact(hintReportPath)).rejects.toThrow(
+        "available document signals require input metadata",
       );
     });
   });
@@ -925,6 +945,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       const reportInputPath = join(fixtureDir, "report-source.json");
       const reportAliasPath = join(fixtureDir, "report-alias.json");
       await writeFile(profilePath, "# Report\n", "utf8");
+      await writeFile(join(fixtureDir, "shared.md"), "# Shared\n", "utf8");
       await symlink(profilePath, inputAliasPath);
       await symlink(profilePath, baseAliasPath);
       await writeFile(reportInputPath, "# JSON named Markdown\n", "utf8");
@@ -969,6 +990,24 @@ describe("cli action modules: md pdf-profile codex", () => {
       await expectCliError(
         () =>
           actionMdPdfProfileCodex(runtime, {
+            baseProfile: "shared.md",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "shared.md",
+            output: "new.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Markdown input cannot be the same path as --base-profile",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
             codexReportOutput: "report-alias.json",
             codexRunner: async () => {
               codexCalls += 1;
@@ -997,6 +1036,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       await writeFile(join(fixtureDir, "base.yml"), "toc:\n  enabled: true\n", "utf8");
       await writeFile(join(fixtureDir, "base.json"), '{"toc":{"enabled":true}}\n', "utf8");
       await writeFile(join(fixtureDir, "sample.json"), "# JSON named Markdown\n", "utf8");
+      await link(join(fixtureDir, "base.yml"), join(fixtureDir, "base-input.md"));
       let codexCalls = 0;
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
@@ -1124,6 +1164,24 @@ describe("cli action modules: md pdf-profile codex", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "--codex-report-output cannot be the same path as --base-profile",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: "base.yml",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "base-input.md",
+            output: "new.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Markdown input cannot be the same file as --base-profile",
         },
       );
       await expectCliError(

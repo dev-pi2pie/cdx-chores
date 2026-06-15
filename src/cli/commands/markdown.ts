@@ -54,6 +54,24 @@ interface MarkdownPdfProfileInitCliOptions extends MarkdownPdfRecipeCliOptions {
   overwrite?: boolean;
 }
 
+interface MarkdownCommandActions {
+  actionMdFrontmatterToJson: typeof actionMdFrontmatterToJson;
+  actionMdPdfProfileCodex: typeof actionMdPdfProfileCodex;
+  actionMdPdfProfileInit: typeof actionMdPdfProfileInit;
+  actionMdPdfTemplateInit: typeof actionMdPdfTemplateInit;
+  actionMdToDocx: typeof actionMdToDocx;
+  actionMdToPdf: typeof actionMdToPdf;
+}
+
+const defaultMarkdownCommandActions: MarkdownCommandActions = {
+  actionMdFrontmatterToJson,
+  actionMdPdfProfileCodex,
+  actionMdPdfProfileInit,
+  actionMdPdfTemplateInit,
+  actionMdToDocx,
+  actionMdToPdf,
+};
+
 function collectStringOption(value: string, previous: string[] = []): string[] {
   return [...previous, value];
 }
@@ -80,7 +98,11 @@ function applyMarkdownPdfRecipeOptions(command: Command): Command {
     );
 }
 
-export function registerMarkdownCommands(program: Command, runtime: CliRuntime): void {
+export function registerMarkdownCommands(
+  program: Command,
+  runtime: CliRuntime,
+  actions: MarkdownCommandActions = defaultMarkdownCommandActions,
+): void {
   const mdCommand = program.command("md").description("Markdown utilities");
 
   applyCommonFileOptions(
@@ -89,7 +111,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       .description("Convert Markdown to DOCX using Pandoc")
       .requiredOption("-i, --input <path>", "Input Markdown file")
       .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
-        await actionMdToDocx(runtime, options);
+        await actions.actionMdToDocx(runtime, options);
       }),
   );
 
@@ -113,7 +135,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .option("--code-highlight", "Enable Shiki code highlighting")
         .option("--no-code-highlight", "Disable Shiki code highlighting")
         .action(async (options: MarkdownPdfCliOptions) => {
-          await actionMdToPdf(runtime, {
+          await actions.actionMdToPdf(runtime, {
             ...options,
             noDefaultCss: options.noDefaultCss ?? options.defaultCss === false,
           });
@@ -130,7 +152,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       .requiredOption("-o, --output <path>", "Output template directory")
       .option("--overwrite", "Overwrite recipe files if they already exist", false)
       .action(async (options: MarkdownPdfTemplateInitCliOptions) => {
-        await actionMdPdfTemplateInit(runtime, options);
+        await actions.actionMdPdfTemplateInit(runtime, options);
       }),
   );
 
@@ -145,7 +167,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       .requiredOption("-o, --output <path>", "Output profile file")
       .option("--overwrite", "Overwrite the profile file if it already exists", false)
       .action(async (options: MarkdownPdfProfileInitCliOptions) => {
-        await actionMdPdfProfileInit(runtime, options);
+        await actions.actionMdPdfProfileInit(runtime, options);
       }),
   );
 
@@ -163,7 +185,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
     .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
     .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
     .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
-      await actionMdPdfProfileCodex(runtime, { ...options, positionalInput: input });
+      await actions.actionMdPdfProfileCodex(runtime, { ...options, positionalInput: input });
     });
 
   mdCommand
@@ -182,7 +204,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         pretty?: boolean;
         dataOnly?: boolean;
       }) => {
-        await actionMdFrontmatterToJson(runtime, options);
+        await actions.actionMdFrontmatterToJson(runtime, options);
       },
     );
 }

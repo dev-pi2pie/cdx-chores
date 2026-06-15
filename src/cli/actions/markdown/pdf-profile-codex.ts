@@ -174,6 +174,19 @@ async function assertDifferentExistingFiles(input: {
   });
 }
 
+async function assertDistinctExistingFilePairs(
+  pairs: Array<{
+    left: string | undefined;
+    leftLabel: string;
+    right: string | undefined;
+    rightLabel: string;
+  }>,
+): Promise<void> {
+  for (const pair of pairs) {
+    await assertDifferentExistingFiles(pair);
+  }
+}
+
 function reportRequested(options: MdPdfProfileCodexOptions): boolean {
   return Boolean(options.keepCodexReport || options.codexReportOutput);
 }
@@ -478,72 +491,54 @@ export async function actionMdPdfProfileCodex(
       exitCode: 2,
     });
   }
-  assertDifferentPaths({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: outputResolution.outputPath,
-    rightLabel: "--output",
-  });
-  assertDifferentPaths({
-    left: outputResolution.outputPath,
-    leftLabel: "--output",
-    right: inputPath,
-    rightLabel: "Markdown input",
-  });
-  assertDifferentPaths({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: inputPath,
-    rightLabel: "Markdown input",
-  });
-  assertDifferentPaths({
-    left: outputResolution.outputPath,
-    leftLabel: "--output",
-    right: baseProfilePath,
-    rightLabel: "--base-profile",
-  });
-  assertDifferentPaths({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: baseProfilePath,
-    rightLabel: "--base-profile",
-  });
+  const pathCollisionPairs = [
+    {
+      left: reportOutputPath,
+      leftLabel: "--codex-report-output",
+      right: outputResolution.outputPath,
+      rightLabel: "--output",
+    },
+    {
+      left: outputResolution.outputPath,
+      leftLabel: "--output",
+      right: inputPath,
+      rightLabel: "Markdown input",
+    },
+    {
+      left: reportOutputPath,
+      leftLabel: "--codex-report-output",
+      right: inputPath,
+      rightLabel: "Markdown input",
+    },
+    {
+      left: outputResolution.outputPath,
+      leftLabel: "--output",
+      right: baseProfilePath,
+      rightLabel: "--base-profile",
+    },
+    {
+      left: reportOutputPath,
+      leftLabel: "--codex-report-output",
+      right: baseProfilePath,
+      rightLabel: "--base-profile",
+    },
+    {
+      left: inputPath,
+      leftLabel: "Markdown input",
+      right: baseProfilePath,
+      rightLabel: "--base-profile",
+    },
+  ];
+  for (const pair of pathCollisionPairs) {
+    assertDifferentPaths(pair);
+  }
   if (!options.dryRun) {
     await assertWritableOutputPath(outputResolution.outputPath, { overwrite: options.overwrite });
   }
   if (reportOutputPath) {
     await assertWritableOutputPath(reportOutputPath, { overwrite: options.overwrite });
   }
-  await assertDifferentExistingFiles({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: outputResolution.outputPath,
-    rightLabel: "--output",
-  });
-  await assertDifferentExistingFiles({
-    left: outputResolution.outputPath,
-    leftLabel: "--output",
-    right: inputPath,
-    rightLabel: "Markdown input",
-  });
-  await assertDifferentExistingFiles({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: inputPath,
-    rightLabel: "Markdown input",
-  });
-  await assertDifferentExistingFiles({
-    left: outputResolution.outputPath,
-    leftLabel: "--output",
-    right: baseProfilePath,
-    rightLabel: "--base-profile",
-  });
-  await assertDifferentExistingFiles({
-    left: reportOutputPath,
-    leftLabel: "--codex-report-output",
-    right: baseProfilePath,
-    rightLabel: "--base-profile",
-  });
+  await assertDistinctExistingFilePairs(pathCollisionPairs);
 
   printLine(runtime.stderr, "Collecting Markdown PDF profile signals...");
   const candidates = createMarkdownPdfProfileCandidates();
