@@ -2,8 +2,10 @@ import { resolve } from "node:path";
 
 import { readMarkdownPdfProfileFile } from "./parse";
 import {
+  MARKDOWN_PDF_PRESET_GUIDANCE,
   MARKDOWN_PDF_PRESETS,
   normalizeMarkdownPdfOptions,
+  type MarkdownPdfPresetDensity,
   type MarkdownPdfPreset,
 } from "../validation";
 import { DEFAULT_MARKDOWN_PDF_PROFILE } from "./defaults";
@@ -12,7 +14,6 @@ import { normalizeMarkdownPdfProfile } from "./normalize";
 import type { NormalizedMarkdownPdfProfileIdentity } from "./types";
 
 export type MarkdownPdfProfileCandidateKind = "default" | "preset" | "base-profile";
-export type MarkdownPdfProfileCandidateDensity = "compact" | "standard" | "spacious" | "wide";
 
 export interface MarkdownPdfProfileCandidateTraits {
   cover: boolean;
@@ -20,7 +21,7 @@ export interface MarkdownPdfProfileCandidateTraits {
   pageNumbers: boolean;
   codeHighlight: boolean;
   lineNumbers: boolean;
-  density: MarkdownPdfProfileCandidateDensity;
+  density: MarkdownPdfPresetDensity;
   bestFor: string[];
 }
 
@@ -57,39 +58,13 @@ function cloneProfile(profile: Record<string, unknown>): Record<string, unknown>
   return structuredClone(profile) as Record<string, unknown>;
 }
 
-const PRESET_TRAITS: Record<
-  MarkdownPdfPreset,
-  Pick<MarkdownPdfProfileCandidateTraits, "bestFor" | "density">
-> = {
-  article: {
-    bestFor: ["general documents", "README-like technical docs", "short structured writing"],
-    density: "standard",
-  },
-  report: {
-    bestFor: ["formal reports", "specifications", "long-form documents"],
-    density: "standard",
-  },
-  "wide-table": {
-    bestFor: ["wide tables", "landscape reports", "dense tabular documents"],
-    density: "wide",
-  },
-  compact: {
-    bestFor: ["space-constrained output", "dense notes", "short handouts"],
-    density: "compact",
-  },
-  reader: {
-    bestFor: ["long reading documents", "narrative docs", "review copies"],
-    density: "spacious",
-  },
-};
-
 function createCandidateTraits(
   profile: Record<string, unknown>,
   preset?: MarkdownPdfPreset,
 ): MarkdownPdfProfileCandidateTraits {
   const normalized = normalizeMarkdownPdfProfile({ profile });
   const presetTraits = preset
-    ? PRESET_TRAITS[preset]
+    ? MARKDOWN_PDF_PRESET_GUIDANCE[preset]
     : {
         bestFor: ["basic reusable Markdown PDF defaults", "weak or absent signals"],
         density: "standard" as const,

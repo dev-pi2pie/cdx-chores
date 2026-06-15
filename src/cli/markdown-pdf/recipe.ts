@@ -226,7 +226,10 @@ blockquote {
 ${tocPageBreakCss(options)}
 ${createMarkdownPdfPageChromeCss(input.profile)}
 ${PRESET_CSS[options.preset]}
-${createMarkdownPdfCoverCss(input.profile)}
+${createMarkdownPdfCoverCss(input.profile, {
+  orientation: options.orientation,
+  pageSize: options.pageSize,
+})}
 ${createMarkdownPdfFontCss(input.profile)}
 `;
 }

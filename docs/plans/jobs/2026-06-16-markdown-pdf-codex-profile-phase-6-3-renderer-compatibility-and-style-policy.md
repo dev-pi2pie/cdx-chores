@@ -78,3 +78,34 @@ failed to initialize in-process app-server client: Operation not permitted
 
 - `git status --short --untracked-files=all` after the smoke run showed only source, test, and documentation changes.
 - No generated Markdown PDF profile, Codex report, PDF, or replay artifact was staged or committed.
+
+## Code Review Follow-Up
+
+The Phase 6.3 range review found three maintainability and verification risks:
+
+- candidate trait guidance was too far from the preset source of truth
+- cover sizing used percentage heights without a definite page-box height
+- the cover warning regression asserted only generated CSS text instead of the render warning path
+
+Follow-up changes:
+
+- Moved preset guidance next to `MARKDOWN_PDF_PRESETS` so preset intent metadata stays near the preset list.
+- Changed cover CSS to use a definite page height derived from normalized page size and orientation.
+- Updated the profile-rendering regression runner so it emits the old WeasyPrint warning if the generated stylesheet contains `100vh`; `expectNoStderr()` now guards the warning path.
+
+Follow-up evidence:
+
+- `bun test test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts`
+  - 47 pass, 0 fail
+- `bun run format:check`
+  - all matched files use the correct format
+- `bun run lint`
+  - completed successfully
+- `bun run build`
+  - completed successfully
+- `git diff --check`
+  - completed successfully
+- `bun test`
+  - 1170 pass, 0 fail
+- `node dist/esm/bin.mjs md pdf-profile codex README.md --intent "clean pdf with a proper cover page" --dry-run`
+  - sandboxed smoke again stopped at the app-server permission boundary before a live Codex response

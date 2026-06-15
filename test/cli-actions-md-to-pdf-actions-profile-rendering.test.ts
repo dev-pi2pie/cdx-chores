@@ -71,15 +71,25 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           }
         }
         if (command === "weasyprint" && !args.includes("--info")) {
+          const commandStyles: string[] = [];
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
           for (const index of stylesheetIndexes) {
             const stylesheetPath = args[index + 1];
             if (stylesheetPath) {
-              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+              const css = await readFile(stylesheetPath, "utf8");
+              commandStyles.push(css);
+              renderedStyles.push(css);
             }
           }
+          const result = await runner(command, args, runnerOptions);
+          return commandStyles.some((css) => css.includes("100vh"))
+            ? {
+                ...result,
+                stderr: "WARNING: Ignored `min-height: 100vh`, invalid value.",
+              }
+            : result;
         }
         return runner(command, args, runnerOptions);
       };
@@ -102,8 +112,8 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedTemplate).toContain("Runtime Notes");
       expect(combinedCss).toContain("@page cover");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
-      expect(combinedCss).toContain("height: 100%;");
-      expect(combinedCss).toContain("min-height: 100%;");
+      expect(combinedCss).toContain("height: 297mm;");
+      expect(combinedCss).toContain("min-height: 297mm;");
       expect(combinedCss).not.toContain("100vh");
       expect(combinedCss).toContain(
         'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif JP", serif;',
