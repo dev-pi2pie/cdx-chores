@@ -1,8 +1,19 @@
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
+import type { MarkdownPdfPreset } from "../validation";
 
 export type MarkdownPdfProfileFormat = "json" | "yaml";
 
 export type MarkdownPdfMetadata = Record<string, string>;
+
+export type MarkdownPdfProfileSource = "codex";
+
+export interface NormalizedMarkdownPdfProfileIdentity {
+  id: string;
+  source: MarkdownPdfProfileSource;
+  basedOn?: string;
+  preset?: MarkdownPdfPreset;
+  createdAt: string;
+}
 
 export const MARKDOWN_PDF_CODE_THEMES = [
   "github-light",
@@ -70,6 +81,7 @@ export interface NormalizedMarkdownPdfFonts {
 }
 
 export interface NormalizedMarkdownPdfProfile {
+  identity?: NormalizedMarkdownPdfProfileIdentity;
   metadata: MarkdownPdfMetadata;
   code: NormalizedMarkdownPdfCode;
   header: MarkdownPdfPageChromeSlots;

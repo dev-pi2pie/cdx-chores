@@ -25,9 +25,11 @@ export type {
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  MarkdownPdfProfileSource,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
+  NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./types";

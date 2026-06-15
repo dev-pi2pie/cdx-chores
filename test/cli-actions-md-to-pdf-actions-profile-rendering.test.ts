@@ -113,4 +113,58 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expectNoStderr();
     });
   });
+
+  test("replays profile preset and lets explicit CLI recipe flags override profile fields", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-preset-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "wide-report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Wide Report\n\n| A | B |\n| - | - |\n| 1 | 2 |\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: wide-table",
+          "  preset: wide-table",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "page:",
+          "  orientation: portrait",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body>Wide Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        orientation: "landscape",
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("size: A4 landscape");
+      expect(combinedCss).toContain('font: 9.5pt/1.45 "Noto Sans", "Arial", sans-serif;');
+      expect(combinedCss).toContain("table, pre, code");
+      expectNoStderr();
+    });
+  });
 });

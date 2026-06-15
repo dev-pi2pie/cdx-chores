@@ -1,4 +1,5 @@
 import { CliError } from "../../errors";
+import { MARKDOWN_PDF_PRESETS, type MarkdownPdfPreset } from "../validation";
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
 import { validateMarkdownPdfBodyFontKey } from "./schema";
@@ -12,6 +13,7 @@ import type {
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
@@ -30,6 +32,7 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
 ]);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
 const CODE_THEMES = new Set<MarkdownPdfCodeTheme>(MARKDOWN_PDF_CODE_THEMES);
+const MARKDOWN_PDF_PRESET_VALUES = new Set<string>(MARKDOWN_PDF_PRESETS);
 
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -100,6 +103,21 @@ function readObject(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   return {};
+}
+
+function optionalStringValue(value: unknown, label: string): string | undefined {
+  const string = stringValue(value, label);
+  if (string === undefined) {
+    return undefined;
+  }
+  const trimmed = string.trim();
+  if (trimmed.length === 0) {
+    throw new CliError(`${label} must not be empty.`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return trimmed;
 }
 
 function readStringArray(value: unknown, label: string): string[] {
@@ -335,12 +353,64 @@ function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
+function normalizeProfileIdentity(
+  value: unknown,
+): NormalizedMarkdownPdfProfileIdentity | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const input = readObject(value);
+  const id = optionalStringValue(input.id, "profile.profile.id");
+  const source = optionalStringValue(input.source, "profile.profile.source");
+  const createdAt = optionalStringValue(input.createdAt, "profile.profile.createdAt");
+
+  if (!id || !source || !createdAt) {
+    throw new CliError("profile.profile requires id, source, and createdAt.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  if (source !== "codex") {
+    throw new CliError("profile.profile.source must be codex.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  if (Number.isNaN(Date.parse(createdAt))) {
+    throw new CliError("profile.profile.createdAt must be an ISO date-time string.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+
+  const preset = optionalStringValue(input.preset, "profile.profile.preset");
+  if (preset && !MARKDOWN_PDF_PRESET_VALUES.has(preset)) {
+    throw new CliError(
+      `profile.profile.preset must be one of: ${MARKDOWN_PDF_PRESETS.join(", ")}.`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return {
+    id,
+    source,
+    basedOn: optionalStringValue(input.basedOn, "profile.profile.basedOn"),
+    preset: preset as MarkdownPdfPreset | undefined,
+    createdAt,
+  };
+}
+
 export function markdownPdfProfileToRecipeOptions(
   profile: Record<string, unknown> = {},
 ): NormalizeMarkdownPdfOptionsInput {
+  const identity = normalizeProfileIdentity(profile.profile);
   const page = readObject(profile.page);
   const toc = readObject(profile.toc);
   return {
+    preset: identity?.preset,
     pageSize: stringValue(page.size, "profile.page.size"),
     orientation: stringValue(page.orientation, "profile.page.orientation"),
     margin: stringValue(page.margin, "profile.page.margin"),
@@ -366,9 +436,11 @@ export function normalizeMarkdownPdfProfile(
   const frontmatterContentLangs = input.frontmatter
     ? contentLangsFromSource(input.frontmatter)
     : [];
+  const identity = normalizeProfileIdentity(profile.profile);
 
   return {
     profile: {
+      identity,
       metadata: {
         ...profileMetadata,
         ...frontmatterMetadata,

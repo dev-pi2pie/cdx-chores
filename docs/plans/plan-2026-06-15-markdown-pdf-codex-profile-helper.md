@@ -327,13 +327,13 @@ No interactive confirmation prompt should be required in the direct CLI path.
 
 ### Phase 1: Profile Schema And Replay
 
-- [ ] Add `profile` identity validation and normalization.
-- [ ] Add `profile.preset` validation against the existing Markdown PDF preset set.
-- [ ] Serialize `profile` in YAML and JSON profiles.
-- [ ] Teach `md to-pdf --profile` to use `profile.preset` for preset-backed recipe behavior.
-- [ ] Preserve CLI-over-profile replay precedence for explicit render flags.
-- [ ] Keep older profiles without `profile` valid.
-- [ ] Add focused parser, serializer, and `md to-pdf --profile` replay tests, including a preset-backed CSS replay test.
+- [x] Add `profile` identity validation and normalization.
+- [x] Add `profile.preset` validation against the existing Markdown PDF preset set.
+- [x] Serialize `profile` in YAML and JSON profiles.
+- [x] Teach `md to-pdf --profile` to use `profile.preset` for preset-backed recipe behavior.
+- [x] Preserve CLI-over-profile replay precedence for explicit render flags.
+- [x] Keep older profiles without `profile` valid.
+- [x] Add focused parser, serializer, and `md to-pdf --profile` replay tests, including a preset-backed CSS replay test.
 
 ### Phase 2: Profile Candidate And Signal Modules
 

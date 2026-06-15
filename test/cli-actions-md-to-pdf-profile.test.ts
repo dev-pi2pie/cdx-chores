@@ -6,6 +6,7 @@ import {
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
   resolveMarkdownPdfCodeOptions,
+  serializeMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf";
 import { expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -129,6 +130,45 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
+  test("normalizes profile identity and maps profile preset into recipe options", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        profile: {
+          id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          source: "codex",
+          basedOn: "wide-table",
+          preset: "wide-table",
+          createdAt: "2026-06-15T08:15:00Z",
+        },
+      },
+    });
+
+    expect(result.profile.identity).toEqual({
+      id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+      source: "codex",
+      basedOn: "wide-table",
+      preset: "wide-table",
+      createdAt: "2026-06-15T08:15:00Z",
+    });
+    expect(result.recipeOptions.preset).toBe("wide-table");
+  });
+
+  test("keeps older profiles without profile identity valid", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        page: {
+          size: "Letter",
+        },
+      },
+    });
+
+    expect(result.profile.identity).toBeUndefined();
+    expect(result.recipeOptions).toMatchObject({
+      pageSize: "Letter",
+      preset: undefined,
+    });
+  });
+
   test("resolves CLI code highlight overrides after profile normalization", () => {
     const profile = normalizeMarkdownPdfProfile({
       profile: {
@@ -213,6 +253,43 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
+  test("rejects invalid profile identity preset values", async () => {
+    await withTempFixtureDir("md-pdf-profile-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(
+        profilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  preset: slide-deck",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "profile.profile.preset must be one of",
+      });
+    });
+  });
+
+  test("rejects incomplete profile identity during normalization", () => {
+    expect(() =>
+      normalizeMarkdownPdfProfile({
+        profile: {
+          profile: {
+            id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+            preset: "article",
+          },
+        },
+      }),
+    ).toThrow("profile.profile requires id, source, and createdAt");
+  });
+
   test("rejects non-language keys in body font mappings", () => {
     expect(() =>
       normalizeMarkdownPdfProfile({
@@ -280,6 +357,29 @@ describe("markdown PDF profile normalization", () => {
         messageIncludes: "Unknown Markdown PDF profile key: profile.unknown",
       });
     });
+  });
+
+  test("serializes profile identity in JSON and YAML profiles", () => {
+    const profile = {
+      profile: {
+        id: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
+        source: "codex",
+        basedOn: "article",
+        preset: "article",
+        createdAt: "2026-06-15T08:15:00Z",
+      },
+      page: {
+        size: "A4",
+      },
+    };
+
+    expect(serializeMarkdownPdfProfile(profile, "json")).toContain(
+      '"id": "md-pdf-profile-20260615T081500Z-a1b2c3d4"',
+    );
+    expect(serializeMarkdownPdfProfile(profile, "yaml")).toContain(
+      "id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+    );
+    expect(serializeMarkdownPdfProfile(profile, "yaml")).toContain("preset: article");
   });
 
   test("rejects malformed profile content and non-object roots", async () => {
