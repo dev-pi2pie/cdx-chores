@@ -5,6 +5,7 @@ import {
   MARKDOWN_PDF_PRESET_GUIDANCE,
   MARKDOWN_PDF_PRESETS,
   normalizeMarkdownPdfOptions,
+  type NormalizedMarkdownPdfOptions,
   type MarkdownPdfPresetDensity,
   type MarkdownPdfPreset,
 } from "../validation";
@@ -43,6 +44,11 @@ export interface MarkdownPdfProfileCandidate {
   path?: string;
 }
 
+interface MarkdownPdfProfileCandidateTraitGuidance {
+  density?: MarkdownPdfPresetDensity;
+  bestFor: string[];
+}
+
 export interface LoadMarkdownPdfBaseProfileCandidateInput {
   path: string;
   cwd?: string;
@@ -58,25 +64,49 @@ function cloneProfile(profile: Record<string, unknown>): Record<string, unknown>
   return structuredClone(profile) as Record<string, unknown>;
 }
 
+function lengthToMillimeters(value: string | undefined): number | undefined {
+  const match = /^([0-9]+(?:\.[0-9]+)?)(in|mm)$/.exec(value?.trim() ?? "");
+  if (!match) {
+    return undefined;
+  }
+  const amount = Number.parseFloat(match[1] ?? "");
+  if (!Number.isFinite(amount)) {
+    return undefined;
+  }
+  return match[2] === "in" ? amount * 25.4 : amount;
+}
+
+function derivedDensity(options: NormalizedMarkdownPdfOptions): MarkdownPdfPresetDensity {
+  if (options.orientation === "landscape") {
+    return "wide";
+  }
+  const margins = Object.values(options.margins).map(lengthToMillimeters);
+  if (margins.every((margin) => margin !== undefined && margin <= 12)) {
+    return "compact";
+  }
+  if (margins.every((margin) => margin !== undefined && margin >= 20)) {
+    return "spacious";
+  }
+  return "standard";
+}
+
 function createCandidateTraits(
   profile: Record<string, unknown>,
-  preset?: MarkdownPdfPreset,
+  guidance?: MarkdownPdfProfileCandidateTraitGuidance,
 ): MarkdownPdfProfileCandidateTraits {
   const normalized = normalizeMarkdownPdfProfile({ profile });
-  const presetTraits = preset
-    ? MARKDOWN_PDF_PRESET_GUIDANCE[preset]
-    : {
-        bestFor: ["basic reusable Markdown PDF defaults", "weak or absent signals"],
-        density: "standard" as const,
-      };
   return {
     cover: normalized.profile.cover.enabled,
     toc: Boolean(normalized.recipeOptions.toc),
     pageNumbers: normalized.profile.pageNumbers.enabled,
     codeHighlight: normalized.profile.code.highlight,
     lineNumbers: normalized.profile.code.lineNumbers,
-    density: presetTraits.density,
-    bestFor: presetTraits.bestFor,
+    density:
+      guidance?.density ?? derivedDensity(normalizeMarkdownPdfOptions(normalized.recipeOptions)),
+    bestFor: guidance?.bestFor ?? [
+      "basic reusable Markdown PDF defaults",
+      "weak or absent signals",
+    ],
   };
 }
 
@@ -108,7 +138,7 @@ function createPresetCandidate(preset: MarkdownPdfPreset): MarkdownPdfProfileCan
       preset,
       basedOn: preset,
       fields: topLevelFields(fullProfile),
-      traits: createCandidateTraits(fullProfile, preset),
+      traits: createCandidateTraits(fullProfile, MARKDOWN_PDF_PRESET_GUIDANCE[preset]),
     },
     fullProfile,
   };
@@ -136,7 +166,7 @@ export async function loadMarkdownPdfBaseProfileCandidate(
       preset: identity?.preset,
       basedOn,
       fields: topLevelFields(fullProfile),
-      traits: createCandidateTraits(fullProfile, identity?.preset),
+      traits: createCandidateTraits(fullProfile, { bestFor: ["user supplied base profile"] }),
     },
     fullProfile,
     identity,

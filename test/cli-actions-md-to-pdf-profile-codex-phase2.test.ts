@@ -87,6 +87,11 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
         preset: "wide-table",
         basedOn: "md-pdf-profile-20260615T081500Z-a1b2c3d4",
       });
+      expect(candidate.summary.traits).toMatchObject({
+        bestFor: ["user supplied base profile"],
+        density: "wide",
+      });
+      expect(candidate.summary.traits.bestFor).not.toContain("wide tables");
       expect(candidate.identity?.id).toBe("md-pdf-profile-20260615T081500Z-a1b2c3d4");
 
       const legacyCandidate = await loadMarkdownPdfBaseProfileCandidate({

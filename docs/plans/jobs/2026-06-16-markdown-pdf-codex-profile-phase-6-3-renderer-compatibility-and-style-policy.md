@@ -109,3 +109,34 @@ Follow-up evidence:
   - 1170 pass, 0 fail
 - `node dist/esm/bin.mjs md pdf-profile codex README.md --intent "clean pdf with a proper cover page" --dry-run`
   - sandboxed smoke again stopped at the app-server permission boundary before a live Codex response
+
+## Final Range Review Follow-Up
+
+The final Phase 6.3 range review found two remaining risks after the first follow-up:
+
+- definite cover height could clip or force awkward pagination for long cover metadata
+- base profiles with preset identity could still inherit preset `bestFor` guidance even after user edits
+
+Final follow-up changes:
+
+- Changed cover section sizing to definite `min-height` so the cover starts at the page-box height but can grow for long metadata.
+- Kept definite `min-height` on cover content for vertical centering without reintroducing viewport units.
+- Derived base-profile density from normalized recipe options and changed base-profile `bestFor` to generic user-supplied-base guidance.
+- Added regression coverage that a preset-backed base profile does not reuse the original preset `bestFor` guidance.
+
+Final follow-up evidence:
+
+- `bun test test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts`
+  - 53 pass, 0 fail
+- `bun run format:check`
+  - all matched files use the correct format
+- `bun run lint`
+  - completed successfully
+- `bun run build`
+  - completed successfully
+- `git diff --check`
+  - completed successfully
+- `bun test`
+  - 1170 pass, 0 fail
+- `node dist/esm/bin.mjs md pdf-profile codex README.md --intent "clean pdf with a proper cover page" --dry-run`
+  - sandboxed smoke still stopped at the app-server permission boundary before a live Codex response

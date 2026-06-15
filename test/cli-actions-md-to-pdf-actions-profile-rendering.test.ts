@@ -112,8 +112,8 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedTemplate).toContain("Runtime Notes");
       expect(combinedCss).toContain("@page cover");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
-      expect(combinedCss).toContain("height: 297mm;");
       expect(combinedCss).toContain("min-height: 297mm;");
+      expect(combinedCss).not.toContain("\n  height: 297mm;");
       expect(combinedCss).not.toContain("100vh");
       expect(combinedCss).toContain(
         'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif JP", serif;',

@@ -75,7 +75,7 @@ ${createMarkdownPdfEmptyMarginBoxesCss()}
 .pdf-cover {
   break-after: page;
   box-sizing: border-box;
-  height: ${pageHeight};
+  min-height: ${pageHeight};
   page: cover;
 }
 
