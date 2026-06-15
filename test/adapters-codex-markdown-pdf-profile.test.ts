@@ -39,15 +39,7 @@ const requestBase = {
   fontHints: ["prefer system serif"],
   fontSignals: { families: [], overflowFamilyCount: 0 },
   intent: "wide table report",
-  selectedBaseProfileSummary: {
-    basedOn: "wide-table",
-    fields: ["page", "toc"],
-    id: "wide-table",
-    kind: "preset" as const,
-    label: "wide-table preset profile",
-    preset: "wide-table" as const,
-    presetBacked: true,
-  },
+  selectedBaseProfileSummary: candidate("wide-table").summary,
   supportedSchemaSummary: ["page.orientation", "toc.enabled", "fonts.body.default"],
   workingDirectory: "/repo",
 };
@@ -61,6 +53,12 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("candidateSummaries");
     expect(prompt).toContain("selectedBaseProfileSummary");
     expect(prompt).toContain("patchValueDomains");
+    expect(prompt).toContain("styleDecisionPolicy");
+    expect(prompt).toContain('"traits"');
+    expect(prompt).toContain('"density": "wide"');
+    expect(prompt).toContain("Do not enable page numbers by default");
+    expect(prompt).toContain("clean, proper, polished, or professional");
+    expect(prompt).toContain("rendererCompatibility");
     expect(prompt).toContain("/cover/style");
     expect(prompt).toContain("plain");
     expect(prompt).toContain("/pageNumbers/position");
@@ -69,6 +67,29 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("fonts.body.default");
     expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("fullProfile");
+  });
+
+  test("summarizes candidate traits for Codex style decisions", () => {
+    const candidates = createMarkdownPdfProfileCandidates();
+    const defaultCandidate = candidates.find((item) => item.summary.id === "default");
+    const reportCandidate = candidates.find((item) => item.summary.id === "report");
+    const wideCandidate = candidates.find((item) => item.summary.id === "wide-table");
+
+    expect(defaultCandidate?.summary.traits).toMatchObject({
+      codeHighlight: false,
+      cover: false,
+      density: "standard",
+      lineNumbers: false,
+      pageNumbers: false,
+      toc: false,
+    });
+    expect(reportCandidate?.summary.traits.bestFor).toContain("formal reports");
+    expect(wideCandidate?.summary.traits).toMatchObject({
+      density: "wide",
+      pageNumbers: false,
+      toc: false,
+    });
+    expect(wideCandidate?.summary.traits.bestFor).toContain("wide tables");
   });
 
   test("uses a strict patch response schema without open nested objects", () => {

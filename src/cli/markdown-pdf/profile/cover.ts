@@ -53,7 +53,7 @@ ${createMarkdownPdfEmptyMarginBoxesCss()}
 .pdf-cover {
   break-after: page;
   box-sizing: border-box;
-  min-height: 100vh;
+  height: 100%;
   page: cover;
 }
 
@@ -62,7 +62,7 @@ ${createMarkdownPdfEmptyMarginBoxesCss()}
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100%;
   padding: 28mm;
 }
 
