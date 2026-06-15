@@ -40,6 +40,7 @@ import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
 import { assertNonEmpty, displayPath, printLine } from "../shared";
+import type { MarkdownPdfCodexProfileResult } from "../../../adapters/codex/markdown-pdf-profile/types";
 
 export interface MdPdfProfileCodexOptions {
   input?: string;
@@ -56,6 +57,15 @@ export interface MdPdfProfileCodexOptions {
 }
 
 export type MdPdfProfileCodexCliOptions = Omit<MdPdfProfileCodexOptions, "codexRunner">;
+
+type MarkdownPdfCodexReportBaseInput = {
+  createdAt: string;
+  displayBaseProfilePath?: string;
+  displayInputPath?: string;
+  displayProfileOutputPath: string;
+  inputSha256?: string;
+  request: Parameters<typeof createMarkdownPdfCodexReportArtifact>[0]["request"];
+};
 
 const SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
   (key) => key !== "profile",
@@ -288,14 +298,7 @@ async function writeFailureReportIfRequested(input: {
   failure: MarkdownPdfCodexReportFailure;
   overwrite?: boolean;
   profileIdentity: NormalizedMarkdownPdfProfileIdentity;
-  reportBase: {
-    createdAt: string;
-    displayBaseProfilePath?: string;
-    displayInputPath?: string;
-    displayProfileOutputPath: string;
-    inputSha256?: string;
-    request: Parameters<typeof createMarkdownPdfCodexReportArtifact>[0]["request"];
-  };
+  reportBase: MarkdownPdfCodexReportBaseInput;
   reportOutputPath?: string;
   runtime: CliRuntime;
 }): Promise<void> {
@@ -315,6 +318,66 @@ async function writeFailureReportIfRequested(input: {
     input.runtime.stderr,
     `Wrote Codex report: ${displayPath(input.runtime, input.reportOutputPath)}`,
   );
+}
+
+async function finalizeSuccessfulProfileDecision(input: {
+  decisionLabel: string;
+  displayOutputPath: string;
+  dryRun?: boolean;
+  identity: NormalizedMarkdownPdfProfileIdentity;
+  outputPath: string;
+  overwrite?: boolean;
+  profile: Record<string, unknown>;
+  reportBase: MarkdownPdfCodexReportBaseInput;
+  reportOutputPath?: string;
+  result?: MarkdownPdfCodexProfileResult;
+  runtime: CliRuntime;
+  selectedCandidate: MarkdownPdfProfileCandidate;
+  signalMode?: MarkdownPdfCodexSignalMode;
+}): Promise<void> {
+  const finalProfile = profileWithIdentity(input.profile, input.identity);
+  validateMarkdownPdfProfileShape(finalProfile);
+  const format = inferMarkdownPdfProfileFormat(input.outputPath);
+  const serialized = serializeMarkdownPdfProfile(finalProfile, format);
+
+  if (input.signalMode) {
+    printLine(input.runtime.stdout, `Signal mode: ${input.signalMode}`);
+  }
+  printLine(input.runtime.stdout, `Decision: ${input.decisionLabel}`);
+  printLine(input.runtime.stdout, `Based on: ${input.identity.basedOn ?? "none"}`);
+  if (input.identity.preset) {
+    printLine(input.runtime.stdout, `Preset: ${input.identity.preset}`);
+  }
+  if (input.result?.decision.fallbackReason) {
+    printLine(input.runtime.stdout, `Fallback reason: ${input.result.decision.fallbackReason}`);
+  }
+  printLine(input.runtime.stdout, `Profile: ${input.displayOutputPath}`);
+
+  if (input.dryRun) {
+    printLine(input.runtime.stdout, "Dry run only. No profile was written.");
+  } else {
+    await writeTextFileSafe(input.outputPath, serialized, {
+      overwrite: input.overwrite,
+    });
+    printLine(input.runtime.stderr, `Wrote Markdown PDF profile: ${input.displayOutputPath}`);
+  }
+
+  if (input.reportOutputPath) {
+    await writeMarkdownPdfCodexReportArtifact(
+      input.reportOutputPath,
+      createMarkdownPdfCodexReportArtifact({
+        ...input.reportBase,
+        profileIdentity: input.identity,
+        result: input.result,
+        selectedCandidate: input.selectedCandidate,
+      }),
+      { overwrite: input.overwrite },
+    );
+    printLine(
+      input.runtime.stderr,
+      `Wrote Codex report: ${displayPath(input.runtime, input.reportOutputPath)}`,
+    );
+  }
 }
 
 export async function actionMdPdfProfileCodex(
@@ -438,40 +501,20 @@ export async function actionMdPdfProfileCodex(
       selectedCandidate: selected,
       source: "deterministic",
     });
-    const finalProfile = profileWithIdentity(selected.fullProfile, identity);
-    validateMarkdownPdfProfileShape(finalProfile);
-    const format = inferMarkdownPdfProfileFormat(outputResolution.outputPath);
-    const serialized = serializeMarkdownPdfProfile(finalProfile, format);
-
-    printLine(runtime.stdout, `Signal mode: ${signalMode}`);
-    printLine(runtime.stdout, "Decision: deterministic");
-    printLine(runtime.stdout, `Based on: ${identity.basedOn ?? "none"}`);
-    if (identity.preset) {
-      printLine(runtime.stdout, `Preset: ${identity.preset}`);
-    }
-    printLine(runtime.stdout, `Profile: ${displayOutputPath}`);
-
-    if (options.dryRun) {
-      printLine(runtime.stdout, "Dry run only. No profile was written.");
-    } else {
-      await writeTextFileSafe(outputResolution.outputPath, serialized, {
-        overwrite: options.overwrite,
-      });
-      printLine(runtime.stderr, `Wrote Markdown PDF profile: ${displayOutputPath}`);
-    }
-
-    if (reportOutputPath) {
-      await writeMarkdownPdfCodexReportArtifact(
-        reportOutputPath,
-        createMarkdownPdfCodexReportArtifact({
-          ...reportBase,
-          profileIdentity: identity,
-          selectedCandidate: selected,
-        }),
-        { overwrite: options.overwrite },
-      );
-      printLine(runtime.stderr, `Wrote Codex report: ${displayPath(runtime, reportOutputPath)}`);
-    }
+    await finalizeSuccessfulProfileDecision({
+      decisionLabel: "deterministic",
+      displayOutputPath,
+      dryRun: options.dryRun,
+      identity,
+      outputPath: outputResolution.outputPath,
+      overwrite: options.overwrite,
+      profile: selected.fullProfile,
+      reportBase,
+      reportOutputPath,
+      runtime,
+      selectedCandidate: selected,
+      signalMode,
+    });
     return;
   }
 
@@ -515,43 +558,20 @@ export async function actionMdPdfProfileCodex(
       });
     }
 
-    const finalProfile = profileWithIdentity(result.profile, identity);
-    validateMarkdownPdfProfileShape(finalProfile);
-    const format = inferMarkdownPdfProfileFormat(outputResolution.outputPath);
-    const serialized = serializeMarkdownPdfProfile(finalProfile, format);
-
-    printLine(runtime.stdout, `Decision: ${result.decision.decisionMode}`);
-    printLine(runtime.stdout, `Based on: ${identity.basedOn ?? "none"}`);
-    if (identity.preset) {
-      printLine(runtime.stdout, `Preset: ${identity.preset}`);
-    }
-    if (result.decision.fallbackReason) {
-      printLine(runtime.stdout, `Fallback reason: ${result.decision.fallbackReason}`);
-    }
-    printLine(runtime.stdout, `Profile: ${displayOutputPath}`);
-
-    if (options.dryRun) {
-      printLine(runtime.stdout, "Dry run only. No profile was written.");
-    } else {
-      await writeTextFileSafe(outputResolution.outputPath, serialized, {
-        overwrite: options.overwrite,
-      });
-      printLine(runtime.stderr, `Wrote Markdown PDF profile: ${displayOutputPath}`);
-    }
-
-    if (reportOutputPath) {
-      await writeMarkdownPdfCodexReportArtifact(
-        reportOutputPath,
-        createMarkdownPdfCodexReportArtifact({
-          ...reportBase,
-          profileIdentity: identity,
-          result,
-          selectedCandidate: selected,
-        }),
-        { overwrite: options.overwrite },
-      );
-      printLine(runtime.stderr, `Wrote Codex report: ${displayPath(runtime, reportOutputPath)}`);
-    }
+    await finalizeSuccessfulProfileDecision({
+      decisionLabel: result.decision.decisionMode,
+      displayOutputPath,
+      dryRun: options.dryRun,
+      identity,
+      outputPath: outputResolution.outputPath,
+      overwrite: options.overwrite,
+      profile: result.profile,
+      reportBase,
+      reportOutputPath,
+      result,
+      runtime,
+      selectedCandidate: selected,
+    });
   } catch (error) {
     if (isNoUsableProfileError(error)) {
       throw error;

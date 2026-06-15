@@ -67,6 +67,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.artifact.advisoryOnly).toBe(true);
       expect(report.profile.id).toBe(profileIdentity.id);
       expect(report.input.path).toBe("report.md");
+      expect(report.signalMode).toBe("document-informed");
       expect(report.result.status).toBe("success");
       expect(report.result.acceptedFields).toEqual({ toc: { enabled: true, depth: 2 } });
     });
@@ -317,6 +318,79 @@ describe("cli action modules: md pdf-profile codex", () => {
       const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, reportPath));
       expect(report.signalMode).toBe("basic-default");
       expect(report.input.path).toBeUndefined();
+    });
+  });
+
+  test("records mixed-with-base signal mode for base profile refinements with target signals", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-mixed-base", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Base\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260610T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: reader",
+          "  preset: reader",
+          "  createdAt: 2026-06-10T08:15:00Z",
+          "toc:",
+          "  enabled: false",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      let prompt = "";
+      let codexCalls = 0;
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.yml",
+        codexReportOutput: "mixed-report.json",
+        codexRunner: async (options) => {
+          codexCalls += 1;
+          prompt = options.prompt;
+          return await adaptedRunner("base-profile")();
+        },
+        input: "report.md",
+        intent: "refine current profile",
+        output: "adapted.yml",
+      });
+
+      expect(codexCalls).toBe(1);
+      expect(prompt).toContain('"signalMode": "mixed-with-base"');
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "mixed-report.json"),
+      );
+      expect(report.signalMode).toBe("mixed-with-base");
+      expect(report.selectedBase.candidateId).toBe("base-profile");
+    });
+  });
+
+  test("rejects Codex reports with invalid signal mode", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-invalid-report-signal", async (fixtureDir) => {
+      const reportPath = join(fixtureDir, "profile-report.json");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "profile-report.json",
+        codexRunner: adaptedRunner("article"),
+        input: "report.md",
+        output: "profile.yml",
+      });
+
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as Record<string, unknown>;
+      report.signalMode = "missing";
+      await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+      await expect(readMarkdownPdfCodexReportArtifact(reportPath)).rejects.toThrow(
+        "signal mode is invalid",
+      );
     });
   });
 

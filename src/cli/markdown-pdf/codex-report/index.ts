@@ -6,6 +6,7 @@ import type {
   MarkdownPdfCodexProfileRequest,
   MarkdownPdfCodexProfileResult,
 } from "../../../adapters/codex/markdown-pdf-profile";
+import { MARKDOWN_PDF_CODEX_SIGNAL_MODES } from "../../../adapters/codex/markdown-pdf-profile/types";
 import { readTextFileRequired, writeTextFileSafe } from "../../file-io";
 import type { MarkdownPdfProfileCandidate } from "../profile/candidates";
 import { MARKDOWN_PDF_PROFILE_ROOT_KEYS } from "../profile/schema";
@@ -13,6 +14,7 @@ import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-profile-report";
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 1;
+const MARKDOWN_PDF_CODEX_SIGNAL_MODE_VALUES = new Set<string>(MARKDOWN_PDF_CODEX_SIGNAL_MODES);
 
 export interface MarkdownPdfCodexReportBaseProfile {
   candidateId: string;
@@ -172,6 +174,9 @@ function validateReportArtifact(value: unknown): MarkdownPdfCodexReportArtifact 
   }
   if (!artifact.profile?.id || artifact.profile.id !== artifact.profile.identity?.id) {
     throw new Error("Markdown PDF Codex report profile identity mismatch.");
+  }
+  if (!MARKDOWN_PDF_CODEX_SIGNAL_MODE_VALUES.has(artifact.signalMode)) {
+    throw new Error("Markdown PDF Codex report signal mode is invalid.");
   }
   if (artifact.result?.status !== "success" && artifact.result?.status !== "failed") {
     throw new Error("Markdown PDF Codex report result status is invalid.");

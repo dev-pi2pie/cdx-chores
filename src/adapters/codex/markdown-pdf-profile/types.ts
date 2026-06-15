@@ -16,12 +16,15 @@ export const MARKDOWN_PDF_CODEX_DECISION_MODES = [
 
 export type MarkdownPdfCodexDecisionMode = (typeof MARKDOWN_PDF_CODEX_DECISION_MODES)[number];
 
-export type MarkdownPdfCodexSignalMode =
-  | "document-informed"
-  | "hint-only"
-  | "mixed-with-base"
-  | "base-only-deterministic"
-  | "basic-default";
+export const MARKDOWN_PDF_CODEX_SIGNAL_MODES = [
+  "document-informed",
+  "hint-only",
+  "mixed-with-base",
+  "base-only-deterministic",
+  "basic-default",
+] as const;
+
+export type MarkdownPdfCodexSignalMode = (typeof MARKDOWN_PDF_CODEX_SIGNAL_MODES)[number];
 
 export interface MarkdownPdfCodexProfileRequest {
   candidates: MarkdownPdfProfileCandidate[];

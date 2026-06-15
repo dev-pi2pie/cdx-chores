@@ -300,4 +300,28 @@ describe("cli command: md pdf-profile codex", () => {
       expect(await readFile(outputPath, "utf8")).toContain("source: deterministic");
     });
   });
+
+  test("rejects conflicting positional and explicit Codex profile inputs from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-input-conflict", async (fixtureDir) => {
+      const firstInputPath = join(fixtureDir, "one.md");
+      const secondInputPath = join(fixtureDir, "two.md");
+      await writeFile(firstInputPath, "# One\n", "utf8");
+      await writeFile(secondInputPath, "# Two\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-profile",
+        "codex",
+        toRepoRelativePath(firstInputPath),
+        "--input",
+        toRepoRelativePath(secondInputPath),
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "profile.yml")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Positional input and --input");
+    });
+  });
 });
