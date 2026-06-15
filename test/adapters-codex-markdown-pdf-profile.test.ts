@@ -1,8 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
-  createMarkdownPdfProfileCodexThreadOptions,
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
 } from "../src/adapters/codex/markdown-pdf-profile";
@@ -63,14 +62,38 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).not.toContain("fullProfile");
   });
 
-  test("uses read-only prompt-only Codex thread options", () => {
-    expect(createMarkdownPdfProfileCodexThreadOptions("/tmp/prompt-only")).toEqual({
+  test("starts the default Codex runner in the request working directory", async () => {
+    let capturedThreadOptions: unknown;
+
+    mock.module("@openai/codex-sdk", () => ({
+      Codex: class {
+        startThread(options: unknown) {
+          capturedThreadOptions = options;
+          return {
+            run: async () => ({
+              finalResponse: JSON.stringify({
+                decision_mode: "adapted",
+                selected_candidate_id: "wide-table",
+                accepted_fields: {},
+                reasoning: "Wide table candidate matches the table facts.",
+                warnings: [],
+                unmatched_directions: [],
+              }),
+            }),
+          };
+        }
+      },
+    }));
+
+    await suggestMarkdownPdfProfileWithCodex(requestBase);
+
+    expect(capturedThreadOptions).toEqual({
       approvalPolicy: "never",
       modelReasoningEffort: "low",
-      networkAccessEnabled: false,
+      networkAccessEnabled: true,
       sandboxMode: "read-only",
       webSearchMode: "disabled",
-      workingDirectory: "/tmp/prompt-only",
+      workingDirectory: "/repo",
     });
   });
 

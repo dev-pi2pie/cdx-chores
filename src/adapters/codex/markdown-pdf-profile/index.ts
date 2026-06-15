@@ -1,4 +1,4 @@
-import { getCodexPathOverrideFromEnv, runCodexPromptOnly } from "../shared";
+import { startCodexReadOnlyThread } from "../shared";
 import { buildMarkdownPdfProfileCodexPrompt } from "./prompt";
 import { applyMarkdownPdfCodexDecision, parseMarkdownPdfCodexDecision } from "./decision";
 import type {
@@ -34,40 +34,17 @@ const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export function createMarkdownPdfProfileCodexThreadOptions(workingDirectory: string) {
-  return {
-    workingDirectory,
-    sandboxMode: "read-only" as const,
-    approvalPolicy: "never" as const,
-    modelReasoningEffort: "low" as const,
-    networkAccessEnabled: false,
-    webSearchMode: "disabled" as const,
-  };
-}
-
 async function runMarkdownPdfProfileCodexPrompt(options: {
   prompt: string;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  return await runCodexPromptOnly({
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
-    prompt: options.prompt,
-    timeoutMs: options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
-    work: async ({ outputSchema, prompt, signal, workingDirectory }) => {
-      const { Codex } = await import("@openai/codex-sdk");
-      const codexPathOverride = getCodexPathOverrideFromEnv();
-      const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
-      const thread = codex.startThread(
-        createMarkdownPdfProfileCodexThreadOptions(workingDirectory),
-      );
-      const turn = await thread.run([{ type: "text", text: prompt }], {
-        outputSchema,
-        signal,
-      });
-      return turn.finalResponse;
-    },
+    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
   });
+  return turn.finalResponse;
 }
 
 export type MarkdownPdfCodexProfileFailureKind =

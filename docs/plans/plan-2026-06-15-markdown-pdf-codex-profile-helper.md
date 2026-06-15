@@ -439,6 +439,13 @@ Phase 6 follow-up note on 2026-06-15:
 - The command description now mentions sample signals, hints, and fallback defaults so no-signal deterministic fallback is not misread as always invoking Codex.
 - No behavior changed in this follow-up.
 
+Phase 6 working-directory hotfix note on 2026-06-15:
+
+- `md pdf-profile codex` now starts Codex from the caller's `runtime.cwd`, matching the existing `rename`, `data query`, and `data stack` Codex helper policy.
+- The bug happened because the action passed `runtime.cwd`, but the adapter wrapped the Codex call in `runCodexPromptOnly`, which replaced that working directory with a temporary prompt directory.
+- This could fail before the profile prompt reached Codex when the temporary directory was not a trusted Git repository.
+- The focused job record is `docs/plans/jobs/2026-06-15-markdown-pdf-codex-profile-phase-6-hotfix.md`.
+
 ### Phase 7: Documentation And Guide Updates
 
 - [ ] Update Markdown PDF user guidance after behavior is implemented.
