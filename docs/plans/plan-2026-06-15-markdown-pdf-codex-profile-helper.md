@@ -358,22 +358,22 @@ No interactive confirmation prompt should be required in the direct CLI path.
 
 ### Phase 4: Action And Command Wiring
 
-- [ ] Add `actionMdPdfProfileCodex`.
-- [ ] Register `md pdf-profile codex`.
-- [ ] Implement output path generation, UID handling, overwrite checks, and collision checks.
-- [ ] Implement `--dry-run`, `--keep-codex-report`, and `--codex-report-output`.
-- [ ] Print concise summary output and fallback notes.
-- [ ] Add progress/status output and explicit exit behavior for Codex unavailable, invalid structured output, and invalid base profile cases.
-- [ ] Export action types through the Markdown action index.
+- [x] Add `actionMdPdfProfileCodex`.
+- [x] Register `md pdf-profile codex`.
+- [x] Implement output path generation, UID handling, overwrite checks, and collision checks.
+- [x] Implement `--dry-run`, `--keep-codex-report`, and `--codex-report-output`.
+- [x] Print concise summary output and fallback notes.
+- [x] Add progress/status output and explicit exit behavior for Codex unavailable, invalid structured output, and invalid base profile cases.
+- [x] Export action types through the Markdown action index.
 
 ### Phase 5: Codex Report Artifact
 
-- [ ] Define the report JSON schema using the shared decision/report types from Phase 3.
-- [ ] Write derived and explicit report paths.
-- [ ] Link report ID and profile ID.
-- [ ] Record base-profile identity or untracked-base fallback.
-- [ ] Keep reports advisory-only.
-- [ ] Add report validation and collision tests.
+- [x] Define the report JSON schema using the shared decision/report types from Phase 3.
+- [x] Write derived and explicit report paths.
+- [x] Link report ID and profile ID.
+- [x] Record base-profile identity or untracked-base fallback.
+- [x] Keep reports advisory-only.
+- [x] Add report validation and collision tests.
 
 ### Phase 6: Documentation And Guide Updates
 

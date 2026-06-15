@@ -266,3 +266,17 @@ describe("cli command: md pdf-profile init", () => {
     });
   });
 });
+
+describe("cli command: md pdf-profile codex", () => {
+  test("documents the direct Codex profile helper options", () => {
+    const result = runCli(["md", "pdf-profile", "codex", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Usage: cdx-chores md pdf-profile codex [options]");
+    expect(result.stdout).toContain("--intent <text>");
+    expect(result.stdout).toContain("--font-hint <text>");
+    expect(result.stdout).toContain("--base-profile <path>");
+    expect(result.stdout).toContain("--keep-codex-report");
+    expect(result.stderr).toBe("");
+  });
+});

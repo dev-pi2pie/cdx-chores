@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import {
   actionMdFrontmatterToJson,
+  actionMdPdfProfileCodex,
   actionMdPdfProfileInit,
   actionMdPdfTemplateInit,
   actionMdToDocx,
@@ -49,6 +50,18 @@ interface MarkdownPdfTemplateInitCliOptions extends MarkdownPdfRecipeCliOptions 
 
 interface MarkdownPdfProfileInitCliOptions extends MarkdownPdfRecipeCliOptions {
   output: string;
+  overwrite?: boolean;
+}
+
+interface MarkdownPdfProfileCodexCliOptions {
+  input: string;
+  intent: string;
+  fontHint?: string[];
+  baseProfile?: string;
+  output?: string;
+  dryRun?: boolean;
+  keepCodexReport?: boolean;
+  codexReportOutput?: string;
   overwrite?: boolean;
 }
 
@@ -132,10 +145,12 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       }),
   );
 
+  const pdfProfileCommand = mdCommand
+    .command("pdf-profile")
+    .description("Manage Markdown PDF profiles");
+
   applyMarkdownPdfRecipeOptions(
-    mdCommand
-      .command("pdf-profile")
-      .description("Manage Markdown PDF profiles")
+    pdfProfileCommand
       .command("init")
       .description("Write a Markdown PDF profile file")
       .requiredOption("-o, --output <path>", "Output profile file")
@@ -144,6 +159,22 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         await actionMdPdfProfileInit(runtime, options);
       }),
   );
+
+  pdfProfileCommand
+    .command("codex")
+    .description("Use Codex to draft a reusable Markdown PDF profile")
+    .requiredOption("-i, --input <path>", "Input Markdown file")
+    .requiredOption("--intent <text>", "Rendering direction for the reusable profile")
+    .option("--font-hint <text>", "Optional font preference hint", collectStringOption)
+    .option("--base-profile <path>", "Existing Markdown PDF profile to refine")
+    .option("-o, --output <path>", "Output profile file (.yml, .yaml, .json)")
+    .option("--dry-run", "Preview the Codex profile decision without writing the profile", false)
+    .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
+    .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
+    .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
+    .action(async (options: MarkdownPdfProfileCodexCliOptions) => {
+      await actionMdPdfProfileCodex(runtime, options);
+    });
 
   mdCommand
     .command("frontmatter-to-json")
