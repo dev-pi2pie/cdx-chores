@@ -337,13 +337,13 @@ No interactive confirmation prompt should be required in the direct CLI path.
 
 ### Phase 2: Profile Candidate And Signal Modules
 
-- [ ] Add reusable candidate construction from current defaults and presets.
-- [ ] Distinguish `default` from preset-backed `article` in candidate summaries.
-- [ ] Add base-profile loading and validation helpers.
-- [ ] Add Markdown signal collection for headings, tables, code fences, scripts, assets, and frontmatter.
-- [ ] Enforce v1 signal caps and no-snippet Codex input behavior.
-- [ ] Add bounded font summary collection using existing font modules.
-- [ ] Add tests for signal caps, inconclusive states, and base-profile validation.
+- [x] Add reusable candidate construction from current defaults and presets.
+- [x] Distinguish `default` from preset-backed `article` in candidate summaries.
+- [x] Add base-profile loading and validation helpers.
+- [x] Add Markdown signal collection for headings, tables, code fences, scripts, assets, and frontmatter.
+- [x] Enforce v1 signal caps and no-snippet Codex input behavior.
+- [x] Add bounded font summary collection using existing font modules.
+- [x] Add tests for signal caps, inconclusive states, and base-profile validation.
 
 ### Phase 3: Codex Adapter
 
