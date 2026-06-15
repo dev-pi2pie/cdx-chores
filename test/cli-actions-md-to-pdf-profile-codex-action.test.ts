@@ -234,6 +234,31 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("uses non-empty font hints as hint-only target signals", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-font-hint-only", async (fixtureDir) => {
+      let prompt = "";
+      let codexCalls = 0;
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async (options) => {
+          codexCalls += 1;
+          prompt = options.prompt;
+          return await adaptedRunner("reader")();
+        },
+        fontHint: ["  ", "prefer Noto Serif CJK TC"],
+        output: "profile.yml",
+      });
+
+      expect(codexCalls).toBe(1);
+      expect(prompt).toContain('"signalMode": "hint-only"');
+      expect(prompt).toContain('"fontHints": [\n    "prefer Noto Serif CJK TC"\n  ]');
+    });
+  });
+
   test("derives a deterministic base profile without calling Codex for base-only mode", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-base-only", async (fixtureDir) => {
       const basePath = join(fixtureDir, "base.yml");
@@ -781,6 +806,9 @@ describe("cli action modules: md pdf-profile codex", () => {
       await writeFile(join(fixtureDir, "profile.yml"), "existing", "utf8");
       await writeFile(join(fixtureDir, "codex-report.json"), "existing", "utf8");
       await writeFile(join(fixtureDir, "invalid.yml"), "unknown:\n  bad: true\n", "utf8");
+      await writeFile(join(fixtureDir, "base.yml"), "toc:\n  enabled: true\n", "utf8");
+      await writeFile(join(fixtureDir, "base.json"), '{"toc":{"enabled":true}}\n', "utf8");
+      await writeFile(join(fixtureDir, "sample.json"), "# JSON named Markdown\n", "utf8");
       let codexCalls = 0;
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
@@ -818,6 +846,96 @@ describe("cli action modules: md pdf-profile codex", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "cannot be the same path",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "codex-report.yml",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "report.md",
+            intent: "report",
+            output: "new.yml",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "report path must end with .json",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "sample.json",
+            intent: "report",
+            output: "sample.json",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same path as Markdown input",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "sample.json",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "sample.json",
+            intent: "report",
+            output: "new.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as Markdown input",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: "base.yml",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            output: "base.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same path as --base-profile",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: "base.json",
+            codexReportOutput: "base.json",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            output: "new.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as --base-profile",
         },
       );
       await expectCliError(

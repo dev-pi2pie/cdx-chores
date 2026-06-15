@@ -109,6 +109,21 @@ function samePath(left: string | undefined, right: string | undefined): boolean 
   return Boolean(left && right && resolve(left) === resolve(right));
 }
 
+function assertDifferentPaths(input: {
+  left: string | undefined;
+  leftLabel: string;
+  right: string | undefined;
+  rightLabel: string;
+}): void {
+  if (!samePath(input.left, input.right)) {
+    return;
+  }
+  throw new CliError(`${input.leftLabel} cannot be the same path as ${input.rightLabel}.`, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
 function reportRequested(options: MdPdfProfileCodexOptions): boolean {
   return Boolean(options.keepCodexReport || options.codexReportOutput);
 }
@@ -385,6 +400,9 @@ export async function actionMdPdfProfileCodex(
   options: MdPdfProfileCodexOptions,
 ): Promise<void> {
   const inputPath = resolveOptionalInputPath(runtime, options);
+  const baseProfilePath = options.baseProfile
+    ? resolveFromCwd(runtime, assertNonEmpty(options.baseProfile, "Base profile path"))
+    : undefined;
   const intent = normalizeOptionalText(options.intent);
   const markdown = inputPath ? await readTextFileRequired(inputPath) : undefined;
   const fontHints = normalizeFontHints(options.fontHint);
@@ -409,12 +427,36 @@ export async function actionMdPdfProfileCodex(
       exitCode: 2,
     });
   }
-  if (samePath(outputResolution.outputPath, reportOutputPath)) {
-    throw new CliError("--codex-report-output cannot be the same path as --output.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
+  assertDifferentPaths({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: outputResolution.outputPath,
+    rightLabel: "--output",
+  });
+  assertDifferentPaths({
+    left: outputResolution.outputPath,
+    leftLabel: "--output",
+    right: inputPath,
+    rightLabel: "Markdown input",
+  });
+  assertDifferentPaths({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: inputPath,
+    rightLabel: "Markdown input",
+  });
+  assertDifferentPaths({
+    left: outputResolution.outputPath,
+    leftLabel: "--output",
+    right: baseProfilePath,
+    rightLabel: "--base-profile",
+  });
+  assertDifferentPaths({
+    left: reportOutputPath,
+    leftLabel: "--codex-report-output",
+    right: baseProfilePath,
+    rightLabel: "--base-profile",
+  });
   if (!options.dryRun) {
     await assertWritableOutputPath(outputResolution.outputPath, { overwrite: options.overwrite });
   }
@@ -424,10 +466,10 @@ export async function actionMdPdfProfileCodex(
 
   printLine(runtime.stderr, "Collecting Markdown PDF profile signals...");
   const candidates = createMarkdownPdfProfileCandidates();
-  const baseProfileCandidate = options.baseProfile
+  const baseProfileCandidate = baseProfilePath
     ? await loadMarkdownPdfBaseProfileCandidate({
         cwd: runtime.cwd,
-        path: options.baseProfile,
+        path: baseProfilePath,
       })
     : undefined;
   if (baseProfileCandidate) {
