@@ -21,7 +21,12 @@ export interface MarkdownPdfCodexReportBaseProfile {
 }
 
 export interface MarkdownPdfCodexReportFailure {
-  kind: "structured-output-schema" | "unavailable" | "no-usable-profile";
+  kind:
+    | "structured-output-schema"
+    | "malformed-output"
+    | "invalid-application"
+    | "unavailable"
+    | "no-usable-profile";
   message: string;
 }
 
