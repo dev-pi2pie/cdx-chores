@@ -98,6 +98,18 @@ Rules:
 - `md to-pdf --profile <path>` consumes `profile.preset` before renderer preset defaults.
 - unknown keys inside `profile` fail validation.
 - older valid profiles without `profile` remain loadable as base profiles and normal render profiles.
+- `profile.source` accepts `codex` in v1. Future deterministic `pdf-profile init` identity can add another source value later.
+- `.json` profile output must support the same identity and preset replay behavior as `.yml` and `.yaml` profile output.
+
+Replay precedence:
+
+```text
+explicit `md to-pdf` CLI recipe flags
+  -> `profile.preset` and profile-derived recipe options
+  -> renderer defaults
+```
+
+This preserves existing CLI override behavior while making generated profiles replayable when no render-time override is passed.
 
 ### Candidate Selection
 
@@ -106,6 +118,13 @@ Use this v1 catalog:
 - built-in default profile
 - preset-derived profile candidates for `article`, `report`, `wide-table`, `compact`, and `reader`
 - one user-supplied base profile from `--base-profile <path>`, when provided
+
+Candidate distinction:
+
+- `default` means the current minimal profile fallback with no explicit `profile.preset`.
+- `article` means the preset-backed candidate with `profile.preset: article`.
+- `default` may still render with the renderer default preset when no preset override exists, but it should not serialize `profile.preset`.
+- each candidate summary passed to Codex must state whether it is preset-backed and which profile fields it contributes.
 
 `--base-profile` rules:
 
@@ -135,6 +154,18 @@ Collect bounded deterministic signals before calling Codex:
 - user `--font-hint` values.
 
 If a signal cannot be collected cheaply or safely, mark it inconclusive. Do not guess.
+
+Signal caps for v1:
+
+| Signal | Bound |
+| --- | --- |
+| document text for script buckets | scan at most 20,000 non-frontmatter characters; do not send raw text to Codex |
+| heading summary | count all parsed headings; include max depth and counts by depth only |
+| Markdown table scan | inspect at most the first 50 table-like rows and report max column count and max line width |
+| code fence languages | list at most 12 distinct language labels plus an overflow count |
+| asset summary | count local and remote references; do not include raw remote URLs in Codex input |
+| font family summary | include bounded family names and coverage statuses; do not include file paths |
+| frontmatter | include only `lang`, `pdf.content-langs`, and metadata keys needed for PDF profile reasoning |
 
 Privacy rules:
 
@@ -170,6 +201,36 @@ The adapter should return structured data, not arbitrary YAML text:
 
 Validate the structured response before serializing a profile. Reject unknown profile fields and invalid enum values.
 
+Shared decision and report types should be defined with the adapter contract so parsing and report serialization do not diverge later.
+
+Adaptation rules:
+
+```text
+base = selectedCandidate.fullProfile
+accepted = validateCodexAcceptedFields(codex.acceptedFields)
+proposed = mergeBounded(base, accepted)
+validate(proposed)
+write(proposed + profile identity metadata)
+```
+
+Rules:
+
+- start from the selected base candidate's full profile object
+- apply only schema-valid field updates from Codex
+- keep unspecified fields from the base profile
+- disallow deletion and reset semantics in v1
+- for `--base-profile`, use the loaded profile as the base object
+- validate the final merged profile before writing or reporting success
+
+Recommended module layout:
+
+- `src/cli/markdown-pdf/profile/identity.ts`
+- `src/cli/markdown-pdf/profile/candidates.ts`
+- `src/cli/markdown-pdf/profile/signals.ts`
+- `src/adapters/codex/markdown-pdf-profile/`
+- `src/cli/markdown-pdf/codex-report/`
+- `src/cli/actions/markdown/pdf-profile-codex.ts`
+
 ### Decision Modes
 
 Implement these outcomes:
@@ -181,6 +242,27 @@ Implement these outcomes:
 | `no-usable-profile` | failure | no profile; Codex report only when explicitly requested |
 
 `conservative-fallback` is a Codex decision mode, not a separate CLI option.
+
+Minimum stdout summary for successful runs:
+
+- decision mode
+- selected `basedOn`
+- output profile path
+- preset value when present
+- fallback reason when mode is `conservative-fallback`
+
+Error and exit behavior:
+
+| Outcome | Exit | Writes |
+| --- | --- | --- |
+| `adapted` | `0` | profile, plus optional Codex report |
+| `conservative-fallback` | `0` | profile, plus optional Codex report |
+| `no-usable-profile` | non-zero | no profile; Codex report only when explicitly requested |
+| Codex unavailable | non-zero | no profile; Codex report only when explicitly requested |
+| invalid structured output | non-zero | no profile; Codex report only when explicitly requested |
+| invalid base profile | `2` | no profile and no Codex call |
+
+The implementation should use the existing read-only Codex adapter pattern and show progress/status output while the Codex call is running.
 
 ### Output And Report Artifacts
 
@@ -249,23 +331,28 @@ No interactive confirmation prompt should be required in the direct CLI path.
 - [ ] Add `profile.preset` validation against the existing Markdown PDF preset set.
 - [ ] Serialize `profile` in YAML and JSON profiles.
 - [ ] Teach `md to-pdf --profile` to use `profile.preset` for preset-backed recipe behavior.
+- [ ] Preserve CLI-over-profile replay precedence for explicit render flags.
 - [ ] Keep older profiles without `profile` valid.
-- [ ] Add focused parser, serializer, and `md to-pdf --profile` replay tests.
+- [ ] Add focused parser, serializer, and `md to-pdf --profile` replay tests, including a preset-backed CSS replay test.
 
 ### Phase 2: Profile Candidate And Signal Modules
 
 - [ ] Add reusable candidate construction from current defaults and presets.
+- [ ] Distinguish `default` from preset-backed `article` in candidate summaries.
 - [ ] Add base-profile loading and validation helpers.
 - [ ] Add Markdown signal collection for headings, tables, code fences, scripts, assets, and frontmatter.
+- [ ] Enforce v1 signal caps and no-snippet Codex input behavior.
 - [ ] Add bounded font summary collection using existing font modules.
 - [ ] Add tests for signal caps, inconclusive states, and base-profile validation.
 
 ### Phase 3: Codex Adapter
 
+- [ ] Define shared decision and report TypeScript types used by adapter parsing and report serialization.
 - [ ] Add Markdown PDF profile prompt construction.
 - [ ] Call Codex through the existing adapter style.
 - [ ] Parse structured recommendations.
 - [ ] Validate decision modes and accepted fields.
+- [ ] Implement bounded base-profile merge semantics with no deletion or reset behavior in v1.
 - [ ] Support unavailable Codex and invalid structured output paths.
 - [ ] Add adapter unit tests with stubs.
 
@@ -276,11 +363,12 @@ No interactive confirmation prompt should be required in the direct CLI path.
 - [ ] Implement output path generation, UID handling, overwrite checks, and collision checks.
 - [ ] Implement `--dry-run`, `--keep-codex-report`, and `--codex-report-output`.
 - [ ] Print concise summary output and fallback notes.
+- [ ] Add progress/status output and explicit exit behavior for Codex unavailable, invalid structured output, and invalid base profile cases.
 - [ ] Export action types through the Markdown action index.
 
 ### Phase 5: Codex Report Artifact
 
-- [ ] Define the report JSON schema and TypeScript types.
+- [ ] Define the report JSON schema using the shared decision/report types from Phase 3.
 - [ ] Write derived and explicit report paths.
 - [ ] Link report ID and profile ID.
 - [ ] Record base-profile identity or untracked-base fallback.
@@ -313,14 +401,20 @@ Focused automated coverage:
 
 - command registration and option validation
 - profile schema validation for `profile` identity and preset replay
+- JSON profile identity and preset replay parity
 - old-profile compatibility without `profile`
 - `md to-pdf --profile` consuming `profile.preset`
+- render CLI flags overriding `profile.preset` and profile-derived recipe options
+- preset-backed profile replay producing different generated CSS than default/article-free profile replay when expected
 - candidate construction from defaults, presets, and `--base-profile`
+- `default` versus preset-backed `article` candidate distinction
 - invalid base-profile rejection before Codex
 - document signal collection with bounded samples
+- no raw document snippets, raw remote URLs, or local font paths in Codex input
 - font summary and coverage warning handling
 - Codex unavailable path
 - invalid Codex structured output path
+- bounded merge semantics preserving unspecified base fields
 - `adapted`, `conservative-fallback`, and `no-usable-profile` behavior
 - generated output path and UID behavior
 - explicit and generated collision behavior
@@ -345,6 +439,8 @@ Manual smoke coverage should use `examples/playground/` for temporary Markdown i
 - `--base-profile <path>` can refine an existing valid profile without mutating it.
 - generated profiles include `profile.id`, `source`, `basedOn`, `preset` when applicable, and `createdAt`.
 - `md to-pdf --profile <generated-profile>` replays the selected preset behavior.
+- a generated `wide-table` profile produces preset-backed render output without also passing `--preset`.
+- explicit render CLI flags still override generated profile settings.
 - `--dry-run` previews the profile decision without writing the profile.
 - optional Codex reports are linked to the generated profile UID.
 - low-signal conservative fallback is visible in stdout.
