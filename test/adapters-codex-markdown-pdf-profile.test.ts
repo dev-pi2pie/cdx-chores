@@ -26,6 +26,19 @@ function candidate(id: string): MarkdownPdfProfileCandidate {
   return found;
 }
 
+function sparseCandidate(fullProfile: Record<string, unknown> = {}): MarkdownPdfProfileCandidate {
+  const base = candidate("default");
+  return {
+    ...base,
+    summary: {
+      ...base.summary,
+      id: "sparse",
+      fields: Object.keys(fullProfile).sort(),
+    },
+    fullProfile,
+  };
+}
+
 const requestBase = {
   candidates: [candidate("default"), candidate("wide-table")],
   documentSignals: {
@@ -59,6 +72,9 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("Do not enable page numbers by default");
     expect(prompt).toContain("clean, proper, polished, or professional");
     expect(prompt).toContain("rendererCompatibility");
+    expect(prompt).toContain("local cover images");
+    expect(prompt).toContain("template-only layout");
+    expect(prompt).toContain("unmatched_directions");
     expect(prompt).toContain("/cover/style");
     expect(prompt).toContain("plain");
     expect(prompt).toContain("/pageNumbers/position");
@@ -222,6 +238,43 @@ describe("Markdown PDF Codex profile adapter", () => {
     });
   });
 
+  test("materializes fixed nested profile containers for accepted patches", () => {
+    const result = applyMarkdownPdfCodexDecision({
+      candidates: [sparseCandidate()],
+      decision: {
+        acceptedPatches: [
+          { op: "replace", path: "/toc/enabled", value: true },
+          { op: "replace", path: "/toc/depth", value: 2 },
+          { op: "replace", path: "/toc/pageBreak", value: "before" },
+          { op: "replace", path: "/pdf/content-langs", value: ["en", "ja"] },
+          { op: "replace", path: "/cover/enabled", value: true },
+          { op: "replace", path: "/cover/fields/title", value: "README Guide" },
+          { op: "replace", path: "/header/left", value: "{title}" },
+          { op: "replace", path: "/footer/right", value: "{page}" },
+          { op: "replace", path: "/pageNumbers/enabled", value: true },
+          { op: "replace", path: "/pageNumbers/position", value: "bottom-right" },
+          { op: "replace", path: "/code/highlight", value: true },
+          { op: "replace", path: "/code/lineNumbers", value: true },
+        ],
+        decisionMode: "adapted",
+        reasoning: "materialize fixed profile containers",
+        selectedCandidateId: "sparse",
+        unmatchedDirections: [],
+        warnings: [],
+      },
+    });
+
+    expect(result.profile).toMatchObject({
+      toc: { enabled: true, depth: 2, pageBreak: "before" },
+      pdf: { "content-langs": ["en", "ja"] },
+      cover: { enabled: true, fields: { title: "README Guide" } },
+      header: { left: "{title}" },
+      footer: { right: "{page}" },
+      pageNumbers: { enabled: true, position: "bottom-right" },
+      code: { highlight: true, lineNumbers: true },
+    });
+  });
+
   test("supports conservative fallback and no usable profile decision modes", async () => {
     const fallback = await suggestMarkdownPdfProfileWithCodex({
       ...requestBase,
@@ -328,13 +381,63 @@ describe("Markdown PDF Codex profile adapter", () => {
       ).toThrow("accepted_patches[0].value for /cover/style must be one of: plain, report");
     }
     expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [{ op: "replace", path: "/cover/enabled", value: null }],
+          reasoning: "bad",
+          warnings: [],
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_patches[0].value must be a string, number, boolean, or string array");
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [{ op: "remove", path: "/cover/enabled", value: true }],
+          reasoning: "bad",
+          warnings: [],
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_patches[0].op must be replace");
+    expect(() =>
       applyMarkdownPdfCodexDecision({
-        candidates: requestBase.candidates,
+        candidates: [sparseCandidate({ cover: [] })],
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/cover/fields/title", value: "bad" }],
+          decisionMode: "adapted",
+          reasoning: "bad",
+          selectedCandidateId: "sparse",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow("path cannot replace nested value");
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: [sparseCandidate({ pdf: "bad" })],
         decision: {
           acceptedPatches: [{ op: "replace", path: "/pdf/content-langs", value: ["en"] }],
           decisionMode: "adapted",
           reasoning: "bad",
-          selectedCandidateId: "default",
+          selectedCandidateId: "sparse",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow("path cannot replace nested value");
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: [sparseCandidate()],
+        decision: {
+          acceptedPatches: [{ op: "replace", path: "/fonts/body/default", value: "serif" }],
+          decisionMode: "adapted",
+          reasoning: "bad",
+          selectedCandidateId: "sparse",
           unmatchedDirections: [],
           warnings: [],
         },

@@ -14,6 +14,16 @@ import {
 import { validateMarkdownPdfCodexPatchValueDomain } from "./value-domains";
 
 const ACCEPTED_PATCH_PATHS = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
+const MATERIALIZABLE_PATCH_PARENT_PATHS = new Set([
+  "/toc",
+  "/pdf",
+  "/cover",
+  "/cover/fields",
+  "/header",
+  "/footer",
+  "/pageNumbers",
+  "/code",
+]);
 
 function parseRecord(value: unknown, context: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -152,8 +162,15 @@ function applyAcceptedProfilePatches(
     });
     const segments = patch.path.slice(1).split("/");
     let target = merged;
-    for (const segment of segments.slice(0, -1)) {
+    const parentSegments = segments.slice(0, -1);
+    for (const [segmentIndex, segment] of parentSegments.entries()) {
       const existing = target[segment];
+      const parentPath = `/${segments.slice(0, segmentIndex + 1).join("/")}`;
+      if (existing === undefined && MATERIALIZABLE_PATCH_PARENT_PATHS.has(parentPath)) {
+        target[segment] = {};
+        target = target[segment] as Record<string, unknown>;
+        continue;
+      }
       if (typeof existing !== "object" || existing === null || Array.isArray(existing)) {
         throw new Error(
           `Markdown PDF Codex response accepted_patches path cannot replace nested value at ${patch.path}.`,

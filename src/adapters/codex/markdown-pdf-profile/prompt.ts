@@ -30,7 +30,9 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   rendererCompatibility: [
     "Return only profile fields; never raw CSS or HTML.",
     "Do not choose settings known to produce renderer warnings.",
+    "Do not invent profile fields for local cover images, arbitrary CSS, custom HTML, or template-only layout.",
     "If a requested style depends on unsupported renderer behavior, choose the closest warning-free profile and explain the mismatch in warnings.",
+    "Report unsupported profile directions such as local cover images, arbitrary CSS, custom HTML, or template-only layout in unmatched_directions.",
   ],
 };
 

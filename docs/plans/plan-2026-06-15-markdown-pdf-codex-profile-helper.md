@@ -555,17 +555,17 @@ Phase 6.3 focused job record:
 
 ### Phase 6.4: Nested Patch Materialization And Unsupported Profile Directions
 
-- [ ] Fix accepted-patch application so allowed non-font nested paths can create missing plain-object parents.
-- [ ] Cover missing parent creation for `toc`, `pdf`, `cover.fields`, `header`, `footer`, `pageNumbers`, and `code`.
-- [ ] Keep patch application fail-closed for unknown paths, array parents, scalar parents, object patch values, deletion, and reset semantics.
-- [ ] Do not expand font path enums in this phase; flexible font-map writes belong to Phase 6.5.
-- [ ] Keep metadata mutation outside the Codex patch enum in this pass.
-- [ ] Add prompt guidance that local cover images, arbitrary CSS, and custom HTML layout are unsupported profile directions and should be reported through `unmatched_directions` and warnings.
-- [ ] Add regression coverage for `/cover/fields/title`, `/pdf/content-langs`, page-number detail paths, header/footer slots, and code settings.
-- [ ] Update or remove stale tests that expected allowed nested paths, such as `/pdf/content-langs`, to fail because their parents were missing.
-- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
-- [ ] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
-- [ ] Add a Phase 6.4 job record after implementation and validation.
+- [x] Fix accepted-patch application so allowed non-font nested paths can create missing plain-object parents.
+- [x] Cover missing parent creation for `toc`, `pdf`, `cover.fields`, `header`, `footer`, `pageNumbers`, and `code`.
+- [x] Keep patch application fail-closed for unknown paths, array parents, scalar parents, object patch values, deletion, and reset semantics.
+- [x] Do not expand font path enums in this phase; flexible font-map writes belong to Phase 6.5.
+- [x] Keep metadata mutation outside the Codex patch enum in this pass.
+- [x] Add prompt guidance that local cover images, arbitrary CSS, and custom HTML layout are unsupported profile directions and should be reported through `unmatched_directions` and warnings.
+- [x] Add regression coverage for `/cover/fields/title`, `/pdf/content-langs`, page-number detail paths, header/footer slots, and code settings.
+- [x] Update or remove stale tests that expected allowed nested paths, such as `/pdf/content-langs`, to fail because their parents were missing.
+- [x] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [x] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
+- [x] Add a Phase 6.4 job record after implementation and validation.
 
 Phase 6.4 rationale:
 
@@ -575,6 +575,10 @@ Phase 6.4 rationale:
 - This phase should align the strict normal patch contract with fixed documented profile leaves without opening arbitrary profile objects or broad CLI hint flags.
 - Font maps are intentionally excluded from this phase. `markdown-pdf-usage.md` documents flexible language-keyed body fonts and `fonts.code.symbols`, so those writes need a dedicated strict font patch contract instead of a longer path enum.
 - Local cover images remain outside the current profile schema. Codex should report those directions as unsupported profile requests, leaving custom HTML/CSS template work for documentation and later template-Codex research.
+
+Phase 6.4 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-4-nested-patch-materialization.md`
 
 ### Phase 6.5: Dedicated Font Patch Contract Branch
 
