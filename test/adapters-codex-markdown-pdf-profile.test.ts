@@ -57,6 +57,12 @@ const requestBase = {
     headings: { byDepth: { "1": 1 }, maxDepth: 1, total: 1 },
     scripts: { buckets: { latin: 20 }, scannedChars: 20, truncated: false },
     tables: { maxColumns: 6, maxLineWidth: 120, overflowRows: 0, scannedRows: 4 },
+    title: {
+      duplicateVisibleTitleRisk: false,
+      firstH1: { charCount: 6, present: true },
+      frontmatterTitle: { charCount: 0, present: false },
+      normalizedTitleMatch: false,
+    },
   },
   fontHints: ["prefer system serif"],
   fontSignals: { families: [], overflowFamilyCount: 0 },
@@ -77,6 +83,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("patchValueDomains");
     expect(prompt).toContain("styleDecisionPolicy");
     expect(prompt).toContain("tableLayoutSignal");
+    expect(prompt).toContain("titleDecisionSignal");
     expect(prompt).toContain("fontPatchContract");
     expect(prompt).toContain("accepted_font_patches");
     expect(prompt).toContain("Noto Serif JP");
@@ -86,6 +93,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("Do not enable page numbers by default");
     expect(prompt).toContain("clean, proper, polished, or professional");
     expect(prompt).toContain("Strong tableLayoutSignal");
+    expect(prompt).toContain("duplicate visible title risk");
     expect(prompt).toContain("wide-table candidate");
     expect(prompt).toContain("rendererCompatibility");
     expect(prompt).toContain("local cover images");
@@ -99,6 +107,89 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("fonts.body.default");
     expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("fullProfile");
+  });
+
+  test("builds title decision signal that blocks duplicate title treatment without cover intent", () => {
+    const facts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          title: {
+            duplicateVisibleTitleRisk: true,
+            firstH1: { charCount: 14, present: true },
+            frontmatterTitle: { charCount: 14, present: true },
+            normalizedTitleMatch: true,
+          },
+        },
+        intent: "clean readable PDF",
+      }),
+    );
+
+    expect(facts.titleDecisionSignal).toMatchObject({
+      duplicateVisibleTitleRisk: true,
+      explicitCoverIntent: false,
+      explicitNoCoverIntent: false,
+      normalizedTitleMatch: true,
+      recommendation:
+        "Treat the first H1 as the visible document title; do not enable cover or extra title treatment.",
+      profileBoundary: [
+        "Do not rewrite Markdown.",
+        "Do not mutate frontmatter.",
+        "Do not invent title-suppression profile fields.",
+        "Report unsupported title or cover behavior in warnings or unmatched_directions.",
+      ],
+    });
+  });
+
+  test("allows explicit cover intent but records duplicate H1 warning policy", () => {
+    const facts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          title: {
+            duplicateVisibleTitleRisk: true,
+            firstH1: { charCount: 14, present: true },
+            frontmatterTitle: { charCount: 14, present: true },
+            normalizedTitleMatch: true,
+          },
+        },
+        intent: "clean pdf with a proper cover page",
+      }),
+    );
+
+    expect(facts.titleDecisionSignal).toMatchObject({
+      duplicateVisibleTitleRisk: true,
+      explicitCoverIntent: true,
+      explicitNoCoverIntent: false,
+      recommendation:
+        "Cover may be enabled because the user asked for it, but warn that profile settings cannot suppress a duplicate body H1.",
+    });
+  });
+
+  test("treats no-cover intent as stronger than cover wording", () => {
+    const facts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          title: {
+            duplicateVisibleTitleRisk: true,
+            firstH1: { charCount: 14, present: true },
+            frontmatterTitle: { charCount: 14, present: true },
+            normalizedTitleMatch: true,
+          },
+        },
+        intent: "no cover page, keep the title in the document",
+      }),
+    );
+
+    expect(facts.titleDecisionSignal).toMatchObject({
+      explicitCoverIntent: false,
+      explicitNoCoverIntent: true,
+      recommendation: "Keep cover disabled and avoid extra title chrome.",
+    });
   });
 
   test("derives strong table layout signal for wide table facts", () => {

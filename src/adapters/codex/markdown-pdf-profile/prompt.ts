@@ -13,6 +13,9 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   featureTriggers: {
     cover: [
       "Enable only when explicitly requested or when metadata/title signals make a cover useful.",
+      "When titleDecisionSignal.duplicateVisibleTitleRisk is true and explicit cover intent is false, keep cover disabled and avoid extra title treatment.",
+      "When explicit cover intent is true and duplicateVisibleTitleRisk is true, cover may be enabled only with a warning that profile settings cannot suppress a duplicate body H1.",
+      "When explicit no-cover or no-title-page intent is true, keep cover disabled and avoid extra title chrome.",
       "Prefer plain cover unless report styling is explicitly requested or the selected candidate is clearly report-like.",
     ],
     toc: [
@@ -38,6 +41,7 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   rendererCompatibility: [
     "Return only profile fields; never raw CSS or HTML.",
     "Do not choose settings known to produce renderer warnings.",
+    "Do not remove body headings, mutate frontmatter, or invent unsupported title-suppression fields.",
     "Do not invent profile fields for local cover images, arbitrary CSS, custom HTML, or template-only layout.",
     "If a requested style depends on unsupported renderer behavior, choose the closest warning-free profile and explain the mismatch in warnings.",
     "Report unsupported profile directions such as local cover images, arbitrary CSS, custom HTML, or template-only layout in unmatched_directions.",
@@ -111,6 +115,47 @@ function buildTableLayoutSignal(
   };
 }
 
+function hasExplicitNoCoverIntent(intent: string): boolean {
+  return /\b(no|without|skip|disable|avoid)\s+(a\s+)?(cover|cover page|title page|title-page)\b/i.test(
+    intent,
+  );
+}
+
+function hasExplicitCoverIntent(intent: string): boolean {
+  if (hasExplicitNoCoverIntent(intent)) {
+    return false;
+  }
+  return /\b(cover|cover page|title page|title-page)\b/i.test(intent);
+}
+
+function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {
+  const intent = request.intent ?? "";
+  const explicitCoverIntent = hasExplicitCoverIntent(intent);
+  const explicitNoCoverIntent = hasExplicitNoCoverIntent(intent);
+  const duplicateVisibleTitleRisk = request.documentSignals.title.duplicateVisibleTitleRisk;
+
+  return {
+    ...request.documentSignals.title,
+    explicitCoverIntent,
+    explicitNoCoverIntent,
+    recommendation: explicitNoCoverIntent
+      ? "Keep cover disabled and avoid extra title chrome."
+      : explicitCoverIntent
+        ? duplicateVisibleTitleRisk
+          ? "Cover may be enabled because the user asked for it, but warn that profile settings cannot suppress a duplicate body H1."
+          : "Cover may be enabled when supported profile fields fit the request."
+        : duplicateVisibleTitleRisk
+          ? "Treat the first H1 as the visible document title; do not enable cover or extra title treatment."
+          : "Use conservative title treatment unless other document signals justify cover.",
+    profileBoundary: [
+      "Do not rewrite Markdown.",
+      "Do not mutate frontmatter.",
+      "Do not invent title-suppression profile fields.",
+      "Report unsupported title or cover behavior in warnings or unmatched_directions.",
+    ],
+  };
+}
+
 export function buildMarkdownPdfProfileCodexPrompt(
   request: MarkdownPdfCodexProfileRequest,
 ): string {
@@ -127,6 +172,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     styleDecisionPolicy: MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY,
     supportedSchemaSummary: request.supportedSchemaSummary,
     tableLayoutSignal: buildTableLayoutSignal(request.documentSignals.tables),
+    titleDecisionSignal: buildTitleDecisionSignal(request),
   };
 
   return [
@@ -142,6 +188,9 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Do not return profile objects or arbitrary nested fields.",
     "- Prefer small adaptations over broad rewrites.",
     "- Follow styleDecisionPolicy when deciding cover, ToC, page-number, code, and renderer-compatible changes.",
+    "- Follow titleDecisionSignal before adding cover or title treatment.",
+    "- If titleDecisionSignal says duplicate visible title risk exists without explicit cover intent, do not enable cover or extra title chrome.",
+    "- If explicit cover intent exists but profile settings cannot suppress duplicate H1 content, include a warning instead of inventing unsupported fields.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",

@@ -42,6 +42,18 @@ export interface MarkdownPdfFrontmatterSignals {
   metadataKeys: string[];
 }
 
+export interface MarkdownPdfTitleSourceSignal {
+  present: boolean;
+  charCount: number;
+}
+
+export interface MarkdownPdfTitleSignals {
+  frontmatterTitle: MarkdownPdfTitleSourceSignal;
+  firstH1: MarkdownPdfTitleSourceSignal;
+  normalizedTitleMatch: boolean;
+  duplicateVisibleTitleRisk: boolean;
+}
+
 export interface MarkdownPdfScriptSignals {
   scannedChars: number;
   truncated: boolean;
@@ -55,6 +67,7 @@ export interface MarkdownPdfDocumentSignals {
   codeFences: MarkdownPdfCodeFenceSignals;
   assets: MarkdownPdfAssetSignals;
   frontmatter: MarkdownPdfFrontmatterSignals;
+  title: MarkdownPdfTitleSignals;
   scripts: MarkdownPdfScriptSignals;
 }
 
@@ -79,6 +92,12 @@ export function createAbsentMarkdownPdfDocumentSignals(): MarkdownPdfDocumentSig
     codeFences: { languages: [], unlabeledCount: 0, overflowLanguageCount: 0 },
     assets: { localCount: 0, remoteCount: 0, dataUriCount: 0 },
     frontmatter: { pdfContentLangs: [], metadataKeys: [] },
+    title: {
+      frontmatterTitle: { present: false, charCount: 0 },
+      firstH1: { present: false, charCount: 0 },
+      normalizedTitleMatch: false,
+      duplicateVisibleTitleRisk: false,
+    },
     scripts: { scannedChars: 0, truncated: false, buckets: {} },
   };
 }
@@ -156,6 +175,70 @@ function collectHeadingSignals(content: string): MarkdownPdfHeadingSignals {
     byDepth[String(depth)] = (byDepth[String(depth)] ?? 0) + 1;
   }
   return { total, maxDepth, byDepth };
+}
+
+function firstH1Text(content: string): string | undefined {
+  let fenceMarker: string | null = null;
+  for (const line of content.split("\n")) {
+    const fenceMatch = /^[\t ]*(```+|~~~+)/.exec(line);
+    if (fenceMatch) {
+      const marker = fenceMatch[1] ?? "";
+      if (fenceMarker) {
+        if (marker.startsWith(fenceMarker[0] ?? "")) {
+          fenceMarker = null;
+        }
+      } else {
+        fenceMarker = marker;
+      }
+      continue;
+    }
+    if (fenceMarker) {
+      continue;
+    }
+    const match = /^#[\t ]+(.+?)\s*#*\s*$/.exec(line);
+    const title = match?.[1]?.trim();
+    if (title) {
+      return title;
+    }
+  }
+  return undefined;
+}
+
+function normalizedTitle(value: string | undefined): string {
+  return (value ?? "")
+    .replace(/[`*_~[\]()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function titleSourceSignal(value: string | undefined): MarkdownPdfTitleSourceSignal {
+  return {
+    present: Boolean(value),
+    charCount: value?.length ?? 0,
+  };
+}
+
+function collectTitleSignals(
+  content: string,
+  data: Record<string, unknown> | null,
+): MarkdownPdfTitleSignals {
+  const frontmatterTitle =
+    typeof data?.title === "string" && data.title.trim().length > 0 ? data.title.trim() : undefined;
+  const firstH1 = firstH1Text(content);
+  const normalizedFrontmatterTitle = normalizedTitle(frontmatterTitle);
+  const normalizedFirstH1 = normalizedTitle(firstH1);
+  const normalizedTitleMatch =
+    normalizedFrontmatterTitle.length > 0 &&
+    normalizedFirstH1.length > 0 &&
+    normalizedFrontmatterTitle === normalizedFirstH1;
+
+  return {
+    frontmatterTitle: titleSourceSignal(frontmatterTitle),
+    firstH1: titleSourceSignal(firstH1),
+    normalizedTitleMatch,
+    duplicateVisibleTitleRisk: normalizedTitleMatch,
+  };
 }
 
 function tableColumnCount(line: string): number {
@@ -271,6 +354,7 @@ export function collectMarkdownPdfDocumentSignals(markdown: string): MarkdownPdf
     codeFences: collectCodeFenceSignals(parsed.content),
     assets: collectAssetSignals(parsed.content),
     frontmatter: collectFrontmatterSignals(parsed.data),
+    title: collectTitleSignals(parsed.content, parsed.data),
     scripts: collectScriptSignals(parsed.content),
   };
 }

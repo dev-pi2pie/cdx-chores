@@ -132,7 +132,7 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
       "  content-langs:",
       "    - zh-Hant",
       "---",
-      "# Title",
+      "# Visible Heading",
       "## Section",
       "![remote](https://example.com/private/chart.png)",
       "![local](./images/chart.png)",
@@ -171,6 +171,12 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
       pdfContentLangs: ["zh-Hant"],
       metadataKeys: ["title"],
     });
+    expect(signals.title).toEqual({
+      frontmatterTitle: { present: true, charCount: "Private Report".length },
+      firstH1: { present: true, charCount: "Visible Heading".length },
+      normalizedTitleMatch: false,
+      duplicateVisibleTitleRisk: false,
+    });
     expect(signals.scripts.truncated).toBe(true);
     expect(signals.scripts.scannedChars).toBe(MARKDOWN_PDF_SIGNAL_TEXT_LIMIT);
     expect(signals.scripts.buckets.han).toBeGreaterThan(0);
@@ -179,6 +185,52 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
     expect(serialized).not.toContain("secret_token");
     expect(serialized).not.toContain("duplicate body");
     expect(serialized).not.toContain("Private Report");
+    expect(serialized).not.toContain("Visible Heading");
+  });
+
+  test("detects duplicate frontmatter title and first H1 without serializing title text", () => {
+    const markdown = [
+      "---",
+      "title: CJK Font Smoke",
+      "---",
+      "# CJK   Font Smoke",
+      "",
+      "Body text.",
+    ].join("\n");
+
+    const signals = collectMarkdownPdfDocumentSignals(markdown);
+    const serialized = JSON.stringify(signals);
+
+    expect(signals.title).toEqual({
+      frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
+      firstH1: { present: true, charCount: "CJK   Font Smoke".length },
+      normalizedTitleMatch: true,
+      duplicateVisibleTitleRisk: true,
+    });
+    expect(serialized).not.toContain("CJK Font Smoke");
+  });
+
+  test("ignores code-fenced Markdown headings when collecting first H1 title signals", () => {
+    const markdown = [
+      "---",
+      "title: Actual Title",
+      "---",
+      "```md",
+      "# Fake Title",
+      "```",
+      "# Actual Title",
+      "",
+      "Body text.",
+    ].join("\n");
+
+    const signals = collectMarkdownPdfDocumentSignals(markdown);
+
+    expect(signals.title).toEqual({
+      frontmatterTitle: { present: true, charCount: "Actual Title".length },
+      firstH1: { present: true, charCount: "Actual Title".length },
+      normalizedTitleMatch: true,
+      duplicateVisibleTitleRisk: true,
+    });
   });
 
   test("collects bounded font summaries without font paths", () => {

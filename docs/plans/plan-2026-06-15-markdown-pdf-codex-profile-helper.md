@@ -639,16 +639,16 @@ Phase 6.5 focused job records:
 
 ### Phase 6.5.1: Title Source And Cover Deduplication Policy
 
-- [ ] Add bounded title signals for frontmatter `title`, first Markdown H1, normalized title match, explicit cover intent, and explicit no-cover/no-title-page intent.
-- [ ] Teach the Codex prompt that a matching frontmatter title and first H1 should default to the H1 as the visible document title, not a duplicate cover/title treatment.
-- [ ] Allow explicit cover intent to enable supported cover behavior while warning when profile settings cannot suppress a duplicate body H1.
-- [ ] Keep explicit no-cover or no-title-page intent as a hard signal to avoid cover and extra title chrome.
-- [ ] Keep Markdown rewriting, frontmatter mutation, unsupported title-suppression fields, local cover images, and custom HTML/CSS outside the profile helper.
-- [ ] Add regression coverage for duplicate frontmatter-title/H1 signals avoiding cover/title duplication when cover was not requested.
-- [ ] Add regression coverage for explicit cover intent still permitting supported cover behavior with an explanatory warning when duplication cannot be avoided by profile settings.
-- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags unless the report is explicitly needed for inspection and cleaned afterward.
-- [ ] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
-- [ ] Add a Phase 6.5.1 job record after implementation and validation.
+- [x] Add bounded title signals for frontmatter `title`, first Markdown H1, normalized title match, explicit cover intent, and explicit no-cover/no-title-page intent.
+- [x] Teach the Codex prompt that a matching frontmatter title and first H1 should default to the H1 as the visible document title, not a duplicate cover/title treatment.
+- [x] Allow explicit cover intent to enable supported cover behavior while warning when profile settings cannot suppress a duplicate body H1.
+- [x] Keep explicit no-cover or no-title-page intent as a hard signal to avoid cover and extra title chrome.
+- [x] Keep Markdown rewriting, frontmatter mutation, unsupported title-suppression fields, local cover images, and custom HTML/CSS outside the profile helper.
+- [x] Add regression coverage for duplicate frontmatter-title/H1 signals avoiding cover/title duplication when cover was not requested.
+- [x] Add regression coverage for explicit cover intent still permitting supported cover behavior with an explanatory warning when duplication cannot be avoided by profile settings.
+- [x] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags unless the report is explicitly needed for inspection and cleaned afterward.
+- [x] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
+- [x] Add a Phase 6.5.1 job record after implementation and validation.
 
 Phase 6.5.1 rationale:
 
@@ -657,6 +657,10 @@ Phase 6.5.1 rationale:
 - Codex should decide from bounded title signals, but it must not solve duplication by rewriting Markdown or inventing unsupported profile fields.
 - When the user explicitly asks for a cover page, the helper may enable supported cover behavior; when the existing H1 would duplicate the cover/title and the profile cannot suppress it, the helper should surface that limitation.
 - More flexible cover media and exact title-block rendering remain template/custom HTML concerns and should be documented in Phase 7.
+
+Phase 6.5.1 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-5-1-title-cover-deduplication.md`
 
 ### Phase 7: Documentation And Guide Updates
 

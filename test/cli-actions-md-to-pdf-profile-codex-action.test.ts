@@ -393,6 +393,49 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("passes duplicate title structure to Codex and reports it without raw title text", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-title-dedup", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "report.md"),
+        ["---", "title: Private Launch Plan", "---", "# Private Launch Plan", "", "Body."].join(
+          "\n",
+        ),
+        "utf8",
+      );
+      let prompt = "";
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "title-report.json",
+        codexRunner: async (options) => {
+          prompt = options.prompt;
+          return await adaptedRunner("article")();
+        },
+        input: "report.md",
+        intent: "clean PDF without cover page",
+        output: "profile.yml",
+      });
+
+      expect(prompt).toContain('"titleDecisionSignal"');
+      expect(prompt).toContain('"duplicateVisibleTitleRisk": true');
+      expect(prompt).toContain('"explicitNoCoverIntent": true');
+      expect(prompt).not.toContain("Private Launch Plan");
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "title-report.json"),
+      );
+      expect(report.documentSignals.title).toEqual({
+        frontmatterTitle: { present: true, charCount: "Private Launch Plan".length },
+        firstH1: { present: true, charCount: "Private Launch Plan".length },
+        normalizedTitleMatch: true,
+        duplicateVisibleTitleRisk: true,
+      });
+      expect(JSON.stringify(report)).not.toContain("Private Launch Plan");
+    });
+  });
+
   test("rejects conflicting positional and explicit input paths before calling Codex", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-input-conflict", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "one.md"), "# One\n", "utf8");
