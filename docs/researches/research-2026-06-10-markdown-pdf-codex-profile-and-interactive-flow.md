@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper and Interactive Flow"
 created-date: 2026-06-10
-modified-date: 2026-06-15
+modified-date: 2026-06-16
 status: in-progress
 agent: codex
 ---
@@ -447,6 +447,45 @@ The first helper should avoid:
 - remote asset suggestions
 - automatic language-span rewriting
 - auto-rendering the PDF without a user-visible profile decision
+
+### 7.1. Title and cover decisions need a deduplication policy
+
+The helper should treat Markdown titles as document structure, not just as cover-page material. A Markdown file can already contain a good visible title in its first H1, while frontmatter `title` can also feed metadata, renderer title chrome, or a cover title. If Codex enables cover or title treatment only because a title signal exists, the rendered PDF can duplicate the same title.
+
+The direct helper should collect bounded title signals when a Markdown sample is available:
+
+- frontmatter `title`, when present
+- first Markdown H1, when present
+- normalized title match between frontmatter `title` and the first H1
+- explicit cover intent from `--intent`
+- explicit no-cover or no-title-page intent from `--intent`
+
+Recommended title decision ladder:
+
+```text
+explicit cover intent
+  -> Codex may enable supported cover/profile title behavior
+  -> warn when the body H1 duplicates the cover/title and profile settings cannot suppress it
+
+explicit no-cover or no-title-page intent
+  -> keep cover disabled
+  -> avoid adding extra title chrome
+
+frontmatter title matches first H1, no explicit cover intent
+  -> treat the H1 as the visible document title
+  -> avoid enabling cover or extra title treatment
+
+metadata title exists, no first H1
+  -> Codex may use supported title or cover behavior when the document purpose justifies it
+
+first H1 exists, no metadata title
+  -> treat the H1 as the visible document title
+  -> avoid cover unless requested
+```
+
+This is a profile-helper policy, not a Markdown rewrite feature. The helper should not remove the first H1, mutate frontmatter, invent unsupported title-suppression fields, or generate custom HTML/CSS to solve title duplication. If the current profile schema cannot represent the requested title or cover behavior, Codex should record the unsupported direction through warnings or unmatched directions.
+
+Richer cover media, local cover images, and exact title-block rendering belong to template/custom HTML work or later template-Codex research.
 
 ### 8. Codex-generated profiles need durable identity
 

@@ -637,15 +637,37 @@ Phase 6.5 focused job records:
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-4-action-smoke.md`
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-5-review-integration.md`
 
+### Phase 6.5.1: Title Source And Cover Deduplication Policy
+
+- [ ] Add bounded title signals for frontmatter `title`, first Markdown H1, normalized title match, explicit cover intent, and explicit no-cover/no-title-page intent.
+- [ ] Teach the Codex prompt that a matching frontmatter title and first H1 should default to the H1 as the visible document title, not a duplicate cover/title treatment.
+- [ ] Allow explicit cover intent to enable supported cover behavior while warning when profile settings cannot suppress a duplicate body H1.
+- [ ] Keep explicit no-cover or no-title-page intent as a hard signal to avoid cover and extra title chrome.
+- [ ] Keep Markdown rewriting, frontmatter mutation, unsupported title-suppression fields, local cover images, and custom HTML/CSS outside the profile helper.
+- [ ] Add regression coverage for duplicate frontmatter-title/H1 signals avoiding cover/title duplication when cover was not requested.
+- [ ] Add regression coverage for explicit cover intent still permitting supported cover behavior with an explanatory warning when duplication cannot be avoided by profile settings.
+- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags unless the report is explicitly needed for inspection and cleaned afterward.
+- [ ] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
+- [ ] Add a Phase 6.5.1 job record after implementation and validation.
+
+Phase 6.5.1 rationale:
+
+- A CJK font smoke replay showed successful font selection but duplicated the document title when frontmatter `title` and the first H1 both represented the same visible title.
+- Title and cover choices are not just styling choices. They depend on document structure, user intent, and what the profile schema can actually express.
+- Codex should decide from bounded title signals, but it must not solve duplication by rewriting Markdown or inventing unsupported profile fields.
+- When the user explicitly asks for a cover page, the helper may enable supported cover behavior; when the existing H1 would duplicate the cover/title and the profile cannot suppress it, the helper should surface that limitation.
+- More flexible cover media and exact title-block rendering remain template/custom HTML concerns and should be documented in Phase 7.
+
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, and Phase 6.5 behavior is implemented.
+- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, and Phase 6.5.1 behavior is implemented.
 - [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document direct helper examples.
 - [ ] Document replay through `md to-pdf --profile`.
 - [ ] Document diagnostic report retention.
 - [ ] Document supported profile patch boundaries, including the dedicated font patch contract.
 - [ ] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
+- [ ] Document title/cover deduplication behavior and the profile boundary for duplicate H1 suppression.
 - [ ] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
 - [ ] Note that template-Codex and cover-media contract research are follow-up work, not part of this helper slice.
 - [ ] Keep Interactive mode documented as a later plan.
@@ -680,6 +702,7 @@ Focused automated coverage:
 - `default` versus preset-backed `article` candidate distinction
 - invalid base-profile rejection before Codex
 - document signal collection with bounded samples
+- bounded title signals and cover/no-cover intent handling
 - no-path signal-mode behavior
 - no raw document snippets, raw remote URLs, or local font paths in Codex input
 - font summary and coverage warning handling
@@ -694,6 +717,8 @@ Focused automated coverage:
 - optional report writing and report/profile UID matching
 - deterministic no-signal basic-profile fallback without a Codex call
 - deterministic render replay from a generated profile
+- duplicate frontmatter-title/H1 signals avoid extra cover/title treatment unless cover is requested
+- explicit cover intent can still enable supported cover behavior while warning about profile-level duplicate-title limits
 
 Expected commands during implementation:
 
@@ -716,6 +741,8 @@ Manual smoke coverage should use `examples/playground/` for temporary Markdown i
 - `--base-profile <path>` can refine an existing valid profile without mutating it.
 - generated profiles include `profile.id`, `source`, `basedOn`, `preset` when applicable, and `createdAt`.
 - `md to-pdf --profile <generated-profile>` replays the selected preset behavior.
+- matching frontmatter-title and first-H1 signals do not cause cover/title duplication unless the user explicitly requests cover behavior.
+- explicit cover requests can still choose supported cover settings, with warnings when profile settings cannot suppress a duplicate body H1.
 - a generated `wide-table` profile produces preset-backed render output without also passing `--preset`.
 - explicit render CLI flags still override generated profile settings.
 - `--dry-run` previews the profile decision without writing the profile.
