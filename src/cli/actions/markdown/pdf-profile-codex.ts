@@ -33,9 +33,11 @@ import {
   normalizeMarkdownPdfProfile,
   serializeMarkdownPdfProfile,
   validateMarkdownPdfProfileShape,
-  type NormalizedMarkdownPdfProfileIdentity,
-  type MarkdownPdfProfileSource,
 } from "../../markdown-pdf";
+import type {
+  MarkdownPdfProfileSource,
+  NormalizedMarkdownPdfProfileIdentity,
+} from "../../markdown-pdf/profile";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
@@ -662,16 +664,13 @@ export async function actionMdPdfProfileCodex(
         codexProgress.stop(codexProgressStatus);
       }
     })();
-    const selected = result.profile
-      ? requireSelectedCandidate(candidates, result.decision.selectedCandidateId)
-      : selectedCandidate(candidates, result.decision.selectedCandidateId);
-    const identity = createProfileIdentity({
-      ...profileIdentityBase,
-      basedOn: "none",
-      selectedCandidate: selected,
-    });
-
     if (!result.profile) {
+      const selected = selectedCandidate(candidates, result.decision.selectedCandidateId);
+      const identity = createProfileIdentity({
+        ...profileIdentityBase,
+        basedOn: "none",
+        selectedCandidate: selected,
+      });
       const failure: MarkdownPdfCodexReportFailure = {
         kind: "no-usable-profile",
         message: "Codex did not find a usable Markdown PDF profile.",
@@ -694,6 +693,13 @@ export async function actionMdPdfProfileCodex(
         exitCode: 1,
       });
     }
+
+    const selected = requireSelectedCandidate(candidates, result.decision.selectedCandidateId);
+    const identity = createProfileIdentity({
+      ...profileIdentityBase,
+      basedOn: "none",
+      selectedCandidate: selected,
+    });
 
     await finalizeSuccessfulProfileDecision({
       decisionLabel: result.decision.decisionMode,
