@@ -580,6 +580,27 @@ Phase 6.4 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-4-nested-patch-materialization.md`
 
+### Phase 6.4.1: Table Signal Layout Selection Policy
+
+- [ ] Treat Markdown table signals as profile-selection evidence before applying soft style intent.
+- [ ] Prefer the `wide-table` candidate or equivalent landscape/table-friendly patches when table signals show layout risk.
+- [ ] Keep portrait/default layouts available when tables are narrow, shallow, or only weakly table-like.
+- [ ] Add prompt guidance that table overflow, large line width, and high column count should outweigh generic clean/professional wording unless the user explicitly requires portrait.
+- [ ] Keep template-only table requests outside the profile helper, including custom column widths, arbitrary table CSS, rotated individual pages, and exact table beautification.
+- [ ] Add regression coverage for strong wide-table signals selecting a table-friendly layout.
+- [ ] Add regression coverage that weak table signals do not force landscape.
+- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [ ] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
+- [ ] Add a Phase 6.4.1 job record after implementation and validation.
+
+Phase 6.4.1 rationale:
+
+- Phase 6.4 made strict nested patches applicable to sparse profiles, but the helper still needs to choose the right layout direction from bounded document signals.
+- Live PDF review showed that wide table content can be rendered into an overly narrow portrait layout when generic style intent is not balanced by table-fit signals.
+- This phase should improve profile selection and patch policy without opening template-level styling through profile fields.
+- Table layout signals should follow a signal ladder: overflow rows and high line width are stronger evidence than column count alone, while short or narrow tables remain weak evidence.
+- Special table presentation remains a template concern. The profile helper can choose reusable page shape, margins, ToC, cover, page numbers, and code/table-friendly presets, but it should not invent per-table CSS or template behavior.
+
 ### Phase 6.5: Dedicated Font Patch Contract Branch
 
 - [ ] Complete `docs/researches/research-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
@@ -597,7 +618,7 @@ Phase 6.5 rationale:
 
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4 and Phase 6.5 behavior is implemented.
+- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, and Phase 6.5 behavior is implemented.
 - [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document direct helper examples.
 - [ ] Document replay through `md to-pdf --profile`.
