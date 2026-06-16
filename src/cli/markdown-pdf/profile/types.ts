@@ -1,8 +1,19 @@
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
+import type { MarkdownPdfPreset } from "../validation";
 
 export type MarkdownPdfProfileFormat = "json" | "yaml";
 
 export type MarkdownPdfMetadata = Record<string, string>;
+
+export type MarkdownPdfProfileSource = "codex" | "deterministic";
+
+export interface NormalizedMarkdownPdfProfileIdentity {
+  id: string;
+  source: MarkdownPdfProfileSource;
+  basedOn?: string;
+  preset?: MarkdownPdfPreset;
+  createdAt: string;
+}
 
 export const MARKDOWN_PDF_CODE_THEMES = [
   "github-light",
@@ -44,6 +55,12 @@ export interface NormalizedMarkdownPdfPageNumbers {
   scope: "body";
 }
 
+export type MarkdownPdfMetadataTitleBlockMode = "auto" | "show" | "hide";
+
+export interface NormalizedMarkdownPdfTitleBlock {
+  metadataTitle: MarkdownPdfMetadataTitleBlockMode;
+}
+
 export type MarkdownPdfCoverStyle = "plain" | "report";
 
 export interface NormalizedMarkdownPdfCover {
@@ -70,11 +87,13 @@ export interface NormalizedMarkdownPdfFonts {
 }
 
 export interface NormalizedMarkdownPdfProfile {
+  identity?: NormalizedMarkdownPdfProfileIdentity;
   metadata: MarkdownPdfMetadata;
   code: NormalizedMarkdownPdfCode;
   header: MarkdownPdfPageChromeSlots;
   footer: MarkdownPdfPageChromeSlots;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
+  titleBlock: NormalizedMarkdownPdfTitleBlock;
   cover: NormalizedMarkdownPdfCover;
   fonts: NormalizedMarkdownPdfFonts;
   contentLangs: string[];

@@ -19,6 +19,7 @@ export {
   DEFAULT_MARKDOWN_PDF_PROFILE,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
@@ -39,6 +40,7 @@ export type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfFontRole,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileFormat,
@@ -48,6 +50,7 @@ export type {
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
 export type {

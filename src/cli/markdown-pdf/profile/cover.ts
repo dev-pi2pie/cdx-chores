@@ -1,6 +1,26 @@
 import { resolveMarkdownPdfPlaceholderText } from "./placeholders";
 import { createMarkdownPdfEmptyMarginBoxesCss } from "./page-chrome";
+import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import type { NormalizedMarkdownPdfProfile } from "./types";
+
+export interface MarkdownPdfCoverCssInput {
+  orientation?: MarkdownPdfOrientation;
+  pageSize?: MarkdownPdfPageSize;
+}
+
+const COVER_PAGE_DIMENSIONS: Record<MarkdownPdfPageSize, { height: string; width: string }> = {
+  A3: { width: "297mm", height: "420mm" },
+  A4: { width: "210mm", height: "297mm" },
+  A5: { width: "148mm", height: "210mm" },
+  Letter: { width: "8.5in", height: "11in" },
+  Legal: { width: "8.5in", height: "14in" },
+  Tabloid: { width: "11in", height: "17in" },
+};
+
+function coverPageHeight(input: MarkdownPdfCoverCssInput): string {
+  const dimensions = COVER_PAGE_DIMENSIONS[input.pageSize ?? "A4"];
+  return input.orientation === "landscape" ? dimensions.width : dimensions.height;
+}
 
 function htmlEscape(value: string): string {
   return value
@@ -38,10 +58,12 @@ ${subtitle ? `    <p class="pdf-cover__subtitle">${subtitle}</p>\n` : ""}${metaP
 
 export function createMarkdownPdfCoverCss(
   profile: NormalizedMarkdownPdfProfile | undefined,
+  input: MarkdownPdfCoverCssInput = {},
 ): string {
   if (!profile?.cover.enabled) {
     return "";
   }
+  const pageHeight = coverPageHeight(input);
 
   return `
 @page cover {
@@ -53,7 +75,7 @@ ${createMarkdownPdfEmptyMarginBoxesCss()}
 .pdf-cover {
   break-after: page;
   box-sizing: border-box;
-  min-height: 100vh;
+  min-height: ${pageHeight};
   page: cover;
 }
 
@@ -62,7 +84,7 @@ ${createMarkdownPdfEmptyMarginBoxesCss()}
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 100vh;
+  min-height: ${pageHeight};
   padding: 28mm;
 }
 

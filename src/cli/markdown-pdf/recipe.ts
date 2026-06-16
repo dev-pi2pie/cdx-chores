@@ -7,6 +7,7 @@ import {
   createMarkdownPdfPageChromeCss,
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
+import type { MarkdownPdfTitleSignals } from "./profile/signals";
 
 export interface MarkdownPdfRecipe {
   templateHtml: string;
@@ -15,6 +16,7 @@ export interface MarkdownPdfRecipe {
 
 export interface CreateMarkdownPdfRecipeInput {
   profile?: NormalizedMarkdownPdfProfile;
+  titleSignals?: MarkdownPdfTitleSignals;
 }
 
 const PRESET_CSS: Record<NormalizedMarkdownPdfOptions["preset"], string> = {
@@ -57,15 +59,12 @@ body {
 
 export function createMarkdownPdfTemplate(input: CreateMarkdownPdfRecipeInput = {}): string {
   const coverHtml = createMarkdownPdfCoverHtml(input.profile);
-  return `<!doctype html>
-<html lang="$if(lang)$$lang$$else$en$endif$">
-<head>
-  <meta charset="utf-8">
-  <meta name="generator" content="cdx-chores md to-pdf">
-  <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
-</head>
-<body>
-${coverHtml}$if(title)$
+  const metadataTitleMode = input.profile?.titleBlock.metadataTitle ?? "auto";
+  const shouldRenderMetadataTitle =
+    metadataTitleMode === "show" ||
+    (metadataTitleMode === "auto" && !input.titleSignals?.duplicateVisibleTitleRisk);
+  const metadataTitleHtml = shouldRenderMetadataTitle
+    ? `$if(title)$
 <header class="document-title">
   <h1 class="title">$title$</h1>
 $if(author)$
@@ -75,7 +74,17 @@ $if(date)$
   <p class="date">$date$</p>
 $endif$
 </header>
-$endif$
+$endif$`
+    : "";
+  return `<!doctype html>
+<html lang="$if(lang)$$lang$$else$en$endif$">
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="cdx-chores md to-pdf">
+  <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
+</head>
+<body>
+${coverHtml}${metadataTitleHtml}
 $if(toc)$
 <nav id="TOC" role="doc-toc">
 $toc$
@@ -226,7 +235,10 @@ blockquote {
 ${tocPageBreakCss(options)}
 ${createMarkdownPdfPageChromeCss(input.profile)}
 ${PRESET_CSS[options.preset]}
-${createMarkdownPdfCoverCss(input.profile)}
+${createMarkdownPdfCoverCss(input.profile, {
+  orientation: options.orientation,
+  pageSize: options.pageSize,
+})}
 ${createMarkdownPdfFontCss(input.profile)}
 `;
 }

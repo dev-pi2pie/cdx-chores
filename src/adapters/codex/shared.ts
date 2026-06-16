@@ -1,5 +1,6 @@
 import { accessSync, constants, existsSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { mkdtemp, rm } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sleep } from "../../utils/sleep";
@@ -78,6 +79,30 @@ export async function startCodexReadOnlyThread(
     networkAccessEnabled: true,
     webSearchMode: "disabled",
   });
+}
+
+export async function runCodexPromptOnly<T>(options: {
+  outputSchema: unknown;
+  prompt: string;
+  timeoutMs: number;
+  work: (input: {
+    outputSchema: unknown;
+    prompt: string;
+    signal: AbortSignal;
+    workingDirectory: string;
+  }) => Promise<T>;
+}): Promise<T> {
+  const workingDirectory = await mkdtemp(join(tmpdir(), "cdx-chores-codex-prompt-"));
+  try {
+    return await options.work({
+      outputSchema: options.outputSchema,
+      prompt: options.prompt,
+      signal: AbortSignal.timeout(options.timeoutMs),
+      workingDirectory,
+    });
+  } finally {
+    await rm(workingDirectory, { recursive: true, force: true });
+  }
 }
 
 export function normalizeTitle(value: string): string {

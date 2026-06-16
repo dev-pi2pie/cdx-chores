@@ -13,6 +13,7 @@ import {
   type MarkdownPdfProcessRunner,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
+import { collectMarkdownPdfTitleSignals } from "../../markdown-pdf/profile/signals";
 import { defaultOutputPath, resolveFromCwd } from "../../path-utils";
 import { execCommand } from "../../process";
 import type { CliRuntime } from "../../types";
@@ -66,8 +67,10 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     profile: normalizedProfile.profile.code,
     cliHighlight: options.codeHighlight,
   });
+  const titleSignals = collectMarkdownPdfTitleSignals(parsedMarkdown.content, parsedMarkdown.data);
   const recipe = createMarkdownPdfRecipe(normalizedOptions, {
     profile: normalizedProfile.profile,
+    titleSignals,
   });
 
   if (customTemplatePath) {

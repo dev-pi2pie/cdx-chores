@@ -1,6 +1,7 @@
 import { CliError } from "../../errors";
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
+import { normalizeMarkdownPdfProfileIdentity } from "./identity";
 import { validateMarkdownPdfBodyFontKey } from "./schema";
 import type {
   EffectiveMarkdownPdfCodeOptions,
@@ -8,14 +9,17 @@ import type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfMetadata,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
 } from "./types";
 import { MARKDOWN_PDF_CODE_THEMES } from "./types";
 
@@ -29,6 +33,11 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-right",
 ]);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
+const METADATA_TITLE_BLOCK_MODES = new Set<MarkdownPdfMetadataTitleBlockMode>([
+  "auto",
+  "show",
+  "hide",
+]);
 const CODE_THEMES = new Set<MarkdownPdfCodeTheme>(MARKDOWN_PDF_CODE_THEMES);
 
 function isScalar(value: unknown): value is string | number | boolean {
@@ -201,6 +210,22 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
   };
 }
 
+function normalizeTitleBlock(value: unknown): NormalizedMarkdownPdfTitleBlock {
+  const input = readObject(value);
+  const metadataTitle =
+    stringValue(input.metadataTitle, "profile.titleBlock.metadataTitle") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.titleBlock.metadataTitle;
+  if (!METADATA_TITLE_BLOCK_MODES.has(metadataTitle as MarkdownPdfMetadataTitleBlockMode)) {
+    throw new CliError("profile.titleBlock.metadataTitle must be one of: auto, show, hide.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return {
+    metadataTitle: metadataTitle as MarkdownPdfMetadataTitleBlockMode,
+  };
+}
+
 function normalizeCover(value: unknown): NormalizedMarkdownPdfCover {
   const input = readObject(value);
   const style =
@@ -336,11 +361,13 @@ function uniqueStrings(values: string[]): string[] {
 }
 
 export function markdownPdfProfileToRecipeOptions(
-  profile: Record<string, unknown> = {},
+  profile: Record<string, unknown>,
+  identity: NormalizedMarkdownPdfProfileIdentity | undefined,
 ): NormalizeMarkdownPdfOptionsInput {
   const page = readObject(profile.page);
   const toc = readObject(profile.toc);
   return {
+    preset: identity?.preset,
     pageSize: stringValue(page.size, "profile.page.size"),
     orientation: stringValue(page.orientation, "profile.page.orientation"),
     margin: stringValue(page.margin, "profile.page.margin"),
@@ -366,9 +393,11 @@ export function normalizeMarkdownPdfProfile(
   const frontmatterContentLangs = input.frontmatter
     ? contentLangsFromSource(input.frontmatter)
     : [];
+  const identity = normalizeMarkdownPdfProfileIdentity(profile.profile);
 
   return {
     profile: {
+      identity,
       metadata: {
         ...profileMetadata,
         ...frontmatterMetadata,
@@ -378,10 +407,11 @@ export function normalizeMarkdownPdfProfile(
       header: normalizeChromeSlots(profile.header, "profile.header"),
       footer: normalizeChromeSlots(profile.footer, "profile.footer"),
       pageNumbers: normalizePageNumbers(profile.pageNumbers),
+      titleBlock: normalizeTitleBlock(profile.titleBlock),
       cover: normalizeCover(profile.cover),
       fonts: normalizeFonts(profile.fonts),
       contentLangs: uniqueStrings([...contentLangsFromSource(profile), ...frontmatterContentLangs]),
     },
-    recipeOptions: markdownPdfProfileToRecipeOptions(profile),
+    recipeOptions: markdownPdfProfileToRecipeOptions(profile, identity),
   };
 }

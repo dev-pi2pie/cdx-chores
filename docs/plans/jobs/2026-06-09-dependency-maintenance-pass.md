@@ -1,6 +1,7 @@
 ---
 title: "Dependency maintenance pass"
 created-date: 2026-06-09
+modified-date: 2026-06-10
 status: completed
 agent: Codex
 ---
@@ -54,6 +55,12 @@ Code compatibility:
 - `bun outdated` no longer reports outdated packages after the refresh.
 - `auto_commit_notification` reviewed the edit batch and reported that the dependency updates, override cleanup, and Codex SDK lazy-load compatibility fix are coherent as one maintenance commit.
 
+Follow-up on 2026-06-10:
+
+- Updated `@openai/codex-sdk` from `^0.138.0` to `^0.139.0` after it became the latest published SDK version.
+- Refreshed the README and CLI action integration guide Codex SDK baseline for `v0.1.5-canary.2` from `0.138.0` to `0.139.0`.
+- Re-checked the installed SDK package exports; it remains import-only ESM, so the existing lazy dynamic import compatibility path still applies.
+
 ## Verification
 
 - Baseline `bun audit` passed with `No vulnerabilities found`.
@@ -72,3 +79,14 @@ Code compatibility:
 - Focused PDF/document extraction tests passed with `14` passing tests and `0` failures.
 - Focused DuckDB tests passed with `36` passing tests and `0` failures.
 - Full `bun test` passed with `1102` passing tests and `0` failures.
+
+Follow-up verification on 2026-06-10:
+
+- `bun audit` passed with `No vulnerabilities found`.
+- `bun outdated` reported no outdated packages after resolving.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bun run build` passed and embedded version generation reported `0.1.5-canary.2`.
+- CJS built-output smoke passed with `require('./dist/cjs/index.cjs')`.
+- ESM CLI built-output smoke passed with `node dist/esm/bin.mjs --version`, reporting `0.1.5-canary.2`.
+- Focused Codex compatibility tests passed with `34` passing tests and `0` failures.
