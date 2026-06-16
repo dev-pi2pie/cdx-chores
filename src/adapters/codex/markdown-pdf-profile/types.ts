@@ -76,6 +76,22 @@ export interface MarkdownPdfCodexProfilePatch {
   value: MarkdownPdfCodexPatchValue;
 }
 
+export const MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES = [
+  "body",
+  "heading",
+  "code",
+  "pageChrome",
+] as const;
+
+export type MarkdownPdfCodexFontPatchRole = (typeof MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES)[number];
+
+export interface MarkdownPdfCodexProfileFontPatch {
+  op: "replace-font";
+  role: MarkdownPdfCodexFontPatchRole;
+  key: string;
+  value: string;
+}
+
 export interface MarkdownPdfCodexProfileRequest {
   candidates: MarkdownPdfProfileCandidate[];
   documentSignals: MarkdownPdfDocumentSignals;
@@ -89,6 +105,7 @@ export interface MarkdownPdfCodexProfileRequest {
 }
 
 export interface MarkdownPdfCodexDecision {
+  acceptedFontPatches: MarkdownPdfCodexProfileFontPatch[];
   acceptedPatches: MarkdownPdfCodexProfilePatch[];
   decisionMode: MarkdownPdfCodexDecisionMode;
   fallbackReason?: string;

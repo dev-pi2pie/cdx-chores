@@ -3,17 +3,21 @@ import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/prof
 import { normalizeMarkdownPdfProfile } from "../../../cli/markdown-pdf/profile/normalize";
 import {
   MARKDOWN_PDF_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES,
   MARKDOWN_PDF_CODEX_PATCH_PATHS,
   type MarkdownPdfCodexDecision,
   type MarkdownPdfCodexDecisionMode,
+  type MarkdownPdfCodexFontPatchRole,
   type MarkdownPdfCodexPatchPath,
   type MarkdownPdfCodexPatchValue,
+  type MarkdownPdfCodexProfileFontPatch,
   type MarkdownPdfCodexProfilePatch,
   type MarkdownPdfCodexProfileResult,
 } from "./types";
 import { validateMarkdownPdfCodexPatchValueDomain } from "./value-domains";
 
 const ACCEPTED_PATCH_PATHS = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
+const ACCEPTED_FONT_PATCH_ROLES = new Set<string>(MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES);
 const MATERIALIZABLE_PATCH_PARENT_PATHS = new Set([
   "/toc",
   "/pdf",
@@ -86,6 +90,15 @@ function parsePatchValue(value: unknown, context: string): MarkdownPdfCodexPatch
   );
 }
 
+function parseFontPatchRole(value: unknown, context: string): MarkdownPdfCodexFontPatchRole {
+  if (typeof value === "string" && ACCEPTED_FONT_PATCH_ROLES.has(value)) {
+    return value as MarkdownPdfCodexFontPatchRole;
+  }
+  throw new Error(
+    `Markdown PDF Codex response ${context} must be one of: ${MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES.join(", ")}.`,
+  );
+}
+
 function parseAcceptedPatch(value: unknown, context: string): MarkdownPdfCodexProfilePatch {
   const patch = parseRecord(value, context);
   if (patch.op !== "replace") {
@@ -98,6 +111,19 @@ function parseAcceptedPatch(value: unknown, context: string): MarkdownPdfCodexPr
     op: "replace",
     path: parsePatchPath(patch.path, `${context}.path`),
     value: parsePatchValue(patch.value, `${context}.value`),
+  };
+}
+
+function parseAcceptedFontPatch(value: unknown, context: string): MarkdownPdfCodexProfileFontPatch {
+  const patch = parseRecord(value, context);
+  if (patch.op !== "replace-font") {
+    throw new Error(`Markdown PDF Codex response ${context}.op must be replace-font.`);
+  }
+  return {
+    op: "replace-font",
+    role: parseFontPatchRole(patch.role, `${context}.role`),
+    key: parseString(patch.key, `${context}.key`),
+    value: parseString(patch.value, `${context}.value`),
   };
 }
 
@@ -120,11 +146,21 @@ function parseAcceptedPatches(value: unknown): MarkdownPdfCodexProfilePatch[] {
   return value.map((patch, index) => parseAcceptedPatch(patch, `accepted_patches[${index}]`));
 }
 
+function parseAcceptedFontPatches(value: unknown): MarkdownPdfCodexProfileFontPatch[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Markdown PDF Codex response accepted_font_patches must be an array.");
+  }
+  return value.map((patch, index) =>
+    parseAcceptedFontPatch(patch, `accepted_font_patches[${index}]`),
+  );
+}
+
 export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPdfCodexDecision {
   const parsed = parseRecord(JSON.parse(finalResponse), "root");
   const decisionMode = parseDecisionMode(parsed.decision_mode);
   const selectedCandidateId = parseString(parsed.selected_candidate_id, "selected_candidate_id");
   const acceptedPatches = parseAcceptedPatches(parsed.accepted_patches);
+  const acceptedFontPatches = parseAcceptedFontPatches(parsed.accepted_font_patches);
   if (decisionMode === "no-usable-profile") {
     if (selectedCandidateId !== "none") {
       throw new Error(
@@ -136,9 +172,15 @@ export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPd
         "Markdown PDF Codex response accepted_patches must be empty for no-usable-profile.",
       );
     }
+    if (acceptedFontPatches.length > 0) {
+      throw new Error(
+        "Markdown PDF Codex response accepted_font_patches must be empty for no-usable-profile.",
+      );
+    }
   }
 
   return {
+    acceptedFontPatches,
     acceptedPatches,
     decisionMode,
     fallbackReason: parseOptionalString(parsed.fallback_reason, "fallback_reason"),

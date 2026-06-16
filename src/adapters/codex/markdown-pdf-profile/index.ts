@@ -6,7 +6,7 @@ import type {
   MarkdownPdfCodexProfileResult,
   MarkdownPdfCodexProfileRunner,
 } from "./types";
-import { MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
+import { MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES, MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
 
 const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 30_000;
 
@@ -34,6 +34,20 @@ export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
         additionalProperties: false,
       },
     },
+    accepted_font_patches: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          op: { type: "string", enum: ["replace-font"] },
+          role: { type: "string", enum: [...MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES] },
+          key: { type: "string" },
+          value: { type: "string" },
+        },
+        required: ["op", "role", "key", "value"],
+        additionalProperties: false,
+      },
+    },
     reasoning: { type: "string" },
     warnings: { type: "array", items: { type: "string" } },
     fallback_reason: { type: "string" },
@@ -43,6 +57,7 @@ export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
     "decision_mode",
     "selected_candidate_id",
     "accepted_patches",
+    "accepted_font_patches",
     "reasoning",
     "warnings",
     "fallback_reason",
@@ -142,7 +157,9 @@ export async function suggestMarkdownPdfProfileWithCodex(
 export type {
   MarkdownPdfCodexDecision,
   MarkdownPdfCodexDecisionMode,
+  MarkdownPdfCodexFontPatchRole,
   MarkdownPdfCodexProfileRequest,
+  MarkdownPdfCodexProfileFontPatch,
   MarkdownPdfCodexProfileResult,
   MarkdownPdfCodexProfileRunner,
   MarkdownPdfCodexReportPayload,

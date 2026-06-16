@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex font patch contract implementation"
 created-date: 2026-06-16
-status: draft
+status: active
 agent: codex
 ---
 
@@ -93,11 +93,13 @@ Validation rules:
 
 ## Phase 1: Schema And Types
 
-- [ ] Add `accepted_font_patches` to the Markdown PDF Codex output schema.
-- [ ] Keep the schema strict with required properties and `additionalProperties: false`.
-- [ ] Add shared TypeScript types for font patches.
-- [ ] Add parser coverage for valid and malformed font patch responses.
-- [ ] Verify the output schema remains accepted by the strict structured-output API shape.
+- [x] Add `accepted_font_patches` to the Markdown PDF Codex output schema.
+- [x] Keep the schema strict with required properties and `additionalProperties: false`.
+- [x] Add shared TypeScript types for font patches.
+- [x] Add parser coverage for valid and malformed font patch responses.
+- [x] Verify the output schema remains accepted by the strict structured-output API shape.
+
+Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-1-schema-types.md`
 
 ## Phase 2: Validation And Application
 

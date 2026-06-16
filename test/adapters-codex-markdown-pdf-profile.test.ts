@@ -160,6 +160,9 @@ describe("Markdown PDF Codex profile adapter", () => {
 
   test("uses a strict patch response schema without open nested objects", () => {
     expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties).toHaveProperty("accepted_patches");
+    expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties).toHaveProperty(
+      "accepted_font_patches",
+    );
     expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties).not.toHaveProperty(
       "accepted_fields",
     );
@@ -177,6 +180,14 @@ describe("Markdown PDF Codex profile adapter", () => {
     const patchSchema = MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items;
     expect(patchSchema.properties.path.enum).toContain("/toc/enabled");
     expect(patchSchema.properties.value.type).not.toContain("object");
+    const fontPatchSchema =
+      MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_font_patches.items;
+    expect(fontPatchSchema).toMatchObject({
+      additionalProperties: false,
+      required: ["op", "role", "key", "value"],
+    });
+    expect(fontPatchSchema.properties.op.enum).toEqual(["replace-font"]);
+    expect(fontPatchSchema.properties.role.enum).toEqual(["body", "heading", "code", "pageChrome"]);
     expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS).toContainEqual({
       path: "/cover/style",
       values: ["plain", "report"],
@@ -222,6 +233,7 @@ describe("Markdown PDF Codex profile adapter", () => {
                 decision_mode: "adapted",
                 selected_candidate_id: "wide-table",
                 accepted_patches: [],
+                accepted_font_patches: [],
                 reasoning: "Wide table candidate matches the table facts.",
                 warnings: [],
                 fallback_reason: "",
@@ -257,6 +269,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             { op: "replace", path: "/toc/depth", value: 2 },
             { op: "replace", path: "/fonts/body/default", value: "Source Serif 4" },
           ],
+          accepted_font_patches: [],
           reasoning: "Wide table candidate matches the table facts.",
           warnings: [],
           fallback_reason: "",
@@ -288,6 +301,88 @@ describe("Markdown PDF Codex profile adapter", () => {
     });
   });
 
+  test("parses accepted font patches and rejects malformed font patch responses", () => {
+    const decision = parseMarkdownPdfCodexDecision(
+      JSON.stringify({
+        decision_mode: "adapted",
+        selected_candidate_id: "default",
+        accepted_patches: [],
+        accepted_font_patches: [
+          { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+        ],
+        reasoning: "Japanese body text was detected.",
+        warnings: [],
+        fallback_reason: "",
+        unmatched_directions: [],
+      }),
+    );
+
+    expect(decision.acceptedFontPatches).toEqual([
+      { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+    ]);
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [],
+          reasoning: "missing font patch array",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_font_patches must be an array");
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [],
+          accepted_font_patches: [
+            { op: "replace", role: "body", key: "ja", value: "Noto Serif JP" },
+          ],
+          reasoning: "bad op",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_font_patches[0].op must be replace-font");
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [],
+          accepted_font_patches: [
+            { op: "replace-font", role: "caption", key: "default", value: "Inter" },
+          ],
+          reasoning: "bad role",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_font_patches[0].role must be one of");
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "no-usable-profile",
+          selected_candidate_id: "none",
+          accepted_patches: [],
+          accepted_font_patches: [
+            { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+          ],
+          reasoning: "No profile should be written.",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_font_patches must be empty for no-usable-profile");
+  });
+
   test("materializes fixed nested profile containers for accepted patches", () => {
     const result = applyMarkdownPdfCodexDecision({
       candidates: [sparseCandidate()],
@@ -306,6 +401,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           { op: "replace", path: "/code/highlight", value: true },
           { op: "replace", path: "/code/lineNumbers", value: true },
         ],
+        acceptedFontPatches: [],
         decisionMode: "adapted",
         reasoning: "materialize fixed profile containers",
         selectedCandidateId: "sparse",
@@ -333,6 +429,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "conservative-fallback",
           selected_candidate_id: "default",
           accepted_patches: [],
+          accepted_font_patches: [],
           reasoning: "Facts are weak.",
           warnings: ["Using default profile."],
           fallback_reason: "No strong layout signals.",
@@ -346,6 +443,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "no-usable-profile",
           selected_candidate_id: "none",
           accepted_patches: [],
+          accepted_font_patches: [],
           reasoning: "No profile should be written.",
           warnings: [],
           fallback_reason: " ",
@@ -367,6 +465,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "adapted",
           selected_candidate_id: "default",
           accepted_patches: [{ op: "replace", path: "/profile/id", value: "bad" }],
+          accepted_font_patches: [],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
@@ -379,6 +478,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "adapted",
           selected_candidate_id: "default",
           accepted_patches: [{ op: "replace", path: "/page/unsupported", value: "bad" }],
+          accepted_font_patches: [],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
@@ -390,6 +490,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         candidates: requestBase.candidates,
         decision: {
           acceptedPatches: [{ op: "replace", path: "/toc/depth", value: "not-a-number" }],
+          acceptedFontPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "wide-table",
@@ -404,6 +505,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           candidates: requestBase.candidates,
           decision: {
             acceptedPatches: [{ op: "replace", path: domain.path, value: "__invalid__" }],
+            acceptedFontPatches: [],
             decisionMode: "adapted",
             reasoning: "bad",
             selectedCandidateId: "wide-table",
@@ -421,6 +523,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           candidates: requestBase.candidates,
           decision: {
             acceptedPatches: [{ op: "replace", path: "/cover/style", value }],
+            acceptedFontPatches: [],
             decisionMode: "adapted",
             reasoning: "bad",
             selectedCandidateId: "wide-table",
@@ -436,6 +539,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "adapted",
           selected_candidate_id: "default",
           accepted_patches: [{ op: "replace", path: "/cover/enabled", value: null }],
+          accepted_font_patches: [],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
@@ -448,6 +552,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           decision_mode: "adapted",
           selected_candidate_id: "default",
           accepted_patches: [{ op: "remove", path: "/cover/enabled", value: true }],
+          accepted_font_patches: [],
           reasoning: "bad",
           warnings: [],
           unmatched_directions: [],
@@ -459,6 +564,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         candidates: [sparseCandidate({ cover: [] })],
         decision: {
           acceptedPatches: [{ op: "replace", path: "/cover/fields/title", value: "bad" }],
+          acceptedFontPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "sparse",
@@ -472,6 +578,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         candidates: [sparseCandidate({ pdf: "bad" })],
         decision: {
           acceptedPatches: [{ op: "replace", path: "/pdf/content-langs", value: ["en"] }],
+          acceptedFontPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "sparse",
@@ -485,6 +592,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         candidates: [sparseCandidate()],
         decision: {
           acceptedPatches: [{ op: "replace", path: "/fonts/body/default", value: "serif" }],
+          acceptedFontPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "sparse",
@@ -499,6 +607,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         candidates: requestBase.candidates,
         decision: {
           acceptedPatches: [],
+          acceptedFontPatches: [],
           decisionMode: "adapted",
           reasoning: "bad",
           selectedCandidateId: "missing",
@@ -562,6 +671,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "adapted",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "missing arrays",
           }),
       }),
@@ -574,6 +684,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "adapted",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "bad warnings",
             warnings: "nope",
             unmatched_directions: [],
@@ -588,6 +699,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "adapted",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "blank warning",
             warnings: [" "],
             unmatched_directions: [],
@@ -602,6 +714,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "other",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "bad mode",
             warnings: [],
             unmatched_directions: [],
@@ -628,6 +741,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "no-usable-profile",
             selected_candidate_id: "none",
             accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+            accepted_font_patches: [],
             reasoning: "No profile should be written.",
             warnings: [],
             unmatched_directions: [],
@@ -642,6 +756,7 @@ describe("Markdown PDF Codex profile adapter", () => {
             decision_mode: "adapted",
             selected_candidate_id: "missing",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "bad candidate",
             warnings: [],
             unmatched_directions: [],
