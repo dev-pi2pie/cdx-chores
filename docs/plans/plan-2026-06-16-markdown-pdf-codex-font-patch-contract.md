@@ -103,12 +103,14 @@ Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-1-sc
 
 ## Phase 2: Validation And Application
 
-- [ ] Add role/key validation for font patches.
-- [ ] Reuse profile language-tag validation for `body` keys.
-- [ ] Materialize missing `fonts` and font role objects only as plain objects.
-- [ ] Reject scalar or array parents.
-- [ ] Apply font patches before final profile shape validation and normalization.
-- [ ] Remove or stop using normal `/fonts/...` accepted patch paths.
+- [x] Add role/key validation for font patches.
+- [x] Reuse profile language-tag validation for `body` keys.
+- [x] Materialize missing `fonts` and font role objects only as plain objects.
+- [x] Reject scalar or array parents.
+- [x] Apply font patches before final profile shape validation and normalization.
+- [x] Remove or stop using normal `/fonts/...` accepted patch paths.
+
+Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-2-validation-application.md`
 
 ## Phase 3: Prompt And Report
 

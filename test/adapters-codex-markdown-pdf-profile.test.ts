@@ -179,6 +179,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     });
     const patchSchema = MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_patches.items;
     expect(patchSchema.properties.path.enum).toContain("/toc/enabled");
+    expect(patchSchema.properties.path.enum).not.toContain("/fonts/body/default");
     expect(patchSchema.properties.value.type).not.toContain("object");
     const fontPatchSchema =
       MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties.accepted_font_patches.items;
@@ -267,9 +268,10 @@ describe("Markdown PDF Codex profile adapter", () => {
           accepted_patches: [
             { op: "replace", path: "/toc/enabled", value: true },
             { op: "replace", path: "/toc/depth", value: 2 },
-            { op: "replace", path: "/fonts/body/default", value: "Source Serif 4" },
           ],
-          accepted_font_patches: [],
+          accepted_font_patches: [
+            { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
+          ],
           reasoning: "Wide table candidate matches the table facts.",
           warnings: [],
           fallback_reason: "",
@@ -381,6 +383,82 @@ describe("Markdown PDF Codex profile adapter", () => {
         }),
       ),
     ).toThrow("accepted_font_patches must be empty for no-usable-profile");
+  });
+
+  test("applies dedicated font patches with bounded role and key validation", () => {
+    const result = applyMarkdownPdfCodexDecision({
+      candidates: [sparseCandidate()],
+      decision: {
+        acceptedPatches: [],
+        acceptedFontPatches: [
+          { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
+          { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+          { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
+          { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+          { op: "replace-font", role: "heading", key: "default", value: "Inter" },
+          { op: "replace-font", role: "pageChrome", key: "default", value: "Inter" },
+        ],
+        decisionMode: "adapted",
+        reasoning: "apply font patches",
+        selectedCandidateId: "sparse",
+        unmatchedDirections: [],
+        warnings: [],
+      },
+    });
+
+    expect(result.profile?.fonts).toEqual({
+      body: { default: "Source Serif 4", ja: "Noto Serif JP" },
+      code: { default: "JetBrains Mono", symbols: "Noto Sans Symbols 2" },
+      heading: { default: "Inter" },
+      pageChrome: { default: "Inter" },
+    });
+  });
+
+  test("rejects invalid dedicated font patch keys and non-object font parents", () => {
+    for (const fontPatch of [
+      { op: "replace-font" as const, role: "body" as const, key: "bad_key", value: "Inter" },
+      { op: "replace-font" as const, role: "code" as const, key: "ja", value: "Inter" },
+      { op: "replace-font" as const, role: "heading" as const, key: "ja", value: "Inter" },
+      { op: "replace-font" as const, role: "pageChrome" as const, key: "ja", value: "Inter" },
+    ]) {
+      expect(() =>
+        applyMarkdownPdfCodexDecision({
+          candidates: [sparseCandidate()],
+          decision: {
+            acceptedPatches: [],
+            acceptedFontPatches: [fontPatch],
+            decisionMode: "adapted",
+            reasoning: "bad font patch",
+            selectedCandidateId: "sparse",
+            unmatchedDirections: [],
+            warnings: [],
+          },
+        }),
+      ).toThrow("accepted_font_patches[0].key");
+    }
+    for (const fullProfile of [
+      { fonts: [] },
+      { fonts: "bad" },
+      { fonts: { body: [] } },
+      { fonts: { body: "bad" } },
+    ]) {
+      expect(() =>
+        applyMarkdownPdfCodexDecision({
+          candidates: [sparseCandidate(fullProfile)],
+          decision: {
+            acceptedPatches: [],
+            acceptedFontPatches: [
+              { op: "replace-font", role: "body", key: "default", value: "Inter" },
+            ],
+            decisionMode: "adapted",
+            reasoning: "bad font parent",
+            selectedCandidateId: "sparse",
+            unmatchedDirections: [],
+            warnings: [],
+          },
+        }),
+      ).toThrow("accepted_font_patches cannot replace font value through non-object");
+    }
   });
 
   test("materializes fixed nested profile containers for accepted patches", () => {
@@ -588,19 +666,19 @@ describe("Markdown PDF Codex profile adapter", () => {
       }),
     ).toThrow("path cannot replace nested value");
     expect(() =>
-      applyMarkdownPdfCodexDecision({
-        candidates: [sparseCandidate()],
-        decision: {
-          acceptedPatches: [{ op: "replace", path: "/fonts/body/default", value: "serif" }],
-          acceptedFontPatches: [],
-          decisionMode: "adapted",
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [{ op: "replace", path: "/fonts/body/default", value: "serif" }],
+          accepted_font_patches: [],
           reasoning: "bad",
-          selectedCandidateId: "sparse",
-          unmatchedDirections: [],
           warnings: [],
-        },
-      }),
-    ).toThrow("path cannot replace nested value");
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_patches[0].path must be one of");
 
     expect(() =>
       applyMarkdownPdfCodexDecision({

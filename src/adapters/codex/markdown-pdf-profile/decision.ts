@@ -1,4 +1,7 @@
-import { validateMarkdownPdfProfileShape } from "../../../cli/markdown-pdf/profile/schema";
+import {
+  validateMarkdownPdfBodyFontKey,
+  validateMarkdownPdfProfileShape,
+} from "../../../cli/markdown-pdf/profile/schema";
 import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/profile/candidates";
 import { normalizeMarkdownPdfProfile } from "../../../cli/markdown-pdf/profile/normalize";
 import {
@@ -228,9 +231,79 @@ function applyAcceptedProfilePatches(
     }
     target[last] = structuredClone(patch.value);
   }
-  validateMarkdownPdfProfileShape(merged);
-  normalizeMarkdownPdfProfile({ profile: merged });
   return merged;
+}
+
+function assertMaterializedFontContainer(
+  target: Record<string, unknown>,
+  key: string,
+  context: string,
+): Record<string, unknown> {
+  const existing = target[key];
+  if (existing === undefined) {
+    target[key] = {};
+    return target[key] as Record<string, unknown>;
+  }
+  if (
+    typeof existing !== "object" ||
+    existing === null ||
+    Array.isArray(existing) ||
+    Object.getPrototypeOf(existing) !== Object.prototype
+  ) {
+    throw new Error(
+      `Markdown PDF Codex response accepted_font_patches cannot replace font value through non-object ${context}.`,
+    );
+  }
+  return existing as Record<string, unknown>;
+}
+
+function validateFontPatchKey(input: {
+  context: string;
+  key: string;
+  role: MarkdownPdfCodexFontPatchRole;
+}): void {
+  if (input.role === "body") {
+    try {
+      validateMarkdownPdfBodyFontKey(input.key);
+    } catch {
+      throw new Error(
+        `Markdown PDF Codex response ${input.context}.key must be default or a valid language tag for body fonts.`,
+      );
+    }
+    return;
+  }
+  if (input.role === "code" && (input.key === "default" || input.key === "symbols")) {
+    return;
+  }
+  if ((input.role === "heading" || input.role === "pageChrome") && input.key === "default") {
+    return;
+  }
+  if (input.role === "code") {
+    throw new Error(
+      `Markdown PDF Codex response ${input.context}.key must be default or symbols for code fonts.`,
+    );
+  }
+  throw new Error(
+    `Markdown PDF Codex response ${input.context}.key must be default for ${input.role} fonts.`,
+  );
+}
+
+function applyAcceptedFontPatches(
+  profile: Record<string, unknown>,
+  acceptedFontPatches: readonly MarkdownPdfCodexProfileFontPatch[],
+): Record<string, unknown> {
+  for (const [index, patch] of acceptedFontPatches.entries()) {
+    const context = `accepted_font_patches[${index}]`;
+    validateFontPatchKey({ context, key: patch.key, role: patch.role });
+    const fonts = assertMaterializedFontContainer(profile, "fonts", "profile.fonts");
+    const roleConfig = assertMaterializedFontContainer(
+      fonts,
+      patch.role,
+      `profile.fonts.${patch.role}`,
+    );
+    roleConfig[patch.key] = patch.value;
+  }
+  return profile;
 }
 
 function selectedCandidate(
@@ -253,9 +326,9 @@ export function applyMarkdownPdfCodexDecision(options: {
   }
 
   const candidate = selectedCandidate(options.candidates, options.decision.selectedCandidateId);
-  const profile = applyAcceptedProfilePatches(
-    candidate.fullProfile,
-    options.decision.acceptedPatches,
+  const profile = applyAcceptedFontPatches(
+    applyAcceptedProfilePatches(candidate.fullProfile, options.decision.acceptedPatches),
+    options.decision.acceptedFontPatches,
   );
   validateMarkdownPdfProfileShape(profile);
   normalizeMarkdownPdfProfile({ profile });
