@@ -128,13 +128,15 @@ Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-3-pr
 
 ## Phase 4: Action Coverage And Smoke
 
-- [ ] Update action tests for dry-run and write paths.
-- [ ] Cover body default, body language tag, code default, code symbols, heading default, and pageChrome default.
-- [ ] Cover invalid role/key combinations.
-- [ ] Cover report retention with accepted font patches.
-- [ ] Run focused tests for adapter, action, report, and profile normalization behavior.
-- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
-- [ ] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
+- [x] Update action tests for dry-run and write paths.
+- [x] Cover body default, body language tag, code default, code symbols, heading default, and pageChrome default.
+- [x] Cover invalid role/key combinations.
+- [x] Cover report retention with accepted font patches.
+- [x] Run focused tests for adapter, action, report, and profile normalization behavior.
+- [x] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [x] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
+
+Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-4-action-smoke.md`
 
 ## Phase 5: Review And Integration
 

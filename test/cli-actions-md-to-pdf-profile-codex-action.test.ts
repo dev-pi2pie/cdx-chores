@@ -28,6 +28,27 @@ function adaptedRunner(candidateId = "wide-table") {
     });
 }
 
+function allFontPatchRunner(candidateId = "default") {
+  return async () =>
+    JSON.stringify({
+      decision_mode: "adapted",
+      selected_candidate_id: candidateId,
+      accepted_patches: [],
+      accepted_font_patches: [
+        { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
+        { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+        { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
+        { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+        { op: "replace-font", role: "heading", key: "default", value: "Inter" },
+        { op: "replace-font", role: "pageChrome", key: "default", value: "Inter" },
+      ],
+      reasoning: "Font hints and document language signals fit dedicated font patches.",
+      warnings: [],
+      fallback_reason: "",
+      unmatched_directions: [],
+    });
+}
+
 describe("cli action modules: md pdf-profile codex", () => {
   test("writes a generated profile with Codex identity and optional report", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-action", async (fixtureDir) => {
@@ -82,6 +103,49 @@ describe("cli action modules: md pdf-profile codex", () => {
       ]);
       expect(report.result.acceptedFontPatches).toEqual([
         { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+      ]);
+    });
+  });
+
+  test("writes dedicated font patches as normal profile fonts and report decisions", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-font-patches", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "mixed.md");
+      const outputPath = join(fixtureDir, "profile.yml");
+      const reportPath = join(fixtureDir, "font-report.json");
+      await writeFile(
+        inputPath,
+        "# Mixed\n\nEnglish and 日本語.\n\n```ts\nconst ok = true;\n```\n",
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "font-report.json",
+        codexRunner: allFontPatchRunner(),
+        fontHint: ["Source Serif 4 for body, JetBrains Mono for code, Noto for Japanese"],
+        input: "mixed.md",
+        output: "profile.yml",
+      });
+
+      const profile = await readMarkdownPdfProfileFile(outputPath);
+      expect(profile.fonts).toEqual({
+        body: { default: "Source Serif 4", ja: "Noto Serif JP" },
+        code: { default: "JetBrains Mono", symbols: "Noto Sans Symbols 2" },
+        heading: { default: "Inter" },
+        pageChrome: { default: "Inter" },
+      });
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.result.acceptedPatches).toEqual([]);
+      expect(report.result.acceptedFontPatches).toEqual([
+        { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
+        { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+        { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
+        { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+        { op: "replace-font", role: "heading", key: "default", value: "Inter" },
+        { op: "replace-font", role: "pageChrome", key: "default", value: "Inter" },
       ]);
     });
   });
@@ -251,6 +315,9 @@ describe("cli action modules: md pdf-profile codex", () => {
       const report = await readMarkdownPdfCodexReportArtifact(reportPath);
       expect(report.profile.outputPath).toBe("profile.yml");
       expect(report.result.status).toBe("success");
+      expect(report.result.acceptedFontPatches).toEqual([
+        { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+      ]);
     });
   });
 
@@ -1147,6 +1214,62 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.result.failure).toMatchObject({ kind: "invalid-application" });
       expect(report.result.failure?.message).toContain("/cover/style");
     });
+  });
+
+  test("rejects invalid Codex font patch role and key combinations before writing the profile", async () => {
+    for (const [name, acceptedFontPatches, messageIncludes, failureKind] of [
+      [
+        "invalid-role",
+        [{ op: "replace-font", role: "caption", key: "default", value: "Inter" }],
+        "accepted_font_patches[0].role must be one of",
+        "malformed-output",
+      ],
+      [
+        "invalid-key",
+        [{ op: "replace-font", role: "code", key: "ja", value: "Inter" }],
+        "accepted_font_patches[0].key must be default or symbols for code fonts",
+        "invalid-application",
+      ],
+    ] as const) {
+      await withTempFixtureDir(`md-pdf-profile-codex-${name}`, async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-06-15T08:15:00.000Z"),
+        });
+        await expectCliError(
+          () =>
+            actionMdPdfProfileCodex(runtime, {
+              codexReportOutput: "font-error-report.json",
+              codexRunner: async () =>
+                JSON.stringify({
+                  decision_mode: "adapted",
+                  selected_candidate_id: "default",
+                  accepted_patches: [],
+                  accepted_font_patches: acceptedFontPatches,
+                  reasoning: "Bad font patch.",
+                  warnings: [],
+                  fallback_reason: "",
+                  unmatched_directions: [],
+                }),
+              input: "report.md",
+              output: "profile.yml",
+            }),
+          {
+            code: "MARKDOWN_PDF_CODEX_FAILED",
+            exitCode: 1,
+            messageIncludes,
+          },
+        );
+
+        await expect(readFile(join(fixtureDir, "profile.yml"), "utf8")).rejects.toThrow();
+        const report = await readMarkdownPdfCodexReportArtifact(
+          join(fixtureDir, "font-error-report.json"),
+        );
+        expect(report.result.failure).toMatchObject({ kind: failureKind });
+      });
+    }
   });
 
   test("stores relative report paths even when display paths are absolute", async () => {
