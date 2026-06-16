@@ -1,9 +1,12 @@
 import { CliError } from "../../errors";
 import { MARKDOWN_PDF_PRESETS, type MarkdownPdfPreset } from "../validation";
-import type { NormalizedMarkdownPdfProfileIdentity } from "./types";
+import type { MarkdownPdfProfileSource, NormalizedMarkdownPdfProfileIdentity } from "./types";
 
 const MARKDOWN_PDF_PRESET_VALUES = new Set<string>(MARKDOWN_PDF_PRESETS);
-const MARKDOWN_PDF_PROFILE_SOURCE_VALUES = new Set(["codex", "deterministic"]);
+const MARKDOWN_PDF_PROFILE_SOURCE_VALUES = new Set<MarkdownPdfProfileSource>([
+  "codex",
+  "deterministic",
+]);
 const PROFILE_ID_PATTERN = /^md-pdf-profile-\d{8}T\d{6}Z-[a-f0-9]{8}$/;
 const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
@@ -70,6 +73,10 @@ function assertCreatedAt(value: string): void {
   });
 }
 
+function isMarkdownPdfProfileSource(value: string): value is MarkdownPdfProfileSource {
+  return MARKDOWN_PDF_PROFILE_SOURCE_VALUES.has(value as MarkdownPdfProfileSource);
+}
+
 export function normalizeMarkdownPdfProfileIdentity(
   value: unknown,
 ): NormalizedMarkdownPdfProfileIdentity | undefined {
@@ -88,7 +95,7 @@ export function normalizeMarkdownPdfProfileIdentity(
     });
   }
   assertProfileId(id);
-  if (!MARKDOWN_PDF_PROFILE_SOURCE_VALUES.has(source)) {
+  if (!isMarkdownPdfProfileSource(source)) {
     throw new CliError("profile.profile.source must be codex or deterministic.", {
       code: "INVALID_INPUT",
       exitCode: 2,
