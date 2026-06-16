@@ -12,7 +12,11 @@ import {
   parseMarkdownPdfCodexDecision,
 } from "../src/adapters/codex/markdown-pdf-profile/decision";
 import { buildMarkdownPdfProfileCodexPrompt } from "../src/adapters/codex/markdown-pdf-profile/prompt";
-import { MARKDOWN_PDF_CODEX_PATCH_PATHS } from "../src/adapters/codex/markdown-pdf-profile/types";
+import {
+  MARKDOWN_PDF_CODEX_PATCH_PATHS,
+  type MarkdownPdfCodexProfileFontPatch,
+  type MarkdownPdfCodexProfileRequest,
+} from "../src/adapters/codex/markdown-pdf-profile/types";
 import {
   createMarkdownPdfProfileCandidates,
   type MarkdownPdfProfileCandidate,
@@ -48,9 +52,10 @@ function promptFacts(prompt: string): Record<string, unknown> {
   return JSON.parse(prompt.slice(index + marker.length)) as Record<string, unknown>;
 }
 
-const requestBase = {
+const requestBase: MarkdownPdfCodexProfileRequest = {
   candidates: [candidate("default"), candidate("wide-table")],
   documentSignals: {
+    available: true,
     assets: { dataUriCount: 0, localCount: 1, remoteCount: 0 },
     codeFences: { languages: ["ts"], overflowLanguageCount: 0, unlabeledCount: 0 },
     frontmatter: { metadataKeys: ["title"], pdfContentLangs: [], lang: "en" },
@@ -68,9 +73,15 @@ const requestBase = {
   fontSignals: { families: [], overflowFamilyCount: 0 },
   intent: "wide table report",
   selectedBaseProfileSummary: candidate("wide-table").summary,
+  signalMode: "mixed-with-base",
   supportedSchemaSummary: ["page.orientation", "toc.enabled", "fonts.body.default"],
   workingDirectory: "/repo",
 };
+
+type MarkdownPdfCodexOutputSchemaKey =
+  (typeof MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required)[number];
+type MarkdownPdfCodexPatchValueDomainPath =
+  (typeof MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS)[number]["path"];
 
 describe("Markdown PDF Codex profile adapter", () => {
   test("builds a bounded prompt from summaries and signals", () => {
@@ -135,7 +146,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     );
 
     const fontPatchContract = facts.fontPatchContract as {
-      examples: Array<{ key: string; role: string; value: string }>;
+      examples: MarkdownPdfCodexProfileFontPatch[];
       roleKeyMatrix: Array<{ allowedKeys: string[]; role: string; useFor: string }>;
       rules: string[];
     };
@@ -383,8 +394,11 @@ describe("Markdown PDF Codex profile adapter", () => {
       "accepted_fields",
     );
     expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.additionalProperties).toBe(false);
+    const schemaPropertyNames = Object.keys(
+      MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties,
+    ) as MarkdownPdfCodexOutputSchemaKey[];
     expect(new Set(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required)).toEqual(
-      new Set(Object.keys(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties)),
+      new Set(schemaPropertyNames),
     );
     expect(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required).toContain("fallback_reason");
     expect(
@@ -420,17 +434,18 @@ describe("Markdown PDF Codex profile adapter", () => {
         "bottom-right",
       ],
     });
+    const expectedValueDomainPaths: MarkdownPdfCodexPatchValueDomainPath[] = [
+      "/code/theme",
+      "/cover/style",
+      "/page/orientation",
+      "/page/size",
+      "/pageNumbers/position",
+      "/pageNumbers/scope",
+      "/titleBlock/metadataTitle",
+      "/toc/pageBreak",
+    ];
     expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS.map((domain) => domain.path).sort()).toEqual(
-      [
-        "/code/theme",
-        "/cover/style",
-        "/page/orientation",
-        "/page/size",
-        "/pageNumbers/position",
-        "/pageNumbers/scope",
-        "/titleBlock/metadataTitle",
-        "/toc/pageBreak",
-      ].sort(),
+      expectedValueDomainPaths.sort(),
     );
     const acceptedPatchPaths = new Set<string>(MARKDOWN_PDF_CODEX_PATCH_PATHS);
     for (const domain of MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS) {
