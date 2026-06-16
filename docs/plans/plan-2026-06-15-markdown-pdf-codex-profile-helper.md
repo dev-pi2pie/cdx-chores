@@ -701,16 +701,35 @@ Phase 6.5.2 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-5-2-font-role-key-prompt.md`
 
+### Phase 6.5.3: Metadata Title Block Deduplication Contract
+
+- [ ] Design a supported profile field for renderer-owned metadata title-block behavior, such as `titleBlock.metadataTitle: auto | show | hide`.
+- [ ] Define the default UX policy: duplicate visible title is avoided by default when frontmatter `title` and the first H1 normalize to the same text.
+- [ ] Preserve explicit user intent: allow users to keep metadata title output when they explicitly request a title page, cover treatment, or duplicate title treatment.
+- [ ] Update profile schema parsing, normalization, candidate summaries, and supported schema summaries for the title-block field.
+- [ ] Update Markdown PDF recipe/template rendering so `auto` suppresses the metadata title block only when it duplicates the first H1, `show` preserves current rendering, and `hide` suppresses metadata title output.
+- [ ] Add the title-block field to the Codex accepted patch contract and patch value domains.
+- [ ] Teach the Codex prompt to use the supported title-block field when `titleDecisionSignal.duplicateVisibleTitleRisk` is true, instead of only warning or avoiding cover.
+- [ ] Add regression coverage for profile normalization, recipe/template output, direct `md to-pdf --profile`, and Codex profile generation decisions.
+- [ ] Run an artifact-safe CJK duplicate-title smoke to confirm the generated profile renders one visible title by default and still respects explicit keep-title/cover intent.
+- [ ] Add a Phase 6.5.3 job record after implementation, validation, smoke replay, artifact cleanup, auto commit, and phase-range code review.
+
+Phase 6.5.3 rationale:
+
+- Phase 6.5.1 gave Codex title signals and a policy to avoid extra title/cover chrome, but the default renderer can still show both the metadata title block and the Markdown H1 when frontmatter `title` duplicates the first H1.
+- Stronger hints cannot reliably solve this because the current profile contract has no supported field for suppressing the renderer metadata title block.
+- The smoother UX is renderer-owned: avoid duplicate visible titles by default, keep Markdown/frontmatter untouched, and let users explicitly request title/cover treatment when they want it.
+
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, Phase 6.5.1, and Phase 6.5.2 behavior is implemented.
+- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, Phase 6.5.1, Phase 6.5.2, and Phase 6.5.3 behavior is implemented.
 - [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document direct helper examples.
 - [ ] Document replay through `md to-pdf --profile`.
 - [ ] Document diagnostic report retention.
 - [ ] Document supported profile patch boundaries, including the dedicated font patch role/key contract.
 - [ ] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
-- [ ] Document title/cover deduplication behavior and the profile boundary for duplicate H1 suppression.
+- [ ] Document title/cover deduplication behavior, including metadata title-block auto suppression and the profile boundary for Markdown H1 rewriting.
 - [ ] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
 - [ ] Note that template-Codex and cover-media contract research are follow-up work, not part of this helper slice.
 - [ ] Keep Interactive mode documented as a later plan.
