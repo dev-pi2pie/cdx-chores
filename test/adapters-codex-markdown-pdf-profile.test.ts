@@ -39,6 +39,15 @@ function sparseCandidate(fullProfile: Record<string, unknown> = {}): MarkdownPdf
   };
 }
 
+function promptFacts(prompt: string): Record<string, unknown> {
+  const marker = "Deterministic facts:\n";
+  const index = prompt.indexOf(marker);
+  if (index < 0) {
+    throw new Error("prompt did not include deterministic facts");
+  }
+  return JSON.parse(prompt.slice(index + marker.length)) as Record<string, unknown>;
+}
+
 const requestBase = {
   candidates: [candidate("default"), candidate("wide-table")],
   documentSignals: {
@@ -67,10 +76,13 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("selectedBaseProfileSummary");
     expect(prompt).toContain("patchValueDomains");
     expect(prompt).toContain("styleDecisionPolicy");
+    expect(prompt).toContain("tableLayoutSignal");
     expect(prompt).toContain('"traits"');
     expect(prompt).toContain('"density": "wide"');
     expect(prompt).toContain("Do not enable page numbers by default");
     expect(prompt).toContain("clean, proper, polished, or professional");
+    expect(prompt).toContain("Strong tableLayoutSignal");
+    expect(prompt).toContain("wide-table candidate");
     expect(prompt).toContain("rendererCompatibility");
     expect(prompt).toContain("local cover images");
     expect(prompt).toContain("template-only layout");
@@ -83,6 +95,44 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("fonts.body.default");
     expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("fullProfile");
+  });
+
+  test("derives strong table layout signal for wide table facts", () => {
+    const facts = promptFacts(buildMarkdownPdfProfileCodexPrompt(requestBase));
+
+    expect(facts.tableLayoutSignal).toMatchObject({
+      level: "strong",
+      recommendation:
+        "Prefer wide-table or landscape/table-friendly profile settings unless intent explicitly requires portrait.",
+      signalLadder: ["overflowRows", "maxLineWidth", "maxColumns", "scannedRows"],
+      templateOnlyDirections: [
+        "custom table column widths",
+        "arbitrary table CSS",
+        "rotated individual pages",
+        "exact table beautification",
+      ],
+    });
+    expect(JSON.stringify(facts.tableLayoutSignal)).toContain("high line width");
+  });
+
+  test("keeps narrow table facts as weak layout evidence", () => {
+    const facts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          tables: { maxColumns: 3, maxLineWidth: 48, overflowRows: 0, scannedRows: 3 },
+        },
+        intent: "clean professional PDF",
+      }),
+    );
+
+    expect(facts.tableLayoutSignal).toMatchObject({
+      level: "weak",
+      recommendation:
+        "Treat table presence as supporting evidence only; do not force landscape by itself.",
+    });
+    expect(JSON.stringify(facts.tableLayoutSignal)).not.toContain("high line width");
   });
 
   test("summarizes candidate traits for Codex style decisions", () => {

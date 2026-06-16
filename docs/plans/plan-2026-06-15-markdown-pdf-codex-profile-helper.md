@@ -582,16 +582,16 @@ Phase 6.4 focused job record:
 
 ### Phase 6.4.1: Table Signal Layout Selection Policy
 
-- [ ] Treat Markdown table signals as profile-selection evidence before applying soft style intent.
-- [ ] Prefer the `wide-table` candidate or equivalent landscape/table-friendly patches when table signals show layout risk.
-- [ ] Keep portrait/default layouts available when tables are narrow, shallow, or only weakly table-like.
-- [ ] Add prompt guidance that table overflow, large line width, and high column count should outweigh generic clean/professional wording unless the user explicitly requires portrait.
-- [ ] Keep template-only table requests outside the profile helper, including custom column widths, arbitrary table CSS, rotated individual pages, and exact table beautification.
-- [ ] Add regression coverage for strong wide-table signals selecting a table-friendly layout.
-- [ ] Add regression coverage that weak table signals do not force landscape.
-- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
-- [ ] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
-- [ ] Add a Phase 6.4.1 job record after implementation and validation.
+- [x] Treat Markdown table signals as profile-selection evidence before applying soft style intent.
+- [x] Prefer the `wide-table` candidate or equivalent landscape/table-friendly patches when table signals show layout risk.
+- [x] Keep portrait/default layouts available when tables are narrow, shallow, or only weakly table-like.
+- [x] Add prompt guidance that table overflow, large line width, and high column count should outweigh generic clean/professional wording unless the user explicitly requires portrait.
+- [x] Keep template-only table requests outside the profile helper, including custom column widths, arbitrary table CSS, rotated individual pages, and exact table beautification.
+- [x] Add regression coverage for strong wide-table signals selecting a table-friendly layout.
+- [x] Add regression coverage that weak table signals do not force landscape.
+- [x] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [x] Verify no generated profile, report, PDF, local resource, or replay artifacts are staged or committed.
+- [x] Add a Phase 6.4.1 job record after implementation and validation.
 
 Phase 6.4.1 rationale:
 
@@ -600,6 +600,10 @@ Phase 6.4.1 rationale:
 - This phase should improve profile selection and patch policy without opening template-level styling through profile fields.
 - Table layout signals should follow a signal ladder: overflow rows and high line width are stronger evidence than column count alone, while short or narrow tables remain weak evidence.
 - Special table presentation remains a template concern. The profile helper can choose reusable page shape, margins, ToC, cover, page numbers, and code/table-friendly presets, but it should not invent per-table CSS or template behavior.
+
+Phase 6.4.1 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-4-1-table-signal-layout-policy.md`
 
 ### Phase 6.5: Dedicated Font Patch Contract Branch
 
