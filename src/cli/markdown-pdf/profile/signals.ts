@@ -177,7 +177,7 @@ function collectHeadingSignals(content: string): MarkdownPdfHeadingSignals {
   return { total, maxDepth, byDepth };
 }
 
-function firstH1Text(content: string): string | undefined {
+export function firstMarkdownH1Text(content: string): string | undefined {
   let fenceMarker: string | null = null;
   for (const line of content.split("\n")) {
     const fenceMatch = /^[\t ]*(```+|~~~+)/.exec(line);
@@ -195,7 +195,7 @@ function firstH1Text(content: string): string | undefined {
     if (fenceMarker) {
       continue;
     }
-    const match = /^#[\t ]+(.+?)\s*#*\s*$/.exec(line);
+    const match = /^#[\t ]+(.+?)(?:\s+\{[#.][^}]*})?\s*#*\s*$/.exec(line);
     const title = match?.[1]?.trim();
     if (title) {
       return title;
@@ -204,7 +204,7 @@ function firstH1Text(content: string): string | undefined {
   return undefined;
 }
 
-function normalizedTitle(value: string | undefined): string {
+export function normalizedMarkdownPdfTitle(value: string | undefined): string {
   return (value ?? "")
     .replace(/[`*_~[\]()]/g, "")
     .replace(/\s+/g, " ")
@@ -219,15 +219,15 @@ function titleSourceSignal(value: string | undefined): MarkdownPdfTitleSourceSig
   };
 }
 
-function collectTitleSignals(
+export function collectMarkdownPdfTitleSignals(
   content: string,
   data: Record<string, unknown> | null,
 ): MarkdownPdfTitleSignals {
   const frontmatterTitle =
     typeof data?.title === "string" && data.title.trim().length > 0 ? data.title.trim() : undefined;
-  const firstH1 = firstH1Text(content);
-  const normalizedFrontmatterTitle = normalizedTitle(frontmatterTitle);
-  const normalizedFirstH1 = normalizedTitle(firstH1);
+  const firstH1 = firstMarkdownH1Text(content);
+  const normalizedFrontmatterTitle = normalizedMarkdownPdfTitle(frontmatterTitle);
+  const normalizedFirstH1 = normalizedMarkdownPdfTitle(firstH1);
   const normalizedTitleMatch =
     normalizedFrontmatterTitle.length > 0 &&
     normalizedFirstH1.length > 0 &&
@@ -354,7 +354,7 @@ export function collectMarkdownPdfDocumentSignals(markdown: string): MarkdownPdf
     codeFences: collectCodeFenceSignals(parsed.content),
     assets: collectAssetSignals(parsed.content),
     frontmatter: collectFrontmatterSignals(parsed.data),
-    title: collectTitleSignals(parsed.content, parsed.data),
+    title: collectMarkdownPdfTitleSignals(parsed.content, parsed.data),
     scripts: collectScriptSignals(parsed.content),
   };
 }

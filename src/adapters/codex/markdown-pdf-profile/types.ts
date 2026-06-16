@@ -57,6 +57,7 @@ export const MARKDOWN_PDF_CODEX_PATCH_PATHS = [
   "/pageNumbers/position",
   "/pageNumbers/format",
   "/pageNumbers/scope",
+  "/titleBlock/metadataTitle",
   "/code/highlight",
   "/code/theme",
   "/code/lineNumbers",

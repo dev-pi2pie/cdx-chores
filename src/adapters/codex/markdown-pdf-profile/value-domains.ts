@@ -16,6 +16,7 @@ const MARKDOWN_PDF_PAGE_NUMBER_POSITIONS = [
   "bottom-right",
 ] as const;
 const MARKDOWN_PDF_PAGE_NUMBER_SCOPES = ["body"] as const;
+const MARKDOWN_PDF_METADATA_TITLE_BLOCK_MODES = ["auto", "show", "hide"] as const;
 
 export interface MarkdownPdfCodexPatchValueDomain {
   path: MarkdownPdfCodexPatchPath;
@@ -29,6 +30,7 @@ export const MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS = [
   { path: "/cover/style", values: MARKDOWN_PDF_COVER_STYLES },
   { path: "/pageNumbers/position", values: MARKDOWN_PDF_PAGE_NUMBER_POSITIONS },
   { path: "/pageNumbers/scope", values: MARKDOWN_PDF_PAGE_NUMBER_SCOPES },
+  { path: "/titleBlock/metadataTitle", values: MARKDOWN_PDF_METADATA_TITLE_BLOCK_MODES },
   { path: "/code/theme", values: MARKDOWN_PDF_CODE_THEMES },
 ] as const satisfies readonly MarkdownPdfCodexPatchValueDomain[];
 

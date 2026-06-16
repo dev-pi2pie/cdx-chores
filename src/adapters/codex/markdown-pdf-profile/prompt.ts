@@ -14,7 +14,8 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
     cover: [
       "Enable only when explicitly requested or when metadata/title signals make a cover useful.",
       "When titleDecisionSignal.duplicateVisibleTitleRisk is true and explicit cover intent is false, keep cover disabled and avoid extra title treatment.",
-      "When explicit cover intent is true and duplicateVisibleTitleRisk is true, cover may be enabled only with a warning that profile settings cannot suppress a duplicate body H1.",
+      "When duplicateVisibleTitleRisk is true, use titleBlock.metadataTitle to control renderer-owned metadata title output instead of inventing fields or rewriting Markdown.",
+      "When explicit cover intent is true and duplicateVisibleTitleRisk is true, cover may be enabled with titleBlock.metadataTitle set to auto unless the user explicitly asks to keep duplicate title output.",
       "When explicit no-cover or no-title-page intent is true, keep cover disabled and avoid extra title chrome.",
       "Prefer plain cover unless report styling is explicitly requested or the selected candidate is clearly report-like.",
     ],
@@ -41,7 +42,7 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   rendererCompatibility: [
     "Return only profile fields; never raw CSS or HTML.",
     "Do not choose settings known to produce renderer warnings.",
-    "Do not remove body headings, mutate frontmatter, or invent unsupported title-suppression fields.",
+    "Do not remove body headings or mutate frontmatter; use titleBlock.metadataTitle for supported metadata title-block behavior.",
     "Do not invent profile fields for local cover images, arbitrary CSS, custom HTML, or template-only layout.",
     "If a requested style depends on unsupported renderer behavior, choose the closest warning-free profile and explain the mismatch in warnings.",
     "Report unsupported profile directions such as local cover images, arbitrary CSS, custom HTML, or template-only layout in unmatched_directions.",
@@ -88,6 +89,18 @@ const MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT = {
     { op: "replace-font", role: "body", key: "zh-Hant", value: "Noto Serif TC" },
     { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
     { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+  ],
+};
+
+const MARKDOWN_PDF_CODEX_TITLE_BLOCK_CONTRACT = {
+  field: "titleBlock.metadataTitle",
+  allowedValues: ["auto", "show", "hide"],
+  rules: [
+    "Use accepted_patches path /titleBlock/metadataTitle to control renderer-owned metadata title output.",
+    "Use auto when duplicateVisibleTitleRisk is true and the user did not explicitly ask to preserve duplicate title output.",
+    "Use show only when the user explicitly asks to keep the metadata title block, title page output, or duplicate title output.",
+    "Use hide only when the user explicitly asks to suppress metadata title output regardless of first-H1 duplication.",
+    "Do not rewrite Markdown H1 content or mutate frontmatter title.",
   ],
 };
 
@@ -157,30 +170,51 @@ function hasExplicitCoverIntent(intent: string): boolean {
   return /\b(cover|cover page|title page|title-page)\b/i.test(intent);
 }
 
+function hasExplicitKeepMetadataTitleIntent(intent: string): boolean {
+  return /\b(keep|preserve|show|include)\s+(the\s+)?(metadata\s+)?(title block|title output|title page|duplicate title|frontmatter title)\b/i.test(
+    intent,
+  );
+}
+
+function hasExplicitHideMetadataTitleIntent(intent: string): boolean {
+  return /\b(hide|suppress|remove|skip|omit)\s+(the\s+)?(metadata\s+)?(title block|title output|frontmatter title)\b/i.test(
+    intent,
+  );
+}
+
 function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {
   const intent = request.intent ?? "";
   const explicitCoverIntent = hasExplicitCoverIntent(intent);
   const explicitNoCoverIntent = hasExplicitNoCoverIntent(intent);
+  const explicitKeepMetadataTitleIntent = hasExplicitKeepMetadataTitleIntent(intent);
+  const explicitHideMetadataTitleIntent = hasExplicitHideMetadataTitleIntent(intent);
   const duplicateVisibleTitleRisk = request.documentSignals.title.duplicateVisibleTitleRisk;
 
   return {
     ...request.documentSignals.title,
     explicitCoverIntent,
+    explicitHideMetadataTitleIntent,
+    explicitKeepMetadataTitleIntent,
     explicitNoCoverIntent,
+    supportedPatch: "/titleBlock/metadataTitle",
     recommendation: explicitNoCoverIntent
       ? "Keep cover disabled and avoid extra title chrome."
-      : explicitCoverIntent
-        ? duplicateVisibleTitleRisk
-          ? "Cover may be enabled because the user asked for it, but warn that profile settings cannot suppress a duplicate body H1."
-          : "Cover may be enabled when supported profile fields fit the request."
-        : duplicateVisibleTitleRisk
-          ? "Treat the first H1 as the visible document title; do not enable cover or extra title treatment."
-          : "Use conservative title treatment unless other document signals justify cover.",
+      : explicitHideMetadataTitleIntent
+        ? "Set titleBlock.metadataTitle to hide; do not rewrite Markdown or frontmatter."
+        : explicitKeepMetadataTitleIntent
+          ? "Set titleBlock.metadataTitle to show when preserving metadata title output is the user's explicit request."
+          : explicitCoverIntent
+            ? duplicateVisibleTitleRisk
+              ? "Cover may be enabled because the user asked for it; use titleBlock.metadataTitle auto unless duplicate metadata title output is explicitly requested."
+              : "Cover may be enabled when supported profile fields fit the request."
+            : duplicateVisibleTitleRisk
+              ? "Set titleBlock.metadataTitle to auto so the renderer suppresses duplicate metadata title output while preserving the Markdown H1."
+              : "Use conservative title treatment unless other document signals justify cover.",
     profileBoundary: [
       "Do not rewrite Markdown.",
       "Do not mutate frontmatter.",
-      "Do not invent title-suppression profile fields.",
-      "Report unsupported title or cover behavior in warnings or unmatched_directions.",
+      "Use titleBlock.metadataTitle for supported metadata title-block behavior.",
+      "Report unsupported title media, custom cover layout, or template-only behavior in warnings or unmatched_directions.",
     ],
   };
 }
@@ -201,6 +235,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     styleDecisionPolicy: MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY,
     supportedSchemaSummary: request.supportedSchemaSummary,
     tableLayoutSignal: buildTableLayoutSignal(request.documentSignals.tables),
+    titleBlockContract: MARKDOWN_PDF_CODEX_TITLE_BLOCK_CONTRACT,
     titleDecisionSignal: buildTitleDecisionSignal(request),
   };
 
@@ -218,8 +253,8 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Prefer small adaptations over broad rewrites.",
     "- Follow styleDecisionPolicy when deciding cover, ToC, page-number, code, and renderer-compatible changes.",
     "- Follow titleDecisionSignal before adding cover or title treatment.",
-    "- If titleDecisionSignal says duplicate visible title risk exists without explicit cover intent, do not enable cover or extra title chrome.",
-    "- If explicit cover intent exists but profile settings cannot suppress duplicate H1 content, include a warning instead of inventing unsupported fields.",
+    "- If titleDecisionSignal says duplicate visible title risk exists, prefer accepted_patches path /titleBlock/metadataTitle with value auto unless the user explicitly asks to keep duplicate title output.",
+    "- If explicit cover intent exists, cover may be enabled, but still use titleBlock.metadataTitle for metadata-title duplication instead of warning that no profile field exists.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",

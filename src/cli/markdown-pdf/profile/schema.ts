@@ -14,6 +14,7 @@ export const MARKDOWN_PDF_PROFILE_ROOT_KEYS = [
   "header",
   "footer",
   "pageNumbers",
+  "titleBlock",
   "code",
 ] as const;
 
@@ -35,6 +36,7 @@ const COVER_KEYS = new Set(["enabled", "style", "fields"]);
 const COVER_FIELD_KEYS = new Set(["title", "subtitle", "author", "company", "date"]);
 const CHROME_KEYS = new Set(["left", "center", "right"]);
 const PAGE_NUMBER_KEYS = new Set(["enabled", "position", "format", "scope"]);
+const TITLE_BLOCK_KEYS = new Set(["metadataTitle"]);
 const CODE_KEYS = new Set(["highlight", "theme", "lineNumbers", "transformerNotation"]);
 const PDF_KEYS = new Set(["content-langs"]);
 const FONT_ROLE_KEYS = new Set(["body", "heading", "code", "pageChrome"]);
@@ -161,6 +163,11 @@ export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>
   const pageNumbers = assertOptionalObject(profile.pageNumbers, "profile.pageNumbers");
   if (pageNumbers) {
     assertAllowedKeys(pageNumbers, PAGE_NUMBER_KEYS, "profile.pageNumbers");
+  }
+
+  const titleBlock = assertOptionalObject(profile.titleBlock, "profile.titleBlock");
+  if (titleBlock) {
+    assertAllowedKeys(titleBlock, TITLE_BLOCK_KEYS, "profile.titleBlock");
   }
 
   const code = assertOptionalObject(profile.code, "profile.code");

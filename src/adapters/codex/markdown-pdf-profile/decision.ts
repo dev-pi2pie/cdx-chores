@@ -29,6 +29,7 @@ const MATERIALIZABLE_PATCH_PARENT_PATHS = new Set([
   "/header",
   "/footer",
   "/pageNumbers",
+  "/titleBlock",
   "/code",
 ]);
 

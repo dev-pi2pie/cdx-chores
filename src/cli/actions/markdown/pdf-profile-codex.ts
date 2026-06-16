@@ -84,6 +84,9 @@ const SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
   if (key === "fonts") {
     return ["fonts.body", "fonts.heading", "fonts.code", "fonts.pageChrome"];
   }
+  if (key === "titleBlock") {
+    return ["titleBlock.metadataTitle"];
+  }
   return [key];
 });
 

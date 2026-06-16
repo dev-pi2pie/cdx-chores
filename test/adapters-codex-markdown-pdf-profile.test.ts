@@ -103,6 +103,8 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("plain");
     expect(prompt).toContain("/pageNumbers/position");
     expect(prompt).toContain("bottom-center");
+    expect(prompt).toContain("titleBlockContract");
+    expect(prompt).toContain("/titleBlock/metadataTitle");
     expect(prompt).toContain("supportedSchemaSummary");
     expect(prompt).toContain("fonts.body.default");
     expect(prompt).toContain("Always include fallback_reason");
@@ -206,16 +208,19 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(facts.titleDecisionSignal).toMatchObject({
       duplicateVisibleTitleRisk: true,
       explicitCoverIntent: false,
+      explicitHideMetadataTitleIntent: false,
+      explicitKeepMetadataTitleIntent: false,
       explicitNoCoverIntent: false,
       normalizedTitleMatch: true,
       recommendation:
-        "Treat the first H1 as the visible document title; do not enable cover or extra title treatment.",
+        "Set titleBlock.metadataTitle to auto so the renderer suppresses duplicate metadata title output while preserving the Markdown H1.",
       profileBoundary: [
         "Do not rewrite Markdown.",
         "Do not mutate frontmatter.",
-        "Do not invent title-suppression profile fields.",
-        "Report unsupported title or cover behavior in warnings or unmatched_directions.",
+        "Use titleBlock.metadataTitle for supported metadata title-block behavior.",
+        "Report unsupported title media, custom cover layout, or template-only behavior in warnings or unmatched_directions.",
       ],
+      supportedPatch: "/titleBlock/metadataTitle",
     });
   });
 
@@ -241,7 +246,7 @@ describe("Markdown PDF Codex profile adapter", () => {
       explicitCoverIntent: true,
       explicitNoCoverIntent: false,
       recommendation:
-        "Cover may be enabled because the user asked for it, but warn that profile settings cannot suppress a duplicate body H1.",
+        "Cover may be enabled because the user asked for it; use titleBlock.metadataTitle auto unless duplicate metadata title output is explicitly requested.",
     });
   });
 
@@ -266,6 +271,45 @@ describe("Markdown PDF Codex profile adapter", () => {
       explicitCoverIntent: false,
       explicitNoCoverIntent: true,
       recommendation: "Keep cover disabled and avoid extra title chrome.",
+    });
+  });
+
+  test("builds title block contract for explicit keep and hide title-block intents", () => {
+    const keepFacts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          title: {
+            duplicateVisibleTitleRisk: true,
+            firstH1: { charCount: 14, present: true },
+            frontmatterTitle: { charCount: 14, present: true },
+            normalizedTitleMatch: true,
+          },
+        },
+        intent: "keep the duplicate title output",
+      }),
+    );
+    const hideFacts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        intent: "hide metadata title output",
+      }),
+    );
+
+    expect(keepFacts.titleBlockContract).toMatchObject({
+      field: "titleBlock.metadataTitle",
+      allowedValues: ["auto", "show", "hide"],
+    });
+    expect(keepFacts.titleDecisionSignal).toMatchObject({
+      explicitKeepMetadataTitleIntent: true,
+      recommendation:
+        "Set titleBlock.metadataTitle to show when preserving metadata title output is the user's explicit request.",
+    });
+    expect(hideFacts.titleDecisionSignal).toMatchObject({
+      explicitHideMetadataTitleIntent: true,
+      recommendation:
+        "Set titleBlock.metadataTitle to hide; do not rewrite Markdown or frontmatter.",
     });
   });
 
@@ -384,6 +428,7 @@ describe("Markdown PDF Codex profile adapter", () => {
         "/page/size",
         "/pageNumbers/position",
         "/pageNumbers/scope",
+        "/titleBlock/metadataTitle",
         "/toc/pageBreak",
       ].sort(),
     );
@@ -648,6 +693,7 @@ describe("Markdown PDF Codex profile adapter", () => {
           { op: "replace", path: "/footer/right", value: "{page}" },
           { op: "replace", path: "/pageNumbers/enabled", value: true },
           { op: "replace", path: "/pageNumbers/position", value: "bottom-right" },
+          { op: "replace", path: "/titleBlock/metadataTitle", value: "auto" },
           { op: "replace", path: "/code/highlight", value: true },
           { op: "replace", path: "/code/lineNumbers", value: true },
         ],
@@ -667,6 +713,7 @@ describe("Markdown PDF Codex profile adapter", () => {
       header: { left: "{title}" },
       footer: { right: "{page}" },
       pageNumbers: { enabled: true, position: "bottom-right" },
+      titleBlock: { metadataTitle: "auto" },
       code: { highlight: true, lineNumbers: true },
     });
   });

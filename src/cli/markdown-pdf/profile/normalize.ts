@@ -9,6 +9,7 @@ import type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfMetadata,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileLoadResult,
@@ -18,6 +19,7 @@ import type {
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
 } from "./types";
 import { MARKDOWN_PDF_CODE_THEMES } from "./types";
 
@@ -31,6 +33,11 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-right",
 ]);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
+const METADATA_TITLE_BLOCK_MODES = new Set<MarkdownPdfMetadataTitleBlockMode>([
+  "auto",
+  "show",
+  "hide",
+]);
 const CODE_THEMES = new Set<MarkdownPdfCodeTheme>(MARKDOWN_PDF_CODE_THEMES);
 
 function isScalar(value: unknown): value is string | number | boolean {
@@ -200,6 +207,22 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
       stringValue(input.format, "profile.pageNumbers.format") ??
       DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.format,
     scope,
+  };
+}
+
+function normalizeTitleBlock(value: unknown): NormalizedMarkdownPdfTitleBlock {
+  const input = readObject(value);
+  const metadataTitle =
+    stringValue(input.metadataTitle, "profile.titleBlock.metadataTitle") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.titleBlock.metadataTitle;
+  if (!METADATA_TITLE_BLOCK_MODES.has(metadataTitle as MarkdownPdfMetadataTitleBlockMode)) {
+    throw new CliError("profile.titleBlock.metadataTitle must be one of: auto, show, hide.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return {
+    metadataTitle: metadataTitle as MarkdownPdfMetadataTitleBlockMode,
   };
 }
 
@@ -384,6 +407,7 @@ export function normalizeMarkdownPdfProfile(
       header: normalizeChromeSlots(profile.header, "profile.header"),
       footer: normalizeChromeSlots(profile.footer, "profile.footer"),
       pageNumbers: normalizePageNumbers(profile.pageNumbers),
+      titleBlock: normalizeTitleBlock(profile.titleBlock),
       cover: normalizeCover(profile.cover),
       fonts: normalizeFonts(profile.fonts),
       contentLangs: uniqueStrings([...contentLangsFromSource(profile), ...frontmatterContentLangs]),

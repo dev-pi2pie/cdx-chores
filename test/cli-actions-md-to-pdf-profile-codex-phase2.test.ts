@@ -210,6 +210,26 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
     expect(serialized).not.toContain("CJK Font Smoke");
   });
 
+  test("normalizes Pandoc heading attributes out of first H1 title signals", () => {
+    const markdown = [
+      "---",
+      "title: CJK Font Smoke",
+      "---",
+      "# CJK Font Smoke {#intro .lead}",
+      "",
+      "Body text.",
+    ].join("\n");
+
+    const signals = collectMarkdownPdfDocumentSignals(markdown);
+
+    expect(signals.title).toEqual({
+      frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
+      firstH1: { present: true, charCount: "CJK Font Smoke".length },
+      normalizedTitleMatch: true,
+      duplicateVisibleTitleRisk: true,
+    });
+  });
+
   test("ignores code-fenced Markdown headings when collecting first H1 title signals", () => {
     const markdown = [
       "---",

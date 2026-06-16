@@ -703,22 +703,26 @@ Phase 6.5.2 focused job record:
 
 ### Phase 6.5.3: Metadata Title Block Deduplication Contract
 
-- [ ] Design a supported profile field for renderer-owned metadata title-block behavior, such as `titleBlock.metadataTitle: auto | show | hide`.
-- [ ] Define the default UX policy: duplicate visible title is avoided by default when frontmatter `title` and the first H1 normalize to the same text.
-- [ ] Preserve explicit user intent: allow users to keep metadata title output when they explicitly request a title page, cover treatment, or duplicate title treatment.
-- [ ] Update profile schema parsing, normalization, candidate summaries, and supported schema summaries for the title-block field.
-- [ ] Update Markdown PDF recipe/template rendering so `auto` suppresses the metadata title block only when it duplicates the first H1, `show` preserves current rendering, and `hide` suppresses metadata title output.
-- [ ] Add the title-block field to the Codex accepted patch contract and patch value domains.
-- [ ] Teach the Codex prompt to use the supported title-block field when `titleDecisionSignal.duplicateVisibleTitleRisk` is true, instead of only warning or avoiding cover.
-- [ ] Add regression coverage for profile normalization, recipe/template output, direct `md to-pdf --profile`, and Codex profile generation decisions.
-- [ ] Run an artifact-safe CJK duplicate-title smoke to confirm the generated profile renders one visible title by default and still respects explicit keep-title/cover intent.
-- [ ] Add a Phase 6.5.3 job record after implementation, validation, smoke replay, artifact cleanup, auto commit, and phase-range code review.
+- [x] Design a supported profile field for renderer-owned metadata title-block behavior: `titleBlock.metadataTitle: auto | show | hide`.
+- [x] Define the default UX policy: duplicate visible title is avoided by default when frontmatter `title` and the first H1 normalize to the same text.
+- [x] Preserve explicit user intent: allow users to keep metadata title output when they explicitly request a title page, cover treatment, or duplicate title treatment.
+- [x] Update profile schema parsing, normalization, candidate summaries, and supported schema summaries for the title-block field.
+- [x] Update Markdown PDF recipe/template rendering so `auto` suppresses the metadata title block only when it duplicates the first H1, `show` preserves current rendering, and `hide` suppresses metadata title output.
+- [x] Add the title-block field to the Codex accepted patch contract and patch value domains.
+- [x] Teach the Codex prompt to use the supported title-block field when `titleDecisionSignal.duplicateVisibleTitleRisk` is true, instead of only warning or avoiding cover.
+- [x] Add regression coverage for profile normalization, recipe/template output, direct `md to-pdf --profile`, and Codex profile generation decisions.
+- [x] Run an artifact-safe CJK duplicate-title smoke to confirm the generated profile renders one visible title by default and still respects explicit keep-title/cover intent.
+- [x] Add a Phase 6.5.3 job record after implementation, validation, smoke replay, artifact cleanup, auto commit, and phase-range code review.
 
 Phase 6.5.3 rationale:
 
 - Phase 6.5.1 gave Codex title signals and a policy to avoid extra title/cover chrome, but the default renderer can still show both the metadata title block and the Markdown H1 when frontmatter `title` duplicates the first H1.
 - Stronger hints cannot reliably solve this because the current profile contract has no supported field for suppressing the renderer metadata title block.
 - The smoother UX is renderer-owned: avoid duplicate visible titles by default, keep Markdown/frontmatter untouched, and let users explicitly request title/cover treatment when they want it.
+
+Phase 6.5.3 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-5-3-title-block-deduplication.md`
 
 ### Phase 7: Documentation And Guide Updates
 
@@ -780,7 +784,8 @@ Focused automated coverage:
 - deterministic no-signal basic-profile fallback without a Codex call
 - deterministic render replay from a generated profile
 - duplicate frontmatter-title/H1 signals avoid extra cover/title treatment unless cover is requested
-- explicit cover intent can still enable supported cover behavior while warning about profile-level duplicate-title limits
+- `titleBlock.metadataTitle` suppresses duplicate metadata title output by default while preserving explicit `show` and `hide` behavior
+- explicit cover intent can still enable supported cover behavior while `titleBlock.metadataTitle` handles duplicate metadata title output
 
 Expected commands during implementation:
 
@@ -803,8 +808,8 @@ Manual smoke coverage should use `examples/playground/` for temporary Markdown i
 - `--base-profile <path>` can refine an existing valid profile without mutating it.
 - generated profiles include `profile.id`, `source`, `basedOn`, `preset` when applicable, and `createdAt`.
 - `md to-pdf --profile <generated-profile>` replays the selected preset behavior.
-- matching frontmatter-title and first-H1 signals do not cause cover/title duplication unless the user explicitly requests cover behavior.
-- explicit cover requests can still choose supported cover settings, with warnings when profile settings cannot suppress a duplicate body H1.
+- matching frontmatter-title and first-H1 signals do not cause duplicate visible metadata title output by default.
+- explicit cover requests can still choose supported cover settings while `titleBlock.metadataTitle` handles duplicate metadata title output.
 - a generated `wide-table` profile produces preset-backed render output without also passing `--preset`.
 - explicit render CLI flags still override generated profile settings.
 - `--dry-run` previews the profile decision without writing the profile.

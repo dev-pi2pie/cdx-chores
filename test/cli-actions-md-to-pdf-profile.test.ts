@@ -132,6 +132,48 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
+  test("normalizes metadata title-block behavior", async () => {
+    const defaults = normalizeMarkdownPdfProfile();
+    expect(defaults.profile.titleBlock).toEqual({ metadataTitle: "auto" });
+
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        titleBlock: {
+          metadataTitle: "hide",
+        },
+      },
+    });
+    expect(result.profile.titleBlock).toEqual({ metadataTitle: "hide" });
+
+    await withTempFixtureDir("md-pdf-profile-title-block-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "titleBlock:\n  metadataTitle: duplicate\n", "utf8");
+
+      await expectCliError(
+        async () =>
+          normalizeMarkdownPdfProfile({ profile: await readMarkdownPdfProfileFile(profilePath) }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "profile.titleBlock.metadataTitle must be one of",
+        },
+      );
+    });
+  });
+
+  test("rejects unknown title-block profile keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-title-block-parse", async (fixtureDir) => {
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      await writeFile(profilePath, "titleBlock:\n  title: hide\n", "utf8");
+
+      await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Unknown Markdown PDF profile key: profile.titleBlock.title",
+      });
+    });
+  });
+
   test("normalizes profile identity and maps profile preset into recipe options", () => {
     const result = normalizeMarkdownPdfProfile({
       profile: {

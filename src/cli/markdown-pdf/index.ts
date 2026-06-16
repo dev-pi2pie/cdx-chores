@@ -40,6 +40,7 @@ export type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfFontRole,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileFormat,
@@ -49,6 +50,7 @@ export type {
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
 export type {

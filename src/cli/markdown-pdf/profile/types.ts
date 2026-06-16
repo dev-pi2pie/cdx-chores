@@ -55,6 +55,12 @@ export interface NormalizedMarkdownPdfPageNumbers {
   scope: "body";
 }
 
+export type MarkdownPdfMetadataTitleBlockMode = "auto" | "show" | "hide";
+
+export interface NormalizedMarkdownPdfTitleBlock {
+  metadataTitle: MarkdownPdfMetadataTitleBlockMode;
+}
+
 export type MarkdownPdfCoverStyle = "plain" | "report";
 
 export interface NormalizedMarkdownPdfCover {
@@ -87,6 +93,7 @@ export interface NormalizedMarkdownPdfProfile {
   header: MarkdownPdfPageChromeSlots;
   footer: MarkdownPdfPageChromeSlots;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
+  titleBlock: NormalizedMarkdownPdfTitleBlock;
   cover: NormalizedMarkdownPdfCover;
   fonts: NormalizedMarkdownPdfFonts;
   contentLangs: string[];

@@ -121,6 +121,68 @@ describe("markdown PDF recipe generation", () => {
     expect(recipe.styleCss).toContain(".pdf-cover");
   });
 
+  test("suppresses duplicate metadata title block when titleBlock mode is auto", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        titleBlock: {
+          metadataTitle: "auto",
+        },
+      },
+      frontmatter: {
+        title: "CJK Font Smoke",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+      titleSignals: {
+        frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
+        firstH1: { present: true, charCount: "CJK Font Smoke".length },
+        normalizedTitleMatch: true,
+        duplicateVisibleTitleRisk: true,
+      },
+    });
+
+    expect(recipe.templateHtml).not.toContain('class="document-title"');
+    expect(recipe.templateHtml).toContain("$body$");
+  });
+
+  test("preserves explicit metadata title block rendering with titleBlock mode show", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        titleBlock: {
+          metadataTitle: "show",
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+      titleSignals: {
+        frontmatterTitle: { present: true, charCount: "CJK Font Smoke".length },
+        firstH1: { present: true, charCount: "CJK Font Smoke".length },
+        normalizedTitleMatch: true,
+        duplicateVisibleTitleRisk: true,
+      },
+    });
+
+    expect(recipe.templateHtml).toContain('class="document-title"');
+    expect(recipe.templateHtml).toContain('<h1 class="title">$title$</h1>');
+  });
+
+  test("suppresses metadata title block with titleBlock mode hide", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        titleBlock: {
+          metadataTitle: "hide",
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    expect(recipe.templateHtml).not.toContain('class="document-title"');
+  });
+
   test("generates report cover CSS with landscape page options", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {

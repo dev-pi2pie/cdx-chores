@@ -22,6 +22,7 @@ export type {
   EffectiveMarkdownPdfCodeOptions,
   MarkdownPdfCodeTheme,
   MarkdownPdfMetadata,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfFontRole,
@@ -36,5 +37,6 @@ export type {
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
 } from "./types";

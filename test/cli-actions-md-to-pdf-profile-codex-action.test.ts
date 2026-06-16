@@ -412,7 +412,16 @@ describe("cli action modules: md pdf-profile codex", () => {
         codexReportOutput: "title-report.json",
         codexRunner: async (options) => {
           prompt = options.prompt;
-          return await adaptedRunner("article")();
+          return JSON.stringify({
+            decision_mode: "adapted",
+            selected_candidate_id: "article",
+            accepted_patches: [{ op: "replace", path: "/titleBlock/metadataTitle", value: "auto" }],
+            accepted_font_patches: [],
+            reasoning: "The first H1 already provides the visible title.",
+            warnings: [],
+            fallback_reason: "",
+            unmatched_directions: [],
+          });
         },
         input: "report.md",
         intent: "clean PDF without cover page",
@@ -422,7 +431,10 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(prompt).toContain('"titleDecisionSignal"');
       expect(prompt).toContain('"duplicateVisibleTitleRisk": true');
       expect(prompt).toContain('"explicitNoCoverIntent": true');
+      expect(prompt).toContain("/titleBlock/metadataTitle");
       expect(prompt).not.toContain("Private Launch Plan");
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.titleBlock).toEqual({ metadataTitle: "auto" });
       const report = await readMarkdownPdfCodexReportArtifact(
         join(fixtureDir, "title-report.json"),
       );
@@ -432,6 +444,9 @@ describe("cli action modules: md pdf-profile codex", () => {
         normalizedTitleMatch: true,
         duplicateVisibleTitleRisk: true,
       });
+      expect(report.result.acceptedPatches).toEqual([
+        { op: "replace", path: "/titleBlock/metadataTitle", value: "auto" },
+      ]);
       expect(JSON.stringify(report)).not.toContain("Private Launch Plan");
     });
   });

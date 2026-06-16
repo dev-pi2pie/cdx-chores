@@ -182,6 +182,78 @@ describe("cli action modules: md to-pdf profile rendering", () => {
     });
   });
 
+  test("suppresses duplicate metadata title block for direct profile rendering by default", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-title-block-auto", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "cjk-font-smoke.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      let renderedTemplate = "";
+      await writeFile(
+        inputPath,
+        ["---", "title: CJK Font Smoke", "---", "# CJK Font Smoke", "", "Body."].join("\n"),
+        "utf8",
+      );
+      await writeFile(profilePath, "titleBlock:\n  metadataTitle: auto\n", "utf8");
+
+      const { runner } = createPdfRunner({ html: "<html><body>CJK Font Smoke</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        runner: capturingRunner,
+      });
+
+      expect(renderedTemplate).not.toContain('class="document-title"');
+      expect(renderedTemplate).toContain("$body$");
+      expectNoStderr();
+    });
+  });
+
+  test("preserves duplicate-capable metadata title block when direct profile rendering requests show", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-title-block-show", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "cjk-font-smoke.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      let renderedTemplate = "";
+      await writeFile(
+        inputPath,
+        ["---", "title: CJK Font Smoke", "---", "# CJK Font Smoke", "", "Body."].join("\n"),
+        "utf8",
+      );
+      await writeFile(profilePath, "titleBlock:\n  metadataTitle: show\n", "utf8");
+
+      const { runner } = createPdfRunner({ html: "<html><body>CJK Font Smoke</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        runner: capturingRunner,
+      });
+
+      expect(renderedTemplate).toContain('class="document-title"');
+      expect(renderedTemplate).toContain('<h1 class="title">$title$</h1>');
+      expectNoStderr();
+    });
+  });
+
   test("lets an explicit CLI preset override profile preset replay", async () => {
     await withTempFixtureDir("md-to-pdf-profile-cli-preset-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
