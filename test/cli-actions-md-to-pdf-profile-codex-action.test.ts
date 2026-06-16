@@ -768,6 +768,52 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("does not attach a base profile path when a built-in candidate is selected", async () => {
+    await withTempFixtureDir(
+      "md-pdf-profile-codex-mixed-base-selects-preset",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Base\n", "utf8");
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260610T081500Z-a1b2c3d4",
+            "  source: codex",
+            "  basedOn: reader",
+            "  preset: reader",
+            "  createdAt: 2026-06-10T08:15:00Z",
+            "toc:",
+            "  enabled: false",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-06-15T08:15:00.000Z"),
+        });
+        await actionMdPdfProfileCodex(runtime, {
+          baseProfile: "base.yml",
+          codexReportOutput: "mixed-report.json",
+          codexRunner: adaptedRunner("article"),
+          input: "report.md",
+          intent: "use a simpler article profile",
+          output: "adapted.yml",
+        });
+
+        const report = await readMarkdownPdfCodexReportArtifact(
+          join(fixtureDir, "mixed-report.json"),
+        );
+        expect(report.signalMode).toBe("mixed-with-base");
+        expect(report.selectedBase.candidateId).toBe("article");
+        expect(report.selectedBase.basedOn).toBe("article");
+        expect(report.selectedBase.path).toBeUndefined();
+        expect(report.selectedBase.untracked).toBe(false);
+      },
+    );
+  });
+
   test("records mixed-with-base signal mode for base profile refinements with font hints", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-mixed-base-font-hint", async (fixtureDir) => {
       await writeFile(

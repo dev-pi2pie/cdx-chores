@@ -97,12 +97,13 @@ function selectedBaseProfile(
   candidate: MarkdownPdfProfileCandidate | undefined,
   displayPath?: string,
 ): MarkdownPdfCodexReportBaseProfile {
+  const isBaseProfile = candidate?.summary.kind === "base-profile";
   return {
     candidateId: candidate?.summary.id ?? "none",
     basedOn: candidate?.summary.basedOn,
     profileId: candidate?.identity?.id,
-    path: displayPath,
-    untracked: candidate?.summary.kind === "base-profile" && !candidate.identity,
+    path: isBaseProfile ? displayPath : undefined,
+    untracked: isBaseProfile && !candidate.identity,
   };
 }
 
