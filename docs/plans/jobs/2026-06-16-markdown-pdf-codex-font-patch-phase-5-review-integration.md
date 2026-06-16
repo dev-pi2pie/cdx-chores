@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex font patch phase 5 review and integration"
 created-date: 2026-06-16
-status: complete
+status: completed
 agent: codex
 plan: ../plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md
 ---

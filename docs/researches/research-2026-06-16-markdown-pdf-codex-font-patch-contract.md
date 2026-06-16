@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex font patch contract"
 created-date: 2026-06-16
-status: complete
+status: completed
 agent: codex
 ---
 
