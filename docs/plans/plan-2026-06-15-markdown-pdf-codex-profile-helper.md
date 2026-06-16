@@ -260,6 +260,7 @@ Rules:
 
 - start from the selected base candidate's full profile object
 - apply only schema-valid replace patches from Codex
+- materialize missing plain-object parents only for allowed patch paths, then validate the merged profile
 - keep unspecified fields from the base profile
 - disallow deletion and reset semantics in v1
 - for `--base-profile`, use the loaded profile as the base object
@@ -552,12 +553,55 @@ Phase 6.3 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-3-renderer-compatibility-and-style-policy.md`
 
+### Phase 6.4: Nested Patch Materialization And Unsupported Profile Directions
+
+- [ ] Fix accepted-patch application so allowed non-font nested paths can create missing plain-object parents.
+- [ ] Cover missing parent creation for `toc`, `pdf`, `cover.fields`, `header`, `footer`, `pageNumbers`, and `code`.
+- [ ] Keep patch application fail-closed for unknown paths, array parents, scalar parents, object patch values, deletion, and reset semantics.
+- [ ] Do not expand font path enums in this phase; flexible font-map writes belong to Phase 6.5.
+- [ ] Keep metadata mutation outside the Codex patch enum in this pass.
+- [ ] Add prompt guidance that local cover images, arbitrary CSS, and custom HTML layout are unsupported profile directions and should be reported through `unmatched_directions` and warnings.
+- [ ] Add regression coverage for `/cover/fields/title`, `/pdf/content-langs`, page-number detail paths, header/footer slots, and code settings.
+- [ ] Update or remove stale tests that expected allowed nested paths, such as `/pdf/content-langs`, to fail because their parents were missing.
+- [ ] Run artifact-safe smoke tests with `--dry-run` and no Codex report flags.
+- [ ] Verify no generated profile, report, PDF, or replay artifacts are staged or committed.
+- [ ] Add a Phase 6.4 job record after implementation and validation.
+
+Phase 6.4 rationale:
+
+- Phase 6.1 moved Codex output to enum-backed `accepted_patches`, but the applicator still assumes every intermediate object already exists in the selected raw candidate profile.
+- Live usage showed an allowed `/cover/fields/title` patch can fail when the selected candidate has `cover.enabled` but no raw `cover.fields` object.
+- The same mismatch applies to other documented nested profile details with fixed schema paths, especially `pdf.content-langs`.
+- This phase should align the strict normal patch contract with fixed documented profile leaves without opening arbitrary profile objects or broad CLI hint flags.
+- Font maps are intentionally excluded from this phase. `markdown-pdf-usage.md` documents flexible language-keyed body fonts and `fonts.code.symbols`, so those writes need a dedicated strict font patch contract instead of a longer path enum.
+- Local cover images remain outside the current profile schema. Codex should report those directions as unsupported profile requests, leaving custom HTML/CSS template work for documentation and later template-Codex research.
+
+### Phase 6.5: Dedicated Font Patch Contract Branch
+
+- [ ] Complete `docs/researches/research-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+- [ ] Complete and implement `docs/plans/plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+- [ ] Integrate the branch result back into this helper before final guide documentation.
+- [ ] Keep normal `accepted_patches` focused on fixed profile leaves.
+- [ ] Keep flexible `fonts.body.<language-tag>` and `fonts.code.symbols` writes in the dedicated font patch contract.
+- [ ] Add or link the Phase 6.5 implementation job record after the branch lands.
+
+Phase 6.5 rationale:
+
+- The profile schema intentionally supports language-keyed `fonts.body` maps, but strict JSON-pointer path enums make those keys artificially inaccessible to Codex.
+- Expanding the normal patch enum for a few CJK paths would solve only the documented examples and would likely be replaced by a more durable font contract.
+- A dedicated font patch contract keeps structured output strict while allowing runtime validation of language tags, role/key combinations, and font-family values.
+
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Update Markdown PDF user guidance after behavior is implemented.
+- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4 and Phase 6.5 behavior is implemented.
+- [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document direct helper examples.
 - [ ] Document replay through `md to-pdf --profile`.
 - [ ] Document diagnostic report retention.
+- [ ] Document supported profile patch boundaries, including the dedicated font patch contract.
+- [ ] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
+- [ ] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
+- [ ] Note that template-Codex and cover-media contract research are follow-up work, not part of this helper slice.
 - [ ] Keep Interactive mode documented as a later plan.
 
 ## Non-Goals
@@ -566,6 +610,7 @@ Phase 6.3 focused job record:
 - no render-time `md to-pdf --codex`
 - no raw HTML or CSS generation
 - no `md pdf-template codex`
+- no profile-level local cover image support
 - no local profile-template catalog
 - no provider-neutral `suggest` command
 - no stdout-only profile emission
