@@ -56,7 +56,7 @@ cdx-chores md pdf-template init --output ./pdf-template
 cdx-chores font check --text "..." --family "Noto Serif CJK TC"
 ```
 
-The public Markdown PDF guide currently states that Interactive Markdown PDF and Codex-assisted PDF helper flows are deferred. Earlier Markdown PDF research also deferred Codex SDK helper behavior until the deterministic renderer, profile, template, font, and code-highlighting layers were proven.
+At the start of this research, the public Markdown PDF guide stated that Interactive Markdown PDF and Codex-assisted PDF helper flows were deferred. Earlier Markdown PDF research also deferred Codex SDK helper behavior until the deterministic renderer, profile, template, font, and code-highlighting layers were proven.
 
 The interactive Markdown submenu currently has Markdown actions for `to-docx` and `frontmatter-to-json`, but not `to-pdf`, `pdf-profile init`, or `pdf-template init`.
 
@@ -721,10 +721,18 @@ Sequencing checklist:
 
 - [x] Record the research decision for the direct Codex profile helper.
 - [x] Draft the first implementation plan for `md pdf-profile codex`.
-- [ ] Replace the open Codex accepted-field fragment with a strict patch contract.
-- [ ] Implement and verify `md pdf-profile codex`.
-- [ ] Update this research if implementation changes the helper API, artifact identity, preset replay, or report sidecar contract.
+- [x] Replace the open Codex accepted-field fragment with a strict patch contract.
+- [x] Implement and verify `md pdf-profile codex`.
+- [x] Update this research if implementation changes the helper API, artifact identity, preset replay, or report sidecar contract.
 - [ ] Draft the Interactive-mode implementation plan.
+
+Direct helper implementation checkpoint:
+
+- The first implementation plan is completed: [Markdown PDF Codex profile helper implementation](../plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md).
+- The current user-facing guide is: [Markdown PDF Codex Profile Helper](../guides/markdown-pdf-codex-profile-helper.md).
+- The landed helper uses `md pdf-profile codex [input]` with optional `--input <path>`, `--intent`, repeatable `--font-hint`, `--base-profile`, `--output`, `--dry-run`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`.
+- The final implementation includes the strict `accepted_patches` contract, the dedicated `accepted_font_patches` role/key contract, profile identity and preset replay, deterministic no-signal and base-only fallback routes, optional diagnostic reports linked to the profile UID, table-signal layout policy, and renderer-owned `titleBlock.metadataTitle` duplicate-title handling.
+- This research remains `in-progress` because Interactive mode is the second layer and still needs its own implementation plan.
 
 Interactive plan readiness checkpoint:
 
@@ -819,3 +827,4 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 ## Related Jobs
 
 - [Markdown PDF profile preset persistence follow-up](../plans/jobs/2026-05-08-markdown-pdf-profile-preset-persistence-follow-up.md)
+- [Markdown PDF Codex profile Phase 7 docs closeout](../plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-7-docs-closeout.md)

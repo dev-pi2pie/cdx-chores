@@ -283,6 +283,9 @@ describe("cli command: md pdf-profile codex", () => {
     expect(result.stdout).toContain("Same as the input argument; useful in scripts");
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--font-hint <text>");
+    expect(normalizedStdout).toContain(
+      "Repeatable font preference hint for the same Codex request",
+    );
     expect(result.stdout).toContain("--base-profile <path>");
     expect(result.stdout).toContain("--keep-codex-report");
     expect(result.stderr).toBe("");

@@ -179,7 +179,11 @@ export function registerMarkdownCommands(
     )
     .option("-i, --input <path>", "Same as the input argument; useful in scripts")
     .option("--intent <text>", "Rendering direction for the reusable profile")
-    .option("--font-hint <text>", "Optional font preference hint", collectStringOption)
+    .option(
+      "--font-hint <text>",
+      "Repeatable font preference hint for the same Codex request",
+      collectStringOption,
+    )
     .option("--base-profile <path>", "Existing Markdown PDF profile to refine")
     .option("-o, --output <path>", "Output profile file (.yml, .yaml, .json)")
     .option("--dry-run", "Preview the Codex profile decision without writing the profile", false)

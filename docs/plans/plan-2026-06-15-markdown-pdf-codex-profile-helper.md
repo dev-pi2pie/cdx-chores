@@ -2,7 +2,7 @@
 title: "Markdown PDF Codex profile helper implementation"
 created-date: 2026-06-15
 modified-date: 2026-06-16
-status: active
+status: completed
 agent: codex
 ---
 
@@ -726,17 +726,21 @@ Phase 6.5.3 focused job record:
 
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, Phase 6.5.1, Phase 6.5.2, and Phase 6.5.3 behavior is implemented.
-- [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
-- [ ] Document direct helper examples.
-- [ ] Document replay through `md to-pdf --profile`.
-- [ ] Document diagnostic report retention.
-- [ ] Document supported profile patch boundaries, including the dedicated font patch role/key contract.
-- [ ] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
-- [ ] Document title/cover deduplication behavior, including metadata title-block auto suppression and the profile boundary for Markdown H1 rewriting.
-- [ ] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
-- [ ] Note that template-Codex and cover-media contract research are follow-up work, not part of this helper slice.
-- [ ] Keep Interactive mode documented as a later plan.
+- [x] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, Phase 6.5.1, Phase 6.5.2, and Phase 6.5.3 behavior is implemented.
+- [x] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
+- [x] Document direct helper examples.
+- [x] Document replay through `md to-pdf --profile`.
+- [x] Document diagnostic report retention.
+- [x] Document supported profile patch boundaries, including the dedicated font patch role/key contract.
+- [x] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
+- [x] Document title/cover deduplication behavior, including metadata title-block auto suppression and the profile boundary for Markdown H1 rewriting.
+- [x] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
+- [x] Note that template-Codex and cover-media contract research are follow-up work, not part of this helper slice.
+- [x] Keep Interactive mode documented as a later plan.
+
+Phase 7 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-7-docs-closeout.md`
 
 ## Non-Goals
 
