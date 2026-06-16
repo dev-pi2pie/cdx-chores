@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex font patch contract"
 created-date: 2026-06-16
-status: draft
+status: complete
 agent: codex
 ---
 
@@ -24,9 +24,9 @@ It is a poor fit for profile font maps:
 
 Adding a few CJK paths to the normal patch enum would only solve the examples in `markdown-pdf-usage.md`. It would still block valid language keys that the profile schema already accepts.
 
-## Current Contract
+## Previous Contract
 
-Normal accepted patches currently look like this:
+Before this branch, normal accepted patches could look like this:
 
 ```json
 {
@@ -67,6 +67,23 @@ Recommended structured output:
 `accepted_patches` remains the contract for fixed profile leaves.
 
 `accepted_font_patches` becomes the contract for font map writes.
+
+## Implementation Outcome
+
+The dedicated font patch contract landed through
+`docs/plans/plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+
+Implemented behavior:
+
+- `accepted_font_patches` is a required strict structured-output array.
+- `accepted_patches` no longer accepts `/fonts/...` JSON Pointer paths.
+- Font patches validate role/key combinations at runtime.
+- `body` font keys support `default` and profile-valid language tags.
+- `code` font keys support `default` and `symbols`.
+- `heading` and `pageChrome` font keys support `default`.
+- Generated profiles still serialize font decisions as normal `fonts` YAML or JSON.
+- Codex diagnostic reports expose `acceptedFontPatches` separately from normal `acceptedPatches`.
+- The Markdown PDF Codex report artifact version is `4`.
 
 ## Strict Schema Shape
 
@@ -180,9 +197,9 @@ Codex should receive bounded instructions:
 
 ## Implementation Notes
 
-- The report artifact version must be bumped during implementation; choose the exact next version from the current report serializer.
-- Existing normal `/fonts/...` patch paths should be removed or made unreachable once `accepted_font_patches` lands, so there is one font-write contract.
-- Prompt and tests should include at least one non-CJK language tag so the contract is visibly not CJK-only.
+- The report artifact version was bumped to `4`.
+- Existing normal `/fonts/...` patch paths were removed from `accepted_patches`, so there is one font-write contract.
+- Prompt and tests include flexible language-key and code-symbol font cases so the contract is visibly not CJK-only.
 
 ## Related Docs
 

@@ -607,18 +607,35 @@ Phase 6.4.1 focused job record:
 
 ### Phase 6.5: Dedicated Font Patch Contract Branch
 
-- [ ] Complete `docs/researches/research-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
-- [ ] Complete and implement `docs/plans/plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
-- [ ] Integrate the branch result back into this helper before final guide documentation.
-- [ ] Keep normal `accepted_patches` focused on fixed profile leaves.
-- [ ] Keep flexible `fonts.body.<language-tag>` and `fonts.code.symbols` writes in the dedicated font patch contract.
-- [ ] Add or link the Phase 6.5 implementation job record after the branch lands.
+- [x] Complete `docs/researches/research-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+- [x] Complete and implement `docs/plans/plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+- [x] Integrate the branch result back into this helper before final guide documentation.
+- [x] Keep normal `accepted_patches` focused on fixed profile leaves.
+- [x] Keep flexible `fonts.body.<language-tag>` and `fonts.code.symbols` writes in the dedicated font patch contract.
+- [x] Link the Phase 6.5 implementation job records from the landed branch.
 
 Phase 6.5 rationale:
 
 - The profile schema intentionally supports language-keyed `fonts.body` maps, but strict JSON-pointer path enums make those keys artificially inaccessible to Codex.
 - Expanding the normal patch enum for a few CJK paths would solve only the documented examples and would likely be replaced by a more durable font contract.
 - A dedicated font patch contract keeps structured output strict while allowing runtime validation of language tags, role/key combinations, and font-family values.
+
+Phase 6.5 implementation result:
+
+- The branch plan is complete: `docs/plans/plan-2026-06-16-markdown-pdf-codex-font-patch-contract.md`.
+- Normal `accepted_patches` no longer accepts `/fonts/...` paths.
+- Dedicated `accepted_font_patches` handles font map writes for `body`, `heading`, `code`, and `pageChrome`.
+- Generated profiles still serialize font decisions as normal `fonts` YAML or JSON.
+- Diagnostic reports expose accepted font decisions as `acceptedFontPatches`.
+- The Markdown PDF Codex report artifact version is `4`.
+
+Phase 6.5 focused job records:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-1-schema-types.md`
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-2-validation-application.md`
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-3-prompt-report.md`
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-4-action-smoke.md`
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-5-review-integration.md`
 
 ### Phase 7: Documentation And Guide Updates
 

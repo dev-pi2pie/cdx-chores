@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex font patch contract implementation"
 created-date: 2026-06-16
-status: active
+status: complete
 agent: codex
 ---
 
@@ -140,11 +140,20 @@ Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-4-ac
 
 ## Phase 5: Review And Integration
 
-- [ ] Update Phase 6.5 checklist in `docs/plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md`.
-- [ ] Add a focused job record for the font patch branch.
-- [ ] Commit the branch feature with a Conventional Commit message.
-- [ ] Run code review over the branch commit range.
-- [ ] Feed any review follow-ups back into this plan before marking it complete.
+- [x] Update Phase 6.5 checklist in `docs/plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md`.
+- [x] Add a focused job record for the font patch branch.
+- [x] Commit the branch feature with a Conventional Commit message.
+- [x] Run code review over the branch commit range.
+- [x] Feed any review follow-ups back into this plan before marking it complete.
+
+Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-5-review-integration.md`
+
+Branch implementation commits:
+
+- `0f09d8c` `feat(markdown-pdf): add accepted_font_patches schema and parser`
+- `5a20047` `feat(adapters/codex): route markdown pdf font writes through accepted_font_patches`
+- `e601421` `feat(markdown-pdf): add accepted font patches to codex prompt and report`
+- `bc39222` `test(repo): cover codex font patch phase 4 action smoke`
 
 ## Validation
 
