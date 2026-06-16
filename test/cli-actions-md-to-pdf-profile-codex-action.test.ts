@@ -6,6 +6,7 @@ import { describe, expect, test } from "bun:test";
 import { actionMdPdfProfileCodex } from "../src/cli/actions";
 import { readMarkdownPdfCodexReportArtifact } from "../src/cli/markdown-pdf/codex-report";
 import { readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
+import type { NormalizedMarkdownPdfProfileIdentity } from "../src/cli/markdown-pdf/profile";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -80,7 +81,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(stderr.text).toContain("Requesting Codex Markdown PDF profile recommendation...");
       expect(stderr.text).toContain("Wrote Markdown PDF profile: profile.yml");
       const profile = await readMarkdownPdfProfileFile(outputPath);
-      const profileIdentity = profile.profile as Record<string, string>;
+      const profileIdentity = profile.profile as NormalizedMarkdownPdfProfileIdentity;
       expect(profileIdentity.id).toMatch(/^md-pdf-profile-20260615T081500Z-[a-f0-9]{8}$/);
       expect(profileIdentity).toMatchObject({
         basedOn: "wide-table",
