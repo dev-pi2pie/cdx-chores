@@ -50,14 +50,43 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
 
 const MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT = {
   field: "accepted_font_patches",
+  roleKeyMatrix: [
+    {
+      role: "body",
+      allowedKeys: ["default", "language tags such as ja or zh-Hant"],
+      useFor: "body text, including language-specific body font fallback",
+    },
+    {
+      role: "code",
+      allowedKeys: ["default", "symbols"],
+      useFor: "code text and code-symbol fallback",
+    },
+    {
+      role: "heading",
+      allowedKeys: ["default"],
+      useFor: "one reusable heading font only; language-specific heading keys are unsupported",
+    },
+    {
+      role: "pageChrome",
+      allowedKeys: ["default"],
+      useFor: "one reusable header, footer, and page-number font only",
+    },
+  ],
   rules: [
     "Use accepted_font_patches for all profile font writes.",
     "Do not use accepted_patches for /fonts/... paths.",
+    "Use only the role/key combinations listed in roleKeyMatrix.",
+    "Never use language-tag keys with heading or pageChrome; use heading.default or pageChrome.default only when a single reusable family is appropriate.",
+    "Map language-specific CJK body font requests to body language keys such as ja or zh-Hant, not to heading or pageChrome.",
+    "Map readable code symbol requests to code.symbols.",
     "Use --font-hint evidence only as a font preference signal; do not invent additional dedicated hint fields.",
     "If a font request cannot be represented by body, heading, code, or pageChrome font maps, report it in warnings or unmatched_directions.",
   ],
   examples: [
+    { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
     { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+    { op: "replace-font", role: "body", key: "zh-Hant", value: "Noto Serif TC" },
+    { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
     { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
   ],
 };

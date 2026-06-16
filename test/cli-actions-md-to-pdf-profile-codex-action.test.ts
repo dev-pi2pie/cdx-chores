@@ -1273,6 +1273,18 @@ describe("cli action modules: md pdf-profile codex", () => {
         "accepted_font_patches[0].key must be default or symbols for code fonts",
         "invalid-application",
       ],
+      [
+        "invalid-heading-key",
+        [{ op: "replace-font", role: "heading", key: "ja", value: "Inter" }],
+        "accepted_font_patches[0].key must be default for heading fonts",
+        "invalid-application",
+      ],
+      [
+        "invalid-page-chrome-key",
+        [{ op: "replace-font", role: "pageChrome", key: "zh-Hant", value: "Inter" }],
+        "accepted_font_patches[0].key must be default for pageChrome fonts",
+        "invalid-application",
+      ],
     ] as const) {
       await withTempFixtureDir(`md-pdf-profile-codex-${name}`, async (fixtureDir) => {
         await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");

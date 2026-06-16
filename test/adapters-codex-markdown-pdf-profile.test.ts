@@ -109,6 +109,83 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).not.toContain("fullProfile");
   });
 
+  test("exposes font patch role-key matrix for multilingual body and code symbol hints", () => {
+    const facts = promptFacts(
+      buildMarkdownPdfProfileCodexPrompt({
+        ...requestBase,
+        documentSignals: {
+          ...requestBase.documentSignals,
+          frontmatter: {
+            ...requestBase.documentSignals.frontmatter,
+            pdfContentLangs: ["en", "ja", "zh-Hant"],
+          },
+          scripts: {
+            buckets: { han: 30, hiragana: 12, latin: 80 },
+            scannedChars: 122,
+            truncated: false,
+          },
+        },
+        fontHints: [
+          "use Source Serif 4 for English body, Noto Serif JP for Japanese, Noto Serif TC for Traditional Chinese, JetBrains Mono for code, Noto Sans Symbols 2 for symbols",
+        ],
+        intent: "mixed-language PDF with readable CJK body text and readable code symbols",
+      }),
+    );
+
+    const fontPatchContract = facts.fontPatchContract as {
+      examples: Array<{ key: string; role: string; value: string }>;
+      roleKeyMatrix: Array<{ allowedKeys: string[]; role: string; useFor: string }>;
+      rules: string[];
+    };
+
+    expect(fontPatchContract.roleKeyMatrix).toEqual([
+      {
+        allowedKeys: ["default", "language tags such as ja or zh-Hant"],
+        role: "body",
+        useFor: "body text, including language-specific body font fallback",
+      },
+      {
+        allowedKeys: ["default", "symbols"],
+        role: "code",
+        useFor: "code text and code-symbol fallback",
+      },
+      {
+        allowedKeys: ["default"],
+        role: "heading",
+        useFor: "one reusable heading font only; language-specific heading keys are unsupported",
+      },
+      {
+        allowedKeys: ["default"],
+        role: "pageChrome",
+        useFor: "one reusable header, footer, and page-number font only",
+      },
+    ]);
+    expect(fontPatchContract.rules).toContain(
+      "Never use language-tag keys with heading or pageChrome; use heading.default or pageChrome.default only when a single reusable family is appropriate.",
+    );
+    expect(fontPatchContract.rules).toContain(
+      "Map language-specific CJK body font requests to body language keys such as ja or zh-Hant, not to heading or pageChrome.",
+    );
+    expect(fontPatchContract.rules).toContain("Map readable code symbol requests to code.symbols.");
+    expect(fontPatchContract.examples).toEqual([
+      { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
+      { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+      { op: "replace-font", role: "body", key: "zh-Hant", value: "Noto Serif TC" },
+      { op: "replace-font", role: "code", key: "default", value: "JetBrains Mono" },
+      { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+    ]);
+    expect(
+      fontPatchContract.examples.some(
+        (example) =>
+          (example.role === "heading" || example.role === "pageChrome") &&
+          example.key !== "default",
+      ),
+    ).toBe(false);
+    expect(facts.fontHints).toEqual([
+      "use Source Serif 4 for English body, Noto Serif JP for Japanese, Noto Serif TC for Traditional Chinese, JetBrains Mono for code, Noto Sans Symbols 2 for symbols",
+    ]);
+  });
+
   test("builds title decision signal that blocks duplicate title treatment without cover intent", () => {
     const facts = promptFacts(
       buildMarkdownPdfProfileCodexPrompt({

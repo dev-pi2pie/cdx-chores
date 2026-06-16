@@ -664,14 +664,15 @@ Phase 6.5.1 focused job record:
 
 ### Phase 6.5.2: Font Patch Role-Key Prompt Contract
 
-- [ ] Tighten the Codex prompt with an explicit `accepted_font_patches` role/key matrix: `body` accepts `default` or language tags, `code` accepts `default` or `symbols`, and `heading` plus `pageChrome` accept only `default`.
-- [ ] Add prompt examples for multilingual body fonts and readable code symbols without implying language-keyed heading or page-chrome fonts.
-- [ ] Keep runtime validator behavior unchanged; invalid role/key combinations should still fail before profile write.
-- [ ] Add regression coverage proving the prompt exposes the role/key matrix and routes language-specific CJK font hints to `body` keys instead of `heading` keys.
-- [ ] Add regression coverage for a rejected heading/page-chrome language key so the error remains clear.
-- [ ] Run a live smoke test with a CJK Markdown sample, multilingual `--font-hint`, `--output`, `--keep-codex-report`, and `--overwrite` to confirm Codex returns applicable font patches.
-- [ ] Verify the smoke output profile renders through `md to-pdf` without font-patch validation errors, then remove generated profile/report/PDF artifacts from the worktree before commit.
-- [ ] Add a Phase 6.5.2 job record after implementation, validation, smoke replay, artifact cleanup, auto commit, and phase-range code review.
+- [x] Tighten the Codex prompt with an explicit `accepted_font_patches` role/key matrix: `body` accepts `default` or language tags, `code` accepts `default` or `symbols`, and `heading` plus `pageChrome` accept only `default`.
+- [x] Add prompt examples for multilingual body fonts and readable code symbols without implying language-keyed heading or page-chrome fonts.
+- [x] Keep runtime validator behavior unchanged; invalid role/key combinations should still fail before profile write.
+- [x] Add regression coverage proving the prompt exposes the role/key matrix and routes language-specific CJK font hints to `body` keys instead of `heading` keys.
+- [x] Add regression coverage for a rejected heading/page-chrome language key so the error remains clear.
+- [x] Run a live smoke test with a CJK Markdown sample, multilingual `--font-hint`, `--output`, `--keep-codex-report`, and `--overwrite` to confirm Codex returns applicable font patches.
+- [x] Verify the smoke output profile is accepted by `md to-pdf` profile normalization without font-patch validation errors; record that full PDF rendering was attempted but blocked by missing local WeasyPrint.
+- [x] Remove generated profile, report, PDF, local resource, and replay artifacts before commit.
+- [x] Add a Phase 6.5.2 job record for implementation, validation, smoke replay, artifact cleanup, and post-commit phase-range review handoff.
 
 Phase 6.5.2 rationale:
 
@@ -695,6 +696,10 @@ The successful smoke should keep font decisions within:
 - `code.default`
 - `code.symbols`
 - optional `heading.default` or `pageChrome.default`
+
+Phase 6.5.2 focused job record:
+
+- `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-5-2-font-role-key-prompt.md`
 
 ### Phase 7: Documentation And Guide Updates
 
