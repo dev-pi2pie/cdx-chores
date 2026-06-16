@@ -662,14 +662,48 @@ Phase 6.5.1 focused job record:
 
 - `docs/plans/jobs/2026-06-16-markdown-pdf-codex-profile-phase-6-5-1-title-cover-deduplication.md`
 
+### Phase 6.5.2: Font Patch Role-Key Prompt Contract
+
+- [ ] Tighten the Codex prompt with an explicit `accepted_font_patches` role/key matrix: `body` accepts `default` or language tags, `code` accepts `default` or `symbols`, and `heading` plus `pageChrome` accept only `default`.
+- [ ] Add prompt examples for multilingual body fonts and readable code symbols without implying language-keyed heading or page-chrome fonts.
+- [ ] Keep runtime validator behavior unchanged; invalid role/key combinations should still fail before profile write.
+- [ ] Add regression coverage proving the prompt exposes the role/key matrix and routes language-specific CJK font hints to `body` keys instead of `heading` keys.
+- [ ] Add regression coverage for a rejected heading/page-chrome language key so the error remains clear.
+- [ ] Run a live smoke test with a CJK Markdown sample, multilingual `--font-hint`, `--output`, `--keep-codex-report`, and `--overwrite` to confirm Codex returns applicable font patches.
+- [ ] Verify the smoke output profile renders through `md to-pdf` without font-patch validation errors, then remove generated profile/report/PDF artifacts from the worktree before commit.
+- [ ] Add a Phase 6.5.2 job record after implementation, validation, smoke replay, artifact cleanup, auto commit, and phase-range code review.
+
+Phase 6.5.2 rationale:
+
+- A live CJK font smoke replay failed because Codex returned a language-keyed `heading` font patch, which the runtime contract correctly rejected with `accepted_font_patches[4].key must be default for heading fonts`.
+- The failure is a prompt-contract gap, not a schema expansion request. The profile helper currently supports language-specific font routing through `fonts.body.<language-tag>` and symbol fallback through `fonts.code.symbols`; heading and page chrome remain single-slot profile settings.
+- Codex should map requests such as Japanese, Traditional Chinese, English body text, readable code, and readable symbols to the existing role/key contract instead of inventing language-keyed heading or page-chrome patches.
+
+Phase 6.5.2 smoke replay requirement:
+
+- Run a live `md pdf-profile codex` smoke with an ignored local CJK Markdown sample.
+- Include intent for mixed-language body text and readable code symbols.
+- Include a multilingual `--font-hint` covering English body, Japanese body, Traditional Chinese body, code, and symbols.
+- Write the profile and diagnostic report to local playground or scratch paths, then render the generated profile through `md to-pdf`.
+- Remove generated profile, report, PDF, local resource, and replay artifacts before commit.
+
+The successful smoke should keep font decisions within:
+
+- `body.default`
+- `body.ja`
+- `body.zh-Hant`
+- `code.default`
+- `code.symbols`
+- optional `heading.default` or `pageChrome.default`
+
 ### Phase 7: Documentation And Guide Updates
 
-- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, and Phase 6.5.1 behavior is implemented.
+- [ ] Add an independent Markdown PDF Codex profile-helper guide after Phase 6.4, Phase 6.4.1, Phase 6.5, Phase 6.5.1, and Phase 6.5.2 behavior is implemented.
 - [ ] Link the new guide from the profile section of `docs/guides/markdown-pdf-usage.md`.
 - [ ] Document direct helper examples.
 - [ ] Document replay through `md to-pdf --profile`.
 - [ ] Document diagnostic report retention.
-- [ ] Document supported profile patch boundaries, including the dedicated font patch contract.
+- [ ] Document supported profile patch boundaries, including the dedicated font patch role/key contract.
 - [ ] Document unsupported profile directions, including local cover images, arbitrary CSS, custom HTML layout, and template-only behavior.
 - [ ] Document title/cover deduplication behavior and the profile boundary for duplicate H1 suppression.
 - [ ] Explain when to use `md pdf-profile init`, `md pdf-profile codex`, `md pdf-template init`, and custom CSS/templates.
