@@ -13,7 +13,7 @@ import { MARKDOWN_PDF_PROFILE_ROOT_KEYS } from "../profile/schema";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-profile-report";
-export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 3;
+export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 4;
 const MARKDOWN_PDF_CODEX_SIGNAL_MODE_VALUES = new Set<string>(MARKDOWN_PDF_CODEX_SIGNAL_MODES);
 const MARKDOWN_PDF_CODEX_INPUTLESS_SIGNAL_MODES = new Set<string>([
   "basic-default",
@@ -68,6 +68,7 @@ export interface MarkdownPdfCodexReportArtifact {
     selectedPreset?: string;
     changedTopLevelFields: string[];
     acceptedPatches?: MarkdownPdfCodexDecision["acceptedPatches"];
+    acceptedFontPatches?: MarkdownPdfCodexDecision["acceptedFontPatches"];
     unmatchedDirections: string[];
     fallbackReason?: string;
     warnings: string[];
@@ -155,6 +156,7 @@ export function createMarkdownPdfCodexReportArtifact(input: {
         input.result?.profile,
       ),
       acceptedPatches: decision?.acceptedPatches,
+      acceptedFontPatches: decision?.acceptedFontPatches,
       unmatchedDirections: decision?.unmatchedDirections ?? [],
       fallbackReason: decision?.fallbackReason,
       warnings: decision?.warnings ?? [],

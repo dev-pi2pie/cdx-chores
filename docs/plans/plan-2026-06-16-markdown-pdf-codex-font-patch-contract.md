@@ -114,15 +114,17 @@ Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-2-va
 
 ## Phase 3: Prompt And Report
 
-- [ ] Update prompt rules so Codex uses `accepted_font_patches` for all font writes.
-- [ ] Include font patch examples only as bounded JSON, not YAML.
-- [ ] Keep `--font-hint` as the only dedicated font hint flag.
-- [ ] Bump the Codex report artifact version.
-- [ ] Record `acceptedFontPatches` in success reports.
-- [ ] Update report-contract tests and inline schema comments for the new `acceptedFontPatches` payload.
-- [ ] Record the user-visible generated-profile change: font patches still serialize as normal `fonts` YAML or JSON.
-- [ ] Record the user-visible report change: diagnostic reports expose accepted font decisions separately from normal accepted patches.
-- [ ] Keep unsupported font requests in warnings or `unmatched_directions` when they cannot be represented.
+- [x] Update prompt rules so Codex uses `accepted_font_patches` for all font writes.
+- [x] Include font patch examples only as bounded JSON, not YAML.
+- [x] Keep `--font-hint` as the only dedicated font hint flag.
+- [x] Bump the Codex report artifact version.
+- [x] Record `acceptedFontPatches` in success reports.
+- [x] Update report-contract tests and inline schema comments for the new `acceptedFontPatches` payload.
+- [x] Record the user-visible generated-profile change: font patches still serialize as normal `fonts` YAML or JSON.
+- [x] Record the user-visible report change: diagnostic reports expose accepted font decisions separately from normal accepted patches.
+- [x] Keep unsupported font requests in warnings or `unmatched_directions` when they cannot be represented.
+
+Job record: `docs/plans/jobs/2026-06-16-markdown-pdf-codex-font-patch-phase-3-prompt-report.md`
 
 ## Phase 4: Action Coverage And Smoke
 

@@ -18,6 +18,9 @@ function adaptedRunner(candidateId = "wide-table") {
         { op: "replace", path: "/toc/enabled", value: true },
         { op: "replace", path: "/toc/depth", value: 2 },
       ],
+      accepted_font_patches: [
+        { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+      ],
       reasoning: "The document has enough structure for a reusable profile.",
       warnings: [],
       fallback_reason: "",
@@ -67,7 +70,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(profile.toc).toMatchObject({ enabled: true, depth: 2 });
 
       const report = await readMarkdownPdfCodexReportArtifact(reportPath);
-      expect(report.artifact.version).toBe(3);
+      expect(report.artifact.version).toBe(4);
       expect(report.artifact.advisoryOnly).toBe(true);
       expect(report.profile.id).toBe(profileIdentity.id);
       expect(report.input.path).toBe("report.md");
@@ -76,6 +79,9 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.result.acceptedPatches).toEqual([
         { op: "replace", path: "/toc/enabled", value: true },
         { op: "replace", path: "/toc/depth", value: 2 },
+      ]);
+      expect(report.result.acceptedFontPatches).toEqual([
+        { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
       ]);
     });
   });
@@ -157,6 +163,7 @@ describe("cli action modules: md pdf-profile codex", () => {
             decision_mode: "conservative-fallback",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "Facts are weak.",
             warnings: ["Using default profile."],
             fallback_reason: "No strong layout signal.",
@@ -195,6 +202,7 @@ describe("cli action modules: md pdf-profile codex", () => {
                 decision_mode: "no-usable-profile",
                 selected_candidate_id: "none",
                 accepted_patches: [],
+                accepted_font_patches: [],
                 reasoning: "No reusable profile fits.",
                 warnings: [],
                 fallback_reason: "Unsupported custom layout request.",
@@ -873,6 +881,7 @@ describe("cli action modules: md pdf-profile codex", () => {
                 decision_mode: "no-usable-profile",
                 selected_candidate_id: "none",
                 accepted_patches: [],
+                accepted_font_patches: [],
                 reasoning: "Template-only request.",
                 warnings: [],
                 unmatched_directions: ["custom CSS"],
@@ -913,6 +922,7 @@ describe("cli action modules: md pdf-profile codex", () => {
                 decision_mode: "no-usable-profile",
                 selected_candidate_id: "none",
                 accepted_patches: [],
+                accepted_font_patches: [],
                 reasoning: "Template-only request.",
                 warnings: [],
                 unmatched_directions: ["custom CSS"],
@@ -946,6 +956,7 @@ describe("cli action modules: md pdf-profile codex", () => {
             decision_mode: "conservative-fallback",
             selected_candidate_id: "default",
             accepted_patches: [],
+            accepted_font_patches: [],
             reasoning: "Facts are weak.",
             warnings: ["Using default profile."],
             fallback_reason: "No strong layout signal.",
@@ -1066,6 +1077,7 @@ describe("cli action modules: md pdf-profile codex", () => {
                 decision_mode: "adapted",
                 selected_candidate_id: "missing",
                 accepted_patches: [],
+                accepted_font_patches: [],
                 reasoning: "bad candidate",
                 warnings: [],
                 unmatched_directions: [],
@@ -1111,6 +1123,7 @@ describe("cli action modules: md pdf-profile codex", () => {
                 decision_mode: "adapted",
                 selected_candidate_id: "default",
                 accepted_patches: [{ op: "replace", path: "/cover/style", value: "modern" }],
+                accepted_font_patches: [],
                 reasoning: "Use a modern cover.",
                 warnings: [],
                 fallback_reason: "",

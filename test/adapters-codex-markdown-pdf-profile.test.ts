@@ -77,6 +77,10 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("patchValueDomains");
     expect(prompt).toContain("styleDecisionPolicy");
     expect(prompt).toContain("tableLayoutSignal");
+    expect(prompt).toContain("fontPatchContract");
+    expect(prompt).toContain("accepted_font_patches");
+    expect(prompt).toContain("Noto Serif JP");
+    expect(prompt).toContain("never put /fonts/... paths in accepted_patches");
     expect(prompt).toContain('"traits"');
     expect(prompt).toContain('"density": "wide"');
     expect(prompt).toContain("Do not enable page numbers by default");

@@ -44,6 +44,20 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   ],
 };
 
+const MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT = {
+  field: "accepted_font_patches",
+  rules: [
+    "Use accepted_font_patches for all profile font writes.",
+    "Do not use accepted_patches for /fonts/... paths.",
+    "Use --font-hint evidence only as a font preference signal; do not invent additional dedicated hint fields.",
+    "If a font request cannot be represented by body, heading, code, or pageChrome font maps, report it in warnings or unmatched_directions.",
+  ],
+  examples: [
+    { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
+    { op: "replace-font", role: "code", key: "symbols", value: "Noto Sans Symbols 2" },
+  ],
+};
+
 function tableLayoutRiskLevel(
   tables: MarkdownPdfCodexProfileRequest["documentSignals"]["tables"],
 ): MarkdownPdfTableLayoutRiskLevel {
@@ -104,6 +118,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     candidateSummaries: request.candidates.map((candidate) => candidate.summary),
     documentSignals: request.documentSignals,
     fontHints: request.fontHints,
+    fontPatchContract: MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT,
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
@@ -122,12 +137,13 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Select one candidate by id.",
     "- Do not write YAML, CSS, HTML, file paths, or raw Markdown snippets.",
     "- Use accepted_patches for small replace patches against allowed Markdown PDF profile paths.",
+    "- Use accepted_font_patches for all font writes; never put /fonts/... paths in accepted_patches.",
     "- For paths listed in patchValueDomains, use only those exact values.",
     "- Do not return profile objects or arbitrary nested fields.",
     "- Prefer small adaptations over broad rewrites.",
     "- Follow styleDecisionPolicy when deciding cover, ToC, page-number, code, and renderer-compatible changes.",
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
-    "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none and accepted_patches to [].",
+    "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",
     "- Keep reasoning short and grounded in the facts.",
     "",
