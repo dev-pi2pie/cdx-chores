@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Helper Roadmap"
 created-date: 2026-06-10
-modified-date: 2026-06-18
+modified-date: 2026-06-19
 status: in-progress
 agent: codex
 ---
@@ -682,11 +682,15 @@ cdx-chores md pdf-template codex \
 The exact command surface belongs in the focused [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md) research and its later implementation plan, but this parent roadmap should record the settled product direction:
 
 - `md pdf-template codex` is the right home for cover media, custom cover composition, exact table styling, section layout, and other HTML/CSS-backed directions.
+- `-o, --output <directory>` should be required for the first template-Codex slice and should keep the same directory semantics as `md pdf-template init --output <directory>`.
+- the direct helper should accept the same deterministic recipe flags as `md pdf-template init` and `md to-pdf` for preset, page shape, margins, and ToC behavior.
 - It should write reviewable artifacts such as `template.html`, `style.css`, managed local assets, and an optional Codex diagnostic report.
 - It should not render the PDF automatically as its primary behavior.
 - `md to-pdf` should remain deterministic and should consume accepted template artifacts through `--template` and `--css`.
+- The default render posture should be layered: profile-derived default CSS stays enabled and the template stylesheet applies after it. `--no-default-css` should be treated as an advanced self-contained-bundle posture.
 - `--base-profile <path>` should be allowed as an input signal and compatibility target, but template/CSS remains the stronger visual layer when supplied at render time.
 - The template helper can generate HTML/CSS, but the output must be explicit files that the user can inspect, commit, diff, and replay.
+- The first slice should not generate a default output directory when `--output` is omitted; a template bundle is larger than a single generated profile file and should have an explicit destination.
 
 Recommended artifact shape:
 
@@ -699,7 +703,7 @@ pdf-template/
   template.codex-report.json  # optional
 ```
 
-Recommended render after review:
+Recommended layered render after review:
 
 ```bash
 cdx-chores md to-pdf \
@@ -710,7 +714,7 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-The focused template-Codex research owns the exact bounded contract for asset copying, relative references, remote-asset policy, template identity, diagnostic report fields, and how much raw CSS/HTML Codex may propose versus how much deterministic code should synthesize.
+The focused template-Codex research owns the bounded contract for signal ladder, decision modes, render posture, asset copying, relative references, remote-asset policy, template identity, diagnostic report fields, required Pandoc and Shiki hooks, and how much raw CSS/HTML Codex may propose versus how much deterministic code should synthesize.
 
 ### 12. Hybrid one-shot comes after template artifacts prove out
 
@@ -818,17 +822,22 @@ docs/researches/research-2026-06-18-markdown-pdf-template-codex-helper.md
 Current canary scope to settle before implementation:
 
 - `md pdf-template codex` command surface
+- required `-o, --output <directory>` behavior aligned with `md pdf-template init`
+- recipe-flag parity with `md pdf-template init` and `md to-pdf`
 - input document, user intent, base-profile, and cover/media signal collection
+- signal ladder for deterministic, Codex-assisted, and too-low-signal cases
+- decision modes and exit/write behavior
 - template artifact identity and optional diagnostic report identity
 - output directory and overwrite/collision behavior
 - managed asset copy/reference behavior
 - generated `template.html` and `style.css` reviewability
+- required Pandoc, profile-renderer, and Shiki hook preservation
 - local and remote asset policy
 - compatibility with `md to-pdf --template`, `--css`, `--profile`, and `--no-default-css`
 - dry-run or preview behavior
 - failure behavior when Codex is unavailable or generated artifacts fail validation
 
-The research remains `in-progress` because template-Codex, hybrid one-shot, and Interactive mode still need focused research, plans, and implementation evidence.
+The research remains `in-progress` because template-Codex still needs an implementation plan and evidence, and the hybrid one-shot and Interactive layers remain deferred.
 
 ## Alternatives Considered
 
@@ -866,10 +875,10 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 
 1. Treat `md pdf-profile codex` as the completed first direct helper from `v0.1.5-canary.2`.
 2. Preserve the profile-helper boundary: no raw CSS, no raw HTML, no local cover images, and no template-only layout in profile fields.
-3. Draft focused research and an implementation plan for `md pdf-template codex` as the current `v0.1.5-canary.3` target.
+3. Use the focused template-Codex research as the input for an implementation plan for the current `v0.1.5-canary.3` target.
 4. Frame `md pdf-template codex` as reviewable recipe artifact generation, not automatic PDF rendering.
 5. Let template-Codex accept profile, document, intent, font, and asset signals, while keeping template/CSS as the stronger visual layer when rendered.
-6. Require explicit artifact paths, overwrite behavior, managed asset behavior, and optional diagnostic report behavior for template-Codex.
+6. Require explicit `-o, --output <directory>` behavior, overwrite behavior, managed asset behavior, and optional diagnostic report behavior for template-Codex.
 7. Keep `md to-pdf` deterministic: render accepted profile/template/CSS artifacts without requiring Codex.
 8. Defer the hybrid one-shot helper until both direct profile and template helper contracts are stable.
 9. Defer Interactive Markdown PDF mode until direct profile, direct template, and hybrid one-shot surfaces have stable contracts.

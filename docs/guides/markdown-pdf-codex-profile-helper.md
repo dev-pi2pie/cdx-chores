@@ -329,8 +329,10 @@ The profile helper still does not generate HTML or CSS. It reports these
 directions as template-backed work instead of inventing profile fields.
 
 The current canary roadmap targets a separate `md pdf-template codex` helper for
-reviewable template artifacts. Until that command is implemented and documented,
-use `md pdf-template init` plus custom edits for template-backed work.
+reviewable template artifacts. The current research direction keeps `--output`
+aligned with `md pdf-template init`: it names the template directory, not the
+rendered PDF. Until that command is implemented and documented, use
+`md pdf-template init` plus custom edits for template-backed work.
 
 ## Related Docs
 
