@@ -14,7 +14,7 @@ The helper should draft reviewable Markdown PDF template artifacts for layout, c
 
 ## Milestone Goal
 
-`v0.1.5-canary.3` should not be tagged until the template-Codex route is implemented, verified, and documented or explicitly deferred.
+`v0.1.5-canary.3` should not be tagged until the template-Codex route is implemented, verified, and documented, or until a separate release decision records why it moved out of the canary.
 
 The previous canary, `v0.1.5-canary.2`, completed the direct `md pdf-profile codex` helper. That profile helper remains the quick durable configuration path. This research owns the next layer: template-backed rendering artifacts.
 
@@ -83,7 +83,7 @@ Use the existing command vocabulary where it already fits:
 - `--cover-image <path>` should be singular in v1. Repeated media inputs can wait until the asset model proves out.
 - local cover images should be copied into `assets/` by default and referenced with relative paths.
 - remote asset fetching is out of scope for v1.
-- `--base-template <directory>` is deferred from v1. The first slice should start from deterministic template families derived from the current recipe generator.
+- the custom template bundle is the command output. `--output <directory>` names the reviewable bundle to write, and the v1 helper should generate that bundle from deterministic template families, recipe flags, profile signals, document signals, and managed cover assets.
 - Codex should return bounded template decisions plus optional bounded CSS blocks; deterministic code should synthesize required HTML/CSS boilerplate and required hooks.
 
 ## Processing Model
@@ -147,7 +147,7 @@ Classify signal mode
   v
 Codex request envelope, only when needed
   |
-  |-- supported template families and bounded slots
+  |-- supported template families, recipe presets, and bounded slots
   |-- summarized/redacted document signals
   |-- normalized profile and recipe signals
   |-- managed asset summaries, not raw copied bytes
@@ -160,6 +160,7 @@ Codex bounded response
   |
   |-- decision mode
   |-- selected template family
+  |-- recipe preset
   |-- cover/table/spacing/type/code slot decisions
   |-- managed asset usage
   |-- optional bounded CSS blocks
@@ -261,7 +262,7 @@ The helper should not invent a second precedence model. It should mirror the cur
 built-in preset/default recipe
   -> base profile recipe settings
   -> explicit recipe flags
-  -> generated template family and CSS decisions
+  -> selected template family and CSS decisions
   -> written template bundle
 ```
 
@@ -363,17 +364,59 @@ The current working direction is Option C. It best matches the repo's reviewed-a
 
 V1 should make Option C concrete with:
 
-- template families derived from the current recipe generator, starting with the default article/report-style family rather than a broad theme catalog
+- two v1 template families: `document-layered` and `cover-media-layered`
+- a separate `recipe_preset` value that remains one of the current renderer presets: `article`, `report`, `wide-table`, `compact`, or `reader`
 - required Pandoc hooks preserved by deterministic code, including `$body$`, `$toc$`, title metadata, and the current standalone HTML structure
 - required renderer hooks preserved by deterministic code, including profile cover/page-chrome hooks and Shiki `.cdx-code*` selectors
 - bounded slots for cover composition, title block placement, table density, section spacing, color tokens, font-role alignment, and code-block treatment
 - bounded CSS blocks only for named slots, with validation for remote URLs, absolute local paths, and required selector preservation
 
+The family names are intentionally narrow. `article`, `report`, `wide-table`, `compact`, and `reader` are already public recipe preset names, so template-Codex should not reuse them as template family names. `plain` and `report` remain the v1 cover-style values for profile-compatible cover treatment. The string `report` can therefore appear in more than one enum domain, but only through explicitly named fields such as `recipe_preset: report` or `slots.cover.style: report`.
+
+V1 enum domains:
+
+| Field | Values |
+| --- | --- |
+| `template_family` | `document-layered`, `cover-media-layered` |
+| `recipe_preset` | `article`, `report`, `wide-table`, `compact`, `reader` |
+| `slots.cover.style` | `plain`, `report` |
+
+V1 field roles:
+
+| Field | Role |
+| --- | --- |
+| `template_family` | Chooses the repo-owned HTML/CSS boilerplate skeleton. It does not imply page density, table density, or renderer preset behavior by itself. |
+| `recipe_preset` | Carries the current renderer preset semantics independently from `template_family`. It is resolved from explicit recipe flags, profile preset identity, or default recipe behavior before template synthesis. |
+| `slots.cover.style` | Controls only profile-compatible cover-slot styling. It does not choose the template skeleton and does not imply `recipe_preset: report`. |
+
+All `recipe_preset` values are valid with both v1 template families. `cover-media-layered` changes managed asset hooks and cover-media slots; it does not force a `report` preset. `document-layered` can still use `slots.cover.style: report` for title-only or profile-compatible cover treatment without becoming a cover-media bundle.
+
+V1 family meanings:
+
+| Template family | Meaning |
+| --- | --- |
+| `document-layered` | The default layered template skeleton for documents without managed cover media. It preserves the current Pandoc structure and lets recipe presets plus slots control density, table, typography, spacing, and code treatment. |
+| `cover-media-layered` | The layered template skeleton with managed local cover-media hooks. It is selected when `--cover-image` or explicit cover-media intent requires copied assets and cover composition slots. |
+
+V1 selection rules should stay deterministic:
+
+| Signal | Template family |
+| --- | --- |
+| no managed local cover image | `document-layered` |
+| `--base-profile` with ordinary profile cover or page chrome, but no local cover image | `document-layered` |
+| recipe flags only | `document-layered` |
+| `--cover-image <path>` with or without recipe flags or `--base-profile` | `cover-media-layered` |
+| intent asks for title-only or profile-compatible cover composition without local image media | `document-layered` with supported cover slots |
+| intent asks for local image or cover media but omits `--cover-image` | keep `document-layered` only if other usable template directions remain and record the missing media request in `unsupported_directions`; otherwise return `no-usable-template` |
+
+This keeps `cover-media-layered` tied to managed asset handling instead of any cover-related wording. A title-only cover or profile-supported cover style can still be represented as slots on `document-layered`.
+
 Illustrative response shape:
 
 ```text
 decision_mode: adapted
-selected_template_family: report-layered
+template_family: cover-media-layered
+recipe_preset: report
 slots:
   cover:
     mode: local-image
@@ -406,8 +449,8 @@ V1 signal handling should be explicit:
 | --- | --- |
 | no input, no intent, no base profile, no cover image, and no recipe flags beyond defaults | reject as too low-signal; use `md pdf-template init` instead |
 | `--base-profile` only | deterministic template snapshot from the base profile and recipe flags; no Codex needed |
-| recipe flags only | deterministic template snapshot equivalent to `md pdf-template init`; no Codex needed |
-| `--cover-image` only | deterministic default cover-media family; write copied asset and minimal cover hooks |
+| recipe flags only | deterministic `document-layered` template snapshot equivalent to `md pdf-template init`; no Codex needed |
+| `--cover-image` only | deterministic `cover-media-layered` bundle; write copied asset and minimal cover hooks |
 | `--intent` and/or Markdown input | call Codex with document/design signals |
 | profile-Codex unmatched template directions | natural escalation path into template-Codex using the same input, intent, and base profile |
 
@@ -415,7 +458,7 @@ Document input should be optional but useful. It can provide heading depth, tabl
 
 The deterministic rows still belong in the command because they keep one bundle-writing surface for profile-aware snapshots, recipe-flag snapshots, cover-image bundling, identity comments, optional reports, and dry-run/collision behavior. Plain `md pdf-template init` remains the simpler command when no template-Codex-specific signal or bundle behavior is needed.
 
-The `--cover-image`-only path should use a fixed deterministic cover-media family in v1. It should not ask Codex to invent cover composition unless the user also supplies intent or document signals.
+The `--cover-image`-only path should use the fixed deterministic `cover-media-layered` family in v1. It should not ask Codex to invent cover composition unless the user also supplies intent or document signals.
 
 ### 9. Decision modes should define write and exit behavior
 
@@ -452,7 +495,7 @@ V1 should avoid a mandatory metadata file unless implementation discovers that c
 markdown-pdf-codex-template-report
 ```
 
-The report should capture the selected template family, decision mode, input summaries, base-profile summary, managed assets, written files, validation results, unsupported directions, and render follow-up command.
+The report should capture the selected template family, recipe preset, decision mode, input summaries, base-profile summary, managed assets, written files, validation results, unsupported directions, and render follow-up command.
 
 When `--keep-codex-report` is passed without `--codex-report-output`, the default report path should be `template.codex-report.json` inside the output directory. `--codex-report-output <path>` can override that location and should require a `.json` path that does not collide with input, profile, output directory, or managed asset sources.
 
@@ -519,13 +562,14 @@ Keeping the workflow as `md pdf-template init` plus manual HTML/CSS editing rema
 
 Adding local cover-image fields to profiles would blur the quick durable config route with asset bundling and custom layout. Local media, custom cover composition, and exact table styling belong in the template artifact layer.
 
-### Support `--base-template` in v1
+### Existing Template Refinement
 
-Editing an existing user template is useful, but it broadens validation and merge behavior. V1 should start from deterministic template families derived from the current recipe generator, then revisit `--base-template <directory>` once generated bundle identity and validation are stable.
+Reading and modifying an existing user template bundle is useful, but it is explicitly out of v1 scope and should be treated as a separate refinement workflow. V1 `md pdf-template codex` should generate a new reviewable bundle at `--output <directory>` from the two deterministic template families, `document-layered` and `cover-media-layered`, plus explicit recipe/profile/document/asset signals.
+
+Operationally, v1 should not read an existing `template.html` or `style.css` as an input signal. If `--output <directory>` points at an existing template bundle, the command should treat that path only as the output target and apply the normal output-directory collision rules: fail on a non-empty directory unless `--overwrite` is passed, and even with `--overwrite`, replace only the generated bundle files without interpreting the previous files as a base. A future refinement workflow should use a separate command or clearly named option after it has its own read, diff, preservation, and validation contract.
 
 ## Open Questions
 
-- What exact template-family names should v1 expose internally?
 - Should `--cover-image` accept only PNG/JPEG/WebP at first, or any local renderer-supported image file?
 - Which static validation failures should be hard errors versus conservative fallback triggers?
 - How should path redaction be represented for copied assets in the report?
