@@ -81,7 +81,8 @@ Use the existing command vocabulary where it already fits:
 - `[input]` plus `-i, --input <path>` should mirror the profile-Codex alias pattern.
 - `--base-profile <path>` is an optional signal and compatibility target, not the output target.
 - `--cover-image <path>` should be singular in v1. Repeated media inputs can wait until the asset model proves out.
-- local cover images should be copied into `assets/` by default and referenced with relative paths.
+- `--cover-image <path>` should accept local still raster PNG, JPEG, and WebP files only in v1.
+- local cover images should be resolved from the CLI working directory unless absolute, copied into `assets/` by default, and referenced with bundle-relative paths.
 - remote asset fetching is out of scope for v1.
 - the custom template bundle is the command output. `--output <directory>` names the reviewable bundle to write, and the v1 helper should generate that bundle from deterministic template families, recipe flags, profile signals, document signals, and managed cover assets.
 - Codex should return bounded template decisions plus optional bounded CSS blocks; deterministic code should synthesize required HTML/CSS boilerplate and required hooks.
@@ -321,6 +322,15 @@ pdf-template/
 
 V1 should create `assets/` only when managed assets exist. Local cover images should be copied into that directory by default, using collision-safe filenames when needed, and generated HTML/CSS should reference those copied files relatively.
 
+V1 cover media should stay intentionally narrow:
+
+- accepted: local still PNG, JPEG, and WebP files
+- unsupported: GIF, animated PNG, animated WebP, SVG, BMP, TIFF, PDF, remote URLs, and other non-local asset references
+- path resolution: user-provided relative paths are resolved from the CLI working directory; generated bundle references remain relative to the template bundle
+- metadata: when practical, collect local image dimensions or aspect ratio as a bounded signal; when metadata is unavailable, keep aspect-ratio handling in `auto` and use conservative layout CSS
+
+Animated media is out of scope because animation has no durable PDF cover semantics. SVG is out of scope because it can contain nested references, active markup, and renderer-sensitive layout behavior. Users should convert other media to a still PNG, JPEG, or WebP before passing `--cover-image`.
+
 `--output` follows `md pdf-template init` semantics:
 
 - the path must be a directory or a missing path that can be created
@@ -334,7 +344,7 @@ Defaulting to copied local assets is the safer reviewable artifact model. It mak
 
 The deterministic renderer blocks remote assets unless the render uses `--allow-remote-assets`.
 
-Template-Codex should not quietly introduce remote asset dependencies. V1 should report remote-asset directions as unsupported template-Codex directions instead of downloading or embedding remote content. A later slice can add an explicit opt-in if there is a real workflow need.
+Template-Codex should not quietly introduce remote asset dependencies. V1 should report remote cover-media directions as unsupported template-Codex directions instead of downloading, inspecting, copying, or emitting remote cover-media references. Existing remote references in accepted Markdown, HTML, or CSS remain a render-time `md to-pdf --allow-remote-assets` concern.
 
 ### 7. Codex output should be constrained even when it writes HTML/CSS
 
@@ -391,6 +401,17 @@ V1 field roles:
 
 All `recipe_preset` values are valid with both v1 template families. `cover-media-layered` changes managed asset hooks and cover-media slots; it does not force a `report` preset. `document-layered` can still use `slots.cover.style: report` for title-only or profile-compatible cover treatment without becoming a cover-media bundle.
 
+V1 cover-media slots should also stay bounded:
+
+| Slot | Values | Notes |
+| --- | --- | --- |
+| `slots.cover.layout` | `background`, `image-above-title`, `image-below-title` | `--cover-image` without design intent should use a conservative contained layout, not a full-page cropped background. |
+| `slots.cover.image_fit` | `cover`, `contain` | `cover` may crop; `contain` preserves the full image. |
+| `slots.cover.title_placement` | `top-left`, `top-center`, `center`, `lower-left`, `lower-center` | Used for media-aware title placement. |
+| `slots.cover.aspect_ratio` | `auto` | V1 records local metadata as a signal when available but should not expose an aspect-ratio CLI flag. |
+
+Full-page background covers should require explicit intent or strong document/design signals. The deterministic `--cover-image`-only path should prefer a contained layout with the title block separate from the image.
+
 V1 family meanings:
 
 | Template family | Meaning |
@@ -421,6 +442,9 @@ slots:
   cover:
     mode: local-image
     image_ref: assets/cover.png
+    layout: background
+    image_fit: cover
+    aspect_ratio: auto
     title_placement: lower-left
   tables:
     density: compact
@@ -511,8 +535,11 @@ V1 validation should reject generated artifacts that:
 - introduce remote URLs
 - write outside the output directory
 - produce unsupported asset references
+- accept unsupported cover-media formats
 
 The test suite should include a smoke render through `md to-pdf` using generated template artifacts where Pandoc and WeasyPrint are mocked or already covered by existing fixtures. Live visual review can remain a manual smoke path under `examples/playground/`.
+
+Cover-media tests should use committed synthetic fixtures for PNG, JPEG, and WebP validation and rejection fixtures for unsupported formats. Manual cover-media smoke outputs can follow the existing Markdown PDF fixture-script pattern by writing local review artifacts under `examples/playground/`, then cleaning those generated outputs before commit. Public docs, reports, and job records should not disclose machine-local source image paths.
 
 ### 12. The command should be direct and scriptable
 
@@ -570,7 +597,6 @@ Operationally, v1 should not read an existing `template.html` or `style.css` as 
 
 ## Open Questions
 
-- Should `--cover-image` accept only PNG/JPEG/WebP at first, or any local renderer-supported image file?
 - Which static validation failures should be hard errors versus conservative fallback triggers?
 - How should path redaction be represented for copied assets in the report?
 
