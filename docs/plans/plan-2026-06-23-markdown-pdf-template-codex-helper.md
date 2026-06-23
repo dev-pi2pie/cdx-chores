@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement the direct `md pdf-template codex` helper for generating reviewable Markdown PDF template bundles from bounded document, profile, recipe, intent, font, and cover-media signals.
+Implement the direct `md pdf-template codex` helper for generating reviewable Markdown PDF template bundles from bounded document, profile-derived recipe, intent, font, and cover-media signals.
 
 This plan intentionally does not implement the hybrid one-shot helper or Interactive Markdown PDF mode. Those layers should reuse this direct helper contract after the template artifact path is implemented and verified.
 
@@ -34,7 +34,7 @@ Current Markdown PDF support includes:
 
 - `md to-pdf` through Pandoc-generated HTML and WeasyPrint PDF rendering.
 - `md pdf-template init --output <directory>` for editable `template.html` and `style.css` recipe files.
-- recipe flags shared by `md pdf-template init` and `md to-pdf`: `--preset`, page shape, margins, `--toc`, `--toc-depth`, and `--toc-page-break`.
+- recipe flags shared by `md pdf-template init` and `md to-pdf`: `--preset`, page shape, margins, `--toc`, `--toc-depth`, and `--toc-page-break`; these remain renderer/init controls, not the desired public surface for `md pdf-template codex`.
 - `md to-pdf --template <path>` and `--css <path>` support.
 - layered render behavior where custom `--template` replaces generated template HTML and custom `--css` applies after default CSS unless `--no-default-css` is used.
 - `md to-pdf` support for combining `--profile`, `--template`, and `--css`.
@@ -81,15 +81,12 @@ Options:
 - `--codex-report-output <path>`: explicit diagnostic report path; implies `--keep-codex-report`.
 - `--overwrite`: allow replacing selected generated files in an existing output directory.
 
-The command should also accept the deterministic recipe flags supported by `md pdf-template init` and `md to-pdf`:
-
-- `--preset <name>`
-- `--page-size <size>`
-- `--orientation <orientation>`
-- `--margin <value>` and side-specific margin flags already supported by the renderer
-- `--toc`
-- `--toc-depth <depth>`
-- `--toc-page-break`
+Do not add direct recipe flags to this public command surface. In particular,
+`md pdf-template codex` should not accept `--preset`, `--page-size`,
+`--orientation`, `--margin*`, `--toc`, `--toc-depth`, or `--toc-page-break` as
+hidden or visible options. Detailed recipe control belongs to
+`md pdf-template init`, reusable `--base-profile` inputs, or the later
+`md to-pdf` render command.
 
 Do not add narrow style flags just to expose prompt-internal categories. General direction stays in `--intent`; font preference stays in repeatable `--font-hint`; cover media uses explicit `--cover-image`.
 
@@ -99,9 +96,8 @@ Classify command inputs before resolving generated default output directories:
 
 | Inputs | Expected behavior |
 | --- | --- |
-| no input, no intent, no base profile, no cover image, and no recipe flags beyond defaults | fail as too low-signal; recommend `md pdf-template init` |
+| no input, no intent, no base profile, and no cover image | fail as too low-signal; recommend `md pdf-template init` for deterministic recipe-controlled templates |
 | `--base-profile` only | deterministic `document-layered` snapshot from the profile; no Codex call |
-| recipe flags only | deterministic `document-layered` snapshot equivalent to `md pdf-template init`; no Codex call |
 | `--cover-image` only | deterministic `cover-media-layered` bundle with copied asset and conservative cover hooks; no Codex call |
 | `--intent` and/or Markdown input | Codex-assisted template decision |
 | profile-Codex unmatched template directions | Codex-assisted escalation path using the same input, intent, and base profile |
@@ -115,6 +111,7 @@ Rules:
 - `--output` is resolved only after the command has enough signal to proceed.
 - no-signal invocations fail before reserving a generated default output directory.
 - deterministic rows still use this command because they need template identity, output collision checks, optional reports, copied cover assets, and dry-run behavior.
+- recipe-only deterministic templates should use `md pdf-template init` instead of `md pdf-template codex`.
 
 ### Render Contract
 
@@ -172,7 +169,6 @@ Selection rules:
 
 - no managed local cover image uses `document-layered`.
 - `--base-profile` with ordinary profile cover or page chrome, but no local cover image, uses `document-layered`.
-- recipe flags only use `document-layered`.
 - `--cover-image <path>` uses `cover-media-layered`.
 - title-only or profile-compatible cover composition without local image media uses `document-layered` with supported cover slots.
 - intent that asks for local image or cover media without `--cover-image` records a missing-media unsupported direction and succeeds only if remaining directions still form a usable bundle.
@@ -246,7 +242,7 @@ The adapter should receive:
 - supported slot enums and defaults
 - summarized document signals
 - normalized base-profile signal
-- normalized recipe flag signal
+- normalized recipe context from base-profile fields and renderer defaults
 - bounded font facts and font hints
 - managed asset summaries, not raw copied bytes, including dimensions, aspect ratio, orientation, and fit pressure when available
 - later-render placeholder and hook requirements
@@ -360,7 +356,7 @@ Report JSON should include:
 - input document summary or fingerprint when present
 - intent and font hints
 - base-profile summary and redacted source metadata when present; repository-relative source paths may be recorded only when they are safely inside the current repository
-- recipe flag summary
+- recipe context summary
 - managed assets with redacted source display
 - bundle-relative written or planned files
 - validation results
@@ -394,7 +390,7 @@ Implement these outcomes:
 
 | Mode | Meaning | CLI behavior | Writes |
 | --- | --- | --- | --- |
-| `deterministic` | no Codex required; recipe flags, base profile, or cover image are enough | success | bundle unless `--dry-run`; optional report |
+| `deterministic` | no Codex required; base profile or cover image signals are enough | success | bundle unless `--dry-run`; optional report |
 | `adapted` | Codex produced valid bounded decisions | success | bundle unless `--dry-run`; optional report |
 | `conservative-fallback` | Codex response was usable only after safe reduction | success with visible note | conservative bundle unless `--dry-run`; optional report |
 | `no-usable-template` | Codex unavailable, invalid, unsafe, or unsupported after validation | failure | no recipe files; requested failure report only |
@@ -473,7 +469,7 @@ Managed asset reports should prefer:
 - [x] Add `md pdf-template codex` command registration and help text.
 - [x] Add action types for command options and normalized command state.
 - [x] Support positional `[input]` and `-i, --input <path>` aliasing.
-- [x] Add recipe flag parity with `md pdf-template init`.
+- [x] Add recipe flag parity with `md pdf-template init` during the initial implementation; superseded by Phase 8.1 command surface simplification.
 - [x] Add `--intent`, repeatable `--font-hint`, `--base-profile`, `--cover-image`, `--output`, `--dry-run`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`.
 - [x] Add early validation for input alias conflicts, invalid base profiles, invalid cover image paths, and invalid output/report path shapes.
 - [x] Add signal-mode and decision-mode type definitions shared by action, adapter, synthesis, validation, and report modules.
@@ -490,7 +486,7 @@ Recommended module targets:
 - [x] Reuse or extract existing Markdown document signal collectors from profile-Codex where appropriate.
 - [x] Collect document title/frontmatter, heading, ToC pressure, table pressure, code-block, language, duplicate-title, and asset-count signals.
 - [x] Load and summarize `--base-profile` as a profile signal and compatibility target.
-- [x] Normalize recipe flag signals and preserve explicit flag precedence over profile recipe fields.
+- [x] Normalize recipe signals and preserve explicit flag precedence over profile recipe fields before Phase 8.1 removes the over-expanded public CLI recipe surface.
 - [x] Collect bounded font summary and repeatable font hints.
 - [x] Validate `--cover-image` format and locality before Codex.
 - [x] Collect cover image dimensions, aspect ratio, orientation bucket, and fit-pressure summary when practical.
@@ -571,7 +567,7 @@ bun test --timeout 30000
 - [x] Add repo-owned boilerplate for `document-layered`.
 - [x] Add repo-owned boilerplate for `cover-media-layered`.
 - [x] Preserve `$body$`, title metadata hooks, conditional ToC placeholders, `#TOC`, cover/page-chrome hooks, and Shiki code selectors.
-- [x] Resolve `recipe_preset` from explicit recipe flags, profile preset identity, or default renderer behavior.
+- [x] Resolve `recipe_preset` from recipe state, profile preset identity, or default renderer behavior.
 - [x] Implement deterministic slot defaults for cover, tables, code, spacing, typography, and color tokens.
 - [x] Implement deterministic `--base-profile` only synthesis.
 - [x] Implement deterministic recipe-flags-only synthesis.
@@ -682,6 +678,53 @@ Focused validation target:
 
 ```bash
 bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+```
+
+Repo gates:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test --timeout 30000
+git diff --check
+```
+
+### Phase 8.1: Command Surface Simplification
+
+This phase intentionally reduces complexity added earlier in the implementation.
+The current public `md pdf-template codex --help` surface exposes recipe flags
+that make the command look like `md pdf-template init` plus Codex. The revised
+direction is to keep `md pdf-template codex` close to `md pdf-profile codex`:
+bounded Codex/template signals, output/report controls, and no hidden accepted
+recipe flags.
+
+- [ ] Remove recipe flags from `md pdf-template codex` CLI registration:
+      `--preset`, `--page-size`, `--orientation`, `--margin*`, `--toc`,
+      `--toc-depth`, and `--toc-page-break`.
+- [ ] Do not keep hidden compatibility for removed recipe flags.
+- [ ] Keep internal/action recipe support only where it is still needed for
+      base-profile-derived signals, renderer defaults, and deterministic
+      synthesis seams.
+- [ ] Add one focused command-layer test proving representative removed flags
+      now fail as unknown options.
+- [ ] Prune obsolete command-layer pass-through tests for removed recipe flags
+      instead of expanding redundant coverage.
+- [ ] Keep or adjust tests for supported public signals: input, intent, font
+      hints, base profile, cover image, output, dry-run, report, and overwrite.
+- [ ] Verify `md pdf-template init` remains the direct recipe-control command.
+- [ ] Update help-output expectations to show the simplified command surface.
+- [ ] Add a job record that documents the sequence: compare current help to
+      `md pdf-profile codex`, classify recipe flags as over-expanded public
+      surface, remove public flags without hiding them, prove representative
+      removed flags reject, prune obsolete tests, verify simplified help, and
+      run gates.
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
 ```
 
 Repo gates:
