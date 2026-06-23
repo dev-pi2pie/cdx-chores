@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.3 render asset compatibility"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -203,7 +203,8 @@ generated cover-media template bundle through `md to-pdf`:
 - `Plainspoken the 6th` reported no material findings remaining.
 - `Probe the 6th` flagged extensionless compact `srcset` candidates; the exact
   descriptor-bearing case now has coverage and passes with the existing parser.
-- Pending final review range after the test-coverage follow-up commit.
+- Final review range `2065397..302780c` was reviewed by `Plainspoken the 6th`
+  and `Probe the 6th`; both reported no material findings remaining.
 
 Phase 8.3 implementation commit:
 
@@ -227,4 +228,4 @@ Phase 8.3 fourth review follow-up commit:
 
 Phase 8.3 test-coverage follow-up commit:
 
-- Pending.
+- `302780c test(template-codex): cover extensionless srcset candidates`
