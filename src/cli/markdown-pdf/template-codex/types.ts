@@ -135,13 +135,18 @@ export interface MdPdfTemplateCodexSignalCollection {
 
 export interface MarkdownPdfTemplateCodexPlannedFile {
   path: string;
-  bundlePath?: string;
+  bundlePath: string;
 }
 
 export interface MarkdownPdfTemplateCodexPlannedAsset extends MarkdownPdfTemplateCodexPlannedFile {
-  bundlePath: string;
   sourcePath: string;
   sourceBasename: string;
+}
+
+export interface MarkdownPdfTemplateCodexPlannedReport {
+  path: string;
+  location: "in-bundle" | "external";
+  bundlePath?: string;
 }
 
 export interface MarkdownPdfTemplateCodexOutputPlan {
@@ -150,6 +155,6 @@ export interface MarkdownPdfTemplateCodexOutputPlan {
   generatedOutputDirectory: boolean;
   templateHtml: MarkdownPdfTemplateCodexPlannedFile;
   styleCss: MarkdownPdfTemplateCodexPlannedFile;
-  report?: MarkdownPdfTemplateCodexPlannedFile;
+  report?: MarkdownPdfTemplateCodexPlannedReport;
   assets: MarkdownPdfTemplateCodexPlannedAsset[];
 }

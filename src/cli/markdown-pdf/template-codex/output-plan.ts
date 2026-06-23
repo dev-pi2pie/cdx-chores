@@ -15,6 +15,7 @@ import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexPlannedAsset,
   MarkdownPdfTemplateCodexPlannedFile,
+  MarkdownPdfTemplateCodexPlannedReport,
   MdPdfTemplateCodexSignalCollection,
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";
@@ -106,16 +107,20 @@ function plannedBundleFile(
 function plannedReportFile(
   outputDirectory: string,
   state: NormalizedMdPdfTemplateCodexCommandState,
-): MarkdownPdfTemplateCodexPlannedFile | undefined {
+): MarkdownPdfTemplateCodexPlannedReport | undefined {
   if (!state.keepCodexReport) {
     return undefined;
   }
   if (state.codexReportOutputPath) {
     return {
       path: state.codexReportOutputPath,
+      location: "external",
     };
   }
-  return plannedBundleFile(outputDirectory, DEFAULT_REPORT_BUNDLE_PATH);
+  return {
+    ...plannedBundleFile(outputDirectory, DEFAULT_REPORT_BUNDLE_PATH),
+    location: "in-bundle",
+  };
 }
 
 function sanitizeAssetStem(value: string): string {
@@ -305,12 +310,12 @@ export async function planMdPdfTemplateCodexOutput(input: {
       });
     }
   }
-  if (plan.report && !input.state.codexReportOutputPath) {
+  if (plan.report?.location === "in-bundle") {
     assertPathInsideDirectory({
       directory: plan.outputDirectory,
       directoryLabel: "--output",
       path: plan.report.path,
-      pathLabel: plan.report.bundlePath ?? DEFAULT_REPORT_BUNDLE_PATH,
+      pathLabel: plan.report.bundlePath,
     });
   }
 

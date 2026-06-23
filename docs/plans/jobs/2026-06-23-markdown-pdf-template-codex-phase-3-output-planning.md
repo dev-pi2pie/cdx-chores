@@ -43,6 +43,11 @@ the action still stops at the Phase 4 boundary.
 - Added follow-up tests for exhausted generated-directory retries, symlink
   output directories, symlink planned recipe files, directory report/asset
   targets, and non-trivial cover-asset filename sanitization.
+- Addressed final follow-up review by splitting planned report targets from
+  ordinary bundle files, preserving bundle-relative paths for template, CSS, and
+  asset files, and adding edge coverage for final retry success, asset
+  sanitization fallback/truncation, style directory targets, report symlink
+  targets, and asset symlink targets.
 
 ## Verification
 
@@ -56,9 +61,9 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: passed. The focused template-Codex suite reported 34 tests passed and 0
-failed. The focused template-Codex plus command-layer suite reported 52 tests
-passed and 0 failed. The final full suite reported 1234 tests passed and 0
+Result: passed. The focused template-Codex suite reported 37 tests passed and 0
+failed. The focused template-Codex plus command-layer suite reported 55 tests
+passed and 0 failed. The final full suite reported 1237 tests passed and 0
 failed.
 
 ## Artifact Safety

@@ -43,11 +43,8 @@ function printMdPdfTemplateCodexPlannedSummary(
     runtime.stdout,
     `Output directory: ${displayPath(runtime, outputPlan.outputDirectory)}`,
   );
-  printLine(
-    runtime.stdout,
-    `Template HTML: ${outputPlan.templateHtml.bundlePath ?? "template.html"}`,
-  );
-  printLine(runtime.stdout, `Stylesheet: ${outputPlan.styleCss.bundlePath ?? "style.css"}`);
+  printLine(runtime.stdout, `Template HTML: ${outputPlan.templateHtml.bundlePath}`);
+  printLine(runtime.stdout, `Stylesheet: ${outputPlan.styleCss.bundlePath}`);
   printLine(runtime.stdout, `Managed assets: ${outputPlan.assets.length}`);
   if (outputPlan.report) {
     printLine(runtime.stdout, `Codex report: ${displayPath(runtime, outputPlan.report.path)}`);
