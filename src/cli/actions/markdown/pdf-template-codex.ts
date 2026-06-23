@@ -17,6 +17,7 @@ import {
   type MdPdfTemplateCodexSignalCollection,
   type NormalizedMdPdfTemplateCodexCommandState,
 } from "../../markdown-pdf/template-codex";
+import { startDirectCodexProgress, type DirectCodexProgressStatus } from "../codex-progress";
 import { displayPath, printLine } from "../shared";
 import type { CliRuntime } from "../../types";
 
@@ -41,12 +42,12 @@ async function preflightMdPdfTemplateCodex(
     signals.signalMode === "codex-assisted"
       ? synthesizeMdPdfTemplateCodexFromDecision({
           decision: (
-            await suggestMarkdownPdfTemplateWithCodex({
-              intent: state.intent,
+            await suggestMdPdfTemplateWithCodexProgress({
               outputPlan,
-              runner: options.codexRunner,
+              options,
+              runtime,
               signals,
-              workingDirectory: runtime.cwd,
+              state,
             })
           ).decision,
           outputPlan,
@@ -55,6 +56,38 @@ async function preflightMdPdfTemplateCodex(
       : synthesizeMdPdfTemplateCodex({ outputPlan, signals });
   validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
   return { outputPlan, signals, state, synthesis };
+}
+
+async function suggestMdPdfTemplateWithCodexProgress(input: {
+  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  options: MdPdfTemplateCodexOptions;
+  runtime: CliRuntime;
+  signals: MdPdfTemplateCodexSignalCollection;
+  state: NormalizedMdPdfTemplateCodexCommandState;
+}): ReturnType<typeof suggestMarkdownPdfTemplateWithCodex> {
+  const codexProgress = startDirectCodexProgress(
+    input.runtime.stderr,
+    "Requesting Codex Markdown PDF template recommendation",
+  );
+  let codexProgressStatus: DirectCodexProgressStatus = "error";
+  try {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      intent: input.state.intent,
+      outputPlan: input.outputPlan,
+      runner: input.options.codexRunner,
+      signals: input.signals,
+      workingDirectory: input.runtime.cwd,
+    });
+    codexProgressStatus =
+      result.decision.decisionMode === "adapted"
+        ? "done"
+        : result.decision.decisionMode === "conservative-fallback"
+          ? "fallback"
+          : "error";
+    return result;
+  } finally {
+    codexProgress.stop(codexProgressStatus);
+  }
 }
 
 export async function actionMdPdfTemplateCodex(

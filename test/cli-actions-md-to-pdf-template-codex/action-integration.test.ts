@@ -180,6 +180,53 @@ describe("cli action modules: md pdf-template codex integration", () => {
     });
   });
 
+  test("prints non-TTY Codex progress for Codex-assisted decisions", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-non-tty",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+
+        const { runtime, stderr } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          intent: "make headings quieter",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(codexTemplateResponse()),
+        });
+
+        expect(stderr.text).toContain("Requesting Codex Markdown PDF template recommendation...\n");
+        expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
+      },
+    );
+  });
+
+  test("shows and clears TTY Codex progress on adapted template decisions", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-action-progress-done", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "template-output");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime, stderr, stdout } = createActionTestRuntime();
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await actionMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "make headings quieter",
+        output: toRepoRelativePath(outputPath),
+        codexRunner: stubCodexRunner(codexTemplateResponse()),
+      });
+
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... -",
+      );
+      expect(stderr.text).toContain(
+        "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... done\n",
+      );
+      expect(stdout.text).toContain("Decision mode: adapted");
+    });
+  });
+
   test("summarizes conservative fallback Codex-assisted decisions", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-fallback", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
@@ -221,6 +268,40 @@ describe("cli action modules: md pdf-template codex integration", () => {
         warnings: ["Risky layout reduced to supported template slots."],
       });
     });
+  });
+
+  test("shows fallback TTY Codex progress for conservative fallback template decisions", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-fallback",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+
+        const { runtime, stderr, stdout } = createActionTestRuntime();
+        (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          intent: "use a risky layout but stay conservative",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(
+            codexTemplateResponse({
+              decisionMode: "conservative-fallback",
+              fallbackReason: "Risky layout reduced to supported template slots.",
+              warnings: ["Risky layout reduced to supported template slots."],
+            }),
+          ),
+        });
+
+        expect(stderr.text).toContain(
+          "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... fallback\n",
+        );
+        expect(stderr.text).not.toContain(
+          "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n",
+        );
+        expect(stdout.text).toContain("Decision mode: conservative-fallback");
+      },
+    );
   });
 
   test("writes requested reports for no-usable-template Codex decisions without recipe files", async () => {
@@ -269,6 +350,60 @@ describe("cli action modules: md pdf-template codex integration", () => {
       ]);
       expect(report.followUpRenderCommand).toBeUndefined();
     });
+  });
+
+  test("shows one error TTY Codex progress stop for no-usable template decisions", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-no-usable",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+
+        const { runtime, stderr, stdout } = createActionTestRuntime();
+        (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          intent: "download a remote animated cover",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(noUsableTemplateResponse()),
+        });
+
+        const errorStop =
+          "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n";
+        const errorStops = stderr.text.split(errorStop).length - 1;
+        expect(errorStops).toBe(1);
+        expect(stdout.text).toContain("Decision mode: no-usable-template");
+      },
+    );
+  });
+
+  test("shows error TTY Codex progress when the Codex runner is unavailable", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-runner-error",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+
+        const { runtime, stderr, stdout } = createActionTestRuntime();
+        (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          intent: "make headings quieter",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: async () => {
+            throw new Error("network unavailable");
+          },
+        });
+
+        expect(stderr.text).toContain(
+          "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n",
+        );
+        expect(stdout.text).toContain("Decision mode: no-usable-template");
+        expect(stdout.text).toContain("Fallback reason: Codex template decision unavailable.");
+      },
+    );
   });
 
   test("keeps Codex-assisted cover fit bounded to slot CSS", async () => {

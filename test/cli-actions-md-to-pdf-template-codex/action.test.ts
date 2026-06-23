@@ -53,6 +53,7 @@ describe("cli action modules: md pdf-template codex action", () => {
       expect(stdout.text).toContain("Stylesheet: style.css");
       expect(stdout.text).toContain("Managed assets: 0");
       expect(stdout.text).toContain("Follow-up render: cdx-chores md to-pdf");
+      expect(stderr.text).not.toContain("Requesting Codex Markdown PDF template recommendation");
       expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
       expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");

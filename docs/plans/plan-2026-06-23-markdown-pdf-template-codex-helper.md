@@ -751,21 +751,21 @@ without the existing progress wrapper. The refinement should reuse the shared
 direct-Codex progress helper instead of introducing a second spinner or status
 implementation.
 
-- [ ] Add Codex progress feedback for `md pdf-template codex` only when
+- [x] Add Codex progress feedback for `md pdf-template codex` only when
       `signals.signalMode` is `codex-assisted`.
-- [ ] Reuse `startDirectCodexProgress` with a template-specific label such as
+- [x] Reuse `startDirectCodexProgress` with a template-specific label such as
       `Requesting Codex Markdown PDF template recommendation`.
-- [ ] Preserve deterministic paths without Codex progress output.
-- [ ] Preserve non-TTY behavior as a stable one-line request message.
-- [ ] Stop TTY progress with `done` for adapted decisions.
-- [ ] Stop TTY progress with `fallback` for conservative fallback decisions.
-- [ ] Stop TTY progress with `error` for `no-usable-template` decisions and
+- [x] Preserve deterministic paths without Codex progress output.
+- [x] Preserve non-TTY behavior as a stable one-line request message.
+- [x] Stop TTY progress with `done` for adapted decisions.
+- [x] Stop TTY progress with `fallback` for conservative fallback decisions.
+- [x] Stop TTY progress with `error` for `no-usable-template` decisions and
       thrown adapter errors.
-- [ ] Ensure progress cleanup happens exactly once through success, fallback,
+- [x] Ensure progress cleanup happens exactly once through success, fallback,
       no-usable-template, and thrown-error paths.
-- [ ] Add action-level tests mirroring the existing
+- [x] Add action-level tests mirroring the existing
       `md pdf-profile codex` progress coverage.
-- [ ] Record the implementation sequence in a Phase 8.2 job record:
+- [x] Record the implementation sequence in a Phase 8.2 job record:
       compare profile progress behavior, apply the shared helper to template,
       prove deterministic paths stay quiet, verify TTY/non-TTY behavior, run
       gates, and review the phase commit range.
