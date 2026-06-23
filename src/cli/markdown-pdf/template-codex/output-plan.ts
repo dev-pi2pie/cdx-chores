@@ -38,7 +38,7 @@ async function pathExists(path: string): Promise<boolean> {
 }
 
 async function assertWritablePlannedFile(
-  file: MarkdownPdfTemplateCodexPlannedFile,
+  file: { path: string },
   options: { label: string; overwrite?: boolean },
 ): Promise<void> {
   try {

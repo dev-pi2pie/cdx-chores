@@ -756,6 +756,31 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("plans explicit Codex report output as an external report target", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-external-report", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const reportPath = join(fixtureDir, "template-codex-report.json");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        now: () => new Date("2026-06-23T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        codexReportOutput: toRepoRelativePath(reportPath),
+        templateBundleIdFactory: () => "md-pdf-template-20260623T010203Z-test0001",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan.report).toEqual({
+        location: "external",
+        path: reportPath,
+      });
+      expect(plan.report && "bundlePath" in plan.report).toBe(false);
+    });
+  });
+
   test("retries generated output paths when the first bundle directory exists", async () => {
     await withTempFixtureDir("md-pdf-template-codex-output-retry", async (fixtureDir) => {
       const firstDirectory = join(fixtureDir, "md-pdf-template-20260623T010203Z-first001");

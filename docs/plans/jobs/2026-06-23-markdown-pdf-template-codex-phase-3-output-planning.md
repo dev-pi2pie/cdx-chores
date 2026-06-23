@@ -48,12 +48,17 @@ the action still stops at the Phase 4 boundary.
   and asset files, and adding edge coverage for final retry success, asset
   sanitization fallback/truncation, style directory targets, report symlink
   targets, and asset symlink targets.
+- Added explicit external-report coverage and a typecheck clean-up so the
+  report union is exercised by tests and consumable by shared write-target
+  checks.
 
 ## Verification
 
 ```bash
 bun test test/cli-actions-md-to-pdf-template-codex.test.ts
 bun test test/cli-actions-md-to-pdf-template-codex.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+bun test test/cli-actions-md-to-pdf-template-codex.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-profile-codex-command-wiring.test.ts
+bunx tsc --noEmit
 bun run format:check
 bun run lint
 bun run build
@@ -61,10 +66,10 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: passed. The focused template-Codex suite reported 37 tests passed and 0
-failed. The focused template-Codex plus command-layer suite reported 55 tests
-passed and 0 failed. The final full suite reported 1237 tests passed and 0
-failed.
+Result: passed. The focused template-Codex suite reported 38 tests passed and 0
+failed. The focused template-Codex plus command-layer suite reported 56 tests
+passed and 0 failed. The affected-file focused suite reported 57 tests passed
+and 0 failed. The final full suite reported 1238 tests passed and 0 failed.
 
 ## Artifact Safety
 
