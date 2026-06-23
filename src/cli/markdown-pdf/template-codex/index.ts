@@ -10,6 +10,23 @@ export {
 export { resolveMdPdfTemplateCodexSlots } from "./slots";
 export { synthesizeMdPdfTemplateCodex } from "./synthesize";
 export {
+  MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES,
+  validateMarkdownPdfTemplateCodexDecision,
+  type MarkdownPdfTemplateCodexDecision,
+  type MarkdownPdfTemplateCodexDecisionManagedAsset,
+} from "./codex-decision";
+export {
+  MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+  validateMarkdownPdfTemplateCodexCssBlock,
+  validateMarkdownPdfTemplateCodexCssBlocks,
+  type MarkdownPdfTemplateCodexCssBlock,
+  type MarkdownPdfTemplateCodexCssBlockSlot,
+} from "./css-blocks";
+export {
   assertUsableMdPdfTemplateCodexSignalMode,
   classifyMdPdfTemplateCodexSignalMode,
 } from "./signal-mode";
@@ -22,8 +39,10 @@ export type {
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexFontSignals,
   MarkdownPdfTemplateCodexFamilySpec,
+  MarkdownPdfTemplateCodexImageFit,
   MarkdownPdfTemplateCodexManagedAssetBinding,
   MarkdownPdfTemplateCodexOrientationBucket,
+  MarkdownPdfTemplateCodexRecipePresetSource,
   MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,
