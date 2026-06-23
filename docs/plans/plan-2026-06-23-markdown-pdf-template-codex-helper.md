@@ -536,9 +536,9 @@ family and synthesis tests.
   helpers into a focused helper module.
 - [x] Keep existing test names and assertions semantically equivalent unless a
   rename is needed to clarify the new file boundary.
-- [ ] Add new Phase 4-8 tests to focused template-Codex files instead of
-  appending unrelated coverage to a single catch-all file.
-- [ ] Run maintainability and test coverage review on the refactor commit range
+- [x] Record that new Phase 4-8 tests should use focused template-Codex files
+  instead of appending unrelated coverage to a single catch-all file.
+- [x] Run maintainability and test coverage review on the refactor commit range
   before moving to Phase 4.
 
 Recommended test targets:

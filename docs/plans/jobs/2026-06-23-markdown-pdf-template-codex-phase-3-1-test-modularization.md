@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF template Codex phase 3.1 test modularization"
 created-date: 2026-06-23
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -49,4 +49,11 @@ and 0 failed across 186 files.
 
 ## Review
 
-Pending maintainability and test coverage review on the Phase 3.1 commit range.
+Passed.
+
+- Initial maintainability review found broad `signals` and `output-validation`
+  files; the follow-up split addressed both findings.
+- Final maintainability review on the follow-up range reported no material
+  concerns.
+- Final test coverage review on the follow-up range reported no material
+  coverage gaps.
