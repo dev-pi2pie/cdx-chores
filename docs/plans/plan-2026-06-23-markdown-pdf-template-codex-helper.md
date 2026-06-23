@@ -529,12 +529,12 @@ This phase is refactor-only. It should preserve existing behavior while making
 the completed Phase 1-3 coverage easier to extend before Phase 4 adds template
 family and synthesis tests.
 
-- [ ] Create a job record for the test modularization refactor.
-- [ ] Split `test/cli-actions-md-to-pdf-template-codex.test.ts` by
+- [x] Create a job record for the test modularization refactor.
+- [x] Split `test/cli-actions-md-to-pdf-template-codex.test.ts` by
   implementation layer instead of continuing to grow one large file.
-- [ ] Extract shared template-Codex binary/image fixture helpers and small path
+- [x] Extract shared template-Codex binary/image fixture helpers and small path
   helpers into a focused helper module.
-- [ ] Keep existing test names and assertions semantically equivalent unless a
+- [x] Keep existing test names and assertions semantically equivalent unless a
   rename is needed to clarify the new file boundary.
 - [ ] Add new Phase 4-8 tests to focused template-Codex files instead of
   appending unrelated coverage to a single catch-all file.
@@ -543,17 +543,18 @@ family and synthesis tests.
 
 Recommended test targets:
 
-- `test/cli-actions-md-to-pdf-template-codex-options.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex-signals.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex-image-metadata.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex-output-plan.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex-action.test.ts`
-- `test/helpers/md-pdf-template-codex-fixtures.ts`
+- `test/cli-actions-md-to-pdf-template-codex/command-state.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/signals.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/image-metadata.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/output-validation.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/action.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`
 
 Verification:
 
 ```bash
-bun test test/cli-actions-md-to-pdf-template-codex-*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
 bunx tsc --noEmit
 bun run format:check
 bun run lint
