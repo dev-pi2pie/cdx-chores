@@ -594,17 +594,21 @@ Recommended module targets:
 
 ### Phase 5: Codex Adapter And Strict Decision Schema
 
-- [ ] Add Markdown PDF template prompt construction under the existing Codex adapter boundary.
-- [ ] Include supported template families, recipe presets, slot enums, asset summaries, asset sizing signals, and hook requirements in bounded prompt facts.
-- [ ] Define strict structured-output schema for template decisions.
-- [ ] Require all schema properties needed by the Codex structured-output API.
-- [ ] Parse decision mode, template family, recipe preset, slots, CSS blocks, managed assets, warnings, unsupported directions, and fallback reason.
-- [ ] Validate enum domains before synthesis.
-- [ ] Validate managed asset references against the output plan.
-- [ ] Validate that Codex decisions use bounded image-fit slots instead of raw pixel sizing directives.
-- [ ] Validate optional CSS blocks for slot ownership, size limits, remote URLs, absolute local paths, and required selector preservation.
-- [ ] Implement unavailable Codex and invalid structured-output handling as `no-usable-template`.
-- [ ] Add adapter unit tests with stubs for adapted, conservative fallback, invalid structured output, unavailable Codex, and unsafe CSS block cases.
+- [x] Add Markdown PDF template prompt construction under the existing Codex adapter boundary.
+- [x] Include supported template families, recipe presets, slot enums, asset summaries, asset sizing signals, and hook requirements in bounded prompt facts.
+- [x] Define strict structured-output schema for template decisions.
+- [x] Require all schema properties needed by the Codex structured-output API.
+- [x] Parse decision mode, template family, recipe preset, slots, CSS blocks, managed assets, warnings, unsupported directions, and fallback reason.
+- [x] Validate enum domains before synthesis.
+- [x] Validate managed asset references against the output plan.
+- [x] Validate that Codex decisions use bounded image-fit slots instead of raw pixel sizing directives.
+- [x] Validate optional CSS blocks for slot ownership, size limits, remote URLs, absolute local paths, and required selector preservation.
+- [x] Implement unavailable Codex and invalid structured-output handling as `no-usable-template`.
+- [x] Add adapter unit tests with stubs for adapted, conservative fallback, invalid structured output, unavailable Codex, and unsafe CSS block cases.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-5-adapter-schema.md`
 
 Recommended module targets:
 
