@@ -398,6 +398,18 @@ describe("Markdown PDF template Codex adapter", () => {
     );
   });
 
+  test("rejects enabled cover slots without an image-fit decision", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({ coverImage: true }),
+      runner: async () => responseFromDecision({ imageFit: "" }),
+    });
+
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision was rejected by validation.",
+    );
+  });
+
   test("rejects unsafe CSS block branches directly", () => {
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
