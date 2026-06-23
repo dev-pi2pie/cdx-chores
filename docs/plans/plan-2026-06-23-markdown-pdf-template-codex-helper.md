@@ -568,18 +568,18 @@ bun test --timeout 30000
 
 ### Phase 4: Deterministic Template Families And Synthesis
 
-- [ ] Add repo-owned boilerplate for `document-layered`.
-- [ ] Add repo-owned boilerplate for `cover-media-layered`.
-- [ ] Preserve `$body$`, title metadata hooks, conditional ToC placeholders, `#TOC`, cover/page-chrome hooks, and Shiki code selectors.
-- [ ] Resolve `recipe_preset` from explicit recipe flags, profile preset identity, or default renderer behavior.
-- [ ] Implement deterministic slot defaults for cover, tables, code, spacing, typography, and color tokens.
-- [ ] Implement deterministic `--base-profile` only synthesis.
-- [ ] Implement deterministic recipe-flags-only synthesis.
-- [ ] Implement deterministic `--cover-image` only synthesis with conservative contained cover layout.
-- [ ] Map `image_fit: contain` and `image_fit: cover` to deterministic page-relative CSS sizing rules.
-- [ ] Ensure generated cover-media CSS never uses source pixel dimensions as rendered width or height.
-- [ ] Write template identity comments into `template.html` and `style.css`.
-- [ ] Add unit tests for both template families and deterministic signal-ladder rows.
+- [x] Add repo-owned boilerplate for `document-layered`.
+- [x] Add repo-owned boilerplate for `cover-media-layered`.
+- [x] Preserve `$body$`, title metadata hooks, conditional ToC placeholders, `#TOC`, cover/page-chrome hooks, and Shiki code selectors.
+- [x] Resolve `recipe_preset` from explicit recipe flags, profile preset identity, or default renderer behavior.
+- [x] Implement deterministic slot defaults for cover, tables, code, spacing, typography, and color tokens.
+- [x] Implement deterministic `--base-profile` only synthesis.
+- [x] Implement deterministic recipe-flags-only synthesis.
+- [x] Implement deterministic `--cover-image` only synthesis with conservative contained cover layout.
+- [x] Map `image_fit: contain` and `image_fit: cover` to deterministic page-relative CSS sizing rules.
+- [x] Ensure generated cover-media CSS never uses source pixel dimensions as rendered width or height.
+- [x] Write template identity comments into `template.html` and `style.css`.
+- [x] Add unit tests for both template families and deterministic signal-ladder rows.
 
 Recommended module targets:
 

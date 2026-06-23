@@ -4,7 +4,9 @@ import {
   collectMdPdfTemplateCodexSignals,
   normalizeMdPdfTemplateCodexCommandState,
   planMdPdfTemplateCodexOutput,
+  synthesizeMdPdfTemplateCodex,
   type MarkdownPdfTemplateCodexOutputPlan,
+  type MarkdownPdfTemplateCodexSynthesisResult,
   type MdPdfTemplateCodexCliOptions,
   type MdPdfTemplateCodexOptions,
   type MdPdfTemplateCodexSignalCollection,
@@ -19,6 +21,7 @@ interface MdPdfTemplateCodexPreflight {
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
   state: NormalizedMdPdfTemplateCodexCommandState;
+  synthesis: MarkdownPdfTemplateCodexSynthesisResult;
 }
 
 async function preflightMdPdfTemplateCodex(
@@ -29,7 +32,8 @@ async function preflightMdPdfTemplateCodex(
   const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
   const outputPlan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
-  return { outputPlan, signals, state };
+  const synthesis = synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+  return { outputPlan, signals, state, synthesis };
 }
 
 function printMdPdfTemplateCodexPlannedSummary(
@@ -38,6 +42,17 @@ function printMdPdfTemplateCodexPlannedSummary(
 ): void {
   const { outputPlan, signals, state } = preflight;
   printLine(runtime.stdout, `Signal mode: ${signals.signalMode}`);
+  printLine(runtime.stdout, `Template family: ${preflight.synthesis.templateFamily}`);
+  printLine(
+    runtime.stdout,
+    `Recipe preset: ${preflight.synthesis.slots.recipePreset.preset} (${preflight.synthesis.slots.recipePreset.source})`,
+  );
+  if (preflight.synthesis.slots.cover.enabled) {
+    printLine(
+      runtime.stdout,
+      `Cover image fit: ${preflight.synthesis.slots.cover.imageFit ?? "contain"}`,
+    );
+  }
   printLine(runtime.stdout, `Template bundle: ${outputPlan.bundleId}`);
   printLine(
     runtime.stdout,
@@ -61,8 +76,12 @@ export async function actionMdPdfTemplateCodex(
   const preflight = await preflightMdPdfTemplateCodex(runtime, options);
   printMdPdfTemplateCodexPlannedSummary(runtime, preflight);
 
+  if (preflight.state.dryRun) {
+    return;
+  }
+
   throw new CliError(
-    "md pdf-template codex output planning is implemented; template synthesis begins in Phase 4.",
+    "md pdf-template codex deterministic template synthesis is implemented; bundle writing begins in Phase 6.",
     {
       code: "NOT_IMPLEMENTED",
       exitCode: 1,

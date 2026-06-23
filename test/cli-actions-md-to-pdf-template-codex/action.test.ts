@@ -34,7 +34,7 @@ describe("cli action modules: md pdf-template codex action", () => {
     });
   });
 
-  test("plans output before the Phase 4 boundary", async () => {
+  test("synthesizes deterministic output before the write-bundle boundary", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       await writeFile(inputPath, "# Report\n", "utf8");
@@ -49,14 +49,39 @@ describe("cli action modules: md pdf-template codex action", () => {
         {
           code: "NOT_IMPLEMENTED",
           exitCode: 1,
-          messageIncludes: "template synthesis begins in Phase 4",
+          messageIncludes: "bundle writing begins in Phase 6",
         },
       );
       expect(stdout.text).toContain("Signal mode: codex-assisted");
+      expect(stdout.text).toContain("Template family: document-layered");
+      expect(stdout.text).toContain("Recipe preset: article (renderer-default)");
       expect(stdout.text).toContain("Template bundle: md-pdf-template-");
       expect(stdout.text).toContain("Template HTML: template.html");
       expect(stdout.text).toContain("Stylesheet: style.css");
       expect(stdout.text).toContain("Managed assets: 0");
+    });
+  });
+
+  test("prints deterministic synthesis summary for dry runs without writing artifacts", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-action-dry-run", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "template-output");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime, stdout } = createActionTestRuntime();
+
+      await actionMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "dense report",
+        output: toRepoRelativePath(outputPath),
+        dryRun: true,
+      });
+
+      expect(stdout.text).toContain("Signal mode: codex-assisted");
+      expect(stdout.text).toContain("Template family: document-layered");
+      expect(stdout.text).toContain("Recipe preset: article (renderer-default)");
+      expect(stdout.text).toContain("Dry run only. No template bundle files were written.");
+      expect(await pathExists(outputPath)).toBe(false);
     });
   });
 });
