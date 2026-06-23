@@ -17,16 +17,34 @@ describe("cli action modules: md pdf-template codex families", () => {
     });
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["document-layered"].requiredTemplateHooks).toEqual(
       expect.arrayContaining([
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
-        `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+        expect.objectContaining({
+          id: "body-placeholder",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "toc-conditional",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
+        }),
+        expect.objectContaining({
+          id: "toc-placeholder",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "toc-nav",
+          marker: `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+        }),
       ]),
     );
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["document-layered"].requiredCssHooks).toEqual(
       expect.arrayContaining([
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector,
+        expect.objectContaining({
+          id: "toc-selector",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
+        }),
+        expect.objectContaining({
+          id: "code-line-selector",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector,
+        }),
       ]),
     );
 
@@ -40,17 +58,38 @@ describe("cli action modules: md pdf-template codex families", () => {
       MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["cover-media-layered"].requiredTemplateHooks,
     ).toEqual(
       expect.arrayContaining([
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
-        `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
-        `class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`,
+        expect.objectContaining({
+          id: "body-placeholder",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "toc-conditional",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
+        }),
+        expect.objectContaining({
+          id: "toc-placeholder",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "toc-nav",
+          marker: `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+        }),
+        expect.objectContaining({
+          id: "cover-media-class",
+          marker: `class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`,
+        }),
       ]),
     );
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["cover-media-layered"].requiredCssHooks).toEqual(
       expect.arrayContaining([
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
-        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+        expect.objectContaining({
+          id: "toc-selector",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
+        }),
+        expect.objectContaining({
+          id: "cover-media-selector",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+        }),
       ]),
     );
   });

@@ -38,6 +38,7 @@ export type {
   MarkdownPdfTemplateCodexRecipePresetSlot,
   MarkdownPdfTemplateCodexRecipePresetSource,
   MarkdownPdfTemplateCodexResolvedSlots,
+  MarkdownPdfTemplateCodexRequiredHook,
   MarkdownPdfTemplateCodexSpacingSlot,
   MarkdownPdfTemplateCodexSynthesisResult,
   MarkdownPdfTemplateCodexTableSlot,

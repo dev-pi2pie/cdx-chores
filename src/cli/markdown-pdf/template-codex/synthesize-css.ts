@@ -1,4 +1,5 @@
 import { createMarkdownPdfCodeCss } from "../code-style";
+import { resolveEffectiveMarkdownPdfTocPageBreak } from "../recipe";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -18,16 +19,7 @@ function identityComment(input: {
 }
 
 function tocPageBreakCss(signals: MdPdfTemplateCodexSignalCollection): string {
-  const options = signals.recipe.effectiveOptions;
-  if (!options.toc) {
-    return "";
-  }
-  const pageBreak =
-    options.tocPageBreak === "auto"
-      ? options.preset === "report"
-        ? "after"
-        : "none"
-      : options.tocPageBreak;
+  const pageBreak = resolveEffectiveMarkdownPdfTocPageBreak(signals.recipe.effectiveOptions);
   if (pageBreak === "none") {
     return "";
   }

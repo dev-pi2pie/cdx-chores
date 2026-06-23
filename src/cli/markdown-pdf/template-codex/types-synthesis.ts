@@ -25,10 +25,15 @@ export interface MarkdownPdfTemplateCodexFamilySpec {
   label: string;
   description: string;
   requiresCoverImage: boolean;
-  requiredTemplateHooks: string[];
-  requiredCssHooks: string[];
+  requiredTemplateHooks: MarkdownPdfTemplateCodexRequiredHook[];
+  requiredCssHooks: MarkdownPdfTemplateCodexRequiredHook[];
   defaultCoverLayout: MarkdownPdfTemplateCodexCoverLayout;
   defaultCoverTitlePlacement: MarkdownPdfTemplateCodexCoverTitlePlacement;
+}
+
+export interface MarkdownPdfTemplateCodexRequiredHook {
+  id: string;
+  marker: string;
 }
 
 export interface MarkdownPdfTemplateCodexRecipePresetSlot {

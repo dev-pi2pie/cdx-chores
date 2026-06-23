@@ -7,13 +7,75 @@ import {
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
 function cssDeclarationsForSelector(styleCss: string, selector: string): Record<string, string> {
-  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`).exec(styleCss);
-  expect(match).not.toBeNull();
+  const selectorIndex = styleCss.indexOf(selector);
+  expect(selectorIndex).toBeGreaterThanOrEqual(0);
+  const openBraceIndex = styleCss.indexOf("{", selectorIndex);
+  expect(openBraceIndex).toBeGreaterThanOrEqual(0);
+  let closeBraceIndex = -1;
+  let quote: '"' | "'" | undefined;
+  let parenDepth = 0;
+  for (let index = openBraceIndex + 1; index < styleCss.length; index += 1) {
+    const char = styleCss[index];
+    const previous = styleCss[index - 1];
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char === "(") {
+      parenDepth += 1;
+      continue;
+    }
+    if (char === ")") {
+      parenDepth = Math.max(0, parenDepth - 1);
+      continue;
+    }
+    if (char === "}" && parenDepth === 0) {
+      closeBraceIndex = index;
+      break;
+    }
+  }
+  expect(closeBraceIndex).toBeGreaterThan(openBraceIndex);
+  const declarations: string[] = [];
+  let declarationStart = 0;
+  quote = undefined;
+  parenDepth = 0;
+  const block = styleCss.slice(openBraceIndex + 1, closeBraceIndex);
+  for (let index = 0; index < block.length; index += 1) {
+    const char = block[index];
+    const previous = block[index - 1];
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char === "(") {
+      parenDepth += 1;
+      continue;
+    }
+    if (char === ")") {
+      parenDepth = Math.max(0, parenDepth - 1);
+      continue;
+    }
+    if (char === ";" && parenDepth === 0) {
+      declarations.push(block.slice(declarationStart, index));
+      declarationStart = index + 1;
+    }
+  }
+  declarations.push(block.slice(declarationStart));
   return Object.fromEntries(
-    (match?.[1] ?? "")
-      .split(";")
-      .map((line) => line.trim().replace(/;$/, ""))
+    declarations
+      .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => {
         const separatorIndex = line.indexOf(":");
@@ -127,9 +189,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
           signalMode: "deterministic",
         }),
       }),
-    ).toThrow(
-      new RegExp(`template:class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`),
-    );
+    ).toThrow(/template:cover-media-class/);
   });
 
   test("maps cover-fit cover media to page-relative CSS without source pixel sizing", () => {
@@ -160,6 +220,34 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)(?:\b|[a-z%])/i,
     );
+  });
+
+  test("maps unknown cover metadata to safe contained cover media", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan({ includeCoverAsset: true }),
+      signals: createSynthesisSignals({
+        coverImage: {
+          orientationBucket: "unknown",
+          fitPressure: "unknown",
+        },
+        signalMode: "cover-image-only",
+      }),
+    });
+
+    expect(result.slots.cover).toMatchObject({
+      enabled: true,
+      imageFit: "contain",
+      layout: "contained-media",
+      orientationBucket: "unknown",
+      fitPressure: "unknown",
+    });
+    expect(result.templateHtml).toContain('data-orientation="unknown"');
+    expect(result.templateHtml).toContain('data-fit-pressure="unknown"');
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toMatchObject({
+      height: "68vh",
+      "max-height": "68vh",
+      "object-fit": "contain",
+    });
   });
 
   test("maps ToC page-break options into CSS branches", () => {

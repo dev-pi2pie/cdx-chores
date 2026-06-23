@@ -1,4 +1,8 @@
-import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES, resolveMdPdfTemplateCodexFamily } from "./families";
+import {
+  assertMarkdownPdfTemplateCodexFamilyHooksPresent,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
+  resolveMdPdfTemplateCodexFamily,
+} from "./families";
 import { resolveMdPdfTemplateCodexSlots, resolveMdPdfTemplateCodexThemeTokens } from "./slots";
 import { synthesizeMdPdfTemplateCodexCss } from "./synthesize-css";
 import { synthesizeMdPdfTemplateCodexHtml } from "./synthesize-template";
@@ -7,7 +11,6 @@ import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexSynthesisResult,
   MdPdfTemplateCodexSignalCollection,
-  MarkdownPdfTemplateCodexFamilySpec,
 } from "./types";
 
 function bindManagedAssets(
@@ -24,28 +27,6 @@ function bindManagedAssets(
       sourceBasename: coverAsset.sourceBasename,
     },
   ];
-}
-
-function assertFamilyHooksPresent(input: {
-  family: MarkdownPdfTemplateCodexFamilySpec;
-  styleCss: string;
-  templateHtml: string;
-}): void {
-  const missingTemplateHooks = input.family.requiredTemplateHooks.filter(
-    (hook) => !input.templateHtml.includes(hook),
-  );
-  const missingCssHooks = input.family.requiredCssHooks.filter(
-    (hook) => !input.styleCss.includes(hook),
-  );
-  const missingHooks = [
-    ...missingTemplateHooks.map((hook) => `template:${hook}`),
-    ...missingCssHooks.map((hook) => `css:${hook}`),
-  ];
-  if (missingHooks.length > 0) {
-    throw new Error(
-      `Generated ${input.family.id} template is missing required hooks: ${missingHooks.join(", ")}`,
-    );
-  }
 }
 
 export function synthesizeMdPdfTemplateCodex(input: {
@@ -74,7 +55,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     slots,
     themeTokens,
   });
-  assertFamilyHooksPresent({ family, styleCss, templateHtml });
+  assertMarkdownPdfTemplateCodexFamilyHooksPresent({ family, styleCss, templateHtml });
 
   return {
     decisionMode: "deterministic",

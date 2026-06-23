@@ -1,5 +1,6 @@
 import type {
   MarkdownPdfTemplateCodexFamilySpec,
+  MarkdownPdfTemplateCodexRequiredHook,
   MarkdownPdfTemplateCodexTemplateFamily,
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
@@ -20,17 +21,21 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT = {
   },
 } as const;
 
+function requiredHook(id: string, marker: string): MarkdownPdfTemplateCodexRequiredHook {
+  return { id, marker };
+}
+
 const REQUIRED_DOCUMENT_TEMPLATE_HOOKS = [
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.titleConditional,
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
-  `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+  requiredHook("body-placeholder", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder),
+  requiredHook("title-conditional", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.titleConditional),
+  requiredHook("toc-conditional", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional),
+  requiredHook("toc-placeholder", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder),
+  requiredHook("toc-nav", `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`),
 ];
 
 const REQUIRED_DOCUMENT_CSS_HOOKS = [
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector,
+  requiredHook("toc-selector", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector),
+  requiredHook("code-line-selector", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector),
 ];
 
 export const MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES: Record<
@@ -54,11 +59,17 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES: Record<
     requiresCoverImage: true,
     requiredTemplateHooks: [
       ...REQUIRED_DOCUMENT_TEMPLATE_HOOKS,
-      `class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`,
+      requiredHook(
+        "cover-media-class",
+        `class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`,
+      ),
     ],
     requiredCssHooks: [
       ...REQUIRED_DOCUMENT_CSS_HOOKS,
-      MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+      requiredHook(
+        "cover-media-selector",
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+      ),
     ],
     defaultCoverLayout: "contained-media",
     defaultCoverTitlePlacement: "below-media",
@@ -69,4 +80,26 @@ export function resolveMdPdfTemplateCodexFamily(
   signals: MdPdfTemplateCodexSignalCollection,
 ): MarkdownPdfTemplateCodexTemplateFamily {
   return signals.coverImage.available ? "cover-media-layered" : "document-layered";
+}
+
+export function assertMarkdownPdfTemplateCodexFamilyHooksPresent(input: {
+  family: MarkdownPdfTemplateCodexFamilySpec;
+  styleCss: string;
+  templateHtml: string;
+}): void {
+  const missingTemplateHooks = input.family.requiredTemplateHooks.filter(
+    (hook) => !input.templateHtml.includes(hook.marker),
+  );
+  const missingCssHooks = input.family.requiredCssHooks.filter(
+    (hook) => !input.styleCss.includes(hook.marker),
+  );
+  const missingHooks = [
+    ...missingTemplateHooks.map((hook) => `template:${hook.id}`),
+    ...missingCssHooks.map((hook) => `css:${hook.id}`),
+  ];
+  if (missingHooks.length > 0) {
+    throw new Error(
+      `Generated ${input.family.id} template is missing required hooks: ${missingHooks.join(", ")}`,
+    );
+  }
 }
