@@ -77,8 +77,12 @@ export interface NormalizedMdPdfTemplateCodexCommandState {
   codexReportOutputPath?: string;
   overwrite: boolean;
   recipeOptions: NormalizedMarkdownPdfOptions;
-  explicitRecipeOptions: NormalizeMarkdownPdfOptionsInput;
-  explicitRecipeFields: string[];
+  explicitRecipe: MdPdfTemplateCodexExplicitRecipeSignal;
+}
+
+export interface MdPdfTemplateCodexExplicitRecipeSignal {
+  options: NormalizeMarkdownPdfOptionsInput;
+  fields: string[];
 }
 
 export interface MarkdownPdfTemplateCodexRecipeSignals {

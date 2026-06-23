@@ -1,8 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function createFakeMarkdownPdfDependencies(binDir: string, html: string): Promise<void> {
   await mkdir(binDir, { recursive: true });
@@ -331,6 +340,8 @@ describe("cli command: md pdf-template codex", () => {
   test("stops at the Phase 3 implementation boundary after signal collection", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-phase3-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "pdf-template");
+      const reportPath = join(fixtureDir, "template-report.json");
       await writeFile(inputPath, "# Report\n", "utf8");
 
       const result = runCli([
@@ -342,12 +353,16 @@ describe("cli command: md pdf-template codex", () => {
         "--intent",
         "dense report",
         "--output",
-        toRepoRelativePath(join(fixtureDir, "pdf-template")),
+        toRepoRelativePath(outputPath),
+        "--codex-report-output",
+        toRepoRelativePath(reportPath),
       ]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stdout).toContain("Signal mode: codex-assisted");
       expect(result.stderr).toContain("output planning begins in Phase 3");
+      expect(await pathExists(outputPath)).toBe(false);
+      expect(await pathExists(reportPath)).toBe(false);
     });
   });
 });

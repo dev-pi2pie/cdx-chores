@@ -1,5 +1,4 @@
 import { readTextFileRequired } from "../../file-io";
-import { definedRecipeOptions } from "../../actions/markdown/common";
 import {
   createMarkdownPdfProfileCandidates,
   loadMarkdownPdfBaseProfileCandidate,
@@ -10,8 +9,8 @@ import {
   collectMarkdownPdfFontSignals,
   createAbsentMarkdownPdfDocumentSignals,
 } from "../profile/signals";
-import { normalizeMarkdownPdfOptions } from "../validation";
 import { collectTemplateCodexCoverImageSignals } from "./cover-assets";
+import { collectMdPdfTemplateCodexRecipeSignals } from "./recipe-signals";
 import { classifyMdPdfTemplateCodexSignalMode } from "./signal-mode";
 import type { CliRuntime } from "../../types";
 import type {
@@ -39,14 +38,11 @@ export async function collectMdPdfTemplateCodexSignals(
   const normalizedSelectedProfile = normalizeMarkdownPdfProfile({
     profile: selectedProfile.fullProfile,
   });
-  const baseProfileRecipeOptions = baseProfileCandidate
-    ? definedRecipeOptions(
-        normalizeMarkdownPdfProfile({ profile: baseProfileCandidate.fullProfile }).recipeOptions,
-      )
-    : {};
-  const effectiveRecipeOptions = normalizeMarkdownPdfOptions({
-    ...baseProfileRecipeOptions,
-    ...state.explicitRecipeOptions,
+  const recipe = collectMdPdfTemplateCodexRecipeSignals({
+    baseProfileRecipeOptions: baseProfileCandidate
+      ? normalizeMarkdownPdfProfile({ profile: baseProfileCandidate.fullProfile }).recipeOptions
+      : undefined,
+    explicitRecipe: state.explicitRecipe,
   });
   const coverImage = await collectTemplateCodexCoverImageSignals(state.coverImagePath);
   const signalMode = classifyMdPdfTemplateCodexSignalMode({
@@ -54,7 +50,7 @@ export async function collectMdPdfTemplateCodexSignals(
     hasCoverImage: coverImage.available,
     hasInput: Boolean(state.inputPath),
     hasIntent: Boolean(state.intent),
-    hasRecipeFlags: state.explicitRecipeFields.length > 0,
+    hasRecipeFlags: state.explicitRecipe.fields.length > 0,
   });
 
   return {
@@ -66,11 +62,7 @@ export async function collectMdPdfTemplateCodexSignals(
       available: Boolean(baseProfileCandidate),
       summary: baseProfileCandidate?.summary,
     },
-    recipe: {
-      effectiveOptions: effectiveRecipeOptions,
-      explicitFields: state.explicitRecipeFields,
-      baseProfileFields: Object.keys(baseProfileRecipeOptions).sort(),
-    },
+    recipe,
     fonts: {
       hints: state.fontHints,
       profileFonts: collectMarkdownPdfFontSignals({

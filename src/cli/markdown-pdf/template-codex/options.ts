@@ -2,13 +2,14 @@ import { stat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import { definedRecipeOptions, ensureExistingFile } from "../../actions/markdown/common";
+import { ensureExistingFile } from "../../actions/markdown/common";
 import { readMarkdownPdfProfileFile } from "../profile";
 import { normalizeMarkdownPdfOptions } from "../validation";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import type { MdPdfTemplateCodexOptions, NormalizedMdPdfTemplateCodexCommandState } from "./types";
-import { SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS } from "./cover-assets";
+import { SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS } from "./image-metadata";
+import { collectMdPdfTemplateCodexExplicitRecipeSignal } from "./recipe-signals";
 
 function normalizeOptionalText(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
@@ -149,21 +150,7 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     resolveCoverImage(runtime, options.coverImage),
   ]);
   const codexReportOutputPath = resolveOptionalReportPath(runtime, options.codexReportOutput);
-  const explicitRecipeOptions = definedRecipeOptions({
-    preset: options.preset,
-    pageSize: options.pageSize,
-    orientation: options.orientation,
-    margin: options.margin,
-    marginX: options.marginX,
-    marginY: options.marginY,
-    marginTop: options.marginTop,
-    marginRight: options.marginRight,
-    marginBottom: options.marginBottom,
-    marginLeft: options.marginLeft,
-    toc: options.toc,
-    tocDepth: options.tocDepth,
-    tocPageBreak: options.tocPageBreak,
-  });
+  const explicitRecipe = collectMdPdfTemplateCodexExplicitRecipeSignal(options);
 
   return {
     inputPath,
@@ -176,8 +163,7 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     keepCodexReport: options.keepCodexReport === true || Boolean(codexReportOutputPath),
     codexReportOutputPath,
     overwrite: options.overwrite === true,
-    recipeOptions: normalizeMarkdownPdfOptions(explicitRecipeOptions),
-    explicitRecipeOptions,
-    explicitRecipeFields: Object.keys(explicitRecipeOptions).sort(),
+    recipeOptions: normalizeMarkdownPdfOptions(explicitRecipe.options),
+    explicitRecipe,
   };
 }

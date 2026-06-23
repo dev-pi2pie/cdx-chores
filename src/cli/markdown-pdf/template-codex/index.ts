@@ -16,6 +16,7 @@ export type {
   MarkdownPdfTemplateCodexCoverImageSignals,
   MarkdownPdfTemplateCodexBaseProfileSignals,
   MarkdownPdfTemplateCodexFontSignals,
+  MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,
   NormalizedMdPdfTemplateCodexCommandState,

@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { symlink, writeFile } from "node:fs/promises";
+import { stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../src/cli/actions/markdown";
 import {
+  assertUsableMdPdfTemplateCodexSignalMode,
   classifyMdPdfTemplateCodexSignalMode,
   collectMdPdfTemplateCodexSignals,
   normalizeMdPdfTemplateCodexCommandState,
@@ -17,6 +18,15 @@ function minimalPng(width: number, height: number): Buffer {
   bytes.writeUInt32BE(width, 16);
   bytes.writeUInt32BE(height, 20);
   return bytes;
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 describe("cli action modules: md pdf-template codex", () => {
@@ -60,8 +70,8 @@ describe("cli action modules: md pdf-template codex", () => {
       expect(state.recipeOptions.pageSize).toBe("Letter");
       expect(state.recipeOptions.toc).toBe(true);
       expect(state.recipeOptions.tocDepth).toBe(2);
-      expect(state.explicitRecipeFields).toEqual(["pageSize", "preset", "toc", "tocDepth"]);
-      expect(state.explicitRecipeOptions).toMatchObject({
+      expect(state.explicitRecipe.fields).toEqual(["pageSize", "preset", "toc", "tocDepth"]);
+      expect(state.explicitRecipe.options).toMatchObject({
         pageSize: "Letter",
         preset: "report",
         toc: true,
@@ -144,6 +154,17 @@ describe("cli action modules: md pdf-template codex", () => {
         hasUsableTemplateCandidate: false,
       }),
     ).toBe("no-usable-template");
+  });
+
+  test("rejects no-usable-template as a distinct failure mode", async () => {
+    await expectCliError(
+      async () => assertUsableMdPdfTemplateCodexSignalMode("no-usable-template"),
+      {
+        code: "NO_USABLE_TEMPLATE",
+        exitCode: 1,
+        messageIncludes: "No usable Markdown PDF template path",
+      },
+    );
   });
 
   test("allows positional input and --input when they resolve to the same file", async () => {
@@ -416,6 +437,27 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("keeps supported but unparseable cover images available with unknown dimensions", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-unparseable-cover", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "cover.png");
+      await writeFile(coverImagePath, "not really a png", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(coverImagePath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.coverImage).toEqual({
+        available: true,
+        sourceBasename: "cover.png",
+        format: "png",
+        orientationBucket: "unknown",
+        fitPressure: "unknown",
+      });
+    });
+  });
+
   test("normalizes output paths without requiring the directory to exist in Phase 1", async () => {
     await withTempFixtureDir("md-pdf-template-codex-output-path", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "new-template-dir");
@@ -429,12 +471,29 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
-  test("rejects low-signal runs before output planning", async () => {
-    const { runtime } = createActionTestRuntime();
-    await expectCliError(() => actionMdPdfTemplateCodex(runtime, {}), {
-      code: "LOW_SIGNAL",
-      exitCode: 2,
-      messageIncludes: "Not enough signal",
+  test("rejects low-signal runs before output planning without writing artifacts", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-low-signal", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "template-output");
+      const reportPath = join(fixtureDir, "template-report.json");
+      const { runtime, stdout } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfTemplateCodex(runtime, {
+            intent: "   ",
+            output: toRepoRelativePath(outputPath),
+            codexReportOutput: toRepoRelativePath(reportPath),
+          }),
+        {
+          code: "LOW_SIGNAL",
+          exitCode: 2,
+          messageIncludes: "Not enough signal",
+        },
+      );
+
+      expect(stdout.text).toBe("");
+      expect(await pathExists(outputPath)).toBe(false);
+      expect(await pathExists(reportPath)).toBe(false);
     });
   });
 

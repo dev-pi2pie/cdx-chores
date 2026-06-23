@@ -35,6 +35,10 @@ planning or bundle writes.
   profile recipe precedence, cover-image metadata, low-signal rejection, and the
   Phase 3 action boundary.
 - Updated the implementation plan checklist for Phase 2.
+- Addressed Phase 2 range-review findings by splitting raw image metadata
+  parsing from cover signal heuristics, centralizing recipe provenance and merge
+  logic, and adding missing tests for no-usable-template failure, unparseable
+  local cover metadata, and side-effect-free Phase 2 failures.
 
 ## Verification
 
@@ -48,9 +52,9 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: all commands passed. The focused Phase 2 suite reported 16 tests passed
+Result: all commands passed. The focused Phase 2 suite reported 18 tests passed
 and 0 failed. The command-layer suite reported 17 tests passed and 0 failed.
-The full suite reported 1215 tests passed and 0 failed.
+The full suite reported 1217 tests passed and 0 failed.
 
 ## Artifact Safety
 
