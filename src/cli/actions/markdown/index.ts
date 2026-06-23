@@ -3,7 +3,6 @@ export type { MdFrontmatterToJsonOptions } from "./frontmatter-to-json";
 export { actionMdPdfProfileCodex } from "./pdf-profile-codex";
 export type { MdPdfProfileCodexCliOptions, MdPdfProfileCodexOptions } from "./pdf-profile-codex";
 export { actionMdPdfTemplateCodex } from "./pdf-template-codex";
-export type { MdPdfTemplateCodexCliOptions, MdPdfTemplateCodexOptions } from "./pdf-template-codex";
 export { actionMdPdfProfileInit } from "./pdf-profile-init";
 export type { MdPdfProfileInitOptions } from "./pdf-profile-init";
 export { actionMdPdfTemplateInit } from "./pdf-template-init";

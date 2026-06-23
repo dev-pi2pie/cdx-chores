@@ -61,15 +61,3 @@ export type {
   NormalizeMarkdownPdfOptionsInput,
   NormalizedMarkdownPdfOptions,
 } from "./validation";
-export { normalizeMdPdfTemplateCodexCommandState } from "./template-codex";
-export type {
-  MarkdownPdfTemplateCodexDecisionMode,
-  MarkdownPdfTemplateCodexFitPressure,
-  MarkdownPdfTemplateCodexImageFit,
-  MarkdownPdfTemplateCodexOrientationBucket,
-  MarkdownPdfTemplateCodexSignalMode,
-  MarkdownPdfTemplateCodexTemplateFamily,
-  MdPdfTemplateCodexCliOptions,
-  MdPdfTemplateCodexOptions,
-  NormalizedMdPdfTemplateCodexCommandState,
-} from "./template-codex";

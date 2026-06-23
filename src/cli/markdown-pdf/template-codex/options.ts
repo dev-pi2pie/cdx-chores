@@ -1,4 +1,5 @@
-import { extname, resolve } from "node:path";
+import { stat } from "node:fs/promises";
+import { extname } from "node:path";
 
 import { CliError } from "../../errors";
 import { ensureExistingFile } from "../../actions/markdown/common";
@@ -19,14 +20,22 @@ function normalizeTextList(values: string[] | undefined): string[] {
   return (values ?? []).map((value) => value.trim()).filter((value) => value.length > 0);
 }
 
-function samePath(left: string | undefined, right: string | undefined): boolean {
-  return Boolean(left && right && resolve(left) === resolve(right));
+async function existingPathIdentity(path: string): Promise<{ dev: number; ino: number }> {
+  const stats = await stat(path);
+  return { dev: stats.dev, ino: stats.ino };
 }
 
-function resolveOptionalInputPath(
+function samePathIdentity(
+  left: { dev: number; ino: number },
+  right: { dev: number; ino: number },
+): boolean {
+  return left.dev === right.dev && left.ino === right.ino;
+}
+
+async function resolveOptionalInputPath(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
-): string | undefined {
+): Promise<string | undefined> {
   const optionInput = normalizeOptionalText(options.input);
   const positionalInput = normalizeOptionalText(options.positionalInput);
   const resolvedOptionInput = optionInput ? resolveFromCwd(runtime, optionInput) : undefined;
@@ -34,15 +43,21 @@ function resolveOptionalInputPath(
     ? resolveFromCwd(runtime, positionalInput)
     : undefined;
 
-  if (
-    resolvedOptionInput &&
-    resolvedPositionalInput &&
-    !samePath(resolvedOptionInput, resolvedPositionalInput)
-  ) {
-    throw new CliError("Positional input and --input must refer to the same Markdown file.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+  if (resolvedOptionInput && resolvedPositionalInput) {
+    await Promise.all([
+      ensureExistingFile(resolvedOptionInput, "Markdown input"),
+      ensureExistingFile(resolvedPositionalInput, "Markdown input"),
+    ]);
+    const [optionIdentity, positionalIdentity] = await Promise.all([
+      existingPathIdentity(resolvedOptionInput),
+      existingPathIdentity(resolvedPositionalInput),
+    ]);
+    if (!samePathIdentity(optionIdentity, positionalIdentity)) {
+      throw new CliError("Positional input and --input must refer to the same Markdown file.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
   }
 
   return resolvedOptionInput ?? resolvedPositionalInput;
@@ -118,7 +133,7 @@ export async function normalizeMdPdfTemplateCodexCommandState(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
 ): Promise<NormalizedMdPdfTemplateCodexCommandState> {
-  const inputPath = resolveOptionalInputPath(runtime, options);
+  const inputPath = await resolveOptionalInputPath(runtime, options);
   if (inputPath) {
     await ensureExistingFile(inputPath, "Markdown input");
   }

@@ -9,10 +9,8 @@ import {
   actionMdToDocx,
   actionMdToPdf,
 } from "../actions";
-import type {
-  MdPdfProfileCodexCliOptions,
-  MdPdfTemplateCodexCliOptions,
-} from "../actions/markdown";
+import type { MdPdfProfileCodexCliOptions } from "../actions/markdown";
+import type { MdPdfTemplateCodexCliOptions } from "../actions/markdown/pdf-template-codex";
 import { applyCommonFileOptions } from "../options/common";
 import { parsePositiveIntegerOption } from "../options/parsers";
 import type { CliRuntime } from "../types";

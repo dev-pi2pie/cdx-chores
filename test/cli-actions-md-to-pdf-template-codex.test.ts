@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../src/cli/actions/markdown";
-import { normalizeMdPdfTemplateCodexCommandState } from "../src/cli/markdown-pdf";
+import { normalizeMdPdfTemplateCodexCommandState } from "../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -66,6 +66,23 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("allows positional input and --input when they resolve to the same file identity", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-symlink-input", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const aliasPath = join(fixtureDir, "report-alias.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await symlink(inputPath, aliasPath);
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        positionalInput: toRepoRelativePath(aliasPath),
+        input: toRepoRelativePath(inputPath),
+      });
+
+      expect(state.inputPath).toBe(inputPath);
+    });
+  });
+
   test("rejects invalid base profiles during early validation", async () => {
     await withTempFixtureDir("md-pdf-template-codex-invalid-profile", async (fixtureDir) => {
       const baseProfilePath = join(fixtureDir, "profile.yml");
@@ -81,6 +98,43 @@ describe("cli action modules: md pdf-template codex", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "Unknown Markdown PDF profile key",
+        },
+      );
+    });
+  });
+
+  test("rejects missing base profile files during early validation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-missing-profile", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          normalizeMdPdfTemplateCodexCommandState(runtime, {
+            baseProfile: toRepoRelativePath(join(fixtureDir, "missing-profile.yml")),
+          }),
+        {
+          code: "FILE_NOT_FOUND",
+          exitCode: 2,
+          messageIncludes: "Base profile file not found",
+        },
+      );
+    });
+  });
+
+  test("rejects malformed base profile files during early validation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-malformed-profile", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(baseProfilePath, "page: [\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          normalizeMdPdfTemplateCodexCommandState(runtime, {
+            baseProfile: toRepoRelativePath(baseProfilePath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Failed to parse Markdown PDF profile YAML",
         },
       );
     });
@@ -103,6 +157,36 @@ describe("cli action modules: md pdf-template codex", () => {
           messageIncludes: "Cover image must be a local PNG, JPEG, or WebP file.",
         },
       );
+    });
+  });
+
+  test("rejects missing cover image files during early validation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-missing-cover", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          normalizeMdPdfTemplateCodexCommandState(runtime, {
+            coverImage: toRepoRelativePath(join(fixtureDir, "missing-cover.png")),
+          }),
+        {
+          code: "FILE_NOT_FOUND",
+          exitCode: 2,
+          messageIncludes: "Cover image file not found",
+        },
+      );
+    });
+  });
+
+  test("normalizes output paths without requiring the directory to exist in Phase 1", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-output-path", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "new-template-dir");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+      });
+
+      expect(state.outputPath).toBe(outputPath);
     });
   });
 

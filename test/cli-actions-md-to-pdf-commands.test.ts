@@ -267,7 +267,19 @@ describe("cli command: md pdf-template codex", () => {
     expect(result.stdout).toContain("--codex-report-output <path>");
     expect(result.stdout).toContain("--overwrite");
     expect(result.stdout).toContain("--preset <value>");
+    expect(result.stdout).toContain("--page-size <value>");
+    expect(result.stdout).toContain("--orientation <value>");
+    expect(result.stdout).toContain("--margin <length>");
+    expect(result.stdout).toContain("--margin-x <length>");
+    expect(result.stdout).toContain("--margin-y <length>");
+    expect(result.stdout).toContain("--margin-top <length>");
+    expect(result.stdout).toContain("--margin-right <length>");
+    expect(result.stdout).toContain("--margin-bottom <length>");
+    expect(result.stdout).toContain("--margin-left <length>");
+    expect(result.stdout).toContain("--toc");
     expect(result.stdout).toContain("--toc-depth <n>");
+    expect(result.stdout).toContain("--toc-page-break <value>");
+    expect(result.stdout).toContain("--dry-run");
     expect(result.stderr).toBe("");
   });
 

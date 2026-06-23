@@ -71,8 +71,6 @@ export type {
   MdPdfProfileCodexCliOptions,
   MdPdfProfileCodexOptions,
   MdPdfProfileInitOptions,
-  MdPdfTemplateCodexCliOptions,
-  MdPdfTemplateCodexOptions,
   MdPdfTemplateInitOptions,
   MdToDocxOptions,
   MdToPdfOptions,

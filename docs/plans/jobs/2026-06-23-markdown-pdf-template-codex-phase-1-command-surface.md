@@ -31,6 +31,10 @@ collection and template synthesis, which start in later phases.
   explicitly until Phase 2 signal collection is implemented.
 - Added CLI help, command-layer validation, and action-level normalization tests.
 - Updated the implementation plan checklist for Phase 1.
+- Addressed Phase 1 range-review findings by using file-identity checks for
+  positional/`--input` alias equivalence, keeping provisional template-Codex
+  internals out of broader Markdown PDF/action barrels, and expanding
+  validation/help coverage.
 
 ## Verification
 
@@ -41,10 +45,10 @@ bun run format:check
 bun run lint
 bun run build
 git diff --check
-bun test
+bun test --timeout 30000
 ```
 
-Result: all commands passed. The full suite reported 1204 tests passed and 0
+Result: all commands passed. The full suite reported 1209 tests passed and 0
 failed.
 
 ## Artifact Safety
