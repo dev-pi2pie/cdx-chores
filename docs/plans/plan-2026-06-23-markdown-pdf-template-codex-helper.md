@@ -618,15 +618,19 @@ Recommended module targets:
 
 ### Phase 6: Static Validation And Managed Asset Writes
 
-- [ ] Add static template-contract validation.
-- [ ] Validate required Pandoc placeholders and ToC regions.
-- [ ] Validate profile/render hook preservation for cover, page chrome, and Shiki code selectors.
-- [ ] Reject absolute local paths and remote URLs in generated HTML/CSS.
-- [ ] Ensure all generated files and copied assets stay inside the output directory.
-- [ ] Copy accepted cover images into `assets/` during normal execution.
-- [ ] Skip recipe file writes and asset copies during `--dry-run`.
-- [ ] Support requested failure reports without writing recipe files on `no-usable-template`.
-- [ ] Add tests for hard validation failures, fallback-compatible reductions, copied assets, dry-run behavior, and output-boundary checks.
+- [x] Add static template-contract validation.
+- [x] Validate required Pandoc placeholders and ToC regions.
+- [x] Validate profile/render hook preservation for cover, page chrome, and Shiki code selectors.
+- [x] Reject absolute local paths and remote URLs in generated HTML/CSS.
+- [x] Ensure all generated files and copied assets stay inside the output directory.
+- [x] Copy accepted cover images into `assets/` during normal execution.
+- [x] Skip recipe file writes and asset copies during `--dry-run`.
+- [x] Support requested failure reports without writing recipe files on `no-usable-template`.
+- [x] Add tests for hard validation failures, fallback-compatible reductions, copied assets, dry-run behavior, and output-boundary checks.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-6-static-validation-managed-asset-writes.md`
 
 Recommended module targets:
 
