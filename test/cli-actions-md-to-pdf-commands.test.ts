@@ -328,8 +328,8 @@ describe("cli command: md pdf-template codex", () => {
     });
   });
 
-  test("stops at the Phase 1 implementation boundary after normalization", async () => {
-    await withTempFixtureDir("md-pdf-template-codex-cli-phase1-boundary", async (fixtureDir) => {
+  test("stops at the Phase 3 implementation boundary after signal collection", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-phase3-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       await writeFile(inputPath, "# Report\n", "utf8");
 
@@ -346,8 +346,8 @@ describe("cli command: md pdf-template codex", () => {
       ]);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stdout).toBe("");
-      expect(result.stderr).toContain("signal collection begins in Phase 2");
+      expect(result.stdout).toContain("Signal mode: codex-assisted");
+      expect(result.stderr).toContain("output planning begins in Phase 3");
     });
   });
 });

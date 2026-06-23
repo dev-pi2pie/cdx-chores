@@ -2,14 +2,13 @@ import { stat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import { ensureExistingFile } from "../../actions/markdown/common";
+import { definedRecipeOptions, ensureExistingFile } from "../../actions/markdown/common";
 import { readMarkdownPdfProfileFile } from "../profile";
 import { normalizeMarkdownPdfOptions } from "../validation";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import type { MdPdfTemplateCodexOptions, NormalizedMdPdfTemplateCodexCommandState } from "./types";
-
-const SUPPORTED_COVER_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+import { SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS } from "./cover-assets";
 
 function normalizeOptionalText(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
@@ -93,12 +92,19 @@ async function resolveCoverImage(
   runtime: CliRuntime,
   value: string | undefined,
 ): Promise<string | undefined> {
-  const coverImagePath = await resolveExistingFile(runtime, value, "Cover image");
+  const normalized = normalizeOptionalText(value);
+  if (/^(?:https?:|file:|data:)/i.test(normalized ?? "")) {
+    throw new CliError("Cover image must be a local PNG, JPEG, or WebP file.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  const coverImagePath = await resolveExistingFile(runtime, normalized, "Cover image");
   if (!coverImagePath) {
     return undefined;
   }
   const extension = extname(coverImagePath).toLowerCase();
-  if (!SUPPORTED_COVER_IMAGE_EXTENSIONS.has(extension)) {
+  if (!SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS.has(extension)) {
     throw new CliError("Cover image must be a local PNG, JPEG, or WebP file.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -143,6 +149,21 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     resolveCoverImage(runtime, options.coverImage),
   ]);
   const codexReportOutputPath = resolveOptionalReportPath(runtime, options.codexReportOutput);
+  const explicitRecipeOptions = definedRecipeOptions({
+    preset: options.preset,
+    pageSize: options.pageSize,
+    orientation: options.orientation,
+    margin: options.margin,
+    marginX: options.marginX,
+    marginY: options.marginY,
+    marginTop: options.marginTop,
+    marginRight: options.marginRight,
+    marginBottom: options.marginBottom,
+    marginLeft: options.marginLeft,
+    toc: options.toc,
+    tocDepth: options.tocDepth,
+    tocPageBreak: options.tocPageBreak,
+  });
 
   return {
     inputPath,
@@ -155,20 +176,8 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     keepCodexReport: options.keepCodexReport === true || Boolean(codexReportOutputPath),
     codexReportOutputPath,
     overwrite: options.overwrite === true,
-    recipeOptions: normalizeMarkdownPdfOptions({
-      preset: options.preset,
-      pageSize: options.pageSize,
-      orientation: options.orientation,
-      margin: options.margin,
-      marginX: options.marginX,
-      marginY: options.marginY,
-      marginTop: options.marginTop,
-      marginRight: options.marginRight,
-      marginBottom: options.marginBottom,
-      marginLeft: options.marginLeft,
-      toc: options.toc,
-      tocDepth: options.tocDepth,
-      tocPageBreak: options.tocPageBreak,
-    }),
+    recipeOptions: normalizeMarkdownPdfOptions(explicitRecipeOptions),
+    explicitRecipeOptions,
+    explicitRecipeFields: Object.keys(explicitRecipeOptions).sort(),
   };
 }

@@ -1,10 +1,14 @@
 import type { NormalizedMarkdownPdfOptions } from "../validation";
+import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
+import type { MarkdownPdfDocumentSignals, MarkdownPdfFontSignals } from "../profile/signals";
+import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 
 export type MarkdownPdfTemplateCodexSignalMode =
   | "low-signal"
   | "base-profile-only"
   | "recipe-only"
   | "cover-image-only"
+  | "deterministic"
   | "codex-assisted"
   | "no-usable-template";
 
@@ -73,4 +77,46 @@ export interface NormalizedMdPdfTemplateCodexCommandState {
   codexReportOutputPath?: string;
   overwrite: boolean;
   recipeOptions: NormalizedMarkdownPdfOptions;
+  explicitRecipeOptions: NormalizeMarkdownPdfOptionsInput;
+  explicitRecipeFields: string[];
+}
+
+export interface MarkdownPdfTemplateCodexRecipeSignals {
+  effectiveOptions: NormalizedMarkdownPdfOptions;
+  explicitFields: string[];
+  baseProfileFields: string[];
+}
+
+export interface MarkdownPdfTemplateCodexBaseProfileSignals {
+  available: boolean;
+  summary?: MarkdownPdfProfileCandidateSummary;
+}
+
+export interface MarkdownPdfTemplateCodexCoverImageDimensions {
+  width: number;
+  height: number;
+}
+
+export interface MarkdownPdfTemplateCodexCoverImageSignals {
+  available: boolean;
+  sourceBasename?: string;
+  format?: "jpeg" | "png" | "webp";
+  dimensions?: MarkdownPdfTemplateCodexCoverImageDimensions;
+  aspectRatio?: number;
+  orientationBucket: MarkdownPdfTemplateCodexOrientationBucket;
+  fitPressure: MarkdownPdfTemplateCodexFitPressure;
+}
+
+export interface MarkdownPdfTemplateCodexFontSignals {
+  hints: string[];
+  profileFonts: MarkdownPdfFontSignals;
+}
+
+export interface MdPdfTemplateCodexSignalCollection {
+  signalMode: MarkdownPdfTemplateCodexSignalMode;
+  documentSignals: MarkdownPdfDocumentSignals;
+  baseProfile: MarkdownPdfTemplateCodexBaseProfileSignals;
+  recipe: MarkdownPdfTemplateCodexRecipeSignals;
+  fonts: MarkdownPdfTemplateCodexFontSignals;
+  coverImage: MarkdownPdfTemplateCodexCoverImageSignals;
 }

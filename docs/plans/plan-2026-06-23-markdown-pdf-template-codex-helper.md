@@ -487,16 +487,16 @@ Recommended module targets:
 
 ### Phase 2: Signal Collection And Classification
 
-- [ ] Reuse or extract existing Markdown document signal collectors from profile-Codex where appropriate.
-- [ ] Collect document title/frontmatter, heading, ToC pressure, table pressure, code-block, language, duplicate-title, and asset-count signals.
-- [ ] Load and summarize `--base-profile` as a profile signal and compatibility target.
-- [ ] Normalize recipe flag signals and preserve explicit flag precedence over profile recipe fields.
-- [ ] Collect bounded font summary and repeatable font hints.
-- [ ] Validate `--cover-image` format and locality before Codex.
-- [ ] Collect cover image dimensions, aspect ratio, orientation bucket, and fit-pressure summary when practical.
-- [ ] Classify low-signal, deterministic, Codex-assisted, and no-usable-template paths.
-- [ ] Ensure no-signal runs fail before deriving default output directories.
-- [ ] Add tests for signal classification, path alias conflicts, invalid profile rejection, invalid cover image rejection, and no-signal behavior.
+- [x] Reuse or extract existing Markdown document signal collectors from profile-Codex where appropriate.
+- [x] Collect document title/frontmatter, heading, ToC pressure, table pressure, code-block, language, duplicate-title, and asset-count signals.
+- [x] Load and summarize `--base-profile` as a profile signal and compatibility target.
+- [x] Normalize recipe flag signals and preserve explicit flag precedence over profile recipe fields.
+- [x] Collect bounded font summary and repeatable font hints.
+- [x] Validate `--cover-image` format and locality before Codex.
+- [x] Collect cover image dimensions, aspect ratio, orientation bucket, and fit-pressure summary when practical.
+- [x] Classify low-signal, deterministic, Codex-assisted, and no-usable-template paths.
+- [x] Ensure no-signal runs fail before deriving default output directories.
+- [x] Add tests for signal classification, path alias conflicts, invalid profile rejection, invalid cover image rejection, and no-signal behavior.
 
 Recommended module targets:
 

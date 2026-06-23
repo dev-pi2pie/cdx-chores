@@ -1,0 +1,58 @@
+---
+title: "Markdown PDF template Codex phase 2 signal collection"
+created-date: 2026-06-23
+status: active
+agent: codex
+plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
+---
+
+## Scope
+
+Implemented Phase 2 of the direct `md pdf-template codex` plan.
+
+This phase collects bounded command, document, profile, recipe, font, and cover
+image signals, then classifies the command path before any default output
+planning or bundle writes.
+
+## Changes
+
+- Added template-Codex signal collection for Markdown document signals by
+  reusing the existing profile-Codex collectors.
+- Added base-profile loading and summary capture as an internal signal and
+  compatibility target.
+- Added explicit recipe flag provenance and effective recipe option merging so
+  CLI flags override base-profile recipe fields.
+- Added bounded font signals from the selected base/default profile plus
+  repeatable `--font-hint` values.
+- Added local cover-image validation for non-local resource strings and a
+  cover-image metadata collector for format, dimensions, aspect ratio,
+  orientation bucket, and fit-pressure signals when dimensions can be read.
+- Added signal-mode classification for low-signal, deterministic,
+  Codex-assisted, and no-usable-template paths.
+- Moved the action boundary forward: the command now collects signals, rejects
+  low-signal requests before output planning, and stops at the Phase 3 boundary.
+- Added focused tests for signal classification, document signal collection,
+  profile recipe precedence, cover-image metadata, low-signal rejection, and the
+  Phase 3 action boundary.
+- Updated the implementation plan checklist for Phase 2.
+
+## Verification
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex.test.ts
+bun test test/cli-actions-md-to-pdf-commands.test.ts
+bun run format:check
+bun run lint
+bun run build
+git diff --check
+bun test --timeout 30000
+```
+
+Result: all commands passed. The focused Phase 2 suite reported 16 tests passed
+and 0 failed. The command-layer suite reported 17 tests passed and 0 failed.
+The full suite reported 1215 tests passed and 0 failed.
+
+## Artifact Safety
+
+No generated template bundles, Codex reports, PDFs, profiles, or local resource
+artifacts were created or staged.

@@ -3,9 +3,21 @@ import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../src/cli/actions/markdown";
-import { normalizeMdPdfTemplateCodexCommandState } from "../src/cli/markdown-pdf/template-codex";
+import {
+  classifyMdPdfTemplateCodexSignalMode,
+  collectMdPdfTemplateCodexSignals,
+  normalizeMdPdfTemplateCodexCommandState,
+} from "../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+
+function minimalPng(width: number, height: number): Buffer {
+  const bytes = Buffer.alloc(24);
+  bytes.set([0x89, 0x50, 0x4e, 0x47], 0);
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  return bytes;
+}
 
 describe("cli action modules: md pdf-template codex", () => {
   test("normalizes inputs, hints, report output, and recipe flags", async () => {
@@ -48,7 +60,90 @@ describe("cli action modules: md pdf-template codex", () => {
       expect(state.recipeOptions.pageSize).toBe("Letter");
       expect(state.recipeOptions.toc).toBe(true);
       expect(state.recipeOptions.tocDepth).toBe(2);
+      expect(state.explicitRecipeFields).toEqual(["pageSize", "preset", "toc", "tocDepth"]);
+      expect(state.explicitRecipeOptions).toMatchObject({
+        pageSize: "Letter",
+        preset: "report",
+        toc: true,
+        tocDepth: 2,
+      });
     });
+  });
+
+  test("classifies the Phase 2 signal ladder", () => {
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: false,
+        hasInput: false,
+        hasIntent: false,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("low-signal");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: true,
+        hasCoverImage: false,
+        hasInput: false,
+        hasIntent: false,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("base-profile-only");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: false,
+        hasInput: false,
+        hasIntent: false,
+        hasRecipeFlags: true,
+      }),
+    ).toBe("recipe-only");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: true,
+        hasInput: false,
+        hasIntent: false,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("cover-image-only");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: true,
+        hasCoverImage: true,
+        hasInput: false,
+        hasIntent: false,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("deterministic");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: false,
+        hasInput: true,
+        hasIntent: false,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("codex-assisted");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: true,
+        hasInput: false,
+        hasIntent: true,
+        hasRecipeFlags: false,
+      }),
+    ).toBe("codex-assisted");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: false,
+        hasInput: true,
+        hasIntent: false,
+        hasRecipeFlags: false,
+        hasUsableTemplateCandidate: false,
+      }),
+    ).toBe("no-usable-template");
   });
 
   test("allows positional input and --input when they resolve to the same file", async () => {
@@ -177,6 +272,150 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("rejects non-local cover image resources before signal collection", async () => {
+    const { runtime } = createActionTestRuntime();
+    await expectCliError(
+      () =>
+        normalizeMdPdfTemplateCodexCommandState(runtime, {
+          coverImage: "https://example.com/cover.png",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Cover image must be a local PNG, JPEG, or WebP file.",
+      },
+    );
+  });
+
+  test("collects Markdown, recipe, and font signals for Codex-assisted input", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-document-signals", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(
+        inputPath,
+        [
+          "---",
+          "title: Private Report",
+          "---",
+          "# Private Report",
+          "## Findings",
+          "![chart](./private/chart.png)",
+          "| A | B | C |",
+          "| - | - | - |",
+          "| 1 | 2 | 3 |",
+          "```ts",
+          "const secret = true;",
+          "```",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        fontHint: [" Inter ", "Noto Sans"],
+        toc: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const serialized = JSON.stringify(signals);
+
+      expect(signals.signalMode).toBe("codex-assisted");
+      expect(signals.documentSignals.available).toBe(true);
+      expect(signals.documentSignals.headings).toMatchObject({ total: 2, maxDepth: 2 });
+      expect(signals.documentSignals.tables.maxColumns).toBe(3);
+      expect(signals.documentSignals.codeFences.languages).toEqual(["ts"]);
+      expect(signals.documentSignals.assets).toEqual({
+        localCount: 1,
+        remoteCount: 0,
+        dataUriCount: 0,
+      });
+      expect(signals.documentSignals.title.duplicateVisibleTitleRisk).toBe(true);
+      expect(signals.recipe.explicitFields).toEqual(["toc"]);
+      expect(signals.recipe.effectiveOptions.toc).toBe(true);
+      expect(signals.fonts.hints).toEqual(["Inter", "Noto Sans"]);
+      expect(signals.fonts.profileFonts.families.length).toBeGreaterThan(0);
+      expect(serialized).not.toContain("Private Report");
+      expect(serialized).not.toContain("./private/chart.png");
+      expect(serialized).not.toContain("secret");
+    });
+  });
+
+  test("uses base profile recipe fields and lets explicit recipe flags take precedence", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-base-profile-signals", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        baseProfilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260618T010203Z-a1b2c3d4",
+          "  source: codex",
+          "  preset: wide-table",
+          "  createdAt: 2026-06-18T01:02:03Z",
+          "page:",
+          "  size: Letter",
+          "  orientation: landscape",
+          "toc:",
+          "  enabled: true",
+          "  depth: 4",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        baseProfile: toRepoRelativePath(baseProfilePath),
+        orientation: "portrait",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.signalMode).toBe("deterministic");
+      expect(signals.baseProfile).toMatchObject({
+        available: true,
+        summary: {
+          kind: "base-profile",
+          preset: "wide-table",
+        },
+      });
+      expect(signals.recipe.baseProfileFields).toEqual([
+        "orientation",
+        "pageSize",
+        "preset",
+        "toc",
+        "tocDepth",
+      ]);
+      expect(signals.recipe.explicitFields).toEqual(["orientation"]);
+      expect(signals.recipe.effectiveOptions.pageSize).toBe("Letter");
+      expect(signals.recipe.effectiveOptions.orientation).toBe("portrait");
+      expect(signals.recipe.effectiveOptions.toc).toBe(true);
+      expect(signals.recipe.effectiveOptions.tocDepth).toBe(4);
+    });
+  });
+
+  test("collects cover image dimensions, orientation, and fit-pressure signals", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cover-signals", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "cover.png");
+      await writeFile(coverImagePath, minimalPng(4000, 1000));
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(coverImagePath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.signalMode).toBe("cover-image-only");
+      expect(signals.coverImage).toMatchObject({
+        available: true,
+        sourceBasename: "cover.png",
+        format: "png",
+        dimensions: { width: 4000, height: 1000 },
+        aspectRatio: 4,
+        orientationBucket: "panoramic",
+        fitPressure: "letterbox-risk",
+      });
+      expect(JSON.stringify(signals.coverImage)).not.toContain(fixtureDir);
+    });
+  });
+
   test("normalizes output paths without requiring the directory to exist in Phase 1", async () => {
     await withTempFixtureDir("md-pdf-template-codex-output-path", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "new-template-dir");
@@ -190,12 +429,21 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
-  test("validates command state before the Phase 2 boundary", async () => {
+  test("rejects low-signal runs before output planning", async () => {
+    const { runtime } = createActionTestRuntime();
+    await expectCliError(() => actionMdPdfTemplateCodex(runtime, {}), {
+      code: "LOW_SIGNAL",
+      exitCode: 2,
+      messageIncludes: "Not enough signal",
+    });
+  });
+
+  test("collects command signals before the Phase 3 boundary", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       await writeFile(inputPath, "# Report\n", "utf8");
 
-      const { runtime } = createActionTestRuntime();
+      const { runtime, stdout } = createActionTestRuntime();
       await expectCliError(
         () =>
           actionMdPdfTemplateCodex(runtime, {
@@ -205,9 +453,10 @@ describe("cli action modules: md pdf-template codex", () => {
         {
           code: "NOT_IMPLEMENTED",
           exitCode: 1,
-          messageIncludes: "signal collection begins in Phase 2",
+          messageIncludes: "output planning begins in Phase 3",
         },
       );
+      expect(stdout.text).toContain("Signal mode: codex-assisted");
     });
   });
 });
