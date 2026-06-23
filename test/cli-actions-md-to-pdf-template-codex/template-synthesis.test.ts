@@ -3,15 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { synthesizeMdPdfTemplateCodex } from "../../src/cli/markdown-pdf/template-codex";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
-function coverImageCssBlock(styleCss: string): string {
-  const match = /\.pdf-cover-media__image \{[\s\S]*?\n\}/.exec(styleCss);
+function cssDeclarationsForSelector(styleCss: string, selector: string): Record<string, string> {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`${escapedSelector} \\{[\\s\\S]*?\\n\\}`).exec(styleCss);
   expect(match).not.toBeNull();
-  return match?.[0] ?? "";
-}
-
-function coverImageCssDeclarations(styleCss: string): Record<string, string> {
   return Object.fromEntries(
-    coverImageCssBlock(styleCss)
+    (match?.[0] ?? "")
       .split("\n")
       .slice(1, -1)
       .map((line) => line.trim().replace(/;$/, ""))
@@ -78,7 +75,17 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('data-orientation="panoramic"');
     expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
     expect(result.styleCss).toContain("object-fit: contain;");
-    expect(coverImageCssDeclarations(result.styleCss)).toEqual({
+    expect(result.styleCss).toContain("@page cover");
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover")).toMatchObject({
+      "break-after": "page",
+      "min-height": "100vh",
+      page: "cover",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media")).toMatchObject({
+      display: "flex",
+      padding: "18mm",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
       display: "block",
       height: "68vh",
       "max-height": "68vh",
@@ -87,15 +94,11 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "object-position": "center",
       width: "100%",
     });
-    expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
-  display: block;
-  height: 68vh;
-  max-height: 68vh;
-  max-width: 100%;
-  object-fit: contain;
-  object-position: center;
-  width: 100%;
-}`);
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__caption")).toMatchObject({
+      display: "flex",
+      gap: "2mm",
+      "margin-top": "8mm",
+    });
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)(?:\b|[a-z%])/i,
     );
@@ -117,7 +120,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.templateHtml).toContain('data-image-fit="cover"');
     expect(result.styleCss).toContain("object-fit: cover;");
-    expect(coverImageCssDeclarations(result.styleCss)).toEqual({
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
       display: "block",
       height: "76vh",
       "max-height": "76vh",
@@ -126,15 +129,6 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "object-position": "center",
       width: "100%",
     });
-    expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
-  display: block;
-  height: 76vh;
-  max-height: 76vh;
-  max-width: 100%;
-  object-fit: cover;
-  object-position: center;
-  width: 100%;
-}`);
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)(?:\b|[a-z%])/i,
     );

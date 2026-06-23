@@ -98,6 +98,36 @@ describe("cli action modules: md pdf-template codex slots", () => {
   });
 
   test("maps preset-driven slots and theme tokens", () => {
+    const article = synthesize({
+      signals: createSynthesisSignals({ preset: "article" }),
+    });
+    expect(article.slots.tables).toMatchObject({
+      density: "standard",
+      width: "content",
+    });
+    expect(article.slots.spacing.density).toBe("standard");
+    expect(article.slots.typography.scale).toBe("standard");
+    expect(article.themeTokens).toMatchObject({
+      bodySize: "10.5pt",
+      lineHeight: "1.5",
+      blockGap: "0.55rem",
+    });
+
+    const report = synthesize({
+      signals: createSynthesisSignals({ preset: "report", explicitFields: ["preset"] }),
+    });
+    expect(report.slots.tables).toMatchObject({
+      density: "standard",
+      width: "content",
+    });
+    expect(report.slots.spacing.density).toBe("standard");
+    expect(report.slots.typography.scale).toBe("standard");
+    expect(report.themeTokens).toMatchObject({
+      bodySize: "10.5pt",
+      lineHeight: "1.5",
+      blockGap: "0.55rem",
+    });
+
     const compact = synthesize({
       signals: createSynthesisSignals({ preset: "compact", explicitFields: ["preset"] }),
     });

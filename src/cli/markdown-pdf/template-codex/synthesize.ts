@@ -31,8 +31,16 @@ function assertFamilyHooksPresent(input: {
   styleCss: string;
   templateHtml: string;
 }): void {
-  const synthesized = `${input.templateHtml}\n${input.styleCss}`;
-  const missingHooks = input.family.requiredHooks.filter((hook) => !synthesized.includes(hook));
+  const missingTemplateHooks = input.family.requiredTemplateHooks.filter(
+    (hook) => !input.templateHtml.includes(hook),
+  );
+  const missingCssHooks = input.family.requiredCssHooks.filter(
+    (hook) => !input.styleCss.includes(hook),
+  );
+  const missingHooks = [
+    ...missingTemplateHooks.map((hook) => `template:${hook}`),
+    ...missingCssHooks.map((hook) => `css:${hook}`),
+  ];
   if (missingHooks.length > 0) {
     throw new Error(
       `Generated ${input.family.id} template is missing required hooks: ${missingHooks.join(", ")}`,

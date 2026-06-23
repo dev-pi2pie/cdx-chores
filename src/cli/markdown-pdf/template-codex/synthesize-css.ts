@@ -47,7 +47,6 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
   const fit = slots.cover.imageFit ?? "contain";
   const imageHeight =
     slots.cover.layout === "full-bleed-media" || fit === "cover" ? "76vh" : "68vh";
-  const captionDisplay = slots.cover.titlePlacement === "below-media" ? "flex" : "none";
   const coverPadding = slots.cover.layout === "full-bleed-media" ? "0" : "18mm";
 
   return `
@@ -84,7 +83,7 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
 
 .pdf-cover-media__caption {
   color: var(--template-muted);
-  display: ${captionDisplay};
+  display: flex;
   flex-direction: column;
   gap: 2mm;
   margin-top: 8mm;

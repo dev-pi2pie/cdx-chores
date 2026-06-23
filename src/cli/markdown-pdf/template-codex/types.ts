@@ -183,7 +183,8 @@ export interface MarkdownPdfTemplateCodexFamilySpec {
   label: string;
   description: string;
   requiresCoverImage: boolean;
-  requiredHooks: string[];
+  requiredTemplateHooks: string[];
+  requiredCssHooks: string[];
   defaultCoverLayout: MarkdownPdfTemplateCodexCoverLayout;
   defaultCoverTitlePlacement: MarkdownPdfTemplateCodexCoverTitlePlacement;
 }

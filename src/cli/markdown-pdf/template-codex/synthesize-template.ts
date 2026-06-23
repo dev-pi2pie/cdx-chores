@@ -23,11 +23,9 @@ function coverMediaHtml(input: {
   if (!input.slots.cover.enabled || !coverAsset) {
     return "";
   }
-
-  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-layout="${input.slots.cover.layout}" data-title-placement="${input.slots.cover.titlePlacement}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
-  <figure class="pdf-cover-media">
-    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
-    <figcaption class="pdf-cover-media__caption">
+  const captionHtml =
+    input.slots.cover.titlePlacement === "below-media"
+      ? `    <figcaption class="pdf-cover-media__caption">
 $if(title)$
       <span class="pdf-cover-media__title">$title$</span>
 $endif$
@@ -35,7 +33,13 @@ $if(subtitle)$
       <span class="pdf-cover-media__subtitle">$subtitle$</span>
 $endif$
     </figcaption>
-  </figure>
+`
+      : "";
+
+  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-layout="${input.slots.cover.layout}" data-title-placement="${input.slots.cover.titlePlacement}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
+  <figure class="pdf-cover-media">
+    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
+${captionHtml}  </figure>
 </section>
 `;
 }
