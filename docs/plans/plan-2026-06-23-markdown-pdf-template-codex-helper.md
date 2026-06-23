@@ -640,16 +640,20 @@ Recommended module targets:
 
 ### Phase 7: Diagnostic Report And CLI Summary
 
-- [ ] Define the `markdown-pdf-codex-template-report` JSON shape.
-- [ ] Link report ID and template bundle ID.
-- [ ] Redact source paths for managed assets.
-- [ ] Record bundle-relative asset paths, formats, dimensions, and source basenames.
-- [ ] Record signal mode, decision mode, template family, recipe preset, base-profile summary, recipe signal, warnings, unsupported directions, validation results, and follow-up render command.
-- [ ] Support `--keep-codex-report` default in-bundle report path.
-- [ ] Support explicit `--codex-report-output <path>`.
-- [ ] Allow report-only writes during dry-run or failure only when explicitly requested.
-- [ ] Print a concise summary for successful and fallback decisions.
-- [ ] Add report schema, redaction, explicit path, default path, and CLI summary tests.
+- [x] Define the `markdown-pdf-codex-template-report` JSON shape.
+- [x] Link report ID and template bundle ID.
+- [x] Redact source paths for managed assets.
+- [x] Record bundle-relative asset paths, formats, dimensions, and source basenames.
+- [x] Record signal mode, decision mode, template family, recipe preset, base-profile summary, recipe signal, warnings, unsupported directions, validation results, and follow-up render command.
+- [x] Support `--keep-codex-report` default in-bundle report path.
+- [x] Support explicit `--codex-report-output <path>`.
+- [x] Allow report-only writes during dry-run or failure only when explicitly requested.
+- [x] Print a concise summary for successful and fallback decisions.
+- [x] Add report schema, redaction, explicit path, default path, and CLI summary tests.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-7-diagnostic-report-cli-summary.md`
 
 Recommended module targets:
 
