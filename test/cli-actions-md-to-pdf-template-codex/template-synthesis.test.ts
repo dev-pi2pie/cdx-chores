@@ -276,6 +276,17 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(explicitBefore.styleCss).toContain("break-before: page;");
     expect(explicitBefore.styleCss).not.toContain("break-after: page;");
 
+    const explicitAfter = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        preset: "article",
+        toc: true,
+        tocPageBreak: "after",
+      }),
+    });
+    expect(explicitAfter.styleCss).not.toContain("break-before: page;");
+    expect(explicitAfter.styleCss).toContain("break-after: page;");
+
     const explicitBoth = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
       signals: createSynthesisSignals({
