@@ -33,6 +33,9 @@ playground image fixtures or record local playground image names.
   module stays small after Phase 3.1 modularization.
 - Covered stubbed Codex-assisted adapted, conservative-fallback, and
   no-usable-template paths without invoking live Codex.
+- Added review follow-up coverage for conservative-fallback bundle
+  materialization, cover-media render handoff through the existing mocked
+  renderer seam, and no-usable-template report-only schema invariants.
 - Covered generated temp synthetic PNG, JPEG, and WebP cover bytes without
   committing new image fixtures or hard-coding playground image paths.
 - Covered bounded cover image behavior so `cover` fit is expressed through slot
@@ -81,10 +84,17 @@ playground image fixtures or record local playground image names.
 ## Review
 
 - Phase implementation range review requested as `a59dbc8..6891c61`.
+- Final Phase 8 code/test review range after review follow-up is
+  `a59dbc8..362a6b0`.
 - Review requests were sent to `Plainspoken the 6th` and `Probe the 6th`.
+- `Probe the 6th` returned coverage findings for cover-media render handoff,
+  conservative-fallback bundle compatibility, and no-usable-template
+  report-only schema assertions.
+- The coverage findings were addressed in `362a6b0`.
 - `auto_commit_notification` was requested before the implementation commit by
   reusing the existing `Commit Scout the 9th` thread.
 
-Phase 8 implementation commit:
+Phase 8 implementation commits:
 
 - `6891c61` `feat(template-codex): wire Codex-assisted template synthesis`
+- `362a6b0` `test(template-codex): cover Phase 8 review gaps`
