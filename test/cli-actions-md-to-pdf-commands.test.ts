@@ -245,6 +245,101 @@ describe("cli command: md pdf-template init", () => {
   });
 });
 
+describe("cli command: md pdf-template codex", () => {
+  test("documents the direct Codex template helper options", () => {
+    const result = runCli(["md", "pdf-template", "codex", "--help"]);
+    const normalizedStdout = result.stdout.replace(/\s+/g, " ");
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Usage: cdx-chores md pdf-template codex [options] [input]");
+    expect(normalizedStdout).toContain(
+      "Draft a reviewable Markdown PDF template bundle from bounded signals",
+    );
+    expect(result.stdout).toContain("input");
+    expect(normalizedStdout).toContain("Markdown sample for document-informed template signals");
+    expect(result.stdout).toContain("-i, --input <path>");
+    expect(result.stdout).toContain("--intent <text>");
+    expect(result.stdout).toContain("--font-hint <text>");
+    expect(result.stdout).toContain("--base-profile <path>");
+    expect(result.stdout).toContain("--cover-image <path>");
+    expect(result.stdout).toContain("-o, --output <path>");
+    expect(result.stdout).toContain("--keep-codex-report");
+    expect(result.stdout).toContain("--codex-report-output <path>");
+    expect(result.stdout).toContain("--overwrite");
+    expect(result.stdout).toContain("--preset <value>");
+    expect(result.stdout).toContain("--toc-depth <n>");
+    expect(result.stderr).toBe("");
+  });
+
+  test("rejects conflicting positional and explicit Codex template inputs from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-input-conflict", async (fixtureDir) => {
+      const firstInputPath = join(fixtureDir, "one.md");
+      const secondInputPath = join(fixtureDir, "two.md");
+      await writeFile(firstInputPath, "# One\n", "utf8");
+      await writeFile(secondInputPath, "# Two\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-template",
+        "codex",
+        toRepoRelativePath(firstInputPath),
+        "--input",
+        toRepoRelativePath(secondInputPath),
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "pdf-template")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Positional input and --input");
+    });
+  });
+
+  test("rejects invalid report paths before later template work", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-report-path", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-template",
+        "codex",
+        "--input",
+        toRepoRelativePath(inputPath),
+        "--codex-report-output",
+        toRepoRelativePath(join(fixtureDir, "report.txt")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("report path must end with .json");
+    });
+  });
+
+  test("stops at the Phase 1 implementation boundary after normalization", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-phase1-boundary", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-template",
+        "codex",
+        "--input",
+        toRepoRelativePath(inputPath),
+        "--intent",
+        "dense report",
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "pdf-template")),
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("signal collection begins in Phase 2");
+    });
+  });
+});
+
 describe("cli command: md pdf-profile init", () => {
   test("writes a profile file from the command layer", async () => {
     await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {

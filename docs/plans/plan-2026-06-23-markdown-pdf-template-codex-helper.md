@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex helper implementation"
 created-date: 2026-06-23
 modified-date: 2026-06-23
-status: draft
+status: active
 agent: codex
 ---
 
@@ -470,14 +470,14 @@ Managed asset reports should prefer:
 
 ### Phase 1: Command Surface And Shared Types
 
-- [ ] Add `md pdf-template codex` command registration and help text.
-- [ ] Add action types for command options and normalized command state.
-- [ ] Support positional `[input]` and `-i, --input <path>` aliasing.
-- [ ] Add recipe flag parity with `md pdf-template init`.
-- [ ] Add `--intent`, repeatable `--font-hint`, `--base-profile`, `--cover-image`, `--output`, `--dry-run`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`.
-- [ ] Add early validation for input alias conflicts, invalid base profiles, invalid cover image paths, and invalid output/report path shapes.
-- [ ] Add signal-mode and decision-mode type definitions shared by action, adapter, synthesis, validation, and report modules.
-- [ ] Add CLI help tests and option parsing tests.
+- [x] Add `md pdf-template codex` command registration and help text.
+- [x] Add action types for command options and normalized command state.
+- [x] Support positional `[input]` and `-i, --input <path>` aliasing.
+- [x] Add recipe flag parity with `md pdf-template init`.
+- [x] Add `--intent`, repeatable `--font-hint`, `--base-profile`, `--cover-image`, `--output`, `--dry-run`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`.
+- [x] Add early validation for input alias conflicts, invalid base profiles, invalid cover image paths, and invalid output/report path shapes.
+- [x] Add signal-mode and decision-mode type definitions shared by action, adapter, synthesis, validation, and report modules.
+- [x] Add CLI help tests and option parsing tests.
 
 Recommended module targets:
 
