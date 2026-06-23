@@ -583,5 +583,22 @@ describe("Markdown PDF template Codex adapter", () => {
         request,
       }),
     ).toThrow("slots.cover.image_fit");
+
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: {
+          ...decision,
+          fontDecisions: [
+            {
+              family: "Inter",
+              role: "heading",
+              source: "font-hint",
+              templateLevel: "yes" as unknown as boolean,
+            },
+          ],
+        },
+        request,
+      }),
+    ).toThrow("font_decisions[0].template_level");
   });
 });

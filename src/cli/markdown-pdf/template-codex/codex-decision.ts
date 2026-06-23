@@ -97,6 +97,13 @@ function assertNonEmptyString(value: string, context: string): string {
   return trimmed;
 }
 
+function assertBoolean(value: boolean, context: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error(`Markdown PDF template Codex response ${context} must be a boolean.`);
+  }
+  return value;
+}
+
 function validateStringArray(values: readonly string[], context: string): string[] {
   return values.map((value, index) => assertNonEmptyString(value, `${context}[${index}]`));
 }
@@ -221,7 +228,10 @@ function validateTemplateFontDecisions(
         MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
         `font_decisions[${index}].source`,
       ),
-      templateLevel: decision.templateLevel === true,
+      templateLevel: assertBoolean(
+        decision.templateLevel,
+        `font_decisions[${index}].template_level`,
+      ),
     };
   });
 }

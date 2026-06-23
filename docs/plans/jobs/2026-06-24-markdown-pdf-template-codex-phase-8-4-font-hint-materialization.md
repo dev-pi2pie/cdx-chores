@@ -35,6 +35,8 @@ font choices.
    precedence.
 9. Ran the focused Phase 8.4 validation target, profile-Codex regression
    coverage, repository gates, and the full test suite.
+10. Added a review-follow-up hardening check so direct decision application
+    rejects malformed `template_level` values instead of coercing them.
 
 ## Changes
 
@@ -63,6 +65,16 @@ font choices.
   - Passed after implementation and formatting.
 - `bun test --timeout 30000`
   - Passed after implementation: 1303 tests.
+- `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+  - Passed after the malformed `template_level` validator follow-up: 42 tests.
+- `bunx tsc --noEmit`
+  - Passed after the malformed `template_level` validator follow-up.
+- `bun run format:check`
+  - Passed after the malformed `template_level` validator follow-up.
+- `git diff --check`
+  - Passed after the malformed `template_level` validator follow-up.
+- `bun run lint`
+  - Passed after the malformed `template_level` validator follow-up.
 
 ## Reviews
 
