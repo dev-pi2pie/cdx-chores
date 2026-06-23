@@ -791,6 +791,118 @@ bun test --timeout 30000
 git diff --check
 ```
 
+### Phase 8.3: Render-Time Bundle Asset And Cover CSS Compatibility
+
+This phase fixes renderer compatibility gaps found by rendering a generated
+cover-media template bundle through `md to-pdf`. The generated bundle copied the
+cover image into `assets/`, but `md to-pdf` resolved the template-relative
+`assets/...` URL against the Markdown input directory. The same smoke also
+showed Template-Codex cover CSS using viewport units (`100vh`, `68vh`, `76vh`)
+that WeasyPrint rejects in this paged-media path.
+
+- [ ] Replace Template-Codex cover-media viewport units with paged-media-safe
+      definite sizing derived from normalized page size and orientation.
+- [ ] Reuse or mirror the renderer-safe cover sizing policy already applied to
+      Markdown PDF profile cover CSS.
+- [ ] Ensure `contain` and `cover` image-fit slots still scale oversized cover
+      images through bounded page-relative rules, not source pixel dimensions.
+- [ ] Teach `md to-pdf` custom-template rendering to resolve bundle-local
+      relative HTML asset URLs beside the custom template when those assets
+      exist there.
+- [ ] Preserve Markdown-input-relative asset resolution for normal Markdown
+      body images and existing render behavior.
+- [ ] Keep remote assets disabled by default and keep absolute/local path
+      hygiene unchanged.
+- [ ] Add regression coverage proving generated Template-Codex cover CSS does
+      not emit `vh` units.
+- [ ] Add render compatibility coverage where `template.html` references
+      `assets/cover.png`, the asset exists only beside the custom template, and
+      the render path does not resolve it from the Markdown input directory.
+- [ ] Add coverage for the fallback case where a relative asset is genuinely
+      Markdown-input-relative and should not be rewritten to the template
+      bundle.
+- [ ] Record the implementation sequence in a Phase 8.3 job record:
+      reproduce the warning/missing-asset cause, fix cover CSS sizing, fix
+      bundle-local asset resolution, verify focused render coverage, run gates,
+      and review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-3-render-asset-compatibility.md`
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-actions*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+```
+
+Repo gates:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test --timeout 30000
+git diff --check
+```
+
+### Phase 8.4: Template Font Hint Materialization
+
+This phase makes `--font-hint` materially useful for `md pdf-template codex`.
+The command already accepts, normalizes, reports, and forwards font hints to the
+template Codex prompt, but current template synthesis still writes fixed
+default font stacks. Unlike `md pdf-profile codex`, there is no bounded template
+decision field that can turn font preferences into durable generated CSS.
+
+- [ ] Define bounded template font decision fields or theme-token overrides for
+      body, heading, and code font roles.
+- [ ] Keep font output deterministic and schema-owned; do not allow arbitrary
+      font CSS blocks or raw full-file CSS generation.
+- [ ] Preserve `--base-profile` font precedence as the strongest concrete font
+      source when a base profile is supplied.
+- [ ] Use `--font-hint` as a weaker preference signal unless Codex returns a
+      validated bounded font decision.
+- [ ] Materialize accepted template font decisions into generated CSS variables
+      such as `--template-body-font`, `--template-heading-font`, and
+      `--template-monospace-font`.
+- [ ] Validate font role domains, non-empty font family strings, and CSS string
+      escaping before writing generated styles.
+- [ ] Keep deterministic no-Codex paths stable unless they have base-profile
+      font signals that can be safely mirrored into template theme tokens.
+- [ ] Record font hints and accepted template font decisions in the diagnostic
+      report without exposing local font file paths.
+- [ ] Add adapter tests proving font hints are visible to Codex and bounded
+      font decisions are accepted or rejected correctly.
+- [ ] Add synthesis/action tests proving font hints can change generated
+      template CSS through bounded decisions, not only prompt text.
+- [ ] Add tests proving blank-only font hints remain ignored.
+- [ ] Record the implementation sequence in a Phase 8.4 job record:
+      compare profile-Codex font patch behavior, define template font slots,
+      validate/materialize accepted decisions, update reports, verify focused
+      coverage, run gates, and review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-4-font-hint-materialization.md`
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts
+```
+
+Repo gates:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test --timeout 30000
+git diff --check
+```
+
 ### Phase 9: Documentation And Release Boundary
 
 - [ ] Update Markdown PDF guide docs with the accepted direct template-Codex workflow.
