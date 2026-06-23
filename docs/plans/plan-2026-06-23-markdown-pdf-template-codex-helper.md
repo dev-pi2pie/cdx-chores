@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF template Codex helper implementation"
 created-date: 2026-06-23
-modified-date: 2026-06-23
+modified-date: 2026-06-24
 status: active
 agent: codex
 ---
@@ -729,6 +729,55 @@ Focused validation target:
 
 ```bash
 bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+```
+
+Repo gates:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test --timeout 30000
+git diff --check
+```
+
+### Phase 8.2: Codex Progress Feedback
+
+This phase restores runtime feedback parity with `md pdf-profile codex`.
+`md pdf-template codex` can spend visible time waiting on a Codex-assisted
+template decision, but the current action calls the template Codex adapter
+without the existing progress wrapper. The refinement should reuse the shared
+direct-Codex progress helper instead of introducing a second spinner or status
+implementation.
+
+- [ ] Add Codex progress feedback for `md pdf-template codex` only when
+      `signals.signalMode` is `codex-assisted`.
+- [ ] Reuse `startDirectCodexProgress` with a template-specific label such as
+      `Requesting Codex Markdown PDF template recommendation`.
+- [ ] Preserve deterministic paths without Codex progress output.
+- [ ] Preserve non-TTY behavior as a stable one-line request message.
+- [ ] Stop TTY progress with `done` for adapted decisions.
+- [ ] Stop TTY progress with `fallback` for conservative fallback decisions.
+- [ ] Stop TTY progress with `error` for `no-usable-template` decisions and
+      thrown adapter errors.
+- [ ] Ensure progress cleanup happens exactly once through success, fallback,
+      no-usable-template, and thrown-error paths.
+- [ ] Add action-level tests mirroring the existing
+      `md pdf-profile codex` progress coverage.
+- [ ] Record the implementation sequence in a Phase 8.2 job record:
+      compare profile progress behavior, apply the shared helper to template,
+      prove deterministic paths stay quiet, verify TTY/non-TTY behavior, run
+      gates, and review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-2-progress-feedback.md`
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-md-to-pdf-commands.test.ts
 ```
 
 Repo gates:
