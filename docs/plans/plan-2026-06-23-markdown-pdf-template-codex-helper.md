@@ -700,26 +700,30 @@ direction is to keep `md pdf-template codex` close to `md pdf-profile codex`:
 bounded Codex/template signals, output/report controls, and no hidden accepted
 recipe flags.
 
-- [ ] Remove recipe flags from `md pdf-template codex` CLI registration:
+- [x] Remove recipe flags from `md pdf-template codex` CLI registration:
       `--preset`, `--page-size`, `--orientation`, `--margin*`, `--toc`,
       `--toc-depth`, and `--toc-page-break`.
-- [ ] Do not keep hidden compatibility for removed recipe flags.
-- [ ] Keep internal/action recipe support only where it is still needed for
+- [x] Do not keep hidden compatibility for removed recipe flags.
+- [x] Keep internal/action recipe support only where it is still needed for
       base-profile-derived signals, renderer defaults, and deterministic
       synthesis seams.
-- [ ] Add one focused command-layer test proving representative removed flags
+- [x] Add one focused command-layer test proving representative removed flags
       now fail as unknown options.
-- [ ] Prune obsolete command-layer pass-through tests for removed recipe flags
+- [x] Prune obsolete command-layer pass-through tests for removed recipe flags
       instead of expanding redundant coverage.
-- [ ] Keep or adjust tests for supported public signals: input, intent, font
+- [x] Keep or adjust tests for supported public signals: input, intent, font
       hints, base profile, cover image, output, dry-run, report, and overwrite.
-- [ ] Verify `md pdf-template init` remains the direct recipe-control command.
-- [ ] Update help-output expectations to show the simplified command surface.
-- [ ] Add a job record that documents the sequence: compare current help to
+- [x] Verify `md pdf-template init` remains the direct recipe-control command.
+- [x] Update help-output expectations to show the simplified command surface.
+- [x] Add a job record that documents the sequence: compare current help to
       `md pdf-profile codex`, classify recipe flags as over-expanded public
       surface, remove public flags without hiding them, prove representative
       removed flags reject, prune obsolete tests, verify simplified help, and
       run gates.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-8-1-command-surface-simplification.md`
 
 Focused validation target:
 
