@@ -3,7 +3,11 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
   resolveMdPdfTemplateCodexFamily,
 } from "./families";
-import { resolveMdPdfTemplateCodexSlots, resolveMdPdfTemplateCodexThemeTokens } from "./slots";
+import {
+  materializeMdPdfTemplateCodexFontDecisions,
+  resolveMdPdfTemplateCodexSlots,
+  resolveMdPdfTemplateCodexThemeTokens,
+} from "./slots";
 import { synthesizeMdPdfTemplateCodexCss } from "./synthesize-css";
 import { synthesizeMdPdfTemplateCodexHtml } from "./synthesize-template";
 import type { MarkdownPdfTemplateCodexDecision } from "./codex-decision";
@@ -63,6 +67,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     templateFamily,
     slots,
     themeTokens,
+    fontDecisions: [],
     managedAssets,
     templateHtml,
     styleCss,
@@ -107,7 +112,11 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   const templateFamily =
     input.decision.templateFamily ?? resolveMdPdfTemplateCodexFamily(input.signals);
   const slots = input.decision.slots;
-  const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots);
+  const fontDecisions = materializeMdPdfTemplateCodexFontDecisions({
+    decisions: input.decision.fontDecisions,
+    signals: input.signals,
+  });
+  const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots, fontDecisions);
 
   if (input.decision.decisionMode === "no-usable-template") {
     return {
@@ -115,6 +124,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
       templateFamily,
       slots,
       themeTokens,
+      fontDecisions,
       managedAssets: [],
       warnings: input.decision.warnings,
       unsupportedDirections: input.decision.unsupportedDirections,
@@ -153,6 +163,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
     templateFamily,
     slots,
     themeTokens,
+    fontDecisions,
     managedAssets,
     warnings: input.decision.warnings,
     unsupportedDirections: input.decision.unsupportedDirections,

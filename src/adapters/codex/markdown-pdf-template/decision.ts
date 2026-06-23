@@ -1,6 +1,8 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
   MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES,
@@ -12,6 +14,7 @@ import {
   type MarkdownPdfTemplateCodexImageFit,
   type MarkdownPdfTemplateCodexRecipePresetSource,
   type MarkdownPdfTemplateCodexResolvedSlots,
+  type MarkdownPdfTemplateCodexTemplateFontDecision,
 } from "../../../cli/markdown-pdf/template-codex";
 import type { NormalizedMarkdownPdfOptions } from "../../../cli/markdown-pdf/validation";
 import type { MarkdownPdfTemplateCodexRequest, MarkdownPdfTemplateCodexResult } from "./types";
@@ -235,6 +238,32 @@ function parseManagedAssets(value: unknown): MarkdownPdfTemplateCodexDecisionMan
   });
 }
 
+function parseFontDecisions(value: unknown): MarkdownPdfTemplateCodexTemplateFontDecision[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Markdown PDF template Codex response font_decisions must be an array.");
+  }
+  return value.map((item, index) => {
+    const decision = parseRecord(item, `font_decisions[${index}]`);
+    return {
+      role: parseEnum(
+        decision.role,
+        MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
+        `font_decisions[${index}].role`,
+      ),
+      family: parseNonEmptyString(decision.family, `font_decisions[${index}].family`),
+      source: parseEnum(
+        decision.source,
+        MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+        `font_decisions[${index}].source`,
+      ),
+      templateLevel: parseBoolean(
+        decision.template_level,
+        `font_decisions[${index}].template_level`,
+      ),
+    };
+  });
+}
+
 export function parseMarkdownPdfTemplateCodexDecision(
   finalResponse: string,
 ): MarkdownPdfTemplateCodexDecision {
@@ -249,6 +278,7 @@ export function parseMarkdownPdfTemplateCodexDecision(
     recipePreset: parseRecipePreset(parsed.recipe_preset, "recipe_preset"),
     slots: parseSlots(parsed.slots),
     cssBlocks: parseCssBlocks(parsed.css_blocks),
+    fontDecisions: parseFontDecisions(parsed.font_decisions),
     managedAssets: parseManagedAssets(parsed.managed_assets),
     warnings: parseStringArray(parsed.warnings, "warnings"),
     unsupportedDirections: parseStringArray(

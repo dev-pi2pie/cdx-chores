@@ -43,6 +43,7 @@ function createNoUsableTemplateDecision(input: {
       signals: input.request.signals,
     }),
     cssBlocks: [],
+    fontDecisions: [],
     managedAssets: [],
     warnings: [input.reason],
     unsupportedDirections: [],

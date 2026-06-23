@@ -11,6 +11,8 @@ import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexRecipePresetSource,
   MarkdownPdfTemplateCodexResolvedSlots,
+  MarkdownPdfTemplateCodexTemplateFontDecision,
+  MarkdownPdfTemplateCodexTemplateFontDecisionSource,
   MarkdownPdfTemplateCodexTemplateFamily,
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
@@ -45,6 +47,17 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES = [
   "renderer-default",
 ] as const satisfies readonly MarkdownPdfTemplateCodexRecipePresetSource[];
 
+export const MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES = [
+  "body",
+  "heading",
+  "code",
+] as const satisfies readonly MarkdownPdfTemplateCodexTemplateFontDecision["role"][];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES = [
+  "font-hint",
+  "template-style",
+] as const satisfies readonly MarkdownPdfTemplateCodexTemplateFontDecisionSource[];
+
 export interface MarkdownPdfTemplateCodexDecisionManagedAsset {
   sourceLabel: string;
   bundlePath: string;
@@ -56,6 +69,7 @@ export interface MarkdownPdfTemplateCodexDecision {
   recipePreset?: NormalizedMarkdownPdfOptions["preset"];
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   cssBlocks: MarkdownPdfTemplateCodexCssBlock[];
+  fontDecisions: MarkdownPdfTemplateCodexTemplateFontDecision[];
   managedAssets: MarkdownPdfTemplateCodexDecisionManagedAsset[];
   warnings: string[];
   unsupportedDirections: string[];
@@ -173,6 +187,45 @@ function validateManagedAssets(input: {
   });
 }
 
+function validateTemplateFontFamily(value: string, context: string): string {
+  const family = assertNonEmptyString(value, context);
+  if (/[;{}(),\r\n]/u.test(family)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context} must be a single font family name, not raw CSS.`,
+    );
+  }
+  return family;
+}
+
+function validateTemplateFontDecisions(
+  decisions: readonly MarkdownPdfTemplateCodexTemplateFontDecision[],
+): MarkdownPdfTemplateCodexTemplateFontDecision[] {
+  const seenRoles = new Set<MarkdownPdfTemplateCodexTemplateFontDecision["role"]>();
+  return decisions.map((decision, index) => {
+    const role = assertStringInDomain(
+      decision.role,
+      MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
+      `font_decisions[${index}].role`,
+    );
+    if (seenRoles.has(role)) {
+      throw new Error(
+        `Markdown PDF template Codex response font_decisions[${index}].role duplicates role ${role}.`,
+      );
+    }
+    seenRoles.add(role);
+    return {
+      role,
+      family: validateTemplateFontFamily(decision.family, `font_decisions[${index}].family`),
+      source: assertStringInDomain(
+        decision.source,
+        MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+        `font_decisions[${index}].source`,
+      ),
+      templateLevel: decision.templateLevel === true,
+    };
+  });
+}
+
 export function validateMarkdownPdfTemplateCodexDecision(input: {
   decision: MarkdownPdfTemplateCodexDecision;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
@@ -203,10 +256,16 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
         "Markdown PDF template Codex response css_blocks must be empty for no-usable-template.",
       );
     }
+    if (input.decision.fontDecisions.length > 0) {
+      throw new Error(
+        "Markdown PDF template Codex response font_decisions must be empty for no-usable-template.",
+      );
+    }
     return {
       decisionMode,
       slots: validateSlots(input.decision.slots),
       cssBlocks,
+      fontDecisions: [],
       managedAssets: validateManagedAssets({
         decisionMode,
         managedAssets: input.decision.managedAssets,
@@ -249,6 +308,7 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     recipePreset,
     slots: validateSlots(input.decision.slots),
     cssBlocks,
+    fontDecisions: validateTemplateFontDecisions(input.decision.fontDecisions),
     managedAssets: validateManagedAssets({
       decisionMode,
       managedAssets: input.decision.managedAssets,

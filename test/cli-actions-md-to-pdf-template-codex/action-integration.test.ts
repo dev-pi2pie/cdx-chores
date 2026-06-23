@@ -15,6 +15,12 @@ function codexTemplateResponse(
     cssBlocks?: Array<{ css: string; slot: string }>;
     decisionMode?: string;
     fallbackReason?: string;
+    fontDecisions?: Array<{
+      family: string;
+      role: string;
+      source: string;
+      template_level: boolean;
+    }>;
     imageFit?: string;
     templateFamily?: string;
     warnings?: string[];
@@ -44,6 +50,7 @@ function codexTemplateResponse(
       colors: { palette: "neutral" },
     },
     css_blocks: input.cssBlocks ?? [],
+    font_decisions: input.fontDecisions ?? [],
     managed_assets: coverEnabled
       ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }]
       : [],
@@ -76,6 +83,7 @@ function noUsableTemplateResponse(reason = "Unsupported template direction."): s
       colors: { palette: "neutral" },
     },
     css_blocks: [],
+    font_decisions: [],
     managed_assets: [],
     warnings: [reason],
     unsupported_directions: [reason],
@@ -179,6 +187,61 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(
         "h1 { color: #234567; }",
       );
+    });
+  });
+
+  test("writes accepted template font decisions into CSS and diagnostic reports", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-action-font-decision", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "template-output");
+      const reportPath = join(fixtureDir, "template-report.json");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      await actionMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        fontHint: ["Inter"],
+        output: toRepoRelativePath(outputPath),
+        codexReportOutput: toRepoRelativePath(reportPath),
+        codexRunner: stubCodexRunner(
+          codexTemplateResponse({
+            fontDecisions: [
+              {
+                family: "Inter",
+                role: "heading",
+                source: "font-hint",
+                template_level: false,
+              },
+            ],
+          }),
+        ),
+      });
+
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(
+        '--template-heading-font: "Inter", sans-serif;',
+      );
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        decision: {
+          fontDecisions: Array<{
+            family: string;
+            overridesProfileFont: boolean;
+            profileOwned: boolean;
+            role: string;
+            status: string;
+          }>;
+        };
+        input: { fontHints: string[] };
+      };
+      expect(report.input.fontHints).toEqual(["Inter"]);
+      expect(report.decision.fontDecisions).toEqual([
+        expect.objectContaining({
+          family: "Inter",
+          overridesProfileFont: false,
+          profileOwned: false,
+          role: "heading",
+          status: "applied",
+        }),
+      ]);
     });
   });
 

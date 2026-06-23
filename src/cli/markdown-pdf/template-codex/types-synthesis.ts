@@ -75,6 +75,26 @@ export interface MarkdownPdfTemplateCodexColorSlot {
   palette: "neutral";
 }
 
+export type MarkdownPdfTemplateCodexFontRole = "body" | "heading" | "code";
+
+export type MarkdownPdfTemplateCodexTemplateFontDecisionSource = "font-hint" | "template-style";
+
+export interface MarkdownPdfTemplateCodexTemplateFontDecision {
+  role: MarkdownPdfTemplateCodexFontRole;
+  family: string;
+  source: MarkdownPdfTemplateCodexTemplateFontDecisionSource;
+  templateLevel: boolean;
+}
+
+export type MarkdownPdfTemplateCodexMaterializedFontDecisionStatus = "applied" | "blocked";
+
+export interface MarkdownPdfTemplateCodexMaterializedFontDecision extends MarkdownPdfTemplateCodexTemplateFontDecision {
+  status: MarkdownPdfTemplateCodexMaterializedFontDecisionStatus;
+  profileOwned: boolean;
+  overridesProfileFont: boolean;
+  reason: "applied" | "template-level-override" | "profile-font-owned";
+}
+
 export interface MarkdownPdfTemplateCodexThemeTokens {
   bodyFont: string;
   headingFont: string;
@@ -111,6 +131,7 @@ export interface MarkdownPdfTemplateCodexSynthesisResult {
   templateFamily: MarkdownPdfTemplateCodexTemplateFamily;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   themeTokens: MarkdownPdfTemplateCodexThemeTokens;
+  fontDecisions: MarkdownPdfTemplateCodexMaterializedFontDecision[];
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   warnings?: string[];
   unsupportedDirections?: string[];

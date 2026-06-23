@@ -1,6 +1,8 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
   MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES,
@@ -135,6 +137,23 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
         additionalProperties: false,
       },
     },
+    font_decisions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          role: { type: "string", enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES] },
+          family: { type: "string" },
+          source: {
+            type: "string",
+            enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES],
+          },
+          template_level: { type: "boolean" },
+        },
+        required: ["role", "family", "source", "template_level"],
+        additionalProperties: false,
+      },
+    },
     managed_assets: {
       type: "array",
       items: {
@@ -157,6 +176,7 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
     "recipe_preset",
     "slots",
     "css_blocks",
+    "font_decisions",
     "managed_assets",
     "warnings",
     "unsupported_directions",

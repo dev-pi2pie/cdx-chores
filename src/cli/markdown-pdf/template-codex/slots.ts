@@ -1,7 +1,9 @@
 import type {
   MarkdownPdfTemplateCodexImageFit,
+  MarkdownPdfTemplateCodexMaterializedFontDecision,
   MarkdownPdfTemplateCodexRecipePresetSource,
   MarkdownPdfTemplateCodexResolvedSlots,
+  MarkdownPdfTemplateCodexTemplateFontDecision,
   MarkdownPdfTemplateCodexTemplateFamily,
   MarkdownPdfTemplateCodexThemeTokens,
   MdPdfTemplateCodexSignalCollection,
@@ -78,6 +80,66 @@ function presetDefaults(signals: MdPdfTemplateCodexSignalCollection): TemplateCo
   return PRESET_DEFAULTS[signals.recipe.effectiveOptions.preset];
 }
 
+function profileOwnsTemplateFontRole(
+  signals: MdPdfTemplateCodexSignalCollection,
+  role: MarkdownPdfTemplateCodexTemplateFontDecision["role"],
+): boolean {
+  if (!signals.baseProfile.available) {
+    return false;
+  }
+  return signals.fonts.profileFonts.families.some((family) => family.role === role);
+}
+
+function cssFallbackForFontRole(
+  role: MarkdownPdfTemplateCodexTemplateFontDecision["role"],
+): string {
+  return role === "body" ? "serif" : role === "heading" ? "sans-serif" : "monospace";
+}
+
+function cssFontFamilyValue(decision: MarkdownPdfTemplateCodexTemplateFontDecision): string {
+  const escapedFamily = decision.family.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return `"${escapedFamily}", ${cssFallbackForFontRole(decision.role)}`;
+}
+
+function applyFontDecisionToTokens(
+  tokens: MarkdownPdfTemplateCodexThemeTokens,
+  decision: MarkdownPdfTemplateCodexMaterializedFontDecision,
+): MarkdownPdfTemplateCodexThemeTokens {
+  if (decision.status !== "applied") {
+    return tokens;
+  }
+  const fontFamily = cssFontFamilyValue(decision);
+  if (decision.role === "body") {
+    return { ...tokens, bodyFont: fontFamily };
+  }
+  if (decision.role === "heading") {
+    return { ...tokens, headingFont: fontFamily };
+  }
+  return { ...tokens, monospaceFont: fontFamily };
+}
+
+export function materializeMdPdfTemplateCodexFontDecisions(input: {
+  decisions: readonly MarkdownPdfTemplateCodexTemplateFontDecision[];
+  signals: MdPdfTemplateCodexSignalCollection;
+}): MarkdownPdfTemplateCodexMaterializedFontDecision[] {
+  return input.decisions.map((decision) => {
+    const profileOwned = profileOwnsTemplateFontRole(input.signals, decision.role);
+    const overridesProfileFont = profileOwned && decision.templateLevel;
+    const applied = !profileOwned || decision.templateLevel;
+    return {
+      ...decision,
+      status: applied ? "applied" : "blocked",
+      profileOwned,
+      overridesProfileFont,
+      reason: applied
+        ? overridesProfileFont
+          ? "template-level-override"
+          : "applied"
+        : "profile-font-owned",
+    };
+  });
+}
+
 function coverImageFit(
   signals: MdPdfTemplateCodexSignalCollection,
 ): MarkdownPdfTemplateCodexImageFit {
@@ -142,9 +204,10 @@ export function resolveMdPdfTemplateCodexSlots(input: {
 export function resolveMdPdfTemplateCodexThemeTokens(
   signals: MdPdfTemplateCodexSignalCollection,
   slots: MarkdownPdfTemplateCodexResolvedSlots,
+  fontDecisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[] = [],
 ): MarkdownPdfTemplateCodexThemeTokens {
   const defaults = presetDefaults(signals);
-  return {
+  const tokens = {
     bodyFont: '"Noto Serif", "Georgia", serif',
     headingFont: '"Noto Sans", "Arial", sans-serif',
     monospaceFont: '"Noto Sans Mono", "SFMono-Regular", "Consolas", monospace',
@@ -163,4 +226,5 @@ export function resolveMdPdfTemplateCodexThemeTokens(
     border: "#d8d8d8",
     codeBackground: "#f5f5f5",
   };
+  return fontDecisions.reduce(applyFontDecisionToTokens, tokens);
 }

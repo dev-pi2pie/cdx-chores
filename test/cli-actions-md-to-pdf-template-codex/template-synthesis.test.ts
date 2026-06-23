@@ -3,6 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
   synthesizeMdPdfTemplateCodex,
+  synthesizeMdPdfTemplateCodexFromDecision,
+  type MarkdownPdfTemplateCodexDecision,
+  type MdPdfTemplateCodexSignalCollection,
 } from "../../src/cli/markdown-pdf/template-codex";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
@@ -155,6 +158,28 @@ function expectTocPageBreakCss(
   }
 }
 
+function createTemplateDecision(input: {
+  fontDecisions?: MarkdownPdfTemplateCodexDecision["fontDecisions"];
+  signals: MdPdfTemplateCodexSignalCollection;
+}): MarkdownPdfTemplateCodexDecision {
+  const outputPlan = createSynthesisOutputPlan();
+  const deterministic = synthesizeMdPdfTemplateCodex({
+    outputPlan,
+    signals: input.signals,
+  });
+  return {
+    decisionMode: "adapted",
+    templateFamily: "document-layered",
+    recipePreset: "article",
+    slots: deterministic.slots,
+    cssBlocks: [],
+    fontDecisions: input.fontDecisions ?? [],
+    managedAssets: [],
+    warnings: [],
+    unsupportedDirections: [],
+  };
+}
+
 describe("cli action modules: md pdf-template codex template synthesis", () => {
   test("preserves Pandoc document hooks and Shiki-compatible code selectors", () => {
     const result = synthesizeMdPdfTemplateCodex({
@@ -189,6 +214,120 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).not.toContain(".pdf-cover-media");
     expect(result.styleCss).not.toContain("break-before: page;");
     expect(result.styleCss).not.toContain("break-after: page;");
+  });
+
+  test("materializes bounded font hint decisions into template CSS variables", () => {
+    const signals = createSynthesisSignals({ fontHints: ["Inter"] });
+    const outputPlan = createSynthesisOutputPlan();
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Inter",
+            role: "heading",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan,
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-heading-font": '"Inter", sans-serif',
+    });
+    expect(result.fontDecisions).toEqual([
+      {
+        family: "Inter",
+        role: "heading",
+        source: "font-hint",
+        templateLevel: false,
+        status: "applied",
+        profileOwned: false,
+        overridesProfileFont: false,
+        reason: "applied",
+      },
+    ]);
+  });
+
+  test("does not let loose font hints override base-profile font ownership", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["Inter"],
+      profileFonts: {
+        families: [{ family: "Aptos", key: "default", role: "heading" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const outputPlan = createSynthesisOutputPlan();
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Inter",
+            role: "heading",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan,
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-heading-font": '"Noto Sans", "Arial", sans-serif',
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        family: "Inter",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        role: "heading",
+        status: "blocked",
+      }),
+    ]);
+  });
+
+  test("allows explicit template-level font decisions to override base-profile fonts", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      profileFonts: {
+        families: [{ family: "Aptos", key: "default", role: "heading" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const outputPlan = createSynthesisOutputPlan();
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Editorial Sans",
+            role: "heading",
+            source: "template-style",
+            templateLevel: true,
+          },
+        ],
+      }),
+      outputPlan,
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-heading-font": '"Editorial Sans", sans-serif',
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        overridesProfileFont: true,
+        profileOwned: true,
+        reason: "template-level-override",
+        status: "applied",
+      }),
+    ]);
   });
 
   test("maps contained cover media to page-relative CSS without source pixel sizing", () => {

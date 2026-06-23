@@ -29,6 +29,8 @@ interface CreateSynthesisSignalsInput {
   signalMode?: MdPdfTemplateCodexSignalCollection["signalMode"];
   toc?: boolean;
   tocPageBreak?: MarkdownPdfTocPageBreak;
+  fontHints?: string[];
+  profileFonts?: MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"];
 }
 
 export function createSynthesisSignals(
@@ -77,8 +79,13 @@ export function createSynthesisSignals(
       baseProfileFields: input.baseProfilePreset ? ["preset"] : [],
     },
     fonts: {
-      hints: [],
-      profileFonts: {} as MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"],
+      hints: input.fontHints ?? [],
+      profileFonts:
+        input.profileFonts ??
+        ({
+          families: [],
+          overflowFamilyCount: 0,
+        } satisfies MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"]),
     },
     coverImage: coverImage
       ? {

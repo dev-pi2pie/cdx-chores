@@ -866,38 +866,38 @@ profiles:
    profile font role, but the diagnostic report must make that override
    explicit and reviewable.
 
-- [ ] Define bounded template font decision fields or theme-token overrides for
+- [x] Define bounded template font decision fields or theme-token overrides for
       body, heading, and code font roles.
-- [ ] Keep font output deterministic and schema-owned; do not allow arbitrary
+- [x] Keep font output deterministic and schema-owned; do not allow arbitrary
       font CSS blocks or raw full-file CSS generation.
-- [ ] Preserve `--base-profile` font precedence as the strongest concrete font
+- [x] Preserve `--base-profile` font precedence as the strongest concrete font
       source when a base profile is supplied.
-- [ ] Use loose `--font-hint` as a weaker preference signal than concrete
+- [x] Use loose `--font-hint` as a weaker preference signal than concrete
       profile fonts.
-- [ ] Allow `--font-hint` to materialize into template CSS when no concrete
+- [x] Allow `--font-hint` to materialize into template CSS when no concrete
       profile font source owns the selected font role.
-- [ ] Allow an explicit validated template font decision to override a profile
+- [x] Allow an explicit validated template font decision to override a profile
       font role only when the decision records template-level ownership.
-- [ ] Materialize accepted template font decisions into generated CSS variables
+- [x] Materialize accepted template font decisions into generated CSS variables
       such as `--template-body-font`, `--template-heading-font`, and
       `--template-monospace-font`.
-- [ ] Validate font role domains, non-empty font family strings, and CSS string
+- [x] Validate font role domains, non-empty font family strings, and CSS string
       escaping before writing generated styles.
-- [ ] Keep deterministic no-Codex paths stable unless they have base-profile
+- [x] Keep deterministic no-Codex paths stable unless they have base-profile
       font signals that can be safely mirrored into template theme tokens.
-- [ ] Record font hints, accepted template font decisions, and whether each
+- [x] Record font hints, accepted template font decisions, and whether each
       accepted decision overrides a concrete profile font in the diagnostic
       report without exposing local font file paths.
-- [ ] Add adapter tests proving font hints are visible to Codex and bounded
+- [x] Add adapter tests proving font hints are visible to Codex and bounded
       font decisions are accepted or rejected correctly.
-- [ ] Add synthesis/action tests proving font hints can change generated
+- [x] Add synthesis/action tests proving font hints can change generated
       template CSS through bounded decisions, not only prompt text.
-- [ ] Add precedence tests proving loose font hints do not silently override
+- [x] Add precedence tests proving loose font hints do not silently override
       base-profile fonts.
-- [ ] Add override tests proving explicit template-level font decisions can
+- [x] Add override tests proving explicit template-level font decisions can
       override profile fonts only through the bounded, reported path.
-- [ ] Add tests proving blank-only font hints remain ignored.
-- [ ] Record the implementation sequence in a Phase 8.4 job record:
+- [x] Add tests proving blank-only font hints remain ignored.
+- [x] Record the implementation sequence in a Phase 8.4 job record:
       compare profile-Codex font patch behavior, define template font slots,
       encode the flexible profile-vs-template font ownership rule,
       validate/materialize accepted decisions, update reports, verify focused

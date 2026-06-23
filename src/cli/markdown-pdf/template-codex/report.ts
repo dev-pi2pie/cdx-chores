@@ -55,6 +55,7 @@ export interface MdPdfTemplateCodexReportArtifact {
     fallbackReason?: string;
     warnings: string[];
     unsupportedDirections: string[];
+    fontDecisions: MarkdownPdfTemplateCodexSynthesisResult["fontDecisions"];
   };
   input: {
     markdown?: MdPdfTemplateCodexReportPathDisplay;
@@ -231,6 +232,7 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
       ...(input.synthesis.fallbackReason ? { fallbackReason: input.synthesis.fallbackReason } : {}),
       warnings: input.synthesis.warnings ?? [],
       unsupportedDirections: input.synthesis.unsupportedDirections ?? [],
+      fontDecisions: input.synthesis.fontDecisions,
     },
     input: {
       ...(input.state.inputPath

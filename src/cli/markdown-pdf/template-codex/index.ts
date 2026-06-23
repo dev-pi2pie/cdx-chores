@@ -7,7 +7,10 @@ export {
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
   resolveMdPdfTemplateCodexFamily,
 } from "./families";
-export { resolveMdPdfTemplateCodexSlots } from "./slots";
+export {
+  materializeMdPdfTemplateCodexFontDecisions,
+  resolveMdPdfTemplateCodexSlots,
+} from "./slots";
 export {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
@@ -28,6 +31,8 @@ export {
 } from "./write-bundle";
 export {
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
   MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES,
@@ -55,11 +60,16 @@ export type {
   MarkdownPdfTemplateCodexBaseProfileSignals,
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexFontSignals,
+  MarkdownPdfTemplateCodexFontRole,
   MarkdownPdfTemplateCodexFamilySpec,
   MarkdownPdfTemplateCodexImageFit,
   MarkdownPdfTemplateCodexManagedAssetBinding,
+  MarkdownPdfTemplateCodexMaterializedFontDecision,
+  MarkdownPdfTemplateCodexMaterializedFontDecisionStatus,
   MarkdownPdfTemplateCodexOrientationBucket,
   MarkdownPdfTemplateCodexRecipePresetSource,
+  MarkdownPdfTemplateCodexTemplateFontDecision,
+  MarkdownPdfTemplateCodexTemplateFontDecisionSource,
   MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,

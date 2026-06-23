@@ -51,6 +51,12 @@ function responseFromDecision(input: {
   coverEnabled?: boolean;
   cssBlocks?: Array<{ css: string; slot: string }>;
   decisionMode?: string;
+  fontDecisions?: Array<{
+    family: string;
+    role: string;
+    source: string;
+    template_level: boolean;
+  }>;
   imageFit?: string;
   managedAssets?: Array<{ bundle_path: string; source_label: string }>;
   recipePreset?: string;
@@ -79,6 +85,7 @@ function responseFromDecision(input: {
       colors: { palette: "neutral" },
     },
     css_blocks: input.cssBlocks ?? [],
+    font_decisions: input.fontDecisions ?? [],
     managed_assets:
       input.managedAssets ??
       (coverEnabled ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }] : []),
@@ -134,11 +141,16 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(prompt).toContain("Return JSON only");
     expect(prompt).toContain("Use cover.image_fit contain or cover");
+    expect(prompt).toContain("Use font_decisions []");
     expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("source-cover.png");
     expect(facts).toMatchObject({
       assetSizingPolicy: {
         rule: "Use bounded cover.image_fit values, not raw pixel width or height directives.",
+      },
+      fontDecisionPolicy: {
+        roles: ["body", "heading", "code"],
+        sources: ["font-hint", "template-style"],
       },
       hookRequirements: {
         css: {
@@ -163,6 +175,7 @@ describe("Markdown PDF template Codex adapter", () => {
     assertStrictSchemaObjects(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA);
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.required).toContain("fallback_reason");
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.required).toContain("css_blocks");
+    expect(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.required).toContain("font_decisions");
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.template_family.enum).toContain(
       "none",
     );
@@ -173,6 +186,10 @@ describe("Markdown PDF template Codex adapter", () => {
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties
         .image_fit.enum,
     ).toContain("");
+    expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.font_decisions.items.properties.role
+        .enum,
+    ).toEqual(["body", "heading", "code"]);
   });
 
   test("parses and applies an adapted decision with managed cover asset references", async () => {
@@ -242,6 +259,34 @@ describe("Markdown PDF template Codex adapter", () => {
     ]);
   });
 
+  test("accepts bounded template font decisions", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          templateFamily: "document-layered",
+          fontDecisions: [
+            {
+              family: "Inter",
+              role: "heading",
+              source: "font-hint",
+              template_level: false,
+            },
+          ],
+        }),
+    });
+
+    expect(result.decision.fontDecisions).toEqual([
+      {
+        family: "Inter",
+        role: "heading",
+        source: "font-hint",
+        templateLevel: false,
+      },
+    ]);
+  });
+
   test("turns invalid structured output into no-usable-template", async () => {
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase({ coverImage: true }),
@@ -287,6 +332,27 @@ describe("Markdown PDF template Codex adapter", () => {
         request,
       }),
     ).toThrow("managed_assets must be empty");
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({
+            coverEnabled: false,
+            decisionMode: "no-usable-template",
+            fontDecisions: [
+              {
+                family: "Inter",
+                role: "body",
+                source: "font-hint",
+                template_level: false,
+              },
+            ],
+            recipePreset: "none",
+            templateFamily: "none",
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("font_decisions must be empty");
     expect(() =>
       applyMarkdownPdfTemplateCodexDecision({
         decision: parseMarkdownPdfTemplateCodexDecision(
@@ -408,6 +474,40 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(result.decision.fallbackReason).toBe(
       "Codex template decision was rejected by validation.",
     );
+  });
+
+  test("rejects unsafe or duplicated template font decisions", async () => {
+    const duplicateRole = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          fontDecisions: [
+            { family: "Inter", role: "body", source: "font-hint", template_level: false },
+            { family: "Georgia", role: "body", source: "font-hint", template_level: false },
+          ],
+          templateFamily: "document-layered",
+        }),
+    });
+    expect(duplicateRole.decision.decisionMode).toBe("no-usable-template");
+
+    const rawCssFamily = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          fontDecisions: [
+            {
+              family: "Inter, sans-serif",
+              role: "heading",
+              source: "font-hint",
+              template_level: false,
+            },
+          ],
+          templateFamily: "document-layered",
+        }),
+    });
+    expect(rawCssFamily.decision.decisionMode).toBe("no-usable-template");
   });
 
   test("rejects unsafe CSS block branches directly", () => {
