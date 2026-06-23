@@ -51,6 +51,8 @@ const HTML_ASSET_TAGS = new Set([
   "object",
   "script",
   "link",
+  "use",
+  "feimage",
 ]);
 const HTML_TEMPLATE_LOCAL_ASSET_ATTRS = new Set(["src", "href", "poster", "data", "xlink:href"]);
 const HTML_ASSET_ATTR_PATTERN =
@@ -299,24 +301,64 @@ async function rewriteTemplateLocalSrcset(
   value: string,
   templateDirectory: string,
 ): Promise<string> {
-  if (value.trimStart().toLowerCase().startsWith("data:")) {
-    return value;
-  }
-  const candidates = await Promise.all(
-    value.split(",").map(async (candidate) => {
+  const candidates = splitSrcsetCandidates(value);
+  const rewrittenCandidates = await Promise.all(
+    candidates.map(async (candidate) => {
       const trimmed = candidate.trim();
       if (!trimmed) {
         return candidate;
       }
-      const [assetReference = "", ...descriptorParts] = trimmed.split(/\s+/u);
+      const descriptorStart = trimmed.search(/\s/u);
+      const assetReference = descriptorStart < 0 ? trimmed : trimmed.slice(0, descriptorStart);
+      const descriptor = descriptorStart < 0 ? "" : trimmed.slice(descriptorStart).trim();
       const rewritten = await resolveTemplateLocalHtmlAssetReference(
         assetReference,
         templateDirectory,
       );
-      return [rewritten, ...descriptorParts].join(" ");
+      return descriptor ? `${rewritten} ${descriptor}` : rewritten;
     }),
   );
-  return candidates.join(", ");
+  return rewrittenCandidates.join(", ");
+}
+
+function splitSrcsetCandidates(value: string): string[] {
+  const candidates: string[] = [];
+  let index = 0;
+  while (index < value.length) {
+    while (index < value.length && /\s/u.test(value[index] ?? "")) {
+      index += 1;
+    }
+    const start = index;
+    while (index < value.length) {
+      const char = value[index] ?? "";
+      if (/\s/u.test(char)) {
+        break;
+      }
+      if (char === "," && isSrcsetSeparatorComma(value, index)) {
+        break;
+      }
+      index += 1;
+    }
+    while (index < value.length && value[index] !== ",") {
+      index += 1;
+    }
+    const candidate = value.slice(start, index).trim();
+    if (candidate) {
+      candidates.push(candidate);
+    }
+    if (value[index] === ",") {
+      index += 1;
+    }
+  }
+  return candidates;
+}
+
+function isSrcsetSeparatorComma(value: string, commaIndex: number): boolean {
+  let nextIndex = commaIndex + 1;
+  while (nextIndex < value.length && /\s/u.test(value[nextIndex] ?? "")) {
+    nextIndex += 1;
+  }
+  return nextIndex >= value.length || nextIndex > commaIndex + 1;
 }
 
 async function rewriteTemplateLocalHtmlAssets(

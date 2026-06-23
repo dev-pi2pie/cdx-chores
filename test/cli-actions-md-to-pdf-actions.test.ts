@@ -294,9 +294,11 @@ describe("cli action modules: md to-pdf rendering", () => {
       const customCss = join(templateDir, "style.css");
       const templateAsset = join(templateDir, "assets", "cover.png");
       const templateAssetSmall = join(templateDir, "assets", "cover-small.png");
+      const templateAssetComma = join(templateDir, "assets", "cover,v2.png");
       const templateBackground = join(templateDir, "assets", "background.png");
       const templatePattern = join(templateDir, "assets", "pattern.png");
       const templateImport = join(templateDir, "assets", "print.css");
+      const templateSvg = join(templateDir, "assets", "icon.svg");
       const markdownAsset = join(inputDir, "images", "body.png");
       await mkdir(dirname(inputPath), { recursive: true });
       await mkdir(dirname(templateAsset), { recursive: true });
@@ -309,7 +311,11 @@ describe("cli action modules: md to-pdf rendering", () => {
           '<style>@import "assets/print.css"; .hero { background-image: url("assets/background.png"); }</style>',
           "</head>",
           '<body style="background-image: url(assets/pattern.png)">',
-          '<img src="assets/cover.png" srcset="assets/cover-small.png 1x, assets/cover.png 2x">',
+          [
+            '<img src="assets/cover.png"',
+            ' srcset="data:image/png;base64,AAAA 1x, assets/cover-small.png 2x, assets/cover,v2.png 3x">',
+          ].join(""),
+          '<svg><use xlink:href="assets/icon.svg#logo"></use></svg>',
           "$body$",
           "</body></html>",
         ].join(""),
@@ -318,9 +324,11 @@ describe("cli action modules: md to-pdf rendering", () => {
       await writeFile(customCss, "body { color: black; }\n", "utf8");
       await writeFile(templateAsset, "template-asset", "utf8");
       await writeFile(templateAssetSmall, "template-small-asset", "utf8");
+      await writeFile(templateAssetComma, "template-comma-asset", "utf8");
       await writeFile(templateBackground, "template-background", "utf8");
       await writeFile(templatePattern, "template-pattern", "utf8");
       await writeFile(templateImport, "body { color: black; }\n", "utf8");
+      await writeFile(templateSvg, '<svg><symbol id="logo"></symbol></svg>', "utf8");
       await writeFile(markdownAsset, "markdown-asset", "utf8");
 
       const calls: Array<{ command: string; args: string[]; cwd?: string }> = [];
@@ -392,8 +400,13 @@ describe("cli action modules: md to-pdf rendering", () => {
         `background-image: url(&quot;${pathToFileURL(templatePattern).href}&quot;)`,
       );
       expect(pandocTemplateHtml).toContain(
-        `srcset="${pathToFileURL(templateAssetSmall).href} 1x, ${pathToFileURL(templateAsset).href} 2x"`,
+        [
+          'srcset="data:image/png;base64,AAAA 1x,',
+          `${pathToFileURL(templateAssetSmall).href} 2x,`,
+          `${pathToFileURL(templateAssetComma).href} 3x"`,
+        ].join(" "),
       );
+      expect(pandocTemplateHtml).toContain(`xlink:href="${pathToFileURL(templateSvg).href}#logo"`);
       expectNoStderr();
     });
   });

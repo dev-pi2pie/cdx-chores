@@ -43,6 +43,8 @@ generated cover-media template bundle through `md to-pdf`:
 12. Added landscape inch page-size coverage for cover-media CSS sizing.
 13. Addressed final review findings by extending template preprocessing to CSS
     URLs and `srcset` references authored inside the custom template.
+14. Addressed re-review findings by preserving comma-bearing `srcset` URLs,
+    preserving data URL candidates, and resolving SVG `xlink:href` references.
 
 ## Changes
 
@@ -66,6 +68,8 @@ generated cover-media template bundle through `md to-pdf`:
 - Added cover CSS coverage for landscape Letter sizing in inch units.
 - Added render-path coverage for template-local `<style>`, `style=`, and
   `srcset` asset references.
+- Added render-path coverage for `srcset` data URL candidates, comma-bearing
+  filenames, and SVG `xlink:href` references.
 
 ## Verification
 
@@ -113,6 +117,20 @@ generated cover-media template bundle through `md to-pdf`:
   - Passed after CSS and `srcset` review follow-up.
 - `bun test --timeout 30000`
   - Passed after CSS and `srcset` review follow-up: 1297 tests.
+- `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+  - Passed after `srcset` parser and SVG review follow-up: 34 tests.
+- `bunx tsc --noEmit`
+  - Passed after `srcset` parser and SVG review follow-up.
+- `bun run lint`
+  - Passed after `srcset` parser and SVG review follow-up.
+- `bun run format:check`
+  - Passed after `srcset` parser and SVG review follow-up.
+- `bun run build`
+  - Passed after `srcset` parser and SVG review follow-up.
+- `git diff --check`
+  - Passed after `srcset` parser and SVG review follow-up.
+- `bun test --timeout 30000`
+  - Passed after `srcset` parser and SVG review follow-up: 1297 tests.
 
 ## Review
 
@@ -133,7 +151,13 @@ generated cover-media template bundle through `md to-pdf`:
 - Material finding addressed in the second review follow-up:
   - Template-local assets in CSS URLs and `srcset` should be resolved with the
     same template-directory ownership rules as HTML asset attributes.
-- Pending final review range after the second follow-up commit.
+- Re-review range `2065397..f060786` was reviewed by `Plainspoken the 6th`
+  and `Probe the 6th`.
+- Material findings addressed in the third review follow-up:
+  - `srcset` parsing should not split data URLs or comma-bearing filenames.
+  - SVG `xlink:href` references should not be blocked by the HTML asset tag
+    allowlist.
+- Pending final review range after the third follow-up commit.
 
 Phase 8.3 implementation commit:
 
@@ -144,5 +168,9 @@ Phase 8.3 review follow-up commit:
 - `3734eaa fix(template-codex): constrain template asset resolution`
 
 Phase 8.3 second review follow-up commit:
+
+- `f060786 fix(template-codex): resolve template css asset references`
+
+Phase 8.3 third review follow-up commit:
 
 - Pending.
