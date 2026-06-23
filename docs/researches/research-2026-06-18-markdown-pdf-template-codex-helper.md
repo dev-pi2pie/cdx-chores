@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Template Codex Helper"
 created-date: 2026-06-18
-modified-date: 2026-06-20
+modified-date: 2026-06-23
 status: in-progress
 agent: codex
 ---
@@ -335,7 +335,7 @@ V1 cover media should stay intentionally narrow:
 - accepted: local still PNG, JPEG, and WebP files
 - unsupported: GIF, animated PNG, animated WebP, SVG, BMP, TIFF, PDF, remote URLs, and other non-local asset references
 - path resolution: user-provided relative paths are resolved from the CLI working directory; generated bundle references remain relative to the template bundle
-- metadata: when practical, collect local image dimensions or aspect ratio as a bounded signal; when metadata is unavailable, keep aspect-ratio handling in `auto` and use conservative layout CSS
+- metadata: when practical, collect local image dimensions, aspect ratio, orientation bucket, and fit-pressure summary as bounded signals; when metadata is unavailable, keep aspect-ratio handling in `auto` and use conservative layout CSS
 
 Animated media is out of scope because animation has no durable PDF cover semantics. SVG is out of scope because it can contain nested references, active markup, and renderer-sensitive layout behavior. Users should convert other media to a still PNG, JPEG, or WebP before passing `--cover-image`.
 
@@ -354,6 +354,19 @@ When `--output` is omitted and the command has enough signal to proceed, templat
 - no-signal invocations should still reject before deriving or reserving a default output directory
 
 Defaulting to copied local assets is the safer reviewable artifact model. It makes the template directory closer to a reusable bundle and avoids leaking absolute local paths into generated files.
+
+Cover image dimensions are metadata, not direct rendered size. Large source images should not be emitted at intrinsic pixel dimensions in the generated template. The deterministic CSS layer owns scaling the copied image into a page-relative cover-media box.
+
+Recommended v1 asset sizing signal:
+
+| Signal | Values |
+| --- | --- |
+| `dimensions` | `{ width, height }` when available; otherwise unknown |
+| `aspect_ratio` | numeric ratio when available; otherwise unknown |
+| `orientation` | `landscape`, `portrait`, `square`, `panoramic`, `tall`, or `unknown` |
+| `fit_pressure` | `normal`, `crop-risk`, `letterbox-risk`, or `unknown` |
+
+`fit_pressure` should summarize layout risk from the image aspect ratio and selected cover-media region. It should not be a new user-facing flag. Codex can use this signal to choose between bounded slots such as `image_fit: contain` and `image_fit: cover`, while deterministic synthesis owns the actual CSS. The default `--cover-image`-only path should use `image_fit: contain` and CSS constraints such as page-relative `max-width` and `max-height` so oversized images scale down to fit the page. `image_fit: cover` may crop and should require explicit intent or strong design signals.
 
 ### 6. Remote assets should stay explicit
 
@@ -426,6 +439,8 @@ V1 cover-media slots should also stay bounded:
 | `slots.cover.aspect_ratio` | `auto` | V1 records local metadata as a signal when available but should not expose an aspect-ratio CLI flag. |
 
 Full-page background covers should require explicit intent or strong document/design signals. The deterministic `--cover-image`-only path should prefer a contained layout with the title block separate from the image.
+
+Slot decisions should not contain raw CSS sizing values derived from source pixels. For example, a 4000px-wide image should not produce `width: 4000px`. It should produce a bounded decision such as `image_fit: contain`, and deterministic CSS should scale the copied image within the selected cover-media region.
 
 V1 family meanings:
 
@@ -673,4 +688,5 @@ Operationally, v1 should not read an existing `template.html` or `style.css` as 
 
 ## Related Plans
 
+- [Markdown PDF template Codex helper implementation](../plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md)
 - [Markdown PDF Codex profile helper implementation](../plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md)
