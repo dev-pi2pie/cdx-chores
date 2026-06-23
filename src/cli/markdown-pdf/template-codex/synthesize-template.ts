@@ -5,6 +5,7 @@ import type {
   MarkdownPdfTemplateCodexTemplateFamily,
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
+import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 
 function identityComment(input: {
   family: MarkdownPdfTemplateCodexTemplateFamily;
@@ -37,7 +38,7 @@ $endif$
       : "";
 
   return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-layout="${input.slots.cover.layout}" data-title-placement="${input.slots.cover.titlePlacement}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
-  <figure class="pdf-cover-media">
+  <figure class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}">
     <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
 ${captionHtml}  </figure>
 </section>
@@ -72,7 +73,7 @@ $endif$
 </header>
 $endif$
 $if(toc)$
-<nav id="TOC" role="doc-toc">
+<nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">
 $toc$
 </nav>
 $endif$

@@ -1,16 +1,18 @@
 import { describe, expect, test } from "bun:test";
 
-import { synthesizeMdPdfTemplateCodex } from "../../src/cli/markdown-pdf/template-codex";
+import {
+  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
+  synthesizeMdPdfTemplateCodex,
+} from "../../src/cli/markdown-pdf/template-codex";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
 function cssDeclarationsForSelector(styleCss: string, selector: string): Record<string, string> {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`${escapedSelector} \\{[\\s\\S]*?\\n\\}`).exec(styleCss);
+  const match = new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`).exec(styleCss);
   expect(match).not.toBeNull();
   return Object.fromEntries(
-    (match?.[0] ?? "")
-      .split("\n")
-      .slice(1, -1)
+    (match?.[1] ?? "")
+      .split(";")
       .map((line) => line.trim().replace(/;$/, ""))
       .filter(Boolean)
       .map((line) => {
@@ -30,12 +32,14 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain("$body$");
     expect(result.templateHtml).toContain("$if(title)$");
     expect(result.templateHtml).toContain("$if(toc)$");
-    expect(result.templateHtml).toContain('<nav id="TOC" role="doc-toc">');
+    expect(result.templateHtml).toContain(
+      `<nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">`,
+    );
     expect(result.templateHtml).toContain("$toc$");
     expect(result.templateHtml).toContain("family=document-layered");
     expect(result.styleCss).toContain("family=document-layered");
-    expect(result.styleCss).toContain("#TOC");
-    expect(result.styleCss).toContain(".cdx-code-line");
+    expect(result.styleCss).toContain(MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector);
+    expect(result.styleCss).toContain(MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector);
     expect(result.styleCss).toContain(".cdx-code-line-content");
   });
 
@@ -81,7 +85,12 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "min-height": "100vh",
       page: "cover",
     });
-    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media")).toMatchObject({
+    expect(
+      cssDeclarationsForSelector(
+        result.styleCss,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+      ),
+    ).toMatchObject({
       display: "flex",
       padding: "18mm",
     });
@@ -101,6 +110,25 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     });
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)(?:\b|[a-z%])/i,
+    );
+  });
+
+  test("rejects cover-media synthesis when no cover asset is bound", () => {
+    expect(() =>
+      synthesizeMdPdfTemplateCodex({
+        outputPlan: createSynthesisOutputPlan(),
+        signals: createSynthesisSignals({
+          coverImage: {
+            orientationBucket: "landscape",
+            fitPressure: "normal",
+            width: 1800,
+            height: 1200,
+          },
+          signalMode: "deterministic",
+        }),
+      }),
+    ).toThrow(
+      new RegExp(`template:class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`),
     );
   });
 
@@ -141,6 +169,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     });
     expect(reportAuto.styleCss).toContain("break-after: page;");
     expect(reportAuto.styleCss).not.toContain("break-before: page;");
+
+    const articleAuto = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({ preset: "article", toc: true }),
+    });
+    expect(articleAuto.styleCss).not.toContain("break-before: page;");
+    expect(articleAuto.styleCss).not.toContain("break-after: page;");
 
     const explicitBefore = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),

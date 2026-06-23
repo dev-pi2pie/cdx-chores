@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
   resolveMdPdfTemplateCodexFamily,
 } from "../../src/cli/markdown-pdf/template-codex";
@@ -15,10 +16,18 @@ describe("cli action modules: md pdf-template codex families", () => {
       defaultCoverTitlePlacement: "document-title",
     });
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["document-layered"].requiredTemplateHooks).toEqual(
-      expect.arrayContaining(["$body$", "$if(toc)$", "$toc$", 'id="TOC"']),
+      expect.arrayContaining([
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
+        `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+      ]),
     );
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["document-layered"].requiredCssHooks).toEqual(
-      expect.arrayContaining(["#TOC", ".cdx-code-line"]),
+      expect.arrayContaining([
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.codeLineSelector,
+      ]),
     );
 
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["cover-media-layered"]).toMatchObject({
@@ -31,15 +40,18 @@ describe("cli action modules: md pdf-template codex families", () => {
       MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["cover-media-layered"].requiredTemplateHooks,
     ).toEqual(
       expect.arrayContaining([
-        "$body$",
-        "$if(toc)$",
-        "$toc$",
-        'id="TOC"',
-        'class="pdf-cover-media"',
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder,
+        `id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}"`,
+        `class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}"`,
       ]),
     );
     expect(MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES["cover-media-layered"].requiredCssHooks).toEqual(
-      expect.arrayContaining(["#TOC", ".pdf-cover-media"]),
+      expect.arrayContaining([
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+      ]),
     );
   });
 

@@ -1,4 +1,5 @@
 import { createMarkdownPdfCodeCss } from "../code-style";
+import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexResolvedSlots,
@@ -33,7 +34,7 @@ function tocPageBreakCss(signals: MdPdfTemplateCodexSignalCollection): string {
   const before = pageBreak === "before" || pageBreak === "both" ? "break-before: page;" : "";
   const after = pageBreak === "after" || pageBreak === "both" ? "break-after: page;" : "";
   return `
-#TOC {
+${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} {
   ${before}
   ${after}
 }
@@ -61,7 +62,7 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
   page: cover;
 }
 
-.pdf-cover-media {
+${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -208,18 +209,18 @@ blockquote {
   padding-left: 0.8rem;
 }
 
-#TOC {
+${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} {
   page: toc;
   margin: 1rem 0 1.5rem;
 }
 
-#TOC ul {
+${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} ul {
   list-style: none;
   margin: 0.25rem 0 0.25rem 1rem;
   padding: 0;
 }
 
-#TOC a {
+${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} a {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(input.signals)}
