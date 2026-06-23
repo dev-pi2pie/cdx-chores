@@ -1,10 +1,10 @@
-import { CliError } from "../../errors";
 import {
   assertUsableMdPdfTemplateCodexSignalMode,
   collectMdPdfTemplateCodexSignals,
   normalizeMdPdfTemplateCodexCommandState,
   planMdPdfTemplateCodexOutput,
   synthesizeMdPdfTemplateCodex,
+  writeMdPdfTemplateCodexBundle,
   type MarkdownPdfTemplateCodexOutputPlan,
   type MarkdownPdfTemplateCodexSynthesisResult,
   type MdPdfTemplateCodexCliOptions,
@@ -80,11 +80,13 @@ export async function actionMdPdfTemplateCodex(
     return;
   }
 
-  throw new CliError(
-    "md pdf-template codex deterministic template synthesis is implemented; bundle writing begins in Phase 6.",
-    {
-      code: "NOT_IMPLEMENTED",
-      exitCode: 1,
-    },
+  await writeMdPdfTemplateCodexBundle({
+    outputPlan: preflight.outputPlan,
+    overwrite: preflight.state.overwrite,
+    synthesis: preflight.synthesis,
+  });
+  printLine(
+    runtime.stderr,
+    `Wrote Markdown PDF template bundle: ${displayPath(runtime, preflight.outputPlan.outputDirectory)}`,
   );
 }

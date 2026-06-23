@@ -9,6 +9,9 @@ export {
 } from "./families";
 export { resolveMdPdfTemplateCodexSlots } from "./slots";
 export { synthesizeMdPdfTemplateCodex } from "./synthesize";
+export { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
+export { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
+export { writeMdPdfTemplateCodexBundle } from "./write-bundle";
 export {
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
   MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,

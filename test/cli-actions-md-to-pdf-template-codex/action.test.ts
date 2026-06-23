@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../../src/cli/actions/markdown";
@@ -34,24 +34,19 @@ describe("cli action modules: md pdf-template codex action", () => {
     });
   });
 
-  test("synthesizes deterministic output before the write-bundle boundary", async () => {
-    await withTempFixtureDir("md-pdf-template-codex-action-boundary", async (fixtureDir) => {
+  test("writes validated deterministic template bundles during normal execution", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-action-write", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "template-output");
       await writeFile(inputPath, "# Report\n", "utf8");
 
-      const { runtime, stdout } = createActionTestRuntime();
-      await expectCliError(
-        () =>
-          actionMdPdfTemplateCodex(runtime, {
-            input: toRepoRelativePath(inputPath),
-            intent: "dense report",
-          }),
-        {
-          code: "NOT_IMPLEMENTED",
-          exitCode: 1,
-          messageIncludes: "bundle writing begins in Phase 6",
-        },
-      );
+      const { runtime, stderr, stdout } = createActionTestRuntime();
+      await actionMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "dense report",
+        output: toRepoRelativePath(outputPath),
+      });
+
       expect(stdout.text).toContain("Signal mode: codex-assisted");
       expect(stdout.text).toContain("Template family: document-layered");
       expect(stdout.text).toContain("Recipe preset: article (renderer-default)");
@@ -59,6 +54,9 @@ describe("cli action modules: md pdf-template codex action", () => {
       expect(stdout.text).toContain("Template HTML: template.html");
       expect(stdout.text).toContain("Stylesheet: style.css");
       expect(stdout.text).toContain("Managed assets: 0");
+      expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
     });
   });
 
