@@ -581,6 +581,10 @@ bun test --timeout 30000
 - [x] Write template identity comments into `template.html` and `style.css`.
 - [x] Add unit tests for both template families and deterministic signal-ladder rows.
 
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-4-deterministic-synthesis.md`
+
 Recommended module targets:
 
 - `src/cli/markdown-pdf/template-codex/families.ts`
