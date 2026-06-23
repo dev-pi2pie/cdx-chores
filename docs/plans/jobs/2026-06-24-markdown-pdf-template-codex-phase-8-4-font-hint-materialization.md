@@ -37,6 +37,9 @@ font choices.
    coverage, repository gates, and the full test suite.
 10. Added a review-follow-up hardening check so direct decision application
     rejects malformed `template_level` values instead of coercing them.
+11. Addressed code-review feedback by coupling `template_level: true` to
+    `source: "template-style"` so a loose font hint cannot be reported while
+    also taking template-level override ownership.
 
 ## Changes
 
@@ -75,7 +78,20 @@ font choices.
   - Passed after the malformed `template_level` validator follow-up.
 - `bun run lint`
   - Passed after the malformed `template_level` validator follow-up.
+- `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+  - Passed after the `template_level`/`source` ownership coupling fix: 42 tests.
+- `bunx tsc --noEmit`
+  - Passed after the `template_level`/`source` ownership coupling fix.
+- `bun run format:check`
+  - Passed after the `template_level`/`source` ownership coupling fix.
+- `git diff --check`
+  - Passed after the `template_level`/`source` ownership coupling fix.
+- `bun run lint`
+  - Passed after the `template_level`/`source` ownership coupling fix.
 
 ## Reviews
 
-- Pending Phase 8.4 code review on the implementation commit range.
+- Plainspoken the 6th found that `source: "font-hint"` with
+  `template_level: true` could pass validation and create misleading override
+  provenance. The follow-up validator change rejects that combination.
+- Probe the 6th review pending on the final Phase 8.4 range.

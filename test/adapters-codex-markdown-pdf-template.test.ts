@@ -600,5 +600,22 @@ describe("Markdown PDF template Codex adapter", () => {
         request,
       }),
     ).toThrow("font_decisions[0].template_level");
+
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: {
+          ...decision,
+          fontDecisions: [
+            {
+              family: "Inter",
+              role: "heading",
+              source: "font-hint",
+              templateLevel: true,
+            },
+          ],
+        },
+        request,
+      }),
+    ).toThrow("requires source template-style");
   });
 });

@@ -220,18 +220,25 @@ function validateTemplateFontDecisions(
       );
     }
     seenRoles.add(role);
+    const source = assertStringInDomain(
+      decision.source,
+      MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
+      `font_decisions[${index}].source`,
+    );
+    const templateLevel = assertBoolean(
+      decision.templateLevel,
+      `font_decisions[${index}].template_level`,
+    );
+    if (templateLevel && source !== "template-style") {
+      throw new Error(
+        `Markdown PDF template Codex response font_decisions[${index}].template_level requires source template-style.`,
+      );
+    }
     return {
       role,
       family: validateTemplateFontFamily(decision.family, `font_decisions[${index}].family`),
-      source: assertStringInDomain(
-        decision.source,
-        MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
-        `font_decisions[${index}].source`,
-      ),
-      templateLevel: assertBoolean(
-        decision.templateLevel,
-        `font_decisions[${index}].template_level`,
-      ),
+      source,
+      templateLevel,
     };
   });
 }

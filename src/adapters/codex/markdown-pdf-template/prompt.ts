@@ -104,7 +104,7 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     "- Use template_family none, recipe_preset none, css_blocks [], and managed_assets [] when decision_mode is no-usable-template.",
     "- Use font_decisions [] when no bounded template font choice is needed or when decision_mode is no-usable-template.",
     "- font_decisions may name one family per body, heading, or code role; do not return raw font-family CSS stacks.",
-    "- Set font_decisions[].template_level true only when the template should explicitly own that font role over a base-profile font.",
+    "- Set font_decisions[].template_level true only with source template-style, when the template should explicitly own that font role over a base-profile font.",
     "- Use managed_assets only for bundle_path values listed in outputPlan.managedAssets.",
     "- Managed asset references must be bundle-relative paths, never source-local absolute paths.",
     "- Use cover.image_fit contain or cover for image sizing; never use raw pixel width or height directives.",
