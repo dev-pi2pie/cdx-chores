@@ -662,31 +662,36 @@ Recommended module targets:
 
 ### Phase 8: Integration Coverage And Render Compatibility
 
-- [ ] Add action-level tests for deterministic paths.
-- [ ] Add action-level tests for Codex-assisted paths with stubbed adapter responses.
-- [ ] Add action-level tests for `no-usable-template` and requested failure reports.
-- [ ] Add tests that generated template artifacts can flow into `md to-pdf --template --css` with Pandoc and WeasyPrint mocked or covered by existing fixture seams.
-- [ ] Add committed synthetic cover fixtures for PNG, JPEG, and WebP.
-- [ ] Add coverage for oversized cover images scaling down through deterministic `contain` CSS.
-- [ ] Add coverage that explicit `cover` fit can crop only through bounded slot selection, not raw pixel sizing.
-- [ ] Add rejection fixtures for unsupported cover-image formats.
-- [ ] Add artifact-safe smoke commands under `examples/playground/` only when manual visual review artifacts are needed.
-- [ ] Ensure generated smoke artifacts are cleaned before commit.
-- [ ] Run focused test files first, then repo gates.
+- [x] Add action-level tests for deterministic paths.
+- [x] Add action-level tests for Codex-assisted paths with stubbed adapter responses.
+- [x] Add action-level tests for `no-usable-template` and requested failure reports.
+- [x] Add tests that generated template artifacts can flow into `md to-pdf --template --css` with Pandoc and WeasyPrint mocked or covered by existing fixture seams.
+- [x] Add generated synthetic cover-byte coverage for PNG, JPEG, and WebP without committing playground image fixtures.
+- [x] Add coverage for oversized cover images scaling down through deterministic `contain` CSS.
+- [x] Add coverage that explicit `cover` fit can crop only through bounded slot selection, not raw pixel sizing.
+- [x] Add rejection fixtures for unsupported cover-image formats.
+- [x] Confirm no manual `examples/playground/` visual artifacts are needed for this phase.
+- [x] Ensure generated smoke artifacts are cleaned before commit.
+- [x] Run focused test files first, then repo gates.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-23-markdown-pdf-template-codex-phase-8-integration-render-compatibility.md`
 
 Focused validation target:
 
 ```bash
-bun test test/cli-actions-md-to-pdf-template-codex-action.test.ts test/cli-actions-md-to-pdf-template.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-commands.test.ts
 ```
 
 Repo gates:
 
 ```bash
+bunx tsc --noEmit
 bun run lint
 bun run format:check
 bun run build
-bun test
+bun test --timeout 30000
 git diff --check
 ```
 
