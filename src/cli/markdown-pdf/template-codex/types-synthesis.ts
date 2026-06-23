@@ -112,6 +112,9 @@ export interface MarkdownPdfTemplateCodexSynthesisResult {
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   themeTokens: MarkdownPdfTemplateCodexThemeTokens;
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
+  warnings?: string[];
+  unsupportedDirections?: string[];
+  fallbackReason?: string;
   templateHtml: string;
   styleCss: string;
 }

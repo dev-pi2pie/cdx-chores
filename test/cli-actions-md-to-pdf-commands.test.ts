@@ -368,6 +368,7 @@ describe("cli command: md pdf-template codex", () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("Signal mode: codex-assisted");
+      expect(result.stdout).toContain("Decision mode: deterministic");
       expect(result.stdout).toContain("Template family: document-layered");
       expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
       expect(result.stdout).toContain("Template bundle: md-pdf-template-");
@@ -376,6 +377,7 @@ describe("cli command: md pdf-template codex", () => {
       expect(result.stdout).toContain("Stylesheet: style.css");
       expect(result.stdout).toContain("Managed assets: 0");
       expect(result.stdout).toContain(`Codex report: ${toRepoRelativePath(reportPath)}`);
+      expect(result.stdout).toContain("Follow-up render: cdx-chores md to-pdf");
       expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
       expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
@@ -384,9 +386,12 @@ describe("cli command: md pdf-template codex", () => {
         decision: { mode: string };
         files: Array<{ bundlePath: string }>;
       };
-      expect(report.artifactType).toBe("markdown-pdf-template-codex-report");
+      expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
       expect(report.decision.mode).toBe("deterministic");
-      expect(report.files.map((file) => file.bundlePath)).toEqual(["template.html", "style.css"]);
+      expect(report.files.map((file) => file.bundlePath).filter(Boolean)).toEqual([
+        "template.html",
+        "style.css",
+      ]);
     });
   });
 
@@ -421,6 +426,7 @@ describe("cli command: md pdf-template codex", () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("Signal mode: deterministic");
+      expect(result.stdout).toContain("Decision mode: deterministic");
       expect(result.stdout).toContain("Template family: cover-media-layered");
       expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
       expect(result.stdout).toContain("Cover image fit: cover");
