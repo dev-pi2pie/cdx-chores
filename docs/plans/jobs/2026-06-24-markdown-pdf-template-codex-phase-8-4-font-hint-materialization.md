@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.4 font hint materialization"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -40,6 +40,8 @@ font choices.
 11. Addressed code-review feedback by coupling `template_level: true` to
     `source: "template-style"` so a loose font hint cannot be reported while
     also taking template-level override ownership.
+12. Re-ran final repository gates after the review fix and closed the review
+    loop with both requested reviewers.
 
 ## Changes
 
@@ -88,10 +90,25 @@ font choices.
   - Passed after the `template_level`/`source` ownership coupling fix.
 - `bun run lint`
   - Passed after the `template_level`/`source` ownership coupling fix.
+- `bun run build`
+  - Passed after final review fixes.
+- `bun run format:check`
+  - Passed after final review fixes.
+- `git diff --check`
+  - Passed after final review fixes.
+- `bunx tsc --noEmit`
+  - Passed after final review fixes.
+- `bun run lint`
+  - Passed after final review fixes.
+- `bun test --timeout 30000`
+  - Passed after final review fixes: 1303 tests.
 
 ## Reviews
 
 - Plainspoken the 6th found that `source: "font-hint"` with
   `template_level: true` could pass validation and create misleading override
   provenance. The follow-up validator change rejects that combination.
-- Probe the 6th review pending on the final Phase 8.4 range.
+- Plainspoken the 6th re-reviewed `a3a3e42..c121847` and reported no material
+  findings remain.
+- Probe the 6th reviewed `a3a3e42..c121847` and reported no material findings
+  remain.
