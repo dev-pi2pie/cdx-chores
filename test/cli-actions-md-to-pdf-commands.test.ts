@@ -347,19 +347,15 @@ describe("cli command: md pdf-template codex", () => {
 
   test("writes a validated template bundle after deterministic synthesis", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-write-bundle", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "report.md");
       const outputPath = join(fixtureDir, "pdf-template");
       const reportPath = join(fixtureDir, "template-report.json");
-      await writeFile(inputPath, "# Report\n", "utf8");
 
       const result = runCli([
         "md",
         "pdf-template",
         "codex",
-        "--input",
-        toRepoRelativePath(inputPath),
-        "--intent",
-        "dense report",
+        "--preset",
+        "report",
         "--output",
         toRepoRelativePath(outputPath),
         "--codex-report-output",
@@ -367,10 +363,10 @@ describe("cli command: md pdf-template codex", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Signal mode: codex-assisted");
+      expect(result.stdout).toContain("Signal mode: recipe-only");
       expect(result.stdout).toContain("Decision mode: deterministic");
       expect(result.stdout).toContain("Template family: document-layered");
-      expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
+      expect(result.stdout).toContain("Recipe preset: report (explicit-recipe)");
       expect(result.stdout).toContain("Template bundle: md-pdf-template-");
       expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
       expect(result.stdout).toContain("Template HTML: template.html");

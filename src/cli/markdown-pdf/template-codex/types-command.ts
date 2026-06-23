@@ -2,6 +2,12 @@ import type { NormalizedMarkdownPdfOptions, NormalizeMarkdownPdfOptionsInput } f
 
 export type MarkdownPdfTemplateCodexBundleIdFactory = (now: Date, attempt: number) => string;
 
+export type MarkdownPdfTemplateCodexRunner = (options: {
+  prompt: string;
+  timeoutMs?: number;
+  workingDirectory: string;
+}) => Promise<string>;
+
 export type MarkdownPdfTemplateCodexSignalMode =
   | "low-signal"
   | "base-profile-only"
@@ -43,11 +49,12 @@ export interface MdPdfTemplateCodexOptions {
   tocDepth?: number;
   tocPageBreak?: string;
   templateBundleIdFactory?: MarkdownPdfTemplateCodexBundleIdFactory;
+  codexRunner?: MarkdownPdfTemplateCodexRunner;
 }
 
 export type MdPdfTemplateCodexCliOptions = Omit<
   MdPdfTemplateCodexOptions,
-  "positionalInput" | "templateBundleIdFactory"
+  "codexRunner" | "positionalInput" | "templateBundleIdFactory"
 >;
 
 export interface NormalizedMdPdfTemplateCodexCommandState {

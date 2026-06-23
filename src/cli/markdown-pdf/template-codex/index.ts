@@ -8,7 +8,10 @@ export {
   resolveMdPdfTemplateCodexFamily,
 } from "./families";
 export { resolveMdPdfTemplateCodexSlots } from "./slots";
-export { synthesizeMdPdfTemplateCodex } from "./synthesize";
+export {
+  synthesizeMdPdfTemplateCodex,
+  synthesizeMdPdfTemplateCodexFromDecision,
+} from "./synthesize";
 export { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
 export { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
 export {

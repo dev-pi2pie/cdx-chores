@@ -1,3 +1,4 @@
+import { suggestMarkdownPdfTemplateWithCodex } from "../../../adapters/codex/markdown-pdf-template";
 import {
   assertUsableMdPdfTemplateCodexSignalMode,
   collectMdPdfTemplateCodexSignals,
@@ -5,6 +6,7 @@ import {
   planMdPdfTemplateCodexOutput,
   printMdPdfTemplateCodexSummary,
   synthesizeMdPdfTemplateCodex,
+  synthesizeMdPdfTemplateCodexFromDecision,
   validateMdPdfTemplateCodexSynthesis,
   writeMdPdfTemplateCodexBundle,
   writeMdPdfTemplateCodexReportIfRequested,
@@ -35,7 +37,22 @@ async function preflightMdPdfTemplateCodex(
   const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
   const outputPlan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
-  const synthesis = synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+  const synthesis =
+    signals.signalMode === "codex-assisted"
+      ? synthesizeMdPdfTemplateCodexFromDecision({
+          decision: (
+            await suggestMarkdownPdfTemplateWithCodex({
+              intent: state.intent,
+              outputPlan,
+              runner: options.codexRunner,
+              signals,
+              workingDirectory: runtime.cwd,
+            })
+          ).decision,
+          outputPlan,
+          signals,
+        })
+      : synthesizeMdPdfTemplateCodex({ outputPlan, signals });
   validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
   return { outputPlan, signals, state, synthesis };
 }
@@ -67,6 +84,15 @@ export async function actionMdPdfTemplateCodex(
     state: preflight.state,
     synthesis: preflight.synthesis,
   });
+  if (preflight.synthesis.decisionMode === "no-usable-template") {
+    if (preflight.outputPlan.report) {
+      printLine(
+        runtime.stderr,
+        `Wrote Codex report: ${displayPath(runtime, preflight.outputPlan.report.path)}`,
+      );
+    }
+    return;
+  }
   printLine(
     runtime.stderr,
     `Wrote Markdown PDF template bundle: ${displayPath(runtime, preflight.outputPlan.outputDirectory)}`,
