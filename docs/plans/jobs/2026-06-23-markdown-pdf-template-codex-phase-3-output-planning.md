@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF template Codex phase 3 output planning"
 created-date: 2026-06-23
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -43,9 +43,9 @@ the action still stops at the Phase 4 boundary.
 - Added follow-up tests for exhausted generated-directory retries, symlink
   output directories, symlink planned recipe files, directory report/asset
   targets, and non-trivial cover-asset filename sanitization.
-- Addressed final follow-up review by splitting planned report targets from
-  ordinary bundle files, preserving bundle-relative paths for template, CSS, and
-  asset files, and adding edge coverage for final retry success, asset
+- Addressed final follow-up review by modeling planned reports as an explicit
+  in-bundle/external union, preserving bundle-relative paths for template, CSS,
+  and asset files, and adding edge coverage for final retry success, asset
   sanitization fallback/truncation, style directory targets, report symlink
   targets, and asset symlink targets.
 

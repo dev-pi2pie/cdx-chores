@@ -143,10 +143,17 @@ export interface MarkdownPdfTemplateCodexPlannedAsset extends MarkdownPdfTemplat
   sourceBasename: string;
 }
 
-export interface MarkdownPdfTemplateCodexPlannedReport {
+export type MarkdownPdfTemplateCodexPlannedReport =
+  | MarkdownPdfTemplateCodexPlannedBundleReport
+  | MarkdownPdfTemplateCodexPlannedExternalReport;
+
+export interface MarkdownPdfTemplateCodexPlannedBundleReport extends MarkdownPdfTemplateCodexPlannedFile {
+  location: "in-bundle";
+}
+
+export interface MarkdownPdfTemplateCodexPlannedExternalReport {
   path: string;
-  location: "in-bundle" | "external";
-  bundlePath?: string;
+  location: "external";
 }
 
 export interface MarkdownPdfTemplateCodexOutputPlan {
