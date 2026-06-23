@@ -44,6 +44,9 @@ planning or bundle writes.
   classification, narrowing the local template-Codex barrel exports to the
   Phase 2 surface, and adding JPEG/WebP, mixed-signal precedence, and
   command-layer option pass-through tests.
+- Followed up on the WebP metadata parser readability by replacing inline byte
+  math with named chunk constants and small decoding helpers for VP8X, VP8, and
+  VP8L dimensions.
 
 ## Verification
 
@@ -60,6 +63,22 @@ bun test --timeout 30000
 Result: all commands passed. The focused Phase 2 suite reported 19 tests passed
 and 0 failed. The command-layer suite reported 18 tests passed and 0 failed.
 The final full suite reported 1219 tests passed and 0 failed.
+
+Follow-up readability verification:
+
+```bash
+bun run format
+bun test test/cli-actions-md-to-pdf-template-codex.test.ts
+bun run format:check
+bun run lint
+bun run build
+git diff --check
+bun test --timeout 30000
+```
+
+Result: all commands passed. The focused template-Codex suite reported 19 tests
+passed and 0 failed. The final full suite reported 1219 tests passed and 0
+failed.
 
 ## Artifact Safety
 

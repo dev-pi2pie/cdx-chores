@@ -30,20 +30,37 @@ function minimalJpeg(width: number, height: number): Buffer {
   return bytes;
 }
 
+const WEBP_FILE_HEADER_LENGTH = 12;
+const WEBP_CHUNK_HEADER_LENGTH = 8;
+const WEBP_VP8X_CHUNK_SIZE = 10;
+const WEBP_VP8X_PAYLOAD_OFFSET = WEBP_FILE_HEADER_LENGTH + WEBP_CHUNK_HEADER_LENGTH;
+const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
+const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
+
+function writeUint24LittleEndian(bytes: Buffer, offset: number, value: number): void {
+  bytes[offset] = value & 0xff;
+  bytes[offset + 1] = (value >> 8) & 0xff;
+  bytes[offset + 2] = (value >> 16) & 0xff;
+}
+
 function minimalWebpVp8x(width: number, height: number): Buffer {
   const bytes = Buffer.alloc(30);
   bytes.write("RIFF", 0, "ascii");
   bytes.write("WEBP", 8, "ascii");
   bytes.write("VP8X", 12, "ascii");
-  bytes.writeUInt32LE(10, 16);
+  bytes.writeUInt32LE(WEBP_VP8X_CHUNK_SIZE, WEBP_FILE_HEADER_LENGTH + 4);
   const storedWidth = width - 1;
   const storedHeight = height - 1;
-  bytes[24] = storedWidth & 0xff;
-  bytes[25] = (storedWidth >> 8) & 0xff;
-  bytes[26] = (storedWidth >> 16) & 0xff;
-  bytes[27] = storedHeight & 0xff;
-  bytes[28] = (storedHeight >> 8) & 0xff;
-  bytes[29] = (storedHeight >> 16) & 0xff;
+  writeUint24LittleEndian(
+    bytes,
+    WEBP_VP8X_PAYLOAD_OFFSET + WEBP_VP8X_CANVAS_WIDTH_OFFSET,
+    storedWidth,
+  );
+  writeUint24LittleEndian(
+    bytes,
+    WEBP_VP8X_PAYLOAD_OFFSET + WEBP_VP8X_CANVAS_HEIGHT_OFFSET,
+    storedHeight,
+  );
   return bytes;
 }
 

@@ -21,6 +21,18 @@ export const SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS = new Set([
   ".webp",
 ]);
 
+const WEBP_FILE_HEADER_LENGTH = 12;
+const WEBP_CHUNK_HEADER_LENGTH = 8;
+const WEBP_VP8X_CHUNK_MIN_SIZE = 10;
+const WEBP_VP8_CHUNK_MIN_SIZE = 10;
+const WEBP_VP8L_CHUNK_MIN_SIZE = 5;
+const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
+const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
+const WEBP_VP8_FRAME_WIDTH_OFFSET = 6;
+const WEBP_VP8_FRAME_HEIGHT_OFFSET = 8;
+const WEBP_VP8_FRAME_DIMENSION_MASK = 0x3fff;
+const WEBP_VP8L_SIGNATURE = 0x2f;
+
 export function imageFormatForPath(
   path: string,
 ): MarkdownPdfTemplateCodexCoverImageFormat | undefined {
@@ -35,6 +47,21 @@ export function imageFormatForPath(
     return "jpeg";
   }
   return undefined;
+}
+
+function readAscii(bytes: Uint8Array, offset: number, length: number): string {
+  return Buffer.from(bytes.subarray(offset, offset + length)).toString("ascii");
+}
+
+function readUint24LittleEndian(bytes: Uint8Array, offset: number): number {
+  return bytes[offset]! + (bytes[offset + 1]! << 8) + (bytes[offset + 2]! << 16);
+}
+
+function dimensionsIfPositive(
+  width: number,
+  height: number,
+): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
+  return width > 0 && height > 0 ? { width, height } : undefined;
 }
 
 function readPngDimensions(
@@ -52,7 +79,7 @@ function readPngDimensions(
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const width = view.getUint32(16, false);
   const height = view.getUint32(20, false);
-  return width > 0 && height > 0 ? { width, height } : undefined;
+  return dimensionsIfPositive(width, height);
 }
 
 function readJpegDimensions(
@@ -85,54 +112,78 @@ function readJpegDimensions(
     if (isStartOfFrame) {
       const height = view.getUint16(offset + 5, false);
       const width = view.getUint16(offset + 7, false);
-      return width > 0 && height > 0 ? { width, height } : undefined;
+      return dimensionsIfPositive(width, height);
     }
     offset += 2 + segmentLength;
   }
   return undefined;
 }
 
+function readWebpVp8xDimensions(
+  bytes: Uint8Array,
+  dataOffset: number,
+): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
+  // VP8X stores canvas dimensions as 24-bit little-endian values minus one.
+  const width = 1 + readUint24LittleEndian(bytes, dataOffset + WEBP_VP8X_CANVAS_WIDTH_OFFSET);
+  const height = 1 + readUint24LittleEndian(bytes, dataOffset + WEBP_VP8X_CANVAS_HEIGHT_OFFSET);
+  return dimensionsIfPositive(width, height);
+}
+
+function readWebpVp8Dimensions(
+  view: DataView,
+  dataOffset: number,
+): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
+  // VP8 frame headers store 14-bit width and height values in little-endian fields.
+  const width =
+    view.getUint16(dataOffset + WEBP_VP8_FRAME_WIDTH_OFFSET, true) & WEBP_VP8_FRAME_DIMENSION_MASK;
+  const height =
+    view.getUint16(dataOffset + WEBP_VP8_FRAME_HEIGHT_OFFSET, true) & WEBP_VP8_FRAME_DIMENSION_MASK;
+  return dimensionsIfPositive(width, height);
+}
+
+function readWebpVp8lDimensions(
+  bytes: Uint8Array,
+  dataOffset: number,
+): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
+  if (bytes[dataOffset] !== WEBP_VP8L_SIGNATURE) {
+    return undefined;
+  }
+
+  // VP8L packs width and height across four bytes after the lossless signature.
+  const b1 = bytes[dataOffset + 1]!;
+  const b2 = bytes[dataOffset + 2]!;
+  const b3 = bytes[dataOffset + 3]!;
+  const b4 = bytes[dataOffset + 4]!;
+  const width = 1 + (((b2 & 0x3f) << 8) | b1);
+  const height = 1 + ((b4 << 6) | (b3 >> 2) | ((b2 & 0xc0) << 6));
+  return dimensionsIfPositive(width, height);
+}
+
 function readWebpDimensions(
   bytes: Uint8Array,
 ): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
-  if (
-    bytes.length < 30 ||
-    Buffer.from(bytes.subarray(0, 4)).toString("ascii") !== "RIFF" ||
-    Buffer.from(bytes.subarray(8, 12)).toString("ascii") !== "WEBP"
-  ) {
+  if (bytes.length < 30 || readAscii(bytes, 0, 4) !== "RIFF" || readAscii(bytes, 8, 4) !== "WEBP") {
     return undefined;
   }
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  let offset = 12;
-  while (offset + 8 <= bytes.length) {
-    const chunkType = Buffer.from(bytes.subarray(offset, offset + 4)).toString("ascii");
+  let offset = WEBP_FILE_HEADER_LENGTH;
+  while (offset + WEBP_CHUNK_HEADER_LENGTH <= bytes.length) {
+    const chunkType = readAscii(bytes, offset, 4);
     const chunkSize = view.getUint32(offset + 4, true);
-    const dataOffset = offset + 8;
+    const dataOffset = offset + WEBP_CHUNK_HEADER_LENGTH;
     if (dataOffset + chunkSize > bytes.length) {
       return undefined;
     }
 
-    if (chunkType === "VP8X" && chunkSize >= 10) {
-      const width =
-        1 + bytes[dataOffset + 4]! + (bytes[dataOffset + 5]! << 8) + (bytes[dataOffset + 6]! << 16);
-      const height =
-        1 + bytes[dataOffset + 7]! + (bytes[dataOffset + 8]! << 8) + (bytes[dataOffset + 9]! << 16);
-      return width > 0 && height > 0 ? { width, height } : undefined;
+    if (chunkType === "VP8X" && chunkSize >= WEBP_VP8X_CHUNK_MIN_SIZE) {
+      return readWebpVp8xDimensions(bytes, dataOffset);
     }
-    if (chunkType === "VP8 " && chunkSize >= 10) {
-      const width = view.getUint16(dataOffset + 6, true) & 0x3fff;
-      const height = view.getUint16(dataOffset + 8, true) & 0x3fff;
-      return width > 0 && height > 0 ? { width, height } : undefined;
+    if (chunkType === "VP8 " && chunkSize >= WEBP_VP8_CHUNK_MIN_SIZE) {
+      return readWebpVp8Dimensions(view, dataOffset);
     }
-    if (chunkType === "VP8L" && chunkSize >= 5 && bytes[dataOffset] === 0x2f) {
-      const b1 = bytes[dataOffset + 1]!;
-      const b2 = bytes[dataOffset + 2]!;
-      const b3 = bytes[dataOffset + 3]!;
-      const b4 = bytes[dataOffset + 4]!;
-      const width = 1 + (((b2 & 0x3f) << 8) | b1);
-      const height = 1 + ((b4 << 6) | (b3 >> 2) | ((b2 & 0xc0) << 6));
-      return width > 0 && height > 0 ? { width, height } : undefined;
+    if (chunkType === "VP8L" && chunkSize >= WEBP_VP8L_CHUNK_MIN_SIZE) {
+      return readWebpVp8lDimensions(bytes, dataOffset);
     }
 
     offset = dataOffset + chunkSize + (chunkSize % 2);
