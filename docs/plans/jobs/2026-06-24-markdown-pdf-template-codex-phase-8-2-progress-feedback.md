@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.2 progress feedback"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -65,9 +65,11 @@ progress contract used by the profile helper.
 - `auto_commit_notification` was requested before the implementation commit;
   the thread limit blocked a fresh advisor, so the existing `Commit Scout the
   9th` thread was reused.
-- Pending Phase 8.2 code review range.
-- Pending review requests to `Plainspoken the 6th` and `Probe the 6th`.
+- Phase 8.2 code review range: `2d9bdd4..a2944fb`.
+- Review requests were sent to `Plainspoken the 6th` and `Probe the 6th`.
+- `Plainspoken the 6th` returned no material findings.
+- `Probe the 6th` returned no material findings.
 
 Phase 8.2 implementation commit:
 
-- Pending.
+- `a2944fb` `feat(template-codex): show Codex progress for template decisions`
