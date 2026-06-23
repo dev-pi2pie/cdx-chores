@@ -7,6 +7,60 @@ import type {
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
+import type { NormalizedMarkdownPdfOptions } from "../validation";
+
+type TemplateCodexPresetDefaults = {
+  bodySize: string;
+  lineHeight: string;
+  spacingDensity: MarkdownPdfTemplateCodexResolvedSlots["spacing"]["density"];
+  tableDensity: MarkdownPdfTemplateCodexResolvedSlots["tables"]["density"];
+  tableWidth: MarkdownPdfTemplateCodexResolvedSlots["tables"]["width"];
+  typographyScale: MarkdownPdfTemplateCodexResolvedSlots["typography"]["scale"];
+};
+
+const PRESET_DEFAULTS: Record<NormalizedMarkdownPdfOptions["preset"], TemplateCodexPresetDefaults> =
+  {
+    article: {
+      bodySize: "10.5pt",
+      lineHeight: "1.5",
+      spacingDensity: "standard",
+      tableDensity: "standard",
+      tableWidth: "content",
+      typographyScale: "standard",
+    },
+    report: {
+      bodySize: "10.5pt",
+      lineHeight: "1.5",
+      spacingDensity: "standard",
+      tableDensity: "standard",
+      tableWidth: "content",
+      typographyScale: "standard",
+    },
+    "wide-table": {
+      bodySize: "9.5pt",
+      lineHeight: "1.5",
+      spacingDensity: "standard",
+      tableDensity: "wide",
+      tableWidth: "full",
+      typographyScale: "standard",
+    },
+    compact: {
+      bodySize: "9.5pt",
+      lineHeight: "1.5",
+      spacingDensity: "compact",
+      tableDensity: "compact",
+      tableWidth: "content",
+      typographyScale: "compact",
+    },
+    reader: {
+      bodySize: "12pt",
+      lineHeight: "1.65",
+      spacingDensity: "spacious",
+      tableDensity: "standard",
+      tableWidth: "content",
+      typographyScale: "reader",
+    },
+  };
 
 function recipePresetSource(
   signals: MdPdfTemplateCodexSignalCollection,
@@ -20,57 +74,8 @@ function recipePresetSource(
   return "renderer-default";
 }
 
-function tableDensity(
-  signals: MdPdfTemplateCodexSignalCollection,
-): MarkdownPdfTemplateCodexResolvedSlots["tables"]["density"] {
-  if (signals.recipe.effectiveOptions.preset === "wide-table") {
-    return "wide";
-  }
-  if (signals.recipe.effectiveOptions.preset === "compact") {
-    return "compact";
-  }
-  return "standard";
-}
-
-function spacingDensity(
-  signals: MdPdfTemplateCodexSignalCollection,
-): MarkdownPdfTemplateCodexResolvedSlots["spacing"]["density"] {
-  if (signals.recipe.effectiveOptions.preset === "compact") {
-    return "compact";
-  }
-  if (signals.recipe.effectiveOptions.preset === "reader") {
-    return "spacious";
-  }
-  return "standard";
-}
-
-function typographyScale(
-  signals: MdPdfTemplateCodexSignalCollection,
-): MarkdownPdfTemplateCodexResolvedSlots["typography"]["scale"] {
-  if (signals.recipe.effectiveOptions.preset === "reader") {
-    return "reader";
-  }
-  if (signals.recipe.effectiveOptions.preset === "compact") {
-    return "compact";
-  }
-  return "standard";
-}
-
-function bodySize(signals: MdPdfTemplateCodexSignalCollection): string {
-  switch (signals.recipe.effectiveOptions.preset) {
-    case "compact":
-      return "9.5pt";
-    case "reader":
-      return "12pt";
-    case "wide-table":
-      return "9.5pt";
-    default:
-      return "10.5pt";
-  }
-}
-
-function lineHeight(signals: MdPdfTemplateCodexSignalCollection): string {
-  return signals.recipe.effectiveOptions.preset === "reader" ? "1.65" : "1.5";
+function presetDefaults(signals: MdPdfTemplateCodexSignalCollection): TemplateCodexPresetDefaults {
+  return PRESET_DEFAULTS[signals.recipe.effectiveOptions.preset];
 }
 
 function coverImageFit(
@@ -91,8 +96,8 @@ export function resolveMdPdfTemplateCodexSlots(input: {
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexResolvedSlots {
   const family = MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES[input.family];
-  const hasCover = input.family === "cover-media-layered" && input.signals.coverImage.available;
-  const spacing = spacingDensity(input.signals);
+  const defaults = presetDefaults(input.signals);
+  const hasCover = family.requiresCoverImage && input.signals.coverImage.available;
 
   return {
     recipePreset: {
@@ -113,9 +118,9 @@ export function resolveMdPdfTemplateCodexSlots(input: {
       fitPressure: input.signals.coverImage.fitPressure,
     },
     tables: {
-      density: tableDensity(input.signals),
+      density: defaults.tableDensity,
       repeatHeader: true,
-      width: input.signals.recipe.effectiveOptions.preset === "wide-table" ? "full" : "content",
+      width: defaults.tableWidth,
     },
     code: {
       style: "shiki-compatible",
@@ -123,10 +128,10 @@ export function resolveMdPdfTemplateCodexSlots(input: {
       preserveSelectors: true,
     },
     spacing: {
-      density: spacing,
+      density: defaults.spacingDensity,
     },
     typography: {
-      scale: typographyScale(input.signals),
+      scale: defaults.typographyScale,
     },
     color: {
       palette: "neutral",
@@ -138,12 +143,13 @@ export function resolveMdPdfTemplateCodexThemeTokens(
   signals: MdPdfTemplateCodexSignalCollection,
   slots: MarkdownPdfTemplateCodexResolvedSlots,
 ): MarkdownPdfTemplateCodexThemeTokens {
+  const defaults = presetDefaults(signals);
   return {
     bodyFont: '"Noto Serif", "Georgia", serif',
     headingFont: '"Noto Sans", "Arial", sans-serif',
     monospaceFont: '"Noto Sans Mono", "SFMono-Regular", "Consolas", monospace',
-    bodySize: bodySize(signals),
-    lineHeight: lineHeight(signals),
+    bodySize: defaults.bodySize,
+    lineHeight: defaults.lineHeight,
     blockGap:
       slots.spacing.density === "compact"
         ? "0.35rem"

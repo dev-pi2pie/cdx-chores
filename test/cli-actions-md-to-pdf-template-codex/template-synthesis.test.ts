@@ -9,6 +9,20 @@ function coverImageCssBlock(styleCss: string): string {
   return match?.[0] ?? "";
 }
 
+function coverImageCssDeclarations(styleCss: string): Record<string, string> {
+  return Object.fromEntries(
+    coverImageCssBlock(styleCss)
+      .split("\n")
+      .slice(1, -1)
+      .map((line) => line.trim().replace(/;$/, ""))
+      .filter(Boolean)
+      .map((line) => {
+        const separatorIndex = line.indexOf(":");
+        return [line.slice(0, separatorIndex), line.slice(separatorIndex + 1).trim()];
+      }),
+  );
+}
+
 describe("cli action modules: md pdf-template codex template synthesis", () => {
   test("preserves Pandoc document hooks and Shiki-compatible code selectors", () => {
     const result = synthesizeMdPdfTemplateCodex({
@@ -26,6 +40,21 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).toContain("#TOC");
     expect(result.styleCss).toContain(".cdx-code-line");
     expect(result.styleCss).toContain(".cdx-code-line-content");
+  });
+
+  test("omits cover media and ToC page-break CSS for plain document synthesis", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({ preset: "article" }),
+    });
+
+    expect(result.templateFamily).toBe("document-layered");
+    expect(result.slots.cover.enabled).toBe(false);
+    expect(result.templateHtml).not.toContain("pdf-cover");
+    expect(result.styleCss).not.toContain("@page cover");
+    expect(result.styleCss).not.toContain(".pdf-cover-media");
+    expect(result.styleCss).not.toContain("break-before: page;");
+    expect(result.styleCss).not.toContain("break-after: page;");
   });
 
   test("maps contained cover media to page-relative CSS without source pixel sizing", () => {
@@ -49,6 +78,15 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('data-orientation="panoramic"');
     expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
     expect(result.styleCss).toContain("object-fit: contain;");
+    expect(coverImageCssDeclarations(result.styleCss)).toEqual({
+      display: "block",
+      height: "68vh",
+      "max-height": "68vh",
+      "max-width": "100%",
+      "object-fit": "contain",
+      "object-position": "center",
+      width: "100%",
+    });
     expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
   display: block;
   height: 68vh;
@@ -59,7 +97,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
   width: 100%;
 }`);
     expect(result.styleCss).not.toMatch(
-      /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)/,
+      /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)(?:\b|[a-z%])/i,
     );
   });
 
@@ -79,6 +117,15 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.templateHtml).toContain('data-image-fit="cover"');
     expect(result.styleCss).toContain("object-fit: cover;");
+    expect(coverImageCssDeclarations(result.styleCss)).toEqual({
+      display: "block",
+      height: "76vh",
+      "max-height": "76vh",
+      "max-width": "100%",
+      "object-fit": "cover",
+      "object-position": "center",
+      width: "100%",
+    });
     expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
   display: block;
   height: 76vh;
@@ -89,7 +136,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
   width: 100%;
 }`);
     expect(result.styleCss).not.toMatch(
-      /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)/,
+      /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)(?:\b|[a-z%])/i,
     );
   });
 

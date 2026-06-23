@@ -77,6 +77,28 @@ describe("cli action modules: md pdf-template codex output paths", () => {
     });
   });
 
+  test("omits report targets by default", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-default-no-report", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        now: () => new Date("2026-06-23T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        templateBundleIdFactory: () => "md-pdf-template-20260623T010203Z-test0001",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan.report).toBeUndefined();
+      expect(plan.templateHtml.bundlePath).toBe("template.html");
+      expect(plan.styleCss.bundlePath).toBe("style.css");
+      expect(await pathExists(plan.outputDirectory)).toBe(false);
+    });
+  });
+
   test("plans explicit Codex report output as an external report target", async () => {
     await withTempFixtureDir("md-pdf-template-codex-external-report", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
