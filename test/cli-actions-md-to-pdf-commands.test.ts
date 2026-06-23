@@ -345,8 +345,8 @@ describe("cli command: md pdf-template codex", () => {
     });
   });
 
-  test("stops at the write-bundle boundary after deterministic synthesis", async () => {
-    await withTempFixtureDir("md-pdf-template-codex-cli-phase3-boundary", async (fixtureDir) => {
+  test("writes a validated template bundle after deterministic synthesis", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-write-bundle", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const outputPath = join(fixtureDir, "pdf-template");
       const reportPath = join(fixtureDir, "template-report.json");
@@ -366,7 +366,7 @@ describe("cli command: md pdf-template codex", () => {
         toRepoRelativePath(reportPath),
       ]);
 
-      expect(result.exitCode).toBe(1);
+      expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("Signal mode: codex-assisted");
       expect(result.stdout).toContain("Template family: document-layered");
       expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
@@ -376,9 +376,17 @@ describe("cli command: md pdf-template codex", () => {
       expect(result.stdout).toContain("Stylesheet: style.css");
       expect(result.stdout).toContain("Managed assets: 0");
       expect(result.stdout).toContain(`Codex report: ${toRepoRelativePath(reportPath)}`);
-      expect(result.stderr).toContain("bundle writing begins in Phase 6");
-      expect(await pathExists(outputPath)).toBe(false);
-      expect(await pathExists(reportPath)).toBe(false);
+      expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        artifactType: string;
+        decision: { mode: string };
+        files: Array<{ bundlePath: string }>;
+      };
+      expect(report.artifactType).toBe("markdown-pdf-template-codex-report");
+      expect(report.decision.mode).toBe("deterministic");
+      expect(report.files.map((file) => file.bundlePath)).toEqual(["template.html", "style.css"]);
     });
   });
 
@@ -411,15 +419,23 @@ describe("cli command: md pdf-template codex", () => {
         toRepoRelativePath(outputPath),
       ]);
 
-      expect(result.exitCode).toBe(1);
+      expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("Signal mode: deterministic");
       expect(result.stdout).toContain("Template family: cover-media-layered");
       expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
       expect(result.stdout).toContain("Cover image fit: cover");
       expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
       expect(result.stdout).toContain("Managed assets: 1");
-      expect(result.stderr).toContain("bundle writing begins in Phase 6");
-      expect(await pathExists(outputPath)).toBe(false);
+      expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain(
+        'src="assets/cover.png"',
+      );
+      expect(
+        Buffer.compare(
+          await readFile(join(outputPath, "assets", "cover.png")),
+          minimalPng(1600, 900),
+        ),
+      ).toBe(0);
     });
   });
 });
