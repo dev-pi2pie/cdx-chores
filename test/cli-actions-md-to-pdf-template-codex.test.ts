@@ -20,6 +20,33 @@ function minimalPng(width: number, height: number): Buffer {
   return bytes;
 }
 
+function minimalJpeg(width: number, height: number): Buffer {
+  const bytes = Buffer.alloc(21);
+  bytes.set([0xff, 0xd8, 0xff, 0xc0], 0);
+  bytes.writeUInt16BE(17, 4);
+  bytes[6] = 8;
+  bytes.writeUInt16BE(height, 7);
+  bytes.writeUInt16BE(width, 9);
+  return bytes;
+}
+
+function minimalWebpVp8x(width: number, height: number): Buffer {
+  const bytes = Buffer.alloc(30);
+  bytes.write("RIFF", 0, "ascii");
+  bytes.write("WEBP", 8, "ascii");
+  bytes.write("VP8X", 12, "ascii");
+  bytes.writeUInt32LE(10, 16);
+  const storedWidth = width - 1;
+  const storedHeight = height - 1;
+  bytes[24] = storedWidth & 0xff;
+  bytes[25] = (storedWidth >> 8) & 0xff;
+  bytes[26] = (storedWidth >> 16) & 0xff;
+  bytes[27] = storedHeight & 0xff;
+  bytes[28] = (storedHeight >> 8) & 0xff;
+  bytes[29] = (storedHeight >> 16) & 0xff;
+  return bytes;
+}
+
 async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path);
@@ -88,6 +115,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("low-signal");
     expect(
@@ -97,6 +125,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("base-profile-only");
     expect(
@@ -106,6 +135,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: false,
         hasRecipeFlags: true,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("recipe-only");
     expect(
@@ -115,6 +145,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("cover-image-only");
     expect(
@@ -124,6 +155,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("deterministic");
     expect(
@@ -133,6 +165,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: true,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("codex-assisted");
     expect(
@@ -142,6 +175,7 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: false,
         hasIntent: true,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
       }),
     ).toBe("codex-assisted");
     expect(
@@ -151,6 +185,36 @@ describe("cli action modules: md pdf-template codex", () => {
         hasInput: true,
         hasIntent: false,
         hasRecipeFlags: false,
+        hasUsableTemplateCandidate: false,
+      }),
+    ).toBe("no-usable-template");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: true,
+        hasCoverImage: false,
+        hasInput: true,
+        hasIntent: false,
+        hasRecipeFlags: false,
+        hasUsableTemplateCandidate: true,
+      }),
+    ).toBe("codex-assisted");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: false,
+        hasCoverImage: false,
+        hasInput: false,
+        hasIntent: true,
+        hasRecipeFlags: true,
+        hasUsableTemplateCandidate: true,
+      }),
+    ).toBe("codex-assisted");
+    expect(
+      classifyMdPdfTemplateCodexSignalMode({
+        hasBaseProfile: true,
+        hasCoverImage: true,
+        hasInput: true,
+        hasIntent: true,
+        hasRecipeFlags: true,
         hasUsableTemplateCandidate: false,
       }),
     ).toBe("no-usable-template");
@@ -428,12 +492,53 @@ describe("cli action modules: md pdf-template codex", () => {
         available: true,
         sourceBasename: "cover.png",
         format: "png",
+        metadataStatus: "parsed",
         dimensions: { width: 4000, height: 1000 },
         aspectRatio: 4,
         orientationBucket: "panoramic",
         fitPressure: "letterbox-risk",
       });
       expect(JSON.stringify(signals.coverImage)).not.toContain(fixtureDir);
+    });
+  });
+
+  test("collects JPEG and WebP cover metadata across orientation buckets", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cover-format-signals", async (fixtureDir) => {
+      const jpegPath = join(fixtureDir, "cover.jpg");
+      const webpPath = join(fixtureDir, "cover.webp");
+      await writeFile(jpegPath, minimalJpeg(800, 2000));
+      await writeFile(webpPath, minimalWebpVp8x(1200, 1200));
+
+      const { runtime } = createActionTestRuntime();
+      const jpegState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(jpegPath),
+      });
+      const webpState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(webpPath),
+      });
+      const [jpegSignals, webpSignals] = await Promise.all([
+        collectMdPdfTemplateCodexSignals(runtime, jpegState),
+        collectMdPdfTemplateCodexSignals(runtime, webpState),
+      ]);
+
+      expect(jpegSignals.coverImage).toMatchObject({
+        available: true,
+        sourceBasename: "cover.jpg",
+        format: "jpeg",
+        metadataStatus: "parsed",
+        dimensions: { width: 800, height: 2000 },
+        orientationBucket: "tall",
+        fitPressure: "crop-risk",
+      });
+      expect(webpSignals.coverImage).toMatchObject({
+        available: true,
+        sourceBasename: "cover.webp",
+        format: "webp",
+        metadataStatus: "parsed",
+        dimensions: { width: 1200, height: 1200 },
+        orientationBucket: "square",
+        fitPressure: "normal",
+      });
     });
   });
 
@@ -452,6 +557,7 @@ describe("cli action modules: md pdf-template codex", () => {
         available: true,
         sourceBasename: "cover.png",
         format: "png",
+        metadataStatus: "unparsed",
         orientationBucket: "unknown",
         fitPressure: "unknown",
       });

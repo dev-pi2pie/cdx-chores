@@ -51,6 +51,7 @@ export async function collectMdPdfTemplateCodexSignals(
     hasInput: Boolean(state.inputPath),
     hasIntent: Boolean(state.intent),
     hasRecipeFlags: state.explicitRecipe.fields.length > 0,
+    hasUsableTemplateCandidate: true,
   });
 
   return {

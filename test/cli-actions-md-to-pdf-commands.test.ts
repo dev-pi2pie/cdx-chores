@@ -13,6 +13,14 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
+function minimalPng(width: number, height: number): Buffer {
+  const bytes = Buffer.alloc(24);
+  bytes.set([0x89, 0x50, 0x4e, 0x47], 0);
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  return bytes;
+}
+
 async function createFakeMarkdownPdfDependencies(binDir: string, html: string): Promise<void> {
   await mkdir(binDir, { recursive: true });
   const escapedHtml = html.replaceAll("\\", "\\\\").replaceAll("'", "'\\''");
@@ -363,6 +371,42 @@ describe("cli command: md pdf-template codex", () => {
       expect(result.stderr).toContain("output planning begins in Phase 3");
       expect(await pathExists(outputPath)).toBe(false);
       expect(await pathExists(reportPath)).toBe(false);
+    });
+  });
+
+  test("passes base profile, cover image, font hints, and recipe flags through the command layer", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-cli-signal-options", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      const coverImagePath = join(fixtureDir, "cover.png");
+      const outputPath = join(fixtureDir, "pdf-template");
+      await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
+      await writeFile(coverImagePath, minimalPng(1600, 900));
+
+      const result = runCli([
+        "md",
+        "pdf-template",
+        "codex",
+        "--base-profile",
+        toRepoRelativePath(baseProfilePath),
+        "--cover-image",
+        toRepoRelativePath(coverImagePath),
+        "--font-hint",
+        "Inter",
+        "--font-hint",
+        "Noto Sans",
+        "--page-size",
+        "A4",
+        "--toc",
+        "--toc-depth",
+        "2",
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toContain("Signal mode: deterministic");
+      expect(result.stderr).toContain("output planning begins in Phase 3");
+      expect(await pathExists(outputPath)).toBe(false);
     });
   });
 });

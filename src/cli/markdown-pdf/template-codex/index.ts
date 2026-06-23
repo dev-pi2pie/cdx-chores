@@ -6,13 +6,8 @@ export {
 } from "./signal-mode";
 export type {
   MdPdfTemplateCodexSignalCollection,
-  MarkdownPdfTemplateCodexDecisionMode,
-  MarkdownPdfTemplateCodexFitPressure,
-  MarkdownPdfTemplateCodexImageFit,
-  MarkdownPdfTemplateCodexOrientationBucket,
   MarkdownPdfTemplateCodexRecipeSignals,
   MarkdownPdfTemplateCodexSignalMode,
-  MarkdownPdfTemplateCodexTemplateFamily,
   MarkdownPdfTemplateCodexCoverImageSignals,
   MarkdownPdfTemplateCodexBaseProfileSignals,
   MarkdownPdfTemplateCodexFontSignals,

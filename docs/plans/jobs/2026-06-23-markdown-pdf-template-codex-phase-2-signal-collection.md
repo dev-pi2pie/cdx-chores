@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF template Codex phase 2 signal collection"
 created-date: 2026-06-23
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -39,6 +39,11 @@ planning or bundle writes.
   parsing from cover signal heuristics, centralizing recipe provenance and merge
   logic, and adding missing tests for no-usable-template failure, unparseable
   local cover metadata, and side-effect-free Phase 2 failures.
+- Addressed final Phase 2 range-review findings by returning tagged cover-image
+  metadata parse results, making usable-template availability explicit in signal
+  classification, narrowing the local template-Codex barrel exports to the
+  Phase 2 surface, and adding JPEG/WebP, mixed-signal precedence, and
+  command-layer option pass-through tests.
 
 ## Verification
 
@@ -52,9 +57,9 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: all commands passed. The focused Phase 2 suite reported 18 tests passed
-and 0 failed. The command-layer suite reported 17 tests passed and 0 failed.
-The full suite reported 1217 tests passed and 0 failed.
+Result: all commands passed. The focused Phase 2 suite reported 19 tests passed
+and 0 failed. The command-layer suite reported 18 tests passed and 0 failed.
+The final full suite reported 1219 tests passed and 0 failed.
 
 ## Artifact Safety
 

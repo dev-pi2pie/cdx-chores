@@ -6,7 +6,7 @@ import type {
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexOrientationBucket,
 } from "./types";
-import { imageFormatForPath, readTemplateCodexCoverImageDimensions } from "./image-metadata";
+import { imageFormatForPath, readTemplateCodexCoverImageMetadata } from "./image-metadata";
 
 function orientationBucket(
   dimensions: MarkdownPdfTemplateCodexCoverImageDimensions | undefined,
@@ -57,12 +57,14 @@ export async function collectTemplateCodexCoverImageSignals(
   }
 
   const format = imageFormatForPath(path);
-  const dimensions = await readTemplateCodexCoverImageDimensions(path, format);
+  const metadata = await readTemplateCodexCoverImageMetadata(path, format);
+  const dimensions = metadata.status === "parsed" ? metadata.dimensions : undefined;
   const bucket = orientationBucket(dimensions);
   return {
     available: true,
     sourceBasename: basename(path),
     format,
+    metadataStatus: metadata.status,
     ...(dimensions
       ? {
           dimensions,

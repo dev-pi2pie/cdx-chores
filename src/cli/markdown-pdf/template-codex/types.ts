@@ -105,6 +105,7 @@ export interface MarkdownPdfTemplateCodexCoverImageSignals {
   available: boolean;
   sourceBasename?: string;
   format?: "jpeg" | "png" | "webp";
+  metadataStatus?: "parsed" | "unparsed" | "unreadable" | "unsupported-format";
   dimensions?: MarkdownPdfTemplateCodexCoverImageDimensions;
   aspectRatio?: number;
   orientationBucket: MarkdownPdfTemplateCodexOrientationBucket;

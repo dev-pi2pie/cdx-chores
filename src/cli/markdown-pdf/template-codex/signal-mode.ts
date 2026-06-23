@@ -7,13 +7,13 @@ export interface ClassifyMdPdfTemplateCodexSignalModeInput {
   hasInput: boolean;
   hasIntent: boolean;
   hasRecipeFlags: boolean;
-  hasUsableTemplateCandidate?: boolean;
+  hasUsableTemplateCandidate: boolean;
 }
 
 export function classifyMdPdfTemplateCodexSignalMode(
   input: ClassifyMdPdfTemplateCodexSignalModeInput,
 ): MarkdownPdfTemplateCodexSignalMode {
-  if (input.hasUsableTemplateCandidate === false) {
+  if (!input.hasUsableTemplateCandidate) {
     return "no-usable-template";
   }
   if (input.hasInput || input.hasIntent) {

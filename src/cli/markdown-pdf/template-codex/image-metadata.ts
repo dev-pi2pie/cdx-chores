@@ -5,6 +5,15 @@ import type { MarkdownPdfTemplateCodexCoverImageDimensions } from "./types";
 
 export type MarkdownPdfTemplateCodexCoverImageFormat = "jpeg" | "png" | "webp";
 
+export type MarkdownPdfTemplateCodexCoverImageMetadataResult =
+  | {
+      status: "parsed";
+      dimensions: MarkdownPdfTemplateCodexCoverImageDimensions;
+    }
+  | {
+      status: "unparsed" | "unreadable" | "unsupported-format";
+    };
+
 export const SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS = new Set([
   ".jpg",
   ".jpeg",
@@ -131,23 +140,29 @@ function readWebpDimensions(
   return undefined;
 }
 
-export async function readTemplateCodexCoverImageDimensions(
+export async function readTemplateCodexCoverImageMetadata(
   path: string,
   format: MarkdownPdfTemplateCodexCoverImageFormat | undefined,
-): Promise<MarkdownPdfTemplateCodexCoverImageDimensions | undefined> {
-  try {
-    const bytes = new Uint8Array(await readFile(path));
-    if (format === "png") {
-      return readPngDimensions(bytes);
-    }
-    if (format === "jpeg") {
-      return readJpegDimensions(bytes);
-    }
-    if (format === "webp") {
-      return readWebpDimensions(bytes);
-    }
-  } catch {
-    return undefined;
+): Promise<MarkdownPdfTemplateCodexCoverImageMetadataResult> {
+  if (!format) {
+    return { status: "unsupported-format" };
   }
-  return undefined;
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await readFile(path));
+  } catch {
+    return { status: "unreadable" };
+  }
+
+  const dimensions =
+    format === "png"
+      ? readPngDimensions(bytes)
+      : format === "jpeg"
+        ? readJpegDimensions(bytes)
+        : readWebpDimensions(bytes);
+  if (!dimensions) {
+    return { status: "unparsed" };
+  }
+  return { status: "parsed", dimensions };
 }
