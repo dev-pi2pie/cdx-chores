@@ -143,6 +143,7 @@ function plannedCoverAsset(
   return {
     path: join(outputDirectory, "assets", fileName),
     bundlePath,
+    role: "cover-image",
     sourcePath,
     sourceBasename,
   };

@@ -24,7 +24,7 @@ function coverMediaHtml(input: {
     return "";
   }
 
-  return `<section class="pdf-cover pdf-cover--media" data-image-fit="${input.slots.cover.imageFit}">
+  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-layout="${input.slots.cover.layout}" data-title-placement="${input.slots.cover.titlePlacement}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
   <figure class="pdf-cover-media">
     <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
     <figcaption class="pdf-cover-media__caption">

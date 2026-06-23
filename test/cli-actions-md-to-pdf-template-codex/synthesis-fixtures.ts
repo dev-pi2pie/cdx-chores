@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   normalizeMarkdownPdfOptions,
   type MarkdownPdfPreset,
+  type MarkdownPdfTocPageBreak,
 } from "../../src/cli/markdown-pdf/validation";
 import type {
   MarkdownPdfTemplateCodexFitPressure,
@@ -23,6 +24,7 @@ interface CreateSynthesisSignalsInput {
   };
   signalMode?: MdPdfTemplateCodexSignalCollection["signalMode"];
   toc?: boolean;
+  tocPageBreak?: MarkdownPdfTocPageBreak;
 }
 
 export function createSynthesisSignals(
@@ -60,7 +62,11 @@ export function createSynthesisSignals(
         : {}),
     },
     recipe: {
-      effectiveOptions: normalizeMarkdownPdfOptions({ preset, toc: input.toc }),
+      effectiveOptions: normalizeMarkdownPdfOptions({
+        preset,
+        toc: input.toc,
+        tocPageBreak: input.tocPageBreak,
+      }),
       explicitFields: input.explicitFields ?? [],
       baseProfileFields: input.baseProfilePreset ? ["preset"] : [],
     },
@@ -113,6 +119,7 @@ export function createSynthesisOutputPlan(
           {
             path: join(outputDirectory, "assets", "cover.png"),
             bundlePath: "assets/cover.png",
+            role: "cover-image",
             sourcePath: "source-cover.png",
             sourceBasename: "cover.png",
           },

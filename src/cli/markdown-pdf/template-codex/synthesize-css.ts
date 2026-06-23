@@ -45,6 +45,10 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
     return "";
   }
   const fit = slots.cover.imageFit ?? "contain";
+  const imageHeight =
+    slots.cover.layout === "full-bleed-media" || fit === "cover" ? "76vh" : "68vh";
+  const captionDisplay = slots.cover.titlePlacement === "below-media" ? "flex" : "none";
+  const coverPadding = slots.cover.layout === "full-bleed-media" ? "0" : "18mm";
 
   return `
 @page cover {
@@ -65,13 +69,13 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
   justify-content: center;
   margin: 0;
   min-height: 100vh;
-  padding: 18mm;
+  padding: ${coverPadding};
 }
 
 .pdf-cover-media__image {
   display: block;
-  height: ${fit === "cover" ? "76vh" : "68vh"};
-  max-height: ${fit === "cover" ? "76vh" : "68vh"};
+  height: ${imageHeight};
+  max-height: ${imageHeight};
   max-width: 100%;
   object-fit: ${fit};
   object-position: center;
@@ -80,7 +84,7 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
 
 .pdf-cover-media__caption {
   color: var(--template-muted);
-  display: flex;
+  display: ${captionDisplay};
   flex-direction: column;
   gap: 2mm;
   margin-top: 8mm;

@@ -144,6 +144,7 @@ export interface MarkdownPdfTemplateCodexPlannedFile {
 }
 
 export interface MarkdownPdfTemplateCodexPlannedAsset extends MarkdownPdfTemplateCodexPlannedFile {
+  role: "cover-image";
   sourcePath: string;
   sourceBasename: string;
 }

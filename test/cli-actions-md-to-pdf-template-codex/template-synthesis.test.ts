@@ -3,6 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { synthesizeMdPdfTemplateCodex } from "../../src/cli/markdown-pdf/template-codex";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
+function coverImageCssBlock(styleCss: string): string {
+  const match = /\.pdf-cover-media__image \{[\s\S]*?\n\}/.exec(styleCss);
+  expect(match).not.toBeNull();
+  return match?.[0] ?? "";
+}
+
 describe("cli action modules: md pdf-template codex template synthesis", () => {
   test("preserves Pandoc document hooks and Shiki-compatible code selectors", () => {
     const result = synthesizeMdPdfTemplateCodex({
@@ -38,12 +44,23 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.templateHtml).toContain('src="assets/cover.png"');
     expect(result.templateHtml).toContain('data-image-fit="contain"');
+    expect(result.templateHtml).toContain('data-cover-layout="contained-media"');
+    expect(result.templateHtml).toContain('data-title-placement="below-media"');
+    expect(result.templateHtml).toContain('data-orientation="panoramic"');
+    expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
     expect(result.styleCss).toContain("object-fit: contain;");
-    expect(result.styleCss).toContain("height: 68vh;");
-    expect(result.styleCss).not.toContain("4200px");
-    expect(result.styleCss).not.toContain("1200px");
-    expect(result.styleCss).not.toContain("width: 4200");
-    expect(result.styleCss).not.toContain("height: 1200");
+    expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
+  display: block;
+  height: 68vh;
+  max-height: 68vh;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
+  width: 100%;
+}`);
+    expect(result.styleCss).not.toMatch(
+      /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)/,
+    );
   });
 
   test("maps cover-fit cover media to page-relative CSS without source pixel sizing", () => {
@@ -62,10 +79,59 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.templateHtml).toContain('data-image-fit="cover"');
     expect(result.styleCss).toContain("object-fit: cover;");
-    expect(result.styleCss).toContain("height: 76vh;");
-    expect(result.styleCss).not.toContain("1800px");
-    expect(result.styleCss).not.toContain("1200px");
-    expect(result.styleCss).not.toContain("width: 1800");
-    expect(result.styleCss).not.toContain("height: 1200");
+    expect(coverImageCssBlock(result.styleCss)).toBe(`.pdf-cover-media__image {
+  display: block;
+  height: 76vh;
+  max-height: 76vh;
+  max-width: 100%;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+}`);
+    expect(result.styleCss).not.toMatch(
+      /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)/,
+    );
+  });
+
+  test("maps ToC page-break options into CSS branches", () => {
+    const reportAuto = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({ preset: "report", toc: true }),
+    });
+    expect(reportAuto.styleCss).toContain("break-after: page;");
+    expect(reportAuto.styleCss).not.toContain("break-before: page;");
+
+    const explicitBefore = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        preset: "article",
+        toc: true,
+        tocPageBreak: "before",
+      }),
+    });
+    expect(explicitBefore.styleCss).toContain("break-before: page;");
+    expect(explicitBefore.styleCss).not.toContain("break-after: page;");
+
+    const explicitBoth = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        preset: "article",
+        toc: true,
+        tocPageBreak: "both",
+      }),
+    });
+    expect(explicitBoth.styleCss).toContain("break-before: page;");
+    expect(explicitBoth.styleCss).toContain("break-after: page;");
+
+    const explicitNone = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        preset: "article",
+        toc: true,
+        tocPageBreak: "none",
+      }),
+    });
+    expect(explicitNone.styleCss).not.toContain("break-before: page;");
+    expect(explicitNone.styleCss).not.toContain("break-after: page;");
   });
 });

@@ -96,4 +96,61 @@ describe("cli action modules: md pdf-template codex slots", () => {
     expect(result.decisionMode).toBe("deterministic");
     expect(result.slots.cover.imageFit).toBe("cover");
   });
+
+  test("maps preset-driven slots and theme tokens", () => {
+    const compact = synthesize({
+      signals: createSynthesisSignals({ preset: "compact", explicitFields: ["preset"] }),
+    });
+    expect(compact.slots.tables).toMatchObject({
+      density: "compact",
+      width: "content",
+    });
+    expect(compact.slots.spacing.density).toBe("compact");
+    expect(compact.slots.typography.scale).toBe("compact");
+    expect(compact.themeTokens).toMatchObject({
+      bodySize: "9.5pt",
+      lineHeight: "1.5",
+      blockGap: "0.35rem",
+    });
+
+    const wideTable = synthesize({
+      signals: createSynthesisSignals({ preset: "wide-table", explicitFields: ["preset"] }),
+    });
+    expect(wideTable.slots.tables).toMatchObject({
+      density: "wide",
+      width: "full",
+    });
+    expect(wideTable.themeTokens.bodySize).toBe("9.5pt");
+    expect(wideTable.styleCss).toContain("width: 100%;");
+
+    const reader = synthesize({
+      signals: createSynthesisSignals({ preset: "reader", explicitFields: ["preset"] }),
+    });
+    expect(reader.slots.spacing.density).toBe("spacious");
+    expect(reader.slots.typography.scale).toBe("reader");
+    expect(reader.themeTokens).toMatchObject({
+      bodySize: "12pt",
+      lineHeight: "1.65",
+      blockGap: "0.8rem",
+    });
+  });
+
+  test("uses contained fit for risky deterministic cover metadata", () => {
+    const result = synthesize({
+      includeCoverAsset: true,
+      signals: createSynthesisSignals({
+        coverImage: {
+          orientationBucket: "panoramic",
+          fitPressure: "letterbox-risk",
+          width: 4200,
+          height: 1200,
+        },
+        signalMode: "deterministic",
+      }),
+    });
+
+    expect(result.slots.cover.imageFit).toBe("contain");
+    expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
+    expect(result.styleCss).toContain("object-fit: contain;");
+  });
 });

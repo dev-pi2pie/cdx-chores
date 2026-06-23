@@ -12,7 +12,7 @@ import type {
 function bindManagedAssets(
   outputPlan: MarkdownPdfTemplateCodexOutputPlan,
 ): MarkdownPdfTemplateCodexManagedAssetBinding[] {
-  const coverAsset = outputPlan.assets[0];
+  const coverAsset = outputPlan.assets.find((asset) => asset.role === "cover-image");
   if (!coverAsset) {
     return [];
   }

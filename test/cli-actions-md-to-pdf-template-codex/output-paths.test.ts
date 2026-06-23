@@ -135,6 +135,7 @@ describe("cli action modules: md pdf-template codex output paths", () => {
             "assets",
             "cover.png",
           ),
+          role: "cover-image",
           sourceBasename: "cover.png",
           sourcePath: join(fixtureDir, "cover.png"),
         },
@@ -212,6 +213,7 @@ describe("cli action modules: md pdf-template codex output paths", () => {
         {
           bundlePath: "assets/Cover-Image-2026.png",
           path: join(outputPath, "assets", "Cover-Image-2026.png"),
+          role: "cover-image",
           sourceBasename: "Cover Image @ 2026 !!.png",
           sourcePath: coverImagePath,
         },
