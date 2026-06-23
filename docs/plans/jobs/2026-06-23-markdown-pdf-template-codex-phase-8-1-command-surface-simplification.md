@@ -78,7 +78,10 @@ base profiles, and the later `md to-pdf` render command.
 ## Review
 
 - Phase implementation range review requested as `c2f2a4b..49fc479`.
+- Final Phase 8.1 range review included `c2f2a4b..81b244b`.
 - Review requests were sent to `Plainspoken the 6th` and `Probe the 6th`.
+- `Plainspoken the 6th` returned no material findings.
+- `Probe the 6th` returned no material findings.
 - `auto_commit_notification` was requested before the implementation commit;
   the thread limit blocked a fresh advisor, so the existing `Commit Scout the
   9th` thread was reused.
