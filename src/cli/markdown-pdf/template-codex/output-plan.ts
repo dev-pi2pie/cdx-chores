@@ -113,7 +113,6 @@ function plannedReportFile(
   if (state.codexReportOutputPath) {
     return {
       path: state.codexReportOutputPath,
-      bundlePath: state.codexReportOutputPath,
     };
   }
   return plannedBundleFile(outputDirectory, DEFAULT_REPORT_BUNDLE_PATH);
@@ -183,6 +182,27 @@ async function resolveOutputDirectory(input: {
   });
 }
 
+interface TemplateCodexCollisionEntry {
+  label: string;
+  path: string | undefined;
+}
+
+function pairwiseCollisionPairs(entries: TemplateCodexCollisionEntry[]): Array<{
+  left: string | undefined;
+  leftLabel: string;
+  right: string | undefined;
+  rightLabel: string;
+}> {
+  return entries.flatMap((left, leftIndex) =>
+    entries.slice(leftIndex + 1).map((right) => ({
+      left: left.path,
+      leftLabel: left.label,
+      right: right.path,
+      rightLabel: right.label,
+    })),
+  );
+}
+
 function collectPathCollisionPairs(input: {
   plan: MarkdownPdfTemplateCodexOutputPlan;
   state: NormalizedMdPdfTemplateCodexCommandState;
@@ -192,154 +212,61 @@ function collectPathCollisionPairs(input: {
   right: string | undefined;
   rightLabel: string;
 }> {
-  const pairs = [
+  const sourceEntries: TemplateCodexCollisionEntry[] = [
     {
-      left: input.state.inputPath,
-      leftLabel: "Markdown input",
-      right: input.state.baseProfilePath,
-      rightLabel: "--base-profile",
+      label: "Markdown input",
+      path: input.state.inputPath,
     },
     {
-      left: input.state.inputPath,
-      leftLabel: "Markdown input",
-      right: input.state.coverImagePath,
-      rightLabel: "--cover-image",
+      label: "--base-profile",
+      path: input.state.baseProfilePath,
     },
     {
-      left: input.state.baseProfilePath,
-      leftLabel: "--base-profile",
-      right: input.state.coverImagePath,
-      rightLabel: "--cover-image",
+      label: "--cover-image",
+      path: input.state.coverImagePath,
+    },
+  ];
+  const plannedEntries: TemplateCodexCollisionEntry[] = [
+    {
+      label: "--output",
+      path: input.plan.outputDirectory,
     },
     {
-      left: input.plan.outputDirectory,
-      leftLabel: "--output",
-      right: input.state.inputPath,
-      rightLabel: "Markdown input",
+      label: "planned template.html",
+      path: input.plan.templateHtml.path,
     },
     {
-      left: input.plan.outputDirectory,
-      leftLabel: "--output",
-      right: input.state.baseProfilePath,
-      rightLabel: "--base-profile",
-    },
-    {
-      left: input.plan.outputDirectory,
-      leftLabel: "--output",
-      right: input.state.coverImagePath,
-      rightLabel: "--cover-image",
-    },
-    {
-      left: input.plan.templateHtml.path,
-      leftLabel: "planned template.html",
-      right: input.state.inputPath,
-      rightLabel: "Markdown input",
-    },
-    {
-      left: input.plan.templateHtml.path,
-      leftLabel: "planned template.html",
-      right: input.state.baseProfilePath,
-      rightLabel: "--base-profile",
-    },
-    {
-      left: input.plan.templateHtml.path,
-      leftLabel: "planned template.html",
-      right: input.state.coverImagePath,
-      rightLabel: "--cover-image",
-    },
-    {
-      left: input.plan.styleCss.path,
-      leftLabel: "planned style.css",
-      right: input.state.inputPath,
-      rightLabel: "Markdown input",
-    },
-    {
-      left: input.plan.styleCss.path,
-      leftLabel: "planned style.css",
-      right: input.state.baseProfilePath,
-      rightLabel: "--base-profile",
-    },
-    {
-      left: input.plan.styleCss.path,
-      leftLabel: "planned style.css",
-      right: input.state.coverImagePath,
-      rightLabel: "--cover-image",
+      label: "planned style.css",
+      path: input.plan.styleCss.path,
     },
   ];
 
   if (input.plan.report) {
-    pairs.push(
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.plan.outputDirectory,
-        rightLabel: "--output",
-      },
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.plan.templateHtml.path,
-        rightLabel: "planned template.html",
-      },
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.plan.styleCss.path,
-        rightLabel: "planned style.css",
-      },
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.state.inputPath,
-        rightLabel: "Markdown input",
-      },
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.state.baseProfilePath,
-        rightLabel: "--base-profile",
-      },
-      {
-        left: input.plan.report.path,
-        leftLabel: "--codex-report-output",
-        right: input.state.coverImagePath,
-        rightLabel: "--cover-image",
-      },
-    );
+    plannedEntries.push({
+      label: "--codex-report-output",
+      path: input.plan.report.path,
+    });
   }
 
   for (const asset of input.plan.assets) {
-    pairs.push(
-      {
-        left: asset.path,
-        leftLabel: `planned asset ${asset.bundlePath}`,
-        right: asset.sourcePath,
-        rightLabel: "--cover-image",
-      },
-      {
-        left: asset.path,
-        leftLabel: `planned asset ${asset.bundlePath}`,
-        right: input.plan.templateHtml.path,
-        rightLabel: "planned template.html",
-      },
-      {
-        left: asset.path,
-        leftLabel: `planned asset ${asset.bundlePath}`,
-        right: input.plan.styleCss.path,
-        rightLabel: "planned style.css",
-      },
-    );
-    if (input.plan.report) {
-      pairs.push({
-        left: asset.path,
-        leftLabel: `planned asset ${asset.bundlePath}`,
-        right: input.plan.report.path,
-        rightLabel: "--codex-report-output",
-      });
-    }
+    plannedEntries.push({
+      label: `planned asset ${asset.bundlePath}`,
+      path: asset.path,
+    });
   }
 
-  return pairs;
+  return [
+    ...pairwiseCollisionPairs(sourceEntries),
+    ...plannedEntries.flatMap((planned) =>
+      sourceEntries.map((source) => ({
+        left: planned.path,
+        leftLabel: planned.label,
+        right: source.path,
+        rightLabel: source.label,
+      })),
+    ),
+    ...pairwiseCollisionPairs(plannedEntries),
+  ];
 }
 
 export async function planMdPdfTemplateCodexOutput(input: {
@@ -374,7 +301,7 @@ export async function planMdPdfTemplateCodexOutput(input: {
         directory: plan.outputDirectory,
         directoryLabel: "--output",
         path: file.path,
-        pathLabel: file.bundlePath,
+        pathLabel: file.bundlePath ?? file.path,
       });
     }
   }
@@ -383,7 +310,7 @@ export async function planMdPdfTemplateCodexOutput(input: {
       directory: plan.outputDirectory,
       directoryLabel: "--output",
       path: plan.report.path,
-      pathLabel: plan.report.bundlePath,
+      pathLabel: plan.report.bundlePath ?? DEFAULT_REPORT_BUNDLE_PATH,
     });
   }
 

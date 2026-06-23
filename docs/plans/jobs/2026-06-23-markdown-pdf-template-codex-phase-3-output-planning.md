@@ -36,6 +36,13 @@ the action still stops at the Phase 4 boundary.
   the planned bundle ID, output directory, generated recipe paths, managed asset
   count, and optional report path before stopping at Phase 4.
 - Updated the implementation plan checklist for Phase 3.
+- Addressed Phase 3 range-review findings by keeping report `bundlePath`
+  bundle-relative only, replacing the manual collision matrix with
+  role-derived pair checks, and extracting action preflight/summary helpers for
+  later synthesis reuse.
+- Added follow-up tests for exhausted generated-directory retries, symlink
+  output directories, symlink planned recipe files, directory report/asset
+  targets, and non-trivial cover-asset filename sanitization.
 
 ## Verification
 
@@ -49,9 +56,9 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: passed. The focused template-Codex suite reported 29 tests passed and 0
-failed. The focused template-Codex plus command-layer suite reported 47 tests
-passed and 0 failed. The final full suite reported 1229 tests passed and 0
+Result: passed. The focused template-Codex suite reported 34 tests passed and 0
+failed. The focused template-Codex plus command-layer suite reported 52 tests
+passed and 0 failed. The final full suite reported 1234 tests passed and 0
 failed.
 
 ## Artifact Safety

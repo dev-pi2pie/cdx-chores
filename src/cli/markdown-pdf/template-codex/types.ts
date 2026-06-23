@@ -135,10 +135,11 @@ export interface MdPdfTemplateCodexSignalCollection {
 
 export interface MarkdownPdfTemplateCodexPlannedFile {
   path: string;
-  bundlePath: string;
+  bundlePath?: string;
 }
 
 export interface MarkdownPdfTemplateCodexPlannedAsset extends MarkdownPdfTemplateCodexPlannedFile {
+  bundlePath: string;
   sourcePath: string;
   sourceBasename: string;
 }

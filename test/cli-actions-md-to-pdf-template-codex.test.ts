@@ -796,6 +796,58 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("fails when generated output path retries are exhausted", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-output-retry-exhausted", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const bundleIdForAttempt = (attempt: number) =>
+        `md-pdf-template-20260623T010203Z-collide${String(attempt).padStart(2, "0")}`;
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        await mkdir(join(fixtureDir, bundleIdForAttempt(attempt)), { recursive: true });
+      }
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-23T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: "cover.png",
+        templateBundleIdFactory: (_now, attempt) => bundleIdForAttempt(attempt),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "OUTPUT_EXISTS",
+        exitCode: 2,
+        messageIncludes: "Unable to generate a non-colliding Markdown PDF template directory",
+      });
+    });
+  });
+
+  test("sanitizes planned cover asset filenames", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-asset-sanitize", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "Cover Image @ 2026 !!.png");
+      const outputPath = join(fixtureDir, "pdf-template");
+      await writeFile(coverImagePath, minimalPng(1200, 800));
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(coverImagePath),
+        output: toRepoRelativePath(outputPath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan.assets).toEqual([
+        {
+          bundlePath: "assets/Cover-Image-2026.png",
+          path: join(outputPath, "assets", "Cover-Image-2026.png"),
+          sourceBasename: "Cover Image @ 2026 !!.png",
+          sourcePath: coverImagePath,
+        },
+      ]);
+    });
+  });
+
   test("rejects explicit non-empty output directories without overwrite", async () => {
     await withTempFixtureDir("md-pdf-template-codex-nonempty-output", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "pdf-template");
@@ -814,6 +866,96 @@ describe("cli action modules: md pdf-template codex", () => {
         exitCode: 2,
         messageIncludes: "Template output directory is not empty",
       });
+    });
+  });
+
+  test("rejects symlink output directories", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-output-symlink", async (fixtureDir) => {
+      const realOutputPath = join(fixtureDir, "real-output");
+      const outputPath = join(fixtureDir, "pdf-template");
+      await mkdir(realOutputPath, { recursive: true });
+      await symlink(realOutputPath, outputPath);
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        toc: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "OUTPUT_SYMLINK",
+        exitCode: 2,
+        messageIncludes: "Template output directory is a symlink",
+      });
+    });
+  });
+
+  test("rejects planned recipe file symlink targets", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-planned-symlink", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-template");
+      const targetPath = join(fixtureDir, "target.html");
+      await mkdir(outputPath, { recursive: true });
+      await writeFile(targetPath, "target\n", "utf8");
+      await symlink(targetPath, join(outputPath, "template.html"));
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        toc: true,
+        overwrite: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "OUTPUT_SYMLINK",
+        exitCode: 2,
+        messageIncludes: "planned template.html is a symlink",
+      });
+    });
+  });
+
+  test("rejects planned report and asset directory targets", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-planned-directories", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-template");
+      const reportPath = join(fixtureDir, "template-report.json");
+      const coverImagePath = join(fixtureDir, "cover.png");
+      await mkdir(outputPath, { recursive: true });
+      await mkdir(reportPath, { recursive: true });
+      await mkdir(join(outputPath, "assets", "cover.png"), { recursive: true });
+      await writeFile(coverImagePath, minimalPng(1200, 800));
+
+      const { runtime } = createActionTestRuntime();
+      const reportState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        codexReportOutput: toRepoRelativePath(reportPath),
+        toc: true,
+        overwrite: true,
+      });
+      const reportSignals = await collectMdPdfTemplateCodexSignals(runtime, reportState);
+      await expectCliError(
+        () => planMdPdfTemplateCodexOutput({ runtime, state: reportState, signals: reportSignals }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output is a directory",
+        },
+      );
+
+      const assetState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(coverImagePath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+      });
+      const assetSignals = await collectMdPdfTemplateCodexSignals(runtime, assetState);
+      await expectCliError(
+        () => planMdPdfTemplateCodexOutput({ runtime, state: assetState, signals: assetSignals }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned asset assets/cover.png is a directory",
+        },
+      );
     });
   });
 
