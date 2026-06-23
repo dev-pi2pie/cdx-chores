@@ -544,10 +544,13 @@ family and synthesis tests.
 Recommended test targets:
 
 - `test/cli-actions-md-to-pdf-template-codex/command-state.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex/signals.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/signal-mode.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/signal-collection.test.ts`
 - `test/cli-actions-md-to-pdf-template-codex/image-metadata.test.ts`
 - `test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts`
-- `test/cli-actions-md-to-pdf-template-codex/output-validation.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts`
 - `test/cli-actions-md-to-pdf-template-codex/action.test.ts`
 - `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`
 

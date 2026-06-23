@@ -20,12 +20,16 @@ coverage while improving test-file ownership.
 - Split the large catch-all template-Codex action test into focused files under
   `test/cli-actions-md-to-pdf-template-codex/`.
 - Used a feature-folder layout after structure-planning review, with separate
-  files for command-state normalization, signals, image metadata, output path
-  planning, output validation, and action-boundary behavior.
+  files for command-state normalization, signal mode, signal collection, image
+  metadata, output path planning, output directory behavior, output target
+  validation, output collision checks, and action-boundary behavior.
 - Extracted shared binary/image fixture builders and small path helpers into
   `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`.
 - Updated the implementation plan checklist for completed Phase 3.1 refactor
   mechanics.
+- Addressed maintainability review by splitting the first-pass `signals` file
+  into pure signal-mode and signal-collection coverage, and by splitting output
+  validation into directory, target, and collision-focused files.
 
 ## Verification
 
