@@ -523,6 +523,45 @@ Recommended module targets:
 - `src/cli/markdown-pdf/template-codex/output-plan.ts`
 - `src/cli/markdown-pdf/template-codex/path-collisions.ts`
 
+### Phase 3.1: Test Modularization And Refactor Baseline
+
+This phase is refactor-only. It should preserve existing behavior while making
+the completed Phase 1-3 coverage easier to extend before Phase 4 adds template
+family and synthesis tests.
+
+- [ ] Create a job record for the test modularization refactor.
+- [ ] Split `test/cli-actions-md-to-pdf-template-codex.test.ts` by
+  implementation layer instead of continuing to grow one large file.
+- [ ] Extract shared template-Codex binary/image fixture helpers and small path
+  helpers into a focused helper module.
+- [ ] Keep existing test names and assertions semantically equivalent unless a
+  rename is needed to clarify the new file boundary.
+- [ ] Add new Phase 4-8 tests to focused template-Codex files instead of
+  appending unrelated coverage to a single catch-all file.
+- [ ] Run maintainability and test coverage review on the refactor commit range
+  before moving to Phase 4.
+
+Recommended test targets:
+
+- `test/cli-actions-md-to-pdf-template-codex-options.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex-signals.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex-image-metadata.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex-output-plan.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex-action.test.ts`
+- `test/helpers/md-pdf-template-codex-fixtures.ts`
+
+Verification:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex-*.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+bunx tsc --noEmit
+bun run format:check
+bun run lint
+bun run build
+git diff --check
+bun test --timeout 30000
+```
+
 ### Phase 4: Deterministic Template Families And Synthesis
 
 - [ ] Add repo-owned boilerplate for `document-layered`.
