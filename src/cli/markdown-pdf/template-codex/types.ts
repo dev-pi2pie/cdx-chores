@@ -3,6 +3,8 @@ import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import type { MarkdownPdfDocumentSignals, MarkdownPdfFontSignals } from "../profile/signals";
 import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 
+export type MarkdownPdfTemplateCodexBundleIdFactory = (now: Date, attempt: number) => string;
+
 export type MarkdownPdfTemplateCodexSignalMode =
   | "low-signal"
   | "base-profile-only"
@@ -61,9 +63,13 @@ export interface MdPdfTemplateCodexOptions {
   toc?: boolean;
   tocDepth?: number;
   tocPageBreak?: string;
+  templateBundleIdFactory?: MarkdownPdfTemplateCodexBundleIdFactory;
 }
 
-export type MdPdfTemplateCodexCliOptions = Omit<MdPdfTemplateCodexOptions, "positionalInput">;
+export type MdPdfTemplateCodexCliOptions = Omit<
+  MdPdfTemplateCodexOptions,
+  "positionalInput" | "templateBundleIdFactory"
+>;
 
 export interface NormalizedMdPdfTemplateCodexCommandState {
   inputPath?: string;
@@ -78,6 +84,7 @@ export interface NormalizedMdPdfTemplateCodexCommandState {
   overwrite: boolean;
   recipeOptions: NormalizedMarkdownPdfOptions;
   explicitRecipe: MdPdfTemplateCodexExplicitRecipeSignal;
+  templateBundleIdFactory?: MarkdownPdfTemplateCodexBundleIdFactory;
 }
 
 export interface MdPdfTemplateCodexExplicitRecipeSignal {
@@ -124,4 +131,24 @@ export interface MdPdfTemplateCodexSignalCollection {
   recipe: MarkdownPdfTemplateCodexRecipeSignals;
   fonts: MarkdownPdfTemplateCodexFontSignals;
   coverImage: MarkdownPdfTemplateCodexCoverImageSignals;
+}
+
+export interface MarkdownPdfTemplateCodexPlannedFile {
+  path: string;
+  bundlePath: string;
+}
+
+export interface MarkdownPdfTemplateCodexPlannedAsset extends MarkdownPdfTemplateCodexPlannedFile {
+  sourcePath: string;
+  sourceBasename: string;
+}
+
+export interface MarkdownPdfTemplateCodexOutputPlan {
+  bundleId: string;
+  outputDirectory: string;
+  generatedOutputDirectory: boolean;
+  templateHtml: MarkdownPdfTemplateCodexPlannedFile;
+  styleCss: MarkdownPdfTemplateCodexPlannedFile;
+  report?: MarkdownPdfTemplateCodexPlannedFile;
+  assets: MarkdownPdfTemplateCodexPlannedAsset[];
 }

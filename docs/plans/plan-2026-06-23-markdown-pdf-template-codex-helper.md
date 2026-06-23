@@ -506,16 +506,16 @@ Recommended module targets:
 
 ### Phase 3: Output Planning, Identity, And Collision Checks
 
-- [ ] Generate template bundle IDs in the `md-pdf-template-YYYYMMDDTHHMMSSZ-xxxxxxxx` format.
-- [ ] Resolve explicit `--output <directory>` with `md pdf-template init` directory semantics.
-- [ ] Derive generated default output directories only after signal classification allows the command to proceed.
-- [ ] Implement bounded collision retries for generated output directories.
-- [ ] Enforce non-empty output directory failure unless `--overwrite` is passed.
-- [ ] Ensure `--overwrite` replaces only selected generated files.
-- [ ] Ensure existing `template.html`, `style.css`, and asset files in `--output` are never read as input signals, merge bases, or refinement sources.
-- [ ] Reject source/sink collisions across input Markdown, base profile, output directory, report output, and managed asset sources.
-- [ ] Plan copied asset target paths inside `assets/` with collision-safe filenames.
-- [ ] Add tests for generated output paths, explicit output paths, overwrite behavior, unrelated-file preservation, and collision failures.
+- [x] Generate template bundle IDs in the `md-pdf-template-YYYYMMDDTHHMMSSZ-xxxxxxxx` format.
+- [x] Resolve explicit `--output <directory>` with `md pdf-template init` directory semantics.
+- [x] Derive generated default output directories only after signal classification allows the command to proceed.
+- [x] Implement bounded collision retries for generated output directories.
+- [x] Enforce non-empty output directory failure unless `--overwrite` is passed.
+- [x] Ensure `--overwrite` replaces only selected generated files.
+- [x] Ensure existing `template.html`, `style.css`, and asset files in `--output` are never read as input signals, merge bases, or refinement sources.
+- [x] Reject source/sink collisions across input Markdown, base profile, output directory, report output, and managed asset sources.
+- [x] Plan copied asset target paths inside `assets/` with collision-safe filenames.
+- [x] Add tests for generated output paths, explicit output paths, overwrite behavior, unrelated-file preservation, and collision failures.
 
 Recommended module targets:
 

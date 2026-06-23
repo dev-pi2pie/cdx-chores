@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { stat, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../src/cli/actions/markdown";
@@ -7,7 +7,9 @@ import {
   assertUsableMdPdfTemplateCodexSignalMode,
   classifyMdPdfTemplateCodexSignalMode,
   collectMdPdfTemplateCodexSignals,
+  createMdPdfTemplateCodexBundleId,
   normalizeMdPdfTemplateCodexCommandState,
+  planMdPdfTemplateCodexOutput,
 } from "../src/cli/markdown-pdf/template-codex";
 import { readTemplateCodexCoverImageMetadata } from "../src/cli/markdown-pdf/template-codex/image-metadata";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
@@ -97,6 +99,17 @@ async function pathExists(path: string): Promise<boolean> {
 }
 
 describe("cli action modules: md pdf-template codex", () => {
+  test("generates readable template bundle IDs", () => {
+    expect(
+      createMdPdfTemplateCodexBundleId(new Date("2026-06-23T01:02:03.000Z"), 0, () => {
+        return "md-pdf-template-20260623T010203Z-fixed001";
+      }),
+    ).toBe("md-pdf-template-20260623T010203Z-fixed001");
+    expect(createMdPdfTemplateCodexBundleId(new Date("2026-06-23T01:02:03.000Z"), 0)).toMatch(
+      /^md-pdf-template-20260623T010203Z-[0-9a-f]{8}$/,
+    );
+  });
+
   test("normalizes inputs, hints, report output, and recipe flags", async () => {
     await withTempFixtureDir("md-pdf-template-codex-options", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
@@ -690,6 +703,213 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
+  test("plans generated output paths after signal classification", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-generated-output", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        now: () => new Date("2026-06-23T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        keepCodexReport: true,
+        templateBundleIdFactory: () => "md-pdf-template-20260623T010203Z-test0001",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan).toMatchObject({
+        bundleId: "md-pdf-template-20260623T010203Z-test0001",
+        generatedOutputDirectory: true,
+        outputDirectory: join(
+          fixtureDir,
+          "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
+        ),
+        templateHtml: {
+          bundlePath: "template.html",
+          path: join(
+            fixtureDir,
+            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
+            "template.html",
+          ),
+        },
+        styleCss: {
+          bundlePath: "style.css",
+          path: join(
+            fixtureDir,
+            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
+            "style.css",
+          ),
+        },
+        report: {
+          bundlePath: "template.codex-report.json",
+          path: join(
+            fixtureDir,
+            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
+            "template.codex-report.json",
+          ),
+        },
+      });
+      expect(plan.assets).toEqual([]);
+      expect(await pathExists(plan.outputDirectory)).toBe(false);
+    });
+  });
+
+  test("retries generated output paths when the first bundle directory exists", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-output-retry", async (fixtureDir) => {
+      const firstDirectory = join(fixtureDir, "md-pdf-template-20260623T010203Z-first001");
+      await mkdir(firstDirectory, { recursive: true });
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-23T01:02:03.000Z"),
+      });
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: "cover.png",
+        templateBundleIdFactory: (_now, attempt) =>
+          attempt === 0
+            ? "md-pdf-template-20260623T010203Z-first001"
+            : "md-pdf-template-20260623T010203Z-second02",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan.bundleId).toBe("md-pdf-template-20260623T010203Z-second02");
+      expect(plan.outputDirectory).toBe(
+        join(fixtureDir, "md-pdf-template-20260623T010203Z-second02"),
+      );
+      expect(plan.assets).toEqual([
+        {
+          bundlePath: "assets/cover.png",
+          path: join(
+            fixtureDir,
+            "md-pdf-template-20260623T010203Z-second02",
+            "assets",
+            "cover.png",
+          ),
+          sourceBasename: "cover.png",
+          sourcePath: join(fixtureDir, "cover.png"),
+        },
+      ]);
+    });
+  });
+
+  test("rejects explicit non-empty output directories without overwrite", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-nonempty-output", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-template");
+      await mkdir(outputPath, { recursive: true });
+      await writeFile(join(outputPath, "unrelated.txt"), "keep me\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        toc: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "OUTPUT_EXISTS",
+        exitCode: 2,
+        messageIncludes: "Template output directory is not empty",
+      });
+    });
+  });
+
+  test("allows overwrite planning without deleting unrelated files", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-overwrite-preserve", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-template");
+      const unrelatedPath = join(outputPath, "unrelated.txt");
+      await mkdir(outputPath, { recursive: true });
+      await writeFile(unrelatedPath, "keep me\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        toc: true,
+        overwrite: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const plan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+
+      expect(plan.outputDirectory).toBe(outputPath);
+      expect(await pathExists(unrelatedPath)).toBe(true);
+      expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
+    });
+  });
+
+  test("rejects explicit report path collisions with input files", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-report-collision", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.json");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        codexReportOutput: toRepoRelativePath(inputPath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--codex-report-output cannot be the same path as Markdown input",
+      });
+    });
+  });
+
+  test("rejects cover asset source and target collisions", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-asset-collision", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "pdf-template");
+      const assetPath = join(outputPath, "assets", "cover.png");
+      await mkdir(join(outputPath, "assets"), { recursive: true });
+      await writeFile(assetPath, minimalPng(1200, 800));
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        coverImage: toRepoRelativePath(assetPath),
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "planned asset assets/cover.png cannot be the same path as --cover-image",
+      });
+    });
+  });
+
+  test("rejects generated recipe file collisions with source files", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-recipe-source-collision",
+      async (fixtureDir) => {
+        const outputPath = join(fixtureDir, "pdf-template");
+        const baseProfilePath = join(fixtureDir, "profile.yml");
+        const plannedStylePath = join(outputPath, "style.css");
+        await mkdir(outputPath, { recursive: true });
+        await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
+        await link(baseProfilePath, plannedStylePath);
+
+        const { runtime } = createActionTestRuntime();
+        const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+          baseProfile: toRepoRelativePath(baseProfilePath),
+          output: toRepoRelativePath(outputPath),
+          overwrite: true,
+        });
+        const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+        await expectCliError(() => planMdPdfTemplateCodexOutput({ runtime, state, signals }), {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned style.css cannot be the same file as --base-profile",
+        });
+      },
+    );
+  });
+
   test("rejects low-signal runs before output planning without writing artifacts", async () => {
     await withTempFixtureDir("md-pdf-template-codex-low-signal", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "template-output");
@@ -716,7 +936,7 @@ describe("cli action modules: md pdf-template codex", () => {
     });
   });
 
-  test("collects command signals before the Phase 3 boundary", async () => {
+  test("plans output before the Phase 4 boundary", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       await writeFile(inputPath, "# Report\n", "utf8");
@@ -731,10 +951,14 @@ describe("cli action modules: md pdf-template codex", () => {
         {
           code: "NOT_IMPLEMENTED",
           exitCode: 1,
-          messageIncludes: "output planning begins in Phase 3",
+          messageIncludes: "template synthesis begins in Phase 4",
         },
       );
       expect(stdout.text).toContain("Signal mode: codex-assisted");
+      expect(stdout.text).toContain("Template bundle: md-pdf-template-");
+      expect(stdout.text).toContain("Template HTML: template.html");
+      expect(stdout.text).toContain("Stylesheet: style.css");
+      expect(stdout.text).toContain("Managed assets: 0");
     });
   });
 });

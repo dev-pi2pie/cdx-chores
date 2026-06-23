@@ -1,5 +1,7 @@
 export { normalizeMdPdfTemplateCodexCommandState } from "./options";
 export { collectMdPdfTemplateCodexSignals } from "./signals";
+export { createMdPdfTemplateCodexBundleId } from "./identity";
+export { planMdPdfTemplateCodexOutput } from "./output-plan";
 export {
   assertUsableMdPdfTemplateCodexSignalMode,
   classifyMdPdfTemplateCodexSignalMode,
@@ -14,5 +16,8 @@ export type {
   MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,
+  MarkdownPdfTemplateCodexOutputPlan,
+  MarkdownPdfTemplateCodexPlannedAsset,
+  MarkdownPdfTemplateCodexPlannedFile,
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";

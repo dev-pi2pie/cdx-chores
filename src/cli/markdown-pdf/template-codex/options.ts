@@ -165,5 +165,6 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     overwrite: options.overwrite === true,
     recipeOptions: normalizeMarkdownPdfOptions(explicitRecipe.options),
     explicitRecipe,
+    templateBundleIdFactory: options.templateBundleIdFactory,
   };
 }

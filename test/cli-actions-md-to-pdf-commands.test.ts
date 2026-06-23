@@ -345,7 +345,7 @@ describe("cli command: md pdf-template codex", () => {
     });
   });
 
-  test("stops at the Phase 3 implementation boundary after signal collection", async () => {
+  test("stops at the Phase 4 implementation boundary after output planning", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-phase3-boundary", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const outputPath = join(fixtureDir, "pdf-template");
@@ -368,7 +368,13 @@ describe("cli command: md pdf-template codex", () => {
 
       expect(result.exitCode).toBe(1);
       expect(result.stdout).toContain("Signal mode: codex-assisted");
-      expect(result.stderr).toContain("output planning begins in Phase 3");
+      expect(result.stdout).toContain("Template bundle: md-pdf-template-");
+      expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
+      expect(result.stdout).toContain("Template HTML: template.html");
+      expect(result.stdout).toContain("Stylesheet: style.css");
+      expect(result.stdout).toContain("Managed assets: 0");
+      expect(result.stdout).toContain(`Codex report: ${toRepoRelativePath(reportPath)}`);
+      expect(result.stderr).toContain("template synthesis begins in Phase 4");
       expect(await pathExists(outputPath)).toBe(false);
       expect(await pathExists(reportPath)).toBe(false);
     });
@@ -405,7 +411,9 @@ describe("cli command: md pdf-template codex", () => {
 
       expect(result.exitCode).toBe(1);
       expect(result.stdout).toContain("Signal mode: deterministic");
-      expect(result.stderr).toContain("output planning begins in Phase 3");
+      expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
+      expect(result.stdout).toContain("Managed assets: 1");
+      expect(result.stderr).toContain("template synthesis begins in Phase 4");
       expect(await pathExists(outputPath)).toBe(false);
     });
   });
