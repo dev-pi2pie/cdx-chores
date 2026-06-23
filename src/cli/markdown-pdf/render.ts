@@ -61,7 +61,7 @@ const HTML_STYLE_TAG_PATTERN = /<\s*style\b[^>]*>([\s\S]*?)<\s*\/\s*style\s*>/gi
 const HTML_STYLE_ATTR_PATTERN = /\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const PANDOC_TEMPLATE_VARIABLE_PATTERN = /\$[A-Za-z][\w-]*\$/u;
 const CSS_URL_FUNCTION_PATTERN = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/gi;
-const CSS_IMPORT_PATTERN = /@import\s+(url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^)"'\s;]+))/gi;
+const CSS_IMPORT_PATTERN = /@import\s+(url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^)"'\s;]+))(\s*\))?/gi;
 const CSS_URL_PATTERNS = [CSS_URL_FUNCTION_PATTERN, CSS_IMPORT_PATTERN] as const;
 
 function splitLines(value: string): string[] {
@@ -334,7 +334,7 @@ function splitSrcsetCandidates(value: string): string[] {
       if (/\s/u.test(char)) {
         break;
       }
-      if (char === "," && isSrcsetSeparatorComma(value, index)) {
+      if (char === "," && isSrcsetSeparatorComma(value, start, index)) {
         break;
       }
       index += 1;
@@ -353,12 +353,24 @@ function splitSrcsetCandidates(value: string): string[] {
   return candidates;
 }
 
-function isSrcsetSeparatorComma(value: string, commaIndex: number): boolean {
+function isSrcsetSeparatorComma(
+  value: string,
+  candidateStart: number,
+  commaIndex: number,
+): boolean {
   let nextIndex = commaIndex + 1;
   while (nextIndex < value.length && /\s/u.test(value[nextIndex] ?? "")) {
     nextIndex += 1;
   }
-  return nextIndex >= value.length || nextIndex > commaIndex + 1;
+  return (
+    nextIndex >= value.length ||
+    nextIndex > commaIndex + 1 ||
+    srcsetCandidatePrefixLooksComplete(value.slice(candidateStart, commaIndex))
+  );
+}
+
+function srcsetCandidatePrefixLooksComplete(value: string): boolean {
+  return /\.(?:avif|gif|jpe?g|png|svg|webp)(?:[?#][^\s,]*)?$/iu.test(value.trim());
 }
 
 async function rewriteTemplateLocalHtmlAssets(

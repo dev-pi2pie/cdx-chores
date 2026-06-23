@@ -45,6 +45,8 @@ generated cover-media template bundle through `md to-pdf`:
     URLs and `srcset` references authored inside the custom template.
 14. Addressed re-review findings by preserving comma-bearing `srcset` URLs,
     preserving data URL candidates, and resolving SVG `xlink:href` references.
+15. Addressed final re-review findings by preserving media-qualified
+    `@import url(...)` rules and compact `srcset` separators.
 
 ## Changes
 
@@ -70,6 +72,8 @@ generated cover-media template bundle through `md to-pdf`:
   `srcset` asset references.
 - Added render-path coverage for `srcset` data URL candidates, comma-bearing
   filenames, and SVG `xlink:href` references.
+- Added render-path coverage for compact `srcset` separators and
+  media-qualified `@import url(...)` rules.
 
 ## Verification
 
@@ -131,6 +135,20 @@ generated cover-media template bundle through `md to-pdf`:
   - Passed after `srcset` parser and SVG review follow-up.
 - `bun test --timeout 30000`
   - Passed after `srcset` parser and SVG review follow-up: 1297 tests.
+- `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+  - Passed after compact `srcset` and media `@import` follow-up: 34 tests.
+- `bunx tsc --noEmit`
+  - Passed after compact `srcset` and media `@import` follow-up.
+- `bun run lint`
+  - Passed after compact `srcset` and media `@import` follow-up.
+- `bun run format:check`
+  - Passed after compact `srcset` and media `@import` follow-up.
+- `bun run build`
+  - Passed after compact `srcset` and media `@import` follow-up.
+- `git diff --check`
+  - Passed after compact `srcset` and media `@import` follow-up.
+- `bun test --timeout 30000`
+  - Passed after compact `srcset` and media `@import` follow-up: 1297 tests.
 
 ## Review
 
@@ -157,7 +175,13 @@ generated cover-media template bundle through `md to-pdf`:
   - `srcset` parsing should not split data URLs or comma-bearing filenames.
   - SVG `xlink:href` references should not be blocked by the HTML asset tag
     allowlist.
-- Pending final review range after the third follow-up commit.
+- Re-review range `2065397..98e6d41` was reviewed by `Plainspoken the 6th`
+  and `Probe the 6th`.
+- Material findings addressed in the fourth review follow-up:
+  - Compact `srcset` separators should still split candidates.
+  - Media-qualified `@import url(...)` rules should preserve the trailing media
+    condition after asset URL rewriting.
+- Pending final review range after the fourth follow-up commit.
 
 Phase 8.3 implementation commit:
 
@@ -172,5 +196,9 @@ Phase 8.3 second review follow-up commit:
 - `f060786 fix(template-codex): resolve template css asset references`
 
 Phase 8.3 third review follow-up commit:
+
+- `98e6d41 fix(template-codex): preserve srcset asset candidates`
+
+Phase 8.3 fourth review follow-up commit:
 
 - Pending.

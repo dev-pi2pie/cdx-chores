@@ -308,13 +308,14 @@ describe("cli action modules: md to-pdf rendering", () => {
         customTemplate,
         [
           "<html><head>",
-          '<style>@import "assets/print.css"; .hero { background-image: url("assets/background.png"); }</style>',
+          '<style>@import url("assets/print.css") screen and (min-width: 900px); .hero { background-image: url("assets/background.png"); }</style>',
           "</head>",
           '<body style="background-image: url(assets/pattern.png)">',
           [
             '<img src="assets/cover.png"',
             ' srcset="data:image/png;base64,AAAA 1x, assets/cover-small.png 2x, assets/cover,v2.png 3x">',
           ].join(""),
+          '<source srcset="assets/cover.png,assets/cover-small.png 2x">',
           '<svg><use xlink:href="assets/icon.svg#logo"></use></svg>',
           "$body$",
           "</body></html>",
@@ -392,7 +393,9 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(templateRenderPath).toBeDefined();
       expect(templateRenderPath).not.toBe(customTemplate);
       expect(pandocTemplateHtml).toContain(`src="${pathToFileURL(templateAsset).href}"`);
-      expect(pandocTemplateHtml).toContain(`@import "${pathToFileURL(templateImport).href}"`);
+      expect(pandocTemplateHtml).toContain(
+        `@import url("${pathToFileURL(templateImport).href}") screen and (min-width: 900px);`,
+      );
       expect(pandocTemplateHtml).toContain(
         `background-image: url("${pathToFileURL(templateBackground).href}")`,
       );
@@ -405,6 +408,9 @@ describe("cli action modules: md to-pdf rendering", () => {
           `${pathToFileURL(templateAssetSmall).href} 2x,`,
           `${pathToFileURL(templateAssetComma).href} 3x"`,
         ].join(" "),
+      );
+      expect(pandocTemplateHtml).toContain(
+        `srcset="${pathToFileURL(templateAsset).href}, ${pathToFileURL(templateAssetSmall).href} 2x"`,
       );
       expect(pandocTemplateHtml).toContain(`xlink:href="${pathToFileURL(templateSvg).href}#logo"`);
       expectNoStderr();
