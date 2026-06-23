@@ -283,21 +283,31 @@ describe("cli command: md pdf-template codex", () => {
     expect(result.stdout).toContain("--keep-codex-report");
     expect(result.stdout).toContain("--codex-report-output <path>");
     expect(result.stdout).toContain("--overwrite");
-    expect(result.stdout).toContain("--preset <value>");
-    expect(result.stdout).toContain("--page-size <value>");
-    expect(result.stdout).toContain("--orientation <value>");
-    expect(result.stdout).toContain("--margin <length>");
-    expect(result.stdout).toContain("--margin-x <length>");
-    expect(result.stdout).toContain("--margin-y <length>");
-    expect(result.stdout).toContain("--margin-top <length>");
-    expect(result.stdout).toContain("--margin-right <length>");
-    expect(result.stdout).toContain("--margin-bottom <length>");
-    expect(result.stdout).toContain("--margin-left <length>");
-    expect(result.stdout).toContain("--toc");
-    expect(result.stdout).toContain("--toc-depth <n>");
-    expect(result.stdout).toContain("--toc-page-break <value>");
+    expect(result.stdout).not.toContain("--preset <value>");
+    expect(result.stdout).not.toContain("--page-size <value>");
+    expect(result.stdout).not.toContain("--orientation <value>");
+    expect(result.stdout).not.toContain("--margin <length>");
+    expect(result.stdout).not.toContain("--margin-x <length>");
+    expect(result.stdout).not.toContain("--margin-y <length>");
+    expect(result.stdout).not.toContain("--margin-top <length>");
+    expect(result.stdout).not.toContain("--margin-right <length>");
+    expect(result.stdout).not.toContain("--margin-bottom <length>");
+    expect(result.stdout).not.toContain("--margin-left <length>");
+    expect(result.stdout).not.toContain("--toc");
+    expect(result.stdout).not.toContain("--toc-depth <n>");
+    expect(result.stdout).not.toContain("--toc-page-break <value>");
     expect(result.stdout).toContain("--dry-run");
     expect(result.stderr).toBe("");
+  });
+
+  test("rejects removed recipe flags from the Codex template command surface", () => {
+    for (const flag of ["--preset", "--margin", "--toc"] as const) {
+      const result = runCli(["md", "pdf-template", "codex", flag, "report"]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`unknown option '${flag}'`);
+    }
   });
 
   test("rejects conflicting positional and explicit Codex template inputs from the command layer", async () => {
@@ -347,15 +357,26 @@ describe("cli command: md pdf-template codex", () => {
 
   test("writes a validated template bundle after deterministic synthesis", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-write-bundle", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "report-profile.yml");
       const outputPath = join(fixtureDir, "pdf-template");
       const reportPath = join(fixtureDir, "template-report.json");
+      const profileResult = runCli([
+        "md",
+        "pdf-profile",
+        "init",
+        "--output",
+        toRepoRelativePath(baseProfilePath),
+        "--preset",
+        "report",
+      ]);
+      expect(profileResult.exitCode).toBe(0);
 
       const result = runCli([
         "md",
         "pdf-template",
         "codex",
-        "--preset",
-        "report",
+        "--base-profile",
+        toRepoRelativePath(baseProfilePath),
         "--output",
         toRepoRelativePath(outputPath),
         "--codex-report-output",
@@ -363,10 +384,10 @@ describe("cli command: md pdf-template codex", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Signal mode: recipe-only");
+      expect(result.stdout).toContain("Signal mode: base-profile-only");
       expect(result.stdout).toContain("Decision mode: deterministic");
       expect(result.stdout).toContain("Template family: document-layered");
-      expect(result.stdout).toContain("Recipe preset: report (explicit-recipe)");
+      expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
       expect(result.stdout).toContain("Template bundle: md-pdf-template-");
       expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
       expect(result.stdout).toContain("Template HTML: template.html");
@@ -391,7 +412,7 @@ describe("cli command: md pdf-template codex", () => {
     });
   });
 
-  test("passes base profile, cover image, font hints, and recipe flags through the command layer", async () => {
+  test("passes base profile, cover image, and font hints through the command layer", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-signal-options", async (fixtureDir) => {
       const baseProfilePath = join(fixtureDir, "profile.yml");
       const coverImagePath = join(fixtureDir, "cover.png");
@@ -411,11 +432,6 @@ describe("cli command: md pdf-template codex", () => {
         "Inter",
         "--font-hint",
         "Noto Sans",
-        "--page-size",
-        "A4",
-        "--toc",
-        "--toc-depth",
-        "2",
         "--output",
         toRepoRelativePath(outputPath),
       ]);

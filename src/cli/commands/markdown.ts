@@ -162,33 +162,31 @@ export function registerMarkdownCommands(
       }),
   );
 
-  applyMarkdownPdfRecipeOptions(
-    pdfTemplateCommand
-      .command("codex")
-      .argument("[input]", "Markdown sample for document-informed template signals")
-      .description("Draft a reviewable Markdown PDF template bundle from bounded signals")
-      .option("-i, --input <path>", "Same as the input argument; useful in scripts")
-      .option("--intent <text>", "Template, layout, and design direction")
-      .option(
-        "--font-hint <text>",
-        "Repeatable font preference hint for the same Codex request",
-        collectStringOption,
-      )
-      .option("--base-profile <path>", "Existing Markdown PDF profile to use as a signal")
-      .option("--cover-image <path>", "Local PNG, JPEG, or WebP cover image")
-      .option("-o, --output <path>", "Output template bundle directory")
-      .option(
-        "--dry-run",
-        "Preview signal collection, decision, synthesis, and validation without writing",
-        false,
-      )
-      .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
-      .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
-      .option("--overwrite", "Overwrite selected generated files if they already exist", false)
-      .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
-        await actions.actionMdPdfTemplateCodex(runtime, { ...options, positionalInput: input });
-      }),
-  );
+  pdfTemplateCommand
+    .command("codex")
+    .argument("[input]", "Markdown sample for document-informed template signals")
+    .description("Draft a reviewable Markdown PDF template bundle from bounded signals")
+    .option("-i, --input <path>", "Same as the input argument; useful in scripts")
+    .option("--intent <text>", "Template, layout, and design direction")
+    .option(
+      "--font-hint <text>",
+      "Repeatable font preference hint for the same Codex request",
+      collectStringOption,
+    )
+    .option("--base-profile <path>", "Existing Markdown PDF profile to use as a signal")
+    .option("--cover-image <path>", "Local PNG, JPEG, or WebP cover image")
+    .option("-o, --output <path>", "Output template bundle directory")
+    .option(
+      "--dry-run",
+      "Preview signal collection, decision, synthesis, and validation without writing",
+      false,
+    )
+    .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
+    .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
+    .option("--overwrite", "Overwrite selected generated files if they already exist", false)
+    .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
+      await actions.actionMdPdfTemplateCodex(runtime, { ...options, positionalInput: input });
+    });
 
   const pdfProfileCommand = mdCommand
     .command("pdf-profile")

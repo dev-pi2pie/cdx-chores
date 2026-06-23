@@ -52,9 +52,27 @@ export interface MdPdfTemplateCodexOptions {
   codexRunner?: MarkdownPdfTemplateCodexRunner;
 }
 
+type MdPdfTemplateCodexNonCliOption =
+  | "codexRunner"
+  | "margin"
+  | "marginBottom"
+  | "marginLeft"
+  | "marginRight"
+  | "marginTop"
+  | "marginX"
+  | "marginY"
+  | "orientation"
+  | "pageSize"
+  | "positionalInput"
+  | "preset"
+  | "templateBundleIdFactory"
+  | "toc"
+  | "tocDepth"
+  | "tocPageBreak";
+
 export type MdPdfTemplateCodexCliOptions = Omit<
   MdPdfTemplateCodexOptions,
-  "codexRunner" | "positionalInput" | "templateBundleIdFactory"
+  MdPdfTemplateCodexNonCliOption
 >;
 
 export interface NormalizedMdPdfTemplateCodexCommandState {
