@@ -57,10 +57,10 @@ const HTML_ASSET_ATTR_PATTERN =
   /\b(src|href|poster|data|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const HTML_STYLE_TAG_PATTERN = /<\s*style\b[^>]*>([\s\S]*?)<\s*\/\s*style\s*>/gi;
 const HTML_STYLE_ATTR_PATTERN = /\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
-const CSS_URL_PATTERNS = [
-  /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/gi,
-  /@import\s+(?:url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^)"'\s;]+))/gi,
-] as const;
+const PANDOC_TEMPLATE_VARIABLE_PATTERN = /\$[A-Za-z][\w-]*\$/u;
+const CSS_URL_FUNCTION_PATTERN = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/gi;
+const CSS_IMPORT_PATTERN = /@import\s+(url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^)"'\s;]+))/gi;
+const CSS_URL_PATTERNS = [CSS_URL_FUNCTION_PATTERN, CSS_IMPORT_PATTERN] as const;
 
 function splitLines(value: string): string[] {
   return value
@@ -221,10 +221,10 @@ async function resolveTemplateLocalHtmlAssetReference(
   if (!isRelativeHtmlAssetReference(value)) {
     return value;
   }
-  const { path, suffix } = splitAssetReference(value);
-  if (path.includes("$")) {
+  if (PANDOC_TEMPLATE_VARIABLE_PATTERN.test(value)) {
     return value;
   }
+  const { path, suffix } = splitAssetReference(value);
   const resolvedPath = resolve(templateDirectory, path);
   const resolvedTemplateDirectory = resolve(templateDirectory);
   if (!relativePathStaysInside(resolvedTemplateDirectory, resolvedPath)) {
@@ -256,20 +256,98 @@ async function resolveTemplateLocalHtmlAssetReference(
   return `${pathToFileURL(realResolvedPath).href}${suffix}`;
 }
 
+async function replaceAsync(
+  value: string,
+  pattern: RegExp,
+  replacer: (match: RegExpMatchArray) => Promise<string>,
+): Promise<string> {
+  let rewritten = "";
+  let lastIndex = 0;
+  for (const match of value.matchAll(pattern)) {
+    const index = match.index ?? 0;
+    rewritten += value.slice(lastIndex, index);
+    rewritten += await replacer(match);
+    lastIndex = index + match[0].length;
+  }
+  rewritten += value.slice(lastIndex);
+  return rewritten;
+}
+
+async function rewriteTemplateLocalCssAssets(
+  css: string,
+  templateDirectory: string,
+): Promise<string> {
+  const withUrlFunctions = await replaceAsync(css, CSS_URL_FUNCTION_PATTERN, async (match) => {
+    const assetReference = (match[1] ?? match[2] ?? match[3] ?? "").trim();
+    const rewritten = await resolveTemplateLocalHtmlAssetReference(
+      assetReference,
+      templateDirectory,
+    );
+    return `url("${rewritten}")`;
+  });
+  return await replaceAsync(withUrlFunctions, CSS_IMPORT_PATTERN, async (match) => {
+    const assetReference = (match[2] ?? match[3] ?? match[4] ?? "").trim();
+    const rewritten = await resolveTemplateLocalHtmlAssetReference(
+      assetReference,
+      templateDirectory,
+    );
+    return match[1] ? `@import url("${rewritten}")` : `@import "${rewritten}"`;
+  });
+}
+
+async function rewriteTemplateLocalSrcset(
+  value: string,
+  templateDirectory: string,
+): Promise<string> {
+  if (value.trimStart().toLowerCase().startsWith("data:")) {
+    return value;
+  }
+  const candidates = await Promise.all(
+    value.split(",").map(async (candidate) => {
+      const trimmed = candidate.trim();
+      if (!trimmed) {
+        return candidate;
+      }
+      const [assetReference = "", ...descriptorParts] = trimmed.split(/\s+/u);
+      const rewritten = await resolveTemplateLocalHtmlAssetReference(
+        assetReference,
+        templateDirectory,
+      );
+      return [rewritten, ...descriptorParts].join(" ");
+    }),
+  );
+  return candidates.join(", ");
+}
+
 async function rewriteTemplateLocalHtmlAssets(
   html: string,
   templateDirectory: string,
 ): Promise<string> {
   const document = parse(html);
-  const visit = async (node: DefaultTreeAdapterTypes.Node): Promise<void> => {
-    if (
-      "attrs" in node &&
-      Array.isArray(node.attrs) &&
-      "tagName" in node &&
-      HTML_ASSET_TAGS.has(String(node.tagName).toLowerCase())
-    ) {
+  const visit = async (
+    node: DefaultTreeAdapterTypes.Node,
+    parentTagName?: string,
+  ): Promise<void> => {
+    if (parentTagName === "style" && "value" in node && typeof node.value === "string") {
+      node.value = await rewriteTemplateLocalCssAssets(node.value, templateDirectory);
+    }
+    const tagName =
+      "tagName" in node && typeof node.tagName === "string" ? node.tagName.toLowerCase() : "";
+    if ("attrs" in node && Array.isArray(node.attrs)) {
       for (const attr of node.attrs) {
-        if (!HTML_TEMPLATE_LOCAL_ASSET_ATTRS.has(attr.name.toLowerCase())) {
+        const attrName = attr.name.toLowerCase();
+        if (attrName === "style") {
+          attr.value = await rewriteTemplateLocalCssAssets(attr.value, templateDirectory);
+          continue;
+        }
+        if (!HTML_ASSET_TAGS.has(tagName)) {
+          continue;
+        }
+        if (attrName === "srcset") {
+          attr.value = await rewriteTemplateLocalSrcset(attr.value, templateDirectory);
+          continue;
+        }
+        if (!HTML_TEMPLATE_LOCAL_ASSET_ATTRS.has(attrName)) {
           continue;
         }
         attr.value = await resolveTemplateLocalHtmlAssetReference(attr.value, templateDirectory);
@@ -277,7 +355,7 @@ async function rewriteTemplateLocalHtmlAssets(
     }
     if ("childNodes" in node && Array.isArray(node.childNodes)) {
       for (const child of node.childNodes) {
-        await visit(child);
+        await visit(child, tagName);
       }
     }
   };

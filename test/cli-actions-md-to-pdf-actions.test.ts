@@ -293,6 +293,10 @@ describe("cli action modules: md to-pdf rendering", () => {
       const customTemplate = join(templateDir, "template.html");
       const customCss = join(templateDir, "style.css");
       const templateAsset = join(templateDir, "assets", "cover.png");
+      const templateAssetSmall = join(templateDir, "assets", "cover-small.png");
+      const templateBackground = join(templateDir, "assets", "background.png");
+      const templatePattern = join(templateDir, "assets", "pattern.png");
+      const templateImport = join(templateDir, "assets", "print.css");
       const markdownAsset = join(inputDir, "images", "body.png");
       await mkdir(dirname(inputPath), { recursive: true });
       await mkdir(dirname(templateAsset), { recursive: true });
@@ -300,11 +304,23 @@ describe("cli action modules: md to-pdf rendering", () => {
       await writeFile(inputPath, "# Report\n\n![Body](images/body.png)\n", "utf8");
       await writeFile(
         customTemplate,
-        '<html><body><img src="assets/cover.png">$body$</body></html>',
+        [
+          "<html><head>",
+          '<style>@import "assets/print.css"; .hero { background-image: url("assets/background.png"); }</style>',
+          "</head>",
+          '<body style="background-image: url(assets/pattern.png)">',
+          '<img src="assets/cover.png" srcset="assets/cover-small.png 1x, assets/cover.png 2x">',
+          "$body$",
+          "</body></html>",
+        ].join(""),
         "utf8",
       );
       await writeFile(customCss, "body { color: black; }\n", "utf8");
       await writeFile(templateAsset, "template-asset", "utf8");
+      await writeFile(templateAssetSmall, "template-small-asset", "utf8");
+      await writeFile(templateBackground, "template-background", "utf8");
+      await writeFile(templatePattern, "template-pattern", "utf8");
+      await writeFile(templateImport, "body { color: black; }\n", "utf8");
       await writeFile(markdownAsset, "markdown-asset", "utf8");
 
       const calls: Array<{ command: string; args: string[]; cwd?: string }> = [];
@@ -368,6 +384,16 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(templateRenderPath).toBeDefined();
       expect(templateRenderPath).not.toBe(customTemplate);
       expect(pandocTemplateHtml).toContain(`src="${pathToFileURL(templateAsset).href}"`);
+      expect(pandocTemplateHtml).toContain(`@import "${pathToFileURL(templateImport).href}"`);
+      expect(pandocTemplateHtml).toContain(
+        `background-image: url("${pathToFileURL(templateBackground).href}")`,
+      );
+      expect(pandocTemplateHtml).toContain(
+        `background-image: url(&quot;${pathToFileURL(templatePattern).href}&quot;)`,
+      );
+      expect(pandocTemplateHtml).toContain(
+        `srcset="${pathToFileURL(templateAssetSmall).href} 1x, ${pathToFileURL(templateAsset).href} 2x"`,
+      );
       expectNoStderr();
     });
   });

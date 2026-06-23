@@ -41,6 +41,8 @@ generated cover-media template bundle through `md to-pdf`:
 11. Added fail-closed checks for missing template assets, path traversal, and
     symlink escapes before render-time execution.
 12. Added landscape inch page-size coverage for cover-media CSS sizing.
+13. Addressed final review findings by extending template preprocessing to CSS
+    URLs and `srcset` references authored inside the custom template.
 
 ## Changes
 
@@ -62,6 +64,8 @@ generated cover-media template bundle through `md to-pdf`:
 - Added render-path coverage for missing template assets, traversal attempts,
   and symlink escapes.
 - Added cover CSS coverage for landscape Letter sizing in inch units.
+- Added render-path coverage for template-local `<style>`, `style=`, and
+  `srcset` asset references.
 
 ## Verification
 
@@ -95,6 +99,20 @@ generated cover-media template bundle through `md to-pdf`:
   - Passed after review follow-up.
 - `bun test --timeout 30000`
   - Passed after review follow-up: 1297 tests.
+- `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+  - Passed after CSS and `srcset` review follow-up: 34 tests.
+- `bunx tsc --noEmit`
+  - Passed after CSS and `srcset` review follow-up.
+- `bun run lint`
+  - Passed after CSS and `srcset` review follow-up.
+- `bun run format:check`
+  - Passed after CSS and `srcset` review follow-up.
+- `bun run build`
+  - Passed after CSS and `srcset` review follow-up.
+- `git diff --check`
+  - Passed after CSS and `srcset` review follow-up.
+- `bun test --timeout 30000`
+  - Passed after CSS and `srcset` review follow-up: 1297 tests.
 
 ## Review
 
@@ -110,11 +128,21 @@ generated cover-media template bundle through `md to-pdf`:
     closed instead of silently falling back to Markdown input resolution.
   - Cover page-size CSS should include non-A4 orientation/unit coverage.
 - Pending final Phase 8.3 review range after follow-up commit.
+- Final Phase 8.3 code review range `2065397..3734eaa` was reviewed by
+  `Plainspoken the 6th` and `Probe the 6th`.
+- Material finding addressed in the second review follow-up:
+  - Template-local assets in CSS URLs and `srcset` should be resolved with the
+    same template-directory ownership rules as HTML asset attributes.
+- Pending final review range after the second follow-up commit.
 
 Phase 8.3 implementation commit:
 
 - `84d5e6d fix(template-codex): render bundle cover assets safely`
 
 Phase 8.3 review follow-up commit:
+
+- `3734eaa fix(template-codex): constrain template asset resolution`
+
+Phase 8.3 second review follow-up commit:
 
 - Pending.
