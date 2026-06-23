@@ -47,6 +47,9 @@ planning or bundle writes.
 - Followed up on the WebP metadata parser readability by replacing inline byte
   math with named chunk constants and small decoding helpers for VP8X, VP8, and
   VP8L dimensions.
+- Addressed follow-up test-review findings by adding direct VP8, VP8L, padded
+  chunk, and malformed WebP parser coverage, and corrected VP8L dimension
+  unpacking to match the lossless bitstream layout.
 
 ## Verification
 
@@ -76,8 +79,8 @@ git diff --check
 bun test --timeout 30000
 ```
 
-Result: all commands passed. The focused template-Codex suite reported 19 tests
-passed and 0 failed. The final full suite reported 1219 tests passed and 0
+Result: all commands passed. The focused template-Codex suite reported 21 tests
+passed and 0 failed. The final full suite reported 1221 tests passed and 0
 failed.
 
 ## Artifact Safety

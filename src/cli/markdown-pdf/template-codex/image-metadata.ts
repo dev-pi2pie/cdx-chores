@@ -26,6 +26,8 @@ const WEBP_CHUNK_HEADER_LENGTH = 8;
 const WEBP_VP8X_CHUNK_MIN_SIZE = 10;
 const WEBP_VP8_CHUNK_MIN_SIZE = 10;
 const WEBP_VP8L_CHUNK_MIN_SIZE = 5;
+const WEBP_MIN_DIMENSION_FILE_LENGTH =
+  WEBP_FILE_HEADER_LENGTH + WEBP_CHUNK_HEADER_LENGTH + WEBP_VP8L_CHUNK_MIN_SIZE;
 const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
 const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
 const WEBP_VP8_FRAME_WIDTH_OFFSET = 6;
@@ -155,14 +157,18 @@ function readWebpVp8lDimensions(
   const b3 = bytes[dataOffset + 3]!;
   const b4 = bytes[dataOffset + 4]!;
   const width = 1 + (((b2 & 0x3f) << 8) | b1);
-  const height = 1 + ((b4 << 6) | (b3 >> 2) | ((b2 & 0xc0) << 6));
+  const height = 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6));
   return dimensionsIfPositive(width, height);
 }
 
 function readWebpDimensions(
   bytes: Uint8Array,
 ): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
-  if (bytes.length < 30 || readAscii(bytes, 0, 4) !== "RIFF" || readAscii(bytes, 8, 4) !== "WEBP") {
+  if (
+    bytes.length < WEBP_MIN_DIMENSION_FILE_LENGTH ||
+    readAscii(bytes, 0, 4) !== "RIFF" ||
+    readAscii(bytes, 8, 4) !== "WEBP"
+  ) {
     return undefined;
   }
 

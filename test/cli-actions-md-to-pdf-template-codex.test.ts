@@ -9,6 +9,7 @@ import {
   collectMdPdfTemplateCodexSignals,
   normalizeMdPdfTemplateCodexCommandState,
 } from "../src/cli/markdown-pdf/template-codex";
+import { readTemplateCodexCoverImageMetadata } from "../src/cli/markdown-pdf/template-codex/image-metadata";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -32,10 +33,35 @@ function minimalJpeg(width: number, height: number): Buffer {
 
 const WEBP_FILE_HEADER_LENGTH = 12;
 const WEBP_CHUNK_HEADER_LENGTH = 8;
+const WEBP_CHUNK_SIZE_OFFSET = 4;
 const WEBP_VP8X_CHUNK_SIZE = 10;
 const WEBP_VP8X_PAYLOAD_OFFSET = WEBP_FILE_HEADER_LENGTH + WEBP_CHUNK_HEADER_LENGTH;
 const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
 const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
+const WEBP_VP8_PAYLOAD_SIZE = 10;
+const WEBP_VP8_FRAME_WIDTH_OFFSET = 6;
+const WEBP_VP8_FRAME_HEIGHT_OFFSET = 8;
+const WEBP_VP8L_PAYLOAD_SIZE = 5;
+const WEBP_VP8L_SIGNATURE = 0x2f;
+
+function minimalWebpWithChunks(
+  chunks: Array<{ type: string; payload: Buffer }>,
+  riffSignature = "RIFF",
+  webpSignature = "WEBP",
+): Buffer {
+  const chunkBytes = chunks.map(({ type, payload }) => {
+    const bytes = Buffer.alloc(WEBP_CHUNK_HEADER_LENGTH + payload.length + (payload.length % 2));
+    bytes.write(type, 0, "ascii");
+    bytes.writeUInt32LE(payload.length, WEBP_CHUNK_SIZE_OFFSET);
+    payload.copy(bytes, WEBP_CHUNK_HEADER_LENGTH);
+    return bytes;
+  });
+  const bytes = Buffer.concat([Buffer.alloc(WEBP_FILE_HEADER_LENGTH), ...chunkBytes]);
+  bytes.write(riffSignature, 0, "ascii");
+  bytes.writeUInt32LE(bytes.length - 8, 4);
+  bytes.write(webpSignature, 8, "ascii");
+  return bytes;
+}
 
 function writeUint24LittleEndian(bytes: Buffer, offset: number, value: number): void {
   bytes[offset] = value & 0xff;
@@ -44,24 +70,31 @@ function writeUint24LittleEndian(bytes: Buffer, offset: number, value: number): 
 }
 
 function minimalWebpVp8x(width: number, height: number): Buffer {
-  const bytes = Buffer.alloc(30);
-  bytes.write("RIFF", 0, "ascii");
-  bytes.write("WEBP", 8, "ascii");
-  bytes.write("VP8X", 12, "ascii");
-  bytes.writeUInt32LE(WEBP_VP8X_CHUNK_SIZE, WEBP_FILE_HEADER_LENGTH + 4);
+  const payload = Buffer.alloc(WEBP_VP8X_CHUNK_SIZE);
   const storedWidth = width - 1;
   const storedHeight = height - 1;
-  writeUint24LittleEndian(
-    bytes,
-    WEBP_VP8X_PAYLOAD_OFFSET + WEBP_VP8X_CANVAS_WIDTH_OFFSET,
-    storedWidth,
-  );
-  writeUint24LittleEndian(
-    bytes,
-    WEBP_VP8X_PAYLOAD_OFFSET + WEBP_VP8X_CANVAS_HEIGHT_OFFSET,
-    storedHeight,
-  );
-  return bytes;
+  writeUint24LittleEndian(payload, WEBP_VP8X_CANVAS_WIDTH_OFFSET, storedWidth);
+  writeUint24LittleEndian(payload, WEBP_VP8X_CANVAS_HEIGHT_OFFSET, storedHeight);
+  return minimalWebpWithChunks([{ type: "VP8X", payload }]);
+}
+
+function minimalWebpVp8(width: number, height: number): Buffer {
+  const payload = Buffer.alloc(WEBP_VP8_PAYLOAD_SIZE);
+  payload.writeUInt16LE(width, WEBP_VP8_FRAME_WIDTH_OFFSET);
+  payload.writeUInt16LE(height, WEBP_VP8_FRAME_HEIGHT_OFFSET);
+  return minimalWebpWithChunks([{ type: "VP8 ", payload }]);
+}
+
+function minimalWebpVp8l(width: number, height: number): Buffer {
+  const payload = Buffer.alloc(WEBP_VP8L_PAYLOAD_SIZE);
+  const storedWidth = width - 1;
+  const storedHeight = height - 1;
+  payload[0] = WEBP_VP8L_SIGNATURE;
+  payload[1] = storedWidth & 0xff;
+  payload[2] = ((storedWidth >> 8) & 0x3f) | ((storedHeight & 0x03) << 6);
+  payload[3] = (storedHeight >> 2) & 0xff;
+  payload[4] = (storedHeight >> 10) & 0x0f;
+  return minimalWebpWithChunks([{ type: "VP8L", payload }]);
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -555,6 +588,79 @@ describe("cli action modules: md pdf-template codex", () => {
         dimensions: { width: 1200, height: 1200 },
         orientationBucket: "square",
         fitPressure: "normal",
+      });
+    });
+  });
+
+  test("parses WebP dimensions from VP8X, VP8, VP8L, and padded chunks", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-webp-variants", async (fixtureDir) => {
+      const vp8xPath = join(fixtureDir, "extended.webp");
+      const vp8Path = join(fixtureDir, "lossy.webp");
+      const vp8lPath = join(fixtureDir, "lossless.webp");
+      const paddedPath = join(fixtureDir, "padded.webp");
+      await writeFile(vp8xPath, minimalWebpVp8x(1200, 800));
+      await writeFile(vp8Path, minimalWebpVp8(640, 480));
+      await writeFile(vp8lPath, minimalWebpVp8l(321, 654));
+      await writeFile(
+        paddedPath,
+        minimalWebpWithChunks([
+          { type: "JUNK", payload: Buffer.from([0x01]) },
+          { type: "VP8X", payload: minimalWebpVp8x(900, 300).subarray(WEBP_VP8X_PAYLOAD_OFFSET) },
+        ]),
+      );
+
+      await expect(readTemplateCodexCoverImageMetadata(vp8xPath, "webp")).resolves.toEqual({
+        status: "parsed",
+        dimensions: { width: 1200, height: 800 },
+      });
+      await expect(readTemplateCodexCoverImageMetadata(vp8Path, "webp")).resolves.toEqual({
+        status: "parsed",
+        dimensions: { width: 640, height: 480 },
+      });
+      await expect(readTemplateCodexCoverImageMetadata(vp8lPath, "webp")).resolves.toEqual({
+        status: "parsed",
+        dimensions: { width: 321, height: 654 },
+      });
+      await expect(readTemplateCodexCoverImageMetadata(paddedPath, "webp")).resolves.toEqual({
+        status: "parsed",
+        dimensions: { width: 900, height: 300 },
+      });
+    });
+  });
+
+  test("treats malformed WebP metadata as unparsed", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-webp-malformed", async (fixtureDir) => {
+      const shortPath = join(fixtureDir, "short.webp");
+      const wrongMagicPath = join(fixtureDir, "wrong-magic.webp");
+      const undersizedPath = join(fixtureDir, "undersized.webp");
+      const truncatedPath = join(fixtureDir, "truncated.webp");
+      await writeFile(shortPath, Buffer.from("RIFFWEBP"));
+      await writeFile(
+        wrongMagicPath,
+        minimalWebpWithChunks([{ type: "VP8X", payload: Buffer.alloc(10) }], "NOPE"),
+      );
+      await writeFile(
+        undersizedPath,
+        minimalWebpWithChunks([{ type: "VP8X", payload: Buffer.alloc(9) }]),
+      );
+      await writeFile(
+        truncatedPath,
+        Buffer.concat([
+          minimalWebpWithChunks([{ type: "VP8X", payload: Buffer.alloc(10) }]).subarray(0, 25),
+        ]),
+      );
+
+      await expect(readTemplateCodexCoverImageMetadata(shortPath, "webp")).resolves.toEqual({
+        status: "unparsed",
+      });
+      await expect(readTemplateCodexCoverImageMetadata(wrongMagicPath, "webp")).resolves.toEqual({
+        status: "unparsed",
+      });
+      await expect(readTemplateCodexCoverImageMetadata(undersizedPath, "webp")).resolves.toEqual({
+        status: "unparsed",
+      });
+      await expect(readTemplateCodexCoverImageMetadata(truncatedPath, "webp")).resolves.toEqual({
+        status: "unparsed",
       });
     });
   });
