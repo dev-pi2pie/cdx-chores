@@ -1,7 +1,6 @@
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
 import {
-  MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
   validateMarkdownPdfTemplateCodexCssBlocks,
   type MarkdownPdfTemplateCodexCssBlock,
   type MarkdownPdfTemplateCodexCssBlockSlot,
@@ -144,13 +143,16 @@ function validateManagedAssets(input: {
     }
     return [];
   }
-  const allowedBundlePaths = new Set(input.outputPlan.assets.map((asset) => asset.bundlePath));
+  const plannedAssetsByBundlePath = new Map(
+    input.outputPlan.assets.map((asset) => [asset.bundlePath, asset]),
+  );
   return input.managedAssets.map((asset, index) => {
     const bundlePath = assertNonEmptyString(
       asset.bundlePath,
       `managed_assets[${index}].bundle_path`,
     );
-    if (!allowedBundlePaths.has(bundlePath)) {
+    const plannedAsset = plannedAssetsByBundlePath.get(bundlePath);
+    if (!plannedAsset) {
       throw new Error(
         `Markdown PDF template Codex response managed_assets[${index}].bundle_path is not in the output plan: ${bundlePath}`,
       );
@@ -166,7 +168,7 @@ function validateManagedAssets(input: {
     }
     return {
       bundlePath,
-      sourceLabel: assertNonEmptyString(asset.sourceLabel, `managed_assets[${index}].source_label`),
+      sourceLabel: plannedAsset.sourceBasename,
     };
   });
 }

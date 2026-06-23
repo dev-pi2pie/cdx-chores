@@ -63,12 +63,25 @@ export async function suggestMarkdownPdfTemplateWithCodex(
   },
 ): Promise<MarkdownPdfTemplateCodexResult> {
   const runner = request.runner ?? runMarkdownPdfTemplateCodexPrompt;
+  const prompt = buildMarkdownPdfTemplateCodexPrompt(request);
+  let finalResponse: string;
   try {
-    const finalResponse = await runner({
-      prompt: buildMarkdownPdfTemplateCodexPrompt(request),
+    finalResponse = await runner({
+      prompt,
       timeoutMs: request.timeoutMs,
       workingDirectory: request.workingDirectory,
     });
+  } catch (error) {
+    return applyMarkdownPdfTemplateCodexDecision({
+      decision: createNoUsableTemplateDecision({
+        reason: fallbackReasonFromError(error),
+        request,
+      }),
+      request,
+    });
+  }
+
+  try {
     return applyMarkdownPdfTemplateCodexDecision({
       decision: parseMarkdownPdfTemplateCodexDecision(finalResponse),
       request,

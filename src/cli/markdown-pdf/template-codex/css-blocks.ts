@@ -64,7 +64,7 @@ function hasBalancedBraces(css: string): boolean {
 
 function topLevelSelectors(css: string): string[] {
   const selectors: string[] = [];
-  const matcher = /([^{}@][^{}]*)\{/gu;
+  const matcher = /([^{}]+)\{/gu;
   for (const match of css.matchAll(matcher)) {
     const selector = match[1]?.trim();
     if (selector) {
@@ -72,6 +72,20 @@ function topLevelSelectors(css: string): string[] {
     }
   }
   return selectors;
+}
+
+function selectorTokens(selectorPart: string): string[] {
+  return selectorPart
+    .split(/[\s>+~]+/u)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .flatMap((part) => {
+      const withoutPseudo = part.split(":")[0] ?? part;
+      const idMatches = withoutPseudo.match(/#[A-Za-z0-9_-]+/gu) ?? [];
+      const classMatches = withoutPseudo.match(/\.[A-Za-z0-9_-]+/gu) ?? [];
+      const typeMatch = withoutPseudo.match(/^[A-Za-z][A-Za-z0-9_-]*/u)?.[0];
+      return [...idMatches, ...classMatches, ...(typeMatch ? [typeMatch] : [])];
+    });
 }
 
 function selectorOwnedBySlot(
@@ -82,7 +96,7 @@ function selectorOwnedBySlot(
   return selector
     .split(",")
     .map((part) => part.trim())
-    .every((part) => hints.some((hint) => part === hint || part.includes(hint)));
+    .every((part) => selectorTokens(part).some((token) => hints.includes(token)));
 }
 
 export function validateMarkdownPdfTemplateCodexCssBlock(
@@ -103,6 +117,11 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
   }
   if (/@import\b/iu.test(css)) {
     throw new Error(`Markdown PDF template Codex response ${context}.css must not use @import.`);
+  }
+  if (/@/u.test(css)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
+    );
   }
   if (includesRemoteOrLocalPathReference(css)) {
     throw new Error(
