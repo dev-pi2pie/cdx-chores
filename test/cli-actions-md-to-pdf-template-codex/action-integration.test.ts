@@ -87,6 +87,35 @@ function stubCodexRunner(response: string): MarkdownPdfTemplateCodexRunner {
   return async () => response;
 }
 
+async function expectTemplateBundleFeedsMdToPdf(input: {
+  fixtureDir: string;
+  inputPath: string;
+  outputPath: string;
+  runtime: ReturnType<typeof createActionTestRuntime>["runtime"];
+}): Promise<void> {
+  const pdfPath = join(input.fixtureDir, "report.pdf");
+  const { calls, runner } = createPdfRunner({
+    html: "<html><body><main>Body.</main></body></html>",
+  });
+  await actionMdToPdf(input.runtime, {
+    input: toRepoRelativePath(input.inputPath),
+    output: toRepoRelativePath(pdfPath),
+    template: toRepoRelativePath(join(input.outputPath, "template.html")),
+    css: toRepoRelativePath(join(input.outputPath, "style.css")),
+    runner,
+  });
+
+  const pandocRender = calls.find(
+    (call) => call.command === "pandoc" && !call.args.includes("--version"),
+  );
+  expect(pandocRender?.args).toContain(join(input.outputPath, "template.html"));
+  const weasyprintRender = calls.find(
+    (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+  );
+  expect(weasyprintRender?.args).toContain(join(input.outputPath, "style.css"));
+  expect(await readFile(pdfPath, "utf8")).toContain("%PDF");
+}
+
 describe("cli action modules: md pdf-template codex integration", () => {
   test("writes only requested diagnostic reports during dry runs", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-dry-run-report", async (fixtureDir) => {
@@ -178,6 +207,11 @@ describe("cli action modules: md pdf-template codex integration", () => {
         "Fallback reason: Risky layout reduced to supported template slots.",
       );
       expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(
+        "/* cdx-chores md pdf-template codex",
+      );
+      await expectTemplateBundleFeedsMdToPdf({ fixtureDir, inputPath, outputPath, runtime });
       const report = JSON.parse(await readFile(reportPath, "utf8")) as {
         decision: { fallbackReason: string; mode: string; warnings: string[] };
       };
@@ -211,12 +245,29 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
       expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
       const report = JSON.parse(await readFile(reportPath, "utf8")) as {
-        decision: { mode: string; fallbackReason: string };
+        decision: {
+          fallbackReason: string;
+          mode: string;
+          recipePreset?: string;
+          templateFamily?: string;
+        };
+        files: Array<{ role: string }>;
+        followUpRenderCommand?: string;
+        managedAssets: unknown[];
+        validationResults: Array<{ name: string; status: string }>;
       };
       expect(report.decision).toMatchObject({
         mode: "no-usable-template",
         fallbackReason: "Unsupported template direction.",
       });
+      expect(report.decision.templateFamily).toBeUndefined();
+      expect(report.decision.recipePreset).toBeUndefined();
+      expect(report.files.map((file) => file.role)).toEqual(["diagnostic-report"]);
+      expect(report.managedAssets).toEqual([]);
+      expect(report.validationResults).toEqual([
+        { name: "static-template-validation", status: "skipped" },
+      ]);
+      expect(report.followUpRenderCommand).toBeUndefined();
     });
   });
 
@@ -273,39 +324,27 @@ describe("cli action modules: md pdf-template codex integration", () => {
     });
   });
 
-  test("generated template bundles can feed md to-pdf template and CSS options", async () => {
+  test("generated cover template bundles can feed md to-pdf template and CSS options", async () => {
     await withTempFixtureDir("md-pdf-template-codex-render-compat", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
+      const coverImagePath = join(fixtureDir, "cover.png");
       const outputPath = join(fixtureDir, "template-output");
-      const pdfPath = join(fixtureDir, "report.pdf");
       await writeFile(inputPath, "# Report\n\nBody.\n", "utf8");
+      await writeFile(coverImagePath, minimalPng(1600, 900));
 
       const { runtime } = createActionTestRuntime();
       await actionMdPdfTemplateCodex(runtime, {
+        coverImage: toRepoRelativePath(coverImagePath),
         output: toRepoRelativePath(outputPath),
-        preset: "report",
       });
 
-      const { calls, runner } = createPdfRunner({
-        html: "<html><body><main>Body.</main></body></html>",
-      });
-      await actionMdToPdf(runtime, {
-        input: toRepoRelativePath(inputPath),
-        output: toRepoRelativePath(pdfPath),
-        template: toRepoRelativePath(join(outputPath, "template.html")),
-        css: toRepoRelativePath(join(outputPath, "style.css")),
-        runner,
-      });
-
-      const pandocRender = calls.find(
-        (call) => call.command === "pandoc" && !call.args.includes("--version"),
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain(
+        'src="assets/cover.png"',
       );
-      expect(pandocRender?.args).toContain(join(outputPath, "template.html"));
-      const weasyprintRender = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(
+        "object-fit: contain;",
       );
-      expect(weasyprintRender?.args).toContain(join(outputPath, "style.css"));
-      expect(await readFile(pdfPath, "utf8")).toContain("%PDF");
+      await expectTemplateBundleFeedsMdToPdf({ fixtureDir, inputPath, outputPath, runtime });
     });
   });
 });
