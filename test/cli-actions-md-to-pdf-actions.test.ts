@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { actionMdToPdf } from "../src/cli/actions";
 import { CliError } from "../src/cli/errors";
@@ -279,6 +280,60 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--stylesheet") + 1]).toBe(
         customCss,
       );
+    });
+  });
+
+  test("resolves existing template-local assets without moving the Markdown asset base", async () => {
+    await withTempFixtureDir("md-to-pdf-template-local-assets", async (fixtureDir) => {
+      const inputDir = join(fixtureDir, "docs");
+      const templateDir = join(fixtureDir, "template-bundle");
+      const inputPath = join(inputDir, "report.md");
+      const customTemplate = join(templateDir, "template.html");
+      const customCss = join(templateDir, "style.css");
+      const templateAsset = join(templateDir, "assets", "cover.png");
+      const markdownAsset = join(inputDir, "images", "body.png");
+      await mkdir(dirname(inputPath), { recursive: true });
+      await mkdir(dirname(templateAsset), { recursive: true });
+      await mkdir(dirname(markdownAsset), { recursive: true });
+      await writeFile(inputPath, "# Report\n\n![Body](images/body.png)\n", "utf8");
+      await writeFile(
+        customTemplate,
+        '<html><body><img src="assets/cover.png">$body$</body></html>',
+        "utf8",
+      );
+      await writeFile(customCss, "body { color: black; }\n", "utf8");
+      await writeFile(templateAsset, "template-asset", "utf8");
+      await writeFile(markdownAsset, "markdown-asset", "utf8");
+
+      const renderedHtml =
+        '<html><body><img src="assets/cover.png"><img src="images/body.png"></body></html>';
+      const { runner } = createPdfRunner({ html: renderedHtml });
+      let weasyprintHtml = "";
+      let weasyprintBaseUrl = "";
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const baseUrlIndex = args.indexOf("--base-url");
+          weasyprintBaseUrl = args[baseUrlIndex + 1] ?? "";
+          const htmlPath = args.at(-2);
+          if (htmlPath) {
+            weasyprintHtml = await readFile(htmlPath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        template: toRepoRelativePath(customTemplate),
+        css: toRepoRelativePath(customCss),
+        runner: capturingRunner,
+      });
+
+      expect(weasyprintBaseUrl).toBe(inputDir);
+      expect(weasyprintHtml).toContain(`src="${pathToFileURL(templateAsset).href}"`);
+      expect(weasyprintHtml).toContain('src="images/body.png"');
+      expectNoStderr();
     });
   });
 

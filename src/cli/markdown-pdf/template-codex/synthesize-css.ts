@@ -1,5 +1,6 @@
 import { createMarkdownPdfCodeCss } from "../code-style";
 import { resolveEffectiveMarkdownPdfTocPageBreak } from "../recipe";
+import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -33,13 +34,49 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} {
 `;
 }
 
-function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
+const COVER_PAGE_DIMENSIONS: Record<
+  MarkdownPdfPageSize,
+  { height: number; unit: "in" | "mm"; width: number }
+> = {
+  A3: { width: 297, height: 420, unit: "mm" },
+  A4: { width: 210, height: 297, unit: "mm" },
+  A5: { width: 148, height: 210, unit: "mm" },
+  Letter: { width: 8.5, height: 11, unit: "in" },
+  Legal: { width: 8.5, height: 14, unit: "in" },
+  Tabloid: { width: 11, height: 17, unit: "in" },
+};
+
+function formatCoverLength(value: number, unit: "in" | "mm"): string {
+  return `${Number(value.toFixed(2))}${unit}`;
+}
+
+function coverPageLength(input: {
+  orientation: MarkdownPdfOrientation;
+  pageSize: MarkdownPdfPageSize;
+}): { unit: "in" | "mm"; value: number } {
+  const dimensions = COVER_PAGE_DIMENSIONS[input.pageSize];
+  return {
+    unit: dimensions.unit,
+    value: input.orientation === "landscape" ? dimensions.width : dimensions.height,
+  };
+}
+
+function coverCss(
+  slots: MarkdownPdfTemplateCodexResolvedSlots,
+  signals: MdPdfTemplateCodexSignalCollection,
+): string {
   if (!slots.cover.enabled) {
     return "";
   }
   const fit = slots.cover.imageFit ?? "contain";
-  const imageHeight =
-    slots.cover.layout === "full-bleed-media" || fit === "cover" ? "76vh" : "68vh";
+  const pageLength = coverPageLength({
+    orientation: signals.recipe.effectiveOptions.orientation,
+    pageSize: signals.recipe.effectiveOptions.pageSize,
+  });
+  const pageHeight = formatCoverLength(pageLength.value, pageLength.unit);
+  const imageHeightRatio =
+    slots.cover.layout === "full-bleed-media" || fit === "cover" ? 0.76 : 0.68;
+  const imageHeight = formatCoverLength(pageLength.value * imageHeightRatio, pageLength.unit);
   const coverPadding = slots.cover.layout === "full-bleed-media" ? "0" : "18mm";
 
   return `
@@ -50,7 +87,7 @@ function coverCss(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
 .pdf-cover {
   break-after: page;
   box-sizing: border-box;
-  min-height: 100vh;
+  min-height: ${pageHeight};
   page: cover;
 }
 
@@ -60,7 +97,7 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
   flex-direction: column;
   justify-content: center;
   margin: 0;
-  min-height: 100vh;
+  min-height: ${pageHeight};
   padding: ${coverPadding};
 }
 
@@ -216,6 +253,6 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} a {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(input.signals)}
-${coverCss(slots)}
+${coverCss(slots, input.signals)}
 `;
 }

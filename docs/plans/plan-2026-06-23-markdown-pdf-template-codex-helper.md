@@ -800,28 +800,28 @@ cover image into `assets/`, but `md to-pdf` resolved the template-relative
 showed Template-Codex cover CSS using viewport units (`100vh`, `68vh`, `76vh`)
 that WeasyPrint rejects in this paged-media path.
 
-- [ ] Replace Template-Codex cover-media viewport units with paged-media-safe
+- [x] Replace Template-Codex cover-media viewport units with paged-media-safe
       definite sizing derived from normalized page size and orientation.
-- [ ] Reuse or mirror the renderer-safe cover sizing policy already applied to
+- [x] Reuse or mirror the renderer-safe cover sizing policy already applied to
       Markdown PDF profile cover CSS.
-- [ ] Ensure `contain` and `cover` image-fit slots still scale oversized cover
+- [x] Ensure `contain` and `cover` image-fit slots still scale oversized cover
       images through bounded page-relative rules, not source pixel dimensions.
-- [ ] Teach `md to-pdf` custom-template rendering to resolve bundle-local
+- [x] Teach `md to-pdf` custom-template rendering to resolve bundle-local
       relative HTML asset URLs beside the custom template when those assets
       exist there.
-- [ ] Preserve Markdown-input-relative asset resolution for normal Markdown
+- [x] Preserve Markdown-input-relative asset resolution for normal Markdown
       body images and existing render behavior.
-- [ ] Keep remote assets disabled by default and keep absolute/local path
+- [x] Keep remote assets disabled by default and keep absolute/local path
       hygiene unchanged.
-- [ ] Add regression coverage proving generated Template-Codex cover CSS does
+- [x] Add regression coverage proving generated Template-Codex cover CSS does
       not emit `vh` units.
-- [ ] Add render compatibility coverage where `template.html` references
+- [x] Add render compatibility coverage where `template.html` references
       `assets/cover.png`, the asset exists only beside the custom template, and
       the render path does not resolve it from the Markdown input directory.
-- [ ] Add coverage for the fallback case where a relative asset is genuinely
+- [x] Add coverage for the fallback case where a relative asset is genuinely
       Markdown-input-relative and should not be rewritten to the template
       bundle.
-- [ ] Record the implementation sequence in a Phase 8.3 job record:
+- [x] Record the implementation sequence in a Phase 8.3 job record:
       reproduce the warning/missing-asset cause, fix cover CSS sizing, fix
       bundle-local asset resolution, verify focused render coverage, run gates,
       and review the phase commit range.

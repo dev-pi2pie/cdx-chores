@@ -215,9 +215,10 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).toContain("@page cover");
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover")).toMatchObject({
       "break-after": "page",
-      "min-height": "100vh",
+      "min-height": "297mm",
       page: "cover",
     });
+    expect(result.styleCss).not.toMatch(/\b\d+(?:\.\d+)?vh\b/);
     expect(
       cssDeclarationsForSelector(
         result.styleCss,
@@ -225,12 +226,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       ),
     ).toMatchObject({
       display: "flex",
+      "min-height": "297mm",
       padding: "18mm",
     });
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
       display: "block",
-      height: "68vh",
-      "max-height": "68vh",
+      height: "201.96mm",
+      "max-height": "201.96mm",
       "max-width": "100%",
       "object-fit": "contain",
       "object-position": "center",
@@ -281,13 +283,14 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).toContain("object-fit: cover;");
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
       display: "block",
-      height: "76vh",
-      "max-height": "76vh",
+      height: "225.72mm",
+      "max-height": "225.72mm",
       "max-width": "100%",
       "object-fit": "cover",
       "object-position": "center",
       width: "100%",
     });
+    expect(result.styleCss).not.toMatch(/\b\d+(?:\.\d+)?vh\b/);
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:1800|1200)(?:\b|[a-z%])/i,
     );
@@ -315,10 +318,11 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('data-orientation="unknown"');
     expect(result.templateHtml).toContain('data-fit-pressure="unknown"');
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toMatchObject({
-      height: "68vh",
-      "max-height": "68vh",
+      height: "201.96mm",
+      "max-height": "201.96mm",
       "object-fit": "contain",
     });
+    expect(result.styleCss).not.toMatch(/\b\d+(?:\.\d+)?vh\b/);
   });
 
   test("maps ToC page-break options into CSS branches", () => {

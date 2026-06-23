@@ -1,6 +1,9 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { basename, dirname, join, relative, resolve } from "node:path";
+
+import { parse, serialize, type DefaultTreeAdapterTypes } from "parse5";
 
 import { CliError } from "../errors";
 import { ensureParentDir, readTextFileRequired, writeTextFileSafe } from "../file-io";
@@ -49,6 +52,7 @@ const HTML_ASSET_TAGS = new Set([
   "script",
   "link",
 ]);
+const HTML_TEMPLATE_LOCAL_ASSET_ATTRS = new Set(["src", "href", "poster", "data", "xlink:href"]);
 const HTML_ASSET_ATTR_PATTERN =
   /\b(src|href|poster|data|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const HTML_STYLE_TAG_PATTERN = /<\s*style\b[^>]*>([\s\S]*?)<\s*\/\s*style\s*>/gi;
@@ -160,12 +164,105 @@ async function createTempFile(dir: string, name: string, content: string): Promi
 async function createFinalHtml(
   input: RenderMarkdownPdfInput,
   pandocHtmlPath: string,
+  templatePath: string,
 ): Promise<string> {
   const pandocHtml = await readTextFileRequired(pandocHtmlPath);
-  if (!input.code?.highlight) {
-    return pandocHtml;
+  const html = input.code?.highlight
+    ? await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code)
+    : pandocHtml;
+  if (!input.customTemplatePath) {
+    return html;
   }
-  return await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code);
+  return await rewriteTemplateLocalHtmlAssets(html, dirname(templatePath));
+}
+
+function relativePathStaysInside(basePath: string, targetPath: string): boolean {
+  const relativePath = relative(basePath, targetPath);
+  return (
+    relativePath.length === 0 ||
+    (!relativePath.startsWith("..") && !WINDOWS_ABSOLUTE_PATH_PATTERN.test(relativePath))
+  );
+}
+
+function splitAssetReference(value: string): { path: string; suffix: string } {
+  const suffixStart = value.search(/[?#]/u);
+  if (suffixStart < 0) {
+    return { path: value, suffix: "" };
+  }
+  return { path: value.slice(0, suffixStart), suffix: value.slice(suffixStart) };
+}
+
+function isRelativeHtmlAssetReference(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    trimmed.length > 0 &&
+    !trimmed.startsWith("#") &&
+    !trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !URL_SCHEME_PATTERN.test(trimmed) &&
+    !WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmed)
+  );
+}
+
+async function pathExistsAsFile(path: string): Promise<boolean> {
+  try {
+    const stats = await stat(path);
+    return stats.isFile();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function resolveTemplateLocalHtmlAssetReference(
+  value: string,
+  templateDirectory: string,
+): Promise<string | undefined> {
+  if (!isRelativeHtmlAssetReference(value)) {
+    return undefined;
+  }
+  const { path, suffix } = splitAssetReference(value);
+  const resolvedPath = resolve(templateDirectory, path);
+  const resolvedTemplateDirectory = resolve(templateDirectory);
+  if (!relativePathStaysInside(resolvedTemplateDirectory, resolvedPath)) {
+    return undefined;
+  }
+  if (!(await pathExistsAsFile(resolvedPath))) {
+    return undefined;
+  }
+  return `${pathToFileURL(resolvedPath).href}${suffix}`;
+}
+
+async function rewriteTemplateLocalHtmlAssets(
+  html: string,
+  templateDirectory: string,
+): Promise<string> {
+  const document = parse(html);
+  const visit = async (node: DefaultTreeAdapterTypes.Node): Promise<void> => {
+    if ("attrs" in node && Array.isArray(node.attrs)) {
+      for (const attr of node.attrs) {
+        if (!HTML_TEMPLATE_LOCAL_ASSET_ATTRS.has(attr.name.toLowerCase())) {
+          continue;
+        }
+        const rewritten = await resolveTemplateLocalHtmlAssetReference(
+          attr.value,
+          templateDirectory,
+        );
+        if (rewritten) {
+          attr.value = rewritten;
+        }
+      }
+    }
+    if ("childNodes" in node && Array.isArray(node.childNodes)) {
+      for (const child of node.childNodes) {
+        await visit(child);
+      }
+    }
+  };
+  await visit(document);
+  return serialize(document);
 }
 
 export async function renderMarkdownPdf(
@@ -208,7 +305,7 @@ export async function renderMarkdownPdf(
       throw formatProcessFailure("pandoc", pandoc);
     }
 
-    const html = await createFinalHtml(input, pandocHtmlPath);
+    const html = await createFinalHtml(input, pandocHtmlPath, templatePath);
     await writeFile(finalHtmlPath, html, "utf8");
 
     await rejectRemoteAssetsWhenDisabled(html, cssPaths, input.options.allowRemoteAssets);
