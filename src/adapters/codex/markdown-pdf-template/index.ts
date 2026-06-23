@@ -50,10 +50,14 @@ function createNoUsableTemplateDecision(input: {
   };
 }
 
-function fallbackReasonFromError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  const trimmed = message.trim();
-  return trimmed.length > 0 ? trimmed : "Codex did not return a usable template decision.";
+function noUsableTemplateResult(input: {
+  reason: string;
+  request: MarkdownPdfTemplateCodexRequest;
+}): MarkdownPdfTemplateCodexResult {
+  return applyMarkdownPdfTemplateCodexDecision({
+    decision: createNoUsableTemplateDecision(input),
+    request: input.request,
+  });
 }
 
 export async function suggestMarkdownPdfTemplateWithCodex(
@@ -71,12 +75,9 @@ export async function suggestMarkdownPdfTemplateWithCodex(
       timeoutMs: request.timeoutMs,
       workingDirectory: request.workingDirectory,
     });
-  } catch (error) {
-    return applyMarkdownPdfTemplateCodexDecision({
-      decision: createNoUsableTemplateDecision({
-        reason: fallbackReasonFromError(error),
-        request,
-      }),
+  } catch {
+    return noUsableTemplateResult({
+      reason: "Codex template decision unavailable.",
       request,
     });
   }
@@ -86,12 +87,9 @@ export async function suggestMarkdownPdfTemplateWithCodex(
       decision: parseMarkdownPdfTemplateCodexDecision(finalResponse),
       request,
     });
-  } catch (error) {
-    return applyMarkdownPdfTemplateCodexDecision({
-      decision: createNoUsableTemplateDecision({
-        reason: fallbackReasonFromError(error),
-        request,
-      }),
+  } catch {
+    return noUsableTemplateResult({
+      reason: "Codex template decision was rejected by validation.",
       request,
     });
   }

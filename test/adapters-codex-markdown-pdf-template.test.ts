@@ -249,7 +249,9 @@ describe("Markdown PDF template Codex adapter", () => {
     });
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
-    expect(result.decision.fallbackReason).toContain("JSON");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision was rejected by validation.",
+    );
     expect(result.decision.cssBlocks).toEqual([]);
     expect(result.decision.managedAssets).toEqual([]);
   });
@@ -285,6 +287,32 @@ describe("Markdown PDF template Codex adapter", () => {
         request,
       }),
     ).toThrow("managed_assets must be empty");
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({
+            coverEnabled: false,
+            decisionMode: "no-usable-template",
+            recipePreset: "article",
+            templateFamily: "none",
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("recipe_preset must be none");
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({
+            coverEnabled: false,
+            decisionMode: "no-usable-template",
+            recipePreset: "none",
+            templateFamily: "document-layered",
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("template_family must be none");
   });
 
   test("turns unavailable Codex into no-usable-template", async () => {
@@ -297,7 +325,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision).toMatchObject({
       decisionMode: "no-usable-template",
-      fallbackReason: "Codex unavailable",
+      fallbackReason: "Codex template decision unavailable.",
       managedAssets: [],
     });
   });
@@ -312,7 +340,35 @@ describe("Markdown PDF template Codex adapter", () => {
     });
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
-    expect(result.decision.fallbackReason).toContain("not in the output plan");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision was rejected by validation.",
+    );
+  });
+
+  test("rejects planned managed asset paths that are not bundle-relative", () => {
+    const request = requestBase({ coverImage: true });
+    const malformedRequest: MarkdownPdfTemplateCodexRequest = {
+      ...request,
+      outputPlan: {
+        ...request.outputPlan,
+        assets: request.outputPlan.assets.map((asset) => ({
+          ...asset,
+          bundlePath: "/absolute/cover.png",
+        })),
+      },
+    };
+    const decision = parseMarkdownPdfTemplateCodexDecision(
+      responseFromDecision({
+        managedAssets: [{ bundle_path: "/absolute/cover.png", source_label: "cover.png" }],
+      }),
+    );
+
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision,
+        request: malformedRequest,
+      }),
+    ).toThrow("bundle-relative");
   });
 
   test("rejects cover-media family when no cover image is available", async () => {
@@ -322,7 +378,9 @@ describe("Markdown PDF template Codex adapter", () => {
     });
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
-    expect(result.decision.fallbackReason).toContain("requires a managed cover image");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision was rejected by validation.",
+    );
   });
 
   test("rejects unsafe CSS blocks and falls back", async () => {
@@ -335,7 +393,9 @@ describe("Markdown PDF template Codex adapter", () => {
     });
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
-    expect(result.decision.fallbackReason).toContain("raw pixel sizing");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision was rejected by validation.",
+    );
   });
 
   test("rejects unsafe CSS block branches directly", () => {
@@ -357,6 +417,18 @@ describe("Markdown PDF template Codex adapter", () => {
         slot: "colors",
       }),
     ).toThrow("@import");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: "@media print { body { color: #222222; } }",
+        slot: "colors",
+      }),
+    ).toThrow("plain selector blocks");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: `body { color: #222222; }\n${"p { margin: 0; }\n".repeat(160)}`,
+        slot: "spacing",
+      }),
+    ).toThrow("at most 2000 characters");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
         css: ".pdf-cover-caption { color: #555555;",

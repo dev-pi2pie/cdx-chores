@@ -17,12 +17,12 @@ export interface MarkdownPdfTemplateCodexCssBlock {
 
 const MAX_CSS_BLOCK_CHARS = 2_000;
 
-const SLOT_SELECTOR_HINTS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly string[]> = {
-  code: ["code", "pre", ".cdx-code-line"],
+const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly string[]> = {
+  code: ["code", "pre", "pre code", ".cdx-code-line"],
   colors: [":root", "body", "a", "mark", "blockquote"],
-  cover: [".pdf-cover", ".pdf-cover-media", ".pdf-cover-caption"],
+  cover: [".pdf-cover", ".pdf-cover-media", ".pdf-cover-caption", ".pdf-cover-media img"],
   spacing: ["body", "p", "section", "h1", "h2", "h3", "ul", "ol", "li", "blockquote"],
-  tables: ["table", "thead", "tbody", "tr", "th", "td"],
+  tables: ["table", "thead", "tbody", "tr", "th", "td", "table th", "table td"],
   typography: ["body", "p", "h1", "h2", "h3", "h4", "h5", "h6"],
 };
 
@@ -74,29 +74,15 @@ function topLevelSelectors(css: string): string[] {
   return selectors;
 }
 
-function selectorTokens(selectorPart: string): string[] {
-  return selectorPart
-    .split(/[\s>+~]+/u)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .flatMap((part) => {
-      const withoutPseudo = part.split(":")[0] ?? part;
-      const idMatches = withoutPseudo.match(/#[A-Za-z0-9_-]+/gu) ?? [];
-      const classMatches = withoutPseudo.match(/\.[A-Za-z0-9_-]+/gu) ?? [];
-      const typeMatch = withoutPseudo.match(/^[A-Za-z][A-Za-z0-9_-]*/u)?.[0];
-      return [...idMatches, ...classMatches, ...(typeMatch ? [typeMatch] : [])];
-    });
-}
-
 function selectorOwnedBySlot(
   selector: string,
   slot: MarkdownPdfTemplateCodexCssBlockSlot,
 ): boolean {
-  const hints = SLOT_SELECTOR_HINTS[slot];
+  const allowedSelectors = SLOT_SELECTORS[slot];
   return selector
     .split(",")
     .map((part) => part.trim())
-    .every((part) => selectorTokens(part).some((token) => hints.includes(token)));
+    .every((part) => allowedSelectors.includes(part));
 }
 
 export function validateMarkdownPdfTemplateCodexCssBlock(

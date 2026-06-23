@@ -188,6 +188,16 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
       ? []
       : validateMarkdownPdfTemplateCodexCssBlocks(input.decision.cssBlocks);
   if (decisionMode === "no-usable-template") {
+    if (input.decision.templateFamily) {
+      throw new Error(
+        "Markdown PDF template Codex response template_family must be none for no-usable-template.",
+      );
+    }
+    if (input.decision.recipePreset) {
+      throw new Error(
+        "Markdown PDF template Codex response recipe_preset must be none for no-usable-template.",
+      );
+    }
     if (input.decision.cssBlocks.length > 0) {
       throw new Error(
         "Markdown PDF template Codex response css_blocks must be empty for no-usable-template.",
