@@ -248,6 +248,41 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     );
   });
 
+  test("maps cover media sizing to landscape inch page dimensions", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan({ includeCoverAsset: true }),
+      signals: createSynthesisSignals({
+        pageSize: "Letter",
+        orientation: "landscape",
+        coverImage: {
+          orientationBucket: "panoramic",
+          fitPressure: "letterbox-risk",
+          width: 4200,
+          height: 1200,
+        },
+        signalMode: "cover-image-only",
+      }),
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover")).toMatchObject({
+      "min-height": "8.5in",
+      page: "cover",
+    });
+    expect(
+      cssDeclarationsForSelector(
+        result.styleCss,
+        MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector,
+      ),
+    ).toMatchObject({
+      "min-height": "8.5in",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toMatchObject({
+      height: "5.78in",
+      "max-height": "5.78in",
+    });
+    expect(result.styleCss).not.toMatch(/\b\d+(?:\.\d+)?vh\b/);
+  });
+
   test("rejects cover-media synthesis when no cover asset is bound", () => {
     expect(() =>
       synthesizeMdPdfTemplateCodex({

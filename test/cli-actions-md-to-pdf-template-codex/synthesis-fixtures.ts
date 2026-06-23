@@ -2,6 +2,8 @@ import { join } from "node:path";
 
 import {
   normalizeMarkdownPdfOptions,
+  type MarkdownPdfOrientation,
+  type MarkdownPdfPageSize,
   type MarkdownPdfPreset,
   type MarkdownPdfTocPageBreak,
 } from "../../src/cli/markdown-pdf/validation";
@@ -14,6 +16,8 @@ import type {
 
 interface CreateSynthesisSignalsInput {
   preset?: MarkdownPdfPreset;
+  pageSize?: MarkdownPdfPageSize;
+  orientation?: MarkdownPdfOrientation;
   explicitFields?: string[];
   baseProfilePreset?: MarkdownPdfPreset;
   coverImage?: {
@@ -64,6 +68,8 @@ export function createSynthesisSignals(
     recipe: {
       effectiveOptions: normalizeMarkdownPdfOptions({
         preset,
+        pageSize: input.pageSize,
+        orientation: input.orientation,
         toc: input.toc,
         tocPageBreak: input.tocPageBreak,
       }),

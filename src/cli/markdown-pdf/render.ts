@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { basename, dirname, join, relative, resolve } from "node:path";
@@ -164,16 +164,11 @@ async function createTempFile(dir: string, name: string, content: string): Promi
 async function createFinalHtml(
   input: RenderMarkdownPdfInput,
   pandocHtmlPath: string,
-  templatePath: string,
 ): Promise<string> {
   const pandocHtml = await readTextFileRequired(pandocHtmlPath);
-  const html = input.code?.highlight
+  return input.code?.highlight
     ? await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code)
     : pandocHtml;
-  if (!input.customTemplatePath) {
-    return html;
-  }
-  return await rewriteTemplateLocalHtmlAssets(html, dirname(templatePath));
 }
 
 function relativePathStaysInside(basePath: string, targetPath: string): boolean {
@@ -204,13 +199,16 @@ function isRelativeHtmlAssetReference(value: string): boolean {
   );
 }
 
-async function pathExistsAsFile(path: string): Promise<boolean> {
+async function realFilePath(path: string): Promise<string | undefined> {
   try {
     const stats = await stat(path);
-    return stats.isFile();
+    if (!stats.isFile()) {
+      return undefined;
+    }
+    return await realpath(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return false;
+      return undefined;
     }
     throw error;
   }
@@ -219,20 +217,43 @@ async function pathExistsAsFile(path: string): Promise<boolean> {
 async function resolveTemplateLocalHtmlAssetReference(
   value: string,
   templateDirectory: string,
-): Promise<string | undefined> {
+): Promise<string> {
   if (!isRelativeHtmlAssetReference(value)) {
-    return undefined;
+    return value;
   }
   const { path, suffix } = splitAssetReference(value);
+  if (path.includes("$")) {
+    return value;
+  }
   const resolvedPath = resolve(templateDirectory, path);
   const resolvedTemplateDirectory = resolve(templateDirectory);
   if (!relativePathStaysInside(resolvedTemplateDirectory, resolvedPath)) {
-    return undefined;
+    throw new CliError(
+      `Template asset path must stay inside the custom template directory: ${value}`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
   }
-  if (!(await pathExistsAsFile(resolvedPath))) {
-    return undefined;
+  const realResolvedPath = await realFilePath(resolvedPath);
+  if (!realResolvedPath) {
+    throw new CliError(`Template asset path does not exist: ${value}`, {
+      code: "FILE_NOT_FOUND",
+      exitCode: 2,
+    });
   }
-  return `${pathToFileURL(resolvedPath).href}${suffix}`;
+  const realTemplateDirectory = await realpath(resolvedTemplateDirectory);
+  if (!relativePathStaysInside(realTemplateDirectory, realResolvedPath)) {
+    throw new CliError(
+      `Template asset path must stay inside the custom template directory: ${value}`,
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
+  return `${pathToFileURL(realResolvedPath).href}${suffix}`;
 }
 
 async function rewriteTemplateLocalHtmlAssets(
@@ -241,18 +262,17 @@ async function rewriteTemplateLocalHtmlAssets(
 ): Promise<string> {
   const document = parse(html);
   const visit = async (node: DefaultTreeAdapterTypes.Node): Promise<void> => {
-    if ("attrs" in node && Array.isArray(node.attrs)) {
+    if (
+      "attrs" in node &&
+      Array.isArray(node.attrs) &&
+      "tagName" in node &&
+      HTML_ASSET_TAGS.has(String(node.tagName).toLowerCase())
+    ) {
       for (const attr of node.attrs) {
         if (!HTML_TEMPLATE_LOCAL_ASSET_ATTRS.has(attr.name.toLowerCase())) {
           continue;
         }
-        const rewritten = await resolveTemplateLocalHtmlAssetReference(
-          attr.value,
-          templateDirectory,
-        );
-        if (rewritten) {
-          attr.value = rewritten;
-        }
+        attr.value = await resolveTemplateLocalHtmlAssetReference(attr.value, templateDirectory);
       }
     }
     if ("childNodes" in node && Array.isArray(node.childNodes)) {
@@ -265,15 +285,30 @@ async function rewriteTemplateLocalHtmlAssets(
   return serialize(document);
 }
 
+async function createCustomTemplateRenderFile(input: {
+  sourcePath: string;
+  tempDir: string;
+}): Promise<string> {
+  const templateHtml = await readTextFileRequired(input.sourcePath);
+  return await createTempFile(
+    input.tempDir,
+    "template.html",
+    await rewriteTemplateLocalHtmlAssets(templateHtml, dirname(input.sourcePath)),
+  );
+}
+
 export async function renderMarkdownPdf(
   input: RenderMarkdownPdfInput,
 ): Promise<RenderMarkdownPdfResult> {
   const runner = input.runner ?? execCommand;
   const tempDir = await mkdtemp(join(tmpdir(), "cdx-chores-md-pdf-"));
   try {
-    const templatePath =
-      input.customTemplatePath ??
-      (await createTempFile(tempDir, "template.html", input.templateHtml));
+    const templatePath = input.customTemplatePath
+      ? await createCustomTemplateRenderFile({
+          sourcePath: input.customTemplatePath,
+          tempDir,
+        })
+      : await createTempFile(tempDir, "template.html", input.templateHtml);
     const defaultCssPath =
       input.noDefaultCss || !input.defaultCss
         ? undefined
@@ -305,7 +340,7 @@ export async function renderMarkdownPdf(
       throw formatProcessFailure("pandoc", pandoc);
     }
 
-    const html = await createFinalHtml(input, pandocHtmlPath, templatePath);
+    const html = await createFinalHtml(input, pandocHtmlPath);
     await writeFile(finalHtmlPath, html, "utf8");
 
     await rejectRemoteAssetsWhenDisabled(html, cssPaths, input.options.allowRemoteAssets);

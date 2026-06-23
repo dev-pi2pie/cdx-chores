@@ -108,7 +108,9 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
   const pandocRender = calls.find(
     (call) => call.command === "pandoc" && !call.args.includes("--version"),
   );
-  expect(pandocRender?.args).toContain(join(input.outputPath, "template.html"));
+  const templateArg = pandocRender?.args[pandocRender.args.indexOf("--template") + 1];
+  expect(templateArg).toBeDefined();
+  expect(templateArg).not.toBe(join(input.outputPath, "template.html"));
   const weasyprintRender = calls.find(
     (call) => call.command === "weasyprint" && !call.args.includes("--info"),
   );
