@@ -50,6 +50,8 @@ planning or bundle writes.
 - Addressed follow-up test-review findings by adding direct VP8, VP8L, padded
   chunk, and malformed WebP parser coverage, and corrected VP8L dimension
   unpacking to match the lossless bitstream layout.
+- Addressed follow-up maintainability review by converting WebP parser fixtures
+  to named literal examples and documenting the minimum container-length guard.
 
 ## Verification
 

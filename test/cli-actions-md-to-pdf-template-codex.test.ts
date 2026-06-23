@@ -34,15 +34,6 @@ function minimalJpeg(width: number, height: number): Buffer {
 const WEBP_FILE_HEADER_LENGTH = 12;
 const WEBP_CHUNK_HEADER_LENGTH = 8;
 const WEBP_CHUNK_SIZE_OFFSET = 4;
-const WEBP_VP8X_CHUNK_SIZE = 10;
-const WEBP_VP8X_PAYLOAD_OFFSET = WEBP_FILE_HEADER_LENGTH + WEBP_CHUNK_HEADER_LENGTH;
-const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
-const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
-const WEBP_VP8_PAYLOAD_SIZE = 10;
-const WEBP_VP8_FRAME_WIDTH_OFFSET = 6;
-const WEBP_VP8_FRAME_HEIGHT_OFFSET = 8;
-const WEBP_VP8L_PAYLOAD_SIZE = 5;
-const WEBP_VP8L_SIGNATURE = 0x2f;
 
 function minimalWebpWithChunks(
   chunks: Array<{ type: string; payload: Buffer }>,
@@ -63,38 +54,37 @@ function minimalWebpWithChunks(
   return bytes;
 }
 
-function writeUint24LittleEndian(bytes: Buffer, offset: number, value: number): void {
-  bytes[offset] = value & 0xff;
-  bytes[offset + 1] = (value >> 8) & 0xff;
-  bytes[offset + 2] = (value >> 16) & 0xff;
+function minimalWebpVp8xSquare1200(): Buffer {
+  // VP8X canvas fields store 1199x1199 for a 1200x1200 image.
+  return minimalWebpWithChunks([
+    { type: "VP8X", payload: Buffer.from([0, 0, 0, 0, 0xaf, 0x04, 0, 0xaf, 0x04, 0]) },
+  ]);
 }
 
-function minimalWebpVp8x(width: number, height: number): Buffer {
-  const payload = Buffer.alloc(WEBP_VP8X_CHUNK_SIZE);
-  const storedWidth = width - 1;
-  const storedHeight = height - 1;
-  writeUint24LittleEndian(payload, WEBP_VP8X_CANVAS_WIDTH_OFFSET, storedWidth);
-  writeUint24LittleEndian(payload, WEBP_VP8X_CANVAS_HEIGHT_OFFSET, storedHeight);
-  return minimalWebpWithChunks([{ type: "VP8X", payload }]);
+function minimalWebpVp8x1200By800(): Buffer {
+  // VP8X canvas fields store 1199x799 for a 1200x800 image.
+  return minimalWebpWithChunks([
+    { type: "VP8X", payload: Buffer.from([0, 0, 0, 0, 0xaf, 0x04, 0, 0x1f, 0x03, 0]) },
+  ]);
 }
 
-function minimalWebpVp8(width: number, height: number): Buffer {
-  const payload = Buffer.alloc(WEBP_VP8_PAYLOAD_SIZE);
-  payload.writeUInt16LE(width, WEBP_VP8_FRAME_WIDTH_OFFSET);
-  payload.writeUInt16LE(height, WEBP_VP8_FRAME_HEIGHT_OFFSET);
-  return minimalWebpWithChunks([{ type: "VP8 ", payload }]);
+function minimalWebpVp8x900By300Payload(): Buffer {
+  // VP8X canvas fields store 899x299 for a 900x300 image.
+  return Buffer.from([0, 0, 0, 0, 0x83, 0x03, 0, 0x2b, 0x01, 0]);
 }
 
-function minimalWebpVp8l(width: number, height: number): Buffer {
-  const payload = Buffer.alloc(WEBP_VP8L_PAYLOAD_SIZE);
-  const storedWidth = width - 1;
-  const storedHeight = height - 1;
-  payload[0] = WEBP_VP8L_SIGNATURE;
-  payload[1] = storedWidth & 0xff;
-  payload[2] = ((storedWidth >> 8) & 0x3f) | ((storedHeight & 0x03) << 6);
-  payload[3] = (storedHeight >> 2) & 0xff;
-  payload[4] = (storedHeight >> 10) & 0x0f;
-  return minimalWebpWithChunks([{ type: "VP8L", payload }]);
+function minimalWebpVp8Lossy640By480(): Buffer {
+  // VP8 lossy frame header stores direct 640x480 dimensions at payload offsets 6 and 8.
+  return minimalWebpWithChunks([
+    { type: "VP8 ", payload: Buffer.from([0, 0, 0, 0, 0, 0, 0x80, 0x02, 0xe0, 0x01]) },
+  ]);
+}
+
+function minimalWebpVp8lLossless321By654(): Buffer {
+  // VP8L stores 320x653 as packed 14-bit values after the 0x2f lossless signature.
+  return minimalWebpWithChunks([
+    { type: "VP8L", payload: Buffer.from([0x2f, 0x40, 0x41, 0xa3, 0]) },
+  ]);
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -557,7 +547,7 @@ describe("cli action modules: md pdf-template codex", () => {
       const jpegPath = join(fixtureDir, "cover.jpg");
       const webpPath = join(fixtureDir, "cover.webp");
       await writeFile(jpegPath, minimalJpeg(800, 2000));
-      await writeFile(webpPath, minimalWebpVp8x(1200, 1200));
+      await writeFile(webpPath, minimalWebpVp8xSquare1200());
 
       const { runtime } = createActionTestRuntime();
       const jpegState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
@@ -598,14 +588,14 @@ describe("cli action modules: md pdf-template codex", () => {
       const vp8Path = join(fixtureDir, "lossy.webp");
       const vp8lPath = join(fixtureDir, "lossless.webp");
       const paddedPath = join(fixtureDir, "padded.webp");
-      await writeFile(vp8xPath, minimalWebpVp8x(1200, 800));
-      await writeFile(vp8Path, minimalWebpVp8(640, 480));
-      await writeFile(vp8lPath, minimalWebpVp8l(321, 654));
+      await writeFile(vp8xPath, minimalWebpVp8x1200By800());
+      await writeFile(vp8Path, minimalWebpVp8Lossy640By480());
+      await writeFile(vp8lPath, minimalWebpVp8lLossless321By654());
       await writeFile(
         paddedPath,
         minimalWebpWithChunks([
           { type: "JUNK", payload: Buffer.from([0x01]) },
-          { type: "VP8X", payload: minimalWebpVp8x(900, 300).subarray(WEBP_VP8X_PAYLOAD_OFFSET) },
+          { type: "VP8X", payload: minimalWebpVp8x900By300Payload() },
         ]),
       );
 

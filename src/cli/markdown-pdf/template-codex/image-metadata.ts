@@ -26,7 +26,8 @@ const WEBP_CHUNK_HEADER_LENGTH = 8;
 const WEBP_VP8X_CHUNK_MIN_SIZE = 10;
 const WEBP_VP8_CHUNK_MIN_SIZE = 10;
 const WEBP_VP8L_CHUNK_MIN_SIZE = 5;
-const WEBP_MIN_DIMENSION_FILE_LENGTH =
+// Minimal RIFF/WEBP container length that can hold one dimension-bearing chunk header and VP8L payload.
+const WEBP_MIN_DIMENSION_CONTAINER_LENGTH =
   WEBP_FILE_HEADER_LENGTH + WEBP_CHUNK_HEADER_LENGTH + WEBP_VP8L_CHUNK_MIN_SIZE;
 const WEBP_VP8X_CANVAS_WIDTH_OFFSET = 4;
 const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
@@ -165,7 +166,7 @@ function readWebpDimensions(
   bytes: Uint8Array,
 ): MarkdownPdfTemplateCodexCoverImageDimensions | undefined {
   if (
-    bytes.length < WEBP_MIN_DIMENSION_FILE_LENGTH ||
+    bytes.length < WEBP_MIN_DIMENSION_CONTAINER_LENGTH ||
     readAscii(bytes, 0, 4) !== "RIFF" ||
     readAscii(bytes, 8, 4) !== "WEBP"
   ) {
