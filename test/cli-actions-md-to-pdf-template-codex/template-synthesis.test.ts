@@ -102,6 +102,17 @@ function cssDeclarationBlocksForSelector(
     if (selectorIndex < 0) {
       break;
     }
+    const nextNonWhitespace = styleCss.slice(selectorIndex + selector.length).search(/\S/);
+    const openBraceOffset = selectorIndex + selector.length + nextNonWhitespace;
+    const previousNonWhitespace = styleCss.slice(0, selectorIndex).search(/\S\s*$/);
+    const isExactSelector =
+      nextNonWhitespace >= 0 &&
+      styleCss[openBraceOffset] === "{" &&
+      (previousNonWhitespace < 0 || styleCss[previousNonWhitespace] === "}");
+    if (!isExactSelector) {
+      searchIndex = selectorIndex + selector.length;
+      continue;
+    }
     const block = readCssDeclarationBlock(styleCss, selectorIndex);
     blocks.push(block.declarations);
     searchIndex = block.endIndex + 1;
