@@ -49,6 +49,22 @@ describe("cli action modules: md pdf-template codex slots", () => {
     });
   });
 
+  test("lets explicit recipe preset override base profile preset provenance", () => {
+    const result = synthesize({
+      signals: createSynthesisSignals({
+        baseProfilePreset: "reader",
+        preset: "compact",
+        explicitFields: ["preset"],
+      }),
+    });
+
+    expect(result.templateFamily).toBe("document-layered");
+    expect(result.slots.recipePreset).toEqual({
+      preset: "compact",
+      source: "explicit-recipe",
+    });
+  });
+
   test("uses conservative contained cover layout for cover-image-only synthesis", () => {
     const result = synthesize({
       includeCoverAsset: true,
