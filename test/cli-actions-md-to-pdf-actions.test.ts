@@ -295,6 +295,8 @@ describe("cli action modules: md to-pdf rendering", () => {
       const templateAsset = join(templateDir, "assets", "cover.png");
       const templateAssetSmall = join(templateDir, "assets", "cover-small.png");
       const templateAssetComma = join(templateDir, "assets", "cover,v2.png");
+      const templateAssetExtensionless = join(templateDir, "assets", "icon");
+      const templateAssetExtensionless2x = join(templateDir, "assets", "icon@2x");
       const templateBackground = join(templateDir, "assets", "background.png");
       const templatePattern = join(templateDir, "assets", "pattern.png");
       const templateImport = join(templateDir, "assets", "print.css");
@@ -316,6 +318,7 @@ describe("cli action modules: md to-pdf rendering", () => {
             ' srcset="data:image/png;base64,AAAA 1x, assets/cover-small.png 2x, assets/cover,v2.png 3x">',
           ].join(""),
           '<source srcset="assets/cover.png,assets/cover-small.png 2x">',
+          '<source srcset="assets/icon 1x,assets/icon@2x 2x">',
           '<svg><use xlink:href="assets/icon.svg#logo"></use></svg>',
           "$body$",
           "</body></html>",
@@ -326,6 +329,8 @@ describe("cli action modules: md to-pdf rendering", () => {
       await writeFile(templateAsset, "template-asset", "utf8");
       await writeFile(templateAssetSmall, "template-small-asset", "utf8");
       await writeFile(templateAssetComma, "template-comma-asset", "utf8");
+      await writeFile(templateAssetExtensionless, "template-extensionless-asset", "utf8");
+      await writeFile(templateAssetExtensionless2x, "template-extensionless-2x-asset", "utf8");
       await writeFile(templateBackground, "template-background", "utf8");
       await writeFile(templatePattern, "template-pattern", "utf8");
       await writeFile(templateImport, "body { color: black; }\n", "utf8");
@@ -411,6 +416,9 @@ describe("cli action modules: md to-pdf rendering", () => {
       );
       expect(pandocTemplateHtml).toContain(
         `srcset="${pathToFileURL(templateAsset).href}, ${pathToFileURL(templateAssetSmall).href} 2x"`,
+      );
+      expect(pandocTemplateHtml).toContain(
+        `srcset="${pathToFileURL(templateAssetExtensionless).href} 1x, ${pathToFileURL(templateAssetExtensionless2x).href} 2x"`,
       );
       expect(pandocTemplateHtml).toContain(`xlink:href="${pathToFileURL(templateSvg).href}#logo"`);
       expectNoStderr();

@@ -47,6 +47,8 @@ generated cover-media template bundle through `md to-pdf`:
     preserving data URL candidates, and resolving SVG `xlink:href` references.
 15. Addressed final re-review findings by preserving media-qualified
     `@import url(...)` rules and compact `srcset` separators.
+16. Added explicit coverage proving extensionless compact `srcset` candidates
+    with descriptors already split and rewrite correctly.
 
 ## Changes
 
@@ -74,6 +76,7 @@ generated cover-media template bundle through `md to-pdf`:
   filenames, and SVG `xlink:href` references.
 - Added render-path coverage for compact `srcset` separators and
   media-qualified `@import url(...)` rules.
+- Added render-path coverage for extensionless compact `srcset` candidates.
 
 ## Verification
 
@@ -149,6 +152,20 @@ generated cover-media template bundle through `md to-pdf`:
   - Passed after compact `srcset` and media `@import` follow-up.
 - `bun test --timeout 30000`
   - Passed after compact `srcset` and media `@import` follow-up: 1297 tests.
+- `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+  - Passed after extensionless compact `srcset` coverage: 34 tests.
+- `bunx tsc --noEmit`
+  - Passed after extensionless compact `srcset` coverage.
+- `bun run lint`
+  - Passed after extensionless compact `srcset` coverage.
+- `bun run format:check`
+  - Passed after extensionless compact `srcset` coverage.
+- `bun run build`
+  - Passed after extensionless compact `srcset` coverage.
+- `git diff --check`
+  - Passed after extensionless compact `srcset` coverage.
+- `bun test --timeout 30000`
+  - Passed after extensionless compact `srcset` coverage: 1297 tests.
 
 ## Review
 
@@ -181,7 +198,12 @@ generated cover-media template bundle through `md to-pdf`:
   - Compact `srcset` separators should still split candidates.
   - Media-qualified `@import url(...)` rules should preserve the trailing media
     condition after asset URL rewriting.
-- Pending final review range after the fourth follow-up commit.
+- Re-review range `2065397..8ccbf79` was reviewed by `Plainspoken the 6th`
+  and `Probe the 6th`.
+- `Plainspoken the 6th` reported no material findings remaining.
+- `Probe the 6th` flagged extensionless compact `srcset` candidates; the exact
+  descriptor-bearing case now has coverage and passes with the existing parser.
+- Pending final review range after the test-coverage follow-up commit.
 
 Phase 8.3 implementation commit:
 
@@ -200,5 +222,9 @@ Phase 8.3 third review follow-up commit:
 - `98e6d41 fix(template-codex): preserve srcset asset candidates`
 
 Phase 8.3 fourth review follow-up commit:
+
+- `8ccbf79 fix(template-codex): preserve compact srcset and import rules`
+
+Phase 8.3 test-coverage follow-up commit:
 
 - Pending.
