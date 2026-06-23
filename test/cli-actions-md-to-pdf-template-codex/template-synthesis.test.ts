@@ -6,9 +6,10 @@ import {
 } from "../../src/cli/markdown-pdf/template-codex";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
-function cssDeclarationsForSelector(styleCss: string, selector: string): Record<string, string> {
-  const selectorIndex = styleCss.indexOf(selector);
-  expect(selectorIndex).toBeGreaterThanOrEqual(0);
+function readCssDeclarationBlock(
+  styleCss: string,
+  selectorIndex: number,
+): { declarations: Record<string, string>; endIndex: number } {
   const openBraceIndex = styleCss.indexOf("{", selectorIndex);
   expect(openBraceIndex).toBeGreaterThanOrEqual(0);
   let closeBraceIndex = -1;
@@ -41,11 +42,17 @@ function cssDeclarationsForSelector(styleCss: string, selector: string): Record<
     }
   }
   expect(closeBraceIndex).toBeGreaterThan(openBraceIndex);
+  return {
+    declarations: parseCssDeclarations(styleCss.slice(openBraceIndex + 1, closeBraceIndex)),
+    endIndex: closeBraceIndex,
+  };
+}
+
+function parseCssDeclarations(block: string): Record<string, string> {
   const declarations: string[] = [];
   let declarationStart = 0;
-  quote = undefined;
-  parenDepth = 0;
-  const block = styleCss.slice(openBraceIndex + 1, closeBraceIndex);
+  let quote: '"' | "'" | undefined;
+  let parenDepth = 0;
   for (let index = 0; index < block.length; index += 1) {
     const char = block[index];
     const previous = block[index - 1];
@@ -82,6 +89,59 @@ function cssDeclarationsForSelector(styleCss: string, selector: string): Record<
         return [line.slice(0, separatorIndex), line.slice(separatorIndex + 1).trim()];
       }),
   );
+}
+
+function cssDeclarationBlocksForSelector(
+  styleCss: string,
+  selector: string,
+): Record<string, string>[] {
+  const blocks: Record<string, string>[] = [];
+  let searchIndex = 0;
+  while (searchIndex < styleCss.length) {
+    const selectorIndex = styleCss.indexOf(selector, searchIndex);
+    if (selectorIndex < 0) {
+      break;
+    }
+    const block = readCssDeclarationBlock(styleCss, selectorIndex);
+    blocks.push(block.declarations);
+    searchIndex = block.endIndex + 1;
+  }
+  expect(blocks.length).toBeGreaterThan(0);
+  return blocks;
+}
+
+function cssDeclarationsForSelector(styleCss: string, selector: string): Record<string, string> {
+  const [declarations] = cssDeclarationBlocksForSelector(styleCss, selector);
+  expect(declarations).toBeDefined();
+  return declarations!;
+}
+
+function expectTocPageBreakCss(
+  styleCss: string,
+  expected: { before?: "page"; after?: "page" },
+): void {
+  const tocBlocks = cssDeclarationBlocksForSelector(
+    styleCss,
+    MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector,
+  );
+  expect(tocBlocks).toEqual(expect.arrayContaining([expect.objectContaining({ page: "toc" })]));
+  const pageBreakBlock = tocBlocks.find(
+    (block) => "break-before" in block || "break-after" in block,
+  );
+  if (!expected.before && !expected.after) {
+    expect(pageBreakBlock).toBeUndefined();
+    return;
+  }
+  expect(pageBreakBlock).toMatchObject({
+    ...(expected.before ? { "break-before": expected.before } : {}),
+    ...(expected.after ? { "break-after": expected.after } : {}),
+  });
+  if (!expected.before) {
+    expect(pageBreakBlock).not.toHaveProperty("break-before");
+  }
+  if (!expected.after) {
+    expect(pageBreakBlock).not.toHaveProperty("break-after");
+  }
 }
 
 describe("cli action modules: md pdf-template codex template synthesis", () => {
@@ -255,15 +315,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       outputPlan: createSynthesisOutputPlan(),
       signals: createSynthesisSignals({ preset: "report", toc: true }),
     });
-    expect(reportAuto.styleCss).toContain("break-after: page;");
-    expect(reportAuto.styleCss).not.toContain("break-before: page;");
+    expectTocPageBreakCss(reportAuto.styleCss, { after: "page" });
 
     const articleAuto = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
       signals: createSynthesisSignals({ preset: "article", toc: true }),
     });
-    expect(articleAuto.styleCss).not.toContain("break-before: page;");
-    expect(articleAuto.styleCss).not.toContain("break-after: page;");
+    expectTocPageBreakCss(articleAuto.styleCss, {});
 
     const explicitBefore = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
@@ -273,8 +331,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         tocPageBreak: "before",
       }),
     });
-    expect(explicitBefore.styleCss).toContain("break-before: page;");
-    expect(explicitBefore.styleCss).not.toContain("break-after: page;");
+    expectTocPageBreakCss(explicitBefore.styleCss, { before: "page" });
 
     const explicitAfter = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
@@ -284,8 +341,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         tocPageBreak: "after",
       }),
     });
-    expect(explicitAfter.styleCss).not.toContain("break-before: page;");
-    expect(explicitAfter.styleCss).toContain("break-after: page;");
+    expectTocPageBreakCss(explicitAfter.styleCss, { after: "page" });
 
     const explicitBoth = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
@@ -295,8 +351,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         tocPageBreak: "both",
       }),
     });
-    expect(explicitBoth.styleCss).toContain("break-before: page;");
-    expect(explicitBoth.styleCss).toContain("break-after: page;");
+    expectTocPageBreakCss(explicitBoth.styleCss, { before: "page", after: "page" });
 
     const explicitNone = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
@@ -306,7 +361,16 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         tocPageBreak: "none",
       }),
     });
-    expect(explicitNone.styleCss).not.toContain("break-before: page;");
-    expect(explicitNone.styleCss).not.toContain("break-after: page;");
+    expectTocPageBreakCss(explicitNone.styleCss, {});
+
+    const tocDisabledAfter = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        preset: "article",
+        toc: false,
+        tocPageBreak: "after",
+      }),
+    });
+    expectTocPageBreakCss(tocDisabledAfter.styleCss, {});
   });
 });
