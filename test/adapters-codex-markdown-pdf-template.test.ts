@@ -651,6 +651,95 @@ describe("Markdown PDF template Codex adapter", () => {
     );
   });
 
+  test("repairs schema-valid responses that fail local application once", async () => {
+    const prompts: string[] = [];
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async ({ prompt }) => {
+        prompts.push(prompt);
+        return prompts.length === 1
+          ? responseFromDecision({ templateFamily: "cover-media-layered" })
+          : responseFromDecision({
+              coverEnabled: false,
+              fontDecisions: [
+                {
+                  family: "Source Serif 4",
+                  key: "default",
+                  role: "body",
+                  source: "font-hint",
+                  template_level: false,
+                },
+              ],
+              templateFamily: "document-layered",
+            });
+      },
+    });
+
+    expect(prompts).toHaveLength(2);
+    expect(prompts[1]).toContain("Correction request:");
+    expect(prompts[1]).toContain("requires a managed cover image");
+    expect(result.decision.decisionMode).toBe("adapted");
+    expect(result.decision.fontDecisions).toEqual([
+      expect.objectContaining({
+        family: "Source Serif 4",
+        key: "default",
+        role: "body",
+      }),
+    ]);
+  });
+
+  test("completes omitted profile-style font-hint role keys locally", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({
+        signals: createSynthesisSignals({
+          fontHints: [
+            "use Source Serif 4 for English body, Noto Serif JP for Japanese, Noto Serif TC for Traditional Chinese, JetBrains Mono for code, Noto Sans Symbols 2 for symbols",
+          ],
+          pdfContentLangs: ["en", "ja", "zh-Hant"],
+          signalMode: "codex-assisted",
+        }),
+      }),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          fontDecisions: [
+            {
+              family: "Noto Serif JP",
+              key: "ja",
+              role: "body",
+              source: "font-hint",
+              template_level: false,
+            },
+            {
+              family: "Noto Serif TC",
+              key: "zh-Hant",
+              role: "body",
+              source: "font-hint",
+              template_level: false,
+            },
+            {
+              family: "Noto Sans Symbols 2",
+              key: "symbols",
+              role: "code",
+              source: "font-hint",
+              template_level: false,
+            },
+          ],
+          templateFamily: "document-layered",
+        }),
+    });
+
+    expect(result.decision.fontDecisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ family: "Source Serif 4", key: "default", role: "body" }),
+        expect.objectContaining({ family: "Noto Serif JP", key: "ja", role: "body" }),
+        expect.objectContaining({ family: "Noto Serif TC", key: "zh-Hant", role: "body" }),
+        expect.objectContaining({ family: "JetBrains Mono", key: "default", role: "code" }),
+        expect.objectContaining({ family: "Noto Sans Symbols 2", key: "symbols", role: "code" }),
+      ]),
+    );
+  });
+
   test("rejects planned managed asset paths that are not bundle-relative", () => {
     const request = requestBase({ coverImage: true });
     const malformedRequest: MarkdownPdfTemplateCodexRequest = {

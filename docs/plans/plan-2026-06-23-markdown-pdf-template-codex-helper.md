@@ -1076,6 +1076,10 @@ review exposes a clearly separate scope.
 - [x] If live smoke exposes a bounded contract bug, fix it inside Phase 8.7, add
       regression coverage, and rerun the matrix until the inspectable-success
       criterion is satisfied.
+- [x] Repair the post-closeout profile-style CJK `--font-hint` smoke regression:
+      retry schema-valid invalid applications once, locally complete omitted
+      bounded font-hint role keys, and prove the rebuilt CLI reports all expected
+      font decisions.
 - [x] Record only sanitized smoke outcomes in the Phase 8.7 job record, run
       focused coverage, run repo gates, and review the phase commit range.
 

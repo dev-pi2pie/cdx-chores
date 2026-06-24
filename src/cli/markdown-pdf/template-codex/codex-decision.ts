@@ -9,6 +9,7 @@ import {
 } from "./css-blocks";
 import type {
   MarkdownPdfTemplateCodexDecisionMode,
+  MarkdownPdfTemplateCodexFontRole,
   MarkdownPdfTemplateCodexImageFit,
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexRecipePresetSource,
@@ -284,6 +285,90 @@ function validateTemplateFontDecisions(
   });
 }
 
+function fontRoleKey(role: MarkdownPdfTemplateCodexFontRole, key: string): string {
+  return `${role}.${canonicalizeMdPdfTemplateFontKey(role, key)}`;
+}
+
+function fontHintTargetForDescription(
+  description: string,
+): Pick<MarkdownPdfTemplateCodexTemplateFontDecision, "key" | "role"> | undefined {
+  const normalized = description.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  if (/\bsymbols?\b/u.test(normalized)) {
+    return { role: "code", key: "symbols" };
+  }
+  if (/\b(?:code|monospace|mono)\b/u.test(normalized)) {
+    return { role: "code", key: "default" };
+  }
+  if (/\b(?:heading|headings|title|titles)\b/u.test(normalized)) {
+    return { role: "heading", key: "default" };
+  }
+  if (/\b(?:japanese|ja|jp)\b/u.test(normalized)) {
+    return { role: "body", key: "ja" };
+  }
+  if (
+    /\b(?:traditional chinese|traditional-chinese|繁體|繁体|zh-hant|zh_hant)\b/u.test(normalized)
+  ) {
+    return { role: "body", key: "zh-Hant" };
+  }
+  if (/\b(?:english|en|body|text|serif)\b/u.test(normalized)) {
+    return { role: "body", key: "default" };
+  }
+  return undefined;
+}
+
+function templateFontDecisionsFromFontHints(
+  hints: readonly string[],
+): MarkdownPdfTemplateCodexTemplateFontDecision[] {
+  const decisions: MarkdownPdfTemplateCodexTemplateFontDecision[] = [];
+  const seen = new Set<string>();
+  for (const hint of hints) {
+    for (const rawSegment of hint.split(/[;,]/u)) {
+      const segment = rawSegment.trim().replace(/^(?:use|and)\s+/iu, "");
+      const match = /^(?<family>.+?)\s+for\s+(?<target>.+)$/iu.exec(segment);
+      const family = match?.groups?.family?.trim();
+      const target = match?.groups?.target
+        ? fontHintTargetForDescription(match.groups.target)
+        : undefined;
+      if (!family || !target) {
+        continue;
+      }
+      const roleKey = fontRoleKey(target.role, target.key);
+      if (seen.has(roleKey)) {
+        continue;
+      }
+      seen.add(roleKey);
+      decisions.push({
+        family: validateTemplateFontFamily(family, `font hint ${roleKey}`),
+        key: canonicalizeMdPdfTemplateFontKey(target.role, target.key),
+        role: target.role,
+        source: "font-hint",
+        templateLevel: false,
+      });
+    }
+  }
+  return decisions;
+}
+
+function completeFontHintDecisions(input: {
+  decisions: readonly MarkdownPdfTemplateCodexTemplateFontDecision[];
+  signals: MdPdfTemplateCodexSignalCollection;
+}): MarkdownPdfTemplateCodexTemplateFontDecision[] {
+  const completed = [...input.decisions];
+  const seen = new Set(completed.map((decision) => fontRoleKey(decision.role, decision.key)));
+  for (const decision of templateFontDecisionsFromFontHints(input.signals.fonts.hints)) {
+    const roleKey = fontRoleKey(decision.role, decision.key);
+    if (seen.has(roleKey)) {
+      continue;
+    }
+    seen.add(roleKey);
+    completed.push(decision);
+  }
+  return completed;
+}
+
 function expectedRecipePresetSource(
   signals: MdPdfTemplateCodexSignalCollection,
 ): MarkdownPdfTemplateCodexRecipePresetSource {
@@ -400,13 +485,17 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     slots,
     signals: input.signals,
   });
+  const fontDecisions = completeFontHintDecisions({
+    decisions: validateTemplateFontDecisions(input.decision.fontDecisions),
+    signals: input.signals,
+  });
   return {
     decisionMode,
     templateFamily,
     recipePreset,
     slots,
     cssBlocks,
-    fontDecisions: validateTemplateFontDecisions(input.decision.fontDecisions),
+    fontDecisions,
     managedAssets: validateManagedAssets({
       decisionMode,
       managedAssets: input.decision.managedAssets,

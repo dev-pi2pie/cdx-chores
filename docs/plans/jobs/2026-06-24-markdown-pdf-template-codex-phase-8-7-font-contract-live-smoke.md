@@ -72,6 +72,19 @@ persisting private local smoke artifacts.
 22. Tightened the language span selector from any prose descendant to direct
     prose children so language spans in nested headings or code descendants do
     not receive body-language font overrides.
+23. Reopened the phase after a post-closeout profile-style CJK `--font-hint`
+    smoke returned a no-usable-template result for the same user-facing command
+    shape.
+24. Added one bounded correction pass for schema-valid Codex responses that fail
+    local Template-Codex application, preserving strict local validation.
+25. Added local completion for omitted profile-style font-hint role keys so
+    bounded hints for default body, language-specific body, default code, and code
+    symbols can all materialize even when Codex returns only a subset.
+26. Rebuilt the CLI and reran the same user-facing smoke with a disposable
+    playground output.
+27. Confirmed the rebuilt live smoke returned an adapted decision with all
+    expected bounded font role keys applied and no committed playground
+    artifacts.
 
 ## Changes
 
@@ -84,6 +97,10 @@ persisting private local smoke artifacts.
   synthesis.
 - Tightened language-specific span selectors to direct prose children so nested
   heading and code content keep their role font choices.
+- Added a single invalid-application repair pass for schema-valid Codex responses
+  that fail local application.
+- Added conservative local completion for omitted profile-style font-hint role
+  keys.
 - Added conservative blocking for loose template font hints when base-profile
   font summaries are truncated.
 - Added sanitized Template-Codex failure categories:
@@ -155,6 +172,16 @@ persisting private local smoke artifacts.
   - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
     `bun run build`, and `git diff --check` passed.
   - `bun test --timeout 30000` passed: 1326 tests across 195 files.
+- Post-closeout font-hint correction verification
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts` passed: 25
+    tests.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+    passed: 60 tests.
+  - `bunx tsc --noEmit`, `bun run format:check`, `bun run lint`,
+    `bun run build`, and `git diff --check` passed before final review.
+  - Rebuilt live smoke with the profile-style CJK `--font-hint` returned an
+    adapted decision and a diagnostic report with all expected bounded font role
+    keys applied.
 
 ## Reviews
 
@@ -170,3 +197,4 @@ persisting private local smoke artifacts.
   `457e22bc2d90e600b9ac781092f893faba2d0c93..04d5964` reported no remaining
   Template-Codex font contract code findings. Both reviewers noted only stale
   closeout text, which this record resolves.
+- Pending post-closeout correction review.

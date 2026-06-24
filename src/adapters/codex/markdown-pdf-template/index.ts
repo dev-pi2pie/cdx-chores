@@ -17,6 +17,7 @@ import type {
 } from "./types";
 
 const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 30_000;
+const MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS = 1;
 
 export type MarkdownPdfTemplateCodexFailureKind =
   | "structured-output-schema"
@@ -54,6 +55,26 @@ export function classifyMarkdownPdfTemplateCodexFailure(
 
 function fallbackReasonForFailure(kind: MarkdownPdfTemplateCodexFailureKind): string {
   return `Codex template decision failed: ${kind}.`;
+}
+
+function summarizeApplicationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/\s+/gu, " ").slice(0, 600);
+}
+
+function buildApplicationRepairPrompt(input: {
+  basePrompt: string;
+  validationError: string;
+}): string {
+  return [
+    input.basePrompt,
+    "",
+    "Correction request:",
+    "The previous JSON response matched the structured-output schema but failed local Template-Codex validation.",
+    `Validation error: ${input.validationError}`,
+    "Return corrected JSON only, using the same structured-output schema and deterministic facts.",
+    "Do not introduce new files, local paths, remote URLs, raw CSS font-family stacks, or unsupported role/key pairs.",
+  ].join("\n");
 }
 
 async function runMarkdownPdfTemplateCodexPrompt(options: {
@@ -106,41 +127,59 @@ export async function suggestMarkdownPdfTemplateWithCodex(
   },
 ): Promise<MarkdownPdfTemplateCodexResult> {
   const runner = request.runner ?? runMarkdownPdfTemplateCodexPrompt;
-  const prompt = buildMarkdownPdfTemplateCodexPrompt(request);
-  let finalResponse: string;
-  try {
-    finalResponse = await runner({
-      prompt,
-      timeoutMs: request.timeoutMs,
-      workingDirectory: request.workingDirectory,
-    });
-  } catch (error) {
-    return noUsableTemplateResult({
-      reason: fallbackReasonForFailure(
-        isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
-      ),
-      request,
-    });
-  }
+  const basePrompt = buildMarkdownPdfTemplateCodexPrompt(request);
+  let prompt = basePrompt;
+  for (
+    let attempt = 0;
+    attempt <= MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS;
+    attempt += 1
+  ) {
+    let finalResponse: string;
+    try {
+      finalResponse = await runner({
+        prompt,
+        timeoutMs: request.timeoutMs,
+        workingDirectory: request.workingDirectory,
+      });
+    } catch (error) {
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure(
+          isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
+        ),
+        request,
+      });
+    }
 
-  let decision: MarkdownPdfTemplateCodexDecision;
-  try {
-    decision = parseMarkdownPdfTemplateCodexDecision(finalResponse);
-  } catch {
-    return noUsableTemplateResult({
-      reason: fallbackReasonForFailure("malformed-output"),
-      request,
-    });
-  }
+    let decision: MarkdownPdfTemplateCodexDecision;
+    try {
+      decision = parseMarkdownPdfTemplateCodexDecision(finalResponse);
+    } catch {
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure("malformed-output"),
+        request,
+      });
+    }
 
-  try {
-    return applyMarkdownPdfTemplateCodexDecision({ decision, request });
-  } catch {
-    return noUsableTemplateResult({
-      reason: fallbackReasonForFailure("invalid-application"),
-      request,
-    });
+    try {
+      return applyMarkdownPdfTemplateCodexDecision({ decision, request });
+    } catch (error) {
+      if (attempt < MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS) {
+        prompt = buildApplicationRepairPrompt({
+          basePrompt,
+          validationError: summarizeApplicationError(error),
+        });
+        continue;
+      }
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure("invalid-application"),
+        request,
+      });
+    }
   }
+  return noUsableTemplateResult({
+    reason: fallbackReasonForFailure("invalid-application"),
+    request,
+  });
 }
 
 export type {
