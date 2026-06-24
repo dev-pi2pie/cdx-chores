@@ -96,6 +96,13 @@ persisting private local smoke artifacts.
 31. Rebuilt the CLI and reran the live profile-style CJK `--font-hint` smoke in
     disposable playground output; it returned an adapted decision with all
     expected bounded font role keys.
+32. Ran commit-range code review for the correction commit. Both reviewers found
+    the same remaining sanitizer gap: absolute local paths outside the original
+    allowlist could still re-enter the Codex repair prompt.
+33. Broadened repair-prompt path redaction to cover general absolute POSIX
+    paths, Windows drive paths, UNC-style paths, home-relative paths, and parent
+    relative paths, then changed the regression to use a non-allowlisted
+    workspace-style path.
 
 ## Changes
 
@@ -212,6 +219,11 @@ persisting private local smoke artifacts.
     the requested CJK and symbol families.
   - Disposable playground smoke output was removed after inspection.
   - `bun test --timeout 30000` passed: 1328 tests across 195 files.
+- Post-review path-redaction follow-up verification
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts` passed: 25
+    tests.
+  - `bunx tsc --noEmit`, `bun run format:check`, `bun run lint`,
+    `bun run build`, and `git diff --check` passed.
 
 ## Reviews
 

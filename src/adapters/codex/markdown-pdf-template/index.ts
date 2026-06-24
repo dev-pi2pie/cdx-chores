@@ -63,11 +63,9 @@ function summarizeApplicationError(error: unknown): string {
     .replace(/\{[^{}]*\}/gu, "{ [css-redacted] }")
     .replace(/\bhttps?:\/\/[^\s"'`<>)]*/giu, "[remote-url]")
     .replace(/\bfile:\/\/[^\s"'`<>)]*/giu, "[local-path]")
-    .replace(
-      /(^|[\s"'`(=:[,])(?:\/(?:Users|home|var|tmp|private|Volumes)\/|~\/|\.\.\/)[^\s"'`<>),;}]*/gu,
-      "$1[local-path]",
-    )
-    .replace(/(^|[\s"'`(=:[,])[A-Za-z]:\\[^\s"'`<>),;}]*/gu, "$1[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:[A-Za-z]:[\\/][^\s"'`<>),;}]*)/gu, "$1[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:\\\\[^\s"'`<>),;}]*)/gu, "$1[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:\/(?!\/)|~\/|\.\.\/)[^\s"'`<>),;}]*/gu, "$1[local-path]")
     .replace(/\s+/gu, " ")
     .slice(0, 600);
 }

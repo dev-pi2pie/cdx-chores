@@ -661,7 +661,10 @@ describe("Markdown PDF template Codex adapter", () => {
           ? responseFromDecision({
               coverEnabled: false,
               managedAssets: [
-                { bundle_path: "/Users/example/private-cover.png", source_label: "cover.png" },
+                {
+                  bundle_path: "/workspace/client/private-cover.png",
+                  source_label: "cover.png",
+                },
               ],
               templateFamily: "document-layered",
             })
@@ -685,7 +688,7 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(prompts[1]).toContain("Correction request:");
     expect(prompts[1]).toContain("not in the output plan");
     expect(prompts[1]).toContain("[local-path]");
-    expect(prompts[1]).not.toContain("/Users/example");
+    expect(prompts[1]).not.toContain("/workspace/client");
     expect(prompts[1]).not.toContain("private-cover.png");
     expect(result.decision.decisionMode).toBe("adapted");
     expect(result.decision.fontDecisions).toEqual([
