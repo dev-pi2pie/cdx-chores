@@ -1,6 +1,10 @@
 import type { MarkdownPdfCodexProfileRequest } from "./types";
 import { MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS } from "./value-domains";
 import { buildMarkdownPdfTableLayoutSignal } from "../../../cli/markdown-pdf/profile/layout-policy";
+import {
+  hasExplicitHideMetadataTitleIntent,
+  hasExplicitKeepMetadataTitleIntent,
+} from "../../../cli/markdown-pdf/profile/title-intent";
 
 const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   stylePolicy: [
@@ -114,18 +118,6 @@ function hasExplicitCoverIntent(intent: string): boolean {
     return false;
   }
   return /\b(cover|cover page|title page|title-page)\b/i.test(intent);
-}
-
-function hasExplicitKeepMetadataTitleIntent(intent: string): boolean {
-  return /\b(keep|preserve|show|include)\s+(the\s+)?(metadata\s+)?(title block|title output|title page|duplicate title|frontmatter title)\b/i.test(
-    intent,
-  );
-}
-
-function hasExplicitHideMetadataTitleIntent(intent: string): boolean {
-  return /\b(hide|suppress|remove|skip|omit)\s+(the\s+)?(metadata\s+)?(title block|title output|frontmatter title)\b/i.test(
-    intent,
-  );
 }
 
 function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {

@@ -73,6 +73,7 @@ export type {
   MarkdownPdfTemplateCodexTemplateFontDecision,
   MarkdownPdfTemplateCodexTemplateFontDecisionSource,
   MarkdownPdfTemplateCodexMetadataTitlePolicy,
+  MarkdownPdfTemplateCodexTitleSignals,
   MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,

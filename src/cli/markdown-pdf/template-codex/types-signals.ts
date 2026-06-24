@@ -1,5 +1,6 @@
 import type { MarkdownPdfDocumentSignals, MarkdownPdfFontSignals } from "../profile/signals";
 import type { MarkdownPdfTableLayoutSignal } from "../profile/layout-policy";
+import type { MarkdownPdfMetadataTitleBlockMode } from "../profile/types";
 import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 import type {
   MdPdfTemplateCodexExplicitRecipeSignal,
@@ -44,6 +45,12 @@ export interface MarkdownPdfTemplateCodexBaseProfileSignals {
   summary?: MarkdownPdfProfileCandidateSummary;
 }
 
+export interface MarkdownPdfTemplateCodexTitleSignals {
+  baseProfileMetadataTitle?: MarkdownPdfMetadataTitleBlockMode;
+  explicitKeepMetadataTitleIntent: boolean;
+  explicitHideMetadataTitleIntent: boolean;
+}
+
 export interface MarkdownPdfTemplateCodexCoverImageDimensions {
   width: number;
   height: number;
@@ -70,6 +77,7 @@ export interface MdPdfTemplateCodexSignalCollection {
   documentSignals: MarkdownPdfDocumentSignals;
   baseProfile: MarkdownPdfTemplateCodexBaseProfileSignals;
   recipe: MarkdownPdfTemplateCodexRecipeSignals;
+  title: MarkdownPdfTemplateCodexTitleSignals;
   fonts: MarkdownPdfTemplateCodexFontSignals;
   coverImage: MarkdownPdfTemplateCodexCoverImageSignals;
 }

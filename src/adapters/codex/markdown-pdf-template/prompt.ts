@@ -9,6 +9,7 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES,
   MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES,
   type MarkdownPdfTemplateCodexOutputPlan,
+  type MarkdownPdfTemplateCodexRecipePresetSource,
 } from "../../../cli/markdown-pdf/template-codex";
 import type { MarkdownPdfTemplateCodexRequest } from "./types";
 
@@ -50,6 +51,21 @@ function supportedFamilies() {
   });
 }
 
+function expectedRecipePresetSource(
+  request: MarkdownPdfTemplateCodexRequest,
+): MarkdownPdfTemplateCodexRecipePresetSource {
+  if (request.signals.recipe.explicitFields.includes("preset")) {
+    return "explicit-recipe";
+  }
+  if (request.signals.recipe.layoutPolicy.recipePreset.status === "applied") {
+    return "document-signal";
+  }
+  if (request.signals.baseProfile.available && request.signals.baseProfile.summary?.preset) {
+    return "base-profile";
+  }
+  return "renderer-default";
+}
+
 export function buildMarkdownPdfTemplateCodexPrompt(
   request: MarkdownPdfTemplateCodexRequest,
 ): string {
@@ -84,10 +100,21 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     layoutDecisionPolicy: {
       tableLayoutSignal: request.signals.recipe.layoutPolicy.tableLayoutSignal,
       recipePresetPolicy: request.signals.recipe.layoutPolicy.recipePreset,
+      schemaRecipePresetSource: expectedRecipePresetSource(request),
       rules: [
         "Strong tableLayoutSignal may derive wide-table only when no explicit recipe or base-profile page recipe owner exists.",
         "Weak tableLayoutSignal supports table density/styling only and must not force landscape.",
-        "Returned recipe_preset and slots.recipe_preset must match recipeSignal.effectiveOptions and the recorded source.",
+        "Returned recipe_preset and slots.recipe_preset must match recipeSignal.effectiveOptions and schemaRecipePresetSource.",
+      ],
+    },
+    titleDecisionPolicy: {
+      documentTitleSignal: request.signals.documentSignals.title,
+      templateTitleSignal: request.signals.title,
+      rules: [
+        "Explicit keep/hide metadata title intent outranks duplicate-title default behavior.",
+        "Base-profile titleBlock.metadataTitle show or hide must be preserved because custom templates replace profile-generated HTML.",
+        "When cover slots own visible title placement, suppress the separate metadata title block unless explicit/base-profile show ownership says otherwise.",
+        "Do not rewrite Markdown H1 content or mutate frontmatter title.",
       ],
     },
     outputPlan: summarizeOutputPlan(request.outputPlan),
@@ -120,7 +147,8 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     "- Use cover.image_fit contain or cover for image sizing; never use raw pixel width or height directives.",
     "- Do not emit page-number CSS or @page margin boxes; page numbers remain profile-owned.",
     "- Follow layoutDecisionPolicy for table pressure, wide-table derivation, and recipe ownership.",
-    "- Return recipe_preset and slots.recipe_preset exactly matching recipeSignal.effectiveOptions.preset and layoutDecisionPolicy source.",
+    "- Return recipe_preset and slots.recipe_preset exactly matching recipeSignal.effectiveOptions.preset and layoutDecisionPolicy.schemaRecipePresetSource.",
+    "- Follow titleDecisionPolicy; preserve explicit title intent and base-profile titleBlock.metadataTitle ownership.",
     "- Keep code.style shiki-compatible, code.line_wrap wrap, and code.preserve_selectors true.",
     "- Preserve Pandoc ToC placeholders and required selectors such as #TOC, .cdx-code-line, and .pdf-cover-media.",
     "- Use conservative-fallback when facts are weak but a safe bounded template decision can still be made.",

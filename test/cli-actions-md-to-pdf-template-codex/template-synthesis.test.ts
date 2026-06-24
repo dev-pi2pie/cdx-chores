@@ -275,6 +275,74 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).not.toContain('<header class="document-title">');
   });
 
+  test("preserves base-profile metadata title show ownership", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        titleSignals: {
+          frontmatterTitle: { present: true, charCount: 14 },
+          firstH1: { present: true, charCount: 14 },
+          normalizedTitleMatch: true,
+          duplicateVisibleTitleRisk: true,
+        },
+        titlePolicySignals: { baseProfileMetadataTitle: "show" },
+      }),
+    });
+
+    expect(result.titlePolicy).toMatchObject({
+      metadataTitle: "show",
+      visibleMetadataTitle: true,
+    });
+    expect(result.templateHtml).toContain('<header class="document-title">');
+  });
+
+  test("preserves base-profile metadata title hide ownership", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        titlePolicySignals: { baseProfileMetadataTitle: "hide" },
+      }),
+    });
+
+    expect(result.titlePolicy).toMatchObject({
+      metadataTitle: "hide",
+      visibleMetadataTitle: false,
+    });
+    expect(result.templateHtml).not.toContain('<header class="document-title">');
+  });
+
+  test("lets explicit title intent override default duplicate suppression", () => {
+    const keep = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        titleSignals: {
+          frontmatterTitle: { present: true, charCount: 14 },
+          firstH1: { present: true, charCount: 14 },
+          normalizedTitleMatch: true,
+          duplicateVisibleTitleRisk: true,
+        },
+        titlePolicySignals: { explicitKeepMetadataTitleIntent: true },
+      }),
+    });
+    const hide = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        titlePolicySignals: { explicitHideMetadataTitleIntent: true },
+      }),
+    });
+
+    expect(keep.titlePolicy).toMatchObject({
+      metadataTitle: "show",
+      visibleMetadataTitle: true,
+    });
+    expect(keep.templateHtml).toContain('<header class="document-title">');
+    expect(hide.titlePolicy).toMatchObject({
+      metadataTitle: "hide",
+      visibleMetadataTitle: false,
+    });
+    expect(hide.templateHtml).not.toContain('<header class="document-title">');
+  });
+
   test("materializes bounded font hint decisions into template CSS variables", () => {
     const signals = createSynthesisSignals({ fontHints: ["Inter"] });
     const outputPlan = createSynthesisOutputPlan();

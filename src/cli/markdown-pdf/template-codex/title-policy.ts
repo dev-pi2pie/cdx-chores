@@ -2,6 +2,7 @@ import type { MarkdownPdfTemplateCodexResolvedSlots } from "./types-synthesis";
 import type { MdPdfTemplateCodexSignalCollection } from "./types-signals";
 
 export type MarkdownPdfTemplateCodexMetadataTitlePolicy =
+  | "hide"
   | "show"
   | "suppress-duplicate"
   | "suppress-cover-title";
@@ -21,6 +22,47 @@ export function resolveMdPdfTemplateCodexTitlePolicy(input: {
   const duplicateVisibleTitleRisk = input.signals.documentSignals.title.duplicateVisibleTitleRisk;
   const coverTitleOwnsPlacement =
     input.slots.cover.enabled && input.slots.cover.titlePlacement !== "document-title";
+  const baseProfileMetadataTitle = input.signals.title.baseProfileMetadataTitle;
+
+  if (input.signals.title.explicitHideMetadataTitleIntent) {
+    return {
+      metadataTitle: "hide",
+      visibleMetadataTitle: false,
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: "explicit intent suppresses metadata title output",
+    };
+  }
+
+  if (input.signals.title.explicitKeepMetadataTitleIntent) {
+    return {
+      metadataTitle: "show",
+      visibleMetadataTitle: true,
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: "explicit intent preserves metadata title output",
+    };
+  }
+
+  if (baseProfileMetadataTitle === "hide") {
+    return {
+      metadataTitle: "hide",
+      visibleMetadataTitle: false,
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: "base profile titleBlock.metadataTitle hides metadata title output",
+    };
+  }
+
+  if (baseProfileMetadataTitle === "show") {
+    return {
+      metadataTitle: "show",
+      visibleMetadataTitle: true,
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: "base profile titleBlock.metadataTitle preserves metadata title output",
+    };
+  }
 
   if (coverTitleOwnsPlacement) {
     return {

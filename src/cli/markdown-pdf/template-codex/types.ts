@@ -17,6 +17,7 @@ export type {
   MarkdownPdfTemplateCodexLayoutPolicySignal,
   MarkdownPdfTemplateCodexOrientationBucket,
   MarkdownPdfTemplateCodexRecipeSignals,
+  MarkdownPdfTemplateCodexTitleSignals,
 } from "./types-signals";
 export type {
   MarkdownPdfTemplateCodexOutputPlan,

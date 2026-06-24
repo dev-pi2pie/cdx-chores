@@ -34,6 +34,7 @@ interface CreateSynthesisSignalsInput {
   profileFonts?: MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"];
   tableSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["tables"]>;
   titleSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["title"]>;
+  titlePolicySignals?: Partial<MdPdfTemplateCodexSignalCollection["title"]>;
 }
 
 const PAGE_LAYOUT_RECIPE_FIELDS = new Set([
@@ -154,6 +155,11 @@ export function createSynthesisSignals(
       explicitFields,
       baseProfileFields: input.baseProfilePreset ? ["preset"] : [],
       layoutPolicy,
+    },
+    title: {
+      explicitKeepMetadataTitleIntent: false,
+      explicitHideMetadataTitleIntent: false,
+      ...input.titlePolicySignals,
     },
     fonts: {
       hints: input.fontHints ?? [],

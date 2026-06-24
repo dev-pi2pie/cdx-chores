@@ -171,6 +171,12 @@ describe("Markdown PDF template Codex adapter", () => {
           source: "document-table-signal",
         },
       },
+      titleDecisionPolicy: {
+        templateTitleSignal: {
+          explicitKeepMetadataTitleIntent: false,
+          explicitHideMetadataTitleIntent: false,
+        },
+      },
       hookRequirements: {
         css: {
           codeLineSelector: ".cdx-code-line",
@@ -188,6 +194,36 @@ describe("Markdown PDF template Codex adapter", () => {
         ],
       },
     });
+  });
+
+  test("uses schema-valid recipe source facts for document-derived wide-table prompts", () => {
+    const prompt = buildMarkdownPdfTemplateCodexPrompt(
+      requestBase({
+        signals: createSynthesisSignals({
+          signalMode: "codex-assisted",
+          tableSignals: { maxColumns: 8, maxLineWidth: 120, scannedRows: 2 },
+        }),
+      }),
+    );
+    const facts = promptFacts(prompt) as {
+      layoutDecisionPolicy: {
+        recipePresetPolicy: { source: string; status: string };
+        schemaRecipePresetSource: string;
+        tableLayoutSignal: { level: string };
+      };
+      recipeSignal: { effectiveOptions: { preset: string } };
+    };
+
+    expect(facts.layoutDecisionPolicy).toMatchObject({
+      recipePresetPolicy: {
+        status: "applied",
+        source: "document-table-signal",
+      },
+      schemaRecipePresetSource: "document-signal",
+      tableLayoutSignal: { level: "strong" },
+    });
+    expect(facts.recipeSignal.effectiveOptions.preset).toBe("wide-table");
+    expect(prompt).toContain("layoutDecisionPolicy.schemaRecipePresetSource");
   });
 
   test("keeps the structured output schema strict for nested objects", () => {

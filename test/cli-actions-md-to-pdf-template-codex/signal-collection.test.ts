@@ -220,6 +220,34 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
     });
   });
 
+  test("collects base-profile and intent title ownership signals", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-title-policy-signals", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        inputPath,
+        ["---", "title: Report", "---", "# Report", "", "Body."].join("\n"),
+        "utf8",
+      );
+      await writeFile(baseProfilePath, "titleBlock:\n  metadataTitle: show\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        baseProfile: toRepoRelativePath(baseProfilePath),
+        intent: "keep the duplicate title output",
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.documentSignals.title.duplicateVisibleTitleRisk).toBe(true);
+      expect(signals.title).toEqual({
+        baseProfileMetadataTitle: "show",
+        explicitKeepMetadataTitleIntent: true,
+        explicitHideMetadataTitleIntent: false,
+      });
+    });
+  });
+
   test("collects cover image dimensions, orientation, and fit-pressure signals", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cover-signals", async (fixtureDir) => {
       const coverImagePath = join(fixtureDir, "cover.png");

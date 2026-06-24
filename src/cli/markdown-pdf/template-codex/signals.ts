@@ -9,6 +9,10 @@ import {
   collectMarkdownPdfFontSignals,
   createAbsentMarkdownPdfDocumentSignals,
 } from "../profile/signals";
+import {
+  hasExplicitHideMetadataTitleIntent,
+  hasExplicitKeepMetadataTitleIntent,
+} from "../profile/title-intent";
 import { collectTemplateCodexCoverImageSignals } from "./cover-assets";
 import { collectMdPdfTemplateCodexRecipeSignals } from "./recipe-signals";
 import { classifyMdPdfTemplateCodexSignalMode } from "./signal-mode";
@@ -66,6 +70,15 @@ export async function collectMdPdfTemplateCodexSignals(
       summary: baseProfileCandidate?.summary,
     },
     recipe,
+    title: {
+      ...(baseProfileCandidate
+        ? {
+            baseProfileMetadataTitle: normalizedSelectedProfile.profile.titleBlock.metadataTitle,
+          }
+        : {}),
+      explicitKeepMetadataTitleIntent: hasExplicitKeepMetadataTitleIntent(state.intent ?? ""),
+      explicitHideMetadataTitleIntent: hasExplicitHideMetadataTitleIntent(state.intent ?? ""),
+    },
     fonts: {
       hints: state.fontHints,
       profileFonts: collectMarkdownPdfFontSignals({
