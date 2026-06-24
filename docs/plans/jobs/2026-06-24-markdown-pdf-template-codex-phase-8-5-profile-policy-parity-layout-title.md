@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.5 profile policy parity for layout and title"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -40,6 +40,15 @@ managed assets.
     with a sanitized CJK-oriented font hint. The local Codex request was
     unavailable, so the command returned the existing no-usable-template
     fallback without writing files or reports.
+11. Reviewed the initial Phase 8.5 range and found two follow-up issues:
+    document-derived recipe provenance used prompt wording that could drift from
+    the strict decision schema, and title policy did not yet preserve explicit
+    or base-profile metadata title ownership.
+12. Added schema-valid recipe provenance facts to the template-Codex prompt and
+    added shared title-intent helpers plus template title ownership signals for
+    explicit/base-profile show and hide decisions.
+13. Committed the review-fix slice as `94cf40a` after a hard
+    `auto_commit_notification` checkpoint.
 
 ## Changes
 
@@ -51,6 +60,9 @@ managed assets.
 - Added recipe ownership validation for Codex-assisted template decisions.
 - Added title policy synthesis to suppress duplicate visible metadata title
   blocks and cover-title duplicate title blocks.
+- Added title policy precedence for explicit keep/hide intent and base-profile
+  `titleBlock.metadataTitle` ownership before default duplicate-title
+  suppression.
 - Added diagnostic report fields for layout and title policy decisions.
 
 ## Verification
@@ -76,7 +88,32 @@ managed assets.
   - Passed after formatting.
 - `bun test --timeout 30000`
   - Passed after implementation: 1315 tests.
+- `bun test test/adapters-codex-markdown-pdf-template.test.ts`
+  - Passed after review fixes: 21 tests.
+- `bun test test/adapters-codex-markdown-pdf-template.test.ts test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-template-codex/signal-collection.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+  - Passed after review fixes: 67 tests.
+- `bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-actions*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts`
+  - Passed after review fixes: 215 tests.
+- `bunx tsc --noEmit`
+  - Passed after review fixes.
+- `bun run lint`
+  - Passed after review fixes.
+- `bun run format:check`
+  - Passed after review fixes.
+- `git diff --check`
+  - Passed after review fixes.
+- `bun run build`
+  - Passed after review fixes.
+- `bun test --timeout 30000`
+  - Passed after review fixes: 1320 tests.
 
 ## Reviews
 
-- Pending Phase 8.5 commit-range review after final verification.
+- Initial review of `40b00b1..9fd6897` found prompt/schema provenance drift for
+  document-derived wide-table decisions and missing explicit/base-profile
+  metadata title ownership in template title policy.
+- Both findings were addressed in `94cf40a`.
+- Final re-review of `40b00b1..94cf40a` reported no findings. Both reviewers
+  confirmed the previous prompt/schema provenance issue was fixed; the
+  title-ownership reviewer also confirmed the previous explicit/base-profile
+  metadata title gap was fixed.

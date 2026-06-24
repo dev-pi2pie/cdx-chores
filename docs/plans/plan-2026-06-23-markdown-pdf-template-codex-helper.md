@@ -975,7 +975,7 @@ composition, title placement, and table styling.
 - [x] Run a privacy-safe manual `--font-hint` smoke with a playground CJK sample
       and record only the sanitized outcome, not local font/resource names,
       absolute paths, raw report content, or generated bundle names.
-- [ ] Record the implementation sequence in a Phase 8.5 job record: compare
+- [x] Record the implementation sequence in a Phase 8.5 job record: compare
       profile-Codex policies, encode ownership boundaries, implement layout and
       title parity, update reports, run the privacy-safe `--font-hint` smoke,
       verify focused coverage, run gates, and review the phase commit range.
