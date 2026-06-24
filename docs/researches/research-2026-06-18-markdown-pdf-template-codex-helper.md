@@ -641,7 +641,9 @@ Likely rules:
 - this command should not inherit the recipe flags from `md pdf-template init`: `--preset`, `--page-size`, `--orientation`, `--margin*`, `--toc`, `--toc-depth`, and `--toc-page-break`.
 - removed recipe flags should not remain as hidden accepted options. If a caller needs those controls, use `md pdf-template init`, encode reusable preferences in `--base-profile`, or pass render-time recipe flags to `md to-pdf`.
 - `--intent` remains the general design direction, not a bundle of many narrow style flags.
-- `--font-hint` should be repeatable for parity with profile-Codex and should inform typography slots rather than raw font CSS.
+- `--font-hint` should be repeatable for parity with profile-Codex and should inform a structured template font decision contract rather than raw font CSS.
+- template font decisions should mirror the profile-Codex role/key posture where practical: `body.default`, `body.<language-tag>`, `code.default`, `code.symbols`, and `heading.default`. `body.<language-tag>` should use valid language tags, while heading remains a single reusable slot.
+- `pdf.content-langs` is an expected coverage signal, not a precise text-label signal. It can order body fallback stacks, but exact mixed-language font targeting depends on rendered `lang` attributes such as Pandoc spans from `[text]{lang=ja}`. Template-Codex should not rewrite Markdown to add language labels.
 - `--cover-image` should be explicit when local cover media is involved.
 - `--base-profile` should validate before calling Codex.
 - `-o, --output <directory>` should be optional in v1; when omitted, the helper should generate a readable, non-colliding default bundle directory.
