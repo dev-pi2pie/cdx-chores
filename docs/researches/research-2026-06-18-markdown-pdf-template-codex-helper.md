@@ -350,10 +350,10 @@ Animated media is out of scope because animation has no durable PDF cover semant
 - `--overwrite` allows replacing selected generated files, but should not silently delete unrelated files
 - `--codex-report-output` must stay distinct from the output directory, input Markdown, base profile, and managed asset source paths
 
-When `--output` is omitted and the command has enough signal to proceed, template-Codex should generate a default bundle directory instead of failing:
+When `--output` is omitted and the command has enough signal to proceed, template-Codex should generate a generic default bundle directory instead of failing:
 
-- with an input path: `<input-stem>.pdf-template-<uid>/`
-- without an input path: `md-pdf-template-<timestamp>-<uid>/` in the current working directory
+- use `md-pdf-template-<timestamp>-<uid>/` in the current working directory, regardless of whether an input path is present
+- do not derive generated bundle names from the Markdown input stem or extension; callers who want semantic names should pass `--output`
 - generated default directories should retry with a bounded UID loop to avoid collisions, matching the profile-Codex generated-output posture
 - no-signal invocations should still reject before deriving or reserving a default output directory
 

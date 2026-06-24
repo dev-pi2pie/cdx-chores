@@ -340,8 +340,9 @@ Output directory:
 - `--overwrite` replaces only selected generated files and must not silently delete unrelated files.
 - existing files inside `--output` are never read as template inputs, merge bases, or refinement sources, even when they are named `template.html` or `style.css`.
 - when `--output` is omitted and the command has enough signal, derive a non-colliding default directory:
-  - with input: `<input-stem>.pdf-template-<uid>/`
-  - without input: `md-pdf-template-<timestamp>-<uid>/`
+  - always use `md-pdf-template-<timestamp>-<uid>/`, regardless of input path
+  - do not include the Markdown input stem, extension, or a fake `.pdf-template` extension in generated names
+  - callers who want semantic bundle names should pass `--output <directory>`
 - generated defaults retry with a bounded UID loop to avoid collisions.
 
 Report output:
@@ -1010,6 +1011,69 @@ bun run format:check
 bun run build
 bun test --timeout 30000
 git diff --check
+```
+
+### Phase 8.6: Generated Bundle Naming Cleanup
+
+This phase removes the noisy input-derived generated bundle name. Default
+generated directories should be short, generic, collision-safe artifact IDs;
+semantic naming belongs to explicit `--output`.
+
+- [ ] Change omitted-output planning to always generate
+      `md-pdf-template-<timestamp>-<uid>/`; keep explicit `--output` unchanged.
+- [ ] Remove the current input-derived `.pdf-template-<bundle-id>` composition
+      so generated names do not include Markdown stems, extensions, or duplicated
+      `pdf-template` wording.
+- [ ] Preserve bounded collision retries for generated defaults.
+- [ ] Update output-path/action/report tests, including a regression proving
+      `README.md` does not produce an input-derived generated directory name.
+- [ ] Record the implementation sequence in a Phase 8.6 job record, run focused
+      output-path coverage, run repo gates, and review the phase commit range.
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts test/cli-actions-md-to-pdf-template-codex/action.test.ts test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+```
+
+### Phase 8.7: Template-Codex Live Failure Diagnostics And Font-Hint Smoke
+
+This phase keeps `--font-hint` as a supported Template-Codex signal, but closes
+the live-verification gap before treating that support as proven. It should not
+grow into more phase sections: if diagnostics reveal bounded prompt, schema, or
+adapter tasks, add those tasks inside this phase and rerun the smoke matrix.
+
+- [ ] Preserve sanitized classified Template-Codex runner failures instead of
+      collapsing all failures to `Codex template decision unavailable`; compare
+      categories with profile-Codex.
+- [ ] Add adapter/action tests proving classified failures remain reportable
+      without exposing absolute local paths or raw local resources.
+- [ ] Run the live smoke matrix: Template-Codex without `--font-hint`,
+      Template-Codex with the sanitized CJK `--font-hint`, and profile-Codex as a
+      control only when Template-Codex diagnostics are ambiguous.
+- [ ] Complete the phase only when the Template-Codex `--font-hint` smoke returns
+      a real successful Codex signal, such as `adapted` or
+      `conservative-fallback`, and the summary/report shows a bounded font
+      decision path rather than the generic unavailable fallback.
+- [ ] If the smoke exposes a bounded contract bug, fix it inside Phase 8.7, add
+      regression coverage, and rerun the matrix; do not add another phase unless
+      the discovered work is clearly a separate scope.
+- [ ] Record only sanitized smoke outcomes in the Phase 8.7 job record, run
+      focused coverage, run repo gates, and review the phase commit range.
+
+Focused validation target:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts
+```
+
+Manual smoke matrix:
+
+```bash
+bun run build
+node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/cjk-font-smoke.md --dry-run
+node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/cjk-font-smoke.md --font-hint "<sanitized CJK-compatible font preference>" --dry-run
+node dist/esm/bin.mjs md pdf-profile codex examples/playground/md-pdf/cjk-font-smoke.md --font-hint "<same sanitized CJK-compatible font preference>" --dry-run
 ```
 
 ### Phase 9: Documentation And Release Boundary
