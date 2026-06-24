@@ -41,7 +41,7 @@ function bodyLanguageFontCss(theme: MarkdownPdfTemplateCodexThemeTokens): string
   return `${theme.bodyLanguageFonts
     .map(
       (entry) => `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${entry.lang}),
-:where(p, li, td, th, blockquote, figcaption, dd, dt) :where(span):lang(${entry.lang}) {
+:where(p, li, td, th, blockquote, figcaption, dd, dt) > :where(span):lang(${entry.lang}) {
   font-family: ${entry.font};
 }`,
     )

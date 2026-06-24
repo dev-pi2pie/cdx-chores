@@ -160,7 +160,7 @@ function expectTocPageBreakCss(
 
 function bodyLanguageSelector(lang: string): string {
   return `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${lang}),
-:where(p, li, td, th, blockquote, figcaption, dd, dt) :where(span):lang(${lang})`;
+:where(p, li, td, th, blockquote, figcaption, dd, dt) > :where(span):lang(${lang})`;
 }
 
 function createTemplateDecision(input: {
@@ -451,6 +451,9 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "font-family": '"Noto Serif TC", "Source Serif 4", serif',
     });
     expect(result.styleCss).not.toContain("\n:lang(ja) {\n");
+    expect(result.styleCss).not.toContain(
+      ":where(p, li, td, th, blockquote, figcaption, dd, dt) :where(span):lang(ja)",
+    );
     expect(result.themeTokens.bodyLanguageFonts).toEqual([
       { lang: "ja", font: '"Noto Serif JP", "Source Serif 4", serif' },
       { lang: "zh-Hant", font: '"Noto Serif TC", "Source Serif 4", serif' },

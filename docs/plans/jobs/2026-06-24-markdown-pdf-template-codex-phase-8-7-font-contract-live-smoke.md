@@ -65,6 +65,13 @@ persisting private local smoke artifacts.
 20. Added regressions for canonical language-key duplicate rejection, canonical
     profile ownership, truncated base-profile blocking, and prose-scoped
     language CSS.
+21. Ran the Phase 8.7 range re-review after the first review-fix commit. Review
+    confirmed canonical language keys and truncated profile-font blocking were
+    fixed, but found the span language selector still too broad for nested
+    heading/code content.
+22. Tightened the language span selector from any prose descendant to direct
+    prose children so language spans in nested headings or code descendants do
+    not receive body-language font overrides.
 
 ## Changes
 
@@ -75,6 +82,8 @@ persisting private local smoke artifacts.
   blocking.
 - Added language-specific prose body font CSS and code symbol font fallback
   synthesis.
+- Tightened language-specific span selectors to direct prose children so nested
+  heading and code content keep their role font choices.
 - Added conservative blocking for loose template font hints when base-profile
   font summaries are truncated.
 - Added sanitized Template-Codex failure categories:
@@ -138,6 +147,14 @@ persisting private local smoke artifacts.
   - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
     `git diff --check`, and `bun run build` passed after formatting.
   - `bun test --timeout 30000` passed: 1326 tests across 195 files.
+- Second review-fix verification
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+    passed: 58 tests.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts`
+    passed: 180 tests.
+  - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+    `bun run build`, and `git diff --check` passed.
+  - `bun test --timeout 30000` passed: 1326 tests across 195 files.
 
 ## Reviews
 
@@ -145,4 +162,8 @@ persisting private local smoke artifacts.
   `457e22bc2d90e600b9ac781092f893faba2d0c93..86d67b4` found three P2
   issues: canonical language-key ownership, truncated profile-font ownership,
   and language selector cascade precedence.
-- Pending review-fix commit and final Phase 8.7 commit-range re-review.
+- Phase 8.7 re-review of
+  `457e22bc2d90e600b9ac781092f893faba2d0c93..f2f36f5` confirmed canonical
+  language keys and truncated profile-font blocking were fixed, then found one
+  remaining P2 selector issue for nested heading/code spans.
+- Pending second review-fix commit and final Phase 8.7 commit-range re-review.
