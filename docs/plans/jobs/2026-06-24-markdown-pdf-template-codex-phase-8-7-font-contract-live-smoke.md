@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.7 font contract and live smoke"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -166,4 +166,7 @@ persisting private local smoke artifacts.
   `457e22bc2d90e600b9ac781092f893faba2d0c93..f2f36f5` confirmed canonical
   language keys and truncated profile-font blocking were fixed, then found one
   remaining P2 selector issue for nested heading/code spans.
-- Pending second review-fix commit and final Phase 8.7 commit-range re-review.
+- Final Phase 8.7 re-review of
+  `457e22bc2d90e600b9ac781092f893faba2d0c93..04d5964` reported no remaining
+  Template-Codex font contract code findings. Both reviewers noted only stale
+  closeout text, which this record resolves.
