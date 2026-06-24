@@ -1,5 +1,6 @@
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
+import { validateMarkdownPdfBodyFontKey } from "../profile/schema";
 import {
   validateMarkdownPdfTemplateCodexCssBlocks,
   type MarkdownPdfTemplateCodexCssBlock,
@@ -205,39 +206,76 @@ function validateTemplateFontFamily(value: string, context: string): string {
   return family;
 }
 
+function validateTemplateFontKey(input: {
+  context: string;
+  key: string;
+  role: MarkdownPdfTemplateCodexTemplateFontDecision["role"];
+}): string {
+  const key = assertNonEmptyString(input.key, `${input.context}.key`);
+  if (input.role === "body") {
+    try {
+      validateMarkdownPdfBodyFontKey(key);
+    } catch {
+      throw new Error(
+        `Markdown PDF template Codex response ${input.context}.key must be default or a valid language tag for body fonts.`,
+      );
+    }
+    return key;
+  }
+  if (input.role === "code" && (key === "default" || key === "symbols")) {
+    return key;
+  }
+  if (input.role === "heading" && key === "default") {
+    return key;
+  }
+  if (input.role === "code") {
+    throw new Error(
+      `Markdown PDF template Codex response ${input.context}.key must be default or symbols for code fonts.`,
+    );
+  }
+  throw new Error(
+    `Markdown PDF template Codex response ${input.context}.key must be default for ${input.role} fonts.`,
+  );
+}
+
 function validateTemplateFontDecisions(
   decisions: readonly MarkdownPdfTemplateCodexTemplateFontDecision[],
 ): MarkdownPdfTemplateCodexTemplateFontDecision[] {
-  const seenRoles = new Set<MarkdownPdfTemplateCodexTemplateFontDecision["role"]>();
+  const seenRoleKeys = new Set<string>();
   return decisions.map((decision, index) => {
+    const context = `font_decisions[${index}]`;
     const role = assertStringInDomain(
       decision.role,
       MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
-      `font_decisions[${index}].role`,
+      `${context}.role`,
     );
-    if (seenRoles.has(role)) {
+    const key = validateTemplateFontKey({
+      context,
+      key: decision.key,
+      role,
+    });
+    const roleKey = `${role}.${key}`;
+    if (seenRoleKeys.has(roleKey)) {
       throw new Error(
-        `Markdown PDF template Codex response font_decisions[${index}].role duplicates role ${role}.`,
+        `Markdown PDF template Codex response ${context}.key duplicates font role/key ${roleKey}.`,
       );
     }
-    seenRoles.add(role);
+    seenRoleKeys.add(roleKey);
     const source = assertStringInDomain(
       decision.source,
       MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
-      `font_decisions[${index}].source`,
+      `${context}.source`,
     );
-    const templateLevel = assertBoolean(
-      decision.templateLevel,
-      `font_decisions[${index}].template_level`,
-    );
+    const templateLevel = assertBoolean(decision.templateLevel, `${context}.template_level`);
     if (templateLevel && source !== "template-style") {
       throw new Error(
-        `Markdown PDF template Codex response font_decisions[${index}].template_level requires source template-style.`,
+        `Markdown PDF template Codex response ${context}.template_level requires source template-style.`,
       );
     }
     return {
       role,
-      family: validateTemplateFontFamily(decision.family, `font_decisions[${index}].family`),
+      key,
+      family: validateTemplateFontFamily(decision.family, `${context}.family`),
       source,
       templateLevel,
     };

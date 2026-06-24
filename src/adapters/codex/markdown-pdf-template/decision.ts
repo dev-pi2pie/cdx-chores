@@ -250,6 +250,7 @@ function parseFontDecisions(value: unknown): MarkdownPdfTemplateCodexTemplateFon
         MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
         `font_decisions[${index}].role`,
       ),
+      key: parseNonEmptyString(decision.key, `font_decisions[${index}].key`),
       family: parseNonEmptyString(decision.family, `font_decisions[${index}].family`),
       source: parseEnum(
         decision.source,

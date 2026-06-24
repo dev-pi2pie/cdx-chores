@@ -85,40 +85,135 @@ function presetDefaults(signals: MdPdfTemplateCodexSignalCollection): TemplateCo
 
 function profileOwnsTemplateFontRole(
   signals: MdPdfTemplateCodexSignalCollection,
-  role: MarkdownPdfTemplateCodexTemplateFontDecision["role"],
+  decision: MarkdownPdfTemplateCodexTemplateFontDecision,
 ): boolean {
   if (!signals.baseProfile.available) {
     return false;
   }
-  return signals.fonts.profileFonts.families.some((family) => family.role === role);
+  return signals.fonts.profileFonts.families.some(
+    (family) => family.role === decision.role && family.key === decision.key,
+  );
 }
 
-function cssFallbackForFontRole(
-  role: MarkdownPdfTemplateCodexTemplateFontDecision["role"],
-): string {
-  return role === "body" ? "serif" : role === "heading" ? "sans-serif" : "monospace";
+const GENERIC_FONT_FAMILIES = new Set([
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+]);
+
+function cssFontFamilyName(family: string): string {
+  const trimmed = family.trim();
+  if (GENERIC_FONT_FAMILIES.has(trimmed.toLowerCase())) {
+    return trimmed;
+  }
+  return JSON.stringify(trimmed);
 }
 
-function cssFontFamilyValue(decision: MarkdownPdfTemplateCodexTemplateFontDecision): string {
-  const escapedFamily = decision.family.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return `"${escapedFamily}", ${cssFallbackForFontRole(decision.role)}`;
+function uniqueFontFamilies(fonts: readonly string[]): string[] {
+  const seen = new Set<string>();
+  return fonts.filter((font) => {
+    const key = font.trim().toLowerCase();
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
-function applyFontDecisionToTokens(
-  tokens: MarkdownPdfTemplateCodexThemeTokens,
-  decision: MarkdownPdfTemplateCodexMaterializedFontDecision,
-): MarkdownPdfTemplateCodexThemeTokens {
-  if (decision.status !== "applied") {
-    return tokens;
+function cssFontStack(fonts: readonly string[], generic: "monospace" | "sans-serif" | "serif") {
+  const values = uniqueFontFamilies(fonts);
+  if (!values.some((font) => font.toLowerCase() === generic)) {
+    values.push(generic);
   }
-  const fontFamily = cssFontFamilyValue(decision);
-  if (decision.role === "body") {
-    return { ...tokens, bodyFont: fontFamily };
-  }
-  if (decision.role === "heading") {
-    return { ...tokens, headingFont: fontFamily };
-  }
-  return { ...tokens, monospaceFont: fontFamily };
+  return values.map(cssFontFamilyName).join(", ");
+}
+
+function bodyLanguageDecisions(input: {
+  contentLangs: readonly string[];
+  decisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+}): MarkdownPdfTemplateCodexMaterializedFontDecision[] {
+  const bodyLanguageDecisionsByLang = new Map(
+    input.decisions
+      .filter((decision) => decision.role === "body" && decision.key !== "default")
+      .map((decision) => [decision.key, decision]),
+  );
+  const ordered = input.contentLangs
+    .map((lang) => bodyLanguageDecisionsByLang.get(lang))
+    .filter((decision): decision is MarkdownPdfTemplateCodexMaterializedFontDecision =>
+      Boolean(decision),
+    );
+  const orderedLangs = new Set(ordered.map((decision) => decision.key));
+  return [
+    ...ordered,
+    ...input.decisions.filter(
+      (decision) =>
+        decision.role === "body" && decision.key !== "default" && !orderedLangs.has(decision.key),
+    ),
+  ];
+}
+
+function applyFontDecisionsToTokens(input: {
+  fontDecisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+  signals: MdPdfTemplateCodexSignalCollection;
+  tokens: MarkdownPdfTemplateCodexThemeTokens;
+}): MarkdownPdfTemplateCodexThemeTokens {
+  const applied = input.fontDecisions.filter((decision) => decision.status === "applied");
+  const bodyDefault = applied.find(
+    (decision) => decision.role === "body" && decision.key === "default",
+  );
+  const bodyLanguages = bodyLanguageDecisions({
+    contentLangs: input.signals.documentSignals.frontmatter.pdfContentLangs,
+    decisions: applied,
+  });
+  const headingDefault = applied.find(
+    (decision) => decision.role === "heading" && decision.key === "default",
+  );
+  const codeDefault = applied.find(
+    (decision) => decision.role === "code" && decision.key === "default",
+  );
+  const codeSymbols = applied.find(
+    (decision) => decision.role === "code" && decision.key === "symbols",
+  );
+
+  return {
+    ...input.tokens,
+    bodyFont:
+      bodyDefault || bodyLanguages.length > 0
+        ? cssFontStack(
+            [
+              bodyDefault?.family ?? "Noto Serif",
+              ...(bodyDefault ? [] : ["Georgia"]),
+              ...bodyLanguages.map((decision) => decision.family),
+            ],
+            "serif",
+          )
+        : input.tokens.bodyFont,
+    bodyLanguageFonts: bodyLanguages.map((decision) => ({
+      lang: decision.key,
+      font: cssFontStack(
+        [decision.family, bodyDefault?.family ?? "Noto Serif", ...(bodyDefault ? [] : ["Georgia"])],
+        "serif",
+      ),
+    })),
+    headingFont: headingDefault
+      ? cssFontStack([headingDefault.family], "sans-serif")
+      : input.tokens.headingFont,
+    monospaceFont:
+      codeDefault || codeSymbols
+        ? cssFontStack(
+            [
+              codeDefault?.family ?? "Noto Sans Mono",
+              ...(codeDefault ? [] : ["SFMono-Regular", "Consolas"]),
+              ...(codeSymbols ? [codeSymbols.family] : []),
+            ],
+            "monospace",
+          )
+        : input.tokens.monospaceFont,
+  };
 }
 
 export function materializeMdPdfTemplateCodexFontDecisions(input: {
@@ -126,7 +221,7 @@ export function materializeMdPdfTemplateCodexFontDecisions(input: {
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexMaterializedFontDecision[] {
   return input.decisions.map((decision) => {
-    const profileOwned = profileOwnsTemplateFontRole(input.signals, decision.role);
+    const profileOwned = profileOwnsTemplateFontRole(input.signals, decision);
     const overridesProfileFont = profileOwned && decision.templateLevel;
     const applied = !profileOwned || decision.templateLevel;
     return {
@@ -212,6 +307,7 @@ export function resolveMdPdfTemplateCodexThemeTokens(
   const defaults = presetDefaults(signals);
   const tokens = {
     bodyFont: '"Noto Serif", "Georgia", serif',
+    bodyLanguageFonts: [],
     headingFont: '"Noto Sans", "Arial", sans-serif',
     monospaceFont: '"Noto Sans Mono", "SFMono-Regular", "Consolas", monospace',
     bodySize: defaults.bodySize,
@@ -229,5 +325,5 @@ export function resolveMdPdfTemplateCodexThemeTokens(
     border: "#d8d8d8",
     codeBackground: "#f5f5f5",
   };
-  return fontDecisions.reduce(applyFontDecisionToTokens, tokens);
+  return applyFontDecisionsToTokens({ fontDecisions, signals, tokens });
 }

@@ -60,6 +60,7 @@ function responseFromDecision(input: {
   decisionMode?: string;
   fontDecisions?: Array<{
     family: string;
+    key: string;
     role: string;
     source: string;
     template_level: boolean;
@@ -162,6 +163,11 @@ describe("Markdown PDF template Codex adapter", () => {
         rule: "Use bounded cover.image_fit values, not raw pixel width or height directives.",
       },
       fontDecisionPolicy: {
+        roleKeyMatrix: {
+          body: ["default", "<valid-language-tag>"],
+          code: ["default", "symbols"],
+          heading: ["default"],
+        },
         roles: ["body", "heading", "code"],
         sources: ["font-hint", "template-style"],
       },
@@ -245,6 +251,9 @@ describe("Markdown PDF template Codex adapter", () => {
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.font_decisions.items.properties.role
         .enum,
     ).toEqual(["body", "heading", "code"]);
+    expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.font_decisions.items.required,
+    ).toContain("key");
     expect(
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.recipe_preset.properties
         .source.enum,
@@ -374,6 +383,7 @@ describe("Markdown PDF template Codex adapter", () => {
           fontDecisions: [
             {
               family: "Inter",
+              key: "default",
               role: "heading",
               source: "font-hint",
               template_level: false,
@@ -385,11 +395,94 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(result.decision.fontDecisions).toEqual([
       {
         family: "Inter",
+        key: "default",
         role: "heading",
         source: "font-hint",
         templateLevel: false,
       },
     ]);
+  });
+
+  test("validates template font decision role keys", () => {
+    const request = requestBase();
+    const validDecision = parseMarkdownPdfTemplateCodexDecision(
+      responseFromDecision({
+        coverEnabled: false,
+        templateFamily: "document-layered",
+        fontDecisions: [
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            template_level: false,
+          },
+          {
+            family: "Noto Sans Symbols 2",
+            key: "symbols",
+            role: "code",
+            source: "font-hint",
+            template_level: false,
+          },
+        ],
+      }),
+    );
+    expect(
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: validDecision,
+        request,
+      }).decision.fontDecisions,
+    ).toEqual([
+      expect.objectContaining({ key: "ja", role: "body" }),
+      expect.objectContaining({ key: "symbols", role: "code" }),
+    ]);
+
+    const invalidCases: Array<{
+      decision: MarkdownPdfTemplateCodexDecision["fontDecisions"][number];
+      message: string;
+    }> = [
+      {
+        decision: {
+          family: "Inter",
+          key: "body font",
+          role: "body",
+          source: "font-hint",
+          templateLevel: false,
+        },
+        message: "key must be default or a valid language tag for body fonts",
+      },
+      {
+        decision: {
+          family: "Inter",
+          key: "ja",
+          role: "code",
+          source: "font-hint",
+          templateLevel: false,
+        },
+        message: "key must be default or symbols for code fonts",
+      },
+      {
+        decision: {
+          family: "Inter",
+          key: "ja",
+          role: "heading",
+          source: "font-hint",
+          templateLevel: false,
+        },
+        message: "key must be default for heading fonts",
+      },
+    ];
+    for (const invalidCase of invalidCases) {
+      expect(() =>
+        applyMarkdownPdfTemplateCodexDecision({
+          decision: {
+            ...validDecision,
+            fontDecisions: [invalidCase.decision],
+          },
+          request,
+        }),
+      ).toThrow(invalidCase.message);
+    }
   });
 
   test("turns invalid structured output into no-usable-template", async () => {
@@ -400,7 +493,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
     expect(result.decision.fallbackReason).toBe(
-      "Codex template decision was rejected by validation.",
+      "Codex template decision failed: malformed-output.",
     );
     expect(result.decision.cssBlocks).toEqual([]);
     expect(result.decision.managedAssets).toEqual([]);
@@ -446,6 +539,7 @@ describe("Markdown PDF template Codex adapter", () => {
             fontDecisions: [
               {
                 family: "Inter",
+                key: "default",
                 role: "body",
                 source: "font-hint",
                 template_level: false,
@@ -496,9 +590,25 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision).toMatchObject({
       decisionMode: "no-usable-template",
-      fallbackReason: "Codex template decision unavailable.",
+      fallbackReason: "Codex template decision failed: unavailable.",
       managedAssets: [],
     });
+  });
+
+  test("classifies structured-output schema runner failures without leaking raw messages", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({ coverImage: true }),
+      runner: async () => {
+        throw new Error("invalid_json_schema at /private/tmp/local-schema.json");
+      },
+    });
+
+    expect(result.decision).toMatchObject({
+      decisionMode: "no-usable-template",
+      fallbackReason: "Codex template decision failed: structured-output-schema.",
+      managedAssets: [],
+    });
+    expect(result.decision.fallbackReason).not.toContain("/private/tmp");
   });
 
   test("rejects managed assets outside the planned bundle and falls back", async () => {
@@ -512,7 +622,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
     expect(result.decision.fallbackReason).toBe(
-      "Codex template decision was rejected by validation.",
+      "Codex template decision failed: invalid-application.",
     );
   });
 
@@ -550,7 +660,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
     expect(result.decision.fallbackReason).toBe(
-      "Codex template decision was rejected by validation.",
+      "Codex template decision failed: invalid-application.",
     );
   });
 
@@ -565,7 +675,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
     expect(result.decision.fallbackReason).toBe(
-      "Codex template decision was rejected by validation.",
+      "Codex template decision failed: invalid-application.",
     );
   });
 
@@ -577,7 +687,7 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(result.decision.decisionMode).toBe("no-usable-template");
     expect(result.decision.fallbackReason).toBe(
-      "Codex template decision was rejected by validation.",
+      "Codex template decision failed: invalid-application.",
     );
   });
 
@@ -588,8 +698,20 @@ describe("Markdown PDF template Codex adapter", () => {
         responseFromDecision({
           coverEnabled: false,
           fontDecisions: [
-            { family: "Inter", role: "body", source: "font-hint", template_level: false },
-            { family: "Georgia", role: "body", source: "font-hint", template_level: false },
+            {
+              family: "Inter",
+              key: "default",
+              role: "body",
+              source: "font-hint",
+              template_level: false,
+            },
+            {
+              family: "Georgia",
+              key: "default",
+              role: "body",
+              source: "font-hint",
+              template_level: false,
+            },
           ],
           templateFamily: "document-layered",
         }),
@@ -604,6 +726,7 @@ describe("Markdown PDF template Codex adapter", () => {
           fontDecisions: [
             {
               family: "Inter, sans-serif",
+              key: "default",
               role: "heading",
               source: "font-hint",
               template_level: false,
@@ -696,6 +819,7 @@ describe("Markdown PDF template Codex adapter", () => {
           fontDecisions: [
             {
               family: "Inter",
+              key: "default",
               role: "heading",
               source: "font-hint",
               templateLevel: "yes" as unknown as boolean,
@@ -713,6 +837,7 @@ describe("Markdown PDF template Codex adapter", () => {
           fontDecisions: [
             {
               family: "Inter",
+              key: "default",
               role: "heading",
               source: "font-hint",
               templateLevel: true,

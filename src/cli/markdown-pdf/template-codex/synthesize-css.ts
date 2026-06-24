@@ -34,6 +34,19 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} {
 `;
 }
 
+function bodyLanguageFontCss(theme: MarkdownPdfTemplateCodexThemeTokens): string {
+  if (theme.bodyLanguageFonts.length === 0) {
+    return "";
+  }
+  return `${theme.bodyLanguageFonts
+    .map(
+      (entry) => `:lang(${entry.lang}) {
+  font-family: ${entry.font};
+}`,
+    )
+    .join("\n\n")}\n`;
+}
+
 const COVER_PAGE_DIMENSIONS: Record<
   MarkdownPdfPageSize,
   { height: number; unit: "in" | "mm"; width: number }
@@ -167,6 +180,7 @@ body {
   overflow-wrap: anywhere;
 }
 
+${bodyLanguageFontCss(theme)}
 .document-title {
   margin-bottom: 1.4rem;
 }

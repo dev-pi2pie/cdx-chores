@@ -1048,36 +1048,40 @@ contract first, then use diagnostics and live smoke to prove the contract return
 an inspectable result. Do not split this into more phase sections unless the live
 review exposes a clearly separate scope.
 
-- [ ] Rework Template-Codex `font_decisions` from role-only decisions to a
+- [x] Rework Template-Codex `font_decisions` from role-only decisions to a
       profile-aligned role/key contract where practical: `body.default`,
       `body.<language-tag>`, `code.default`, `code.symbols`, and
       `heading.default`.
-- [ ] Validate role/key combinations locally: body keys accept `default` or valid
+- [x] Validate role/key combinations locally: body keys accept `default` or valid
       language tags, code accepts `default` or `symbols`, and heading accepts
       only `default`.
-- [ ] Synthesize bounded CSS from the role/key contract: global fallback stacks
+- [x] Synthesize bounded CSS from the role/key contract: global fallback stacks
       from `body.default` and `pdf.content-langs`, `:lang(...)` rules for valid
       language-keyed body decisions, and code symbol fallbacks for code selectors.
-- [ ] Keep language semantics honest: `pdf.content-langs` is expected coverage,
+- [x] Keep language semantics honest: `pdf.content-langs` is expected coverage,
       not precise text labeling; exact targeting depends on rendered `lang`
       attributes such as Pandoc spans, and Template-Codex must not rewrite
       Markdown to add labels.
-- [ ] Preserve sanitized classified Template-Codex runner failures instead of
+- [x] Preserve sanitized classified Template-Codex runner failures instead of
       collapsing all failures to `Codex template decision unavailable`; compare
       categories with profile-Codex and add adapter/action tests for reportable,
       path-safe failures.
-- [ ] Run the live smoke matrix: Template-Codex without `--font-hint`,
+- [x] Run the live smoke matrix: Template-Codex without `--font-hint`,
       Template-Codex with the sanitized CJK `--font-hint`, and profile-Codex as a
       control only when Template-Codex diagnostics are ambiguous.
-- [ ] Complete the phase only when Template-Codex `--font-hint` returns a real
+- [x] Complete the phase only when Template-Codex `--font-hint` returns a real
       successful Codex signal and an inspectable result: a generated template
       bundle plus requested diagnostic report whose summary/report show bounded
       font decisions rather than the generic unavailable fallback.
-- [ ] If live smoke exposes a bounded contract bug, fix it inside Phase 8.7, add
+- [x] If live smoke exposes a bounded contract bug, fix it inside Phase 8.7, add
       regression coverage, and rerun the matrix until the inspectable-success
       criterion is satisfied.
 - [ ] Record only sanitized smoke outcomes in the Phase 8.7 job record, run
       focused coverage, run repo gates, and review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-7-font-contract-live-smoke.md`
 
 Focused validation target:
 

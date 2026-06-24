@@ -352,6 +352,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         fontDecisions: [
           {
             family: "Inter",
+            key: "default",
             role: "heading",
             source: "font-hint",
             templateLevel: false,
@@ -368,6 +369,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.fontDecisions).toEqual([
       {
         family: "Inter",
+        key: "default",
         role: "heading",
         source: "font-hint",
         templateLevel: false,
@@ -376,6 +378,66 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         overridesProfileFont: false,
         reason: "applied",
       },
+    ]);
+  });
+
+  test("materializes language and symbol font decisions into bounded CSS", () => {
+    const signals = createSynthesisSignals({
+      fontHints: ["mixed CJK body and symbol code fallback"],
+      pdfContentLangs: ["ja", "zh-Hant"],
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Source Serif 4",
+            key: "default",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+          {
+            family: "Noto Serif TC",
+            key: "zh-Hant",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+          {
+            family: "Noto Sans Symbols 2",
+            key: "symbols",
+            role: "code",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-body-font": '"Source Serif 4", "Noto Serif JP", "Noto Serif TC", serif',
+      "--template-monospace-font":
+        '"Noto Sans Mono", "SFMono-Regular", "Consolas", "Noto Sans Symbols 2", monospace',
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ":lang(ja)")).toMatchObject({
+      "font-family": '"Noto Serif JP", "Source Serif 4", serif',
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ":lang(zh-Hant)")).toMatchObject({
+      "font-family": '"Noto Serif TC", "Source Serif 4", serif',
+    });
+    expect(result.themeTokens.bodyLanguageFonts).toEqual([
+      { lang: "ja", font: '"Noto Serif JP", "Source Serif 4", serif' },
+      { lang: "zh-Hant", font: '"Noto Serif TC", "Source Serif 4", serif' },
     ]);
   });
 
@@ -395,6 +457,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         fontDecisions: [
           {
             family: "Inter",
+            key: "default",
             role: "heading",
             source: "font-hint",
             templateLevel: false,
@@ -411,9 +474,64 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.fontDecisions).toEqual([
       expect.objectContaining({
         family: "Inter",
+        key: "default",
         profileOwned: true,
         reason: "profile-font-owned",
         role: "heading",
+        status: "blocked",
+      }),
+    ]);
+  });
+
+  test("blocks only the exact base-profile font role key", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["body default and Japanese body"],
+      profileFonts: {
+        families: [{ family: "Profile Serif JP", key: "ja", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Source Serif 4",
+            key: "default",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-body-font": '"Source Serif 4", serif',
+    });
+    expect(result.styleCss).not.toContain(":lang(ja)");
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "default",
+        profileOwned: false,
+        role: "body",
+        status: "applied",
+      }),
+      expect.objectContaining({
+        key: "ja",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        role: "body",
         status: "blocked",
       }),
     ]);
@@ -434,6 +552,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         fontDecisions: [
           {
             family: "Editorial Sans",
+            key: "default",
             role: "heading",
             source: "template-style",
             templateLevel: true,

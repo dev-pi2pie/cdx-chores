@@ -143,6 +143,7 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
         type: "object",
         properties: {
           role: { type: "string", enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES] },
+          key: { type: "string" },
           family: { type: "string" },
           source: {
             type: "string",
@@ -150,7 +151,7 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
           },
           template_level: { type: "boolean" },
         },
-        required: ["role", "family", "source", "template_level"],
+        required: ["role", "key", "family", "source", "template_level"],
         additionalProperties: false,
       },
     },

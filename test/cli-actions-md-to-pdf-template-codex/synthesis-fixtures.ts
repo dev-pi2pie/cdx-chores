@@ -31,6 +31,7 @@ interface CreateSynthesisSignalsInput {
   toc?: boolean;
   tocPageBreak?: MarkdownPdfTocPageBreak;
   fontHints?: string[];
+  pdfContentLangs?: string[];
   profileFonts?: MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"];
   tableSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["tables"]>;
   titleSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["title"]>;
@@ -109,7 +110,7 @@ export function createSynthesisSignals(
       tables,
       codeFences: { languages: [], unlabeledCount: 0, overflowLanguageCount: 0 },
       assets: { localCount: 0, remoteCount: 0, dataUriCount: 0 },
-      frontmatter: { pdfContentLangs: [], metadataKeys: [] },
+      frontmatter: { pdfContentLangs: input.pdfContentLangs ?? [], metadataKeys: [] },
       title: {
         frontmatterTitle: { present: false, charCount: 0 },
         firstH1: { present: false, charCount: 0 },

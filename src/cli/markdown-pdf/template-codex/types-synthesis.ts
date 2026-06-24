@@ -79,10 +79,13 @@ export interface MarkdownPdfTemplateCodexColorSlot {
 
 export type MarkdownPdfTemplateCodexFontRole = "body" | "heading" | "code";
 
+export type MarkdownPdfTemplateCodexFontKey = string;
+
 export type MarkdownPdfTemplateCodexTemplateFontDecisionSource = "font-hint" | "template-style";
 
 export interface MarkdownPdfTemplateCodexTemplateFontDecision {
   role: MarkdownPdfTemplateCodexFontRole;
+  key: MarkdownPdfTemplateCodexFontKey;
   family: string;
   source: MarkdownPdfTemplateCodexTemplateFontDecisionSource;
   templateLevel: boolean;
@@ -99,6 +102,7 @@ export interface MarkdownPdfTemplateCodexMaterializedFontDecision extends Markdo
 
 export interface MarkdownPdfTemplateCodexThemeTokens {
   bodyFont: string;
+  bodyLanguageFonts: Array<{ font: string; lang: string }>;
   headingFont: string;
   monospaceFont: string;
   bodySize: string;

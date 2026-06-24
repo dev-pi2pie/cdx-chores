@@ -18,6 +18,44 @@ import type {
 
 const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 30_000;
 
+export type MarkdownPdfTemplateCodexFailureKind =
+  | "structured-output-schema"
+  | "malformed-output"
+  | "invalid-application"
+  | "unavailable";
+
+export class MarkdownPdfTemplateCodexError extends Error {
+  constructor(
+    message: string,
+    public readonly kind: MarkdownPdfTemplateCodexFailureKind,
+  ) {
+    super(message);
+    this.name = "MarkdownPdfTemplateCodexError";
+  }
+}
+
+function isCodexStructuredOutputSchemaError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("invalid_json_schema") ||
+    message.includes("invalid_request_error") ||
+    message.includes("response_format")
+  );
+}
+
+export function classifyMarkdownPdfTemplateCodexFailure(
+  error: unknown,
+): MarkdownPdfTemplateCodexFailureKind {
+  if (error instanceof MarkdownPdfTemplateCodexError) {
+    return error.kind;
+  }
+  return "unavailable";
+}
+
+function fallbackReasonForFailure(kind: MarkdownPdfTemplateCodexFailureKind): string {
+  return `Codex template decision failed: ${kind}.`;
+}
+
 async function runMarkdownPdfTemplateCodexPrompt(options: {
   prompt: string;
   timeoutMs?: number;
@@ -76,21 +114,30 @@ export async function suggestMarkdownPdfTemplateWithCodex(
       timeoutMs: request.timeoutMs,
       workingDirectory: request.workingDirectory,
     });
+  } catch (error) {
+    return noUsableTemplateResult({
+      reason: fallbackReasonForFailure(
+        isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
+      ),
+      request,
+    });
+  }
+
+  let decision: MarkdownPdfTemplateCodexDecision;
+  try {
+    decision = parseMarkdownPdfTemplateCodexDecision(finalResponse);
   } catch {
     return noUsableTemplateResult({
-      reason: "Codex template decision unavailable.",
+      reason: fallbackReasonForFailure("malformed-output"),
       request,
     });
   }
 
   try {
-    return applyMarkdownPdfTemplateCodexDecision({
-      decision: parseMarkdownPdfTemplateCodexDecision(finalResponse),
-      request,
-    });
+    return applyMarkdownPdfTemplateCodexDecision({ decision, request });
   } catch {
     return noUsableTemplateResult({
-      reason: "Codex template decision was rejected by validation.",
+      reason: fallbackReasonForFailure("invalid-application"),
       request,
     });
   }

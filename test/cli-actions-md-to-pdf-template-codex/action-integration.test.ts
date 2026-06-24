@@ -18,6 +18,7 @@ function codexTemplateResponse(
     fallbackReason?: string;
     fontDecisions?: Array<{
       family: string;
+      key: string;
       role: string;
       source: string;
       template_level: boolean;
@@ -224,6 +225,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
             fontDecisions: [
               {
                 family: "Inter",
+                key: "default",
                 role: "heading",
                 source: "font-hint",
                 template_level: false,
@@ -240,6 +242,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
         decision: {
           fontDecisions: Array<{
             family: string;
+            key: string;
             overridesProfileFont: boolean;
             profileOwned: boolean;
             role: string;
@@ -252,6 +255,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(report.decision.fontDecisions).toEqual([
         expect.objectContaining({
           family: "Inter",
+          key: "default",
           overridesProfileFont: false,
           profileOwned: false,
           role: "heading",
@@ -482,7 +486,9 @@ describe("cli action modules: md pdf-template codex integration", () => {
           "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n",
         );
         expect(stdout.text).toContain("Decision mode: no-usable-template");
-        expect(stdout.text).toContain("Fallback reason: Codex template decision unavailable.");
+        expect(stdout.text).toContain(
+          "Fallback reason: Codex template decision failed: unavailable.",
+        );
       },
     );
   });
