@@ -1027,7 +1027,7 @@ semantic naming belongs to explicit `--output`.
 - [x] Preserve bounded collision retries for generated defaults.
 - [x] Update output-path/action/report tests, including a regression proving
       `README.md` does not produce an input-derived generated directory name.
-- [ ] Record the implementation sequence in a Phase 8.6 job record, run focused
+- [x] Record the implementation sequence in a Phase 8.6 job record, run focused
       output-path coverage, run repo gates, and review the phase commit range.
 
 Job record:

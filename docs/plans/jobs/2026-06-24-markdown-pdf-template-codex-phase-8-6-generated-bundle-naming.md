@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.6 generated bundle naming"
 created-date: 2026-06-24
 modified-date: 2026-06-24
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -56,4 +56,11 @@ semantic names remain available through explicit `--output`.
 
 ## Reviews
 
-- Pending Phase 8.6 commit-range review.
+- `Plainspoken the 6th` reviewed
+  `9421840580ed349b456104f1d4a866b86ab86b3e..f8a8251` and reported no
+  findings. The reviewer reran the focused Phase 8.6 suite and
+  `git diff --check`; both passed.
+- `Probe the 6th` reviewed
+  `9421840580ed349b456104f1d4a866b86ab86b3e..f8a8251` and reported no
+  findings. The reviewer reran the focused Phase 8.6 suite and
+  `git diff --check`; both passed.
