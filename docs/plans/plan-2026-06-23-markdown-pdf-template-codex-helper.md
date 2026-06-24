@@ -1019,16 +1019,20 @@ This phase removes the noisy input-derived generated bundle name. Default
 generated directories should be short, generic, collision-safe artifact IDs;
 semantic naming belongs to explicit `--output`.
 
-- [ ] Change omitted-output planning to always generate
+- [x] Change omitted-output planning to always generate
       `md-pdf-template-<timestamp>-<uid>/`; keep explicit `--output` unchanged.
-- [ ] Remove the current input-derived `.pdf-template-<bundle-id>` composition
+- [x] Remove the current input-derived `.pdf-template-<bundle-id>` composition
       so generated names do not include Markdown stems, extensions, or duplicated
       `pdf-template` wording.
-- [ ] Preserve bounded collision retries for generated defaults.
-- [ ] Update output-path/action/report tests, including a regression proving
+- [x] Preserve bounded collision retries for generated defaults.
+- [x] Update output-path/action/report tests, including a regression proving
       `README.md` does not produce an input-derived generated directory name.
 - [ ] Record the implementation sequence in a Phase 8.6 job record, run focused
       output-path coverage, run repo gates, and review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-6-generated-bundle-naming.md`
 
 Focused validation target:
 

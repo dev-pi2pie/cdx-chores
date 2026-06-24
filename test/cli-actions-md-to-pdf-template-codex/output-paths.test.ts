@@ -24,16 +24,17 @@ describe("cli action modules: md pdf-template codex output paths", () => {
     );
   });
 
-  test("plans generated output paths after signal classification", async () => {
+  test("plans generated output paths without input-derived bundle names", async () => {
     await withTempFixtureDir("md-pdf-template-codex-generated-output", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "report.md");
+      const inputPath = join(fixtureDir, "README.md");
       await writeFile(inputPath, "# Report\n", "utf8");
 
       const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
         now: () => new Date("2026-06-23T01:02:03.000Z"),
       });
       const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
-        input: toRepoRelativePath(inputPath),
+        input: "README.md",
         keepCodexReport: true,
         templateBundleIdFactory: () => "md-pdf-template-20260623T010203Z-test0001",
       });
@@ -43,35 +44,26 @@ describe("cli action modules: md pdf-template codex output paths", () => {
       expect(plan).toMatchObject({
         bundleId: "md-pdf-template-20260623T010203Z-test0001",
         generatedOutputDirectory: true,
-        outputDirectory: join(
-          fixtureDir,
-          "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
-        ),
+        outputDirectory: join(fixtureDir, "md-pdf-template-20260623T010203Z-test0001"),
         templateHtml: {
           bundlePath: "template.html",
-          path: join(
-            fixtureDir,
-            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
-            "template.html",
-          ),
+          path: join(fixtureDir, "md-pdf-template-20260623T010203Z-test0001", "template.html"),
         },
         styleCss: {
           bundlePath: "style.css",
-          path: join(
-            fixtureDir,
-            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
-            "style.css",
-          ),
+          path: join(fixtureDir, "md-pdf-template-20260623T010203Z-test0001", "style.css"),
         },
         report: {
           bundlePath: "template.codex-report.json",
           path: join(
             fixtureDir,
-            "report.pdf-template-md-pdf-template-20260623T010203Z-test0001",
+            "md-pdf-template-20260623T010203Z-test0001",
             "template.codex-report.json",
           ),
         },
       });
+      expect(plan.outputDirectory).not.toContain("README");
+      expect(plan.outputDirectory).not.toContain(".md");
       expect(plan.assets).toEqual([]);
       expect(await pathExists(plan.outputDirectory)).toBe(false);
     });

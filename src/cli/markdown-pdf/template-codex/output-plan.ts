@@ -84,14 +84,9 @@ async function assertWritablePlannedFile(
 
 function generatedTemplateOutputDirectory(input: {
   bundleId: string;
-  inputPath?: string;
   runtime: CliRuntime;
 }): string {
-  if (!input.inputPath) {
-    return join(input.runtime.cwd, input.bundleId);
-  }
-  const parsed = parse(input.inputPath);
-  return join(parsed.dir, `${parsed.name}.pdf-template-${input.bundleId}`);
+  return join(input.runtime.cwd, input.bundleId);
 }
 
 function plannedBundleFile(
@@ -170,7 +165,6 @@ async function resolveOutputDirectory(input: {
     );
     const outputDirectory = generatedTemplateOutputDirectory({
       bundleId,
-      inputPath: input.state.inputPath,
       runtime: input.runtime,
     });
     if (!(await pathExists(outputDirectory))) {
