@@ -1078,8 +1078,9 @@ review exposes a clearly separate scope.
       criterion is satisfied.
 - [x] Repair the post-closeout profile-style CJK `--font-hint` smoke regression:
       retry schema-valid invalid applications once, locally complete omitted
-      bounded font-hint role keys, and prove the rebuilt CLI reports all expected
-      font decisions.
+      bounded font-hint role keys, sanitize repair-prompt validation text, parse
+      common multi-clause profile-style hints, and prove the rebuilt CLI reports
+      all expected font decisions.
 - [x] Record only sanitized smoke outcomes in the Phase 8.7 job record, run
       focused coverage, run repo gates, and review the phase commit range.
 

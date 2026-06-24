@@ -85,6 +85,17 @@ persisting private local smoke artifacts.
 27. Confirmed the rebuilt live smoke returned an adapted decision with all
     expected bounded font role keys applied and no committed playground
     artifacts.
+28. Ran post-closeout code review for the correction range and accepted two
+    findings: raw validation text could re-enter the repair prompt, and the local
+    profile-style hint parser was too literal for common `prefer ... for ... and
+    ... for ...` wording.
+29. Sanitized repair-prompt validation text before it is sent back to Codex,
+    including local paths, file URLs, remote URLs, and raw CSS-like blocks.
+30. Hardened local profile-style font-hint parsing so common lead-in verbs and
+    multi-clause `and` forms do not become part of a font-family name.
+31. Rebuilt the CLI and reran the live profile-style CJK `--font-hint` smoke in
+    disposable playground output; it returned an adapted decision with all
+    expected bounded font role keys.
 
 ## Changes
 
@@ -101,6 +112,9 @@ persisting private local smoke artifacts.
   that fail local application.
 - Added conservative local completion for omitted profile-style font-hint role
   keys.
+- Sanitized validation text before it is reused in the repair prompt.
+- Hardened local profile-style font-hint parsing for common lead-in verbs and
+  multi-clause `and` forms.
 - Added conservative blocking for loose template font hints when base-profile
   font summaries are truncated.
 - Added sanitized Template-Codex failure categories:
@@ -182,6 +196,22 @@ persisting private local smoke artifacts.
   - Rebuilt live smoke with the profile-style CJK `--font-hint` returned an
     adapted decision and a diagnostic report with all expected bounded font role
     keys applied.
+- Post-review font-hint hardening verification
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts` passed: 25
+    tests.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+    passed: 60 tests.
+  - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+    `bun run build`, and `git diff --check` passed.
+  - Rebuilt live smoke with the profile-style CJK `--font-hint` returned an
+    adapted decision in disposable playground output.
+  - Diagnostic report inspection showed `body.default`, `body.ja`,
+    `body.zh-Hant`, `code.default`, and `code.symbols` all applied from
+    `font-hint`.
+  - CSS inspection showed the generated body and monospace font stacks included
+    the requested CJK and symbol families.
+  - Disposable playground smoke output was removed after inspection.
+  - `bun test --timeout 30000` passed: 1328 tests across 195 files.
 
 ## Reviews
 

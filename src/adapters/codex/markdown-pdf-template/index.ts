@@ -59,7 +59,17 @@ function fallbackReasonForFailure(kind: MarkdownPdfTemplateCodexFailureKind): st
 
 function summarizeApplicationError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  return message.replace(/\s+/gu, " ").slice(0, 600);
+  return message
+    .replace(/\{[^{}]*\}/gu, "{ [css-redacted] }")
+    .replace(/\bhttps?:\/\/[^\s"'`<>)]*/giu, "[remote-url]")
+    .replace(/\bfile:\/\/[^\s"'`<>)]*/giu, "[local-path]")
+    .replace(
+      /(^|[\s"'`(=:[,])(?:\/(?:Users|home|var|tmp|private|Volumes)\/|~\/|\.\.\/)[^\s"'`<>),;}]*/gu,
+      "$1[local-path]",
+    )
+    .replace(/(^|[\s"'`(=:[,])[A-Za-z]:\\[^\s"'`<>),;}]*/gu, "$1[local-path]")
+    .replace(/\s+/gu, " ")
+    .slice(0, 600);
 }
 
 function buildApplicationRepairPrompt(input: {

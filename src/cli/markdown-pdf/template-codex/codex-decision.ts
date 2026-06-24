@@ -319,14 +319,27 @@ function fontHintTargetForDescription(
   return undefined;
 }
 
+const FONT_HINT_VERB_PATTERN = "(?:(?:use|using|choose|set|apply)|prefer(?:\\s+using)?)";
+
+function fontHintSegments(hint: string): string[] {
+  const multiClauseSeparator = new RegExp(
+    `[,;]|\\s+\\band\\s+(?=(?:(?:please\\s+)?${FONT_HINT_VERB_PATTERN}\\s+)?[^,;]+?\\s+for\\s+)`,
+    "iu",
+  );
+  const leadIn = new RegExp(`^(?:and\\s+)?(?:please\\s+)?${FONT_HINT_VERB_PATTERN}\\s+`, "iu");
+  return hint
+    .split(multiClauseSeparator)
+    .map((segment) => segment.trim().replace(leadIn, ""))
+    .filter((segment) => segment.length > 0);
+}
+
 function templateFontDecisionsFromFontHints(
   hints: readonly string[],
 ): MarkdownPdfTemplateCodexTemplateFontDecision[] {
   const decisions: MarkdownPdfTemplateCodexTemplateFontDecision[] = [];
   const seen = new Set<string>();
   for (const hint of hints) {
-    for (const rawSegment of hint.split(/[;,]/u)) {
-      const segment = rawSegment.trim().replace(/^(?:use|and)\s+/iu, "");
+    for (const segment of fontHintSegments(hint)) {
       const match = /^(?<family>.+?)\s+for\s+(?<target>.+)$/iu.exec(segment);
       const family = match?.groups?.family?.trim();
       const target = match?.groups?.target

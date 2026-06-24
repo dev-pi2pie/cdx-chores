@@ -658,7 +658,13 @@ describe("Markdown PDF template Codex adapter", () => {
       runner: async ({ prompt }) => {
         prompts.push(prompt);
         return prompts.length === 1
-          ? responseFromDecision({ templateFamily: "cover-media-layered" })
+          ? responseFromDecision({
+              coverEnabled: false,
+              managedAssets: [
+                { bundle_path: "/Users/example/private-cover.png", source_label: "cover.png" },
+              ],
+              templateFamily: "document-layered",
+            })
           : responseFromDecision({
               coverEnabled: false,
               fontDecisions: [
@@ -677,7 +683,10 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(prompts).toHaveLength(2);
     expect(prompts[1]).toContain("Correction request:");
-    expect(prompts[1]).toContain("requires a managed cover image");
+    expect(prompts[1]).toContain("not in the output plan");
+    expect(prompts[1]).toContain("[local-path]");
+    expect(prompts[1]).not.toContain("/Users/example");
+    expect(prompts[1]).not.toContain("private-cover.png");
     expect(result.decision.decisionMode).toBe("adapted");
     expect(result.decision.fontDecisions).toEqual([
       expect.objectContaining({
@@ -693,7 +702,7 @@ describe("Markdown PDF template Codex adapter", () => {
       ...requestBase({
         signals: createSynthesisSignals({
           fontHints: [
-            "use Source Serif 4 for English body, Noto Serif JP for Japanese, Noto Serif TC for Traditional Chinese, JetBrains Mono for code, Noto Sans Symbols 2 for symbols",
+            "prefer Source Serif 4 for English body and Noto Serif JP for Japanese, Noto Serif TC for Traditional Chinese, JetBrains Mono for code and Noto Sans Symbols 2 for symbols",
           ],
           pdfContentLangs: ["en", "ja", "zh-Hant"],
           signalMode: "codex-assisted",
@@ -702,29 +711,7 @@ describe("Markdown PDF template Codex adapter", () => {
       runner: async () =>
         responseFromDecision({
           coverEnabled: false,
-          fontDecisions: [
-            {
-              family: "Noto Serif JP",
-              key: "ja",
-              role: "body",
-              source: "font-hint",
-              template_level: false,
-            },
-            {
-              family: "Noto Serif TC",
-              key: "zh-Hant",
-              role: "body",
-              source: "font-hint",
-              template_level: false,
-            },
-            {
-              family: "Noto Sans Symbols 2",
-              key: "symbols",
-              role: "code",
-              source: "font-hint",
-              template_level: false,
-            },
-          ],
+          fontDecisions: [],
           templateFamily: "document-layered",
         }),
     });
@@ -737,6 +724,9 @@ describe("Markdown PDF template Codex adapter", () => {
         expect.objectContaining({ family: "JetBrains Mono", key: "default", role: "code" }),
         expect.objectContaining({ family: "Noto Sans Symbols 2", key: "symbols", role: "code" }),
       ]),
+    );
+    expect(result.decision.fontDecisions).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ family: "prefer Source Serif 4" })]),
     );
   });
 
