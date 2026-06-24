@@ -158,6 +158,11 @@ function expectTocPageBreakCss(
   }
 }
 
+function bodyLanguageSelector(lang: string): string {
+  return `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${lang}),
+:where(p, li, td, th, blockquote, figcaption, dd, dt) :where(span):lang(${lang})`;
+}
+
 function createTemplateDecision(input: {
   fontDecisions?: MarkdownPdfTemplateCodexDecision["fontDecisions"];
   signals: MdPdfTemplateCodexSignalCollection;
@@ -418,6 +423,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
             source: "font-hint",
             templateLevel: false,
           },
+          {
+            family: "Source Sans 3",
+            key: "default",
+            role: "heading",
+            source: "font-hint",
+            templateLevel: false,
+          },
         ],
       }),
       outputPlan: createSynthesisOutputPlan(),
@@ -426,15 +438,19 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
       "--template-body-font": '"Source Serif 4", "Noto Serif JP", "Noto Serif TC", serif',
+      "--template-heading-font": '"Source Sans 3", sans-serif',
       "--template-monospace-font":
         '"Noto Sans Mono", "SFMono-Regular", "Consolas", "Noto Sans Symbols 2", monospace',
     });
-    expect(cssDeclarationsForSelector(result.styleCss, ":lang(ja)")).toMatchObject({
+    expect(cssDeclarationsForSelector(result.styleCss, bodyLanguageSelector("ja"))).toMatchObject({
       "font-family": '"Noto Serif JP", "Source Serif 4", serif',
     });
-    expect(cssDeclarationsForSelector(result.styleCss, ":lang(zh-Hant)")).toMatchObject({
+    expect(
+      cssDeclarationsForSelector(result.styleCss, bodyLanguageSelector("zh-Hant")),
+    ).toMatchObject({
       "font-family": '"Noto Serif TC", "Source Serif 4", serif',
     });
+    expect(result.styleCss).not.toContain("\n:lang(ja) {\n");
     expect(result.themeTokens.bodyLanguageFonts).toEqual([
       { lang: "ja", font: '"Noto Serif JP", "Source Serif 4", serif' },
       { lang: "zh-Hant", font: '"Noto Serif TC", "Source Serif 4", serif' },
@@ -527,6 +543,87 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         role: "body",
         status: "applied",
       }),
+      expect.objectContaining({
+        key: "ja",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        role: "body",
+        status: "blocked",
+      }),
+    ]);
+  });
+
+  test("canonicalizes body language keys for ordering and profile ownership", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["Traditional Chinese body font"],
+      pdfContentLangs: ["zh-hant"],
+      profileFonts: {
+        families: [{ family: "Profile Serif TC", key: "zh-hant", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Noto Serif TC",
+            key: "zh-Hant",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(result.styleCss).not.toContain(bodyLanguageSelector("zh-Hant"));
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "zh-Hant",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        role: "body",
+        status: "blocked",
+      }),
+    ]);
+  });
+
+  test("blocks loose font hints when base-profile font signals are truncated", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["late profile font may own this role key"],
+      profileFonts: {
+        families: Array.from({ length: 20 }, (_, index) => ({
+          family: `Profile Body ${index}`,
+          key: `und-x-${index}`,
+          role: "body" as const,
+        })),
+        overflowFamilyCount: 3,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(result.styleCss).not.toContain(bodyLanguageSelector("ja"));
+    expect(result.fontDecisions).toEqual([
       expect.objectContaining({
         key: "ja",
         profileOwned: true,

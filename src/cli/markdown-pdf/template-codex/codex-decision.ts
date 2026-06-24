@@ -1,6 +1,7 @@
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
 import { validateMarkdownPdfBodyFontKey } from "../profile/schema";
+import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
 import {
   validateMarkdownPdfTemplateCodexCssBlocks,
   type MarkdownPdfTemplateCodexCssBlock,
@@ -254,7 +255,8 @@ function validateTemplateFontDecisions(
       key: decision.key,
       role,
     });
-    const roleKey = `${role}.${key}`;
+    const canonicalKey = canonicalizeMdPdfTemplateFontKey(role, key);
+    const roleKey = `${role}.${canonicalKey}`;
     if (seenRoleKeys.has(roleKey)) {
       throw new Error(
         `Markdown PDF template Codex response ${context}.key duplicates font role/key ${roleKey}.`,
@@ -274,7 +276,7 @@ function validateTemplateFontDecisions(
     }
     return {
       role,
-      key,
+      key: canonicalKey,
       family: validateTemplateFontFamily(decision.family, `${context}.family`),
       source,
       templateLevel,

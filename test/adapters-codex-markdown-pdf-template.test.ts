@@ -483,6 +483,31 @@ describe("Markdown PDF template Codex adapter", () => {
         }),
       ).toThrow(invalidCase.message);
     }
+
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: {
+          ...validDecision,
+          fontDecisions: [
+            {
+              family: "Noto Serif TC",
+              key: "zh-Hant",
+              role: "body",
+              source: "font-hint",
+              templateLevel: false,
+            },
+            {
+              family: "Noto Serif TC Alt",
+              key: "zh-hant",
+              role: "body",
+              source: "font-hint",
+              templateLevel: false,
+            },
+          ],
+        },
+        request,
+      }),
+    ).toThrow("duplicates font role/key body.zh-Hant");
   });
 
   test("turns invalid structured output into no-usable-template", async () => {

@@ -28,8 +28,8 @@ persisting private local smoke artifacts.
    `heading.default`.
 4. Changed duplicate detection from role-only to `role.key`.
 5. Changed base-profile font ownership checks from role-only to exact role/key.
-6. Synthesized body language decisions as `:lang(...)` rules and code symbol
-   decisions as part of the monospace fallback stack.
+6. Synthesized body language decisions as prose-scoped `:lang(...)` rules and
+   code symbol decisions as part of the monospace fallback stack.
 7. Kept `pdf.content-langs` as expected coverage ordering for body fallback
    stacks, not as precise text labeling.
 8. Tightened Template-Codex fallback categories so runner/schema/malformed/apply
@@ -50,13 +50,33 @@ persisting private local smoke artifacts.
 14. Confirmed generated CSS included a global body fallback stack, `:lang(...)`
     body font rules, and a code symbol fallback stack.
 15. Deleted all disposable playground output directories after inspection.
+16. Ran the initial Phase 8.7 commit-range code review. Review found three
+    bounded contract issues: case-variant language keys could bypass duplicate
+    and profile-ownership checks, truncated base-profile font signals were not
+    treated conservatively, and bare `:lang(...)` selectors could override
+    heading or code font choices.
+17. Added canonical body language-key handling for duplicate checks, profile
+    ownership, and `pdf.content-langs` ordering.
+18. Treated truncated base-profile font summaries as conservative ownership for
+    loose template font hints unless the decision explicitly records
+    template-level ownership.
+19. Scoped language-specific body CSS to prose selectors so heading and code font
+    decisions keep precedence.
+20. Added regressions for canonical language-key duplicate rejection, canonical
+    profile ownership, truncated base-profile blocking, and prose-scoped
+    language CSS.
 
 ## Changes
 
 - Added role/key font decisions to Template-Codex schema and parser.
 - Added local role/key validation matching profile-Codex for overlapping roles.
 - Added key-aware profile-font ownership blocking.
-- Added language-specific body font CSS and code symbol font fallback synthesis.
+- Added canonical language-key handling for key-aware profile-font ownership
+  blocking.
+- Added language-specific prose body font CSS and code symbol font fallback
+  synthesis.
+- Added conservative blocking for loose template font hints when base-profile
+  font summaries are truncated.
 - Added sanitized Template-Codex failure categories:
   `structured-output-schema`, `malformed-output`, `invalid-application`, and
   `unavailable`.
@@ -107,7 +127,22 @@ persisting private local smoke artifacts.
     rules, and a code symbol fallback stack.
 - Playground cleanup
   - Disposable smoke output directories were removed after inspection.
+- Review-fix verification
+  - `bunx tsc --noEmit` passed after the review fixes.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+    passed: 44 tests.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts`
+    passed: 180 tests.
+  - `bun run format:check` failed before formatting due wrapping in
+    `slots.ts`; `bun run format` applied formatting.
+  - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+    `git diff --check`, and `bun run build` passed after formatting.
+  - `bun test --timeout 30000` passed: 1326 tests across 195 files.
 
 ## Reviews
 
-- Pending Phase 8.7 commit-range review.
+- Initial Phase 8.7 commit-range review
+  `457e22bc2d90e600b9ac781092f893faba2d0c93..86d67b4` found three P2
+  issues: canonical language-key ownership, truncated profile-font ownership,
+  and language selector cascade precedence.
+- Pending review-fix commit and final Phase 8.7 commit-range re-review.

@@ -1,6 +1,7 @@
 import type {
   MarkdownPdfTemplateCodexImageFit,
   MarkdownPdfTemplateCodexMaterializedFontDecision,
+  MarkdownPdfTemplateCodexFontRole,
   MarkdownPdfTemplateCodexRecipePresetSource,
   MarkdownPdfTemplateCodexResolvedSlots,
   MarkdownPdfTemplateCodexTemplateFontDecision,
@@ -8,6 +9,7 @@ import type {
   MarkdownPdfTemplateCodexThemeTokens,
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
+import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 
@@ -90,9 +92,21 @@ function profileOwnsTemplateFontRole(
   if (!signals.baseProfile.available) {
     return false;
   }
+  const decisionKey = canonicalizeMdPdfTemplateFontKey(decision.role, decision.key);
   return signals.fonts.profileFonts.families.some(
-    (family) => family.role === decision.role && family.key === decision.key,
+    (family) =>
+      family.role === decision.role &&
+      canonicalizeMdPdfTemplateFontKey(
+        family.role as MarkdownPdfTemplateCodexFontRole,
+        family.key,
+      ) === decisionKey,
   );
+}
+
+function mayHaveTruncatedProfileFontOwnership(
+  signals: MdPdfTemplateCodexSignalCollection,
+): boolean {
+  return signals.baseProfile.available && signals.fonts.profileFonts.overflowFamilyCount > 0;
 }
 
 const GENERIC_FONT_FAMILIES = new Set([
@@ -139,19 +153,23 @@ function bodyLanguageDecisions(input: {
   const bodyLanguageDecisionsByLang = new Map(
     input.decisions
       .filter((decision) => decision.role === "body" && decision.key !== "default")
-      .map((decision) => [decision.key, decision]),
+      .map((decision) => [canonicalizeMdPdfTemplateFontKey("body", decision.key), decision]),
   );
   const ordered = input.contentLangs
-    .map((lang) => bodyLanguageDecisionsByLang.get(lang))
+    .map((lang) => bodyLanguageDecisionsByLang.get(canonicalizeMdPdfTemplateFontKey("body", lang)))
     .filter((decision): decision is MarkdownPdfTemplateCodexMaterializedFontDecision =>
       Boolean(decision),
     );
-  const orderedLangs = new Set(ordered.map((decision) => decision.key));
+  const orderedLangs = new Set(
+    ordered.map((decision) => canonicalizeMdPdfTemplateFontKey("body", decision.key)),
+  );
   return [
     ...ordered,
     ...input.decisions.filter(
       (decision) =>
-        decision.role === "body" && decision.key !== "default" && !orderedLangs.has(decision.key),
+        decision.role === "body" &&
+        decision.key !== "default" &&
+        !orderedLangs.has(canonicalizeMdPdfTemplateFontKey("body", decision.key)),
     ),
   ];
 }
@@ -222,12 +240,14 @@ export function materializeMdPdfTemplateCodexFontDecisions(input: {
 }): MarkdownPdfTemplateCodexMaterializedFontDecision[] {
   return input.decisions.map((decision) => {
     const profileOwned = profileOwnsTemplateFontRole(input.signals, decision);
-    const overridesProfileFont = profileOwned && decision.templateLevel;
-    const applied = !profileOwned || decision.templateLevel;
+    const overflowBlocked = !profileOwned && mayHaveTruncatedProfileFontOwnership(input.signals);
+    const blockedByProfile = profileOwned || overflowBlocked;
+    const overridesProfileFont = blockedByProfile && decision.templateLevel;
+    const applied = !blockedByProfile || decision.templateLevel;
     return {
       ...decision,
       status: applied ? "applied" : "blocked",
-      profileOwned,
+      profileOwned: blockedByProfile,
       overridesProfileFont,
       reason: applied
         ? overridesProfileFont
