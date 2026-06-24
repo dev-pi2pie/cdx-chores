@@ -11,6 +11,7 @@ export {
   materializeMdPdfTemplateCodexFontDecisions,
   resolveMdPdfTemplateCodexSlots,
 } from "./slots";
+export { resolveMdPdfTemplateCodexTitlePolicy } from "./title-policy";
 export {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
@@ -63,6 +64,7 @@ export type {
   MarkdownPdfTemplateCodexFontRole,
   MarkdownPdfTemplateCodexFamilySpec,
   MarkdownPdfTemplateCodexImageFit,
+  MarkdownPdfTemplateCodexLayoutPolicySignal,
   MarkdownPdfTemplateCodexManagedAssetBinding,
   MarkdownPdfTemplateCodexMaterializedFontDecision,
   MarkdownPdfTemplateCodexMaterializedFontDecisionStatus,
@@ -70,6 +72,7 @@ export type {
   MarkdownPdfTemplateCodexRecipePresetSource,
   MarkdownPdfTemplateCodexTemplateFontDecision,
   MarkdownPdfTemplateCodexTemplateFontDecisionSource,
+  MarkdownPdfTemplateCodexMetadataTitlePolicy,
   MdPdfTemplateCodexExplicitRecipeSignal,
   MdPdfTemplateCodexCliOptions,
   MdPdfTemplateCodexOptions,
@@ -79,5 +82,6 @@ export type {
   MarkdownPdfTemplateCodexResolvedSlots,
   MarkdownPdfTemplateCodexSynthesisResult,
   MarkdownPdfTemplateCodexTemplateFamily,
+  MarkdownPdfTemplateCodexTitlePolicyDecision,
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";

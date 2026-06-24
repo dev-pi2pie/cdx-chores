@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
+import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
 import { createPdfRunner } from "../cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -151,9 +152,24 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(await pathExists(outputPath)).toBe(false);
       const report = JSON.parse(await readFile(reportPath, "utf8")) as {
         artifactType: string;
+        decision: {
+          layoutPolicy: {
+            recipePreset: { status: string };
+            tableLayoutSignal: { level: string };
+          };
+          titlePolicy: { metadataTitle: string; visibleMetadataTitle: boolean };
+        };
         files: Array<{ role: string }>;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
+      expect(report.decision.layoutPolicy).toMatchObject({
+        tableLayoutSignal: { level: "none" },
+        recipePreset: { status: "not-needed" },
+      });
+      expect(report.decision.titlePolicy).toMatchObject({
+        metadataTitle: "show",
+        visibleMetadataTitle: true,
+      });
       expect(report.files.map((file) => file.role)).toEqual([
         "template-html",
         "style-css",
@@ -546,5 +562,68 @@ describe("cli action modules: md pdf-template codex integration", () => {
       );
       await expectTemplateBundleFeedsMdToPdf({ fixtureDir, inputPath, outputPath, runtime });
     });
+  });
+
+  test("keeps page numbers profile-owned when rendering with template and CSS", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-profile-page-number-compat",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "template-output");
+        const renderedStyles: string[] = [];
+        await writeFile(inputPath, "# Report\n\nBody.\n", "utf8");
+        await writeFile(
+          profilePath,
+          [
+            "pageNumbers:",
+            "  enabled: true",
+            "  position: bottom-center",
+            "  format: 'Page {page}'",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(codexTemplateResponse({ coverEnabled: false })),
+        });
+
+        const templateCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(templateCss).not.toContain("counter(page)");
+        expect(templateCss).not.toContain("@bottom-center");
+
+        const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+        const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+          if (command === "weasyprint" && !args.includes("--info")) {
+            const stylesheetIndexes = args
+              .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+              .filter((index) => index >= 0);
+            for (const index of stylesheetIndexes) {
+              const stylesheetPath = args[index + 1];
+              if (stylesheetPath) {
+                renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+              }
+            }
+          }
+          return runner(command, args, runnerOptions);
+        };
+
+        await actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          profile: toRepoRelativePath(profilePath),
+          template: toRepoRelativePath(join(outputPath, "template.html")),
+          css: toRepoRelativePath(join(outputPath, "style.css")),
+          runner: capturingRunner,
+        });
+
+        const combinedCss = renderedStyles.join("\n");
+        expect(combinedCss).toContain("@bottom-center");
+        expect(combinedCss).toContain("counter(page)");
+      },
+    );
   });
 });

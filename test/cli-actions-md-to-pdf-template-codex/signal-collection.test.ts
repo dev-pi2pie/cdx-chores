@@ -115,6 +115,111 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
     });
   });
 
+  test("derives wide-table recipe from strong table signals when no page recipe owner exists", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-wide-table-signals", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "wide-report.md");
+      await writeFile(
+        inputPath,
+        [
+          "# Wide Report",
+          "",
+          "| Alpha | Beta | Gamma | Delta | Epsilon | Zeta | Eta | Theta |",
+          "| - | - | - | - | - | - | - | - |",
+          "| 100000000000000 | 200000000000000 | 300000000000000 | 400000000000000 | 500000000000000 | 600000000000000 | 700000000000000 | 800000000000000 |",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.recipe.layoutPolicy.tableLayoutSignal.level).toBe("strong");
+      expect(signals.recipe.layoutPolicy.recipePreset).toMatchObject({
+        status: "applied",
+        source: "document-table-signal",
+        preset: "wide-table",
+      });
+      expect(signals.recipe.effectiveOptions.preset).toBe("wide-table");
+      expect(signals.recipe.effectiveOptions.orientation).toBe("landscape");
+      expect(signals.recipe.effectiveOptions.margins).toEqual({
+        top: "12mm",
+        right: "12mm",
+        bottom: "12mm",
+        left: "12mm",
+      });
+    });
+  });
+
+  test("keeps weak table signals from forcing landscape", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-weak-table-signals", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "weak-table.md");
+      await writeFile(
+        inputPath,
+        [
+          "# Table",
+          "",
+          "| A | B | C | D | E |",
+          "| - | - | - | - | - |",
+          "| 1 | 2 | 3 | 4 | 5 |",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.recipe.layoutPolicy.tableLayoutSignal.level).toBe("weak");
+      expect(signals.recipe.layoutPolicy.recipePreset).toMatchObject({
+        status: "not-needed",
+        source: "document-table-signal",
+      });
+      expect(signals.recipe.effectiveOptions.preset).toBe("article");
+      expect(signals.recipe.effectiveOptions.orientation).toBe("portrait");
+    });
+  });
+
+  test("blocks document-derived wide-table when a base profile owns page recipe settings", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-wide-table-owned", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "wide-report.md");
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        inputPath,
+        [
+          "# Wide Report",
+          "",
+          "| Alpha | Beta | Gamma | Delta | Epsilon | Zeta | Eta | Theta |",
+          "| - | - | - | - | - | - | - | - |",
+          "| 100000000000000 | 200000000000000 | 300000000000000 | 400000000000000 | 500000000000000 | 600000000000000 | 700000000000000 | 800000000000000 |",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(baseProfilePath, "page:\n  orientation: portrait\n", "utf8");
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(inputPath),
+        baseProfile: toRepoRelativePath(baseProfilePath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+
+      expect(signals.recipe.layoutPolicy.tableLayoutSignal.level).toBe("strong");
+      expect(signals.recipe.layoutPolicy.recipePreset).toMatchObject({
+        status: "blocked",
+        source: "document-table-signal",
+        preset: "wide-table",
+        blockedBy: "base-profile",
+      });
+      expect(signals.recipe.effectiveOptions.preset).toBe("article");
+      expect(signals.recipe.effectiveOptions.orientation).toBe("portrait");
+    });
+  });
+
   test("collects cover image dimensions, orientation, and fit-pressure signals", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cover-signals", async (fixtureDir) => {
       const coverImagePath = join(fixtureDir, "cover.png");

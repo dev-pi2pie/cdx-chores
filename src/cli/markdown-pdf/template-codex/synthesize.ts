@@ -10,6 +10,7 @@ import {
 } from "./slots";
 import { synthesizeMdPdfTemplateCodexCss } from "./synthesize-css";
 import { synthesizeMdPdfTemplateCodexHtml } from "./synthesize-template";
+import { resolveMdPdfTemplateCodexTitlePolicy } from "./title-policy";
 import type { MarkdownPdfTemplateCodexDecision } from "./codex-decision";
 import type {
   MarkdownPdfTemplateCodexManagedAssetBinding,
@@ -45,6 +46,10 @@ export function synthesizeMdPdfTemplateCodex(input: {
     signals: input.signals,
   });
   const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots);
+  const titlePolicy = resolveMdPdfTemplateCodexTitlePolicy({
+    signals: input.signals,
+    slots,
+  });
   const managedAssets = bindManagedAssets(input.outputPlan);
   const templateHtml = synthesizeMdPdfTemplateCodexHtml({
     family: templateFamily,
@@ -52,6 +57,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     outputPlan: input.outputPlan,
     signals: input.signals,
     slots,
+    titlePolicy,
   });
   const styleCss = synthesizeMdPdfTemplateCodexCss({
     family: templateFamily,
@@ -67,6 +73,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     templateFamily,
     slots,
     themeTokens,
+    titlePolicy,
     fontDecisions: [],
     managedAssets,
     templateHtml,
@@ -117,6 +124,10 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
     signals: input.signals,
   });
   const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots, fontDecisions);
+  const titlePolicy = resolveMdPdfTemplateCodexTitlePolicy({
+    signals: input.signals,
+    slots,
+  });
 
   if (input.decision.decisionMode === "no-usable-template") {
     return {
@@ -124,6 +135,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
       templateFamily,
       slots,
       themeTokens,
+      titlePolicy,
       fontDecisions,
       managedAssets: [],
       warnings: input.decision.warnings,
@@ -145,6 +157,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
     outputPlan: input.outputPlan,
     signals: input.signals,
     slots,
+    titlePolicy,
   });
   const styleCss = appendDecisionCssBlocks(
     synthesizeMdPdfTemplateCodexCss({
@@ -163,6 +176,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
     templateFamily,
     slots,
     themeTokens,
+    titlePolicy,
     fontDecisions,
     managedAssets,
     warnings: input.decision.warnings,

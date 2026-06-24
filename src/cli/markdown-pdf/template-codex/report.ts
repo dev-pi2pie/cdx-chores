@@ -56,6 +56,8 @@ export interface MdPdfTemplateCodexReportArtifact {
     warnings: string[];
     unsupportedDirections: string[];
     fontDecisions: MarkdownPdfTemplateCodexSynthesisResult["fontDecisions"];
+    layoutPolicy: MdPdfTemplateCodexSignalCollection["recipe"]["layoutPolicy"];
+    titlePolicy: MarkdownPdfTemplateCodexSynthesisResult["titlePolicy"];
   };
   input: {
     markdown?: MdPdfTemplateCodexReportPathDisplay;
@@ -233,6 +235,8 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
       warnings: input.synthesis.warnings ?? [],
       unsupportedDirections: input.synthesis.unsupportedDirections ?? [],
       fontDecisions: input.synthesis.fontDecisions,
+      layoutPolicy: input.signals.recipe.layoutPolicy,
+      titlePolicy: input.synthesis.titlePolicy,
     },
     input: {
       ...(input.state.inputPath

@@ -67,6 +67,7 @@ export function buildMarkdownPdfTemplateCodexPrompt(
       "missing Pandoc placeholders",
       "missing required CSS hooks",
       "raw pixel image sizing directives",
+      "template-owned page-number margin boxes",
     ],
     documentSignals: request.signals.documentSignals,
     fontFacts: {
@@ -80,6 +81,15 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     },
     hookRequirements: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
     intent: request.intent ?? "",
+    layoutDecisionPolicy: {
+      tableLayoutSignal: request.signals.recipe.layoutPolicy.tableLayoutSignal,
+      recipePresetPolicy: request.signals.recipe.layoutPolicy.recipePreset,
+      rules: [
+        "Strong tableLayoutSignal may derive wide-table only when no explicit recipe or base-profile page recipe owner exists.",
+        "Weak tableLayoutSignal supports table density/styling only and must not force landscape.",
+        "Returned recipe_preset and slots.recipe_preset must match recipeSignal.effectiveOptions and the recorded source.",
+      ],
+    },
     outputPlan: summarizeOutputPlan(request.outputPlan),
     recipeSignal: request.signals.recipe,
     selectedBaseProfile: request.signals.baseProfile,
@@ -108,6 +118,9 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     "- Use managed_assets only for bundle_path values listed in outputPlan.managedAssets.",
     "- Managed asset references must be bundle-relative paths, never source-local absolute paths.",
     "- Use cover.image_fit contain or cover for image sizing; never use raw pixel width or height directives.",
+    "- Do not emit page-number CSS or @page margin boxes; page numbers remain profile-owned.",
+    "- Follow layoutDecisionPolicy for table pressure, wide-table derivation, and recipe ownership.",
+    "- Return recipe_preset and slots.recipe_preset exactly matching recipeSignal.effectiveOptions.preset and layoutDecisionPolicy source.",
     "- Keep code.style shiki-compatible, code.line_wrap wrap, and code.preserve_selectors true.",
     "- Preserve Pandoc ToC placeholders and required selectors such as #TOC, .cdx-code-line, and .pdf-cover-media.",
     "- Use conservative-fallback when facts are weak but a safe bounded template decision can still be made.",

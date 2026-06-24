@@ -70,6 +70,9 @@ function recipePresetSource(
   if (signals.recipe.explicitFields.includes("preset")) {
     return "explicit-recipe";
   }
+  if (signals.recipe.layoutPolicy.recipePreset.status === "applied") {
+    return "document-signal";
+  }
   if (signals.baseProfile.available && signals.baseProfile.summary?.preset) {
     return "base-profile";
   }

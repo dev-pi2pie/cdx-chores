@@ -1,4 +1,5 @@
 import type { MarkdownPdfDocumentSignals, MarkdownPdfFontSignals } from "../profile/signals";
+import type { MarkdownPdfTableLayoutSignal } from "../profile/layout-policy";
 import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 import type {
   MdPdfTemplateCodexExplicitRecipeSignal,
@@ -24,6 +25,18 @@ export interface MarkdownPdfTemplateCodexRecipeSignals {
   effectiveOptions: NormalizedMarkdownPdfOptions;
   explicitFields: string[];
   baseProfileFields: string[];
+  layoutPolicy: MarkdownPdfTemplateCodexLayoutPolicySignal;
+}
+
+export interface MarkdownPdfTemplateCodexLayoutPolicySignal {
+  tableLayoutSignal: MarkdownPdfTableLayoutSignal;
+  recipePreset: {
+    status: "applied" | "blocked" | "not-needed";
+    source: "document-table-signal";
+    preset?: NormalizedMarkdownPdfOptions["preset"];
+    blockedBy?: "explicit-recipe" | "base-profile";
+    reason: string;
+  };
 }
 
 export interface MarkdownPdfTemplateCodexBaseProfileSignals {

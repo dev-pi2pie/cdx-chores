@@ -942,37 +942,37 @@ route for page-number and reusable page/render policy, while template-Codex
 remains the stronger route for local cover-image bundles, custom cover
 composition, title placement, and table styling.
 
-- [ ] Reuse or mirror the profile-Codex table layout signal ladder for template
+- [x] Reuse or mirror the profile-Codex table layout signal ladder for template
       decisions, including scanned row count, overflow rows, maximum line width,
       and maximum column count.
-- [ ] Treat strong wide-table document signals as permission to choose
+- [x] Treat strong wide-table document signals as permission to choose
       `recipe_preset: wide-table` and landscape-compatible synthesis only when
       no stronger base-profile or render-time recipe owner exists.
-- [ ] Keep weak table signals from forcing landscape; use them only for bounded
+- [x] Keep weak table signals from forcing landscape; use them only for bounded
       table-density and styling slots.
-- [ ] Preserve explicit/base-profile page shape and recipe settings over
+- [x] Preserve explicit/base-profile page shape and recipe settings over
       document-derived template layout suggestions.
-- [ ] Keep page numbers profile-owned by default; do not add template
+- [x] Keep page numbers profile-owned by default; do not add template
       page-number margin boxes unless a future bounded page-chrome ownership
       path is explicitly designed.
-- [ ] Port or mirror the profile title decision policy so duplicate frontmatter
+- [x] Port or mirror the profile title decision policy so duplicate frontmatter
       `title` and first `H1` values do not produce duplicate visible titles in
       custom template output.
-- [ ] Define cover-title ownership: when the cover slot owns visible title
+- [x] Define cover-title ownership: when the cover slot owns visible title
       placement, suppress the separate metadata title block that would duplicate
       the same title; do not mutate the Markdown body or frontmatter.
-- [ ] Record layout/title ownership decisions and any suppressed duplicate
+- [x] Record layout/title ownership decisions and any suppressed duplicate
       title behavior in the diagnostic report without exposing local paths.
-- [ ] Add tests for strong wide-table input choosing wide-table/landscape only
+- [x] Add tests for strong wide-table input choosing wide-table/landscape only
       when no profile or render-time owner blocks it.
-- [ ] Add tests for weak table input not forcing landscape.
-- [ ] Add precedence tests proving base-profile recipe/page settings win over
+- [x] Add tests for weak table input not forcing landscape.
+- [x] Add precedence tests proving base-profile recipe/page settings win over
       document table signals.
-- [ ] Add duplicate-title tests covering frontmatter `title` plus matching first
+- [x] Add duplicate-title tests covering frontmatter `title` plus matching first
       `H1`, including cover-title placement.
-- [ ] Add `md to-pdf` compatibility coverage for template/profile combinations
+- [x] Add `md to-pdf` compatibility coverage for template/profile combinations
       where page settings and page numbers must remain profile-owned.
-- [ ] Run a privacy-safe manual `--font-hint` smoke with a playground CJK sample
+- [x] Run a privacy-safe manual `--font-hint` smoke with a playground CJK sample
       and record only the sanitized outcome, not local font/resource names,
       absolute paths, raw report content, or generated bundle names.
 - [ ] Record the implementation sequence in a Phase 8.5 job record: compare

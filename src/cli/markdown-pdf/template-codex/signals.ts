@@ -38,10 +38,14 @@ export async function collectMdPdfTemplateCodexSignals(
   const normalizedSelectedProfile = normalizeMarkdownPdfProfile({
     profile: selectedProfile.fullProfile,
   });
+  const documentSignals = markdown
+    ? collectMarkdownPdfDocumentSignals(markdown)
+    : createAbsentMarkdownPdfDocumentSignals();
   const recipe = collectMdPdfTemplateCodexRecipeSignals({
     baseProfileRecipeOptions: baseProfileCandidate
       ? normalizeMarkdownPdfProfile({ profile: baseProfileCandidate.fullProfile }).recipeOptions
       : undefined,
+    documentSignals,
     explicitRecipe: state.explicitRecipe,
   });
   const coverImage = await collectTemplateCodexCoverImageSignals(state.coverImagePath);
@@ -56,9 +60,7 @@ export async function collectMdPdfTemplateCodexSignals(
 
   return {
     signalMode,
-    documentSignals: markdown
-      ? collectMarkdownPdfDocumentSignals(markdown)
-      : createAbsentMarkdownPdfDocumentSignals(),
+    documentSignals,
     baseProfile: {
       available: Boolean(baseProfileCandidate),
       summary: baseProfileCandidate?.summary,

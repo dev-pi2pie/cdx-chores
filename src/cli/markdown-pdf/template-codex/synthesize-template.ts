@@ -3,6 +3,7 @@ import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexResolvedSlots,
   MarkdownPdfTemplateCodexTemplateFamily,
+  MarkdownPdfTemplateCodexTitlePolicyDecision,
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
@@ -45,23 +46,11 @@ ${captionHtml}  </figure>
 `;
 }
 
-export function synthesizeMdPdfTemplateCodexHtml(input: {
-  family: MarkdownPdfTemplateCodexTemplateFamily;
-  managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
-  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
-  signals: MdPdfTemplateCodexSignalCollection;
-  slots: MarkdownPdfTemplateCodexResolvedSlots;
-}): string {
-  return `<!doctype html>
-${identityComment(input)}
-<html lang="$if(lang)$$lang$$else$en$endif$">
-<head>
-  <meta charset="utf-8">
-  <meta name="generator" content="cdx-chores md pdf-template codex">
-  <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
-</head>
-<body class="template-family-${input.family}">
-${coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}$if(title)$
+function documentTitleHtml(titlePolicy: MarkdownPdfTemplateCodexTitlePolicyDecision): string {
+  if (!titlePolicy.visibleMetadataTitle) {
+    return "";
+  }
+  return `$if(title)$
 <header class="document-title">
   <h1 class="title">$title$</h1>
 $if(author)$
@@ -72,6 +61,27 @@ $if(date)$
 $endif$
 </header>
 $endif$
+`;
+}
+
+export function synthesizeMdPdfTemplateCodexHtml(input: {
+  family: MarkdownPdfTemplateCodexTemplateFamily;
+  managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
+  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  signals: MdPdfTemplateCodexSignalCollection;
+  slots: MarkdownPdfTemplateCodexResolvedSlots;
+  titlePolicy: MarkdownPdfTemplateCodexTitlePolicyDecision;
+}): string {
+  return `<!doctype html>
+${identityComment(input)}
+<html lang="$if(lang)$$lang$$else$en$endif$">
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="cdx-chores md pdf-template codex">
+  <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
+</head>
+<body class="template-family-${input.family}">
+${coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}${documentTitleHtml(input.titlePolicy)}
 $if(toc)$
 <nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">
 $toc$

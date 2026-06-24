@@ -4,6 +4,7 @@ import type {
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexOrientationBucket,
 } from "./types-signals";
+import type { MarkdownPdfTemplateCodexTitlePolicyDecision } from "./title-policy";
 
 export type MarkdownPdfTemplateCodexTemplateFamily = "document-layered" | "cover-media-layered";
 
@@ -12,6 +13,7 @@ export type MarkdownPdfTemplateCodexImageFit = "contain" | "cover";
 export type MarkdownPdfTemplateCodexRecipePresetSource =
   | "explicit-recipe"
   | "base-profile"
+  | "document-signal"
   | "renderer-default";
 
 export type MarkdownPdfTemplateCodexCoverLayout = "none" | "contained-media" | "full-bleed-media";
@@ -131,6 +133,7 @@ export interface MarkdownPdfTemplateCodexSynthesisResult {
   templateFamily: MarkdownPdfTemplateCodexTemplateFamily;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   themeTokens: MarkdownPdfTemplateCodexThemeTokens;
+  titlePolicy: MarkdownPdfTemplateCodexTitlePolicyDecision;
   fontDecisions: MarkdownPdfTemplateCodexMaterializedFontDecision[];
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   warnings?: string[];

@@ -7,6 +7,7 @@ import {
   type MarkdownPdfPreset,
   type MarkdownPdfTocPageBreak,
 } from "../../src/cli/markdown-pdf/validation";
+import { buildMarkdownPdfTableLayoutSignal } from "../../src/cli/markdown-pdf/profile/layout-policy";
 import type {
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexOrientationBucket,
@@ -31,17 +32,92 @@ interface CreateSynthesisSignalsInput {
   tocPageBreak?: MarkdownPdfTocPageBreak;
   fontHints?: string[];
   profileFonts?: MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"];
+  tableSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["tables"]>;
+  titleSignals?: Partial<MdPdfTemplateCodexSignalCollection["documentSignals"]["title"]>;
 }
+
+const PAGE_LAYOUT_RECIPE_FIELDS = new Set([
+  "preset",
+  "pageSize",
+  "orientation",
+  "margin",
+  "marginX",
+  "marginY",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+]);
 
 export function createSynthesisSignals(
   input: CreateSynthesisSignalsInput = {},
 ): MdPdfTemplateCodexSignalCollection {
-  const preset = input.preset ?? input.baseProfilePreset ?? "article";
   const coverImage = input.coverImage;
+  const explicitFields = input.explicitFields ?? [];
+  const tables = {
+    scannedRows: 0,
+    maxColumns: 0,
+    maxLineWidth: 0,
+    overflowRows: 0,
+    ...input.tableSignals,
+  };
+  const tableLayoutSignal = buildMarkdownPdfTableLayoutSignal(tables);
+  const owner = explicitFields.some((field) => PAGE_LAYOUT_RECIPE_FIELDS.has(field))
+    ? "explicit-recipe"
+    : input.baseProfilePreset
+      ? "base-profile"
+      : undefined;
+  const documentDerivedWideTable = tableLayoutSignal.level === "strong" && !owner && !input.preset;
+  const preset =
+    input.preset ??
+    input.baseProfilePreset ??
+    (documentDerivedWideTable ? "wide-table" : "article");
+  const layoutPolicy: MdPdfTemplateCodexSignalCollection["recipe"]["layoutPolicy"] = {
+    tableLayoutSignal,
+    recipePreset:
+      tableLayoutSignal.level !== "strong"
+        ? {
+            status: "not-needed",
+            source: "document-table-signal",
+            reason:
+              tableLayoutSignal.level === "weak"
+                ? "weak table layout signal affects table styling only"
+                : "no table layout signal",
+          }
+        : owner
+          ? {
+              status: "blocked",
+              source: "document-table-signal",
+              preset: "wide-table",
+              blockedBy: owner,
+              reason: `strong table layout signal blocked by ${owner} page recipe ownership`,
+            }
+          : {
+              status: "applied",
+              source: "document-table-signal",
+              preset: "wide-table",
+              reason: "strong table layout signal derived wide-table recipe",
+            },
+  };
 
   return {
     signalMode: input.signalMode ?? (coverImage ? "deterministic" : "codex-assisted"),
-    documentSignals: {} as MdPdfTemplateCodexSignalCollection["documentSignals"],
+    documentSignals: {
+      available: true,
+      headings: { total: 0, maxDepth: 0, byDepth: {} },
+      tables,
+      codeFences: { languages: [], unlabeledCount: 0, overflowLanguageCount: 0 },
+      assets: { localCount: 0, remoteCount: 0, dataUriCount: 0 },
+      frontmatter: { pdfContentLangs: [], metadataKeys: [] },
+      title: {
+        frontmatterTitle: { present: false, charCount: 0 },
+        firstH1: { present: false, charCount: 0 },
+        normalizedTitleMatch: false,
+        duplicateVisibleTitleRisk: false,
+        ...input.titleSignals,
+      },
+      scripts: { scannedChars: 0, truncated: false, buckets: {} },
+    },
     baseProfile: {
       available: Boolean(input.baseProfilePreset),
       ...(input.baseProfilePreset
@@ -75,8 +151,9 @@ export function createSynthesisSignals(
         toc: input.toc,
         tocPageBreak: input.tocPageBreak,
       }),
-      explicitFields: input.explicitFields ?? [],
+      explicitFields,
       baseProfileFields: input.baseProfilePreset ? ["preset"] : [],
+      layoutPolicy,
     },
     fonts: {
       hints: input.fontHints ?? [],

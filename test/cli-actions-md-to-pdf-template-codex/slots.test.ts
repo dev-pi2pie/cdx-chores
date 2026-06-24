@@ -65,6 +65,63 @@ describe("cli action modules: md pdf-template codex slots", () => {
     });
   });
 
+  test("uses document signal provenance for derived wide-table layout", () => {
+    const result = synthesize({
+      signals: createSynthesisSignals({
+        tableSignals: { maxLineWidth: 120, maxColumns: 8, scannedRows: 3 },
+      }),
+    });
+
+    expect(result.slots.recipePreset).toEqual({
+      preset: "wide-table",
+      source: "document-signal",
+    });
+    expect(result.slots.tables).toMatchObject({
+      density: "wide",
+      width: "full",
+    });
+    expect(result.styleCss).toContain("size: A4 landscape;");
+    expect(result.styleCss).toContain("margin: 12mm 12mm 12mm 12mm;");
+  });
+
+  test("does not derive wide-table layout from weak table signals", () => {
+    const result = synthesize({
+      signals: createSynthesisSignals({
+        tableSignals: { maxColumns: 5, scannedRows: 3 },
+      }),
+    });
+
+    expect(result.slots.recipePreset).toEqual({
+      preset: "article",
+      source: "renderer-default",
+    });
+    expect(result.slots.tables).toMatchObject({
+      density: "standard",
+      width: "content",
+    });
+    expect(result.styleCss).toContain("size: A4 portrait;");
+  });
+
+  test("preserves base-profile recipe ownership over strong table signals", () => {
+    const result = synthesize({
+      signals: createSynthesisSignals({
+        baseProfilePreset: "reader",
+        signalMode: "codex-assisted",
+        tableSignals: { maxLineWidth: 120, maxColumns: 8, scannedRows: 3 },
+      }),
+    });
+
+    expect(result.slots.recipePreset).toEqual({
+      preset: "reader",
+      source: "base-profile",
+    });
+    expect(result.slots.tables).toMatchObject({
+      density: "standard",
+      width: "content",
+    });
+    expect(result.styleCss).toContain("size: A4 portrait;");
+  });
+
   test("uses conservative contained cover layout for cover-image-only synthesis", () => {
     const result = synthesize({
       includeCoverAsset: true,

@@ -17,23 +17,30 @@ import {
   createSynthesisSignals,
 } from "./cli-actions-md-to-pdf-template-codex/synthesis-fixtures";
 
-function requestBase(input: { coverImage?: boolean } = {}): MarkdownPdfTemplateCodexRequest {
+function requestBase(
+  input: {
+    coverImage?: boolean;
+    signals?: MarkdownPdfTemplateCodexRequest["signals"];
+  } = {},
+): MarkdownPdfTemplateCodexRequest {
   return {
     intent: "adapt this report with a local cover image",
     outputPlan: createSynthesisOutputPlan({ includeCoverAsset: input.coverImage }),
-    signals: createSynthesisSignals(
-      input.coverImage
-        ? {
-            coverImage: {
-              fitPressure: "normal",
-              height: 800,
-              orientationBucket: "landscape",
-              width: 1200,
-            },
-            signalMode: "codex-assisted",
-          }
-        : { signalMode: "codex-assisted" },
-    ),
+    signals:
+      input.signals ??
+      createSynthesisSignals(
+        input.coverImage
+          ? {
+              coverImage: {
+                fitPressure: "normal",
+                height: 800,
+                orientationBucket: "landscape",
+                width: 1200,
+              },
+              signalMode: "codex-assisted",
+            }
+          : { signalMode: "codex-assisted" },
+      ),
     workingDirectory: "/repo",
   };
 }
@@ -60,15 +67,21 @@ function responseFromDecision(input: {
   imageFit?: string;
   managedAssets?: Array<{ bundle_path: string; source_label: string }>;
   recipePreset?: string;
+  recipeSource?: string;
   templateFamily?: string;
 }): string {
   const coverEnabled = input.coverEnabled ?? true;
+  const recipePreset = input.recipePreset ?? "article";
+  const slotRecipePreset = recipePreset === "none" ? "article" : recipePreset;
   return JSON.stringify({
     decision_mode: input.decisionMode ?? "adapted",
     template_family: input.templateFamily ?? "cover-media-layered",
-    recipe_preset: input.recipePreset ?? "article",
+    recipe_preset: recipePreset,
     slots: {
-      recipe_preset: { preset: "article", source: "renderer-default" },
+      recipe_preset: {
+        preset: slotRecipePreset,
+        source: input.recipeSource ?? "renderer-default",
+      },
       cover: {
         enabled: coverEnabled,
         image_fit: input.imageFit ?? (coverEnabled ? "cover" : ""),
@@ -152,6 +165,12 @@ describe("Markdown PDF template Codex adapter", () => {
         roles: ["body", "heading", "code"],
         sources: ["font-hint", "template-style"],
       },
+      layoutDecisionPolicy: {
+        recipePresetPolicy: {
+          status: "not-needed",
+          source: "document-table-signal",
+        },
+      },
       hookRequirements: {
         css: {
           codeLineSelector: ".cdx-code-line",
@@ -190,6 +209,10 @@ describe("Markdown PDF template Codex adapter", () => {
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.font_decisions.items.properties.role
         .enum,
     ).toEqual(["body", "heading", "code"]);
+    expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.recipe_preset.properties
+        .source.enum,
+    ).toContain("document-signal");
   });
 
   test("parses and applies an adapted decision with managed cover asset references", async () => {
@@ -208,6 +231,52 @@ describe("Markdown PDF template Codex adapter", () => {
         cover: { enabled: true, imageFit: "cover" },
         code: { lineWrap: "wrap", preserveSelectors: true, style: "shiki-compatible" },
       },
+    });
+  });
+
+  test("rejects recipe decisions that drift from document-derived wide-table ownership", async () => {
+    const request = requestBase({
+      signals: createSynthesisSignals({
+        signalMode: "codex-assisted",
+        tableSignals: { maxColumns: 8, maxLineWidth: 120, scannedRows: 2 },
+      }),
+    });
+
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({
+            coverEnabled: false,
+            recipePreset: "article",
+            templateFamily: "document-layered",
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("recipe_preset must match the effective recipe preset: wide-table");
+  });
+
+  test("accepts recipe decisions that match document-derived wide-table ownership", async () => {
+    const request = requestBase({
+      signals: createSynthesisSignals({
+        signalMode: "codex-assisted",
+        tableSignals: { maxColumns: 8, maxLineWidth: 120, scannedRows: 2 },
+      }),
+    });
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...request,
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          recipePreset: "wide-table",
+          recipeSource: "document-signal",
+          templateFamily: "document-layered",
+        }),
+    });
+
+    expect(result.decision.slots.recipePreset).toEqual({
+      preset: "wide-table",
+      source: "document-signal",
     });
   });
 

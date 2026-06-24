@@ -216,6 +216,65 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).not.toContain("break-after: page;");
   });
 
+  test("suppresses duplicate metadata title blocks like profile auto title policy", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        titleSignals: {
+          frontmatterTitle: { present: true, charCount: 14 },
+          firstH1: { present: true, charCount: 14 },
+          normalizedTitleMatch: true,
+          duplicateVisibleTitleRisk: true,
+        },
+      }),
+    });
+
+    expect(result.titlePolicy).toMatchObject({
+      metadataTitle: "suppress-duplicate",
+      visibleMetadataTitle: false,
+      duplicateVisibleTitleRisk: true,
+    });
+    expect(result.templateHtml).not.toContain('<header class="document-title">');
+    expect(result.templateHtml).toContain(
+      "<title>$if(title)$$title$$else$Markdown PDF$endif$</title>",
+    );
+    expect(result.templateHtml).toContain("$body$");
+  });
+
+  test("keeps metadata title blocks when there is no duplicate title risk", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals(),
+    });
+
+    expect(result.titlePolicy).toMatchObject({
+      metadataTitle: "show",
+      visibleMetadataTitle: true,
+    });
+    expect(result.templateHtml).toContain('<header class="document-title">');
+    expect(result.templateHtml).toContain('<h1 class="title">$title$</h1>');
+  });
+
+  test("lets cover-title placement own the visible title block", () => {
+    const result = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan({ includeCoverAsset: true }),
+      signals: createSynthesisSignals({
+        coverImage: {
+          orientationBucket: "landscape",
+          fitPressure: "normal",
+        },
+      }),
+    });
+
+    expect(result.titlePolicy).toMatchObject({
+      metadataTitle: "suppress-cover-title",
+      visibleMetadataTitle: false,
+      coverTitleOwnsPlacement: true,
+    });
+    expect(result.templateHtml).toContain("pdf-cover-media__title");
+    expect(result.templateHtml).not.toContain('<header class="document-title">');
+  });
+
   test("materializes bounded font hint decisions into template CSS variables", () => {
     const signals = createSynthesisSignals({ fontHints: ["Inter"] });
     const outputPlan = createSynthesisOutputPlan();

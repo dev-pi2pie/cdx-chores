@@ -44,6 +44,7 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS = [
 export const MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES = [
   "explicit-recipe",
   "base-profile",
+  "document-signal",
   "renderer-default",
 ] as const satisfies readonly MarkdownPdfTemplateCodexRecipePresetSource[];
 
@@ -243,6 +244,40 @@ function validateTemplateFontDecisions(
   });
 }
 
+function expectedRecipePresetSource(
+  signals: MdPdfTemplateCodexSignalCollection,
+): MarkdownPdfTemplateCodexRecipePresetSource {
+  if (signals.recipe.explicitFields.includes("preset")) {
+    return "explicit-recipe";
+  }
+  if (signals.recipe.layoutPolicy.recipePreset.status === "applied") {
+    return "document-signal";
+  }
+  if (signals.baseProfile.available && signals.baseProfile.summary?.preset) {
+    return "base-profile";
+  }
+  return "renderer-default";
+}
+
+function validateRecipeOwnership(input: {
+  recipePreset: NormalizedMarkdownPdfOptions["preset"];
+  slots: MarkdownPdfTemplateCodexResolvedSlots;
+  signals: MdPdfTemplateCodexSignalCollection;
+}): void {
+  const expectedPreset = input.signals.recipe.effectiveOptions.preset;
+  if (input.recipePreset !== expectedPreset || input.slots.recipePreset.preset !== expectedPreset) {
+    throw new Error(
+      `Markdown PDF template Codex response recipe_preset must match the effective recipe preset: ${expectedPreset}.`,
+    );
+  }
+  const expectedSource = expectedRecipePresetSource(input.signals);
+  if (input.slots.recipePreset.source !== expectedSource) {
+    throw new Error(
+      `Markdown PDF template Codex response slots.recipe_preset.source must match the effective recipe source: ${expectedSource}.`,
+    );
+  }
+}
+
 export function validateMarkdownPdfTemplateCodexDecision(input: {
   decision: MarkdownPdfTemplateCodexDecision;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
@@ -319,11 +354,17 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
     "recipe_preset",
   );
+  const slots = validateSlots(input.decision.slots);
+  validateRecipeOwnership({
+    recipePreset,
+    slots,
+    signals: input.signals,
+  });
   return {
     decisionMode,
     templateFamily,
     recipePreset,
-    slots: validateSlots(input.decision.slots),
+    slots,
     cssBlocks,
     fontDecisions: validateTemplateFontDecisions(input.decision.fontDecisions),
     managedAssets: validateManagedAssets({

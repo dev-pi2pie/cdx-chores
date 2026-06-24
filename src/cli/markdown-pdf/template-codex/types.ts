@@ -14,6 +14,7 @@ export type {
   MarkdownPdfTemplateCodexCoverImageSignals,
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexFontSignals,
+  MarkdownPdfTemplateCodexLayoutPolicySignal,
   MarkdownPdfTemplateCodexOrientationBucket,
   MarkdownPdfTemplateCodexRecipeSignals,
 } from "./types-signals";
@@ -51,3 +52,7 @@ export type {
   MarkdownPdfTemplateCodexThemeTokens,
   MarkdownPdfTemplateCodexTypographySlot,
 } from "./types-synthesis";
+export type {
+  MarkdownPdfTemplateCodexMetadataTitlePolicy,
+  MarkdownPdfTemplateCodexTitlePolicyDecision,
+} from "./title-policy";
