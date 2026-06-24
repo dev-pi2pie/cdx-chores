@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Template Codex Helper"
 created-date: 2026-06-18
-modified-date: 2026-06-23
+modified-date: 2026-06-24
 status: in-progress
 agent: codex
 ---
@@ -79,6 +79,9 @@ Use the existing command vocabulary where it already fits:
 - when `--output` is omitted, v1 should generate a readable, non-colliding default bundle directory using the same Codex-helper posture as `md pdf-profile codex`, but only after the command has enough signal to proceed.
 - the public `md pdf-template codex` command surface should stay close to `md pdf-profile codex`: bounded Codex/template signals, output/report controls, and no direct render-recipe flag surface.
 - recipe controls should not be hidden or secretly accepted by this command. Detailed page shape, preset, margin, and ToC controls belong to `md pdf-template init`, reusable `--base-profile` inputs, or the later `md to-pdf` render command.
+- the ownership split should stay explicit: profile-Codex is the stronger route for page and render policy such as page size, orientation, margins, ToC, page numbers, reusable font defaults, and preset-backed recipes; template-Codex is the stronger route for reviewable HTML/CSS structure, visual treatment, local cover-image packaging, and managed bundle assets.
+- table pressure can influence both helpers, but with different authority. Profile-Codex may turn strong wide-table signals into profile recipe settings. Template-Codex may adapt table styling and may choose a wide-table-compatible recipe only when no stronger profile or render-time recipe owner exists.
+- page numbers should remain profile-owned by default. Template-Codex should not emit template page-number chrome unless a later phase adds explicit bounded template-level ownership and conflict reporting.
 - `[input]` plus `-i, --input <path>` should mirror the profile-Codex alias pattern.
 - `--base-profile <path>` is an optional signal and compatibility target, not the output target.
 - `--cover-image <path>` should be singular in v1. Repeated media inputs can wait until the asset model proves out.
@@ -241,7 +244,7 @@ Template-Codex is the correct owner for:
 - brand-like typography and color treatment
 - template-only rendering behavior
 
-This does not make profile-Codex obsolete. Profile-Codex remains the quick config route when a request can be represented by page settings, ToC, cover fields, page chrome, fonts, code highlighting, and preset-backed recipe choices.
+This does not make profile-Codex obsolete. Profile-Codex remains the quick config route when a request can be represented by page settings, ToC, profile-compatible cover fields, page chrome, page numbers, fonts, code highlighting, and preset-backed recipe choices. Put another way: profile-Codex is better for page-number and reusable render policy; template-Codex is better for cover-image bundles and reviewable presentation artifacts.
 
 ### 3. Profile can be an input signal, but template/CSS is the stronger visual layer
 
@@ -262,6 +265,8 @@ The base profile should act as:
 But a custom template and stylesheet are lower-level rendering artifacts. When rendered with `md to-pdf`, a profile field affects the final PDF only if the template and stylesheet honor that hook.
 
 The helper should make this relationship visible in its summary and optional report.
+
+Template-Codex should therefore treat profile-owned render policy as an input boundary, not as a styling suggestion to silently override. Page size, orientation, margins, ToC behavior, and page numbers should be inherited from profile or render-time recipe sources unless the template phase defines a bounded, reported template-level override. By contrast, local cover-image copying, bundle-relative asset paths, cover-media layout, duplicate-title avoidance in the custom template, and table styling are template-owned presentation concerns.
 
 ### 4. Precedence should follow the current renderer model
 

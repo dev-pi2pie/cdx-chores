@@ -146,6 +146,15 @@ The generated template and stylesheet must preserve later-render hooks needed by
 - cover and page-chrome hooks used by profile-backed rendering
 - Shiki `.cdx-code*` selectors and code-block hook styling
 
+Render-policy ownership should stay explicit. Profile-Codex and render-time
+recipe sources own page size, orientation, margins, ToC behavior, page numbers,
+and reusable render defaults by default. Template-Codex owns reviewable HTML/CSS
+structure, local cover-image packaging, cover-media presentation, title
+placement, table styling, and managed bundle assets. Strong document table
+signals may influence a template-compatible `wide-table` recipe only when no
+stronger profile or render-time recipe owner exists; weak table signals should
+change table styling without forcing landscape.
+
 Self-contained rendering with `--no-default-css` is an advanced posture. V1 should not optimize the default docs or command summary around that mode, but static validation should avoid making it impossible to support later.
 
 ### Template Families And Slots
@@ -911,6 +920,78 @@ Focused validation target:
 
 ```bash
 bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts
+```
+
+Repo gates:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test --timeout 30000
+git diff --check
+```
+
+### Phase 8.5: Profile Policy Parity For Layout And Title Signals
+
+This phase closes the remaining parity gap between `md pdf-profile codex` and
+`md pdf-template codex` for document-informed layout and title decisions. The
+ownership model is intentionally asymmetric: profile-Codex remains the stronger
+route for page-number and reusable page/render policy, while template-Codex
+remains the stronger route for local cover-image bundles, custom cover
+composition, title placement, and table styling.
+
+- [ ] Reuse or mirror the profile-Codex table layout signal ladder for template
+      decisions, including scanned row count, overflow rows, maximum line width,
+      and maximum column count.
+- [ ] Treat strong wide-table document signals as permission to choose
+      `recipe_preset: wide-table` and landscape-compatible synthesis only when
+      no stronger base-profile or render-time recipe owner exists.
+- [ ] Keep weak table signals from forcing landscape; use them only for bounded
+      table-density and styling slots.
+- [ ] Preserve explicit/base-profile page shape and recipe settings over
+      document-derived template layout suggestions.
+- [ ] Keep page numbers profile-owned by default; do not add template
+      page-number margin boxes unless a future bounded page-chrome ownership
+      path is explicitly designed.
+- [ ] Port or mirror the profile title decision policy so duplicate frontmatter
+      `title` and first `H1` values do not produce duplicate visible titles in
+      custom template output.
+- [ ] Define cover-title ownership: when the cover slot owns visible title
+      placement, suppress the separate metadata title block that would duplicate
+      the same title; do not mutate the Markdown body or frontmatter.
+- [ ] Record layout/title ownership decisions and any suppressed duplicate
+      title behavior in the diagnostic report without exposing local paths.
+- [ ] Add tests for strong wide-table input choosing wide-table/landscape only
+      when no profile or render-time owner blocks it.
+- [ ] Add tests for weak table input not forcing landscape.
+- [ ] Add precedence tests proving base-profile recipe/page settings win over
+      document table signals.
+- [ ] Add duplicate-title tests covering frontmatter `title` plus matching first
+      `H1`, including cover-title placement.
+- [ ] Add `md to-pdf` compatibility coverage for template/profile combinations
+      where page settings and page numbers must remain profile-owned.
+- [ ] Record the implementation sequence in a Phase 8.5 job record: compare
+      profile-Codex policies, encode ownership boundaries, implement layout and
+      title parity, update reports, verify focused coverage, run gates, and
+      review the phase commit range.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-24-markdown-pdf-template-codex-phase-8-5-profile-policy-parity-layout-title.md`
+
+Focused validation target:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/*.test.ts test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-actions*.test.ts test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/adapters-codex-markdown-pdf-profile.test.ts
+```
+
+Manual smoke target:
+
+```bash
+bun run build
+node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/cjk-font-smoke.md --font-hint "<reviewed local CJK font preference>" --dry-run
 ```
 
 Repo gates:
