@@ -972,10 +972,13 @@ composition, title placement, and table styling.
       `H1`, including cover-title placement.
 - [ ] Add `md to-pdf` compatibility coverage for template/profile combinations
       where page settings and page numbers must remain profile-owned.
+- [ ] Run a privacy-safe manual `--font-hint` smoke with a playground CJK sample
+      and record only the sanitized outcome, not local font/resource names,
+      absolute paths, raw report content, or generated bundle names.
 - [ ] Record the implementation sequence in a Phase 8.5 job record: compare
       profile-Codex policies, encode ownership boundaries, implement layout and
-      title parity, update reports, verify focused coverage, run gates, and
-      review the phase commit range.
+      title parity, update reports, run the privacy-safe `--font-hint` smoke,
+      verify focused coverage, run gates, and review the phase commit range.
 
 Job record:
 
@@ -993,6 +996,10 @@ Manual smoke target:
 bun run build
 node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/cjk-font-smoke.md --font-hint "<reviewed local CJK font preference>" --dry-run
 ```
+
+Record this smoke as a sanitized outcome only. Do not persist exact local font
+names, absolute local paths, raw diagnostic report content, or generated bundle
+names in the job record.
 
 Repo gates:
 
