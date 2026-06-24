@@ -239,4 +239,8 @@ persisting private local smoke artifacts.
   `457e22bc2d90e600b9ac781092f893faba2d0c93..04d5964` reported no remaining
   Template-Codex font contract code findings. Both reviewers noted only stale
   closeout text, which this record resolves.
-- Pending post-closeout correction review.
+- Post-closeout correction review of `5ad1e6b..2b37b66` found one remaining
+  sanitizer gap: non-allowlisted absolute local paths could still re-enter the
+  Codex repair prompt. The follow-up commit `e709211` broadened path redaction
+  and added a non-allowlisted workspace-style path regression.
+- Focused review of `2b37b66..e709211` reported no remaining findings.
