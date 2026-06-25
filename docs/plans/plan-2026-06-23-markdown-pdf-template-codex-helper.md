@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex helper implementation"
 created-date: 2026-06-23
 modified-date: 2026-06-25
-status: active
+status: completed
 agent: codex
 ---
 
@@ -1222,7 +1222,7 @@ Job record:
       verified and tagged.
 - [x] Update related research status only after implementation evidence
       exists.
-- [ ] Run docs review and final full-plan range review, then record the
+- [x] Run docs review and final full-plan range review, then record the
       closeout results.
 
 Job record:
@@ -1254,7 +1254,7 @@ Job record:
 | Cover media leaks source paths | copy into bundle assets and persist only redacted source display, basename, format, dimensions, and bundle path |
 | `--output` behavior becomes ambiguous | classify signals before deriving generated output; use `md pdf-template init` directory semantics for explicit output |
 | Template family names blur with renderer presets | keep `template_family` and `recipe_preset` as separate enum domains |
-| Docs overstate the canary state | keep release wording as planned/in-progress until implementation, verification, and tagging are complete |
+| Docs overstate the canary state | keep release wording clear that implementation is complete but `v0.1.5-canary.3` is not released until tagged |
 
 ## Related Research
 

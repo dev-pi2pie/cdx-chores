@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 9 docs closeout"
 created-date: 2026-06-25
 modified-date: 2026-06-25
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -128,9 +128,8 @@ one-shot or Interactive Markdown PDF layers.
   - `docs_reviewer` found one required guide correction and one expected
     closeout sequencing note.
   - The guide correction was addressed in this pass.
-  - The plan closeout gate remains open until final full-plan range review is
-    recorded.
-- Pending final full-plan range review.
+  - The closeout sequencing note was addressed after final full-plan range
+    review completed.
 - First final full-plan range review
   - Requested reviewers found actionable issues in cover-slot validation,
     diagnostic-report path redaction, remote `srcset` blocking, low-signal
@@ -169,3 +168,9 @@ one-shot or Interactive Markdown PDF layers.
     follow-up render commands, nested CSS import read boundaries, and absolute
     local asset references in custom templates.
   - The issues were addressed in the seventh-review fix slice.
+- Final full-plan range review
+  - `maintainability_reviewer` reviewed `c7b4d92^..HEAD` after the seventh
+    fix slice and reported no findings.
+  - Residual risk is limited to renderer/custom-template edge cases outside
+    the exercised template-Codex command, bundle-write, and integration test
+    coverage.

@@ -811,19 +811,19 @@ Completed profile-helper scope:
 - optional Codex diagnostic report JSON
 - focused tests for unavailable Codex, invalid structured output, overwrite behavior, and deterministic replay through `md to-pdf --profile`
 
-Current canary plan to draft:
+Completed current canary implementation plan:
 
 ```text
-docs/plans/plan-YYYY-MM-DD-markdown-pdf-template-codex-helper.md
+docs/plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ```
 
-Related current research:
+Related focused research:
 
 ```text
 docs/researches/research-2026-06-18-markdown-pdf-template-codex-helper.md
 ```
 
-Current canary scope to settle before implementation:
+Current canary implementation scope now completed:
 
 - `md pdf-template codex` command surface
 - explicit `-o, --output <directory>` behavior plus generated default output directory behavior
@@ -841,7 +841,7 @@ Current canary scope to settle before implementation:
 - dry-run or preview behavior
 - failure behavior when Codex is unavailable or generated artifacts fail validation
 
-The research remains `in-progress` because template-Codex still needs an implementation plan and evidence, and the hybrid one-shot and Interactive layers remain deferred.
+The research remains `in-progress` because the hybrid one-shot and Interactive layers remain deferred.
 
 ## Alternatives Considered
 
