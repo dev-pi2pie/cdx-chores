@@ -1,6 +1,6 @@
 import { mkdtemp, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { basename, dirname, join, relative, resolve } from "node:path";
 
 import { parse, serialize, type DefaultTreeAdapterTypes } from "parse5";
@@ -60,7 +60,7 @@ const HTML_ASSET_ATTR_PATTERN =
 const HTML_SRCSET_ATTR_PATTERN = /\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const HTML_STYLE_TAG_PATTERN = /<\s*style\b[^>]*>([\s\S]*?)<\s*\/\s*style\s*>/gi;
 const HTML_STYLE_ATTR_PATTERN = /\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
-const PANDOC_TEMPLATE_VARIABLE_PATTERN = /\$[A-Za-z][\w-]*\$/u;
+const PANDOC_TEMPLATE_VARIABLE_PATTERN = /\$[^$]+\$/u;
 const CSS_URL_FUNCTION_PATTERN = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/gi;
 const CSS_IMPORT_PATTERN = /@import\s+(url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^)"'\s;]+))(\s*\))?/gi;
 const CSS_URL_PATTERNS = [CSS_URL_FUNCTION_PATTERN, CSS_IMPORT_PATTERN] as const;
@@ -140,9 +140,75 @@ function collectRemoteCssAssets(css: string): string[] {
   return CSS_URL_PATTERNS.flatMap((pattern) => collectRemoteValuesFromPattern(css, pattern));
 }
 
+function cssImportReferenceFromMatch(match: RegExpMatchArray): string {
+  return (match[2] ?? match[3] ?? match[4] ?? "").trim();
+}
+
+function resolveLocalCssImportReference(
+  reference: string,
+  baseDirectory: string,
+): string | undefined {
+  if (!reference || shouldBlockAssetUrl(reference)) {
+    return undefined;
+  }
+  const scheme = reference.match(URL_SCHEME_PATTERN)?.[1]?.toLowerCase();
+  if (scheme === "data") {
+    return undefined;
+  }
+  if (scheme === "file") {
+    return fileURLToPath(reference);
+  }
+  if (scheme) {
+    return undefined;
+  }
+  return resolve(baseDirectory, splitAssetReference(reference).path);
+}
+
+async function collectRemoteCssAssetsDeep(input: {
+  baseDirectory: string;
+  css: string;
+  visitedCssPaths: Set<string>;
+}): Promise<string[]> {
+  const remotes = new Set<string>(collectRemoteCssAssets(input.css));
+  for (const match of input.css.matchAll(CSS_IMPORT_PATTERN)) {
+    const importPath = resolveLocalCssImportReference(
+      cssImportReferenceFromMatch(match),
+      input.baseDirectory,
+    );
+    if (!importPath || input.visitedCssPaths.has(importPath)) {
+      continue;
+    }
+    input.visitedCssPaths.add(importPath);
+    const importedCss = await readTextFileRequired(importPath);
+    for (const remote of await collectRemoteCssAssetsDeep({
+      baseDirectory: dirname(importPath),
+      css: importedCss,
+      visitedCssPaths: input.visitedCssPaths,
+    })) {
+      remotes.add(remote);
+    }
+  }
+  return Array.from(remotes);
+}
+
+function collectInlineCssBlocksFromHtml(html: string): string[] {
+  const blocks: string[] = [];
+  for (const tagMatch of html.matchAll(HTML_TAG_PATTERN)) {
+    const tag = tagMatch[0] ?? "";
+    for (const styleMatch of tag.matchAll(HTML_STYLE_ATTR_PATTERN)) {
+      blocks.push(styleMatch[1] ?? styleMatch[2] ?? styleMatch[3] ?? "");
+    }
+  }
+  for (const tagMatch of html.matchAll(HTML_STYLE_TAG_PATTERN)) {
+    blocks.push(tagMatch[1] ?? "");
+  }
+  return blocks;
+}
+
 async function rejectRemoteAssetsWhenDisabled(
   html: string,
   cssPaths: string[],
+  htmlBaseDirectory: string,
   allowRemoteAssets: boolean,
 ): Promise<void> {
   if (allowRemoteAssets) {
@@ -150,9 +216,25 @@ async function rejectRemoteAssetsWhenDisabled(
   }
 
   const remotes = new Set<string>(collectRemoteHtmlAssets(html));
+  const visitedCssPaths = new Set<string>();
+  for (const css of collectInlineCssBlocksFromHtml(html)) {
+    for (const remote of await collectRemoteCssAssetsDeep({
+      baseDirectory: htmlBaseDirectory,
+      css,
+      visitedCssPaths,
+    })) {
+      remotes.add(remote);
+    }
+  }
   for (const cssPath of cssPaths) {
     const css = await readTextFileRequired(cssPath);
-    for (const remote of collectRemoteCssAssets(css)) {
+    const resolvedCssPath = resolve(cssPath);
+    visitedCssPaths.add(resolvedCssPath);
+    for (const remote of await collectRemoteCssAssetsDeep({
+      baseDirectory: dirname(resolvedCssPath),
+      css,
+      visitedCssPaths,
+    })) {
       remotes.add(remote);
     }
   }
@@ -235,7 +317,10 @@ async function resolveTemplateLocalHtmlAssetReference(
     return value;
   }
   if (PANDOC_TEMPLATE_VARIABLE_PATTERN.test(value)) {
-    return value;
+    throw new CliError(`Template asset path must not contain Pandoc template variables: ${value}`, {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
   }
   const { path, suffix } = splitAssetReference(value);
   const resolvedPath = resolve(templateDirectory, path);
@@ -486,7 +571,12 @@ export async function renderMarkdownPdf(
     const html = await createFinalHtml(input, pandocHtmlPath);
     await writeFile(finalHtmlPath, html, "utf8");
 
-    await rejectRemoteAssetsWhenDisabled(html, cssPaths, input.options.allowRemoteAssets);
+    await rejectRemoteAssetsWhenDisabled(
+      html,
+      cssPaths,
+      dirname(input.inputPath),
+      input.options.allowRemoteAssets,
+    );
 
     if (input.htmlOutputPath) {
       await writeTextFileSafe(input.htmlOutputPath, html, { overwrite: input.overwrite });

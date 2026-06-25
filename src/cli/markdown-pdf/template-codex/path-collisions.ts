@@ -98,7 +98,7 @@ export async function assertDistinctPathPairs(
 
 export async function assertUsableTemplateCodexOutputDirectory(
   outputDirectory: string,
-  options: { overwrite?: boolean },
+  options: { allowExistingContents?: boolean; overwrite?: boolean },
 ): Promise<"existing" | "missing"> {
   try {
     const stats = await lstat(outputDirectory);
@@ -114,7 +114,7 @@ export async function assertUsableTemplateCodexOutputDirectory(
         exitCode: 2,
       });
     }
-    if (!options.overwrite) {
+    if (!options.overwrite && !options.allowExistingContents) {
       const entries = await readdir(outputDirectory);
       if (entries.length > 0) {
         throw new CliError(

@@ -1,7 +1,10 @@
 export { normalizeMdPdfTemplateCodexCommandState } from "./options";
 export { collectMdPdfTemplateCodexSignals } from "./signals";
 export { createMdPdfTemplateCodexBundleId } from "./identity";
-export { planMdPdfTemplateCodexOutput } from "./output-plan";
+export {
+  planMdPdfTemplateCodexOutput,
+  validateMdPdfTemplateCodexOutputWritability,
+} from "./output-plan";
 export {
   MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,

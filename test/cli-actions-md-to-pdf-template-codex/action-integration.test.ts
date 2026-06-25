@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
@@ -199,6 +199,41 @@ describe("cli action modules: md pdf-template codex integration", () => {
         "diagnostic-report",
       ]);
     });
+  });
+
+  test("allows dry-run in-bundle reports in existing bundle directories", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-dry-run-report-existing-bundle",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        const existingTemplate = "<html>existing</html>\n";
+        const existingStyle = "body { color: red; }\n";
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await mkdir(outputPath, { recursive: true });
+        await writeFile(join(outputPath, "template.html"), existingTemplate, "utf8");
+        await writeFile(join(outputPath, "style.css"), existingStyle, "utf8");
+
+        const { runtime, stdout } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          input: toRepoRelativePath(inputPath),
+          intent: "dense report",
+          output: toRepoRelativePath(outputPath),
+          keepCodexReport: true,
+          codexRunner: stubCodexRunner(codexTemplateResponse()),
+          dryRun: true,
+        });
+
+        expect(stdout.text).toContain("Dry run only. No template bundle files were written.");
+        expect(await readFile(join(outputPath, "template.html"), "utf8")).toBe(existingTemplate);
+        expect(await readFile(join(outputPath, "style.css"), "utf8")).toBe(existingStyle);
+        expect(
+          JSON.parse(await readFile(join(outputPath, "template.codex-report.json"), "utf8")),
+        ).toMatchObject({
+          decision: { mode: "adapted" },
+        });
+      },
+    );
   });
 
   test("writes adapted Codex-assisted template bundles with bounded CSS", async () => {
@@ -521,6 +556,50 @@ describe("cli action modules: md pdf-template codex integration", () => {
       ]);
       expect(report.followUpRenderCommand).toBeUndefined();
     });
+  });
+
+  test("allows no-usable in-bundle reports in existing bundle directories", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-no-usable-report-existing-bundle",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        const existingTemplate = "<html>existing</html>\n";
+        const existingStyle = "body { color: red; }\n";
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await mkdir(outputPath, { recursive: true });
+        await writeFile(join(outputPath, "template.html"), existingTemplate, "utf8");
+        await writeFile(join(outputPath, "style.css"), existingStyle, "utf8");
+
+        const { runtime, stderr, stdout } = createActionTestRuntime();
+        await expectCliError(
+          () =>
+            actionMdPdfTemplateCodex(runtime, {
+              input: toRepoRelativePath(inputPath),
+              intent: "download a remote animated cover",
+              output: toRepoRelativePath(outputPath),
+              keepCodexReport: true,
+              codexRunner: stubCodexRunner(noUsableTemplateResponse()),
+            }),
+          {
+            code: "NO_USABLE_TEMPLATE",
+            exitCode: 1,
+            messageIncludes: "Unsupported template direction.",
+          },
+        );
+
+        expect(stdout.text).toContain("Decision mode: no-usable-template");
+        expect(stderr.text).toContain("Wrote Codex report:");
+        expect(await readFile(join(outputPath, "template.html"), "utf8")).toBe(existingTemplate);
+        expect(await readFile(join(outputPath, "style.css"), "utf8")).toBe(existingStyle);
+        expect(
+          JSON.parse(await readFile(join(outputPath, "template.codex-report.json"), "utf8")),
+        ).toMatchObject({
+          decision: { mode: "no-usable-template" },
+          files: [{ role: "diagnostic-report" }],
+        });
+      },
+    );
   });
 
   test("shows one error TTY Codex progress stop for no-usable template decisions", async () => {

@@ -489,6 +489,37 @@ describe("cli action modules: md to-pdf rendering", () => {
     });
   });
 
+  test("rejects custom template asset references with Pandoc variables before rendering", async () => {
+    await withTempFixtureDir("md-to-pdf-template-asset-variable", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const customTemplate = join(fixtureDir, "template", "template.html");
+      await mkdir(dirname(customTemplate), { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        customTemplate,
+        '<html><body><img src="$if(cover)$assets/cover.png$endif$">$body$</body></html>',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          template: toRepoRelativePath(customTemplate),
+          runner,
+        }),
+      ).rejects.toThrow("Template asset path must not contain Pandoc template variables");
+
+      expect(
+        calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
+      ).toBe(false);
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+    });
+  });
+
   test("rejects custom template asset symlink escapes before rendering", async () => {
     await withTempFixtureDir("md-to-pdf-template-asset-symlink", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

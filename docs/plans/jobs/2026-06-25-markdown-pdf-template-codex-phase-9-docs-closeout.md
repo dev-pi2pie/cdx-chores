@@ -65,6 +65,12 @@ one-shot or Interactive Markdown PDF layers.
     local paths, blocking asset writes through symlinked parent directories,
     and aligning cover-style/aspect-ratio plan and research wording with the
     implemented contract.
+19. Addressed the sixth final-review slice by deferring bundle-output
+    writability checks for report-only dry-run and no-usable-template paths,
+    allowing requested in-bundle diagnostic reports to be written in existing
+    bundle directories without touching recipe files, following local CSS
+    import graphs when blocking remote render assets, and rejecting
+    Pandoc-template-token asset references before custom-template rendering.
 
 ## Verification
 
@@ -101,8 +107,11 @@ one-shot or Interactive Markdown PDF layers.
     `bun test test/cli-actions-md-to-pdf-template-codex/signal-mode.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/adapters-codex-markdown-pdf-template.test.ts`
     and
     `bun test test/cli-actions-md-to-pdf-commands.test.ts --test-name-pattern "routes base profile, cover image, and font hints through Codex-assisted command wiring"`
+- Focused sixth-review-fix tests:
+  - Passed: 61 tests across 7 files:
+    `bun test test/cli-actions-md-to-pdf-actions-assets.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts`
 - `bun test --timeout 30000`
-  - Passed: 1337 tests across 195 files.
+  - Passed: 1342 tests across 195 files.
 
 ## Review
 
@@ -140,3 +149,8 @@ one-shot or Interactive Markdown PDF layers.
     directories, generic absolute path redaction, and stale cover-slot plan
     wording.
   - The issues were addressed in the fifth-review fix slice.
+- Sixth final full-plan range review
+  - Reviewers found remaining issues in report-only dry-run/no-usable
+    preflight behavior, nested CSS remote-asset detection, and
+    Pandoc-template-token asset references.
+  - The issues were addressed in the sixth-review fix slice.

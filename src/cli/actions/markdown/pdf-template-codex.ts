@@ -7,6 +7,7 @@ import {
   printMdPdfTemplateCodexSummary,
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
+  validateMdPdfTemplateCodexOutputWritability,
   validateMdPdfTemplateCodexSynthesis,
   writeMdPdfTemplateCodexBundle,
   writeMdPdfTemplateCodexReportIfRequested,
@@ -38,7 +39,12 @@ async function preflightMdPdfTemplateCodex(
   const state = await normalizeMdPdfTemplateCodexCommandState(runtime, options);
   const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
-  const outputPlan = await planMdPdfTemplateCodexOutput({ runtime, state, signals });
+  const outputPlan = await planMdPdfTemplateCodexOutput({
+    runtime,
+    state,
+    signals,
+    writeMode: state.dryRun || signals.signalMode === "codex-assisted" ? "report-only" : "bundle",
+  });
   const synthesis =
     signals.signalMode === "codex-assisted"
       ? synthesizeMdPdfTemplateCodexFromDecision({
@@ -55,6 +61,13 @@ async function preflightMdPdfTemplateCodex(
           signals,
         })
       : synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+  if (!state.dryRun && synthesis.decisionMode !== "no-usable-template") {
+    await validateMdPdfTemplateCodexOutputWritability({
+      plan: outputPlan,
+      state,
+      writeMode: "bundle",
+    });
+  }
   validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
   return { outputPlan, signals, state, synthesis };
 }

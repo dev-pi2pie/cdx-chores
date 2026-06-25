@@ -25,6 +25,8 @@ const TEMPLATE_HTML_BUNDLE_PATH = "template.html";
 const STYLE_CSS_BUNDLE_PATH = "style.css";
 const DEFAULT_REPORT_BUNDLE_PATH = "template.codex-report.json";
 
+export type MdPdfTemplateCodexOutputWriteMode = "bundle" | "report-only";
+
 async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path);
@@ -206,6 +208,7 @@ function pairwiseCollisionPairs(entries: TemplateCodexCollisionEntry[]): Array<{
 function collectPathCollisionPairs(input: {
   plan: MarkdownPdfTemplateCodexOutputPlan;
   state: NormalizedMdPdfTemplateCodexCommandState;
+  writeMode: MdPdfTemplateCodexOutputWriteMode;
 }): Array<{
   left: string | undefined;
   leftLabel: string;
@@ -226,20 +229,28 @@ function collectPathCollisionPairs(input: {
       path: input.state.coverImagePath,
     },
   ];
-  const plannedEntries: TemplateCodexCollisionEntry[] = [
-    {
-      label: "--output",
-      path: input.plan.outputDirectory,
-    },
-    {
-      label: "planned template.html",
-      path: input.plan.templateHtml.path,
-    },
-    {
-      label: "planned style.css",
-      path: input.plan.styleCss.path,
-    },
-  ];
+  const plannedEntries: TemplateCodexCollisionEntry[] =
+    input.writeMode === "bundle"
+      ? [
+          {
+            label: "--output",
+            path: input.plan.outputDirectory,
+          },
+          {
+            label: "planned template.html",
+            path: input.plan.templateHtml.path,
+          },
+          {
+            label: "planned style.css",
+            path: input.plan.styleCss.path,
+          },
+        ]
+      : [
+          {
+            label: "--output",
+            path: input.plan.outputDirectory,
+          },
+        ];
 
   if (input.plan.report) {
     plannedEntries.push({
@@ -248,11 +259,13 @@ function collectPathCollisionPairs(input: {
     });
   }
 
-  for (const asset of input.plan.assets) {
-    plannedEntries.push({
-      label: `planned asset ${asset.bundlePath}`,
-      path: asset.path,
-    });
+  if (input.writeMode === "bundle") {
+    for (const asset of input.plan.assets) {
+      plannedEntries.push({
+        label: `planned asset ${asset.bundlePath}`,
+        path: asset.path,
+      });
+    }
   }
 
   return [
@@ -269,17 +282,79 @@ function collectPathCollisionPairs(input: {
   ];
 }
 
+function writablePlannedFiles(input: {
+  plan: MarkdownPdfTemplateCodexOutputPlan;
+  writeMode: MdPdfTemplateCodexOutputWriteMode;
+}): Array<{ label: string; path: string }> {
+  if (input.writeMode === "report-only") {
+    return input.plan.report
+      ? [
+          {
+            label: "--codex-report-output",
+            path: input.plan.report.path,
+          },
+        ]
+      : [];
+  }
+  return [
+    {
+      label: "planned template.html",
+      path: input.plan.templateHtml.path,
+    },
+    {
+      label: "planned style.css",
+      path: input.plan.styleCss.path,
+    },
+    ...(input.plan.report
+      ? [
+          {
+            label: "--codex-report-output",
+            path: input.plan.report.path,
+          },
+        ]
+      : []),
+    ...input.plan.assets.map((asset) => ({
+      label: `planned asset ${asset.bundlePath}`,
+      path: asset.path,
+    })),
+  ];
+}
+
+export async function validateMdPdfTemplateCodexOutputWritability(input: {
+  plan: MarkdownPdfTemplateCodexOutputPlan;
+  state: NormalizedMdPdfTemplateCodexCommandState;
+  writeMode: MdPdfTemplateCodexOutputWriteMode;
+}): Promise<void> {
+  await assertUsableTemplateCodexOutputDirectory(input.plan.outputDirectory, {
+    allowExistingContents: input.writeMode === "report-only",
+    overwrite: input.state.overwrite,
+  });
+  await assertDistinctPathPairs(
+    collectPathCollisionPairs({
+      plan: input.plan,
+      state: input.state,
+      writeMode: input.writeMode,
+    }),
+  );
+  await Promise.all(
+    writablePlannedFiles({ plan: input.plan, writeMode: input.writeMode }).map((file) =>
+      assertWritablePlannedFile(file, {
+        label: file.label,
+        overwrite: input.state.overwrite,
+      }),
+    ),
+  );
+}
+
 export async function planMdPdfTemplateCodexOutput(input: {
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
   state: NormalizedMdPdfTemplateCodexCommandState;
+  writeMode?: MdPdfTemplateCodexOutputWriteMode;
 }): Promise<MarkdownPdfTemplateCodexOutputPlan> {
   const outputResolution = await resolveOutputDirectory({
     runtime: input.runtime,
     state: input.state,
-  });
-  await assertUsableTemplateCodexOutputDirectory(outputResolution.outputDirectory, {
-    overwrite: input.state.overwrite,
   });
 
   const plan: MarkdownPdfTemplateCodexOutputPlan = {
@@ -314,31 +389,11 @@ export async function planMdPdfTemplateCodexOutput(input: {
     });
   }
 
-  await assertDistinctPathPairs(collectPathCollisionPairs({ plan, state: input.state }));
-  await Promise.all([
-    assertWritablePlannedFile(plan.templateHtml, {
-      label: "planned template.html",
-      overwrite: input.state.overwrite,
-    }),
-    assertWritablePlannedFile(plan.styleCss, {
-      label: "planned style.css",
-      overwrite: input.state.overwrite,
-    }),
-    ...(plan.report
-      ? [
-          assertWritablePlannedFile(plan.report, {
-            label: "--codex-report-output",
-            overwrite: input.state.overwrite,
-          }),
-        ]
-      : []),
-    ...plan.assets.map((asset) =>
-      assertWritablePlannedFile(asset, {
-        label: `planned asset ${asset.bundlePath}`,
-        overwrite: input.state.overwrite,
-      }),
-    ),
-  ]);
+  await validateMdPdfTemplateCodexOutputWritability({
+    plan,
+    state: input.state,
+    writeMode: input.writeMode ?? "bundle",
+  });
 
   return plan;
 }

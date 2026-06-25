@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
@@ -36,6 +36,75 @@ describe("cli action modules: md to-pdf assets", () => {
       );
 
       expect(error.message).toContain("https://example.com/logo.png");
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("blocks remote assets in nested CSS imports by default", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const cssDir = join(fixtureDir, "styles");
+      const customCss = join(cssDir, "base.css");
+      const nestedCss = join(cssDir, "nested.css");
+      await mkdir(cssDir, { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(customCss, '@import "nested.css";\nbody { color: black; }\n', "utf8");
+      await writeFile(
+        nestedCss,
+        '.logo { background: url("https://example.com/nested-logo.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(customCss),
+            runner,
+          }),
+        {
+          code: "REMOTE_ASSET_BLOCKED",
+          exitCode: 2,
+          messageIncludes: "https://example.com/nested-logo.png",
+        },
+      );
+
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("blocks remote assets in nested inline CSS imports by default", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const importedCss = join(fixtureDir, "print.css");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        importedCss,
+        '.hero { background: url("https://example.com/inline-nested.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({
+        html: '<html><head><style>@import "print.css";</style></head><body></body></html>',
+      });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () => actionMdToPdf(runtime, { input: toRepoRelativePath(inputPath), runner }),
+        {
+          code: "REMOTE_ASSET_BLOCKED",
+          exitCode: 2,
+          messageIncludes: "https://example.com/inline-nested.png",
+        },
+      );
+
       expect(
         calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
       ).toBe(false);
