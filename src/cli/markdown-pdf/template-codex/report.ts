@@ -278,9 +278,12 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
         : {}),
     },
     recipe: recipeSummary(input.signals),
-    managedAssets: input.outputPlan.assets.map((asset) =>
-      managedAssetReport({ asset, signals: input.signals }),
-    ),
+    managedAssets:
+      input.synthesis.decisionMode === "no-usable-template"
+        ? []
+        : input.outputPlan.assets.map((asset) =>
+            managedAssetReport({ asset, signals: input.signals }),
+          ),
     files: reportFiles(input),
     validationResults: [
       {

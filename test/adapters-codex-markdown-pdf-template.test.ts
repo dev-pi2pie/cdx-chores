@@ -680,6 +680,8 @@ describe("Markdown PDF template Codex adapter", () => {
       fallbackReason: "Codex template decision failed: unavailable.",
       managedAssets: [],
     });
+    expect(result.decision.slots.cover.enabled).toBe(false);
+    expect(result.decision.slots.cover.imageFit).toBeUndefined();
   });
 
   test("classifies structured-output schema runner failures without leaking raw messages", async () => {
@@ -695,6 +697,8 @@ describe("Markdown PDF template Codex adapter", () => {
       fallbackReason: "Codex template decision failed: structured-output-schema.",
       managedAssets: [],
     });
+    expect(result.decision.slots.cover.enabled).toBe(false);
+    expect(result.decision.slots.cover.imageFit).toBeUndefined();
     expect(result.decision.fallbackReason).not.toContain("/private/tmp");
   });
 

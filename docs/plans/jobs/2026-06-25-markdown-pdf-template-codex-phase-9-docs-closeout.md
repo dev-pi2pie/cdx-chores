@@ -51,6 +51,10 @@ one-shot or Interactive Markdown PDF layers.
     terminal absolute-path display mode, making `no-usable-template` decisions
     return `NO_USABLE_TEMPLATE` after writing any requested diagnostics, and
     rejecting animated PNG/WebP cover inputs during early command validation.
+16. Addressed the final no-usable-template cover-image review finding by making
+    fallback decisions cover-disabled, reporting zero managed assets for
+    no-usable outputs, and asserting that no-usable reports do not claim cover
+    output when a cover image was supplied.
 
 ## Verification
 
@@ -76,6 +80,9 @@ one-shot or Interactive Markdown PDF layers.
 - Focused second-review-fix tests:
   - Passed:
     `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-template-codex/command-state.test.ts test/cli-actions-md-to-pdf-template-codex/image-metadata.test.ts`
+- Focused final-review-fix tests:
+  - Passed:
+    `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts`
 - `bun test --timeout 30000`
   - Passed: 1334 tests across 195 files.
 
@@ -99,3 +106,8 @@ one-shot or Interactive Markdown PDF layers.
     absolute display mode, `no-usable-template` exit behavior, and animated
     cover input validation.
   - The issues were addressed in the second follow-up fix slice.
+- Third final full-plan range review
+  - One reviewer reported no findings.
+  - One reviewer found a remaining no-usable-template reporting inconsistency
+    for requests that included a cover image.
+  - The issue was addressed in the final follow-up fix slice.

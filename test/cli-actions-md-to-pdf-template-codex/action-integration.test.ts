@@ -414,9 +414,11 @@ describe("cli action modules: md pdf-template codex integration", () => {
   test("writes requested reports for no-usable-template Codex decisions without recipe files", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-no-usable", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
+      const coverImagePath = join(fixtureDir, "cover.png");
       const outputPath = join(fixtureDir, "template-output");
       const reportPath = join(fixtureDir, "template-report.json");
       await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(coverImagePath, minimalPng(1200, 800));
 
       const { runtime, stderr, stdout } = createActionTestRuntime();
       await expectCliError(
@@ -424,6 +426,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
           actionMdPdfTemplateCodex(runtime, {
             input: toRepoRelativePath(inputPath),
             intent: "download a remote animated cover",
+            coverImage: toRepoRelativePath(coverImagePath),
             output: toRepoRelativePath(outputPath),
             codexReportOutput: toRepoRelativePath(reportPath),
             codexRunner: stubCodexRunner(noUsableTemplateResponse()),
@@ -437,11 +440,14 @@ describe("cli action modules: md pdf-template codex integration", () => {
 
       expect(stdout.text).toContain("Decision mode: no-usable-template");
       expect(stdout.text).toContain("Fallback reason: Unsupported template direction.");
+      expect(stdout.text).toContain("Managed assets: 0");
+      expect(stdout.text).not.toContain("Cover composition:");
       expect(stderr.text).toContain("Wrote Codex report:");
       expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
       expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
       const report = JSON.parse(await readFile(reportPath, "utf8")) as {
         decision: {
+          cover: { enabled: boolean };
           fallbackReason: string;
           mode: string;
           recipePreset?: string;
@@ -455,6 +461,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(report.decision).toMatchObject({
         mode: "no-usable-template",
         fallbackReason: "Unsupported template direction.",
+        cover: { enabled: false },
       });
       expect(report.decision.templateFamily).toBeUndefined();
       expect(report.decision.recipePreset).toBeUndefined();

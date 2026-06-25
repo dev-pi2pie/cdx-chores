@@ -1,6 +1,5 @@
 import { startCodexReadOnlyThread } from "../shared";
 import {
-  resolveMdPdfTemplateCodexFamily,
   resolveMdPdfTemplateCodexSlots,
   type MarkdownPdfTemplateCodexDecision,
 } from "../../../cli/markdown-pdf/template-codex";
@@ -102,11 +101,10 @@ function createNoUsableTemplateDecision(input: {
   reason: string;
   request: MarkdownPdfTemplateCodexRequest;
 }): MarkdownPdfTemplateCodexDecision {
-  const family = resolveMdPdfTemplateCodexFamily(input.request.signals);
   return {
     decisionMode: "no-usable-template",
     slots: resolveMdPdfTemplateCodexSlots({
-      family,
+      family: "document-layered",
       signals: input.request.signals,
     }),
     cssBlocks: [],

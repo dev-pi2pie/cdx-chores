@@ -59,7 +59,12 @@ export function printMdPdfTemplateCodexSummary(
   );
   printLine(runtime.stdout, `Template HTML: ${input.outputPlan.templateHtml.bundlePath}`);
   printLine(runtime.stdout, `Stylesheet: ${input.outputPlan.styleCss.bundlePath}`);
-  printLine(runtime.stdout, `Managed assets: ${input.outputPlan.assets.length}`);
+  printLine(
+    runtime.stdout,
+    `Managed assets: ${
+      input.synthesis.decisionMode === "no-usable-template" ? 0 : input.outputPlan.assets.length
+    }`,
+  );
   if (input.outputPlan.report) {
     printLine(
       runtime.stdout,
