@@ -8,6 +8,10 @@ import type {
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";
 
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
 function renderFollowUpRenderCommand(input: {
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   runtime: CliRuntime;
@@ -20,10 +24,9 @@ function renderFollowUpRenderCommand(input: {
   const inputPath = input.state.inputPath
     ? formatPathForDisplay(input.runtime, input.state.inputPath)
     : "<input.md>";
-  return `cdx-chores md to-pdf --input ${inputPath} --template ${formatPathForDisplay(
-    input.runtime,
-    input.outputPlan.templateHtml.path,
-  )} --css ${formatPathForDisplay(input.runtime, input.outputPlan.styleCss.path)} --output <output.pdf>`;
+  return `cdx-chores md to-pdf --input ${shellQuote(inputPath)} --template ${shellQuote(
+    formatPathForDisplay(input.runtime, input.outputPlan.templateHtml.path),
+  )} --css ${shellQuote(formatPathForDisplay(input.runtime, input.outputPlan.styleCss.path))} --output ${shellQuote("<output.pdf>")}`;
 }
 
 export function printMdPdfTemplateCodexSummary(

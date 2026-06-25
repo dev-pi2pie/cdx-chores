@@ -71,6 +71,12 @@ one-shot or Interactive Markdown PDF layers.
     bundle directories without touching recipe files, following local CSS
     import graphs when blocking remote render assets, and rejecting
     Pandoc-template-token asset references before custom-template rendering.
+20. Addressed the seventh final-review slice by making the command-layer
+    Template-Codex fallback test use a deterministic Codex CLI stub, redacting
+    Windows-style absolute paths from persisted diagnostics, shell-quoting
+    persisted and printed follow-up render commands, rejecting absolute local
+    custom-template asset references, and constraining nested CSS import reads
+    to the source directory plus the custom-template directory when applicable.
 
 ## Verification
 
@@ -110,8 +116,11 @@ one-shot or Interactive Markdown PDF layers.
 - Focused sixth-review-fix tests:
   - Passed: 61 tests across 7 files:
     `bun test test/cli-actions-md-to-pdf-actions-assets.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts`
+- Focused seventh-review-fix tests:
+  - Passed: 58 tests across 4 files:
+    `bun test test/cli-actions-md-to-pdf-actions-assets.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-commands.test.ts`
 - `bun test --timeout 30000`
-  - Passed: 1342 tests across 195 files.
+  - Passed: 1347 tests across 195 files.
 
 ## Review
 
@@ -154,3 +163,9 @@ one-shot or Interactive Markdown PDF layers.
     preflight behavior, nested CSS remote-asset detection, and
     Pandoc-template-token asset references.
   - The issues were addressed in the sixth-review fix slice.
+- Seventh final full-plan range review
+  - Reviewers found remaining issues in env-sensitive command-layer Codex
+    fallback coverage, Windows-style persisted path redaction, shell-unsafe
+    follow-up render commands, nested CSS import read boundaries, and absolute
+    local asset references in custom templates.
+  - The issues were addressed in the seventh-review fix slice.

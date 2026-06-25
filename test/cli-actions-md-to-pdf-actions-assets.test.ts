@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
@@ -74,6 +74,86 @@ describe("cli action modules: md to-pdf assets", () => {
         },
       );
 
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("rejects nested CSS imports outside the source directory before reading them", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const cssDir = join(fixtureDir, "styles");
+      const customCss = join(cssDir, "base.css");
+      const outsideCss = join(fixtureDir, "outside.css");
+      await mkdir(cssDir, { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(customCss, '@import "../outside.css";\nbody { color: black; }\n', "utf8");
+      await writeFile(
+        outsideCss,
+        '.logo { background: url("https://example.com/outside-logo.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      const error = await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(customCss),
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "CSS import path must stay inside its source directory",
+        },
+      );
+
+      expect(error.message).not.toContain("https://example.com/outside-logo.png");
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("rejects nested CSS imports that symlink outside the source directory", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const cssDir = join(fixtureDir, "styles");
+      const customCss = join(cssDir, "base.css");
+      const linkedCss = join(cssDir, "linked.css");
+      const outsideCss = join(fixtureDir, "outside.css");
+      await mkdir(cssDir, { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(customCss, '@import "linked.css";\nbody { color: black; }\n', "utf8");
+      await writeFile(
+        outsideCss,
+        '.logo { background: url("https://example.com/symlink-logo.png"); }\n',
+        "utf8",
+      );
+      await symlink(outsideCss, linkedCss);
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      const error = await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(customCss),
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "CSS import path must stay inside its source directory",
+        },
+      );
+
+      expect(error.message).not.toContain("https://example.com/symlink-logo.png");
       expect(
         calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
       ).toBe(false);

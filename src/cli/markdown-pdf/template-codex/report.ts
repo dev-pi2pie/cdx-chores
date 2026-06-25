@@ -1,4 +1,4 @@
-import { basename, relative } from "node:path";
+import { basename, relative, win32 } from "node:path";
 
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
@@ -95,8 +95,40 @@ export interface MdPdfTemplateCodexReportArtifact {
 }
 
 function pathInsideCwd(runtime: CliRuntime, path: string): boolean {
+  const cwdIsWindowsAbsolute = isWindowsAbsolutePath(runtime.cwd);
+  const pathIsWindowsAbsolute = isWindowsAbsolutePath(path);
+  if (cwdIsWindowsAbsolute || pathIsWindowsAbsolute) {
+    if (!cwdIsWindowsAbsolute || !pathIsWindowsAbsolute) {
+      return false;
+    }
+    const repoRelative = win32.relative(runtime.cwd, path);
+    return (
+      repoRelative === "" ||
+      (!repoRelative.startsWith("..") &&
+        !repoRelative.startsWith("\\") &&
+        !isWindowsAbsolutePath(repoRelative))
+    );
+  }
   const repoRelative = relative(runtime.cwd, path);
-  return repoRelative === "" || (!repoRelative.startsWith("..") && !repoRelative.startsWith("/"));
+  return (
+    repoRelative === "" ||
+    (!repoRelative.startsWith("..") &&
+      !repoRelative.startsWith("/") &&
+      !repoRelative.startsWith("\\") &&
+      !isWindowsAbsolutePath(repoRelative))
+  );
+}
+
+function isWindowsAbsolutePath(path: string): boolean {
+  return /^[a-z]:[\\/]/iu.test(path) || path.startsWith("\\\\") || /^\\[^\\]/u.test(path);
+}
+
+function pathBasename(path: string): string {
+  return path.includes("\\") || isWindowsAbsolutePath(path) ? win32.basename(path) : basename(path);
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function redactedPathDisplay(
@@ -107,10 +139,14 @@ function redactedPathDisplay(
     return undefined;
   }
   const insideCwd = pathInsideCwd(runtime, path);
-  const relativePath = relative(runtime.cwd, path);
+  const relativePath =
+    isWindowsAbsolutePath(runtime.cwd) && isWindowsAbsolutePath(path)
+      ? win32.relative(runtime.cwd, path)
+      : relative(runtime.cwd, path);
+  const basenameValue = pathBasename(path);
   return {
-    display: insideCwd ? (relativePath.length > 0 ? relativePath : ".") : basename(path),
-    basename: basename(path),
+    display: insideCwd ? (relativePath.length > 0 ? relativePath : ".") : basenameValue,
+    basename: basenameValue,
     redacted: !insideCwd,
   };
 }
@@ -207,7 +243,7 @@ function reportFiles(input: {
             role: "diagnostic-report",
             path:
               redactedPathDisplay(input.runtime, input.outputPlan.report.path)?.display ??
-              basename(input.outputPlan.report.path),
+              pathBasename(input.outputPlan.report.path),
             planned: true,
           },
     );
@@ -229,7 +265,9 @@ function followUpRenderCommand(input: {
     : "<input.md>";
   const templatePath = `<template-bundle>/${input.outputPlan.templateHtml.bundlePath}`;
   const cssPath = `<template-bundle>/${input.outputPlan.styleCss.bundlePath}`;
-  return `cdx-chores md to-pdf --input ${inputPath} --template ${templatePath} --css ${cssPath} --output <output.pdf>`;
+  return `cdx-chores md to-pdf --input ${shellQuote(inputPath)} --template ${shellQuote(
+    templatePath,
+  )} --css ${shellQuote(cssPath)} --output ${shellQuote("<output.pdf>")}`;
 }
 
 export function createMdPdfTemplateCodexReportArtifact(input: {

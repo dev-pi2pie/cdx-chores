@@ -39,6 +39,7 @@ export interface RenderMarkdownPdfResult {
 
 const URL_SCHEME_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
 const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[a-z]:[\\/]/i;
+const WINDOWS_ROOT_RELATIVE_PATH_PATTERN = /^\\/u;
 const HTML_TAG_PATTERN = /<\s*([a-z][\w:-]*)\b[^>]*>/gi;
 const HTML_ASSET_TAGS = new Set([
   "img",
@@ -167,6 +168,7 @@ function resolveLocalCssImportReference(
 async function collectRemoteCssAssetsDeep(input: {
   baseDirectory: string;
   css: string;
+  rootDirectories: string[];
   visitedCssPaths: Set<string>;
 }): Promise<string[]> {
   const remotes = new Set<string>(collectRemoteCssAssets(input.css));
@@ -178,11 +180,34 @@ async function collectRemoteCssAssetsDeep(input: {
     if (!importPath || input.visitedCssPaths.has(importPath)) {
       continue;
     }
-    input.visitedCssPaths.add(importPath);
-    const importedCss = await readTextFileRequired(importPath);
+    const resolvedImportPath = resolve(importPath);
+    const rootDirectory = findContainingRootDirectory(resolvedImportPath, input.rootDirectories);
+    if (!rootDirectory) {
+      throw new CliError(`CSS import path must stay inside its source directory: ${importPath}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    const realImportPath = await realFilePath(resolvedImportPath);
+    if (!realImportPath) {
+      throw new CliError(`CSS import path does not exist: ${importPath}`, {
+        code: "FILE_NOT_FOUND",
+        exitCode: 1,
+      });
+    }
+    const realRootDirectory = findContainingRootDirectory(realImportPath, input.rootDirectories);
+    if (!realRootDirectory) {
+      throw new CliError(`CSS import path must stay inside its source directory: ${importPath}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    input.visitedCssPaths.add(resolvedImportPath);
+    const importedCss = await readTextFileRequired(resolvedImportPath);
     for (const remote of await collectRemoteCssAssetsDeep({
-      baseDirectory: dirname(importPath),
+      baseDirectory: dirname(resolvedImportPath),
       css: importedCss,
+      rootDirectories: [realRootDirectory],
       visitedCssPaths: input.visitedCssPaths,
     })) {
       remotes.add(remote);
@@ -205,11 +230,19 @@ function collectInlineCssBlocksFromHtml(html: string): string[] {
   return blocks;
 }
 
+function findContainingRootDirectory(path: string, rootDirectories: string[]): string | undefined {
+  const resolvedPath = resolve(path);
+  return rootDirectories
+    .map((rootDirectory) => resolve(rootDirectory))
+    .find((rootDirectory) => relativePathStaysInside(rootDirectory, resolvedPath));
+}
+
 async function rejectRemoteAssetsWhenDisabled(
   html: string,
   cssPaths: string[],
   htmlBaseDirectory: string,
   allowRemoteAssets: boolean,
+  htmlCssAdditionalRootDirectories: string[] = [],
 ): Promise<void> {
   if (allowRemoteAssets) {
     return;
@@ -217,10 +250,12 @@ async function rejectRemoteAssetsWhenDisabled(
 
   const remotes = new Set<string>(collectRemoteHtmlAssets(html));
   const visitedCssPaths = new Set<string>();
+  const htmlCssRootDirectories = [htmlBaseDirectory, ...htmlCssAdditionalRootDirectories];
   for (const css of collectInlineCssBlocksFromHtml(html)) {
     for (const remote of await collectRemoteCssAssetsDeep({
       baseDirectory: htmlBaseDirectory,
       css,
+      rootDirectories: htmlCssRootDirectories,
       visitedCssPaths,
     })) {
       remotes.add(remote);
@@ -233,6 +268,7 @@ async function rejectRemoteAssetsWhenDisabled(
     for (const remote of await collectRemoteCssAssetsDeep({
       baseDirectory: dirname(resolvedCssPath),
       css,
+      rootDirectories: [dirname(resolvedCssPath)],
       visitedCssPaths,
     })) {
       remotes.add(remote);
@@ -288,9 +324,21 @@ function isRelativeHtmlAssetReference(value: string): boolean {
     trimmed.length > 0 &&
     !trimmed.startsWith("#") &&
     !trimmed.startsWith("/") &&
+    !WINDOWS_ROOT_RELATIVE_PATH_PATTERN.test(trimmed) &&
     !trimmed.startsWith("//") &&
     !URL_SCHEME_PATTERN.test(trimmed) &&
     !WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmed)
+  );
+}
+
+function isLocalAbsoluteHtmlAssetReference(value: string): boolean {
+  const trimmed = value.trim();
+  const scheme = trimmed.match(URL_SCHEME_PATTERN)?.[1]?.toLowerCase();
+  return (
+    scheme === "file" ||
+    (trimmed.startsWith("/") && !trimmed.startsWith("//")) ||
+    WINDOWS_ROOT_RELATIVE_PATH_PATTERN.test(trimmed) ||
+    WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmed)
   );
 }
 
@@ -313,14 +361,52 @@ async function resolveTemplateLocalHtmlAssetReference(
   value: string,
   templateDirectory: string,
 ): Promise<string> {
-  if (!isRelativeHtmlAssetReference(value)) {
-    return value;
-  }
   if (PANDOC_TEMPLATE_VARIABLE_PATTERN.test(value)) {
     throw new CliError(`Template asset path must not contain Pandoc template variables: ${value}`, {
       code: "INVALID_INPUT",
       exitCode: 2,
     });
+  }
+  const scheme = value.trim().match(URL_SCHEME_PATTERN)?.[1]?.toLowerCase();
+  if (scheme === "file") {
+    const { path } = splitAssetReference(value);
+    const resolvedPath = fileURLToPath(path);
+    const resolvedTemplateDirectory = resolve(templateDirectory);
+    if (!relativePathStaysInside(resolvedTemplateDirectory, resolvedPath)) {
+      throw new CliError(
+        `Template asset path must stay inside the custom template directory: ${value}`,
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
+    }
+    const realResolvedPath = await realFilePath(resolvedPath);
+    if (!realResolvedPath) {
+      throw new CliError(`Template asset path does not exist: ${value}`, {
+        code: "FILE_NOT_FOUND",
+        exitCode: 1,
+      });
+    }
+    if (!relativePathStaysInside(resolvedTemplateDirectory, realResolvedPath)) {
+      throw new CliError(
+        `Template asset path must stay inside the custom template directory: ${value}`,
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        },
+      );
+    }
+    return value;
+  }
+  if (!isRelativeHtmlAssetReference(value)) {
+    if (isLocalAbsoluteHtmlAssetReference(value)) {
+      throw new CliError(`Template asset path must be relative to the custom template: ${value}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    return value;
   }
   const { path, suffix } = splitAssetReference(value);
   const resolvedPath = resolve(templateDirectory, path);
@@ -576,6 +662,7 @@ export async function renderMarkdownPdf(
       cssPaths,
       dirname(input.inputPath),
       input.options.allowRemoteAssets,
+      input.customTemplatePath ? [dirname(input.customTemplatePath)] : [],
     );
 
     if (input.htmlOutputPath) {

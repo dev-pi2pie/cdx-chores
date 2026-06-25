@@ -489,6 +489,48 @@ describe("cli action modules: md to-pdf rendering", () => {
     });
   });
 
+  test("rejects custom template absolute local asset references before rendering", async () => {
+    const scenarios = [
+      { label: "root-relative", reference: "/private/cover.png" },
+      { label: "windows-absolute", reference: "C:\\private\\cover.png" },
+      { label: "file-url", reference: "file:///private/cover.png" },
+    ] as const;
+
+    for (const scenario of scenarios) {
+      await withTempFixtureDir(
+        `md-to-pdf-template-absolute-asset-${scenario.label}`,
+        async (fixtureDir) => {
+          const inputPath = join(fixtureDir, "report.md");
+          const customTemplate = join(fixtureDir, "template", "template.html");
+          await mkdir(dirname(customTemplate), { recursive: true });
+          await writeFile(inputPath, "# Report\n", "utf8");
+          await writeFile(
+            customTemplate,
+            `<html><body><img src="${scenario.reference}">$body$</body></html>`,
+            "utf8",
+          );
+          const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+          const { runtime } = createActionTestRuntime();
+
+          await expect(
+            actionMdToPdf(runtime, {
+              input: toRepoRelativePath(inputPath),
+              template: toRepoRelativePath(customTemplate),
+              runner,
+            }),
+          ).rejects.toThrow("Template asset path must");
+
+          expect(
+            calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
+          ).toBe(false);
+          expect(
+            calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+          ).toBe(false);
+        },
+      );
+    }
+  });
+
   test("rejects custom template asset references with Pandoc variables before rendering", async () => {
     await withTempFixtureDir("md-to-pdf-template-asset-variable", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

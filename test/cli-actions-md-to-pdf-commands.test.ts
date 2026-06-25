@@ -21,6 +21,66 @@ function minimalPng(width: number, height: number): Buffer {
   return bytes;
 }
 
+async function createTemplateCodexStub(fixtureDir: string): Promise<string> {
+  const stubPath = join(fixtureDir, "codex-stub.mjs");
+  const response = JSON.stringify({
+    decision_mode: "no-usable-template",
+    template_family: "none",
+    recipe_preset: "none",
+    slots: {
+      recipe_preset: { preset: "article", source: "renderer-default" },
+      cover: {
+        enabled: false,
+        byline: "none",
+        composition: "media-first-caption",
+        image_fit: "",
+        image_anchor: "center",
+        media_align: "center",
+        media_scale: "balanced",
+        text_align: "center",
+        style: "none",
+        orientation_bucket: "unknown",
+        fit_pressure: "unknown",
+      },
+      tables: { density: "standard", repeat_header: true, width: "content" },
+      code: { style: "shiki-compatible", line_wrap: "wrap", preserve_selectors: true },
+      spacing: { density: "standard" },
+      typography: { scale: "standard" },
+      colors: { palette: "neutral" },
+    },
+    css_blocks: [],
+    font_decisions: [],
+    managed_assets: [],
+    warnings: ["Unsupported template direction."],
+    unsupported_directions: ["Unsupported template direction."],
+    fallback_reason: "Unsupported template direction.",
+  });
+  await writeFile(
+    stubPath,
+    `#!/usr/bin/env node
+await new Promise((resolve, reject) => {
+  process.stdin.resume();
+  process.stdin.on("end", resolve);
+  process.stdin.on("error", reject);
+});
+const response = ${JSON.stringify(response)};
+process.stdout.write(JSON.stringify({ type: "thread.started", thread_id: "stub-thread" }) + "\\n");
+process.stdout.write(JSON.stringify({ type: "turn.started" }) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "item.completed",
+  item: { id: "msg-1", type: "agent_message", text: response },
+}) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "turn.completed",
+  usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
+}) + "\\n");
+`,
+    "utf8",
+  );
+  await chmod(stubPath, 0o755);
+  return stubPath;
+}
+
 async function createFakeMarkdownPdfDependencies(binDir: string, html: string): Promise<void> {
   await mkdir(binDir, { recursive: true });
   const escapedHtml = html.replaceAll("\\", "\\\\").replaceAll("'", "'\\''");
@@ -419,29 +479,36 @@ describe("cli command: md pdf-template codex", () => {
       const outputPath = join(fixtureDir, "pdf-template");
       await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
       await writeFile(coverImagePath, minimalPng(1600, 900));
+      const codexStubPath = await createTemplateCodexStub(fixtureDir);
 
-      const result = runCli([
-        "md",
-        "pdf-template",
-        "codex",
-        "--base-profile",
-        toRepoRelativePath(baseProfilePath),
-        "--cover-image",
-        toRepoRelativePath(coverImagePath),
-        "--font-hint",
-        "Inter",
-        "--font-hint",
-        "Noto Sans",
-        "--output",
-        toRepoRelativePath(outputPath),
-      ]);
+      const result = runCli(
+        [
+          "md",
+          "pdf-template",
+          "codex",
+          "--base-profile",
+          toRepoRelativePath(baseProfilePath),
+          "--cover-image",
+          toRepoRelativePath(coverImagePath),
+          "--font-hint",
+          "Inter",
+          "--font-hint",
+          "Noto Sans",
+          "--output",
+          toRepoRelativePath(outputPath),
+        ],
+        undefined,
+        {
+          CDX_CHORES_CODEX_PATH: codexStubPath,
+          CODEX_API_KEY: "",
+          OPENAI_API_KEY: "",
+        },
+      );
 
       expect(result.exitCode).toBe(1);
       expect(result.stdout).toContain("Signal mode: codex-assisted");
       expect(result.stdout).toContain("Decision mode: no-usable-template");
-      expect(result.stdout).toContain(
-        "Fallback reason: Codex template decision failed: unavailable.",
-      );
+      expect(result.stdout).toContain("Fallback reason: Unsupported template direction.");
       expect(result.stdout).not.toContain("Template family:");
       expect(result.stdout).not.toContain("Managed assets:");
       expect(result.stderr).toContain("Requesting Codex Markdown PDF template recommendation");

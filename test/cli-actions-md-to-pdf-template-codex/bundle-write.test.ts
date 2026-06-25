@@ -3,6 +3,7 @@ import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import {
+  createMdPdfTemplateCodexReportArtifact,
   MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,
   synthesizeMdPdfTemplateCodex,
   validateMdPdfTemplateCodexSynthesis,
@@ -415,12 +416,87 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         toRepoRelativePath(reportPath),
       );
       expect(report.followUpRenderCommand).toContain("cdx-chores md to-pdf");
-      expect(report.followUpRenderCommand).toContain(`--input ${toRepoRelativePath(inputPath)}`);
-      expect(report.followUpRenderCommand).toContain("--template <template-bundle>/template.html");
-      expect(report.followUpRenderCommand).toContain("--css <template-bundle>/style.css");
+      expect(report.followUpRenderCommand).toContain(`--input '${toRepoRelativePath(inputPath)}'`);
+      expect(report.followUpRenderCommand).toContain(
+        "--template '<template-bundle>/template.html'",
+      );
+      expect(report.followUpRenderCommand).toContain("--css '<template-bundle>/style.css'");
+      expect(report.followUpRenderCommand).toContain("--output '<output.pdf>'");
       expect(report.followUpRenderCommand).not.toContain(fixtureDir);
       expect(report.followUpRenderCommand).not.toContain("private-cover.png");
       expect(JSON.stringify(report)).not.toContain(runtime.cwd);
+    });
+  });
+
+  test("redacts Windows absolute paths outside cwd in diagnostic reports", async () => {
+    const plan = outputPlan({
+      outputDirectory: "/repo/bundle",
+      reportPath: "D:\\private\\report.json",
+    });
+    const signals = signalsForPlan(plan);
+    const { runtime } = createCapturedRuntime({ cwd: "C:\\repo" });
+    const report = createMdPdfTemplateCodexReportArtifact({
+      outputPlan: plan,
+      runtime,
+      signals,
+      state: {
+        ...commandStateForSignals(signals),
+        baseProfilePath: "D:\\private\\profile.yml",
+        inputPath: "D:\\private\\source.md",
+      },
+      synthesis: synthesizeForPlan(plan),
+    });
+
+    expect(report.input.markdown).toMatchObject({
+      basename: "source.md",
+      display: "source.md",
+      redacted: true,
+    });
+    expect(report.baseProfile.source).toMatchObject({
+      basename: "profile.yml",
+      display: "profile.yml",
+      redacted: true,
+    });
+    expect(report.files.find((file) => file.role === "diagnostic-report")?.path).toBe(
+      "report.json",
+    );
+    expect(JSON.stringify(report)).not.toContain("private");
+  });
+
+  test("shell-quotes follow-up render command paths in diagnostic reports", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-quoted-followup", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "source report's draft.md");
+      const reportPath = join(fixtureDir, "report.json");
+      await writeFile(inputPath, "# Source report\n", "utf8");
+      const plan = outputPlan({
+        outputDirectory: join(fixtureDir, "bundle"),
+        reportPath,
+      });
+      const signals = signalsForPlan(plan);
+
+      await writeMdPdfTemplateCodexBundle({
+        outputPlan: plan,
+        runtime: createCapturedRuntime().runtime,
+        signals,
+        state: {
+          ...commandStateForSignals(signals),
+          inputPath,
+        },
+        synthesis: synthesizeForPlan(plan),
+      });
+
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        followUpRenderCommand: string;
+      };
+      expect(report.followUpRenderCommand).toContain(
+        "--input 'examples/playground/.tmp-tests/md-pdf-template-codex-quoted-followup-",
+      );
+      expect(report.followUpRenderCommand).toContain("'\\''s draft.md'");
+      expect(report.followUpRenderCommand).toContain(
+        "--template '<template-bundle>/template.html'",
+      );
+      expect(report.followUpRenderCommand).toContain("--css '<template-bundle>/style.css'");
+      expect(report.followUpRenderCommand).toContain("--output '<output.pdf>'");
     });
   });
 
