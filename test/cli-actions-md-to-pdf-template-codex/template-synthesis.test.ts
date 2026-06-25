@@ -783,6 +783,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(titleIndex).toBeGreaterThanOrEqual(0);
     expect(imageIndex).toBeGreaterThan(titleIndex);
     expect(subtitleIndex).toBeGreaterThan(imageIndex);
+    expect(result.templateHtml).toContain(
+      '<div class="pdf-cover-media__caption pdf-cover-media__caption--title">',
+    );
+    expect(result.templateHtml).toContain(
+      '<div class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">',
+    );
+    expect(result.templateHtml).not.toContain("<figcaption");
     expect(result.templateHtml).toContain('data-cover-composition="title-media-subtitle"');
     expect(result.templateHtml).toContain('data-cover-text-align="right"');
     expect(result.templateHtml).toContain('data-media-align="end"');

@@ -37,15 +37,15 @@ ${subtitleHtml}
     </figcaption>
 `;
   const titleCaptionHtml = `$if(title)$
-    <figcaption class="pdf-cover-media__caption pdf-cover-media__caption--title">
+    <div class="pdf-cover-media__caption pdf-cover-media__caption--title">
       <span class="pdf-cover-media__title">$title$</span>
-    </figcaption>
+    </div>
 $endif$
 `;
   const subtitleCaptionHtml = `$if(subtitle)$
-    <figcaption class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">
+    <div class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">
       <span class="pdf-cover-media__subtitle">$subtitle$</span>
-    </figcaption>
+    </div>
 $endif$
 `;
   const imageHtml = `    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">

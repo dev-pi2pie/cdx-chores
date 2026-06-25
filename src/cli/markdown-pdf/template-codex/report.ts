@@ -55,7 +55,10 @@ export interface MdPdfTemplateCodexReportArtifact {
     fallbackReason?: string;
     warnings: string[];
     unsupportedDirections: string[];
-    cover: MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"];
+    cover: Omit<
+      MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"],
+      "layout" | "titlePlacement"
+    >;
     fontDecisions: MarkdownPdfTemplateCodexSynthesisResult["fontDecisions"];
     layoutPolicy: MdPdfTemplateCodexSignalCollection["recipe"]["layoutPolicy"];
     titlePolicy: MarkdownPdfTemplateCodexSynthesisResult["titlePolicy"];
@@ -113,6 +116,23 @@ function redactedPathDisplay(
 
 function reportArtifactId(bundleId: string): string {
   return `${bundleId}-diagnostic-report`;
+}
+
+function coverDecisionReport(
+  cover: MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"],
+): Omit<MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"], "layout" | "titlePlacement"> {
+  return {
+    enabled: cover.enabled,
+    composition: cover.composition,
+    imageFit: cover.imageFit,
+    imageAnchor: cover.imageAnchor,
+    mediaAlign: cover.mediaAlign,
+    mediaScale: cover.mediaScale,
+    textAlign: cover.textAlign,
+    style: cover.style,
+    orientationBucket: cover.orientationBucket,
+    fitPressure: cover.fitPressure,
+  };
 }
 
 function recipeSummary(
@@ -235,7 +255,7 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
       ...(input.synthesis.fallbackReason ? { fallbackReason: input.synthesis.fallbackReason } : {}),
       warnings: input.synthesis.warnings ?? [],
       unsupportedDirections: input.synthesis.unsupportedDirections ?? [],
-      cover: input.synthesis.slots.cover,
+      cover: coverDecisionReport(input.synthesis.slots.cover),
       fontDecisions: input.synthesis.fontDecisions,
       layoutPolicy: input.signals.recipe.layoutPolicy,
       titlePolicy: input.synthesis.titlePolicy,

@@ -20,7 +20,16 @@ const MAX_CSS_BLOCK_CHARS = 2_000;
 const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly string[]> = {
   code: ["code", "pre", "pre code", ".cdx-code-line"],
   colors: [":root", "body", "a", "mark", "blockquote"],
-  cover: [".pdf-cover", ".pdf-cover-media", ".pdf-cover-caption", ".pdf-cover-media img"],
+  cover: [
+    ".pdf-cover",
+    ".pdf-cover-media",
+    ".pdf-cover-media__caption",
+    ".pdf-cover-media__caption--subtitle",
+    ".pdf-cover-media__caption--title",
+    ".pdf-cover-media__image",
+    ".pdf-cover-media__subtitle",
+    ".pdf-cover-media__title",
+  ],
   spacing: ["body", "p", "section", "h1", "h2", "h3", "ul", "ol", "li", "blockquote"],
   tables: ["table", "thead", "tbody", "tr", "th", "td", "table th", "table td"],
   typography: ["body", "p", "h1", "h2", "h3", "h4", "h5", "h6"],

@@ -56,6 +56,12 @@ cover composition and text/media layout slots.
     stylesheet; the local run was blocked before rendering because `weasyprint`
     is not installed in this environment.
 15. Removed the disposable playground smoke output after inspection.
+16. Committed the initial Phase 8.8 implementation slice.
+17. Ran commit-range code review on the initial Phase 8.8 commit range.
+18. Addressed review findings by replacing split `<figcaption>` markup with
+    non-caption wrappers for separated title/subtitle regions, aligning cover
+    CSS-block selectors with generated classes, and omitting internal legacy
+    cover placement fields from the diagnostic report.
 
 ## Changes
 
@@ -85,6 +91,12 @@ cover composition and text/media layout slots.
   - Passed.
 - `bun test --timeout 30000`
   - Passed: 1330 tests across 195 files.
+- Follow-up verification after code-review fixes
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts`
+    passed: 125 tests.
+  - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+    `bun run build`, and `git diff --check` passed.
+  - `bun test --timeout 30000` passed: 1330 tests across 195 files.
 - Live Template-Codex smoke with the public playground tool-cover sample and
   cover asset
   - Result: adapted bundle with `title-media-subtitle`, centered text,
@@ -109,5 +121,4 @@ cover composition and text/media layout slots.
 - Complete the real PDF render smoke in an environment with `weasyprint`
   available. Until that command succeeds against the generated template and CSS,
   Phase 8.8 render compatibility remains unchecked.
-- Commit the meaningful Phase 8.8 implementation slice.
-- Run code review on the Phase 8.8 commit range.
+- Run final code review on the updated Phase 8.8 commit range.

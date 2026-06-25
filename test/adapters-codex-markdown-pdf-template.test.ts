@@ -406,14 +406,14 @@ describe("Markdown PDF template Codex adapter", () => {
       ...requestBase({ coverImage: true }),
       runner: async () =>
         responseFromDecision({
-          cssBlocks: [{ css: ".pdf-cover-caption { color: #555555; }", slot: "cover" }],
+          cssBlocks: [{ css: ".pdf-cover-media__caption { color: #555555; }", slot: "cover" }],
           decisionMode: "conservative-fallback",
         }),
     });
 
     expect(result.decision.decisionMode).toBe("conservative-fallback");
     expect(result.decision.cssBlocks).toEqual([
-      { css: ".pdf-cover-caption { color: #555555; }", slot: "cover" },
+      { css: ".pdf-cover-media__caption { color: #555555; }", slot: "cover" },
     ]);
   });
 
@@ -922,10 +922,16 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("at most 2000 characters");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
-        css: ".pdf-cover-caption { color: #555555;",
+        css: ".pdf-cover-media__caption { color: #555555;",
         slot: "cover",
       }),
     ).toThrow("unbalanced braces");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: ".pdf-cover-caption { color: #555555; }",
+        slot: "cover",
+      }),
+    ).toThrow("outside the cover slot");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
         css: ".pdf-cover-media { display: none; }",

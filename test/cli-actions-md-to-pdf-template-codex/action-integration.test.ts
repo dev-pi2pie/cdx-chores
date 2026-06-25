@@ -165,6 +165,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       const report = JSON.parse(await readFile(reportPath, "utf8")) as {
         artifactType: string;
         decision: {
+          cover: Record<string, unknown>;
           layoutPolicy: {
             recipePreset: { status: string };
             tableLayoutSignal: { level: string };
@@ -174,6 +175,12 @@ describe("cli action modules: md pdf-template codex integration", () => {
         files: Array<{ role: string }>;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
+      expect(report.decision.cover).toMatchObject({
+        enabled: false,
+        composition: "media-first-caption",
+      });
+      expect(report.decision.cover).not.toHaveProperty("layout");
+      expect(report.decision.cover).not.toHaveProperty("titlePlacement");
       expect(report.decision.layoutPolicy).toMatchObject({
         tableLayoutSignal: { level: "none" },
         recipePreset: { status: "not-needed" },
