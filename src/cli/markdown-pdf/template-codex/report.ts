@@ -123,6 +123,7 @@ function coverDecisionReport(
 ): Omit<MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"], "layout" | "titlePlacement"> {
   return {
     enabled: cover.enabled,
+    byline: cover.byline,
     composition: cover.composition,
     imageFit: cover.imageFit,
     imageAnchor: cover.imageAnchor,

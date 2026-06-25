@@ -31,6 +31,7 @@ export {
   writeMdPdfTemplateCodexReportIfRequested,
 } from "./write-bundle";
 export {
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
@@ -64,6 +65,7 @@ export type {
   MarkdownPdfTemplateCodexSignalMode,
   MarkdownPdfTemplateCodexCoverImageSignals,
   MarkdownPdfTemplateCodexBaseProfileSignals,
+  MarkdownPdfTemplateCodexCoverByline,
   MarkdownPdfTemplateCodexCoverComposition,
   MarkdownPdfTemplateCodexCoverImageAnchor,
   MarkdownPdfTemplateCodexFitPressure,

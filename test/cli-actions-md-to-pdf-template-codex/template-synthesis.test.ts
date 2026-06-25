@@ -693,6 +693,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('src="assets/cover.png"');
     expect(result.templateHtml).toContain('data-image-fit="contain"');
     expect(result.templateHtml).toContain('data-cover-composition="media-first-caption"');
+    expect(result.templateHtml).toContain('data-cover-byline="none"');
     expect(result.templateHtml).toContain('data-cover-text-align="center"');
     expect(result.templateHtml).toContain('data-media-align="center"');
     expect(result.templateHtml).toContain('data-media-scale="balanced"');
@@ -737,6 +738,18 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "margin-top": "8mm",
       "text-align": "center",
     });
+    expect(result.styleCss).not.toContain("inset:");
+    expect(
+      cssDeclarationsForSelector(
+        result.styleCss,
+        '.pdf-cover[data-cover-composition="media-background-overlay"] .pdf-cover-media__caption',
+      ),
+    ).toMatchObject({
+      bottom: "18mm",
+      left: "18mm",
+      right: "18mm",
+      top: "18mm",
+    });
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)(?:\b|[a-z%])/i,
     );
@@ -765,6 +778,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
           ...base.slots,
           cover: {
             ...base.slots.cover,
+            byline: "author-date",
             composition: "title-media-subtitle",
             imageAnchor: "bottom",
             imageFit: "contain",
@@ -784,9 +798,14 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     const titleIndex = result.templateHtml.indexOf("pdf-cover-media__caption--title");
     const imageIndex = result.templateHtml.indexOf('<img class="pdf-cover-media__image"');
     const subtitleIndex = result.templateHtml.indexOf("pdf-cover-media__caption--subtitle");
+    const subtitleTextIndex = result.templateHtml.indexOf(
+      '<span class="pdf-cover-media__subtitle">$subtitle$</span>',
+    );
+    const bylineIndex = result.templateHtml.indexOf("pdf-cover-media__byline");
     expect(titleIndex).toBeGreaterThanOrEqual(0);
     expect(imageIndex).toBeGreaterThan(titleIndex);
     expect(subtitleIndex).toBeGreaterThan(imageIndex);
+    expect(bylineIndex).toBeGreaterThan(subtitleTextIndex);
     expect(result.templateHtml).toContain(
       '<div class="pdf-cover-media__caption pdf-cover-media__caption--title">',
     );
@@ -795,7 +814,12 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     );
     expect(result.templateHtml).not.toContain("<figcaption");
     expect(result.templateHtml).toContain('data-cover-composition="title-media-subtitle"');
+    expect(result.templateHtml).toContain('data-cover-byline="author-date"');
     expect(result.templateHtml).toContain('data-cover-text-align="right"');
+    expect(result.templateHtml).toContain(
+      '<span class="pdf-cover-media__byline">$for(author)$$author$$sep$, $endfor$</span>',
+    );
+    expect(result.templateHtml).toContain('<span class="pdf-cover-media__byline">$date$</span>');
     expect(result.templateHtml).toContain('data-media-align="end"');
     expect(result.templateHtml).toContain('data-media-scale="compact"');
     expect(result.templateHtml).toContain('data-image-anchor="bottom"');
@@ -808,6 +832,11 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "max-height": "154.44mm",
       "max-width": "72%",
       "object-position": "center bottom",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__byline")).toMatchObject({
+      font: "10.5pt/1.35 var(--template-body-font)",
+      display: "block",
+      "margin-top": "2mm",
     });
   });
 

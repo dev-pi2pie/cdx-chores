@@ -199,6 +199,13 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
   font: 12pt/1.35 var(--template-body-font);
 }
 
+.pdf-cover-media__byline {
+  color: var(--template-muted);
+  display: block;
+  font: 10.5pt/1.35 var(--template-body-font);
+  margin-top: 2mm;
+}
+
 .pdf-cover[data-cover-composition="media-background-overlay"] .pdf-cover-media__image {
   height: ${pageHeight};
   max-height: ${pageHeight};
@@ -206,12 +213,15 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
 }
 
 .pdf-cover[data-cover-composition="media-background-overlay"] .pdf-cover-media__caption {
+  bottom: 18mm;
   box-sizing: border-box;
   color: var(--template-background);
-  inset: 18mm;
   justify-content: center;
+  left: 18mm;
   margin: 0;
   position: absolute;
+  right: 18mm;
+  top: 18mm;
 }
 `;
 }

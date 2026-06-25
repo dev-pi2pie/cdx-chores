@@ -1,5 +1,6 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
@@ -79,6 +80,7 @@ export function buildMarkdownPdfTemplateCodexPrompt(
       imageSignals: request.signals.coverImage,
     },
     coverCompositionPolicy: {
+      byline: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
       compositions: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
       textAlign: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
       mediaAlign: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
@@ -89,6 +91,8 @@ export function buildMarkdownPdfTemplateCodexPrompt(
         "Use title-media-subtitle when intent asks for title above image and subtitle below image.",
         "Use media-first-caption for conservative cover-image-only or image-first cover treatment.",
         "Use media-background-overlay only for explicit full-page background or overlay intent.",
+        "Use cover.byline author, date, or author-date only when intent asks to show that metadata on the cover; otherwise use none.",
+        "Cover byline is rendered after subtitle within the selected bounded cover composition.",
         "Use cover.text_align, cover.media_align, cover.image_anchor, and cover.media_scale for bounded layout control instead of CSS pixels.",
       ],
     },
@@ -147,6 +151,7 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     signalMode: request.signals.signalMode,
     slotEnums: {
       cssBlockSlots: MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+      coverBylines: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
       imageFits: MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
       coverCompositions: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
       coverImageAnchors: MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
@@ -177,6 +182,7 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     "- Managed asset references must be bundle-relative paths, never source-local absolute paths.",
     "- Use cover.image_fit contain or cover for image sizing; never use raw pixel width or height directives.",
     "- Use cover.composition for title/image/subtitle ordering; use title-media-subtitle for title above the image and subtitle below it.",
+    "- Use cover.byline none unless intent asks for author, date, or author/date on the cover; when requested, byline renders after subtitle.",
     "- Use cover.text_align, cover.media_align, cover.image_anchor, and cover.media_scale for bounded cover text and media layout.",
     "- Do not return legacy cover layout or title placement fields.",
     "- Do not emit page-number CSS or @page margin boxes; page numbers remain profile-owned.",

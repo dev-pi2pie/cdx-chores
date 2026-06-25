@@ -1,4 +1,5 @@
 import type {
+  MarkdownPdfTemplateCodexCoverByline,
   MarkdownPdfTemplateCodexManagedAssetBinding,
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexResolvedSlots,
@@ -17,6 +18,25 @@ function identityComment(input: {
   return `<!-- cdx-chores md pdf-template codex | bundle=${input.outputPlan.bundleId} | family=${input.family} | signal_mode=${input.signals.signalMode} | recipe_preset=${input.slots.recipePreset.preset} | recipe_source=${input.slots.recipePreset.source} -->`;
 }
 
+function coverBylineHtml(byline: MarkdownPdfTemplateCodexCoverByline): string {
+  if (byline === "none") {
+    return "";
+  }
+  const authorHtml =
+    byline === "author" || byline === "author-date"
+      ? `$if(author)$
+      <span class="pdf-cover-media__byline">$for(author)$$author$$sep$, $endfor$</span>
+$endif$`
+      : "";
+  const dateHtml =
+    byline === "date" || byline === "author-date"
+      ? `$if(date)$
+      <span class="pdf-cover-media__byline">$date$</span>
+$endif$`
+      : "";
+  return `${authorHtml}${dateHtml}`;
+}
+
 function coverMediaHtml(input: {
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   slots: MarkdownPdfTemplateCodexResolvedSlots;
@@ -31,9 +51,11 @@ $endif$`;
   const subtitleHtml = `$if(subtitle)$
       <span class="pdf-cover-media__subtitle">$subtitle$</span>
 $endif$`;
+  const bylineHtml = coverBylineHtml(input.slots.cover.byline);
   const captionHtml = `    <figcaption class="pdf-cover-media__caption">
 ${titleHtml}
 ${subtitleHtml}
+${bylineHtml}
     </figcaption>
 `;
   const titleCaptionHtml = `$if(title)$
@@ -42,11 +64,18 @@ ${subtitleHtml}
     </div>
 $endif$
 `;
-  const subtitleCaptionHtml = `$if(subtitle)$
+  const subtitleCaptionHtml =
+    input.slots.cover.byline === "none"
+      ? `$if(subtitle)$
     <div class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">
       <span class="pdf-cover-media__subtitle">$subtitle$</span>
     </div>
 $endif$
+`
+      : `    <div class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">
+${subtitleHtml}
+${bylineHtml}
+    </div>
 `;
   const imageHtml = `    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="Cover image">
 `;
@@ -62,7 +91,7 @@ $endif$
     }
   })();
 
-  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-composition="${input.slots.cover.composition}" data-cover-text-align="${input.slots.cover.textAlign}" data-media-align="${input.slots.cover.mediaAlign}" data-media-scale="${input.slots.cover.mediaScale}" data-image-anchor="${input.slots.cover.imageAnchor}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
+  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-composition="${input.slots.cover.composition}" data-cover-byline="${input.slots.cover.byline}" data-cover-text-align="${input.slots.cover.textAlign}" data-media-align="${input.slots.cover.mediaAlign}" data-media-scale="${input.slots.cover.mediaScale}" data-image-anchor="${input.slots.cover.imageAnchor}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
   <figure class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}">
 ${contentHtml}  </figure>
 </section>

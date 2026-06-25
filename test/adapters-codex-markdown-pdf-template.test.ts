@@ -66,6 +66,7 @@ function responseFromDecision(input: {
     template_level: boolean;
   }>;
   composition?: string;
+  byline?: string;
   imageFit?: string;
   imageAnchor?: string;
   managedAssets?: Array<{ bundle_path: string; source_label: string }>;
@@ -90,6 +91,7 @@ function responseFromDecision(input: {
       },
       cover: {
         enabled: coverEnabled,
+        byline: input.byline ?? "none",
         composition: input.composition ?? "media-first-caption",
         image_fit: input.imageFit ?? (coverEnabled ? "cover" : ""),
         image_anchor: input.imageAnchor ?? "center",
@@ -164,6 +166,7 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(prompt).toContain("Return JSON only");
     expect(prompt).toContain("Use cover.image_fit contain or cover");
     expect(prompt).toContain("Use cover.composition for title/image/subtitle ordering");
+    expect(prompt).toContain("Use cover.byline none unless intent asks for author");
     expect(prompt).toContain("title-media-subtitle");
     expect(prompt).toContain("Use font_decisions []");
     expect(prompt).toContain("Always include fallback_reason");
@@ -182,6 +185,7 @@ describe("Markdown PDF template Codex adapter", () => {
         sources: ["font-hint", "template-style"],
       },
       coverCompositionPolicy: {
+        byline: ["none", "author", "date", "author-date"],
         compositions: [
           "media-first-caption",
           "title-media-subtitle",
@@ -267,6 +271,10 @@ describe("Markdown PDF template Codex adapter", () => {
         .image_fit.enum,
     ).toContain("");
     expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties.byline
+        .enum,
+    ).toEqual(["none", "author", "date", "author-date"]);
+    expect(
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties
         .composition.enum,
     ).toEqual([
@@ -307,7 +315,7 @@ describe("Markdown PDF template Codex adapter", () => {
       templateFamily: "cover-media-layered",
       managedAssets: [{ bundlePath: "assets/cover.png", sourceLabel: "cover.png" }],
       slots: {
-        cover: { enabled: true, imageFit: "cover" },
+        cover: { enabled: true, byline: "none", imageFit: "cover" },
         code: { lineWrap: "wrap", preserveSelectors: true, style: "shiki-compatible" },
       },
     });
@@ -321,6 +329,16 @@ describe("Markdown PDF template Codex adapter", () => {
         }),
       ),
     ).toThrow("slots.cover.composition");
+  });
+
+  test("rejects unbounded cover byline values", () => {
+    expect(() =>
+      parseMarkdownPdfTemplateCodexDecision(
+        responseFromDecision({
+          byline: "author-under-image",
+        }),
+      ),
+    ).toThrow("slots.cover.byline");
   });
 
   test("rejects recipe decisions that drift from document-derived wide-table ownership", async () => {

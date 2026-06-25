@@ -30,6 +30,7 @@ export type {
 export type {
   MarkdownPdfTemplateCodexCodeSlot,
   MarkdownPdfTemplateCodexColorSlot,
+  MarkdownPdfTemplateCodexCoverByline,
   MarkdownPdfTemplateCodexCoverComposition,
   MarkdownPdfTemplateCodexCoverImageAnchor,
   MarkdownPdfTemplateCodexCoverLayout,

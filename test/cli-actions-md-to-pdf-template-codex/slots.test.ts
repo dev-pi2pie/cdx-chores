@@ -139,6 +139,7 @@ describe("cli action modules: md pdf-template codex slots", () => {
     expect(result.templateFamily).toBe("cover-media-layered");
     expect(result.slots.cover).toMatchObject({
       enabled: true,
+      byline: "none",
       composition: "media-first-caption",
       imageFit: "contain",
       imageAnchor: "center",

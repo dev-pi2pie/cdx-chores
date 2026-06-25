@@ -1,5 +1,6 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
@@ -62,6 +63,10 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
           type: "object",
           properties: {
             enabled: { type: "boolean" },
+            byline: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES],
+            },
             composition: {
               type: "string",
               enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS],
@@ -89,6 +94,7 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
           },
           required: [
             "enabled",
+            "byline",
             "composition",
             "image_fit",
             "image_anchor",

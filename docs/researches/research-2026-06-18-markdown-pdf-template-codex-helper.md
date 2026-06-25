@@ -444,6 +444,7 @@ V1 cover-media slots should also stay bounded:
 | `slots.cover.media_align` | `start`, `center`, `end` | Controls the image block alignment when the composition does not use full-bleed media. |
 | `slots.cover.image_anchor` | `top`, `center`, `bottom` | Controls `object-position` for cropped or fitted cover media. |
 | `slots.cover.media_scale` | `compact`, `balanced`, `hero` | Chooses a page-relative media region size; deterministic CSS owns the actual lengths. |
+| `slots.cover.byline` | `none`, `author`, `date`, `author-date` | Optional cover metadata rendered after the subtitle only when intent asks for author/date placement. |
 | `slots.cover.aspect_ratio` | `auto` | V1 records local metadata as a signal when available but should not expose an aspect-ratio CLI flag. |
 
 User control for these slots stays in `--intent`, not new CLI flags. For example, an intent such as "tool introduction cover with title above the image, subtitle below it, centered text" should map to bounded slots such as `composition: title-media-subtitle` and `text_align: center`.

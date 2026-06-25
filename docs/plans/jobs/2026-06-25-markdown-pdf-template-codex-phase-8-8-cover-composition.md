@@ -68,6 +68,24 @@ cover composition and text/media layout slots.
 20. Added follow-up Phase 8.8 task items after a manual render succeeded but
     reported a WeasyPrint warning for the inactive overlay `inset` shorthand,
     and after cover byline placement was identified as an intent-contract gap.
+21. Replaced overlay `inset` output with explicit `top`, `right`, `bottom`, and
+    `left` declarations so even inactive cover-composition CSS branches avoid
+    the unsupported shorthand.
+22. Added a bounded `slots.cover.byline` decision with `none`, `author`,
+    `date`, and `author-date` values. The default remains `none`, and byline
+    output is available only through intent-driven Codex decisions.
+23. Updated deterministic cover HTML so requested byline metadata renders after
+    the subtitle inside the selected cover composition.
+24. Updated generated cover CSS so byline metadata uses block-like spacing
+    instead of adjacent inline text.
+25. Ran a live Template-Codex smoke with the public playground tool-cover sample
+    and an author-after-subtitle intent. The Codex-assisted decision returned
+    `title-media-subtitle`, centered text, contained image fit, and
+    `cover.byline: author`.
+26. Attempted the follow-up `md to-pdf` render again. This environment still
+    lacks `weasyprint`, so the command exits before renderer CSS parsing; static
+    inspection of the generated bundle confirmed byline markup and no `inset`
+    shorthand.
 
 ## Changes
 
@@ -80,6 +98,10 @@ cover composition and text/media layout slots.
   output schema.
 - Kept `md pdf-template init` out of scope for cover-image asset copying.
 - Added report and summary visibility for cover decisions.
+- Added optional bounded cover byline decisions for author/date metadata without
+  adding CLI flags.
+- Replaced overlay cover offset CSS with explicit renderer-compatible
+  properties.
 
 ## Verification
 
@@ -128,18 +150,48 @@ cover composition and text/media layout slots.
     node dist/esm/bin.mjs md to-pdf --input examples/playground/md-pdf/tool-cover-smoke.md --template examples/playground/md-pdf/phase-8-8-cover-smoke-template/template.html --css examples/playground/md-pdf/phase-8-8-cover-smoke-template/style.css --output examples/playground/md-pdf/phase-8-8-cover-smoke.pdf --overwrite
     ```
 
+- Follow-up byline smoke with the public playground tool-cover sample and cover
+  asset
+  - Result: adapted bundle with `title-media-subtitle`, `cover.byline: author`,
+    centered text, contained image fit, one managed asset, and diagnostic report
+    output.
+  - Static inspection confirmed the generated HTML includes
+    `data-cover-byline="author"` and author byline markup after the subtitle
+    block.
+  - Static inspection confirmed the generated CSS contains explicit overlay
+    offsets and no `inset` shorthand.
+  - `md to-pdf` render remains blocked locally before renderer CSS parsing
+    because `weasyprint` is not installed.
+  - Commands:
+
+    ```bash
+    node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/tool-cover-smoke.md --intent "tool introduction cover with title above the image, subtitle and author below it, centered text" --cover-image examples/playground/md-pdf/assets/tool-cover-sample.jpg --output examples/playground/md-pdf/phase-8-8-byline-smoke-template --keep-codex-report --overwrite
+    node dist/esm/bin.mjs md to-pdf --input examples/playground/md-pdf/tool-cover-smoke.md --template examples/playground/md-pdf/phase-8-8-byline-smoke-template/template.html --css examples/playground/md-pdf/phase-8-8-byline-smoke-template/style.css --output examples/playground/md-pdf/phase-8-8-byline-smoke.pdf --overwrite
+    ```
+
+- Final follow-up verification before commit
+  - `bunx tsc --noEmit` passed.
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/slots.test.ts test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
+    passed: 73 tests.
+  - `bun run format:check` passed.
+  - `bun run lint` passed.
+  - `bun run build` passed.
+  - `git diff --check` passed.
+  - `bun test --timeout 30000` passed: 1331 tests across 195 files.
+
+## Guide-facing Phase 9 Notes
+
+- Cover image order remains intent-driven, not flag-driven. A guide example can
+  use wording such as "title above the image, subtitle and author below it,
+  centered text".
+- The Markdown sample must include the frontmatter fields that the requested
+  cover should reveal, such as `title`, `subtitle`, and `author`.
+- Byline output should be described as optional cover metadata selected through
+  intent; default Template-Codex output keeps it hidden with
+  `cover.byline: none`.
+
 ## Remaining
 
-- Remove the WeasyPrint warning from cover CSS by replacing unsupported
-  shorthands such as overlay `inset` with explicit renderer-compatible
-  properties.
-- Add optional intent-driven cover metadata/byline slots so author and date can
-  be displayed on the cover only when requested, with default behavior
-  remaining hidden.
-- Add focused tests for the supported cover metadata combinations and their
-  generated HTML/CSS.
-- Record guide-facing intent examples for Phase 9 documentation, including the
-  required frontmatter fields for title, subtitle, and author.
 - Re-run the real PDF render smoke after the CSS compatibility fix and record
-  whether it is warning-free.
+  whether it is warning-free in an environment with `weasyprint` installed.
 - Run final verification and code review on the updated Phase 8.8 commit range.

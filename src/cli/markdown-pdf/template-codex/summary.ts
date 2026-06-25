@@ -44,6 +44,7 @@ export function printMdPdfTemplateCodexSummary(
   );
   if (input.synthesis.slots.cover.enabled) {
     printLine(runtime.stdout, `Cover composition: ${input.synthesis.slots.cover.composition}`);
+    printLine(runtime.stdout, `Cover byline: ${input.synthesis.slots.cover.byline}`);
     printLine(runtime.stdout, `Cover text align: ${input.synthesis.slots.cover.textAlign}`);
     printLine(
       runtime.stdout,

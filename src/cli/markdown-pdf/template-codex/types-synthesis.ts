@@ -36,6 +36,8 @@ export type MarkdownPdfTemplateCodexCoverImageAnchor = "top" | "center" | "botto
 
 export type MarkdownPdfTemplateCodexCoverMediaScale = "compact" | "balanced" | "hero";
 
+export type MarkdownPdfTemplateCodexCoverByline = "none" | "author" | "date" | "author-date";
+
 export interface MarkdownPdfTemplateCodexFamilySpec {
   id: MarkdownPdfTemplateCodexTemplateFamily;
   label: string;
@@ -59,6 +61,7 @@ export interface MarkdownPdfTemplateCodexRecipePresetSlot {
 
 export interface MarkdownPdfTemplateCodexCoverSlot {
   enabled: boolean;
+  byline: MarkdownPdfTemplateCodexCoverByline;
   composition: MarkdownPdfTemplateCodexCoverComposition;
   imageFit?: MarkdownPdfTemplateCodexImageFit;
   imageAnchor: MarkdownPdfTemplateCodexCoverImageAnchor;

@@ -23,6 +23,7 @@ const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly stri
   cover: [
     ".pdf-cover",
     ".pdf-cover-media",
+    ".pdf-cover-media__byline",
     ".pdf-cover-media__caption",
     ".pdf-cover-media__caption--subtitle",
     ".pdf-cover-media__caption--title",

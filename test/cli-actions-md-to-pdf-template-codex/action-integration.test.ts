@@ -24,6 +24,7 @@ function codexTemplateResponse(
       template_level: boolean;
     }>;
     composition?: string;
+    byline?: string;
     imageFit?: string;
     imageAnchor?: string;
     mediaAlign?: string;
@@ -43,6 +44,7 @@ function codexTemplateResponse(
       recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: coverEnabled,
+        byline: input.byline ?? "none",
         composition: input.composition ?? "media-first-caption",
         image_fit: coverEnabled ? (input.imageFit ?? "cover") : "",
         image_anchor: input.imageAnchor ?? "center",
@@ -79,6 +81,7 @@ function noUsableTemplateResponse(reason = "Unsupported template direction."): s
       recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: false,
+        byline: "none",
         composition: "media-first-caption",
         image_fit: "",
         image_anchor: "center",
@@ -177,6 +180,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
       expect(report.decision.cover).toMatchObject({
         enabled: false,
+        byline: "none",
         composition: "media-first-caption",
       });
       expect(report.decision.cover).not.toHaveProperty("layout");

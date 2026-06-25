@@ -9,6 +9,7 @@ import {
 } from "./css-blocks";
 import type {
   MarkdownPdfTemplateCodexDecisionMode,
+  MarkdownPdfTemplateCodexCoverByline,
   MarkdownPdfTemplateCodexCoverComposition,
   MarkdownPdfTemplateCodexCoverImageAnchor,
   MarkdownPdfTemplateCodexCoverMediaAlign,
@@ -55,6 +56,13 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS = [
   "title-subtitle-media",
   "media-background-overlay",
 ] as const satisfies readonly MarkdownPdfTemplateCodexCoverComposition[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES = [
+  "none",
+  "author",
+  "date",
+  "author-date",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverByline[];
 
 export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS = [
   "left",
@@ -173,6 +181,11 @@ function validateSlots(
       "Markdown PDF template Codex response slots.cover.image_fit is required when cover is enabled.",
     );
   }
+  assertStringInDomain(
+    slots.cover.byline,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
+    "slots.cover.byline",
+  );
   assertStringInDomain(
     slots.cover.composition,
     MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,

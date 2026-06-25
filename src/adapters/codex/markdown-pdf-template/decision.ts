@@ -1,5 +1,6 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
   MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
@@ -14,6 +15,7 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES,
   validateMarkdownPdfTemplateCodexDecision,
   type MarkdownPdfTemplateCodexCssBlockSlot,
+  type MarkdownPdfTemplateCodexCoverByline,
   type MarkdownPdfTemplateCodexCoverComposition,
   type MarkdownPdfTemplateCodexCoverLayout,
   type MarkdownPdfTemplateCodexCoverTitlePlacement,
@@ -187,6 +189,11 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
     },
     cover: {
       enabled: coverEnabled,
+      byline: parseEnum(
+        cover.byline,
+        MARKDOWN_PDF_TEMPLATE_CODEX_COVER_BYLINES,
+        "slots.cover.byline",
+      ) as MarkdownPdfTemplateCodexCoverByline,
       composition: coverComposition,
       imageFit: parseOptionalEnum(
         cover.image_fit,

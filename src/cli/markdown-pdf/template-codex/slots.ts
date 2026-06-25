@@ -287,6 +287,7 @@ export function resolveMdPdfTemplateCodexSlots(input: {
     },
     cover: {
       enabled: hasCover,
+      byline: "none",
       ...(hasCover
         ? {
             imageFit,
