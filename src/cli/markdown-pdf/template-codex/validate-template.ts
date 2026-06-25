@@ -13,8 +13,7 @@ import type {
 const REMOTE_REFERENCE_PATTERN = /\b(?:https?|ftp):\/\/|\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/iu;
 const FILE_URL_PATTERN = /\bfile:\/\//iu;
 const WINDOWS_ABSOLUTE_PATH_PATTERN = /(?:^|[\s"'(=])(?:[A-Za-z]:\\|\\\\)/u;
-const UNIX_LOCAL_PATH_PATTERN =
-  /(?:^|[\s"'(=])\/(?:Users|home|private|tmp|var|Volumes|opt|usr|etc)\//u;
+const UNIX_ABSOLUTE_PATH_PATTERN = /(?:^|[\s"'(=])\/(?![/*])(?:[^\s"'(){};]|\\.)+/u;
 const HTML_REFERENCE_PATTERN = /\b(?:src|href)\s*=\s*(["'])(.*?)\1/giu;
 const CSS_URL_PATTERN = /\burl\(\s*(["']?)(.*?)\1\s*\)/giu;
 
@@ -65,8 +64,11 @@ function assertFamilyHooks(input: {
   assertContains(input.synthesis.styleCss, "@page", "page chrome hook", "style.css");
   assertContains(input.synthesis.styleCss, "body", "body style hook", "style.css");
 
-  if (family.requiresCoverImage && input.outputPlan.assets.length === 0) {
-    validationError(`${family.id} requires a planned managed cover image asset.`);
+  if (
+    family.requiresCoverImage &&
+    !input.synthesis.managedAssets.some((asset) => asset.role === "cover-image")
+  ) {
+    validationError(`${family.id} requires an accepted managed cover image asset.`);
   }
 }
 
@@ -95,7 +97,7 @@ function extractReferences(value: string): string[] {
 function assertNoUnsafeReferences(input: {
   content: string;
   fileLabel: string;
-  plannedAssetPaths: Set<string>;
+  acceptedAssetPaths: Set<string>;
 }): void {
   if (REMOTE_REFERENCE_PATTERN.test(input.content)) {
     validationError(`${input.fileLabel} must not reference remote URLs.`);
@@ -106,7 +108,7 @@ function assertNoUnsafeReferences(input: {
   if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(input.content)) {
     validationError(`${input.fileLabel} must not reference absolute local paths.`);
   }
-  if (UNIX_LOCAL_PATH_PATTERN.test(input.content)) {
+  if (UNIX_ABSOLUTE_PATH_PATTERN.test(input.content)) {
     validationError(`${input.fileLabel} must not reference absolute local paths.`);
   }
 
@@ -122,7 +124,7 @@ function assertNoUnsafeReferences(input: {
         `${input.fileLabel} must not reference paths outside the bundle: ${reference}`,
       );
     }
-    if (reference.startsWith("assets/") && !input.plannedAssetPaths.has(reference)) {
+    if (!input.acceptedAssetPaths.has(reference)) {
       validationError(`${input.fileLabel} references an unmanaged asset: ${reference}`);
     }
   }
@@ -197,16 +199,18 @@ export function validateMdPdfTemplateCodexSynthesis(input: {
   assertTocRegion(input.synthesis.templateHtml);
   assertFamilyHooks(input);
 
-  const plannedAssetPaths = new Set(input.outputPlan.assets.map((asset) => asset.bundlePath));
+  const acceptedAssetPaths = new Set(
+    input.synthesis.managedAssets.map((asset) => asset.bundlePath),
+  );
   assertNoUnsafeReferences({
     content: input.synthesis.templateHtml,
     fileLabel: "template.html",
-    plannedAssetPaths,
+    acceptedAssetPaths,
   });
   assertNoUnsafeReferences({
     content: input.synthesis.styleCss,
     fileLabel: "style.css",
-    plannedAssetPaths,
+    acceptedAssetPaths,
   });
 
   for (const asset of input.outputPlan.assets) {

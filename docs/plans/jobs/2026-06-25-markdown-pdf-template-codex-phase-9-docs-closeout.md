@@ -59,6 +59,12 @@ one-shot or Interactive Markdown PDF layers.
     schema-valid no-usable decisions that keep cover enabled, copying and
     reporting only accepted synthesis-managed assets, and suppressing unwritten
     bundle paths from no-usable CLI summaries.
+18. Addressed the fifth final-review slice by routing font-hint-only and
+    cover-plus-font-hint requests through Codex-assisted synthesis, rejecting
+    arbitrary local relative asset references, validating generic absolute
+    local paths, blocking asset writes through symlinked parent directories,
+    and aligning cover-style/aspect-ratio plan and research wording with the
+    implemented contract.
 
 ## Verification
 
@@ -90,8 +96,13 @@ one-shot or Interactive Markdown PDF layers.
 - Focused final-consistency-fix tests:
   - Passed:
     `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts`
+- Focused fifth-review-fix tests:
+  - Passed: 55 tests across 5 files:
+    `bun test test/cli-actions-md-to-pdf-template-codex/signal-mode.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/adapters-codex-markdown-pdf-template.test.ts`
+    and
+    `bun test test/cli-actions-md-to-pdf-commands.test.ts --test-name-pattern "routes base profile, cover image, and font hints through Codex-assisted command wiring"`
 - `bun test --timeout 30000`
-  - Passed: 1335 tests across 195 files.
+  - Passed: 1337 tests across 195 files.
 
 ## Review
 
@@ -123,3 +134,9 @@ one-shot or Interactive Markdown PDF layers.
     schema-valid cover-enabled no-usable responses, unused planned cover assets,
     and summaries that advertised unwritten bundle paths.
   - The issues were addressed in the final consistency fix slice.
+- Fifth final full-plan range review
+  - Reviewers found remaining issues in cover-plus-font-hint signal routing,
+    final asset-reference validation, symlinked managed-asset parent
+    directories, generic absolute path redaction, and stale cover-slot plan
+    wording.
+  - The issues were addressed in the fifth-review fix slice.

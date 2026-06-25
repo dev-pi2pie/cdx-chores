@@ -40,6 +40,7 @@ function includesRemoteOrLocalPathReference(css: string): boolean {
   return (
     /https?:\/\//iu.test(css) ||
     /\bfile:\/\//iu.test(css) ||
+    /\burl\s*\(/iu.test(css) ||
     /\burl\s*\(\s*['"]?(?:\/|[A-Za-z]:\\|~\/|\.\.\/)/iu.test(css) ||
     /['"](?:\/Users\/|\/home\/|\/var\/|\/tmp\/|[A-Za-z]:\\)/u.test(css)
   );

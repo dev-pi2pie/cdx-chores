@@ -287,6 +287,51 @@ describe("cli action modules: md pdf-template codex integration", () => {
     });
   });
 
+  test("routes cover image plus font hints through Codex-assisted synthesis", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-cover-font-decision",
+      async (fixtureDir) => {
+        const coverImagePath = join(fixtureDir, "cover.png");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(coverImagePath, minimalPng(1200, 800));
+
+        let codexCalled = false;
+        const { runtime, stderr, stdout } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          coverImage: toRepoRelativePath(coverImagePath),
+          fontHint: ["Inter"],
+          output: toRepoRelativePath(outputPath),
+          codexRunner: async () => {
+            codexCalled = true;
+            return codexTemplateResponse({
+              coverEnabled: true,
+              fontDecisions: [
+                {
+                  family: "Inter",
+                  key: "default",
+                  role: "heading",
+                  source: "font-hint",
+                  template_level: false,
+                },
+              ],
+            });
+          },
+        });
+
+        expect(codexCalled).toBe(true);
+        expect(stdout.text).toContain("Signal mode: codex-assisted");
+        expect(stdout.text).toContain("Decision mode: adapted");
+        expect(stderr.text).toContain("Requesting Codex Markdown PDF template recommendation...");
+        expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain(
+          'src="assets/cover.png"',
+        );
+        expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(
+          '--template-heading-font: "Inter", sans-serif;',
+        );
+      },
+    );
+  });
+
   test("prints non-TTY Codex progress for Codex-assisted decisions", async () => {
     await withTempFixtureDir(
       "md-pdf-template-codex-action-progress-non-tty",

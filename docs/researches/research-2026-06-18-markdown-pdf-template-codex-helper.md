@@ -415,7 +415,7 @@ V1 should make Option C concrete with:
 - bounded slots for cover composition, cover text layout, title block visibility, table density, section spacing, color tokens, font-role alignment, and code-block treatment
 - bounded CSS blocks only for named slots, with validation for remote URLs, absolute local paths, and required selector preservation
 
-The family names are intentionally narrow. `article`, `report`, `wide-table`, `compact`, and `reader` are already public recipe preset names, so template-Codex should not reuse them as template family names. `plain` and `report` remain the v1 cover-style values for profile-compatible cover treatment. The string `report` can therefore appear in more than one enum domain, but only through explicitly named fields such as `recipe_preset: report` or `slots.cover.style: report`.
+The family names are intentionally narrow. `article`, `report`, `wide-table`, `compact`, and `reader` are already public recipe preset names, so template-Codex should not reuse them as template family names. Cover style is a structural template slot: `none` means no generated cover-media section, while `media` means the managed cover-media skeleton is active. The string `report` therefore belongs to the recipe preset domain only, not the cover-style domain.
 
 V1 enum domains:
 
@@ -423,7 +423,7 @@ V1 enum domains:
 | --- | --- |
 | `template_family` | `document-layered`, `cover-media-layered` |
 | `recipe_preset` | `article`, `report`, `wide-table`, `compact`, `reader` |
-| `slots.cover.style` | `plain`, `report` |
+| `slots.cover.style` | `none`, `media` |
 
 V1 field roles:
 
@@ -431,9 +431,9 @@ V1 field roles:
 | --- | --- |
 | `template_family` | Chooses the repo-owned HTML/CSS boilerplate skeleton. It does not imply page density, table density, or renderer preset behavior by itself. |
 | `recipe_preset` | Carries the current renderer preset semantics independently from `template_family`. It is resolved from base-profile preset identity or default recipe behavior before template synthesis. |
-| `slots.cover.style` | Controls only profile-compatible cover-slot styling. It does not choose the template skeleton and does not imply `recipe_preset: report`. |
+| `slots.cover.style` | Records whether the generated cover-media skeleton is inactive (`none`) or active (`media`). It does not imply `recipe_preset: report`. |
 
-All `recipe_preset` values are valid with both v1 template families. `cover-media-layered` changes managed asset hooks and cover-media slots; it does not force a `report` preset. `document-layered` can still use `slots.cover.style: report` for title-only or profile-compatible cover treatment without becoming a cover-media bundle.
+All `recipe_preset` values are valid with both v1 template families. `cover-media-layered` changes managed asset hooks and cover-media slots; it does not force a `report` preset. `document-layered` uses `slots.cover.style: none` because title-only or profile-compatible title treatment remains outside the managed cover-media skeleton.
 
 V1 cover-media slots should also stay bounded:
 
@@ -446,7 +446,8 @@ V1 cover-media slots should also stay bounded:
 | `slots.cover.image_anchor` | `top`, `center`, `bottom` | Controls `object-position` for cropped or fitted cover media. |
 | `slots.cover.media_scale` | `compact`, `balanced`, `hero` | Chooses a page-relative media region size; deterministic CSS owns the actual lengths. |
 | `slots.cover.byline` | `none`, `author`, `date`, `author-date` | Optional cover metadata rendered after the subtitle only when intent asks for author/date placement. |
-| `slots.cover.aspect_ratio` | `auto` | V1 records local metadata as a signal when available but should not expose an aspect-ratio CLI flag. |
+
+Cover image dimensions and aspect ratio remain local metadata signals. They are not Codex-returned slots and should not become raw sizing fields in generated CSS.
 
 User control for these slots stays in `--intent`, not new CLI flags. For example, an intent such as "tool introduction cover with title above the image, subtitle below it, centered text" should map to bounded slots such as `composition: title-media-subtitle` and `text_align: center`.
 
@@ -489,7 +490,6 @@ slots:
     media_align: center
     image_anchor: center
     media_scale: hero
-    aspect_ratio: auto
   tables:
     density: compact
     header_treatment: shaded
@@ -588,7 +588,8 @@ Conservative fallback should remain available when validation can safely reduce 
 
 - invalid optional CSS blocks can be dropped only when they fail non-security styling validation; optional blocks containing remote URLs, absolute local source paths, or required-hook removals are hard errors unless fully removed before synthesis
 - unsupported slot enum values can fall back to the closest allowed slot
-- unavailable image dimensions can use `aspect_ratio: auto`
+- unavailable image dimensions can remain unknown metadata; Codex should not
+  invent an aspect-ratio slot
 - unsupported design directions can move into `unsupported_directions` on successful adapted or fallback decisions when the remaining directions still form a valid bundle
 - cover-media intent without usable local media can fall back to `document-layered` when the non-media directions still make sense
 

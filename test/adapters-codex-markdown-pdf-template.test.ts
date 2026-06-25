@@ -970,6 +970,12 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("absolute local paths");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
+        css: ".pdf-cover-media { background-image: url(foo.png); }",
+        slot: "cover",
+      }),
+    ).toThrow("remote URLs or absolute local paths");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
         css: "@import url(https://example.com/a.css);",
         slot: "colors",
       }),

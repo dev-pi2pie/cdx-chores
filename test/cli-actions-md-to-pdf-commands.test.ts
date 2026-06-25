@@ -412,7 +412,7 @@ describe("cli command: md pdf-template codex", () => {
     });
   });
 
-  test("passes base profile, cover image, and font hints through the command layer", async () => {
+  test("routes base profile, cover image, and font hints through Codex-assisted command wiring", async () => {
     await withTempFixtureDir("md-pdf-template-codex-cli-signal-options", async (fixtureDir) => {
       const baseProfilePath = join(fixtureDir, "profile.yml");
       const coverImagePath = join(fixtureDir, "cover.png");
@@ -436,24 +436,17 @@ describe("cli command: md pdf-template codex", () => {
         toRepoRelativePath(outputPath),
       ]);
 
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Signal mode: deterministic");
-      expect(result.stdout).toContain("Decision mode: deterministic");
-      expect(result.stdout).toContain("Template family: cover-media-layered");
-      expect(result.stdout).toContain("Recipe preset: article (renderer-default)");
-      expect(result.stdout).toContain("Cover image fit: cover");
-      expect(result.stdout).toContain(`Output directory: ${toRepoRelativePath(outputPath)}`);
-      expect(result.stdout).toContain("Managed assets: 1");
-      expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
-      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain(
-        'src="assets/cover.png"',
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toContain("Signal mode: codex-assisted");
+      expect(result.stdout).toContain("Decision mode: no-usable-template");
+      expect(result.stdout).toContain(
+        "Fallback reason: Codex template decision failed: unavailable.",
       );
-      expect(
-        Buffer.compare(
-          await readFile(join(outputPath, "assets", "cover.png")),
-          minimalPng(1600, 900),
-        ),
-      ).toBe(0);
+      expect(result.stdout).not.toContain("Template family:");
+      expect(result.stdout).not.toContain("Managed assets:");
+      expect(result.stderr).toContain("Requesting Codex Markdown PDF template recommendation");
+      expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
+      expect(await pathExists(join(outputPath, "assets", "cover.png"))).toBe(false);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import {
@@ -187,6 +187,26 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
           },
         }),
       ).toThrow("absolute local paths");
+
+      expect(() =>
+        validateMdPdfTemplateCodexSynthesis({
+          outputPlan: plan,
+          synthesis: {
+            ...synthesis,
+            styleCss: `${synthesis.styleCss}\n/* /workspace/private-cover.png */\n`,
+          },
+        }),
+      ).toThrow("absolute local paths");
+
+      expect(() =>
+        validateMdPdfTemplateCodexSynthesis({
+          outputPlan: plan,
+          synthesis: {
+            ...synthesis,
+            styleCss: `${synthesis.styleCss}\nbody { background: url(foo.png); }\n`,
+          },
+        }),
+      ).toThrow("unmanaged asset");
     });
   });
 
@@ -212,6 +232,38 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         ),
       ).toBe(0);
       expect(await readFile(plan.templateHtml.path, "utf8")).toContain('src="assets/cover.png"');
+    });
+  });
+
+  test("rejects managed asset writes through symlinked parent directories", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-copy-symlink-parent", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "source-cover.png");
+      const outsideDir = join(fixtureDir, "outside");
+      const outputDirectory = join(fixtureDir, "bundle");
+      await writeFile(coverImagePath, minimalPng(1200, 800));
+      await mkdir(outsideDir, { recursive: true });
+      await mkdir(outputDirectory, { recursive: true });
+      await symlink(outsideDir, join(outputDirectory, "assets"));
+      const plan = outputPlan({
+        coverImagePath,
+        outputDirectory,
+      });
+
+      await expectCliError(
+        () =>
+          writeMdPdfTemplateCodexBundle({
+            outputPlan: plan,
+            ...bundleWriteContext(plan),
+            overwrite: true,
+            synthesis: synthesizeForPlan(plan),
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "parent directory is a symlink",
+        },
+      );
+      expect(await pathExists(join(outsideDir, "cover.png"))).toBe(false);
     });
   });
 

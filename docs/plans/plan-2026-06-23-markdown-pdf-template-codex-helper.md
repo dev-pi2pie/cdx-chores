@@ -173,7 +173,7 @@ Keep `recipe_preset` separate from `template_family`:
 | --- | --- |
 | `template_family` | `document-layered`, `cover-media-layered` |
 | `recipe_preset` | `article`, `report`, `wide-table`, `compact`, `reader` |
-| `slots.cover.style` | `plain`, `report` |
+| `slots.cover.style` | `none`, `media` |
 
 Selection rules:
 
@@ -193,7 +193,11 @@ V1 cover-media slots:
 | `slots.cover.media_align` | `start`, `center`, `end` |
 | `slots.cover.image_anchor` | `top`, `center`, `bottom` |
 | `slots.cover.media_scale` | `compact`, `balanced`, `hero` |
-| `slots.cover.aspect_ratio` | `auto` |
+| `slots.cover.byline` | `none`, `author`, `date`, `author-date` |
+
+Cover image dimensions and aspect ratio remain local metadata signals. They are
+not Codex-returned slots and should not become raw sizing fields in generated
+CSS.
 
 `--cover-image` without design intent should use a conservative contained composition, not a full-page cropped or overlaid background. Full-page background or overlay covers require explicit intent or strong document/design signals. User control for cover order and alignment stays in `--intent`; Codex maps wording such as "title above the image, subtitle below it, centered text" into bounded slots, and deterministic synthesis owns the generated HTML/CSS.
 
@@ -227,7 +231,8 @@ Rules:
 - use collision-safe bundle filenames when needed.
 - reference copied assets from generated HTML/CSS with bundle-relative paths.
 - collect bounded image metadata, such as format, dimensions, aspect ratio, orientation bucket, and fit-pressure summary, when practical.
-- use `aspect_ratio: auto` when dimensions are unavailable.
+- record unavailable dimensions or aspect ratio as unknown metadata, not as a
+  Codex-returned slot.
 - never download, inspect, copy, or emit remote cover-media references in v1.
 - existing remote references in accepted Markdown, HTML, or CSS remain a later render-time `--allow-remote-assets` concern, not a template-Codex behavior.
 
@@ -442,7 +447,8 @@ Fallback-compatible reductions:
 
 - invalid non-security optional CSS blocks can be dropped.
 - unsupported slot values can map to the closest allowed slot.
-- unavailable image dimensions can use `aspect_ratio: auto`.
+- unavailable image dimensions can remain unknown metadata; Codex should not
+  invent an aspect-ratio slot.
 - unsupported design directions can move to `unsupported_directions`.
 - cover-media intent without usable local media can fall back to `document-layered` only when non-media directions still form a useful bundle.
 

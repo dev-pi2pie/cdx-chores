@@ -56,6 +56,7 @@ export async function collectMdPdfTemplateCodexSignals(
   const signalMode = classifyMdPdfTemplateCodexSignalMode({
     hasBaseProfile: Boolean(baseProfileCandidate),
     hasCoverImage: coverImage.available,
+    hasFontHints: state.fontHints.length > 0,
     hasInput: Boolean(state.inputPath),
     hasIntent: Boolean(state.intent),
     hasRecipeFlags: state.explicitRecipe.fields.length > 0,

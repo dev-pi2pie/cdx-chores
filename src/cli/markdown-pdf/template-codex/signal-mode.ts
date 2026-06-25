@@ -4,6 +4,7 @@ import type { MarkdownPdfTemplateCodexSignalMode } from "./types";
 export interface ClassifyMdPdfTemplateCodexSignalModeInput {
   hasBaseProfile: boolean;
   hasCoverImage: boolean;
+  hasFontHints: boolean;
   hasInput: boolean;
   hasIntent: boolean;
   hasRecipeFlags: boolean;
@@ -16,7 +17,7 @@ export function classifyMdPdfTemplateCodexSignalMode(
   if (!input.hasUsableTemplateCandidate) {
     return "no-usable-template";
   }
-  if (input.hasInput || input.hasIntent) {
+  if (input.hasInput || input.hasIntent || input.hasFontHints) {
     return "codex-assisted";
   }
 
