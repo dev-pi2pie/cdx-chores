@@ -2,6 +2,7 @@ export {
   actionMdFrontmatterToJson,
   actionMdPdfProfileCodex,
   actionMdPdfProfileInit,
+  actionMdPdfTemplateCodex,
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,

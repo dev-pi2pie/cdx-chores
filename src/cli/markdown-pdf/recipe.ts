@@ -19,6 +19,21 @@ export interface CreateMarkdownPdfRecipeInput {
   titleSignals?: MarkdownPdfTitleSignals;
 }
 
+export type EffectiveMarkdownPdfTocPageBreak = "none" | "before" | "after" | "both";
+
+export function resolveEffectiveMarkdownPdfTocPageBreak(
+  options: Pick<NormalizedMarkdownPdfOptions, "preset" | "toc" | "tocPageBreak">,
+): EffectiveMarkdownPdfTocPageBreak {
+  if (!options.toc) {
+    return "none";
+  }
+  return options.tocPageBreak === "auto"
+    ? options.preset === "report"
+      ? "after"
+      : "none"
+    : options.tocPageBreak;
+}
+
 const PRESET_CSS: Record<NormalizedMarkdownPdfOptions["preset"], string> = {
   article: `
 body {
@@ -99,16 +114,7 @@ $body$
 }
 
 function tocPageBreakCss(options: NormalizedMarkdownPdfOptions): string {
-  if (!options.toc) {
-    return "";
-  }
-
-  const pageBreak =
-    options.tocPageBreak === "auto"
-      ? options.preset === "report"
-        ? "after"
-        : "none"
-      : options.tocPageBreak;
+  const pageBreak = resolveEffectiveMarkdownPdfTocPageBreak(options);
 
   if (pageBreak === "none") {
     return "";

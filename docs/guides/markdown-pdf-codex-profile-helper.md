@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
+modified-date: 2026-06-25
 status: completed
 agent: codex
 ---
@@ -301,9 +302,10 @@ Strong wide-table signals such as high column count, long table-like lines, or
 overflow risk should outweigh generic wording such as "clean" or "professional"
 unless the user explicitly asks for portrait output.
 
-The profile helper can choose reusable page shape, margins, ToC, cover, page
-numbers, and table-friendly presets. It does not tune individual column widths,
-rotate individual pages, or generate per-table CSS.
+The profile helper can choose reusable page shape, margins, ToC, text
+cover/title-page fields, page numbers, and table-friendly presets. It does not
+tune individual column widths, rotate individual pages, or generate per-table
+CSS.
 
 Use a custom template or CSS when table presentation needs exact layout control.
 
@@ -313,6 +315,10 @@ Use `md pdf-profile init` when you want a deterministic starter profile.
 
 Use `md pdf-profile codex` when you want Codex to select or adapt a reusable
 profile from bounded signals and hints.
+
+Prefer `md pdf-profile codex` for reusable render policy: page shape, margins,
+ToC, page numbers, page chrome, text cover fields, fonts, and Shiki
+code-highlight settings.
 
 Use `md pdf-template init` when you need the low-level HTML/CSS recipe snapshot.
 Templates are the right boundary for:
@@ -324,12 +330,24 @@ Templates are the right boundary for:
 - unsupported profile directions
 - template-only rendering behavior
 
-There is no `md pdf-template codex` command in this helper slice. Template-Codex
-and cover-media contracts need separate research before implementation.
+The profile helper still does not generate HTML or CSS. It reports these
+directions as template-backed work instead of inventing profile fields.
+
+The direct `md pdf-template codex` helper now owns reviewable template artifacts.
+Its `--output` remains aligned with `md pdf-template init`: it names the
+template bundle directory, not the rendered PDF. Use that helper when Codex
+should draft bounded `template.html`, `style.css`, and managed local assets for
+later deterministic rendering.
+
+Prefer `md pdf-template codex` for reviewable HTML/CSS/assets: local
+cover-image assets, cover composition, custom layout, custom CSS, and
+template-only behavior.
 
 ## Related Docs
 
 - [Markdown PDF Usage](markdown-pdf-usage.md)
+- [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [PDF Backend License Guidance](pdf-backend-license-guidance.md)
-- [Markdown PDF Codex Profile Helper and Interactive Flow](../researches/research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
+- [Markdown PDF Codex Helper Roadmap](../researches/research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
+- [Markdown PDF Template Codex Helper](../researches/research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown PDF Codex profile helper implementation](../plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md)

@@ -12,6 +12,7 @@ test("md pdf-profile codex command forwards positional input and repeated font h
       calls.push(options);
     },
     actionMdPdfProfileInit: async () => {},
+    actionMdPdfTemplateCodex: async () => {},
     actionMdPdfTemplateInit: async () => {},
     actionMdToDocx: async () => {},
     actionMdToPdf: async () => {},

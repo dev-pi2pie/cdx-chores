@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-06-16
+modified-date: 2026-06-25
 status: completed
 agent: codex
 ---
@@ -31,7 +31,7 @@ cdx-chores doctor --json
 
 ## Current Release Boundary
 
-Markdown PDF rendering, profile initialization, template initialization, and the direct Codex-assisted profile helper are direct CLI flows. Interactive Markdown PDF flows remain deferred to a later plan.
+Markdown PDF rendering, profile initialization, template initialization, and the direct Codex-assisted profile and template helpers are direct CLI flows. Interactive Markdown PDF flows remain deferred to a later plan.
 
 ## Basic Render
 
@@ -325,13 +325,50 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 `md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
 
-`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, covers, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
 
-A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile cover settings will not appear in the rendered PDF.
+A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile text cover settings will not appear in the rendered PDF.
 
 The Codex profile helper stays inside the profile boundary. Use custom templates or CSS for local cover images, arbitrary CSS, custom HTML layout, exact table styling, and other template-only behavior.
+
+| Need | `md pdf-profile codex` | `md pdf-template codex` |
+| --- | --- | --- |
+| Output | Reusable profile YAML/JSON | Reviewable template bundle |
+| Best owner | Page shape, ToC, page numbers, fonts, code-highlight settings | Cover images, custom layout, custom CSS, managed assets |
+| ToC | Owns reusable ToC render settings: enabled, depth, page break | Preserves and styles Pandoc ToC hooks only |
+| Code highlighting | Owns Shiki render settings | Owns Shiki-compatible CSS only |
+| Cover/title page | Text/metadata cover fields only | Custom cover layout and composition |
+| Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
+| Render with | `md to-pdf --profile ...` | `md to-pdf --template ... --css ...` |
+
+Template bundles can style highlighted code, but Shiki is enabled only by
+`md to-pdf --code-highlight` or an effective profile.
+
+For a Codex-assisted path that drafts reviewable template artifacts, use
+`md pdf-template codex`:
+
+```bash
+cdx-chores md pdf-template codex ./report.md \
+  --intent "client report with a clean cover image and readable code blocks" \
+  --cover-image ./cover.jpg \
+  --output ./report-template
+```
+
+Render the accepted bundle through the deterministic renderer:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --template ./report-template/template.html \
+  --css ./report-template/style.css \
+  --output ./report.pdf
+```
+
+For the full helper contract, including generated bundle contents,
+cover-image behavior, font-hint boundaries, and redacted diagnostic reports,
+see [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md).
 
 Templates generated before Shiki code highlighting was added continue to render, but their `style.css` may not include the newer `.cdx-code` hook styles for highlighted blocks, line numbers, and transformer notation. To pick up the built-in code-block styling, regenerate the template with `md pdf-template init --overwrite` or copy the code-block CSS from a newly generated template.
 
@@ -558,6 +595,7 @@ cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 ## Related Docs
 
 - `docs/guides/markdown-pdf-codex-profile-helper.md`
+- `docs/guides/markdown-pdf-codex-template-helper.md`
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
 - `docs/researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md`
 - `docs/researches/research-2026-05-07-font-command-discovery-options.md`

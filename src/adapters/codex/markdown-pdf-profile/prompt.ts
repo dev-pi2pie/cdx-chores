@@ -1,7 +1,10 @@
 import type { MarkdownPdfCodexProfileRequest } from "./types";
 import { MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS } from "./value-domains";
-
-type MarkdownPdfTableLayoutRiskLevel = "none" | "weak" | "strong";
+import { buildMarkdownPdfTableLayoutSignal } from "../../../cli/markdown-pdf/profile/layout-policy";
+import {
+  hasExplicitHideMetadataTitleIntent,
+  hasExplicitKeepMetadataTitleIntent,
+} from "../../../cli/markdown-pdf/profile/title-intent";
 
 const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
   stylePolicy: [
@@ -104,59 +107,6 @@ const MARKDOWN_PDF_CODEX_TITLE_BLOCK_CONTRACT = {
   ],
 };
 
-function tableLayoutRiskLevel(
-  tables: MarkdownPdfCodexProfileRequest["documentSignals"]["tables"],
-): MarkdownPdfTableLayoutRiskLevel {
-  if (tables.overflowRows > 0 || tables.maxLineWidth >= 100 || tables.maxColumns >= 8) {
-    return "strong";
-  }
-  if (tables.scannedRows > 0 || tables.maxLineWidth >= 80 || tables.maxColumns >= 5) {
-    return "weak";
-  }
-  return "none";
-}
-
-function buildTableLayoutSignal(
-  tables: MarkdownPdfCodexProfileRequest["documentSignals"]["tables"],
-) {
-  const level = tableLayoutRiskLevel(tables);
-  const reasons: string[] = [];
-  if (tables.overflowRows > 0) {
-    reasons.push("table rows exceeded the bounded scan limit");
-  }
-  if (tables.maxLineWidth >= 100) {
-    reasons.push("table rows have high line width");
-  } else if (tables.maxLineWidth >= 80) {
-    reasons.push("table rows have moderate line width");
-  }
-  if (tables.maxColumns >= 8) {
-    reasons.push("table rows have many columns");
-  } else if (tables.maxColumns >= 5) {
-    reasons.push("table rows have moderately many columns");
-  }
-  if (tables.scannedRows > 0 && reasons.length === 0) {
-    reasons.push("tables are present but table-fit risk is weak");
-  }
-
-  return {
-    level,
-    reasons,
-    recommendation:
-      level === "strong"
-        ? "Prefer wide-table or landscape/table-friendly profile settings unless intent explicitly requires portrait."
-        : level === "weak"
-          ? "Treat table presence as supporting evidence only; do not force landscape by itself."
-          : "No table layout signal.",
-    signalLadder: ["overflowRows", "maxLineWidth", "maxColumns", "scannedRows"],
-    templateOnlyDirections: [
-      "custom table column widths",
-      "arbitrary table CSS",
-      "rotated individual pages",
-      "exact table beautification",
-    ],
-  };
-}
-
 function hasExplicitNoCoverIntent(intent: string): boolean {
   return /\b(no|without|skip|disable|avoid)\s+(a\s+)?(cover|cover page|title page|title-page)\b/i.test(
     intent,
@@ -168,18 +118,6 @@ function hasExplicitCoverIntent(intent: string): boolean {
     return false;
   }
   return /\b(cover|cover page|title page|title-page)\b/i.test(intent);
-}
-
-function hasExplicitKeepMetadataTitleIntent(intent: string): boolean {
-  return /\b(keep|preserve|show|include)\s+(the\s+)?(metadata\s+)?(title block|title output|title page|duplicate title|frontmatter title)\b/i.test(
-    intent,
-  );
-}
-
-function hasExplicitHideMetadataTitleIntent(intent: string): boolean {
-  return /\b(hide|suppress|remove|skip|omit)\s+(the\s+)?(metadata\s+)?(title block|title output|frontmatter title)\b/i.test(
-    intent,
-  );
 }
 
 function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {
@@ -234,7 +172,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     signalMode: request.signalMode,
     styleDecisionPolicy: MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY,
     supportedSchemaSummary: request.supportedSchemaSummary,
-    tableLayoutSignal: buildTableLayoutSignal(request.documentSignals.tables),
+    tableLayoutSignal: buildMarkdownPdfTableLayoutSignal(request.documentSignals.tables),
     titleBlockContract: MARKDOWN_PDF_CODEX_TITLE_BLOCK_CONTRACT,
     titleDecisionSignal: buildTitleDecisionSignal(request),
   };
