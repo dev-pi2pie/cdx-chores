@@ -12,3 +12,12 @@
 !parquet-preview/**
 !tabular-preview/
 !tabular-preview/**
+# md-pdf samples
+!md-pdf/
+!md-pdf/**
+md-pdf/**/*.pdf
+md-pdf/**/*.html
+md-pdf/**/*.css
+md-pdf/**/*.json
+md-pdf/**/*-md-pdf-profile-*.yml
+md-pdf/**/md-pdf-template-*/
