@@ -19,6 +19,7 @@ import {
 } from "../../markdown-pdf/template-codex";
 import { startDirectCodexProgress, type DirectCodexProgressStatus } from "../codex-progress";
 import { displayPath, printLine } from "../shared";
+import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 
 export type { MdPdfTemplateCodexCliOptions, MdPdfTemplateCodexOptions };
@@ -90,6 +91,17 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
   }
 }
 
+function throwNoUsableTemplate(synthesis: MarkdownPdfTemplateCodexSynthesisResult): never {
+  throw new CliError(
+    synthesis.fallbackReason ??
+      "No usable Markdown PDF template path is available for the provided signals.",
+    {
+      code: "NO_USABLE_TEMPLATE",
+      exitCode: 1,
+    },
+  );
+}
+
 export async function actionMdPdfTemplateCodex(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
@@ -106,6 +118,9 @@ export async function actionMdPdfTemplateCodex(
       state: preflight.state,
       synthesis: preflight.synthesis,
     });
+    if (preflight.synthesis.decisionMode === "no-usable-template") {
+      throwNoUsableTemplate(preflight.synthesis);
+    }
     return;
   }
 
@@ -124,7 +139,7 @@ export async function actionMdPdfTemplateCodex(
         `Wrote Codex report: ${displayPath(runtime, preflight.outputPlan.report.path)}`,
       );
     }
-    return;
+    throwNoUsableTemplate(preflight.synthesis);
   }
   printLine(
     runtime.stderr,

@@ -6,7 +6,7 @@ import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/m
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
 import { createPdfRunner } from "../cli-actions-md-to-pdf.helpers";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
+import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
 import { minimalJpeg, minimalPng, minimalWebpVp8x1200By800, pathExists } from "./fixtures";
 
@@ -419,13 +419,21 @@ describe("cli action modules: md pdf-template codex integration", () => {
       await writeFile(inputPath, "# Report\n", "utf8");
 
       const { runtime, stderr, stdout } = createActionTestRuntime();
-      await actionMdPdfTemplateCodex(runtime, {
-        input: toRepoRelativePath(inputPath),
-        intent: "download a remote animated cover",
-        output: toRepoRelativePath(outputPath),
-        codexReportOutput: toRepoRelativePath(reportPath),
-        codexRunner: stubCodexRunner(noUsableTemplateResponse()),
-      });
+      await expectCliError(
+        () =>
+          actionMdPdfTemplateCodex(runtime, {
+            input: toRepoRelativePath(inputPath),
+            intent: "download a remote animated cover",
+            output: toRepoRelativePath(outputPath),
+            codexReportOutput: toRepoRelativePath(reportPath),
+            codexRunner: stubCodexRunner(noUsableTemplateResponse()),
+          }),
+        {
+          code: "NO_USABLE_TEMPLATE",
+          exitCode: 1,
+          messageIncludes: "Unsupported template direction.",
+        },
+      );
 
       expect(stdout.text).toContain("Decision mode: no-usable-template");
       expect(stdout.text).toContain("Fallback reason: Unsupported template direction.");
@@ -469,12 +477,20 @@ describe("cli action modules: md pdf-template codex integration", () => {
 
         const { runtime, stderr, stdout } = createActionTestRuntime();
         (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
-        await actionMdPdfTemplateCodex(runtime, {
-          input: toRepoRelativePath(inputPath),
-          intent: "download a remote animated cover",
-          output: toRepoRelativePath(outputPath),
-          codexRunner: stubCodexRunner(noUsableTemplateResponse()),
-        });
+        await expectCliError(
+          () =>
+            actionMdPdfTemplateCodex(runtime, {
+              input: toRepoRelativePath(inputPath),
+              intent: "download a remote animated cover",
+              output: toRepoRelativePath(outputPath),
+              codexRunner: stubCodexRunner(noUsableTemplateResponse()),
+            }),
+          {
+            code: "NO_USABLE_TEMPLATE",
+            exitCode: 1,
+            messageIncludes: "Unsupported template direction.",
+          },
+        );
 
         const errorStop =
           "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n";
@@ -495,14 +511,22 @@ describe("cli action modules: md pdf-template codex integration", () => {
 
         const { runtime, stderr, stdout } = createActionTestRuntime();
         (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
-        await actionMdPdfTemplateCodex(runtime, {
-          input: toRepoRelativePath(inputPath),
-          intent: "make headings quieter",
-          output: toRepoRelativePath(outputPath),
-          codexRunner: async () => {
-            throw new Error("network unavailable");
+        await expectCliError(
+          () =>
+            actionMdPdfTemplateCodex(runtime, {
+              input: toRepoRelativePath(inputPath),
+              intent: "make headings quieter",
+              output: toRepoRelativePath(outputPath),
+              codexRunner: async () => {
+                throw new Error("network unavailable");
+              },
+            }),
+          {
+            code: "NO_USABLE_TEMPLATE",
+            exitCode: 1,
+            messageIncludes: "Codex template decision failed: unavailable.",
           },
-        });
+        );
 
         expect(stderr.text).toContain(
           "\r\u001b[2KRequesting Codex Markdown PDF template recommendation... error\n",

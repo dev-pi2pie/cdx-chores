@@ -1,7 +1,6 @@
 import { basename, relative } from "node:path";
 
 import { writeTextFileSafe } from "../../file-io";
-import { formatPathForDisplay } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -107,10 +106,12 @@ function redactedPathDisplay(
   if (!path) {
     return undefined;
   }
+  const insideCwd = pathInsideCwd(runtime, path);
+  const relativePath = relative(runtime.cwd, path);
   return {
-    display: pathInsideCwd(runtime, path) ? formatPathForDisplay(runtime, path) : basename(path),
+    display: insideCwd ? (relativePath.length > 0 ? relativePath : ".") : basename(path),
     basename: basename(path),
-    redacted: !pathInsideCwd(runtime, path),
+    redacted: !insideCwd,
   };
 }
 
@@ -204,7 +205,9 @@ function reportFiles(input: {
         ? plannedFile("diagnostic-report", input.outputPlan.report)
         : {
             role: "diagnostic-report",
-            path: formatPathForDisplay(input.runtime, input.outputPlan.report.path),
+            path:
+              redactedPathDisplay(input.runtime, input.outputPlan.report.path)?.display ??
+              basename(input.outputPlan.report.path),
             planned: true,
           },
     );

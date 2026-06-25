@@ -8,7 +8,11 @@ import { normalizeMarkdownPdfOptions } from "../validation";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import type { MdPdfTemplateCodexOptions, NormalizedMdPdfTemplateCodexCommandState } from "./types";
-import { SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS } from "./image-metadata";
+import {
+  imageFormatForPath,
+  isAnimatedTemplateCodexCoverImage,
+  SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS,
+} from "./image-metadata";
 import { collectMdPdfTemplateCodexExplicitRecipeSignal } from "./recipe-signals";
 
 function normalizeOptionalText(value: string | undefined): string | undefined {
@@ -107,6 +111,12 @@ async function resolveCoverImage(
   const extension = extname(coverImagePath).toLowerCase();
   if (!SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS.has(extension)) {
     throw new CliError("Cover image must be a local PNG, JPEG, or WebP file.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  if (await isAnimatedTemplateCodexCoverImage(coverImagePath, imageFormatForPath(coverImagePath))) {
+    throw new CliError("Cover image must be a local still PNG, JPEG, or WebP file.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });

@@ -46,6 +46,11 @@ one-shot or Interactive Markdown PDF layers.
     default, and removing stale low-signal recipe-flag wording.
 13. Removed the playground cover smoke trailing blank line reported by
     `git diff --check c7b4d92^..HEAD`.
+14. Ran a second final full-plan range review over `c7b4d92^..HEAD`.
+15. Addressed the remaining review findings by making persisted reports ignore
+    terminal absolute-path display mode, making `no-usable-template` decisions
+    return `NO_USABLE_TEMPLATE` after writing any requested diagnostics, and
+    rejecting animated PNG/WebP cover inputs during early command validation.
 
 ## Verification
 
@@ -68,8 +73,11 @@ one-shot or Interactive Markdown PDF layers.
 - Focused review-fix tests:
   - Passed:
     `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts`
+- Focused second-review-fix tests:
+  - Passed:
+    `bun test test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-template-codex/command-state.test.ts test/cli-actions-md-to-pdf-template-codex/image-metadata.test.ts`
 - `bun test --timeout 30000`
-  - Passed: 1333 tests across 195 files.
+  - Passed: 1334 tests across 195 files.
 
 ## Review
 
@@ -85,3 +93,9 @@ one-shot or Interactive Markdown PDF layers.
     diagnostic-report path redaction, remote `srcset` blocking, low-signal
     guide wording, and full-range whitespace.
   - The issues were addressed in the follow-up fix slice.
+- Second final full-plan range review
+  - One reviewer reported no findings after independent focused validation.
+  - One reviewer found remaining issues in report path formatting under
+    absolute display mode, `no-usable-template` exit behavior, and animated
+    cover input validation.
+  - The issues were addressed in the second follow-up fix slice.

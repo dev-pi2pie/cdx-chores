@@ -13,7 +13,11 @@ import {
   type NormalizedMdPdfTemplateCodexCommandState,
 } from "../../src/cli/markdown-pdf/template-codex";
 import { expectCliError } from "../helpers/cli-action-test-utils";
-import { createCapturedRuntime, withTempFixtureDir } from "../helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  toRepoRelativePath,
+  withTempFixtureDir,
+} from "../helpers/cli-test-utils";
 import { minimalPng, pathExists } from "./fixtures";
 import { createSynthesisSignals } from "./synthesis-fixtures";
 
@@ -280,18 +284,32 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
 
   test("writes rich diagnostic reports with redacted managed asset metadata", async () => {
     await withTempFixtureDir("md-pdf-template-codex-rich-report", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "source-report.md");
+      const baseProfilePath = join(fixtureDir, "profile.yml");
       const coverImagePath = join(fixtureDir, "private-cover.png");
       const reportPath = join(fixtureDir, "report.json");
+      await writeFile(inputPath, "# Source report\n", "utf8");
+      await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
       await writeFile(coverImagePath, minimalPng(1200, 800));
       const plan = outputPlan({
         coverImagePath,
         outputDirectory: join(fixtureDir, "bundle"),
         reportPath,
       });
+      const signals = signalsForPlan(plan);
+      const { runtime } = createCapturedRuntime({ displayPathStyle: "absolute" });
 
       await writeMdPdfTemplateCodexBundle({
         outputPlan: plan,
-        ...bundleWriteContext(plan),
+        runtime,
+        signals,
+        state: {
+          ...commandStateForSignals(signals, {
+            coverImagePath: plan.assets[0]?.sourcePath,
+          }),
+          inputPath,
+          baseProfilePath,
+        },
         synthesis: synthesizeForPlan(plan),
       });
 
@@ -306,6 +324,9 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
           dimensions: { width: number; height: number };
           format: string;
         }>;
+        files: Array<{ path?: string; role: string }>;
+        input: { markdown: { display: string; redacted: boolean } };
+        baseProfile: { source: { display: string; redacted: boolean } };
         validationResults: Array<{ name: string; status: string }>;
         followUpRenderCommand: string;
       };
@@ -330,11 +351,24 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         name: "static-template-validation",
         status: "passed",
       });
+      expect(report.input.markdown).toMatchObject({
+        display: toRepoRelativePath(inputPath),
+        redacted: false,
+      });
+      expect(report.baseProfile.source).toMatchObject({
+        display: toRepoRelativePath(baseProfilePath),
+        redacted: false,
+      });
+      expect(report.files.find((file) => file.role === "diagnostic-report")?.path).toBe(
+        toRepoRelativePath(reportPath),
+      );
       expect(report.followUpRenderCommand).toContain("cdx-chores md to-pdf");
+      expect(report.followUpRenderCommand).toContain(`--input ${toRepoRelativePath(inputPath)}`);
       expect(report.followUpRenderCommand).toContain("--template <template-bundle>/template.html");
       expect(report.followUpRenderCommand).toContain("--css <template-bundle>/style.css");
       expect(report.followUpRenderCommand).not.toContain(fixtureDir);
       expect(report.followUpRenderCommand).not.toContain("private-cover.png");
+      expect(JSON.stringify(report)).not.toContain(runtime.cwd);
     });
   });
 

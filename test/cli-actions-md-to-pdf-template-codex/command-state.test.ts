@@ -5,6 +5,30 @@ import { join } from "node:path";
 import { normalizeMdPdfTemplateCodexCommandState } from "../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { minimalWebpWithChunks } from "./fixtures";
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+function pngChunk(type: string, payload: Buffer): Buffer {
+  const bytes = Buffer.alloc(12 + payload.length);
+  bytes.writeUInt32BE(payload.length, 0);
+  bytes.write(type, 4, "ascii");
+  payload.copy(bytes, 8);
+  return bytes;
+}
+
+function minimalAnimatedPng(width: number, height: number): Buffer {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  return Buffer.concat([PNG_SIGNATURE, pngChunk("IHDR", ihdr), pngChunk("acTL", Buffer.alloc(8))]);
+}
+
+function minimalAnimatedWebp(): Buffer {
+  return minimalWebpWithChunks([
+    { type: "VP8X", payload: Buffer.from([0x02, 0, 0, 0, 0xaf, 0x04, 0, 0x1f, 0x03, 0]) },
+  ]);
+}
 
 describe("cli action modules: md pdf-template codex command state", () => {
   test("normalizes inputs, hints, report output, and recipe flags", async () => {
@@ -163,6 +187,30 @@ describe("cli action modules: md pdf-template codex command state", () => {
           messageIncludes: "Cover image must be a local PNG, JPEG, or WebP file.",
         },
       );
+    });
+  });
+
+  test("rejects animated cover images during early validation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-animated-cover", async (fixtureDir) => {
+      const animatedPngPath = join(fixtureDir, "animated.png");
+      const animatedWebpPath = join(fixtureDir, "animated.webp");
+      await writeFile(animatedPngPath, minimalAnimatedPng(1200, 800));
+      await writeFile(animatedWebpPath, minimalAnimatedWebp());
+
+      const { runtime } = createActionTestRuntime();
+      for (const coverImagePath of [animatedPngPath, animatedWebpPath]) {
+        await expectCliError(
+          () =>
+            normalizeMdPdfTemplateCodexCommandState(runtime, {
+              coverImage: toRepoRelativePath(coverImagePath),
+            }),
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+            messageIncludes: "Cover image must be a local still PNG, JPEG, or WebP file.",
+          },
+        );
+      }
     });
   });
 

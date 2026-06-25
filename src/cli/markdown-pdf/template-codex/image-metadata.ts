@@ -34,7 +34,12 @@ const WEBP_VP8X_CANVAS_HEIGHT_OFFSET = 7;
 const WEBP_VP8_FRAME_WIDTH_OFFSET = 6;
 const WEBP_VP8_FRAME_HEIGHT_OFFSET = 8;
 const WEBP_VP8_FRAME_DIMENSION_MASK = 0x3fff;
+const WEBP_VP8X_ANIMATION_FLAG = 0x02;
 const WEBP_VP8L_SIGNATURE = 0x2f;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
+const PNG_SIGNATURE_LENGTH = 8;
+const PNG_CHUNK_HEADER_LENGTH = 8;
+const PNG_CHUNK_CRC_LENGTH = 4;
 
 export function imageFormatForPath(
   path: string,
@@ -54,6 +59,10 @@ export function imageFormatForPath(
 
 function readAscii(bytes: Uint8Array, offset: number, length: number): string {
   return Buffer.from(bytes.subarray(offset, offset + length)).toString("ascii");
+}
+
+function hasPngSignature(bytes: Uint8Array): boolean {
+  return PNG_SIGNATURE.every((byte, index) => bytes[index] === byte);
 }
 
 function readUint24LittleEndian(bytes: Uint8Array, offset: number): number {
@@ -83,6 +92,28 @@ function readPngDimensions(
   const width = view.getUint32(16, false);
   const height = view.getUint32(20, false);
   return dimensionsIfPositive(width, height);
+}
+
+function pngHasAnimationControlChunk(bytes: Uint8Array): boolean {
+  if (!hasPngSignature(bytes)) {
+    return false;
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = PNG_SIGNATURE_LENGTH;
+  while (offset + PNG_CHUNK_HEADER_LENGTH <= bytes.length) {
+    const chunkLength = view.getUint32(offset, false);
+    const chunkType = readAscii(bytes, offset + 4, 4);
+    const nextOffset = offset + PNG_CHUNK_HEADER_LENGTH + chunkLength + PNG_CHUNK_CRC_LENGTH;
+    if (nextOffset > bytes.length) {
+      return false;
+    }
+    if (chunkType === "acTL") {
+      return true;
+    }
+    offset = nextOffset;
+  }
+  return false;
 }
 
 function readJpegDimensions(
@@ -198,6 +229,39 @@ function readWebpDimensions(
   return undefined;
 }
 
+function webpHasAnimation(bytes: Uint8Array): boolean {
+  if (
+    bytes.length < WEBP_MIN_DIMENSION_CONTAINER_LENGTH ||
+    readAscii(bytes, 0, 4) !== "RIFF" ||
+    readAscii(bytes, 8, 4) !== "WEBP"
+  ) {
+    return false;
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = WEBP_FILE_HEADER_LENGTH;
+  while (offset + WEBP_CHUNK_HEADER_LENGTH <= bytes.length) {
+    const chunkType = readAscii(bytes, offset, 4);
+    const chunkSize = view.getUint32(offset + 4, true);
+    const dataOffset = offset + WEBP_CHUNK_HEADER_LENGTH;
+    if (dataOffset + chunkSize > bytes.length) {
+      return false;
+    }
+    if (chunkType === "ANIM") {
+      return true;
+    }
+    if (
+      chunkType === "VP8X" &&
+      chunkSize >= 1 &&
+      ((bytes[dataOffset] ?? 0) & WEBP_VP8X_ANIMATION_FLAG) !== 0
+    ) {
+      return true;
+    }
+    offset = dataOffset + chunkSize + (chunkSize % 2);
+  }
+  return false;
+}
+
 export async function readTemplateCodexCoverImageMetadata(
   path: string,
   format: MarkdownPdfTemplateCodexCoverImageFormat | undefined,
@@ -223,4 +287,22 @@ export async function readTemplateCodexCoverImageMetadata(
     return { status: "unparsed" };
   }
   return { status: "parsed", dimensions };
+}
+
+export async function isAnimatedTemplateCodexCoverImage(
+  path: string,
+  format: MarkdownPdfTemplateCodexCoverImageFormat | undefined,
+): Promise<boolean> {
+  if (!format || format === "jpeg") {
+    return false;
+  }
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await readFile(path));
+  } catch {
+    return false;
+  }
+
+  return format === "png" ? pngHasAnimationControlChunk(bytes) : webpHasAnimation(bytes);
 }
