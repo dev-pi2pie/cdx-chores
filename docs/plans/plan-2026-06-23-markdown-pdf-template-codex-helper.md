@@ -1157,7 +1157,7 @@ flags.
 - [x] Record guide-facing intent examples for Phase 9, including required
       frontmatter fields such as `title`, `subtitle`, and `author`, so the
       eventual guide explains how users ask for common cover arrangements.
-- [ ] Run focused Template-Codex tests, repo gates, and code review on the Phase
+- [x] Run focused Template-Codex tests, repo gates, and code review on the Phase
       8.8 commit range.
 
 Focused validation target:
