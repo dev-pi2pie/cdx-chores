@@ -48,7 +48,7 @@ $endif$
     </div>
 $endif$
 `;
-  const imageHtml = `    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
+  const imageHtml = `    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="Cover image">
 `;
   const contentHtml = (() => {
     switch (input.slots.cover.composition) {

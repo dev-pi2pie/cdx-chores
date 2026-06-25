@@ -701,6 +701,10 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
     expect(result.styleCss).toContain("object-fit: contain;");
     expect(result.styleCss).toContain("@page cover");
+    expect(result.templateHtml).toContain(
+      '<img class="pdf-cover-media__image" src="assets/cover.png" alt="Cover image">',
+    );
+    expect(result.templateHtml).not.toContain("$title$ cover image");
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover")).toMatchObject({
       "break-after": "page",
       "min-height": "297mm",

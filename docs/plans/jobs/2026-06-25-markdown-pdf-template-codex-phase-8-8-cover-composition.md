@@ -62,6 +62,9 @@ cover composition and text/media layout slots.
     non-caption wrappers for separated title/subtitle regions, aligning cover
     CSS-block selectors with generated classes, and omitting internal legacy
     cover placement fields from the diagnostic report.
+19. Addressed final review feedback by replacing dynamic Pandoc `$title$`
+    interpolation inside the cover image `alt` attribute with static,
+    attribute-safe alt text.
 
 ## Changes
 
@@ -97,6 +100,12 @@ cover composition and text/media layout slots.
   - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
     `bun run build`, and `git diff --check` passed.
   - `bun test --timeout 30000` passed: 1330 tests across 195 files.
+- Final alt-attribute review fix
+  - `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts`
+    passed: 125 tests.
+  - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+    `bun run build`, and `git diff --check` passed.
+  - `bun test --timeout 30000` passed: 1330 tests across 195 files.
 - Live Template-Codex smoke with the public playground tool-cover sample and
   cover asset
   - Result: adapted bundle with `title-media-subtitle`, centered text,
@@ -121,4 +130,4 @@ cover composition and text/media layout slots.
 - Complete the real PDF render smoke in an environment with `weasyprint`
   available. Until that command succeeds against the generated template and CSS,
   Phase 8.8 render compatibility remains unchecked.
-- Run final code review on the updated Phase 8.8 commit range.
+- Run final verification and code review on the updated Phase 8.8 commit range.
