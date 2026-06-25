@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF template Codex helper implementation"
 created-date: 2026-06-23
-modified-date: 2026-06-24
+modified-date: 2026-06-25
 status: active
 agent: codex
 ---
@@ -112,6 +112,7 @@ Rules:
 - no-signal invocations fail before reserving a generated default output directory.
 - deterministic rows still use this command because they need template identity, output collision checks, optional reports, copied cover assets, and dry-run behavior.
 - recipe-only deterministic templates should use `md pdf-template init` instead of `md pdf-template codex`.
+- managed cover-image composition stays in `md pdf-template codex`; do not add `--cover-image` or asset-copy behavior to `md pdf-template init`.
 
 ### Render Contract
 
@@ -186,12 +187,15 @@ V1 cover-media slots:
 
 | Slot | Values |
 | --- | --- |
-| `slots.cover.layout` | `background`, `image-above-title`, `image-below-title` |
+| `slots.cover.composition` | `media-first-caption`, `title-media-subtitle`, `title-subtitle-media`, `media-background-overlay` |
 | `slots.cover.image_fit` | `cover`, `contain` |
-| `slots.cover.title_placement` | `top-left`, `top-center`, `center`, `lower-left`, `lower-center` |
+| `slots.cover.text_align` | `left`, `center`, `right` |
+| `slots.cover.media_align` | `start`, `center`, `end` |
+| `slots.cover.image_anchor` | `top`, `center`, `bottom` |
+| `slots.cover.media_scale` | `compact`, `balanced`, `hero` |
 | `slots.cover.aspect_ratio` | `auto` |
 
-`--cover-image` without design intent should use a conservative contained layout, not a full-page cropped background. Full-page background covers require explicit intent or strong document/design signals.
+`--cover-image` without design intent should use a conservative contained composition, not a full-page cropped or overlaid background. Full-page background or overlay covers require explicit intent or strong document/design signals. User control for cover order and alignment stays in `--intent`; Codex maps wording such as "title above the image, subtitle below it, centered text" into bounded slots, and deterministic synthesis owns the generated HTML/CSS.
 
 Slot decisions should not expose raw pixel sizing. A large source image should not produce generated CSS such as `width: 4000px`; it should produce bounded decisions such as `image_fit: contain` or `image_fit: cover`, and deterministic CSS should scale the copied asset inside the selected page-relative cover-media region.
 
@@ -941,7 +945,7 @@ This phase closes the remaining parity gap between `md pdf-profile codex` and
 ownership model is intentionally asymmetric: profile-Codex remains the stronger
 route for page-number and reusable page/render policy, while template-Codex
 remains the stronger route for local cover-image bundles, custom cover
-composition, title placement, and table styling.
+composition, cover text layout, and table styling.
 
 - [x] Reuse or mirror the profile-Codex table layout signal ladder for template
       decisions, including scanned row count, overflow rows, maximum line width,
@@ -970,7 +974,7 @@ composition, title placement, and table styling.
 - [x] Add precedence tests proving base-profile recipe/page settings win over
       document table signals.
 - [x] Add duplicate-title tests covering frontmatter `title` plus matching first
-      `H1`, including cover-title placement.
+      `H1`, including cover-title ownership.
 - [x] Add `md to-pdf` compatibility coverage for template/profile combinations
       where page settings and page numbers must remain profile-owned.
 - [x] Run a privacy-safe manual `--font-hint` smoke with a playground CJK sample
@@ -1104,6 +1108,56 @@ node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/cjk-font-
 node dist/esm/bin.mjs md pdf-profile codex examples/playground/md-pdf/cjk-font-smoke.md --font-hint "<same sanitized CJK-compatible font preference>" --dry-run
 ```
 
+### Phase 8.8: Cover Image Composition And Text Layout
+
+This phase keeps cover-image "magic" in `md pdf-template codex`, not in
+`md pdf-template init`. It replaces the stale cover placement wording with a
+bounded composition contract that can express cover order such as title, image,
+then subtitle, while keeping control in `--intent` instead of adding narrow CLI
+flags.
+
+- [ ] Add strict cover composition slots to Template-Codex types, schema,
+      parser, prompt, report, and summary output:
+      `composition`, `text_align`, `media_align`, `image_anchor`, and
+      `media_scale`.
+- [ ] Map intent wording into bounded cover slots, including
+      `title-media-subtitle` for title above image and subtitle below image,
+      without adding `--cover-title-align`, `--cover-layout`, or other narrow
+      style flags.
+- [ ] Update deterministic template synthesis so cover title, image, and
+      subtitle can be emitted in different safe orders, with reviewable
+      `data-*` attributes on the cover wrapper.
+- [ ] Update deterministic CSS synthesis so alignment, media scale, media
+      alignment, image fit, and image anchor use page-relative values and do not
+      emit raw pixel sizing from source image dimensions.
+- [ ] Keep `md pdf-template init` unchanged except documentation
+      clarification: it remains the deterministic recipe starter and does not
+      own local cover-image asset copying.
+- [ ] Add focused tests for conservative cover-image-only defaults,
+      `title-media-subtitle` ordering, text alignment, media alignment, image
+      anchor, report/summary visibility, and schema rejection of unbounded cover
+      layout values.
+- [ ] Run a manual render-compat smoke with
+      `examples/playground/md-pdf/tool-cover-smoke.md` and the public sample
+      cover asset; record only sanitized outcome details in the Phase 8.8 job
+      record.
+- [ ] Run focused Template-Codex tests, repo gates, and code review on the Phase
+      8.8 commit range.
+
+Focused validation target:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/*.test.ts
+```
+
+Manual smoke target:
+
+```bash
+bun run build
+node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/tool-cover-smoke.md --intent "tool introduction cover with title above the image, subtitle below it, centered text" --cover-image examples/playground/md-pdf/assets/tool-cover-sample.jpg --output "<playground smoke output directory>" --keep-codex-report --overwrite
+node dist/esm/bin.mjs md to-pdf --input examples/playground/md-pdf/tool-cover-smoke.md --template "<playground smoke output directory>/template.html" --css "<playground smoke output directory>/style.css" --output "<playground smoke output pdf>" --overwrite
+```
+
 ### Phase 9: Documentation And Release Boundary
 
 - [ ] Update Markdown PDF guide docs with the accepted direct template-Codex workflow.
@@ -1127,6 +1181,7 @@ node dist/esm/bin.mjs md pdf-profile codex examples/playground/md-pdf/cjk-font-s
 - animated cover media
 - SVG cover media
 - profile schema changes for local cover images
+- adding `--cover-image` or managed-asset copying to `md pdf-template init`
 - arbitrary full-file HTML/CSS generation by Codex
 - mandatory template metadata files beyond identity comments
 

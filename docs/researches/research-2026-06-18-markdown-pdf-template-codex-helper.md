@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Template Codex Helper"
 created-date: 2026-06-18
-modified-date: 2026-06-24
+modified-date: 2026-06-25
 status: in-progress
 agent: codex
 ---
@@ -76,6 +76,7 @@ Use the existing command vocabulary where it already fits:
 
 - `md pdf-template codex` is a direct, scriptable command.
 - `-o, --output <directory>` means the template bundle directory when provided, matching `md pdf-template init`.
+- `md pdf-template init` remains a deterministic HTML/CSS starter and should not gain `--cover-image`; managed cover-image composition belongs to `md pdf-template codex`.
 - when `--output` is omitted, v1 should generate a readable, non-colliding default bundle directory using the same Codex-helper posture as `md pdf-profile codex`, but only after the command has enough signal to proceed.
 - the public `md pdf-template codex` command surface should stay close to `md pdf-profile codex`: bounded Codex/template signals, output/report controls, and no direct render-recipe flag surface.
 - recipe controls should not be hidden or secretly accepted by this command. Detailed page shape, preset, margin, and ToC controls belong to `md pdf-template init`, reusable `--base-profile` inputs, or the later `md to-pdf` render command.
@@ -236,7 +237,7 @@ Profile-Codex remains intentionally bounded to profile fields.
 Template-Codex is the correct owner for:
 
 - local cover images and custom cover media
-- custom cover composition and title placement
+- custom cover composition and cover text layout
 - exact table styling
 - custom HTML structure
 - custom CSS layout
@@ -410,7 +411,7 @@ V1 should make Option C concrete with:
 - a separate `recipe_preset` value that remains one of the current renderer presets: `article`, `report`, `wide-table`, `compact`, or `reader`
 - later-render template placeholders preserved by deterministic code, including `$body$`, title metadata, the conditional `$if(toc)$ ... $toc$ ... $endif$` ToC region, and the current standalone HTML structure
 - required renderer hooks preserved by deterministic code, including profile cover/page-chrome hooks and Shiki `.cdx-code*` selectors
-- bounded slots for cover composition, title block placement, table density, section spacing, color tokens, font-role alignment, and code-block treatment
+- bounded slots for cover composition, cover text layout, title block visibility, table density, section spacing, color tokens, font-role alignment, and code-block treatment
 - bounded CSS blocks only for named slots, with validation for remote URLs, absolute local paths, and required selector preservation
 
 The family names are intentionally narrow. `article`, `report`, `wide-table`, `compact`, and `reader` are already public recipe preset names, so template-Codex should not reuse them as template family names. `plain` and `report` remain the v1 cover-style values for profile-compatible cover treatment. The string `report` can therefore appear in more than one enum domain, but only through explicitly named fields such as `recipe_preset: report` or `slots.cover.style: report`.
@@ -437,12 +438,17 @@ V1 cover-media slots should also stay bounded:
 
 | Slot | Values | Notes |
 | --- | --- | --- |
-| `slots.cover.layout` | `background`, `image-above-title`, `image-below-title` | `--cover-image` without design intent should use a conservative contained layout, not a full-page cropped background. |
+| `slots.cover.composition` | `media-first-caption`, `title-media-subtitle`, `title-subtitle-media`, `media-background-overlay` | Controls the generated cover HTML order and whether title/subtitle are separate from or overlaid on the image. |
 | `slots.cover.image_fit` | `cover`, `contain` | `cover` may crop; `contain` preserves the full image. |
-| `slots.cover.title_placement` | `top-left`, `top-center`, `center`, `lower-left`, `lower-center` | Used for media-aware title placement. |
+| `slots.cover.text_align` | `left`, `center`, `right` | Controls title and subtitle alignment inside the selected composition. |
+| `slots.cover.media_align` | `start`, `center`, `end` | Controls the image block alignment when the composition does not use full-bleed media. |
+| `slots.cover.image_anchor` | `top`, `center`, `bottom` | Controls `object-position` for cropped or fitted cover media. |
+| `slots.cover.media_scale` | `compact`, `balanced`, `hero` | Chooses a page-relative media region size; deterministic CSS owns the actual lengths. |
 | `slots.cover.aspect_ratio` | `auto` | V1 records local metadata as a signal when available but should not expose an aspect-ratio CLI flag. |
 
-Full-page background covers should require explicit intent or strong document/design signals. The deterministic `--cover-image`-only path should prefer a contained layout with the title block separate from the image.
+User control for these slots stays in `--intent`, not new CLI flags. For example, an intent such as "tool introduction cover with title above the image, subtitle below it, centered text" should map to bounded slots such as `composition: title-media-subtitle` and `text_align: center`.
+
+Full-page background or overlay covers should require explicit intent or strong document/design signals. The deterministic `--cover-image`-only path should prefer a contained composition with the title/subtitle block separate from the image.
 
 Slot decisions should not contain raw CSS sizing values derived from source pixels. For example, a 4000px-wide image should not produce `width: 4000px`. It should produce a bounded decision such as `image_fit: contain`, and deterministic CSS should scale the copied image within the selected cover-media region.
 
@@ -475,10 +481,13 @@ slots:
   cover:
     mode: local-image
     image_ref: assets/cover.png
-    layout: background
+    composition: title-media-subtitle
     image_fit: cover
+    text_align: center
+    media_align: center
+    image_anchor: center
+    media_scale: hero
     aspect_ratio: auto
-    title_placement: lower-left
   tables:
     density: compact
     header_treatment: shaded
@@ -661,7 +670,7 @@ Letting Codex return full `template.html` and `style.css` directly is the fastes
 
 ### Manual `md pdf-template init` only
 
-Keeping the workflow as `md pdf-template init` plus manual HTML/CSS editing remains the fallback path. It does not solve the current product gap: users need help crossing from high-level layout intent into a reviewable template bundle without touching the full CSS/HTML surface by hand.
+Keeping the workflow as `md pdf-template init` plus manual HTML/CSS editing remains the fallback path for deterministic recipe-controlled templates. It should not absorb managed cover-image behavior; adding `--cover-image` there would duplicate asset copying, image metadata, collision checks, and redacted reporting that belong to the Template-Codex bundle layer. It also does not solve the current product gap: users need help crossing from high-level cover layout intent into a reviewable template bundle without touching the full CSS/HTML surface by hand.
 
 ### Expand the profile schema for cover images
 
