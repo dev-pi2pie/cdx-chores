@@ -281,9 +281,14 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
     managedAssets:
       input.synthesis.decisionMode === "no-usable-template"
         ? []
-        : input.outputPlan.assets.map((asset) =>
-            managedAssetReport({ asset, signals: input.signals }),
-          ),
+        : input.synthesis.managedAssets.flatMap((managedAsset) => {
+            const plannedAsset = input.outputPlan.assets.find(
+              (asset) => asset.bundlePath === managedAsset.bundlePath,
+            );
+            return plannedAsset
+              ? [managedAssetReport({ asset: plannedAsset, signals: input.signals })]
+              : [];
+          }),
     files: reportFiles(input),
     validationResults: [
       {

@@ -440,7 +440,11 @@ describe("cli action modules: md pdf-template codex integration", () => {
 
       expect(stdout.text).toContain("Decision mode: no-usable-template");
       expect(stdout.text).toContain("Fallback reason: Unsupported template direction.");
-      expect(stdout.text).toContain("Managed assets: 0");
+      expect(stdout.text).not.toContain("Template family:");
+      expect(stdout.text).not.toContain("Output directory:");
+      expect(stdout.text).not.toContain("Template HTML:");
+      expect(stdout.text).not.toContain("Stylesheet:");
+      expect(stdout.text).not.toContain("Managed assets:");
       expect(stdout.text).not.toContain("Cover composition:");
       expect(stderr.text).toContain("Wrote Codex report:");
       expect(await pathExists(join(outputPath, "template.html"))).toBe(false);

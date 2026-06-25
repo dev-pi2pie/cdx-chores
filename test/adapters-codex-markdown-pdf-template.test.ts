@@ -121,12 +121,13 @@ function responseFromDecision(input: {
 
 function noUsableResponse(
   input: {
+    coverEnabled?: boolean;
     cssBlocks?: Array<{ css: string; slot: string }>;
     managedAssets?: Array<{ bundle_path: string; source_label: string }>;
   } = {},
 ): string {
   return responseFromDecision({
-    coverEnabled: false,
+    coverEnabled: input.coverEnabled ?? false,
     cssBlocks: input.cssBlocks ?? [],
     decisionMode: "no-usable-template",
     managedAssets: input.managedAssets ?? [],
@@ -419,6 +420,23 @@ describe("Markdown PDF template Codex adapter", () => {
     });
   });
 
+  test("rejects usable decisions that ignore an explicit cover image signal", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({ coverImage: true }),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          managedAssets: [],
+          templateFamily: "document-layered",
+        }),
+    });
+
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision failed: invalid-application.",
+    );
+  });
+
   test("accepts conservative fallback decisions with bounded slot-owned CSS", async () => {
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase({ coverImage: true }),
@@ -617,6 +635,16 @@ describe("Markdown PDF template Codex adapter", () => {
         request,
       }),
     ).toThrow("managed_assets must be empty");
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          noUsableResponse({
+            coverEnabled: true,
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("slots.cover.enabled must be false");
     expect(() =>
       applyMarkdownPdfTemplateCodexDecision({
         decision: parseMarkdownPdfTemplateCodexDecision(

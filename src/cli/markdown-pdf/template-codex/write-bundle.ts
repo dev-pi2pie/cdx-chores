@@ -53,6 +53,7 @@ export async function writeMdPdfTemplateCodexBundle(input: {
     overwrite: input.overwrite,
   });
   await copyMdPdfTemplateCodexManagedAssets({
+    managedAssets: input.synthesis.managedAssets,
     outputPlan: input.outputPlan,
     overwrite: input.overwrite,
   });

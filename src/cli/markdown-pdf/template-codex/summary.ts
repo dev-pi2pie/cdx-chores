@@ -35,8 +35,27 @@ export function printMdPdfTemplateCodexSummary(
     synthesis: MarkdownPdfTemplateCodexSynthesisResult;
   },
 ): void {
+  const noUsableTemplate = input.synthesis.decisionMode === "no-usable-template";
   printLine(runtime.stdout, `Signal mode: ${input.signals.signalMode}`);
   printLine(runtime.stdout, `Decision mode: ${input.synthesis.decisionMode}`);
+  if (noUsableTemplate) {
+    if (input.outputPlan.report) {
+      printLine(
+        runtime.stdout,
+        `Codex report: ${formatPathForDisplay(runtime, input.outputPlan.report.path)}`,
+      );
+    }
+    if (input.synthesis.fallbackReason) {
+      printLine(runtime.stdout, `Fallback reason: ${input.synthesis.fallbackReason}`);
+    }
+    for (const direction of input.synthesis.unsupportedDirections ?? []) {
+      printLine(runtime.stdout, `Unsupported direction: ${direction}`);
+    }
+    if (input.state.dryRun) {
+      printLine(runtime.stdout, "Dry run only. No template bundle files were written.");
+    }
+    return;
+  }
   printLine(runtime.stdout, `Template family: ${input.synthesis.templateFamily}`);
   printLine(
     runtime.stdout,
@@ -59,12 +78,7 @@ export function printMdPdfTemplateCodexSummary(
   );
   printLine(runtime.stdout, `Template HTML: ${input.outputPlan.templateHtml.bundlePath}`);
   printLine(runtime.stdout, `Stylesheet: ${input.outputPlan.styleCss.bundlePath}`);
-  printLine(
-    runtime.stdout,
-    `Managed assets: ${
-      input.synthesis.decisionMode === "no-usable-template" ? 0 : input.outputPlan.assets.length
-    }`,
-  );
+  printLine(runtime.stdout, `Managed assets: ${input.synthesis.managedAssets.length}`);
   if (input.outputPlan.report) {
     printLine(
       runtime.stdout,

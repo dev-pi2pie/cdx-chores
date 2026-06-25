@@ -525,9 +525,15 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
         "Markdown PDF template Codex response font_decisions must be empty for no-usable-template.",
       );
     }
+    const slots = validateSlots(input.decision.slots);
+    if (slots.cover.enabled) {
+      throw new Error(
+        "Markdown PDF template Codex response slots.cover.enabled must be false for no-usable-template.",
+      );
+    }
     return {
       decisionMode,
-      slots: validateSlots(input.decision.slots),
+      slots,
       cssBlocks,
       fontDecisions: [],
       managedAssets: validateManagedAssets({
@@ -576,6 +582,11 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
       "Markdown PDF template Codex response slots.cover.enabled requires a planned managed cover image asset.",
     );
   }
+  if (input.signals.coverImage.available && !slots.cover.enabled) {
+    throw new Error(
+      "Markdown PDF template Codex response slots.cover.enabled must be true when a cover image is provided.",
+    );
+  }
   validateRecipeOwnership({
     recipePreset,
     slots,
@@ -585,6 +596,27 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     decisions: validateTemplateFontDecisions(input.decision.fontDecisions),
     signals: input.signals,
   });
+  const managedAssets = validateManagedAssets({
+    decisionMode,
+    managedAssets: input.decision.managedAssets,
+    outputPlan: input.outputPlan,
+  });
+  const hasCoverManagedAsset = managedAssets.some((asset) =>
+    input.outputPlan.assets.some(
+      (plannedAsset) =>
+        plannedAsset.role === "cover-image" && plannedAsset.bundlePath === asset.bundlePath,
+    ),
+  );
+  if (slots.cover.enabled && !hasCoverManagedAsset) {
+    throw new Error(
+      "Markdown PDF template Codex response managed_assets must include the planned cover image when cover is enabled.",
+    );
+  }
+  if (!slots.cover.enabled && managedAssets.length > 0) {
+    throw new Error(
+      "Markdown PDF template Codex response managed_assets must be empty when cover is disabled.",
+    );
+  }
   return {
     decisionMode,
     templateFamily,
@@ -592,11 +624,7 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     slots,
     cssBlocks,
     fontDecisions,
-    managedAssets: validateManagedAssets({
-      decisionMode,
-      managedAssets: input.decision.managedAssets,
-      outputPlan: input.outputPlan,
-    }),
+    managedAssets,
     warnings: validateStringArray(input.decision.warnings, "warnings"),
     unsupportedDirections: validateStringArray(
       input.decision.unsupportedDirections,

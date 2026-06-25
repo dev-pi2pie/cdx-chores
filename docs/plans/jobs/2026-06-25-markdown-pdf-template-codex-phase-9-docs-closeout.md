@@ -55,6 +55,10 @@ one-shot or Interactive Markdown PDF layers.
     fallback decisions cover-disabled, reporting zero managed assets for
     no-usable outputs, and asserting that no-usable reports do not claim cover
     output when a cover image was supplied.
+17. Addressed the final no-usable-template consistency review by rejecting
+    schema-valid no-usable decisions that keep cover enabled, copying and
+    reporting only accepted synthesis-managed assets, and suppressing unwritten
+    bundle paths from no-usable CLI summaries.
 
 ## Verification
 
@@ -83,8 +87,11 @@ one-shot or Interactive Markdown PDF layers.
 - Focused final-review-fix tests:
   - Passed:
     `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts`
+- Focused final-consistency-fix tests:
+  - Passed:
+    `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts`
 - `bun test --timeout 30000`
-  - Passed: 1334 tests across 195 files.
+  - Passed: 1335 tests across 195 files.
 
 ## Review
 
@@ -111,3 +118,8 @@ one-shot or Interactive Markdown PDF layers.
   - One reviewer found a remaining no-usable-template reporting inconsistency
     for requests that included a cover image.
   - The issue was addressed in the final follow-up fix slice.
+- Fourth final full-plan range review
+  - Reviewers found remaining no-usable-template consistency issues for
+    schema-valid cover-enabled no-usable responses, unused planned cover assets,
+    and summaries that advertised unwritten bundle paths.
+  - The issues were addressed in the final consistency fix slice.

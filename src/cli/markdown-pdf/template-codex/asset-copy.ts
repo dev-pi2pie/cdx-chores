@@ -4,7 +4,10 @@ import { dirname, isAbsolute, relative } from "node:path";
 
 import { isNotFoundError } from "../../actions/markdown/common";
 import { CliError } from "../../errors";
-import type { MarkdownPdfTemplateCodexOutputPlan } from "./types";
+import type {
+  MarkdownPdfTemplateCodexManagedAssetBinding,
+  MarkdownPdfTemplateCodexOutputPlan,
+} from "./types";
 
 function assertInsideOutputDirectory(input: {
   outputDirectory: string;
@@ -76,10 +79,14 @@ async function writeBinaryFileSafe(
 }
 
 export async function copyMdPdfTemplateCodexManagedAssets(input: {
+  managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   overwrite?: boolean;
 }): Promise<void> {
-  for (const asset of input.outputPlan.assets) {
+  const acceptedBundlePaths = new Set(input.managedAssets.map((asset) => asset.bundlePath));
+  for (const asset of input.outputPlan.assets.filter((asset) =>
+    acceptedBundlePaths.has(asset.bundlePath),
+  )) {
     assertInsideOutputDirectory({
       outputDirectory: input.outputPlan.outputDirectory,
       path: asset.path,
