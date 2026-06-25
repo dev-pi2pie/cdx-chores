@@ -22,6 +22,20 @@ export type MarkdownPdfTemplateCodexCoverTitlePlacement = "document-title" | "be
 
 export type MarkdownPdfTemplateCodexCoverStyle = "none" | "media";
 
+export type MarkdownPdfTemplateCodexCoverComposition =
+  | "media-first-caption"
+  | "title-media-subtitle"
+  | "title-subtitle-media"
+  | "media-background-overlay";
+
+export type MarkdownPdfTemplateCodexCoverTextAlign = "left" | "center" | "right";
+
+export type MarkdownPdfTemplateCodexCoverMediaAlign = "start" | "center" | "end";
+
+export type MarkdownPdfTemplateCodexCoverImageAnchor = "top" | "center" | "bottom";
+
+export type MarkdownPdfTemplateCodexCoverMediaScale = "compact" | "balanced" | "hero";
+
 export interface MarkdownPdfTemplateCodexFamilySpec {
   id: MarkdownPdfTemplateCodexTemplateFamily;
   label: string;
@@ -45,9 +59,14 @@ export interface MarkdownPdfTemplateCodexRecipePresetSlot {
 
 export interface MarkdownPdfTemplateCodexCoverSlot {
   enabled: boolean;
+  composition: MarkdownPdfTemplateCodexCoverComposition;
   imageFit?: MarkdownPdfTemplateCodexImageFit;
+  imageAnchor: MarkdownPdfTemplateCodexCoverImageAnchor;
   layout: MarkdownPdfTemplateCodexCoverLayout;
+  mediaAlign: MarkdownPdfTemplateCodexCoverMediaAlign;
+  mediaScale: MarkdownPdfTemplateCodexCoverMediaScale;
   titlePlacement: MarkdownPdfTemplateCodexCoverTitlePlacement;
+  textAlign: MarkdownPdfTemplateCodexCoverTextAlign;
   style: MarkdownPdfTemplateCodexCoverStyle;
   orientationBucket: MarkdownPdfTemplateCodexOrientationBucket;
   fitPressure: MarkdownPdfTemplateCodexFitPressure;

@@ -20,8 +20,7 @@ export function resolveMdPdfTemplateCodexTitlePolicy(input: {
   slots: MarkdownPdfTemplateCodexResolvedSlots;
 }): MarkdownPdfTemplateCodexTitlePolicyDecision {
   const duplicateVisibleTitleRisk = input.signals.documentSignals.title.duplicateVisibleTitleRisk;
-  const coverTitleOwnsPlacement =
-    input.slots.cover.enabled && input.slots.cover.titlePlacement !== "document-title";
+  const coverTitleOwnsPlacement = input.slots.cover.enabled;
   const baseProfileMetadataTitle = input.signals.title.baseProfileMetadataTitle;
 
   if (input.signals.title.explicitHideMetadataTitleIntent) {

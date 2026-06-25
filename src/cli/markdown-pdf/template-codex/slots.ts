@@ -278,6 +278,7 @@ export function resolveMdPdfTemplateCodexSlots(input: {
   const family = MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES[input.family];
   const defaults = presetDefaults(input.signals);
   const hasCover = family.requiresCoverImage && input.signals.coverImage.available;
+  const imageFit = hasCover ? coverImageFit(input.signals) : undefined;
 
   return {
     recipePreset: {
@@ -288,11 +289,16 @@ export function resolveMdPdfTemplateCodexSlots(input: {
       enabled: hasCover,
       ...(hasCover
         ? {
-            imageFit: coverImageFit(input.signals),
+            imageFit,
           }
         : {}),
+      composition: "media-first-caption",
+      imageAnchor: "center",
       layout: hasCover ? family.defaultCoverLayout : "none",
+      mediaAlign: "center",
+      mediaScale: imageFit === "cover" ? "hero" : "balanced",
       titlePlacement: hasCover ? family.defaultCoverTitlePlacement : "document-title",
+      textAlign: "center",
       style: hasCover ? "media" : "none",
       orientationBucket: input.signals.coverImage.orientationBucket,
       fitPressure: input.signals.coverImage.fitPressure,

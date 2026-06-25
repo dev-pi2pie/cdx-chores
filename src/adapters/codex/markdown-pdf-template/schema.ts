@@ -1,5 +1,10 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
   MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
   MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
@@ -12,8 +17,6 @@ import {
 const TEMPLATE_FAMILY_VALUES = [...MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES, "none"];
 const RECIPE_PRESET_VALUES = [...MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS, "none"];
 
-const COVER_LAYOUT_VALUES = ["none", "contained-media", "full-bleed-media"] as const;
-const COVER_TITLE_PLACEMENT_VALUES = ["document-title", "below-media"] as const;
 const COVER_STYLE_VALUES = ["none", "media"] as const;
 const ORIENTATION_BUCKET_VALUES = [
   "landscape",
@@ -59,18 +62,39 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA = {
           type: "object",
           properties: {
             enabled: { type: "boolean" },
+            composition: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS],
+            },
             image_fit: { type: "string", enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS, ""] },
-            layout: { type: "string", enum: COVER_LAYOUT_VALUES },
-            title_placement: { type: "string", enum: COVER_TITLE_PLACEMENT_VALUES },
+            image_anchor: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS],
+            },
+            media_align: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS],
+            },
+            media_scale: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES],
+            },
+            text_align: {
+              type: "string",
+              enum: [...MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS],
+            },
             style: { type: "string", enum: COVER_STYLE_VALUES },
             orientation_bucket: { type: "string", enum: ORIENTATION_BUCKET_VALUES },
             fit_pressure: { type: "string", enum: FIT_PRESSURE_VALUES },
           },
           required: [
             "enabled",
+            "composition",
             "image_fit",
-            "layout",
-            "title_placement",
+            "image_anchor",
+            "media_align",
+            "media_scale",
+            "text_align",
             "style",
             "orientation_bucket",
             "fit_pressure",

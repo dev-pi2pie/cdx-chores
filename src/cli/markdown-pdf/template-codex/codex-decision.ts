@@ -9,6 +9,11 @@ import {
 } from "./css-blocks";
 import type {
   MarkdownPdfTemplateCodexDecisionMode,
+  MarkdownPdfTemplateCodexCoverComposition,
+  MarkdownPdfTemplateCodexCoverImageAnchor,
+  MarkdownPdfTemplateCodexCoverMediaAlign,
+  MarkdownPdfTemplateCodexCoverMediaScale,
+  MarkdownPdfTemplateCodexCoverTextAlign,
   MarkdownPdfTemplateCodexFontRole,
   MarkdownPdfTemplateCodexImageFit,
   MarkdownPdfTemplateCodexOutputPlan,
@@ -43,6 +48,37 @@ export const MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS = [
   "contain",
   "cover",
 ] as const satisfies readonly MarkdownPdfTemplateCodexImageFit[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS = [
+  "media-first-caption",
+  "title-media-subtitle",
+  "title-subtitle-media",
+  "media-background-overlay",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverComposition[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS = [
+  "left",
+  "center",
+  "right",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverTextAlign[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS = [
+  "start",
+  "center",
+  "end",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverMediaAlign[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS = [
+  "top",
+  "center",
+  "bottom",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverImageAnchor[];
+
+export const MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES = [
+  "compact",
+  "balanced",
+  "hero",
+] as const satisfies readonly MarkdownPdfTemplateCodexCoverMediaScale[];
 
 export const MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESET_SOURCES = [
   "explicit-recipe",
@@ -137,6 +173,31 @@ function validateSlots(
       "Markdown PDF template Codex response slots.cover.image_fit is required when cover is enabled.",
     );
   }
+  assertStringInDomain(
+    slots.cover.composition,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
+    "slots.cover.composition",
+  );
+  assertStringInDomain(
+    slots.cover.textAlign,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
+    "slots.cover.text_align",
+  );
+  assertStringInDomain(
+    slots.cover.mediaAlign,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
+    "slots.cover.media_align",
+  );
+  assertStringInDomain(
+    slots.cover.imageAnchor,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
+    "slots.cover.image_anchor",
+  );
+  assertStringInDomain(
+    slots.cover.mediaScale,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES,
+    "slots.cover.media_scale",
+  );
   if (!slots.code.preserveSelectors) {
     throw new Error(
       "Markdown PDF template Codex response slots.code.preserve_selectors must be true.",

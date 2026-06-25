@@ -75,6 +75,49 @@ function coverPageLength(input: {
   };
 }
 
+function coverMediaHeightRatio(slots: MarkdownPdfTemplateCodexResolvedSlots): number {
+  if (slots.cover.composition === "media-background-overlay") {
+    return 1;
+  }
+  if (slots.cover.mediaScale === "compact") {
+    return 0.52;
+  }
+  if (slots.cover.mediaScale === "hero") {
+    return 0.76;
+  }
+  return 0.68;
+}
+
+function coverMediaMaxWidth(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
+  if (slots.cover.composition === "media-background-overlay" || slots.cover.mediaScale === "hero") {
+    return "100%";
+  }
+  if (slots.cover.mediaScale === "compact") {
+    return "72%";
+  }
+  return "88%";
+}
+
+function coverMediaAlignSelf(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
+  if (slots.cover.mediaAlign === "start") {
+    return "flex-start";
+  }
+  if (slots.cover.mediaAlign === "end") {
+    return "flex-end";
+  }
+  return "center";
+}
+
+function coverImageObjectPosition(slots: MarkdownPdfTemplateCodexResolvedSlots): string {
+  if (slots.cover.imageAnchor === "top") {
+    return "center top";
+  }
+  if (slots.cover.imageAnchor === "bottom") {
+    return "center bottom";
+  }
+  return "center";
+}
+
 function coverCss(
   slots: MarkdownPdfTemplateCodexResolvedSlots,
   signals: MdPdfTemplateCodexSignalCollection,
@@ -88,10 +131,12 @@ function coverCss(
     pageSize: signals.recipe.effectiveOptions.pageSize,
   });
   const pageHeight = formatCoverLength(pageLength.value, pageLength.unit);
-  const imageHeightRatio =
-    slots.cover.layout === "full-bleed-media" || fit === "cover" ? 0.76 : 0.68;
+  const imageHeightRatio = coverMediaHeightRatio(slots);
   const imageHeight = formatCoverLength(pageLength.value * imageHeightRatio, pageLength.unit);
-  const coverPadding = slots.cover.layout === "full-bleed-media" ? "0" : "18mm";
+  const coverPadding = slots.cover.composition === "media-background-overlay" ? "0" : "18mm";
+  const imageMaxWidth = coverMediaMaxWidth(slots);
+  const imageAlignSelf = coverMediaAlignSelf(slots);
+  const imageObjectPosition = coverImageObjectPosition(slots);
 
   return `
 @page cover {
@@ -113,15 +158,17 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
   margin: 0;
   min-height: ${pageHeight};
   padding: ${coverPadding};
+  position: relative;
 }
 
 .pdf-cover-media__image {
+  align-self: ${imageAlignSelf};
   display: block;
   height: ${imageHeight};
   max-height: ${imageHeight};
-  max-width: 100%;
+  max-width: ${imageMaxWidth};
   object-fit: ${fit};
-  object-position: center;
+  object-position: ${imageObjectPosition};
   width: 100%;
 }
 
@@ -131,6 +178,16 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
   flex-direction: column;
   gap: 2mm;
   margin-top: 8mm;
+  text-align: ${slots.cover.textAlign};
+}
+
+.pdf-cover-media__caption--title {
+  margin-bottom: 8mm;
+  margin-top: 0;
+}
+
+.pdf-cover-media__caption--subtitle {
+  margin-top: 6mm;
 }
 
 .pdf-cover-media__title {
@@ -140,6 +197,21 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
 
 .pdf-cover-media__subtitle {
   font: 12pt/1.35 var(--template-body-font);
+}
+
+.pdf-cover[data-cover-composition="media-background-overlay"] .pdf-cover-media__image {
+  height: ${pageHeight};
+  max-height: ${pageHeight};
+  max-width: 100%;
+}
+
+.pdf-cover[data-cover-composition="media-background-overlay"] .pdf-cover-media__caption {
+  box-sizing: border-box;
+  color: var(--template-background);
+  inset: 18mm;
+  justify-content: center;
+  margin: 0;
+  position: absolute;
 }
 `;
 }

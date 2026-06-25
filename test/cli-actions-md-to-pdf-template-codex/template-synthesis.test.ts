@@ -692,8 +692,11 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.templateHtml).toContain('src="assets/cover.png"');
     expect(result.templateHtml).toContain('data-image-fit="contain"');
-    expect(result.templateHtml).toContain('data-cover-layout="contained-media"');
-    expect(result.templateHtml).toContain('data-title-placement="below-media"');
+    expect(result.templateHtml).toContain('data-cover-composition="media-first-caption"');
+    expect(result.templateHtml).toContain('data-cover-text-align="center"');
+    expect(result.templateHtml).toContain('data-media-align="center"');
+    expect(result.templateHtml).toContain('data-media-scale="balanced"');
+    expect(result.templateHtml).toContain('data-image-anchor="center"');
     expect(result.templateHtml).toContain('data-orientation="panoramic"');
     expect(result.templateHtml).toContain('data-fit-pressure="letterbox-risk"');
     expect(result.styleCss).toContain("object-fit: contain;");
@@ -715,10 +718,11 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       padding: "18mm",
     });
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
+      "align-self": "center",
       display: "block",
       height: "201.96mm",
       "max-height": "201.96mm",
-      "max-width": "100%",
+      "max-width": "88%",
       "object-fit": "contain",
       "object-position": "center",
       width: "100%",
@@ -727,10 +731,73 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       display: "flex",
       gap: "2mm",
       "margin-top": "8mm",
+      "text-align": "center",
     });
     expect(result.styleCss).not.toMatch(
       /\b(?:width|height|max-height|max-width)\s*:\s*(?:4200|1200)(?:\b|[a-z%])/i,
     );
+  });
+
+  test("synthesizes title-image-subtitle cover composition with bounded alignment slots", () => {
+    const outputPlan = createSynthesisOutputPlan({ includeCoverAsset: true });
+    const signals = createSynthesisSignals({
+      coverImage: {
+        orientationBucket: "portrait",
+        fitPressure: "crop-risk",
+        width: 1200,
+        height: 1800,
+      },
+      signalMode: "codex-assisted",
+    });
+    const base = synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      outputPlan,
+      signals,
+      decision: {
+        decisionMode: "adapted",
+        templateFamily: "cover-media-layered",
+        recipePreset: "article",
+        slots: {
+          ...base.slots,
+          cover: {
+            ...base.slots.cover,
+            composition: "title-media-subtitle",
+            imageAnchor: "bottom",
+            imageFit: "contain",
+            mediaAlign: "end",
+            mediaScale: "compact",
+            textAlign: "right",
+          },
+        },
+        cssBlocks: [],
+        fontDecisions: [],
+        managedAssets: [{ bundlePath: "assets/cover.png", sourceLabel: "cover.png" }],
+        warnings: [],
+        unsupportedDirections: [],
+      },
+    });
+
+    const titleIndex = result.templateHtml.indexOf("pdf-cover-media__caption--title");
+    const imageIndex = result.templateHtml.indexOf('<img class="pdf-cover-media__image"');
+    const subtitleIndex = result.templateHtml.indexOf("pdf-cover-media__caption--subtitle");
+    expect(titleIndex).toBeGreaterThanOrEqual(0);
+    expect(imageIndex).toBeGreaterThan(titleIndex);
+    expect(subtitleIndex).toBeGreaterThan(imageIndex);
+    expect(result.templateHtml).toContain('data-cover-composition="title-media-subtitle"');
+    expect(result.templateHtml).toContain('data-cover-text-align="right"');
+    expect(result.templateHtml).toContain('data-media-align="end"');
+    expect(result.templateHtml).toContain('data-media-scale="compact"');
+    expect(result.templateHtml).toContain('data-image-anchor="bottom"');
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__caption")).toMatchObject({
+      "text-align": "right",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toMatchObject({
+      "align-self": "flex-end",
+      height: "154.44mm",
+      "max-height": "154.44mm",
+      "max-width": "72%",
+      "object-position": "center bottom",
+    });
   });
 
   test("maps cover media sizing to landscape inch page dimensions", () => {
@@ -802,6 +869,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.templateHtml).toContain('data-image-fit="cover"');
     expect(result.styleCss).toContain("object-fit: cover;");
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__image")).toEqual({
+      "align-self": "center",
       display: "block",
       height: "225.72mm",
       "max-height": "225.72mm",
@@ -830,8 +898,10 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
     expect(result.slots.cover).toMatchObject({
       enabled: true,
+      composition: "media-first-caption",
       imageFit: "contain",
       layout: "contained-media",
+      mediaScale: "balanced",
       orientationBucket: "unknown",
       fitPressure: "unknown",
     });

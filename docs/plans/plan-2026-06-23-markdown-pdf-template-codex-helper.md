@@ -1116,31 +1116,34 @@ bounded composition contract that can express cover order such as title, image,
 then subtitle, while keeping control in `--intent` instead of adding narrow CLI
 flags.
 
-- [ ] Add strict cover composition slots to Template-Codex types, schema,
+- [x] Add strict cover composition slots to Template-Codex types, schema,
       parser, prompt, report, and summary output:
       `composition`, `text_align`, `media_align`, `image_anchor`, and
       `media_scale`.
-- [ ] Map intent wording into bounded cover slots, including
+- [x] Map intent wording into bounded cover slots, including
       `title-media-subtitle` for title above image and subtitle below image,
       without adding `--cover-title-align`, `--cover-layout`, or other narrow
       style flags.
-- [ ] Update deterministic template synthesis so cover title, image, and
+- [x] Update deterministic template synthesis so cover title, image, and
       subtitle can be emitted in different safe orders, with reviewable
       `data-*` attributes on the cover wrapper.
-- [ ] Update deterministic CSS synthesis so alignment, media scale, media
+- [x] Update deterministic CSS synthesis so alignment, media scale, media
       alignment, image fit, and image anchor use page-relative values and do not
       emit raw pixel sizing from source image dimensions.
-- [ ] Keep `md pdf-template init` unchanged except documentation
+- [x] Keep `md pdf-template init` unchanged except documentation
       clarification: it remains the deterministic recipe starter and does not
       own local cover-image asset copying.
-- [ ] Add focused tests for conservative cover-image-only defaults,
+- [x] Add focused tests for conservative cover-image-only defaults,
       `title-media-subtitle` ordering, text alignment, media alignment, image
       anchor, report/summary visibility, and schema rejection of unbounded cover
       layout values.
-- [ ] Run a manual render-compat smoke with
+- [x] Run a live Template-Codex bundle smoke with
       `examples/playground/md-pdf/tool-cover-smoke.md` and the public sample
       cover asset; record only sanitized outcome details in the Phase 8.8 job
       record.
+- [ ] Complete the follow-up real PDF render smoke with the generated template
+      and stylesheet. The local render attempt is currently blocked before
+      rendering because `weasyprint` is not installed in this environment.
 - [ ] Run focused Template-Codex tests, repo gates, and code review on the Phase
       8.8 commit range.
 
@@ -1157,6 +1160,10 @@ bun run build
 node dist/esm/bin.mjs md pdf-template codex examples/playground/md-pdf/tool-cover-smoke.md --intent "tool introduction cover with title above the image, subtitle below it, centered text" --cover-image examples/playground/md-pdf/assets/tool-cover-sample.jpg --output "<playground smoke output directory>" --keep-codex-report --overwrite
 node dist/esm/bin.mjs md to-pdf --input examples/playground/md-pdf/tool-cover-smoke.md --template "<playground smoke output directory>/template.html" --css "<playground smoke output directory>/style.css" --output "<playground smoke output pdf>" --overwrite
 ```
+
+Job record:
+
+- `docs/plans/jobs/2026-06-25-markdown-pdf-template-codex-phase-8-8-cover-composition.md`
 
 ### Phase 9: Documentation And Release Boundary
 

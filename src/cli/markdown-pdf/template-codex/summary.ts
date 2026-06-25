@@ -43,10 +43,13 @@ export function printMdPdfTemplateCodexSummary(
     `Recipe preset: ${input.synthesis.slots.recipePreset.preset} (${input.synthesis.slots.recipePreset.source})`,
   );
   if (input.synthesis.slots.cover.enabled) {
+    printLine(runtime.stdout, `Cover composition: ${input.synthesis.slots.cover.composition}`);
+    printLine(runtime.stdout, `Cover text align: ${input.synthesis.slots.cover.textAlign}`);
     printLine(
       runtime.stdout,
       `Cover image fit: ${input.synthesis.slots.cover.imageFit ?? "contain"}`,
     );
+    printLine(runtime.stdout, `Cover media scale: ${input.synthesis.slots.cover.mediaScale}`);
   }
   printLine(runtime.stdout, `Template bundle: ${input.outputPlan.bundleId}`);
   printLine(

@@ -25,23 +25,46 @@ function coverMediaHtml(input: {
   if (!input.slots.cover.enabled || !coverAsset) {
     return "";
   }
-  const captionHtml =
-    input.slots.cover.titlePlacement === "below-media"
-      ? `    <figcaption class="pdf-cover-media__caption">
-$if(title)$
+  const titleHtml = `$if(title)$
       <span class="pdf-cover-media__title">$title$</span>
-$endif$
-$if(subtitle)$
+$endif$`;
+  const subtitleHtml = `$if(subtitle)$
       <span class="pdf-cover-media__subtitle">$subtitle$</span>
-$endif$
+$endif$`;
+  const captionHtml = `    <figcaption class="pdf-cover-media__caption">
+${titleHtml}
+${subtitleHtml}
     </figcaption>
-`
-      : "";
+`;
+  const titleCaptionHtml = `$if(title)$
+    <figcaption class="pdf-cover-media__caption pdf-cover-media__caption--title">
+      <span class="pdf-cover-media__title">$title$</span>
+    </figcaption>
+$endif$
+`;
+  const subtitleCaptionHtml = `$if(subtitle)$
+    <figcaption class="pdf-cover-media__caption pdf-cover-media__caption--subtitle">
+      <span class="pdf-cover-media__subtitle">$subtitle$</span>
+    </figcaption>
+$endif$
+`;
+  const imageHtml = `    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
+`;
+  const contentHtml = (() => {
+    switch (input.slots.cover.composition) {
+      case "title-media-subtitle":
+        return `${titleCaptionHtml}${imageHtml}${subtitleCaptionHtml}`;
+      case "title-subtitle-media":
+        return `${captionHtml}${imageHtml}`;
+      case "media-background-overlay":
+      case "media-first-caption":
+        return `${imageHtml}${captionHtml}`;
+    }
+  })();
 
-  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-layout="${input.slots.cover.layout}" data-title-placement="${input.slots.cover.titlePlacement}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
+  return `<section class="pdf-cover pdf-cover--${input.slots.cover.style}" data-cover-composition="${input.slots.cover.composition}" data-cover-text-align="${input.slots.cover.textAlign}" data-media-align="${input.slots.cover.mediaAlign}" data-media-scale="${input.slots.cover.mediaScale}" data-image-anchor="${input.slots.cover.imageAnchor}" data-image-fit="${input.slots.cover.imageFit}" data-orientation="${input.slots.cover.orientationBucket}" data-fit-pressure="${input.slots.cover.fitPressure}">
   <figure class="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.coverMediaClass}">
-    <img class="pdf-cover-media__image" src="${coverAsset.bundlePath}" alt="$if(title)$$title$ cover image$else$Cover image$endif$">
-${captionHtml}  </figure>
+${contentHtml}  </figure>
 </section>
 `;
 }

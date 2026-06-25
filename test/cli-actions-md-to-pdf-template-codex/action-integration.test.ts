@@ -23,8 +23,13 @@ function codexTemplateResponse(
       source: string;
       template_level: boolean;
     }>;
+    composition?: string;
     imageFit?: string;
+    imageAnchor?: string;
+    mediaAlign?: string;
+    mediaScale?: string;
     templateFamily?: string;
+    textAlign?: string;
     warnings?: string[];
   } = {},
 ): string {
@@ -38,9 +43,12 @@ function codexTemplateResponse(
       recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: coverEnabled,
+        composition: input.composition ?? "media-first-caption",
         image_fit: coverEnabled ? (input.imageFit ?? "cover") : "",
-        layout: coverEnabled ? "contained-media" : "none",
-        title_placement: coverEnabled ? "below-media" : "document-title",
+        image_anchor: input.imageAnchor ?? "center",
+        media_align: input.mediaAlign ?? "center",
+        media_scale: input.mediaScale ?? (coverEnabled ? "hero" : "balanced"),
+        text_align: input.textAlign ?? "center",
         style: coverEnabled ? "media" : "none",
         orientation_bucket: coverEnabled ? "landscape" : "unknown",
         fit_pressure: coverEnabled ? "normal" : "unknown",
@@ -71,9 +79,12 @@ function noUsableTemplateResponse(reason = "Unsupported template direction."): s
       recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: false,
+        composition: "media-first-caption",
         image_fit: "",
-        layout: "none",
-        title_placement: "document-title",
+        image_anchor: "center",
+        media_align: "center",
+        media_scale: "balanced",
+        text_align: "center",
         style: "none",
         orientation_bucket: "unknown",
         fit_pressure: "unknown",

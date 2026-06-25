@@ -55,6 +55,7 @@ export interface MdPdfTemplateCodexReportArtifact {
     fallbackReason?: string;
     warnings: string[];
     unsupportedDirections: string[];
+    cover: MarkdownPdfTemplateCodexSynthesisResult["slots"]["cover"];
     fontDecisions: MarkdownPdfTemplateCodexSynthesisResult["fontDecisions"];
     layoutPolicy: MdPdfTemplateCodexSignalCollection["recipe"]["layoutPolicy"];
     titlePolicy: MarkdownPdfTemplateCodexSynthesisResult["titlePolicy"];
@@ -234,6 +235,7 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
       ...(input.synthesis.fallbackReason ? { fallbackReason: input.synthesis.fallbackReason } : {}),
       warnings: input.synthesis.warnings ?? [],
       unsupportedDirections: input.synthesis.unsupportedDirections ?? [],
+      cover: input.synthesis.slots.cover,
       fontDecisions: input.synthesis.fontDecisions,
       layoutPolicy: input.signals.recipe.layoutPolicy,
       titlePolicy: input.synthesis.titlePolicy,

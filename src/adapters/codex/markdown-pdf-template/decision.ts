@@ -1,5 +1,10 @@
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES,
+  MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
   MARKDOWN_PDF_TEMPLATE_CODEX_DECISION_MODES,
   MARKDOWN_PDF_TEMPLATE_CODEX_FONT_DECISION_SOURCES,
   MARKDOWN_PDF_TEMPLATE_CODEX_FONT_ROLES,
@@ -9,6 +14,9 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES,
   validateMarkdownPdfTemplateCodexDecision,
   type MarkdownPdfTemplateCodexCssBlockSlot,
+  type MarkdownPdfTemplateCodexCoverComposition,
+  type MarkdownPdfTemplateCodexCoverLayout,
+  type MarkdownPdfTemplateCodexCoverTitlePlacement,
   type MarkdownPdfTemplateCodexDecision,
   type MarkdownPdfTemplateCodexDecisionManagedAsset,
   type MarkdownPdfTemplateCodexImageFit,
@@ -21,8 +29,6 @@ import type { MarkdownPdfTemplateCodexRequest, MarkdownPdfTemplateCodexResult } 
 
 type RawRecord = Record<string, unknown>;
 
-const COVER_LAYOUT_VALUES = ["none", "contained-media", "full-bleed-media"] as const;
-const COVER_TITLE_PLACEMENT_VALUES = ["document-title", "below-media"] as const;
 const COVER_STYLE_VALUES = ["none", "media"] as const;
 const ORIENTATION_BUCKET_VALUES = [
   "landscape",
@@ -134,6 +140,22 @@ function parseTemplateFamily(value: unknown): MarkdownPdfTemplateCodexDecision["
   );
 }
 
+function coverLayoutFromComposition(input: {
+  composition: MarkdownPdfTemplateCodexCoverComposition;
+  enabled: boolean;
+}): MarkdownPdfTemplateCodexCoverLayout {
+  if (!input.enabled) {
+    return "none";
+  }
+  return input.composition === "media-background-overlay" ? "full-bleed-media" : "contained-media";
+}
+
+function coverTitlePlacementFromComposition(
+  enabled: boolean,
+): MarkdownPdfTemplateCodexCoverTitlePlacement {
+  return enabled ? "below-media" : "document-title";
+}
+
 function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
   const slots = parseRecord(value, "slots");
   const recipePreset = parseRecord(slots.recipe_preset, "slots.recipe_preset");
@@ -143,6 +165,12 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
   const spacing = parseRecord(slots.spacing, "slots.spacing");
   const typography = parseRecord(slots.typography, "slots.typography");
   const colors = parseRecord(slots.colors, "slots.colors");
+  const coverEnabled = parseBoolean(cover.enabled, "slots.cover.enabled");
+  const coverComposition = parseEnum(
+    cover.composition,
+    MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
+    "slots.cover.composition",
+  );
 
   return {
     recipePreset: {
@@ -158,17 +186,37 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
       ) as MarkdownPdfTemplateCodexRecipePresetSource,
     },
     cover: {
-      enabled: parseBoolean(cover.enabled, "slots.cover.enabled"),
+      enabled: coverEnabled,
+      composition: coverComposition,
       imageFit: parseOptionalEnum(
         cover.image_fit,
         MARKDOWN_PDF_TEMPLATE_CODEX_IMAGE_FITS,
         "slots.cover.image_fit",
       ) as MarkdownPdfTemplateCodexImageFit | undefined,
-      layout: parseEnum(cover.layout, COVER_LAYOUT_VALUES, "slots.cover.layout"),
-      titlePlacement: parseEnum(
-        cover.title_placement,
-        COVER_TITLE_PLACEMENT_VALUES,
-        "slots.cover.title_placement",
+      imageAnchor: parseEnum(
+        cover.image_anchor,
+        MARKDOWN_PDF_TEMPLATE_CODEX_COVER_IMAGE_ANCHORS,
+        "slots.cover.image_anchor",
+      ),
+      layout: coverLayoutFromComposition({
+        composition: coverComposition,
+        enabled: coverEnabled,
+      }),
+      mediaAlign: parseEnum(
+        cover.media_align,
+        MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_ALIGNS,
+        "slots.cover.media_align",
+      ),
+      mediaScale: parseEnum(
+        cover.media_scale,
+        MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES,
+        "slots.cover.media_scale",
+      ),
+      titlePlacement: coverTitlePlacementFromComposition(coverEnabled),
+      textAlign: parseEnum(
+        cover.text_align,
+        MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
+        "slots.cover.text_align",
       ),
       style: parseEnum(cover.style, COVER_STYLE_VALUES, "slots.cover.style"),
       orientationBucket: parseEnum(

@@ -65,11 +65,16 @@ function responseFromDecision(input: {
     source: string;
     template_level: boolean;
   }>;
+  composition?: string;
   imageFit?: string;
+  imageAnchor?: string;
   managedAssets?: Array<{ bundle_path: string; source_label: string }>;
+  mediaAlign?: string;
+  mediaScale?: string;
   recipePreset?: string;
   recipeSource?: string;
   templateFamily?: string;
+  textAlign?: string;
 }): string {
   const coverEnabled = input.coverEnabled ?? true;
   const recipePreset = input.recipePreset ?? "article";
@@ -85,9 +90,12 @@ function responseFromDecision(input: {
       },
       cover: {
         enabled: coverEnabled,
+        composition: input.composition ?? "media-first-caption",
         image_fit: input.imageFit ?? (coverEnabled ? "cover" : ""),
-        layout: coverEnabled ? "contained-media" : "none",
-        title_placement: coverEnabled ? "below-media" : "document-title",
+        image_anchor: input.imageAnchor ?? "center",
+        media_align: input.mediaAlign ?? "center",
+        media_scale: input.mediaScale ?? (coverEnabled ? "hero" : "balanced"),
+        text_align: input.textAlign ?? "center",
         style: coverEnabled ? "media" : "none",
         orientation_bucket: coverEnabled ? "landscape" : "unknown",
         fit_pressure: coverEnabled ? "normal" : "unknown",
@@ -155,6 +163,8 @@ describe("Markdown PDF template Codex adapter", () => {
 
     expect(prompt).toContain("Return JSON only");
     expect(prompt).toContain("Use cover.image_fit contain or cover");
+    expect(prompt).toContain("Use cover.composition for title/image/subtitle ordering");
+    expect(prompt).toContain("title-media-subtitle");
     expect(prompt).toContain("Use font_decisions []");
     expect(prompt).toContain("Always include fallback_reason");
     expect(prompt).not.toContain("source-cover.png");
@@ -170,6 +180,15 @@ describe("Markdown PDF template Codex adapter", () => {
         },
         roles: ["body", "heading", "code"],
         sources: ["font-hint", "template-style"],
+      },
+      coverCompositionPolicy: {
+        compositions: [
+          "media-first-caption",
+          "title-media-subtitle",
+          "title-subtitle-media",
+          "media-background-overlay",
+        ],
+        textAlign: ["left", "center", "right"],
       },
       layoutDecisionPolicy: {
         recipePresetPolicy: {
@@ -248,6 +267,21 @@ describe("Markdown PDF template Codex adapter", () => {
         .image_fit.enum,
     ).toContain("");
     expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties
+        .composition.enum,
+    ).toEqual([
+      "media-first-caption",
+      "title-media-subtitle",
+      "title-subtitle-media",
+      "media-background-overlay",
+    ]);
+    expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties,
+    ).not.toHaveProperty("title_placement");
+    expect(
+      MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.slots.properties.cover.properties,
+    ).not.toHaveProperty("layout");
+    expect(
       MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA.properties.font_decisions.items.properties.role
         .enum,
     ).toEqual(["body", "heading", "code"]);
@@ -277,6 +311,16 @@ describe("Markdown PDF template Codex adapter", () => {
         code: { lineWrap: "wrap", preserveSelectors: true, style: "shiki-compatible" },
       },
     });
+  });
+
+  test("rejects unbounded cover composition values", () => {
+    expect(() =>
+      parseMarkdownPdfTemplateCodexDecision(
+        responseFromDecision({
+          composition: "image-above-title",
+        }),
+      ),
+    ).toThrow("slots.cover.composition");
   });
 
   test("rejects recipe decisions that drift from document-derived wide-table ownership", async () => {
