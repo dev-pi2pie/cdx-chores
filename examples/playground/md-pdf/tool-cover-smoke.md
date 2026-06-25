@@ -32,4 +32,3 @@ cdx-chores md pdf-template codex examples/playground/md-pdf/tool-cover-smoke.md 
 | Draft | Generate a reviewable template bundle |
 | Inspect | Check the template, CSS, and managed assets |
 | Render | Use `md to-pdf` with the generated template and stylesheet |
-

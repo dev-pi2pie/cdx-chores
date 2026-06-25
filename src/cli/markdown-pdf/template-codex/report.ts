@@ -222,10 +222,10 @@ function followUpRenderCommand(input: {
     return undefined;
   }
   const inputPath = input.state.inputPath
-    ? formatPathForDisplay(input.runtime, input.state.inputPath)
+    ? (redactedPathDisplay(input.runtime, input.state.inputPath)?.display ?? "<input.md>")
     : "<input.md>";
-  const templatePath = formatPathForDisplay(input.runtime, input.outputPlan.templateHtml.path);
-  const cssPath = formatPathForDisplay(input.runtime, input.outputPlan.styleCss.path);
+  const templatePath = `<template-bundle>/${input.outputPlan.templateHtml.bundlePath}`;
+  const cssPath = `<template-bundle>/${input.outputPlan.styleCss.bundlePath}`;
   return `cdx-chores md to-pdf --input ${inputPath} --template ${templatePath} --css ${cssPath} --output <output.pdf>`;
 }
 

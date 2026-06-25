@@ -833,6 +833,22 @@ describe("Markdown PDF template Codex adapter", () => {
     );
   });
 
+  test("rejects enabled cover slots when no managed cover asset is planned", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          templateFamily: "document-layered",
+          coverEnabled: true,
+        }),
+    });
+
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision failed: invalid-application.",
+    );
+  });
+
   test("rejects unsafe CSS blocks and falls back", async () => {
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase({ coverImage: true }),

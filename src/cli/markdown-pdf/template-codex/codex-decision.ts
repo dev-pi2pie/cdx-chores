@@ -567,6 +567,15 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     "recipe_preset",
   );
   const slots = validateSlots(input.decision.slots);
+  if (
+    slots.cover.enabled &&
+    (!input.signals.coverImage.available ||
+      !input.outputPlan.assets.some((asset) => asset.role === "cover-image"))
+  ) {
+    throw new Error(
+      "Markdown PDF template Codex response slots.cover.enabled requires a planned managed cover image asset.",
+    );
+  }
   validateRecipeOwnership({
     recipePreset,
     slots,

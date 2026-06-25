@@ -331,6 +331,10 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         status: "passed",
       });
       expect(report.followUpRenderCommand).toContain("cdx-chores md to-pdf");
+      expect(report.followUpRenderCommand).toContain("--template <template-bundle>/template.html");
+      expect(report.followUpRenderCommand).toContain("--css <template-bundle>/style.css");
+      expect(report.followUpRenderCommand).not.toContain(fixtureDir);
+      expect(report.followUpRenderCommand).not.toContain("private-cover.png");
     });
   });
 

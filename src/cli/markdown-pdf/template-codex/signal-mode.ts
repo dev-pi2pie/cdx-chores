@@ -57,7 +57,7 @@ export function assertUsableMdPdfTemplateCodexSignalMode(
     );
   }
   throw new CliError(
-    "Not enough signal to create a Codex-assisted Markdown PDF template. Provide Markdown input, --intent, --base-profile, --cover-image, or recipe flags; for defaults use md pdf-template init.",
+    "Not enough signal to create a Codex-assisted Markdown PDF template. Provide Markdown input, --intent, --base-profile, or --cover-image; for deterministic defaults use md pdf-template init.",
     {
       code: "LOW_SIGNAL",
       exitCode: 2,

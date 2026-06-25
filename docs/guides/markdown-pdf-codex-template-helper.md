@@ -114,7 +114,8 @@ Decision
   +-- no-usable-template ------ no bundle files written
 ```
 
-Low-signal runs can still use deterministic fallback defaults. Unsupported
+Low-signal runs fail before output planning; use `md pdf-template init` when you
+want deterministic defaults without template-specific signals. Unsupported
 directions are reported instead of being converted into arbitrary HTML or CSS.
 
 ## Preview Then Decide

@@ -57,6 +57,7 @@ const HTML_ASSET_TAGS = new Set([
 const HTML_TEMPLATE_LOCAL_ASSET_ATTRS = new Set(["src", "href", "poster", "data", "xlink:href"]);
 const HTML_ASSET_ATTR_PATTERN =
   /\b(src|href|poster|data|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+const HTML_SRCSET_ATTR_PATTERN = /\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const HTML_STYLE_TAG_PATTERN = /<\s*style\b[^>]*>([\s\S]*?)<\s*\/\s*style\s*>/gi;
 const HTML_STYLE_ATTR_PATTERN = /\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
 const PANDOC_TEMPLATE_VARIABLE_PATTERN = /\$[A-Za-z][\w-]*\$/u;
@@ -92,6 +93,12 @@ function collectRemoteValuesFromPattern(value: string, pattern: RegExp): string[
   return remotes;
 }
 
+function collectRemoteSrcsetAssets(value: string): string[] {
+  return splitSrcsetCandidates(value)
+    .map((candidate) => candidate.split(/\s+/u)[0]?.trim() ?? "")
+    .filter((candidate) => candidate.length > 0 && shouldBlockAssetUrl(candidate));
+}
+
 function shouldBlockAssetUrl(candidate: string): boolean {
   if (candidate.startsWith("//")) {
     return true;
@@ -111,6 +118,10 @@ function collectRemoteHtmlAssets(html: string): string[] {
     const tagName = (tagMatch[1] ?? "").toLowerCase();
     if (HTML_ASSET_TAGS.has(tagName)) {
       remotes.push(...collectRemoteValuesFromPattern(tag, HTML_ASSET_ATTR_PATTERN));
+      for (const srcsetMatch of tag.matchAll(HTML_SRCSET_ATTR_PATTERN)) {
+        const srcsetValue = srcsetMatch[1] ?? srcsetMatch[2] ?? srcsetMatch[3] ?? "";
+        remotes.push(...collectRemoteSrcsetAssets(srcsetValue));
+      }
     }
     for (const styleMatch of tag.matchAll(HTML_STYLE_ATTR_PATTERN)) {
       const style = styleMatch[1] ?? styleMatch[2] ?? styleMatch[3] ?? "";

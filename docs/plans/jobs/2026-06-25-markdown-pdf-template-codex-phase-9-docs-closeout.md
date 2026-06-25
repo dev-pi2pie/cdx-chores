@@ -38,6 +38,14 @@ one-shot or Interactive Markdown PDF layers.
    helper as completed while leaving hybrid and Interactive layers deferred.
 10. Addressed docs-review feedback by moving `template.codex-report.json` out
     of the default bundle tree and into a requested-report example.
+11. Ran the first final full-plan range review over `c7b4d92^..HEAD` with the
+    requested code-review agents.
+12. Addressed review findings by requiring enabled cover slots to have a
+    planned managed cover image asset, sanitizing persisted follow-up render
+    commands to bundle placeholders, blocking remote HTML `srcset` assets by
+    default, and removing stale low-signal recipe-flag wording.
+13. Removed the playground cover smoke trailing blank line reported by
+    `git diff --check c7b4d92^..HEAD`.
 
 ## Verification
 
@@ -57,8 +65,11 @@ one-shot or Interactive Markdown PDF layers.
   - Passed.
 - `bun run build`
   - Passed.
+- Focused review-fix tests:
+  - Passed:
+    `bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action.test.ts test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts`
 - `bun test --timeout 30000`
-  - Passed: 1331 tests across 195 files.
+  - Passed: 1333 tests across 195 files.
 
 ## Review
 
@@ -69,3 +80,8 @@ one-shot or Interactive Markdown PDF layers.
   - The plan closeout gate remains open until final full-plan range review is
     recorded.
 - Pending final full-plan range review.
+- First final full-plan range review
+  - Requested reviewers found actionable issues in cover-slot validation,
+    diagnostic-report path redaction, remote `srcset` blocking, low-signal
+    guide wording, and full-range whitespace.
+  - The issues were addressed in the follow-up fix slice.

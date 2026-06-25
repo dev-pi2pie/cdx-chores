@@ -14,7 +14,7 @@ describe("cli action modules: md pdf-template codex action", () => {
       const reportPath = join(fixtureDir, "template-report.json");
       const { runtime, stdout } = createActionTestRuntime();
 
-      await expectCliError(
+      const lowSignalError = await expectCliError(
         () =>
           actionMdPdfTemplateCodex(runtime, {
             intent: "   ",
@@ -24,9 +24,11 @@ describe("cli action modules: md pdf-template codex action", () => {
         {
           code: "LOW_SIGNAL",
           exitCode: 2,
-          messageIncludes: "Not enough signal",
+          messageIncludes: "for deterministic defaults use md pdf-template init",
         },
       );
+      expect(lowSignalError.message).toContain("Not enough signal");
+      expect(lowSignalError.message).not.toContain("recipe flags");
 
       expect(stdout.text).toBe("");
       expect(await pathExists(outputPath)).toBe(false);

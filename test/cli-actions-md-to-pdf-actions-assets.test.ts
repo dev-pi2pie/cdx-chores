@@ -205,6 +205,32 @@ describe("cli action modules: md to-pdf assets", () => {
     });
   });
 
+  test("blocks remote srcset assets by default", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      const { calls, runner } = createPdfRunner({
+        html: '<html><body><img srcset="https://example.com/chart.png 1x, ./chart-large.png 2x"></body></html>',
+      });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      const error = await expectCliError(
+        () => actionMdToPdf(runtime, { input: toRepoRelativePath(inputPath), runner }),
+        {
+          code: "REMOTE_ASSET_BLOCKED",
+          exitCode: 2,
+          messageIncludes: "Remote assets are disabled by default",
+        },
+      );
+
+      expect(error.message).toContain("https://example.com/chart.png");
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
   test("allows remote image assets with explicit opt in", async () => {
     await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
