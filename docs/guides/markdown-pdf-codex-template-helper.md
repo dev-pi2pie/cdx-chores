@@ -240,9 +240,14 @@ bounded role/key contract. This keeps helper-generated template CSS from
 silently fighting profile fonts.
 
 Use `md pdf-profile codex` first when the main goal is reusable typography,
-page numbers, page shape, or page chrome. Use `md pdf-template codex` when the
-main goal is a reviewable HTML/CSS bundle, local cover media, or template-only
-layout behavior.
+page numbers, page shape, page chrome, or Shiki code-highlight settings. Use
+`md pdf-template codex` when the main goal is a reviewable HTML/CSS bundle,
+local cover-image assets, cover composition, custom CSS, or template-only
+layout.
+
+`md pdf-template codex` can emit Shiki-compatible code-block CSS, but it does
+not enable Shiki. Enable highlighting during `md to-pdf` with
+`--code-highlight` or a profile with `code.highlight: true`.
 
 ## Diagnostics And Redaction
 
