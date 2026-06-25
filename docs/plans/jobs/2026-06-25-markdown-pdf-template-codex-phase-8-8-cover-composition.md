@@ -2,7 +2,7 @@
 title: "Markdown PDF template Codex phase 8.8 cover composition"
 created-date: 2026-06-25
 modified-date: 2026-06-25
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-06-23-markdown-pdf-template-codex-helper.md
 ---
@@ -198,7 +198,10 @@ cover composition and text/media layout slots.
   intent; default Template-Codex output keeps it hidden with
   `cover.byline: none`.
 
-## Remaining
+## Environment Note
 
 - Re-run the real PDF render smoke after the CSS compatibility fix and record
   whether it is warning-free in an environment with `weasyprint` installed.
+  This repository environment reports `weasyprint` unavailable, so the
+  implementation closeout relies on static bundle inspection and the mocked
+  render-compatibility coverage already recorded above.

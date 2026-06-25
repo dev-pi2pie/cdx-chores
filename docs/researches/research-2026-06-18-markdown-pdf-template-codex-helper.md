@@ -2,13 +2,14 @@
 title: "Markdown PDF Template Codex Helper"
 created-date: 2026-06-18
 modified-date: 2026-06-25
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Define the direct `md pdf-template codex` helper for the current canary target, `v0.1.5-canary.3`.
+Define the direct `md pdf-template codex` helper for the current canary target,
+`v0.1.5-canary.3`.
 
 The helper should draft reviewable Markdown PDF template artifacts for layout, cover media, and HTML/CSS-backed directions that `md pdf-profile codex` intentionally rejects.
 
@@ -686,13 +687,25 @@ Operationally, v1 should not read an existing `template.html` or `style.css` as 
 ## Recommendations
 
 1. Keep this research separate from the parent roadmap so the profile-Codex history does not get buried in template-specific details.
-2. Implement `md pdf-template codex` as the current `v0.1.5-canary.3` target.
+2. Keep `md pdf-template codex` as the completed direct helper for the current
+   `v0.1.5-canary.3` target.
 3. Treat template-Codex as an artifact generator, not a render-time hidden assistant.
 4. Support `-o, --output <directory>` as an explicit bundle destination while generating a readable, non-colliding default directory when omitted.
 5. Accept profile input as a signal and compatibility target, while documenting that template/CSS is the stronger visual layer.
 6. Prefer copied local assets inside the output directory, referenced relatively from generated HTML/CSS.
 7. Use bounded template decisions plus deterministic file synthesis instead of raw full-file Codex dumps.
 8. Defer hybrid one-shot and Interactive mode until this direct command contract is implemented and verified.
+
+## Completion Evidence
+
+The direct template helper landed under
+`docs/plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md` and is now
+documented in `docs/guides/markdown-pdf-codex-template-helper.md`.
+
+Implementation job records are linked from the plan phase sections. The final
+documentation pass records the accepted command surface, generated bundle
+contents, deterministic render boundary, managed cover-image behavior,
+font-hint/profile ownership boundary, and redacted diagnostic report behavior.
 
 ## Related Research
 

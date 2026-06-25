@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Helper Roadmap"
 created-date: 2026-06-10
-modified-date: 2026-06-19
+modified-date: 2026-06-25
 status: in-progress
 agent: codex
 ---
@@ -63,7 +63,7 @@ cdx-chores font check --text "..." --family "Noto Serif CJK TC"
 
 At the start of this research, the public Markdown PDF guide stated that Interactive Markdown PDF and Codex-assisted PDF helper flows were deferred. Earlier Markdown PDF research also deferred Codex SDK helper behavior until the deterministic renderer, profile, template, font, and code-highlighting layers were proven.
 
-The first direct helper, `md pdf-profile codex`, was completed for the previous canary line, `v0.1.5-canary.2`. The current canary target is `v0.1.5-canary.3`, and the intended remaining work before tagging that canary is the direct `md pdf-template codex` route.
+The first direct helper, `md pdf-profile codex`, was completed for the previous canary line, `v0.1.5-canary.2`. The second direct helper, `md pdf-template codex`, is completed for the current canary target, `v0.1.5-canary.3`. The remaining roadmap layers are the later hybrid one-shot helper and Interactive Markdown PDF flow.
 
 The interactive Markdown submenu currently has Markdown actions for `to-docx` and `frontmatter-to-json`, but not `to-pdf`, `pdf-profile init`, or `pdf-template init`.
 
@@ -145,7 +145,7 @@ Recommended command roles:
 | `md pdf-profile codex [path]` | Codex-assisted profile candidate selection and adaptation from available signals |
 | `md to-pdf --profile <path>` | deterministic render from an accepted profile |
 | `md pdf-template init` | low-level editable HTML/CSS recipe snapshot |
-| `md pdf-template codex [path]` | Codex-assisted advanced template recipe drafting, targeted for `v0.1.5-canary.3` |
+| `md pdf-template codex [path]` | Codex-assisted advanced template recipe drafting, completed for `v0.1.5-canary.3` |
 | later hybrid one-shot helper | chooses profile-only or template-backed artifacts before deterministic render |
 
 ### 3. The helper should choose and adapt profile candidates
@@ -355,7 +355,7 @@ pdf-template/
 
 The first Codex helper targeted `pdf-profile` and intentionally rejected raw `template.html` or `style.css` generation. That safety decision still stands for the profile helper: profile-Codex should report local cover images, arbitrary CSS, custom HTML, and template-only layout as unsupported profile directions instead of inventing profile fields.
 
-That does not mean template-Codex is rejected as a product direction. It means template-Codex needs its own artifact contract. The current canary target is a direct `md pdf-template codex` route that writes a reviewable recipe directory rather than hiding generated HTML/CSS inside `md to-pdf`.
+That does not mean template-Codex is rejected as a product direction. It means template-Codex needs its own artifact contract. That contract is now the direct `md pdf-template codex` route, which writes a reviewable recipe directory rather than hiding generated HTML/CSS inside `md to-pdf`.
 
 The intended helper model is:
 
@@ -519,7 +519,7 @@ first H1 exists, no metadata title
 
 This is a profile-helper policy, not a Markdown rewrite feature. The helper should not remove the first H1, mutate frontmatter, invent unsupported title-suppression fields, or generate custom HTML/CSS to solve title duplication. If the current profile schema cannot represent the requested title or cover behavior, Codex should record the unsupported direction through warnings or unmatched directions.
 
-Richer cover media, local cover images, and exact title-block rendering belong to template/custom HTML work. The current canary target is to move that work into a direct template-Codex contract rather than expanding profile-Codex.
+Richer cover media, local cover images, and exact title-block rendering belong to template/custom HTML work. That work now belongs to the direct template-Codex contract rather than expanding profile-Codex.
 
 ### 8. Codex-generated profiles need durable identity
 
@@ -666,9 +666,10 @@ Recommended direct behavior:
 
 Interactive mode can provide the richer user decision loop later.
 
-### 11. Template-Codex is the current canary target
+### 11. Template-Codex is the current direct helper
 
-The completed profile helper is the previous direct Codex layer. The current canary target, before tagging `v0.1.5-canary.3`, is a direct template helper:
+The completed profile helper is the previous direct Codex layer. The current
+direct template helper for `v0.1.5-canary.3` is:
 
 ```bash
 cdx-chores md pdf-template codex \
@@ -684,7 +685,9 @@ The exact command surface belongs in the focused [Markdown PDF Template Codex He
 - `md pdf-template codex` is the right home for cover media, custom cover composition, exact table styling, section layout, and other HTML/CSS-backed directions.
 - `-o, --output <directory>` should be an explicit bundle destination when provided and should keep the same directory semantics as `md pdf-template init --output <directory>`.
 - when `--output` is omitted, the direct helper should generate a readable, non-colliding default bundle directory, matching the Codex-helper posture used by `md pdf-profile codex`.
-- the direct helper should accept the same deterministic recipe flags as `md pdf-template init` and `md to-pdf` for preset, page shape, margins, and ToC settings. ToC settings remain later-render recipe settings, not static ToC content generated by template-Codex.
+- the direct helper keeps a simplified public option surface close to
+  `md pdf-profile codex`; recipe flags remain with deterministic init/render
+  commands and profile inputs.
 - It should write reviewable artifacts such as `template.html`, `style.css`, managed local assets, and an optional Codex diagnostic report.
 - It should not render the PDF automatically as its primary behavior.
 - `md to-pdf` should remain deterministic and should consume accepted template artifacts through `--template` and `--css`.
@@ -780,7 +783,7 @@ This research should now sequence work by canary milestones instead of a two-pla
 | Milestone | Target | Status |
 | --- | --- | --- |
 | Profile helper | `v0.1.5-canary.2` | completed |
-| Template helper | `v0.1.5-canary.3` | current target before tagging |
+| Template helper | `v0.1.5-canary.3` | completed |
 | Hybrid one-shot helper | next canary | deferred until template artifacts prove out |
 | Interactive Markdown PDF mode | later canary | deferred until direct helpers stabilize |
 
@@ -858,7 +861,7 @@ This keeps the command provider-neutral, but the repo currently has Codex-specif
 
 This was deferred from the profile-helper slice because it creates a larger review surface and turns assistant output into low-level rendering code. That deferral was correct for `v0.1.5-canary.2`.
 
-For the current canary target, `md pdf-template codex` is no longer an alternative to reject. It is the accepted next direct helper surface, provided it has its own artifact contract, writes reviewable `template.html`/`style.css` files, manages local assets explicitly, and keeps `md to-pdf` deterministic.
+For `v0.1.5-canary.3`, `md pdf-template codex` is no longer an alternative to reject. It is the accepted direct helper surface with its own artifact contract: it writes reviewable `template.html`/`style.css` files, manages local assets explicitly, and keeps `md to-pdf` deterministic.
 
 ### Creation-only profile helper
 

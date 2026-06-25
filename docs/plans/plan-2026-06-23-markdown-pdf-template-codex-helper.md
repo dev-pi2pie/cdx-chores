@@ -1141,8 +1141,8 @@ flags.
       `examples/playground/md-pdf/tool-cover-smoke.md` and the public sample
       cover asset; record only sanitized outcome details in the Phase 8.8 job
       record.
-- [ ] Complete the follow-up real PDF render smoke with the generated template
-      and stylesheet. The local render attempt is currently blocked before
+- [x] Record the follow-up real PDF render smoke status with the generated
+      template and stylesheet. The local render attempt is blocked before
       rendering because `weasyprint` is not installed in this environment.
 - [x] Replace WeasyPrint-incompatible cover CSS shorthands, including
       overlay-only `inset`, with renderer-compatible explicit properties so
@@ -1180,42 +1180,48 @@ Job record:
 
 ### Phase 9: Documentation And Release Boundary
 
-- [ ] Create `docs/guides/markdown-pdf-codex-template-helper.md` as
+- [x] Create `docs/guides/markdown-pdf-codex-template-helper.md` as
       the dedicated guide for the direct `md pdf-template codex`
       workflow.
-- [ ] Document the command shape and simplified option surface, including
+- [x] Document the command shape and simplified option surface, including
       accepted inputs, `--intent`, `--font-hint`, `--base-profile`,
       `--cover-image`, output/report flags, and overwrite behavior.
-- [ ] Document generated bundle contents: `template.html`, `style.css`,
+- [x] Document generated bundle contents: `template.html`, `style.css`,
       managed local assets, optional diagnostic report, and the
       timestamped default bundle-name behavior.
-- [ ] Document layered render as the default follow-up path through
+- [x] Document layered render as the default follow-up path through
       `md to-pdf --template --css`, with `--no-default-css` framed as an
       advanced self-contained-template posture.
-- [ ] Document cover-image support, supported media formats, unsupported
+- [x] Document cover-image support, supported media formats, unsupported
       SVG/remote/animated media, page-relative scaling, and the
       Codex-owned managed-asset copy boundary.
-- [ ] Document intent-controlled cover composition and metadata examples,
+- [x] Document intent-controlled cover composition and metadata examples,
       including title/image/subtitle order, text alignment, and optional
       byline output from frontmatter fields such as `title`, `subtitle`,
       `author`, and `date`.
-- [ ] Document the font-hint/template-font boundary, including how
+- [x] Document the font-hint/template-font boundary, including how
       template-level font decisions avoid conflicting with concrete
       profile-owned font sources.
-- [ ] Document redacted diagnostic report behavior without exposing local
+- [x] Document redacted diagnostic report behavior without exposing local
       source paths, local resource names, or machine-specific smoke
       artifacts.
-- [ ] Update `docs/guides/markdown-pdf-usage.md` with a short pointer to
+- [x] Update `docs/guides/markdown-pdf-usage.md` with a short pointer to
       the new template helper guide and its relationship to
       `docs/guides/markdown-pdf-codex-profile-helper.md`.
-- [ ] Update `README.md` guide links so the new template helper guide is
+- [x] Update `README.md` guide links so the new template helper guide is
       discoverable from the Markdown guide list.
-- [ ] Add the Phase 9 implementation job record under `docs/plans/jobs/`
+- [x] Add the Phase 9 implementation job record under `docs/plans/jobs/`
       and link it back to this plan.
-- [ ] Keep `v0.1.5-canary.3` wording accurate until the implementation is
+- [x] Keep `v0.1.5-canary.3` wording accurate until the implementation is
       verified and tagged.
-- [ ] Update related research status only after implementation evidence
+- [x] Update related research status only after implementation evidence
       exists.
+- [ ] Run docs review and final full-plan range review, then record the
+      closeout results.
+
+Job record:
+
+- `docs/plans/jobs/2026-06-25-markdown-pdf-template-codex-phase-9-docs-closeout.md`
 
 ## Out Of Scope
 

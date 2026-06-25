@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-06-18
+modified-date: 2026-06-25
 status: completed
 agent: codex
 ---
@@ -328,15 +328,16 @@ Templates are the right boundary for:
 The profile helper still does not generate HTML or CSS. It reports these
 directions as template-backed work instead of inventing profile fields.
 
-The current canary roadmap targets a separate `md pdf-template codex` helper for
-reviewable template artifacts. The current research direction keeps `--output`
-aligned with `md pdf-template init`: it names the template directory, not the
-rendered PDF. Until that command is implemented and documented, use
-`md pdf-template init` plus custom edits for template-backed work.
+The direct `md pdf-template codex` helper now owns reviewable template artifacts.
+Its `--output` remains aligned with `md pdf-template init`: it names the
+template bundle directory, not the rendered PDF. Use that helper when Codex
+should draft bounded `template.html`, `style.css`, and managed local assets for
+later deterministic rendering.
 
 ## Related Docs
 
 - [Markdown PDF Usage](markdown-pdf-usage.md)
+- [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [PDF Backend License Guidance](pdf-backend-license-guidance.md)
 - [Markdown PDF Codex Helper Roadmap](../researches/research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
 - [Markdown PDF Template Codex Helper](../researches/research-2026-06-18-markdown-pdf-template-codex-helper.md)

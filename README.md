@@ -80,7 +80,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 
 Codex SDK baseline for `v0.1.5-canary.3`: `0.142.0`
 
-Markdown PDF profile, template, and Codex-assisted profile helper workflows are direct CLI flows in the current canary line; interactive Markdown PDF flows remain deferred to a later release.
+Markdown PDF profile, template, and Codex-assisted profile/template helper workflows are direct CLI flows in the current canary line; interactive Markdown PDF flows remain deferred to a later release.
 
 For automation or machine-readable checks, use:
 
@@ -405,6 +405,8 @@ Video:
 Markdown:
 
 - `docs/guides/markdown-pdf-usage.md`
+- `docs/guides/markdown-pdf-codex-profile-helper.md`
+- `docs/guides/markdown-pdf-codex-template-helper.md`
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
 
 ## Local Development
