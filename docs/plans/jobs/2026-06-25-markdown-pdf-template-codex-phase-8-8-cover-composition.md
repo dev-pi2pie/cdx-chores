@@ -65,6 +65,9 @@ cover composition and text/media layout slots.
 19. Addressed final review feedback by replacing dynamic Pandoc `$title$`
     interpolation inside the cover image `alt` attribute with static,
     attribute-safe alt text.
+20. Added follow-up Phase 8.8 task items after a manual render succeeded but
+    reported a WeasyPrint warning for the inactive overlay `inset` shorthand,
+    and after cover byline placement was identified as an intent-contract gap.
 
 ## Changes
 
@@ -127,7 +130,16 @@ cover composition and text/media layout slots.
 
 ## Remaining
 
-- Complete the real PDF render smoke in an environment with `weasyprint`
-  available. Until that command succeeds against the generated template and CSS,
-  Phase 8.8 render compatibility remains unchecked.
+- Remove the WeasyPrint warning from cover CSS by replacing unsupported
+  shorthands such as overlay `inset` with explicit renderer-compatible
+  properties.
+- Add optional intent-driven cover metadata/byline slots so author and date can
+  be displayed on the cover only when requested, with default behavior
+  remaining hidden.
+- Add focused tests for the supported cover metadata combinations and their
+  generated HTML/CSS.
+- Record guide-facing intent examples for Phase 9 documentation, including the
+  required frontmatter fields for title, subtitle, and author.
+- Re-run the real PDF render smoke after the CSS compatibility fix and record
+  whether it is warning-free.
 - Run final verification and code review on the updated Phase 8.8 commit range.

@@ -1144,6 +1144,19 @@ flags.
 - [ ] Complete the follow-up real PDF render smoke with the generated template
       and stylesheet. The local render attempt is currently blocked before
       rendering because `weasyprint` is not installed in this environment.
+- [ ] Replace WeasyPrint-incompatible cover CSS shorthands, including
+      overlay-only `inset`, with renderer-compatible explicit properties so
+      inactive cover-composition branches do not create render warnings.
+- [ ] Add optional intent-driven cover metadata/byline slots without adding CLI
+      flags. Defaults should remain hidden, while intents such as "show author
+      after subtitle" can map to bounded metadata output such as author or
+      author/date after the subtitle.
+- [ ] Preserve multiple title/image/subtitle/byline cover combinations through
+      bounded slots instead of raw CSS requests, and add tests for the selected
+      combinations that are expected to be reachable by `--intent`.
+- [ ] Record guide-facing intent examples for Phase 9, including required
+      frontmatter fields such as `title`, `subtitle`, and `author`, so the
+      eventual guide explains how users ask for common cover arrangements.
 - [ ] Run focused Template-Codex tests, repo gates, and code review on the Phase
       8.8 commit range.
 
