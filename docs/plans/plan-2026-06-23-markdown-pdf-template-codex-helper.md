@@ -1180,15 +1180,42 @@ Job record:
 
 ### Phase 9: Documentation And Release Boundary
 
-- [ ] Update Markdown PDF guide docs with the accepted direct template-Codex workflow.
-- [ ] Document layered render as the default follow-up path.
-- [ ] Document `--no-default-css` as an advanced self-contained posture.
-- [ ] Document cover-image support and unsupported media formats.
-- [ ] Document redacted report behavior without exposing local source paths.
-- [ ] Keep `v0.1.5-canary.3` wording accurate until the implementation is verified and tagged.
-- [ ] Add implementation job records under `docs/plans/jobs/` as phases land.
-- [ ] Link completed job records back to this plan.
-- [ ] Update related research status only after implementation evidence exists.
+- [ ] Create `docs/guides/markdown-pdf-codex-template-helper.md` as
+      the dedicated guide for the direct `md pdf-template codex`
+      workflow.
+- [ ] Document the command shape and simplified option surface, including
+      accepted inputs, `--intent`, `--font-hint`, `--base-profile`,
+      `--cover-image`, output/report flags, and overwrite behavior.
+- [ ] Document generated bundle contents: `template.html`, `style.css`,
+      managed local assets, optional diagnostic report, and the
+      timestamped default bundle-name behavior.
+- [ ] Document layered render as the default follow-up path through
+      `md to-pdf --template --css`, with `--no-default-css` framed as an
+      advanced self-contained-template posture.
+- [ ] Document cover-image support, supported media formats, unsupported
+      SVG/remote/animated media, page-relative scaling, and the
+      Codex-owned managed-asset copy boundary.
+- [ ] Document intent-controlled cover composition and metadata examples,
+      including title/image/subtitle order, text alignment, and optional
+      byline output from frontmatter fields such as `title`, `subtitle`,
+      `author`, and `date`.
+- [ ] Document the font-hint/template-font boundary, including how
+      template-level font decisions avoid conflicting with concrete
+      profile-owned font sources.
+- [ ] Document redacted diagnostic report behavior without exposing local
+      source paths, local resource names, or machine-specific smoke
+      artifacts.
+- [ ] Update `docs/guides/markdown-pdf-usage.md` with a short pointer to
+      the new template helper guide and its relationship to
+      `docs/guides/markdown-pdf-codex-profile-helper.md`.
+- [ ] Update `README.md` guide links so the new template helper guide is
+      discoverable from the Markdown guide list.
+- [ ] Add the Phase 9 implementation job record under `docs/plans/jobs/`
+      and link it back to this plan.
+- [ ] Keep `v0.1.5-canary.3` wording accurate until the implementation is
+      verified and tagged.
+- [ ] Update related research status only after implementation evidence
+      exists.
 
 ## Out Of Scope
 
