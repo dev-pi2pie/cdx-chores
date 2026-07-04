@@ -107,10 +107,28 @@ The shared path policy now inspects the trusted root itself, and the project and
 template output tests cover symlinked `cwd` plus alias-based source collision
 cases.
 
+The final security/test review found one remaining write-sink gap outside
+project planning:
+
+- template Codex bundle/report/asset writes needed sink-level parent-root
+  checks, not only planner-time validation.
+- overwrite writes needed replacement semantics that avoid mutating unrelated
+  hardlinked files.
+- report-only template planning needed explicit coverage for symlinked runtime
+  working directories and external report parents.
+
+The shared safe file writer now supports labeled parent-root checks and
+same-directory temp-file replacement for trusted Codex overwrites, while
+preserving the existing unlabeled write-error contract used by other commands.
+Template Codex bundle, report, and managed-asset sinks now use that shared
+writer, with regression coverage for symlinked output roots, report-only
+symlink parents, and hardlink replacement.
+
 ## Verification
 
 ```bash
-bun test test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts test/cli-actions-md-to-pdf-project-codex/command-state.test.ts test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts
+bun test test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts
+bun test test/cli-actions-md-to-pdf-profile-init.test.ts test/cli-actions-data.test.ts test/cli-actions-data-extract-validation.test.ts test/cli-actions-data-stack/validation.test.ts
 bunx tsc --noEmit
 bun run format:check
 bun run lint
@@ -119,7 +137,7 @@ bun test
 git diff --check
 ```
 
-Result: all commands passed. The full suite reported 1378 tests passed and 0
+Result: all commands passed. The full suite reported 1380 tests passed and 0
 failed.
 
 ## Artifact Safety

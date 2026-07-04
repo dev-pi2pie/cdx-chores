@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import {
@@ -265,6 +265,53 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         },
       );
       expect(await pathExists(join(outsideDir, "cover.png"))).toBe(false);
+    });
+  });
+
+  test("rejects template writes through a symlinked output root at the final boundary", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-write-symlink-root", async (fixtureDir) => {
+      const outsideDir = join(fixtureDir, "outside");
+      const outputDirectory = join(fixtureDir, "bundle");
+      await mkdir(outsideDir, { recursive: true });
+      await symlink(outsideDir, outputDirectory);
+      const plan = outputPlan({ outputDirectory });
+
+      await expectCliError(
+        () =>
+          writeMdPdfTemplateCodexBundle({
+            outputPlan: plan,
+            ...bundleWriteContext(plan),
+            overwrite: true,
+            synthesis: synthesizeForPlan(plan),
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "planned template.html parent directory is a symlink",
+        },
+      );
+      expect(await pathExists(join(outsideDir, "template.html"))).toBe(false);
+    });
+  });
+
+  test("replaces hard-linked template targets without clobbering the other link", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-write-hardlink-target", async (fixtureDir) => {
+      const outputDirectory = join(fixtureDir, "bundle");
+      const outsideTemplatePath = join(fixtureDir, "outside-template.html");
+      await mkdir(outputDirectory, { recursive: true });
+      await writeFile(outsideTemplatePath, "outside template\n", "utf8");
+      await link(outsideTemplatePath, join(outputDirectory, "template.html"));
+      const plan = outputPlan({ outputDirectory });
+
+      await writeMdPdfTemplateCodexBundle({
+        outputPlan: plan,
+        ...bundleWriteContext(plan),
+        overwrite: true,
+        synthesis: synthesizeForPlan(plan),
+      });
+
+      expect(await readFile(outsideTemplatePath, "utf8")).toBe("outside template\n");
+      expect(await readFile(plan.templateHtml.path, "utf8")).toContain("$body$");
     });
   });
 

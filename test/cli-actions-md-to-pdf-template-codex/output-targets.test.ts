@@ -182,6 +182,33 @@ describe("cli action modules: md pdf-template codex output targets", () => {
         },
       );
 
+      const symlinkCwdReportOnlyState = await normalizeMdPdfTemplateCodexCommandState(
+        symlinkCwdRuntime,
+        {
+          codexReportOutput: "cwd-report.json",
+          output: "cwd-template-report-only",
+          overwrite: true,
+        },
+      );
+      const symlinkCwdReportOnlySignals = await collectMdPdfTemplateCodexSignals(
+        symlinkCwdRuntime,
+        symlinkCwdReportOnlyState,
+      );
+      await expectCliError(
+        () =>
+          planMdPdfTemplateCodexOutput({
+            runtime: symlinkCwdRuntime,
+            state: symlinkCwdReportOnlyState,
+            signals: symlinkCwdReportOnlySignals,
+            writeMode: "report-only",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Template output directory parent directory is a symlink",
+        },
+      );
+
       const outputParentState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
         output: toRepoRelativePath(join(outputRootAlias, "pdf-template")),
         overwrite: true,
@@ -201,6 +228,34 @@ describe("cli action modules: md pdf-template codex output targets", () => {
           code: "OUTPUT_SYMLINK",
           exitCode: 2,
           messageIncludes: "Template output directory parent directory is a symlink",
+        },
+      );
+
+      const reportTargetDirectory = join(fixtureDir, "report-targets");
+      const reportAliasDirectory = join(fixtureDir, "report-link");
+      await mkdir(reportTargetDirectory, { recursive: true });
+      await symlink(reportTargetDirectory, reportAliasDirectory);
+      const reportParentState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        codexReportOutput: toRepoRelativePath(join(reportAliasDirectory, "template-report.json")),
+        output: toRepoRelativePath(join(fixtureDir, "report-only-template")),
+        overwrite: true,
+      });
+      const reportParentSignals = await collectMdPdfTemplateCodexSignals(
+        runtime,
+        reportParentState,
+      );
+      await expectCliError(
+        () =>
+          planMdPdfTemplateCodexOutput({
+            runtime,
+            state: reportParentState,
+            signals: reportParentSignals,
+            writeMode: "report-only",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output parent directory is a symlink",
         },
       );
 

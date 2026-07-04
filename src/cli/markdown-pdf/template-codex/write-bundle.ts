@@ -47,10 +47,14 @@ export async function writeMdPdfTemplateCodexBundle(input: {
 
   await mkdir(input.outputPlan.outputDirectory, { recursive: true });
   await writeTextFileSafe(input.outputPlan.templateHtml.path, input.synthesis.templateHtml, {
+    label: "planned template.html",
     overwrite: input.overwrite,
+    parentRootDirectory: input.outputPlan.outputDirectory,
   });
   await writeTextFileSafe(input.outputPlan.styleCss.path, input.synthesis.styleCss, {
+    label: "planned style.css",
     overwrite: input.overwrite,
+    parentRootDirectory: input.outputPlan.outputDirectory,
   });
   await copyMdPdfTemplateCodexManagedAssets({
     managedAssets: input.synthesis.managedAssets,

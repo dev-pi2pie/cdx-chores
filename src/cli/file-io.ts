@@ -1,8 +1,181 @@
+import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { lstat, mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 
 import { CliError } from "./errors";
+
+interface SafeWriteOptions {
+  label?: string;
+  overwrite?: boolean;
+  parentRootDirectory?: string;
+}
+
+type FileContent = Buffer | string;
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT"
+  );
+}
+
+function isInsideDirectory(input: { directory: string; path: string }): boolean {
+  const relativePath = relative(input.directory, input.path);
+  return relativePath.length === 0 || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
+}
+
+async function assertNoSymlinkParentSegments(input: {
+  label: string;
+  parentRootDirectory?: string;
+  path: string;
+}): Promise<void> {
+  if (!input.parentRootDirectory) {
+    return;
+  }
+
+  const absolutePath = resolve(input.path);
+  const parentDirectory = dirname(absolutePath);
+  const preferredRoot = resolve(input.parentRootDirectory);
+  const root = isInsideDirectory({ directory: preferredRoot, path: parentDirectory })
+    ? preferredRoot
+    : parse(parentDirectory).root;
+  const relativeParentDirectory = relative(root, parentDirectory);
+
+  let currentPath = root;
+  for (const segment of ["", ...relativeParentDirectory.split(sep).filter(Boolean)]) {
+    if (segment) {
+      currentPath = join(currentPath, segment);
+    }
+    try {
+      const stats = await lstat(currentPath);
+      if (stats.isSymbolicLink()) {
+        throw new CliError(
+          `${input.label} parent directory is a symlink and cannot be written safely: ${currentPath}`,
+          {
+            code: "OUTPUT_SYMLINK",
+            exitCode: 2,
+          },
+        );
+      }
+      if (!stats.isDirectory()) {
+        throw new CliError(`${input.label} parent path is not a directory: ${currentPath}`, {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+        });
+      }
+    } catch (error) {
+      if (error instanceof CliError) {
+        throw error;
+      }
+      if (isNotFoundError(error)) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CliError(
+        `Failed to inspect ${input.label} parent path: ${currentPath} (${message})`,
+        {
+          code: "FILE_READ_ERROR",
+          exitCode: 2,
+        },
+      );
+    }
+  }
+}
+
+async function writeFileHandleContent(
+  handle: Awaited<ReturnType<typeof open>>,
+  content: FileContent,
+) {
+  if (typeof content === "string") {
+    await handle.writeFile(content, "utf8");
+    return;
+  }
+  await handle.writeFile(content);
+}
+
+async function assertExistingOutputPathWritable(input: {
+  existingFileLabel: string;
+  label: string;
+  overwrite: boolean;
+  path: string;
+}): Promise<void> {
+  try {
+    const outputStats = await lstat(input.path);
+    if (outputStats.isSymbolicLink()) {
+      throw new CliError(
+        `${input.label} is a symlink and cannot be written safely: ${input.path}`,
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+        },
+      );
+    }
+    if (outputStats.isDirectory()) {
+      throw new CliError(`${input.label} is a directory: ${input.path}`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    if (!input.overwrite) {
+      throw new CliError(
+        `${input.existingFileLabel} already exists: ${input.path}. Use --overwrite to replace it.`,
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+        },
+      );
+    }
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
+    if (!isNotFoundError(error)) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CliError(`Failed to inspect ${input.label}: ${input.path} (${message})`, {
+        code: "FILE_READ_ERROR",
+        exitCode: 2,
+      });
+    }
+  }
+}
+
+async function writeFileViaTempReplace(input: {
+  content: FileContent;
+  label: string;
+  parentRootDirectory: string;
+  path: string;
+}): Promise<void> {
+  const parentDirectory = dirname(input.path);
+  const tempPath = join(
+    parentDirectory,
+    `.${basename(input.path)}.${process.pid}.${randomUUID()}.tmp`,
+  );
+  let handle;
+  try {
+    await assertNoSymlinkParentSegments(input);
+    handle = await open(
+      tempPath,
+      constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | (constants.O_NOFOLLOW ?? 0),
+      0o600,
+    );
+    await writeFileHandleContent(handle, input.content);
+    await handle.close();
+    handle = undefined;
+    await assertNoSymlinkParentSegments(input);
+    await rename(tempPath, input.path);
+  } catch (error) {
+    await handle?.close();
+    await rm(tempPath, { force: true });
+    if (error instanceof CliError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliError(`Failed to write ${input.label}: ${input.path} (${message})`, {
+      code: "FILE_WRITE_ERROR",
+      exitCode: 2,
+    });
+  }
+}
 
 export async function readTextFileRequired(path: string): Promise<string> {
   try {
@@ -23,30 +196,50 @@ export async function ensureParentDir(path: string): Promise<void> {
 export async function writeTextFileSafe(
   path: string,
   content: string,
-  options: { overwrite?: boolean } = {},
+  options: SafeWriteOptions = {},
+): Promise<void> {
+  await writeFileSafe(path, content, options);
+}
+
+export async function writeBufferFileSafe(
+  path: string,
+  content: Buffer,
+  options: SafeWriteOptions = {},
+): Promise<void> {
+  await writeFileSafe(path, content, options);
+}
+
+async function writeFileSafe(
+  path: string,
+  content: FileContent,
+  options: SafeWriteOptions = {},
 ): Promise<void> {
   const overwrite = options.overwrite ?? false;
-  try {
-    const outputStats = await lstat(path);
-    if (outputStats.isSymbolicLink()) {
-      throw new CliError(`Output path is a symlink and cannot be written safely: ${path}`, {
-        code: "OUTPUT_SYMLINK",
-        exitCode: 2,
-      });
-    }
-    if (!overwrite) {
-      throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      });
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-  }
+  const label = options.label ?? "Output path";
+  const existingFileLabel = options.label ?? "Output file";
+  await assertNoSymlinkParentSegments({
+    label,
+    parentRootDirectory: options.parentRootDirectory,
+    path,
+  });
+  await assertExistingOutputPathWritable({ existingFileLabel, label, overwrite, path });
 
   await ensureParentDir(path);
+  await assertNoSymlinkParentSegments({
+    label,
+    parentRootDirectory: options.parentRootDirectory,
+    path,
+  });
+  if (overwrite && options.parentRootDirectory) {
+    await writeFileViaTempReplace({
+      content,
+      label,
+      parentRootDirectory: options.parentRootDirectory,
+      path,
+    });
+    return;
+  }
+
   const noFollow = constants.O_NOFOLLOW ?? 0;
   const flags = overwrite
     ? constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | noFollow
@@ -54,7 +247,7 @@ export async function writeTextFileSafe(
   let handle;
   try {
     handle = await open(path, flags, 0o666);
-    await handle.writeFile(content, "utf8");
+    await writeFileHandleContent(handle, content);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new CliError(`Failed to write file: ${path} (${message})`, {

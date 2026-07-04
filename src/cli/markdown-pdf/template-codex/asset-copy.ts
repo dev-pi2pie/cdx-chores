@@ -1,9 +1,8 @@
-import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { readFile } from "node:fs/promises";
+import { isAbsolute, relative } from "node:path";
 
-import { isNotFoundError } from "../../actions/markdown/common";
 import { CliError } from "../../errors";
+import { writeBufferFileSafe } from "../../file-io";
 import type {
   MarkdownPdfTemplateCodexManagedAssetBinding,
   MarkdownPdfTemplateCodexOutputPlan,
@@ -24,102 +23,6 @@ function assertInsideOutputDirectory(input: {
   });
 }
 
-async function assertNoSymlinkParents(input: {
-  outputDirectory: string;
-  path: string;
-  pathLabel: string;
-}): Promise<void> {
-  const relativeDirectory = relative(input.outputDirectory, dirname(input.path));
-  if (!relativeDirectory || relativeDirectory.startsWith("..") || isAbsolute(relativeDirectory)) {
-    return;
-  }
-
-  let currentPath = input.outputDirectory;
-  for (const segment of relativeDirectory.split(sep).filter(Boolean)) {
-    currentPath = join(currentPath, segment);
-    try {
-      const stats = await lstat(currentPath);
-      if (stats.isSymbolicLink()) {
-        throw new CliError(
-          `${input.pathLabel} parent directory is a symlink and cannot be written safely: ${currentPath}`,
-          {
-            code: "OUTPUT_SYMLINK",
-            exitCode: 2,
-          },
-        );
-      }
-      if (!stats.isDirectory()) {
-        throw new CliError(`${input.pathLabel} parent path is not a directory: ${currentPath}`, {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-        });
-      }
-    } catch (error) {
-      if (error instanceof CliError) {
-        throw error;
-      }
-      if (isNotFoundError(error)) {
-        return;
-      }
-      throw error;
-    }
-  }
-}
-
-async function writeBinaryFileSafe(
-  path: string,
-  content: Buffer,
-  options: { overwrite?: boolean },
-): Promise<void> {
-  try {
-    const stats = await lstat(path);
-    if (stats.isSymbolicLink()) {
-      throw new CliError(`Output path is a symlink and cannot be written safely: ${path}`, {
-        code: "OUTPUT_SYMLINK",
-        exitCode: 2,
-      });
-    }
-    if (stats.isDirectory()) {
-      throw new CliError(`Output path is a directory: ${path}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    if (!options.overwrite) {
-      throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      });
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-    if (!isNotFoundError(error)) {
-      throw error;
-    }
-  }
-
-  await mkdir(dirname(path), { recursive: true });
-  const noFollow = constants.O_NOFOLLOW ?? 0;
-  const flags = options.overwrite
-    ? constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | noFollow
-    : constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | noFollow;
-  let handle;
-  try {
-    handle = await open(path, flags, 0o666);
-    await handle.writeFile(content);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to write managed asset: ${path} (${message})`, {
-      code: "FILE_WRITE_ERROR",
-      exitCode: 2,
-    });
-  } finally {
-    await handle?.close();
-  }
-}
-
 export async function copyMdPdfTemplateCodexManagedAssets(input: {
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
@@ -134,12 +37,11 @@ export async function copyMdPdfTemplateCodexManagedAssets(input: {
       path: asset.path,
       pathLabel: `managed asset ${asset.bundlePath}`,
     });
-    await assertNoSymlinkParents({
-      outputDirectory: input.outputPlan.outputDirectory,
-      path: asset.path,
-      pathLabel: `managed asset ${asset.bundlePath}`,
-    });
     const content = await readFile(asset.sourcePath);
-    await writeBinaryFileSafe(asset.path, content, { overwrite: input.overwrite });
+    await writeBufferFileSafe(asset.path, content, {
+      label: `managed asset ${asset.bundlePath}`,
+      overwrite: input.overwrite,
+      parentRootDirectory: input.outputPlan.outputDirectory,
+    });
   }
 }

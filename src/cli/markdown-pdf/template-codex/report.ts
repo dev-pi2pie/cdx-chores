@@ -360,6 +360,13 @@ export async function writeMdPdfTemplateCodexReportArtifact(input: {
   await writeTextFileSafe(
     input.outputPlan.report.path,
     serializeMdPdfTemplateCodexReportArtifact(createMdPdfTemplateCodexReportArtifact(input)),
-    { overwrite: input.overwrite },
+    {
+      label: "--codex-report-output",
+      overwrite: input.overwrite,
+      parentRootDirectory:
+        input.outputPlan.report.location === "in-bundle"
+          ? input.outputPlan.outputDirectory
+          : input.runtime.cwd,
+    },
   );
 }
