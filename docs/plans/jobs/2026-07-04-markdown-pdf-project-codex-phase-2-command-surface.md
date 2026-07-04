@@ -38,6 +38,20 @@ The Phase 2 action validates command-state inputs and then fails with
 placeholder with output planning, signal classification, orchestration,
 validation, report writing, and project writes.
 
+## Review Follow-up
+
+Phase 2 commit review found two useful gaps:
+
+- project and template Codex command-state normalization duplicated the same
+  optional text, list, path, and dual-input identity handling.
+- project phase summaries allowed impossible phase/signal-mode combinations.
+- tests covered positional input forwarding but not the explicit `--input`
+  command alias or symlink/differently-resolved same-file input aliases.
+
+Follow-up changes added a shared Markdown PDF Codex command-state helper, moved
+template and project normalization to that helper, tightened project phase
+summaries into a discriminated union, and added explicit alias coverage.
+
 ## Verification
 
 ```bash

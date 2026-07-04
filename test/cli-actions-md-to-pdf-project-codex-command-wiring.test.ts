@@ -60,3 +60,49 @@ test("md pdf-project codex command forwards positional input and project options
     },
   ]);
 });
+
+test("md pdf-project codex command forwards explicit input alias", async () => {
+  const calls: unknown[] = [];
+  const actionStubs = {
+    actionMdFrontmatterToJson: async () => {},
+    actionMdPdfProjectCodex: async (_runtime: unknown, options: unknown) => {
+      calls.push(options);
+    },
+    actionMdPdfProfileCodex: async () => {},
+    actionMdPdfProfileInit: async () => {},
+    actionMdPdfTemplateCodex: async () => {},
+    actionMdPdfTemplateInit: async () => {},
+    actionMdToDocx: async () => {},
+    actionMdToPdf: async () => {},
+  };
+
+  const program = new Command();
+  program.exitOverride();
+  registerMarkdownCommands(program, createCapturedRuntime().runtime, actionStubs);
+
+  await program.parseAsync([
+    "node",
+    "test",
+    "md",
+    "pdf-project",
+    "codex",
+    "--input",
+    "report.md",
+    "--font-hint",
+    "Inter",
+    "--codex-report-output",
+    "project-report.json",
+    "--dry-run",
+  ]);
+
+  expect(calls).toEqual([
+    {
+      codexReportOutput: "project-report.json",
+      dryRun: true,
+      fontHint: ["Inter"],
+      input: "report.md",
+      keepCodexReport: false,
+      overwrite: false,
+    },
+  ]);
+});

@@ -1,12 +1,16 @@
-import { stat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
 import { ensureExistingFile } from "../../actions/markdown/common";
 import { readMarkdownPdfProfileFile } from "../profile";
 import { normalizeMarkdownPdfOptions } from "../validation";
-import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import {
+  normalizeOptionalText,
+  normalizeTextList,
+  resolveOptionalMarkdownInputPath,
+  resolveOptionalPath,
+} from "../codex-command-state";
 import type { MdPdfTemplateCodexOptions, NormalizedMdPdfTemplateCodexCommandState } from "./types";
 import {
   imageFormatForPath,
@@ -15,68 +19,15 @@ import {
 } from "./image-metadata";
 import { collectMdPdfTemplateCodexExplicitRecipeSignal } from "./recipe-signals";
 
-function normalizeOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : undefined;
-}
-
-function normalizeTextList(values: string[] | undefined): string[] {
-  return (values ?? []).map((value) => value.trim()).filter((value) => value.length > 0);
-}
-
-async function existingPathIdentity(path: string): Promise<{ dev: number; ino: number }> {
-  const stats = await stat(path);
-  return { dev: stats.dev, ino: stats.ino };
-}
-
-function samePathIdentity(
-  left: { dev: number; ino: number },
-  right: { dev: number; ino: number },
-): boolean {
-  return left.dev === right.dev && left.ino === right.ino;
-}
-
-async function resolveOptionalInputPath(
-  runtime: CliRuntime,
-  options: MdPdfTemplateCodexOptions,
-): Promise<string | undefined> {
-  const optionInput = normalizeOptionalText(options.input);
-  const positionalInput = normalizeOptionalText(options.positionalInput);
-  const resolvedOptionInput = optionInput ? resolveFromCwd(runtime, optionInput) : undefined;
-  const resolvedPositionalInput = positionalInput
-    ? resolveFromCwd(runtime, positionalInput)
-    : undefined;
-
-  if (resolvedOptionInput && resolvedPositionalInput) {
-    await Promise.all([
-      ensureExistingFile(resolvedOptionInput, "Markdown input"),
-      ensureExistingFile(resolvedPositionalInput, "Markdown input"),
-    ]);
-    const [optionIdentity, positionalIdentity] = await Promise.all([
-      existingPathIdentity(resolvedOptionInput),
-      existingPathIdentity(resolvedPositionalInput),
-    ]);
-    if (!samePathIdentity(optionIdentity, positionalIdentity)) {
-      throw new CliError("Positional input and --input must refer to the same Markdown file.", {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-  }
-
-  return resolvedOptionInput ?? resolvedPositionalInput;
-}
-
 async function resolveExistingFile(
   runtime: CliRuntime,
   value: string | undefined,
   label: string,
 ): Promise<string | undefined> {
-  const normalized = normalizeOptionalText(value);
-  if (!normalized) {
+  const path = resolveOptionalPath(runtime, value);
+  if (!path) {
     return undefined;
   }
-  const path = resolveFromCwd(runtime, normalized);
   await ensureExistingFile(path, label);
   return path;
 }
@@ -124,19 +75,11 @@ async function resolveCoverImage(
   return coverImagePath;
 }
 
-function resolveOptionalOutputPath(
-  runtime: CliRuntime,
-  value: string | undefined,
-): string | undefined {
-  const normalized = normalizeOptionalText(value);
-  return normalized ? resolveFromCwd(runtime, normalized) : undefined;
-}
-
 function resolveOptionalReportPath(
   runtime: CliRuntime,
   value: string | undefined,
 ): string | undefined {
-  const reportPath = resolveOptionalOutputPath(runtime, value);
+  const reportPath = resolveOptionalPath(runtime, value);
   if (reportPath && extname(reportPath).toLowerCase() !== ".json") {
     throw new CliError("Markdown PDF template Codex report path must end with .json.", {
       code: "INVALID_INPUT",
@@ -150,10 +93,7 @@ export async function normalizeMdPdfTemplateCodexCommandState(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
 ): Promise<NormalizedMdPdfTemplateCodexCommandState> {
-  const inputPath = await resolveOptionalInputPath(runtime, options);
-  if (inputPath) {
-    await ensureExistingFile(inputPath, "Markdown input");
-  }
+  const inputPath = await resolveOptionalMarkdownInputPath(runtime, options);
 
   const [baseProfilePath, coverImagePath] = await Promise.all([
     resolveBaseProfile(runtime, options.baseProfile),
@@ -168,7 +108,7 @@ export async function normalizeMdPdfTemplateCodexCommandState(
     fontHints: normalizeTextList(options.fontHint),
     baseProfilePath,
     coverImagePath,
-    outputPath: resolveOptionalOutputPath(runtime, options.output),
+    outputPath: resolveOptionalPath(runtime, options.output),
     dryRun: options.dryRun === true,
     keepCodexReport: options.keepCodexReport === true || Boolean(codexReportOutputPath),
     codexReportOutputPath,

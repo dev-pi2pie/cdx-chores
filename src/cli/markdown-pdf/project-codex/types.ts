@@ -66,15 +66,25 @@ export interface MarkdownPdfProjectCodexIdentity {
   outputDirectory?: string;
 }
 
-export interface MarkdownPdfProjectCodexPhaseSummary {
-  phase: MarkdownPdfProjectCodexPhaseName;
-  signalMode:
-    | MarkdownPdfProjectCodexProfilePhaseSignalMode
-    | MarkdownPdfProjectCodexTemplatePhaseSignalMode;
+interface MarkdownPdfProjectCodexPhaseSummaryBase {
   decisionMode: MarkdownPdfProjectCodexDecisionMode;
   fallbackReason?: string;
   warnings: string[];
 }
+
+export interface MarkdownPdfProjectCodexProfilePhaseSummary extends MarkdownPdfProjectCodexPhaseSummaryBase {
+  phase: "profile";
+  signalMode: MarkdownPdfProjectCodexProfilePhaseSignalMode;
+}
+
+export interface MarkdownPdfProjectCodexTemplatePhaseSummary extends MarkdownPdfProjectCodexPhaseSummaryBase {
+  phase: "template";
+  signalMode: MarkdownPdfProjectCodexTemplatePhaseSignalMode;
+}
+
+export type MarkdownPdfProjectCodexPhaseSummary =
+  | MarkdownPdfProjectCodexProfilePhaseSummary
+  | MarkdownPdfProjectCodexTemplatePhaseSummary;
 
 export interface MarkdownPdfProjectCodexReportArtifact {
   artifactType: "markdown-pdf-codex-project-report";

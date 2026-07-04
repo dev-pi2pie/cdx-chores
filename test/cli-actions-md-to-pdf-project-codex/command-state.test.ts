@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -51,6 +51,21 @@ describe("cli action modules: md pdf-project codex command state", () => {
       });
 
       expect(state.inputPath).toBe(join(fixtureDir, "report.md"));
+    });
+  });
+
+  test("allows positional and explicit input aliases that resolve to the same file", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-input-alias", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      await symlink("report.md", join(fixtureDir, "report-alias.md"));
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        input: "report-alias.md",
+        positionalInput: "report.md",
+      });
+
+      expect(state.inputPath).toBe(join(fixtureDir, "report-alias.md"));
     });
   });
 
