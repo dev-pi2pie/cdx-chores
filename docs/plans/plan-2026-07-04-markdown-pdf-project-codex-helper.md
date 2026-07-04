@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF project Codex helper implementation"
 created-date: 2026-07-04
-status: draft
+status: active
 agent: codex
 ---
 
@@ -244,21 +244,21 @@ Signal ladder rows to preserve:
 
 ### Phase 1: Profile-Codex Service Extraction
 
-- [ ] Create `src/cli/markdown-pdf/profile-codex/` for reusable profile helper
+- [x] Create `src/cli/markdown-pdf/profile-codex/` for reusable profile helper
       internals.
-- [ ] Move profile command-state normalization, signal collection, candidate
+- [x] Move profile command-state normalization, signal collection, candidate
       construction, Codex decision handling, report shaping, output planning,
       and write behavior behind service functions.
-- [ ] Extract profile signal-mode classification into a reusable module instead
+- [x] Extract profile signal-mode classification into a reusable module instead
       of leaving it action-local.
-- [ ] Extract synthesis-without-write support so project orchestration can
+- [x] Extract synthesis-without-write support so project orchestration can
       validate an in-memory profile result before any project artifact is
       written.
-- [ ] Keep existing `md pdf-profile codex` behavior unchanged by routing the
+- [x] Keep existing `md pdf-profile codex` behavior unchanged by routing the
       action through the extracted service.
-- [ ] Preserve profile signal modes, deterministic fallback behavior, report
+- [x] Preserve profile signal modes, deterministic fallback behavior, report
       format, source/sink collision checks, and progress feedback.
-- [ ] Add or adjust focused tests proving the extraction is behavior-preserving.
+- [x] Add or adjust focused tests proving the extraction is behavior-preserving.
 
 Recommended module targets:
 
@@ -270,6 +270,10 @@ Recommended module targets:
 - `src/cli/markdown-pdf/profile-codex/report.ts`
 - `src/cli/markdown-pdf/profile-codex/write-profile.ts`
 - `src/cli/markdown-pdf/profile-codex/index.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 1 profile service extraction](jobs/2026-07-04-markdown-pdf-project-codex-phase-1-profile-service-extraction.md)
 
 ### Phase 2: Project Command Surface And Shared Types
 
