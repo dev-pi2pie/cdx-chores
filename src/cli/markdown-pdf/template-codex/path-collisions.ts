@@ -102,20 +102,21 @@ export async function assertDistinctPathPairs(
 
 export async function assertUsableTemplateCodexOutputDirectory(
   outputDirectory: string,
-  options: { allowExistingContents?: boolean; overwrite?: boolean },
+  options: { allowExistingContents?: boolean; overwrite?: boolean; parentRootDirectory?: string },
 ): Promise<"existing" | "missing"> {
   return assertUsableCodexOutputDirectory(outputDirectory, {
     allowExistingContents: options.allowExistingContents,
     failedInspectLabel: "template output directory",
     kindLabel: "Template",
     overwrite: options.overwrite,
+    parentRootDirectory: options.parentRootDirectory,
     replacementLabel: "recipe files",
   });
 }
 
 export async function assertWritableTemplateCodexPlannedFile(
   file: { path: string },
-  options: { label: string; overwrite?: boolean },
+  options: { label: string; overwrite?: boolean; parentRootDirectory?: string },
 ): Promise<void> {
   await assertWritableCodexPlannedFile(file, options);
 }

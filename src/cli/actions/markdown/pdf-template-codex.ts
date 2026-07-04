@@ -64,6 +64,7 @@ async function preflightMdPdfTemplateCodex(
   if (!state.dryRun && synthesis.decisionMode !== "no-usable-template") {
     await validateMdPdfTemplateCodexOutputWritability({
       plan: outputPlan,
+      runtime,
       state,
       writeMode: "bundle",
     });

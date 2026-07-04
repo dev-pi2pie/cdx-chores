@@ -33,5 +33,4 @@ export interface NormalizedMdPdfProjectCodexCommandState {
   keepCodexReport: boolean;
   codexReportOutputPath?: string;
   overwrite: boolean;
-  identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
 }

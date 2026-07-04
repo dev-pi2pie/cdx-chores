@@ -79,6 +79,23 @@ still implicit:
 
 Those boundaries are now covered in the project output-plan tests.
 
+A post-commit Phase 3 range review found additional safety and maintainability
+follow-ups:
+
+- shared project/template Codex output preflight needed ancestor-symlink checks,
+  not only leaf symlink checks.
+- overwrite preflight needed to reject pre-planted hardlinks that alias
+  unrelated files.
+- project planned-target metadata needed one descriptor source for collision,
+  inside-output, parent-symlink, and writability validation.
+- deterministic project identity UID generation should remain a planner/test
+  seam instead of being stored in normalized command state.
+- project collision tests needed explicit coverage for output/source collisions
+  and base-profile/cover-image aliasing.
+
+Those follow-ups are now implemented in the shared Codex output path policy,
+the project output planner, and the project/template output-target tests.
+
 ## Verification
 
 ```bash
@@ -91,7 +108,7 @@ bun test
 git diff --check
 ```
 
-Result: all commands passed. The full suite reported 1376 tests passed and 0
+Result: all commands passed. The full suite reported 1378 tests passed and 0
 failed.
 
 ## Artifact Safety

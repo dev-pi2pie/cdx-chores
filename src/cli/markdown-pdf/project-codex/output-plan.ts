@@ -15,6 +15,7 @@ import {
 } from "./path-collisions";
 import type {
   MarkdownPdfProjectCodexOutputPlan,
+  MarkdownPdfProjectCodexIdentityUidFactory,
   MarkdownPdfProjectCodexPlannedAsset,
   MarkdownPdfProjectCodexPlannedFile,
   MarkdownPdfProjectCodexPlannedIdentity,
@@ -113,6 +114,7 @@ function assertProceedingSignalMode(
 }
 
 async function resolveOutputIdentity(input: {
+  identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
   runtime: CliRuntime;
   state: NormalizedMdPdfProjectCodexCommandState;
 }): Promise<{
@@ -127,7 +129,7 @@ async function resolveOutputIdentity(input: {
         now,
         attempt: 0,
         outputDirectory,
-        identityUidFactory: input.state.identityUidFactory,
+        identityUidFactory: input.identityUidFactory,
       }),
       generatedOutputDirectory: false,
     };
@@ -137,7 +139,7 @@ async function resolveOutputIdentity(input: {
     const identityValues = createMdPdfProjectCodexIdentityValues({
       now,
       attempt,
-      identityUidFactory: input.state.identityUidFactory,
+      identityUidFactory: input.identityUidFactory,
     });
     const outputDirectory = generatedProjectOutputDirectory({
       projectBundleId: identityValues.projectBundleId,
@@ -166,6 +168,9 @@ interface ProjectCodexPathEntry {
 }
 
 interface ProjectCodexPlannedPathTarget extends ProjectCodexPathEntry {
+  bundlePath?: string;
+  parentRootDirectory?: string;
+  requireInsideOutputDirectory: boolean;
   writable: boolean;
 }
 
@@ -206,40 +211,58 @@ function collectSourcePathEntries(
 
 function collectPlannedPathTargets(
   plan: MarkdownPdfProjectCodexOutputPlan,
+  runtime: CliRuntime,
 ): ProjectCodexPlannedPathTarget[] {
   return [
     {
       label: "--output",
       path: plan.outputDirectory,
+      requireInsideOutputDirectory: false,
       writable: false,
     },
     {
+      bundlePath: plan.profile.bundlePath,
       label: "planned profile.yml",
+      parentRootDirectory: plan.outputDirectory,
       path: plan.profile.path,
+      requireInsideOutputDirectory: true,
       writable: true,
     },
     {
+      bundlePath: plan.templateHtml.bundlePath,
       label: "planned template.html",
+      parentRootDirectory: plan.outputDirectory,
       path: plan.templateHtml.path,
+      requireInsideOutputDirectory: true,
       writable: true,
     },
     {
+      bundlePath: plan.styleCss.bundlePath,
       label: "planned style.css",
+      parentRootDirectory: plan.outputDirectory,
       path: plan.styleCss.path,
+      requireInsideOutputDirectory: true,
       writable: true,
     },
     ...(plan.report
       ? [
           {
+            bundlePath: plan.report.location === "in-bundle" ? plan.report.bundlePath : undefined,
             label: "--codex-report-output",
+            parentRootDirectory:
+              plan.report.location === "in-bundle" ? plan.outputDirectory : runtime.cwd,
             path: plan.report.path,
+            requireInsideOutputDirectory: plan.report.location === "in-bundle",
             writable: true,
           },
         ]
       : []),
     ...plan.assets.map((asset) => ({
+      bundlePath: asset.bundlePath,
       label: `planned asset ${asset.bundlePath}`,
+      parentRootDirectory: plan.outputDirectory,
       path: asset.path,
+      requireInsideOutputDirectory: true,
       writable: true,
     })),
   ];
@@ -248,6 +271,7 @@ function collectPlannedPathTargets(
 function collectPathCollisionPairs(input: {
   plan: MarkdownPdfProjectCodexOutputPlan;
   state: NormalizedMdPdfProjectCodexCommandState;
+  runtime: CliRuntime;
 }): Array<{
   left: string | undefined;
   leftLabel: string;
@@ -255,7 +279,7 @@ function collectPathCollisionPairs(input: {
   rightLabel: string;
 }> {
   const sourceEntries = collectSourcePathEntries(input.state);
-  const plannedEntries = collectPlannedPathTargets(input.plan);
+  const plannedEntries = collectPlannedPathTargets(input.plan, input.runtime);
 
   return [
     ...pairwiseCollisionPairs(sourceEntries),
@@ -271,46 +295,59 @@ function collectPathCollisionPairs(input: {
   ];
 }
 
-function writablePlannedFiles(plan: MarkdownPdfProjectCodexOutputPlan): Array<{
-  label: string;
-  path: string;
-}> {
-  return collectPlannedPathTargets(plan).filter(
-    (target): target is ProjectCodexPlannedPathTarget & { path: string } =>
-      target.writable && Boolean(target.path),
-  );
-}
-
 export async function validateMdPdfProjectCodexOutputWritability(input: {
   plan: MarkdownPdfProjectCodexOutputPlan;
+  runtime: CliRuntime;
   state: NormalizedMdPdfProjectCodexCommandState;
 }): Promise<void> {
   await assertUsableProjectCodexOutputDirectory(input.plan.outputDirectory, {
     overwrite: input.state.overwrite,
+    parentRootDirectory: input.runtime.cwd,
   });
+  const plannedTargets = collectPlannedPathTargets(input.plan, input.runtime);
+  for (const target of plannedTargets) {
+    if (!target.path || !target.requireInsideOutputDirectory) {
+      continue;
+    }
+    assertPathInsideDirectory({
+      directory: input.plan.outputDirectory,
+      directoryLabel: "--output",
+      path: target.path,
+      pathLabel: target.bundlePath ?? target.label,
+    });
+  }
   await assertDistinctPathPairs(
     collectPathCollisionPairs({
       plan: input.plan,
+      runtime: input.runtime,
       state: input.state,
     }),
   );
   await Promise.all(
-    writablePlannedFiles(input.plan).map((file) =>
-      assertWritableProjectCodexPlannedFile(file, {
-        label: file.label,
-        overwrite: input.state.overwrite,
-      }),
-    ),
+    plannedTargets
+      .filter(
+        (target): target is ProjectCodexPlannedPathTarget & { path: string } =>
+          target.writable && Boolean(target.path),
+      )
+      .map((file) =>
+        assertWritableProjectCodexPlannedFile(file, {
+          label: file.label,
+          overwrite: input.state.overwrite,
+          parentRootDirectory: file.parentRootDirectory,
+        }),
+      ),
   );
 }
 
 export async function planMdPdfProjectCodexOutput(input: {
+  identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
   runtime: CliRuntime;
   state: NormalizedMdPdfProjectCodexCommandState;
   signalMode: MarkdownPdfProjectCodexSignalMode;
 }): Promise<MarkdownPdfProjectCodexOutputPlan> {
   assertProceedingSignalMode(input.signalMode);
   const outputResolution = await resolveOutputIdentity({
+    identityUidFactory: input.identityUidFactory,
     runtime: input.runtime,
     state: input.state,
   });
@@ -328,25 +365,9 @@ export async function planMdPdfProjectCodexOutput(input: {
       : [],
   };
 
-  for (const file of [plan.profile, plan.templateHtml, plan.styleCss, ...plan.assets]) {
-    assertPathInsideDirectory({
-      directory: plan.outputDirectory,
-      directoryLabel: "--output",
-      path: file.path,
-      pathLabel: file.bundlePath,
-    });
-  }
-  if (plan.report?.location === "in-bundle") {
-    assertPathInsideDirectory({
-      directory: plan.outputDirectory,
-      directoryLabel: "--output",
-      path: plan.report.path,
-      pathLabel: plan.report.bundlePath,
-    });
-  }
-
   await validateMdPdfProjectCodexOutputWritability({
     plan,
+    runtime: input.runtime,
     state: input.state,
   });
 

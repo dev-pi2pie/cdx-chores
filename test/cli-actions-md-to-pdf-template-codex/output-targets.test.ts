@@ -1,5 +1,5 @@
 import { describe, test } from "bun:test";
-import { mkdir, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -142,6 +142,63 @@ describe("cli action modules: md pdf-template codex output targets", () => {
           code: "OUTPUT_SYMLINK",
           exitCode: 2,
           messageIncludes: "planned asset assets/cover.png is a symlink",
+        },
+      );
+    });
+  });
+
+  test("rejects symlink parents and unrelated hardlinks before writing targets", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-parent-safety", async (fixtureDir) => {
+      const realOutputRoot = join(fixtureDir, "real-output-root");
+      const outputRootAlias = join(fixtureDir, "output-root-alias");
+      await mkdir(join(realOutputRoot, "pdf-template"), { recursive: true });
+      await symlink(realOutputRoot, outputRootAlias);
+
+      const { runtime } = createActionTestRuntime();
+      const outputParentState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(join(outputRootAlias, "pdf-template")),
+        overwrite: true,
+      });
+      const outputParentSignals = await collectMdPdfTemplateCodexSignals(
+        runtime,
+        outputParentState,
+      );
+      await expectCliError(
+        () =>
+          planMdPdfTemplateCodexOutput({
+            runtime,
+            state: outputParentState,
+            signals: outputParentSignals,
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Template output directory parent directory is a symlink",
+        },
+      );
+
+      const outputPath = join(fixtureDir, "pdf-template");
+      const hardlinkTargetPath = join(fixtureDir, "unrelated-template.html");
+      await mkdir(outputPath, { recursive: true });
+      await writeFile(hardlinkTargetPath, "outside template\n", "utf8");
+      await link(hardlinkTargetPath, join(outputPath, "template.html"));
+
+      const hardlinkState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        output: toRepoRelativePath(outputPath),
+        overwrite: true,
+      });
+      const hardlinkSignals = await collectMdPdfTemplateCodexSignals(runtime, hardlinkState);
+      await expectCliError(
+        () =>
+          planMdPdfTemplateCodexOutput({
+            runtime,
+            state: hardlinkState,
+            signals: hardlinkSignals,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned template.html is hard-linked",
         },
       );
     });

@@ -40,9 +40,7 @@ describe("cli action modules: md pdf-project codex output planning", () => {
   test("rejects output planning before project signal classification can proceed", async () => {
     await withTempFixtureDir("md-pdf-project-codex-low-signal-plan", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
-      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
-        identityUidFactory: () => "fixed001",
-      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {});
 
       await expectCliError(
         () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "too-low-signal" }),
@@ -71,9 +69,9 @@ describe("cli action modules: md pdf-project codex output planning", () => {
         input: "README.md",
         coverImage: "cover.png",
         keepCodexReport: true,
-        identityUidFactory: () => "fixed001",
       });
       const plan = await planMdPdfProjectCodexOutput({
+        identityUidFactory: () => "fixed001",
         runtime,
         state,
         signalMode: "deterministic",
@@ -178,9 +176,9 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
         output: "reviewable-project",
         codexReportOutput: reportPath,
-        identityUidFactory: () => "fixed001",
       });
       const plan = await planMdPdfProjectCodexOutput({
+        identityUidFactory: () => "fixed001",
         runtime,
         state,
         signalMode: "deterministic",
@@ -208,9 +206,9 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       });
       const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
         intent: "client report",
-        identityUidFactory: (_now, attempt) => `retry${String(attempt).padStart(3, "0")}`,
       });
       const plan = await planMdPdfProjectCodexOutput({
+        identityUidFactory: (_now, attempt) => `retry${String(attempt).padStart(3, "0")}`,
         runtime,
         state,
         signalMode: "codex-assisted",
@@ -231,9 +229,9 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       });
       const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
         intent: "client report",
-        identityUidFactory: (_now, attempt) => `file${String(attempt).padStart(3, "0")}`,
       });
       const plan = await planMdPdfProjectCodexOutput({
+        identityUidFactory: (_now, attempt) => `file${String(attempt).padStart(3, "0")}`,
         runtime,
         state,
         signalMode: "codex-assisted",
@@ -256,9 +254,9 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       });
       const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
         intent: "client report",
-        identityUidFactory: (_now, attempt) => `final${String(attempt).padStart(3, "0")}`,
       });
       const plan = await planMdPdfProjectCodexOutput({
+        identityUidFactory: (_now, attempt) => `final${String(attempt).padStart(3, "0")}`,
         runtime,
         state,
         signalMode: "codex-assisted",
@@ -281,11 +279,16 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       });
       const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
         intent: "client report",
-        identityUidFactory: (_now, attempt) => `collide${String(attempt).padStart(2, "0")}`,
       });
 
       await expectCliError(
-        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "codex-assisted" }),
+        () =>
+          planMdPdfProjectCodexOutput({
+            identityUidFactory: (_now, attempt) => `collide${String(attempt).padStart(2, "0")}`,
+            runtime,
+            state,
+            signalMode: "codex-assisted",
+          }),
         {
           code: "OUTPUT_EXISTS",
           exitCode: 2,
@@ -501,6 +504,104 @@ describe("cli action modules: md pdf-project codex output planning", () => {
     });
   });
 
+  test("rejects symlink parents and unrelated hardlinks before writes", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-output-parent-safety", async (fixtureDir) => {
+      const realOutputRoot = join(fixtureDir, "real-output-root");
+      const outputRootAlias = join(fixtureDir, "output-root-alias");
+      await mkdir(join(realOutputRoot, "pdf-project"), { recursive: true });
+      await symlink(realOutputRoot, outputRootAlias);
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const outputParentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "output-root-alias/pdf-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: outputParentState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Project output directory parent directory is a symlink",
+        },
+      );
+
+      const reportTargetDirectory = join(fixtureDir, "report-targets");
+      const reportAliasDirectory = join(fixtureDir, "report-link");
+      await mkdir(reportTargetDirectory, { recursive: true });
+      await symlink(reportTargetDirectory, reportAliasDirectory);
+      const reportParentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        codexReportOutput: "report-link/project-report.json",
+        output: "report-parent-project",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportParentState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output parent directory is a symlink",
+        },
+      );
+
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const assetOutputDirectory = join(fixtureDir, "asset-parent-project");
+      const assetTargetDirectory = join(fixtureDir, "asset-targets");
+      await mkdir(assetOutputDirectory, { recursive: true });
+      await mkdir(assetTargetDirectory, { recursive: true });
+      await symlink(assetTargetDirectory, join(assetOutputDirectory, "assets"));
+      const assetParentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "cover.png",
+        output: "asset-parent-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: assetParentState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "planned asset assets/cover.png parent directory is a symlink",
+        },
+      );
+
+      const hardlinkOutputDirectory = join(fixtureDir, "hardlink-target-project");
+      const unrelatedTargetPath = join(fixtureDir, "unrelated-profile.yml");
+      await mkdir(hardlinkOutputDirectory, { recursive: true });
+      await writeFile(unrelatedTargetPath, "outside profile\n", "utf8");
+      await link(unrelatedTargetPath, join(hardlinkOutputDirectory, "profile.yml"));
+      const hardlinkState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "hardlink-target-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: hardlinkState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned profile.yml is hard-linked",
+        },
+      );
+    });
+  });
+
   test("rejects source and sink collisions across reports, assets, and generated files", async () => {
     await withTempFixtureDir("md-pdf-project-codex-collisions", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.json");
@@ -508,6 +609,7 @@ describe("cli action modules: md pdf-project codex output planning", () => {
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
       await writeFile(join(fixtureDir, "shared.md"), "# Shared\n", "utf8");
+      await mkdir(join(fixtureDir, "shared-source-directory"), { recursive: true });
       const sourceCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         input: "shared.md",
         baseProfile: "shared.md",
@@ -523,6 +625,43 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "Markdown input cannot be the same path as --base-profile",
+        },
+      );
+
+      const sourceDirectoryCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        baseProfile: "shared-source-directory",
+        coverImage: "shared-source-directory",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: sourceDirectoryCollisionState,
+            signalMode: "codex-assisted",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--base-profile cannot be the same path as --cover-image",
+        },
+      );
+
+      const outputSourceCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        baseProfile: "shared-source-directory",
+        output: "shared-source-directory",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: outputSourceCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same path as --base-profile",
         },
       );
 

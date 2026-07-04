@@ -41,6 +41,5 @@ export async function normalizeMdPdfProjectCodexCommandState(
     keepCodexReport: options.keepCodexReport === true || Boolean(codexReportOutputPath),
     codexReportOutputPath,
     overwrite: options.overwrite === true,
-    identityUidFactory: options.identityUidFactory,
   };
 }
