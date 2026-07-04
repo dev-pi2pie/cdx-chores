@@ -5,3 +5,4 @@ export {
   materializeMarkdownPdfProfileCodexProfile,
   type MarkdownPdfProfileCodexMaterializedProfile,
 } from "./synthesis";
+export { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";

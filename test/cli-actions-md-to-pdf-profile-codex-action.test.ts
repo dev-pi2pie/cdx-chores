@@ -108,6 +108,43 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("writes a generated JSON profile with Codex identity", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-json-output", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "profile.json");
+      await writeFile(inputPath, "# Report\n\nUse a reusable PDF profile.\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: adaptedRunner(),
+        input: "report.md",
+        output: "profile.json",
+      });
+
+      const rawProfile = await readFile(outputPath, "utf8");
+      expect(JSON.parse(rawProfile)).toMatchObject({
+        profile: {
+          basedOn: "wide-table",
+          preset: "wide-table",
+          source: "codex",
+        },
+        toc: {
+          depth: 2,
+          enabled: true,
+        },
+      });
+      const profile = await readMarkdownPdfProfileFile(outputPath);
+      expect(profile.profile).toMatchObject({
+        basedOn: "wide-table",
+        preset: "wide-table",
+        source: "codex",
+      });
+    });
+  });
+
   test("writes dedicated font patches as normal profile fonts and report decisions", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-font-patches", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "mixed.md");
@@ -558,6 +595,34 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(codexCalls).toBe(1);
       expect(prompt).toContain('"signalMode": "hint-only"');
       expect(prompt).toContain('"fontHints": [\n    "prefer Noto Serif CJK TC"\n  ]');
+    });
+  });
+
+  test("keeps document-informed signal mode when input and font hints are both present", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-input-plus-font-hint", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\n日本語 and English.\n", "utf8");
+      let prompt = "";
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "report.json",
+        codexRunner: async (options) => {
+          prompt = options.prompt;
+          return await adaptedRunner("reader")();
+        },
+        fontHint: ["prefer Noto Serif CJK TC"],
+        input: "report.md",
+        output: "profile.yml",
+      });
+
+      expect(prompt).toContain('"signalMode": "document-informed"');
+      const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, "report.json"));
+      expect(report.signalMode).toBe("document-informed");
+      expect(report.input.path).toBe("report.md");
+      expect(report.request.fontHints).toEqual(["prefer Noto Serif CJK TC"]);
     });
   });
 

@@ -47,6 +47,7 @@ import type { MarkdownPdfCodexProfileResult } from "../../../adapters/codex/mark
 import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
 import { materializeMarkdownPdfProfileCodexProfile } from "./synthesis";
 import type { MdPdfProfileCodexOptions } from "./types";
+import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
 
 type MarkdownPdfCodexReportBaseInput = {
   createdAt: string;
@@ -371,10 +372,13 @@ async function finalizeSuccessfulProfileDecision(input: {
   selectedCandidate: MarkdownPdfProfileCandidate;
   signalMode?: MarkdownPdfCodexSignalMode;
 }): Promise<void> {
-  const { serialized } = materializeMarkdownPdfProfileCodexProfile({
+  const { finalProfile } = materializeMarkdownPdfProfileCodexProfile({
     identity: input.identity,
-    outputPath: input.outputPath,
     profile: input.profile,
+  });
+  const serialized = serializeMarkdownPdfProfileCodexProfile({
+    finalProfile,
+    outputPath: input.outputPath,
   });
 
   if (input.signalMode) {

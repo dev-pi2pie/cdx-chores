@@ -24,13 +24,29 @@ composing profile and template phases.
 - Extracted profile signal-mode classification into
   `src/cli/markdown-pdf/profile-codex/signal-mode.ts`.
 - Added `src/cli/markdown-pdf/profile-codex/synthesis.ts` so profile identity
-  materialization, validation, and serialization can happen in memory before a
-  caller writes artifacts.
+  materialization and validation can happen in memory before a caller writes
+  artifacts.
+- Added `src/cli/markdown-pdf/profile-codex/write-profile.ts` so output-path
+  format inference and profile serialization stay in the write boundary.
 - Preserved existing direct helper behavior for deterministic fallback,
   Codex-assisted decisions, report writing, source/sink collision checks, and
   Codex progress output.
 - Marked the project-helper plan `active` now that Phase 1 implementation has
   started.
+
+## Review Follow-up
+
+Phase 1 commit review found two useful gaps:
+
+- The extracted synthesis seam still coupled profile materialization to output
+  format inference and serialization.
+- The focused tests did not pin JSON output serialization or the mixed
+  `input` plus `fontHint` signal-mode precedence.
+
+Follow-up changes split write serialization into `write-profile.ts`, kept
+`synthesis.ts` focused on validated in-memory profile materialization, and
+added regression coverage for both JSON output and document-informed precedence
+when input and font hints are supplied together.
 
 ## Notes
 
