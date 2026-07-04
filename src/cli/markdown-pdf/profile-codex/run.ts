@@ -28,7 +28,7 @@ import {
 } from "../../markdown-pdf/codex-report";
 import {
   inferMarkdownPdfProfileFormat,
-  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
   normalizeMarkdownPdfProfile,
 } from "../../markdown-pdf";
 import type {
@@ -44,7 +44,10 @@ import {
 } from "../../actions/codex-progress";
 import { assertNonEmpty, displayPath, printLine } from "../../actions/shared";
 import type { MarkdownPdfCodexProfileResult } from "../../../adapters/codex/markdown-pdf-profile/types";
-import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
+import {
+  classifyMarkdownPdfProfileCodexSignalMode,
+  executionModeForMarkdownPdfProfileCodexSignalMode,
+} from "./signal-mode";
 import { materializeMarkdownPdfProfileCodexProfile } from "./synthesis";
 import type { MdPdfProfileCodexOptions } from "./types";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
@@ -57,24 +60,6 @@ type MarkdownPdfCodexReportBaseInput = {
   inputSha256?: string;
   request: Parameters<typeof createMarkdownPdfCodexReportArtifact>[0]["request"];
 };
-
-const SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
-  (key) => key !== "profile",
-).flatMap((key) => {
-  if (key === "page") {
-    return ["page.size", "page.orientation", "page margins"];
-  }
-  if (key === "toc") {
-    return ["toc.enabled", "toc.depth", "toc.pageBreak"];
-  }
-  if (key === "fonts") {
-    return ["fonts.body", "fonts.heading", "fonts.code", "fonts.pageChrome"];
-  }
-  if (key === "titleBlock") {
-    return ["titleBlock.metadataTitle"];
-  }
-  return [key];
-});
 
 function strictUtcIso(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -543,7 +528,7 @@ export async function actionMdPdfProfileCodex(
     intent,
     selectedBaseProfileSummary: baseProfileCandidate?.summary,
     signalMode,
-    supportedSchemaSummary: SUPPORTED_SCHEMA_SUMMARY,
+    supportedSchemaSummary: MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
     workingDirectory: runtime.cwd,
   };
 
@@ -566,7 +551,7 @@ export async function actionMdPdfProfileCodex(
     request,
   };
 
-  if (signalMode === "basic-default" || signalMode === "base-only-deterministic") {
+  if (executionModeForMarkdownPdfProfileCodexSignalMode(signalMode) === "deterministic") {
     const selected =
       signalMode === "base-only-deterministic" ? baseProfileCandidate : strongestCandidate;
     if (!selected) {

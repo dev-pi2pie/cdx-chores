@@ -1,5 +1,7 @@
 import type { MarkdownPdfCodexSignalMode } from "../../../adapters/codex/markdown-pdf-profile/types";
 
+export type MarkdownPdfProfileCodexExecutionMode = "codex-assisted" | "deterministic";
+
 export function classifyMarkdownPdfProfileCodexSignalMode(input: {
   hasBaseProfile: boolean;
   hasFontHints: boolean;
@@ -20,4 +22,12 @@ export function classifyMarkdownPdfProfileCodexSignalMode(input: {
     return "base-only-deterministic";
   }
   return "basic-default";
+}
+
+export function executionModeForMarkdownPdfProfileCodexSignalMode(
+  signalMode: MarkdownPdfCodexSignalMode,
+): MarkdownPdfProfileCodexExecutionMode {
+  return signalMode === "basic-default" || signalMode === "base-only-deterministic"
+    ? "deterministic"
+    : "codex-assisted";
 }

@@ -59,6 +59,17 @@ extracted output/report paths:
 Follow-up tests now cover generated failure report paths for no-usable-profile
 and unavailable failures, plus input-derived generated profile path retries.
 
+A final maintainability pass found two small runner-local coupling points:
+
+- supported profile schema prompt summaries were still hand-maintained inside
+  the profile-Codex runner.
+- deterministic-vs-Codex execution was still encoded by checking signal-mode
+  string values in the runner.
+
+Follow-up changes moved the supported schema summary to the Markdown PDF profile
+schema module and centralized the signal-mode-to-execution-mode decision in the
+profile-Codex signal-mode module.
+
 ## Notes
 
 The service boundary is intentionally behavior-preserving. Some recommended
