@@ -44,6 +44,11 @@ After `v0.1.5-canary.4` is complete, the intended release path is to review and
 release `v0.1.5` before starting Interactive Markdown PDF mode as the
 `v0.1.6` or `v0.1.6-canary.*` feature track.
 
+This milestone is the current roadmap bridge between the completed direct
+profile/template helpers and the later Interactive Markdown PDF mode. The
+project helper should lock the reusable artifact contracts before Interactive
+mode adds conversational iteration on top of them.
+
 ## Why This Research
 
 The existing direct helpers are useful but intentionally split:
@@ -165,7 +170,7 @@ The `v0.1.5-canary.4` command surface should stay close to the direct helpers:
 | `[input]` | optional Markdown sample for shared document signals |
 | `-i, --input <path>` | script-friendly alias for positional input |
 | `--intent <text>` | general render, layout, and design direction |
-| `--font-hint <text>` | repeatable font preference hint |
+| `--font-hint <text>...` | repeatable font preference hint |
 | `--base-profile <path>` | existing profile to refine or use as a compatibility target |
 | `--cover-image <path>` | local PNG, JPEG, or WebP cover image passed to the template phase |
 | `-o, --output <directory>` | project bundle output directory |
@@ -226,6 +231,12 @@ Rules:
 - `--codex-report-output <path>` must not collide with input Markdown, base
   profile, output directory, generated files, or managed asset source paths
 
+`--overwrite` should be resolved during preflight and should apply to the whole
+set of project-owned generated outputs, not to individual mid-pipeline recovery.
+It must not overwrite user-supplied inputs such as the Markdown sample, base
+profile, cover image source, or an explicit external report path unless that
+path itself was safely selected as a report destination.
+
 The project helper should use fixed file names inside `outputDirectory`:
 
 ```text
@@ -282,6 +293,14 @@ decisions remain template-owned even when a final profile exists first.
 The project helper should collect shared inputs once, then run two artifact
 phases before writing anything durable.
 
+The phase order should be profile first, then template. The profile phase
+settles reusable render policy before template synthesis. The template phase
+runs second because, at render time, `md to-pdf --template` replaces the
+generated internal template and `--css` applies after the profile-derived
+default CSS. Profile-first orchestration is therefore not a claim that profile
+visually wins; it gives the stronger template/CSS layer the final profile
+contract to preserve, style, or explicitly report as overridden.
+
 Recommended pipeline:
 
 ```text
@@ -304,8 +323,7 @@ Collect shared signals
 Classify project signal mode
   |
   |-- too-low-signal
-  |-- deterministic-base-profile
-  |-- deterministic-cover-image
+  |-- deterministic
   |-- codex-assisted
   |
   v
@@ -331,6 +349,7 @@ Project validation
   |
   |-- profile parses and validates
   |-- template preserves later-render placeholders and hooks
+  |-- stronger template/CSS layer does not silently defeat profile-owned hooks
   |-- CSS does not introduce unsafe references
   |-- copied assets and report paths stay inside allowed boundaries
   |-- follow-up md to-pdf command is well formed
@@ -359,17 +378,45 @@ succeeds. Signal handling should still avoid low-value empty projects.
 | no input, no intent, no base profile, and no cover image | fail as too low-signal; recommend direct init commands |
 | `--base-profile` only | deterministic project snapshot from the base profile and renderer defaults |
 | `--cover-image` only | deterministic default profile plus `cover-media-layered` template with copied asset |
-| Markdown input and/or `--intent` | profile Codex decision; template Codex only when template-owned directions are present |
+| `--base-profile` plus `--cover-image`, with no input or intent | deterministic project snapshot from the base profile plus `cover-media-layered` template with copied asset |
+| `--base-profile` plus Markdown input and/or `--intent` | profile Codex may adapt from the base profile; template Codex only when template-owned directions are present |
+| `--cover-image` plus Markdown input and/or `--intent` | profile Codex may adapt the render policy; template phase uses a media-capable layered template and calls template Codex only when template-owned directions require it |
+| Markdown input and/or `--intent` without base profile or cover image | profile Codex decision; template Codex only when template-owned directions are present |
+| `--base-profile` plus `--cover-image` plus Markdown input and/or `--intent` | profile Codex may adapt from the base profile; template phase uses a media-capable layered template and calls template Codex only for template-owned directions or unmatched profile directions |
 | profile-Codex unmatched template directions | forward into the template phase as escalation signals |
 
 Template-owned directions include local cover media, custom cover composition,
 custom HTML/CSS layout, exact table styling, section or chapter treatment,
 brand-like visual styling, and unsupported profile directions.
 
+Base profiles and cover images should shape deterministic defaults by
+themselves. Markdown input, `--intent`, and unmatched profile directions are the
+signals that can escalate a phase to Codex-assisted adaptation.
+
+Project-level `signalMode` should stay coarse and informational:
+`too-low-signal`, `deterministic`, or `codex-assisted`. Combined deterministic
+inputs such as `--base-profile` plus `--cover-image` should use project
+`signalMode: deterministic`; the detailed reason belongs in phase summaries.
+
+Phase summaries should preserve each direct helper's native signal-mode
+vocabulary rather than translating every value into project-specific labels.
+Profile phase values should match profile-Codex values such as
+`document-informed`, `hint-only`, `mixed-with-base`, `base-only-deterministic`,
+or `basic-default`. Template phase values should match template-Codex values
+such as `base-profile-only`, `cover-image-only`, `deterministic`, or
+`codex-assisted`. A shared Markdown input can make the profile phase
+`document-informed` without forcing the template phase to become
+`codex-assisted`; the template phase should escalate only when template-owned
+document, intent, or unmatched profile directions are forwarded.
+
 If the user supplies general render policy such as page shape, ToC, page
 numbers, fonts, code highlighting, or text cover fields, the project helper
 should prefer the profile phase and then synthesize a deterministic
 `document-layered` template that preserves the hooks needed by `md to-pdf`.
+When `--cover-image` is present, the template phase should choose the
+media-capable layered family, such as `cover-media-layered`, even if the profile
+phase was deterministic or profile-Codex-assisted. `document-layered` remains
+the no-cover default.
 
 ## Decision Modes
 
@@ -408,6 +455,12 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
+When no Markdown input was provided to the project helper, the printed command
+should use an explicit placeholder such as `<input.md>` and `<output.pdf>`
+rather than inventing source or destination filenames. The printed command
+should always include the generated `--profile`, `--template`, and `--css`
+arguments because those are the project bundle's accepted render inputs.
+
 The project helper must respect the current `md to-pdf` precedence model:
 
 ```text
@@ -418,6 +471,13 @@ profile recipe fields
        -> default CSS remains enabled
        -> --css applies after default CSS
 ```
+
+This precedence is the reason project orchestration should not be
+template-first. If `template.html` and `style.css` are drafted before the final
+profile exists, later profile decisions can introduce ToC, title, cover, font,
+page-chrome, or code-highlight expectations that the template phase never saw.
+Profile-first orchestration lets the later, stronger template/CSS layer be
+synthesized with the final profile policy in hand.
 
 Default `v0.1.5-canary.4` project rendering should use layered CSS. The
 profile-derived default CSS stays enabled, and `style.css` applies after it.
@@ -465,12 +525,79 @@ The report should include:
 - input and base-profile summaries
 - intent and font hints
 - cover-image metadata with source directories redacted
+- project signal mode
 - profile phase signal mode and decision mode
 - template phase signal mode and decision mode
 - final project decision mode
 - unsupported directions and fallback reasons
 - validation results
 - follow-up `md to-pdf` command
+
+The report should use one project-level schema with summarized phase data. For
+example, pretty-printed reports may store the follow-up command as an argument
+array to keep the JSON readable:
+
+```json
+{
+  "artifactType": "markdown-pdf-codex-project-report",
+  "version": 1,
+  "identities": {
+    "projectBundleId": "md-pdf-project-20260703T142501Z-a1b2c3d4",
+    "profileId": "md-pdf-profile-20260703T142501Z-a1b2c3d4",
+    "templateBundleId": "md-pdf-template-20260703T142501Z-a1b2c3d4"
+  },
+  "projectSignalMode": "codex-assisted",
+  "outputDirectory": "./md-pdf-project-20260703T142501Z-a1b2c3d4",
+  "artifacts": {
+    "profile": "profile.yml",
+    "template": "template.html",
+    "css": "style.css",
+    "assets": ["assets/cover.png"]
+  },
+  "inputs": {
+    "markdown": {"displayPath": "./report.md"},
+    "baseProfile": null,
+    "coverImage": {"label": "--cover-image", "basename": "cover.png"}
+  },
+  "phases": {
+    "profile": {
+      "signalMode": "document-informed",
+      "decisionMode": "adapted",
+      "unsupportedDirections": []
+    },
+    "template": {
+      "signalMode": "cover-image-only",
+      "decisionMode": "deterministic",
+      "fallbackReasons": []
+    }
+  },
+  "finalProjectDecisionMode": "adapted",
+  "validation": {"ok": true, "errors": []},
+  "followUpCommand": {
+    "argv": [
+      "cdx-chores",
+      "md",
+      "to-pdf",
+      "--input",
+      "./report.md",
+      "--profile",
+      "./md-pdf-project-20260703T142501Z-a1b2c3d4/profile.yml",
+      "--template",
+      "./md-pdf-project-20260703T142501Z-a1b2c3d4/template.html",
+      "--css",
+      "./md-pdf-project-20260703T142501Z-a1b2c3d4/style.css",
+      "--output",
+      "./report.pdf"
+    ]
+  }
+}
+```
+
+When Markdown input is absent, the report's `followUpCommand.argv` should use
+`<input.md>` and `<output.pdf>` placeholders. Project report artifact paths
+should prefer project-relative paths such as `profile.yml`, `template.html`,
+`style.css`, and `assets/cover.png`; displayed terminal paths may still be used
+in command summaries.
 
 Persisted reports and generated artifacts should avoid raw absolute source paths
 by default. Bundle-relative paths, source basenames, source labels such as
@@ -588,6 +715,10 @@ report shaping, and write planning into a reusable service before implementing
 the project helper. Route the existing `md pdf-profile codex` action through
 that service first, then compose the project helper from the profile service and
 the existing template-Codex service.
+
+The intended module home is `src/cli/markdown-pdf/profile-codex/`, parallel to
+`src/cli/markdown-pdf/template-codex/`. This is guidance for implementation
+shape, not a requirement to mirror every template-Codex file one-for-one.
 
 The project helper should not invoke direct CLI actions as subprocess-like
 steps. Direct actions print summaries and write their own artifacts, which would
