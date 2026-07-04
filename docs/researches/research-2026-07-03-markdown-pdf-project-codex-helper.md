@@ -755,6 +755,21 @@ default.
 9. Keep Interactive Markdown PDF mode out of the `v0.1.5-canary.4` scope.
 10. Update guide docs only after the project command is implemented and verified.
 
+## Completion Criteria
+
+Keep this research `in-progress` while the project helper is still only planned.
+Move it to `completed` only after implementation evidence is linked from the
+project-helper plan or focused job records.
+
+Minimum closure evidence:
+
+- the project-helper implementation plan exists and is linked below
+- implementation job records cover the accepted command surface, orchestration,
+  validation, report, and guide closeout
+- verification records show the project output feeds
+  `md to-pdf --profile --template --css`
+- guide updates document shipped behavior rather than planned behavior
+
 ## Related Research
 
 - [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
@@ -765,5 +780,6 @@ default.
 
 ## Related Plans
 
+- [Markdown PDF project Codex helper implementation](../plans/plan-2026-07-04-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF Codex profile helper implementation](../plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md)
 - [Markdown PDF template Codex helper implementation](../plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md)
