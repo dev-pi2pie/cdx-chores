@@ -22,13 +22,12 @@ async function assertNoSymlinkParentSegments(input: {
       ? preferredRoot
       : parse(parentDirectory).root;
   const relativeParentDirectory = relative(root, parentDirectory);
-  if (!relativeParentDirectory) {
-    return;
-  }
 
   let currentPath = root;
-  for (const segment of relativeParentDirectory.split(sep).filter(Boolean)) {
-    currentPath = join(currentPath, segment);
+  for (const segment of ["", ...relativeParentDirectory.split(sep).filter(Boolean)]) {
+    if (segment) {
+      currentPath = join(currentPath, segment);
+    }
     try {
       const stats = await lstat(currentPath);
       if (stats.isSymbolicLink()) {

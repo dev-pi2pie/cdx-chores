@@ -155,6 +155,33 @@ describe("cli action modules: md pdf-template codex output targets", () => {
       await symlink(realOutputRoot, outputRootAlias);
 
       const { runtime } = createActionTestRuntime();
+      const realCwd = join(fixtureDir, "real-cwd");
+      const cwdAlias = join(fixtureDir, "cwd-alias");
+      await mkdir(realCwd, { recursive: true });
+      await symlink(realCwd, cwdAlias);
+      const { runtime: symlinkCwdRuntime } = createActionTestRuntime({ cwd: cwdAlias });
+      const symlinkCwdState = await normalizeMdPdfTemplateCodexCommandState(symlinkCwdRuntime, {
+        output: "cwd-template",
+        overwrite: true,
+      });
+      const symlinkCwdSignals = await collectMdPdfTemplateCodexSignals(
+        symlinkCwdRuntime,
+        symlinkCwdState,
+      );
+      await expectCliError(
+        () =>
+          planMdPdfTemplateCodexOutput({
+            runtime: symlinkCwdRuntime,
+            state: symlinkCwdState,
+            signals: symlinkCwdSignals,
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Template output directory parent directory is a symlink",
+        },
+      );
+
       const outputParentState = await normalizeMdPdfTemplateCodexCommandState(runtime, {
         output: toRepoRelativePath(join(outputRootAlias, "pdf-template")),
         overwrite: true,

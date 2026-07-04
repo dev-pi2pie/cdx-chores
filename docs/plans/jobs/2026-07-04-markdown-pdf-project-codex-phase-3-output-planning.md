@@ -96,6 +96,17 @@ follow-ups:
 Those follow-ups are now implemented in the shared Codex output path policy,
 the project output planner, and the project/template output-target tests.
 
+The final range review found two last test/safety refinements:
+
+- symlinked runtime working directories should not be trusted as safe output
+  roots.
+- source/source and output/source collision tests should include alias-based
+  paths, not only literal duplicate path strings.
+
+The shared path policy now inspects the trusted root itself, and the project and
+template output tests cover symlinked `cwd` plus alias-based source collision
+cases.
+
 ## Verification
 
 ```bash

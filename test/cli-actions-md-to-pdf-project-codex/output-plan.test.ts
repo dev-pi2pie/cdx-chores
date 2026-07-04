@@ -512,6 +512,28 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       await symlink(realOutputRoot, outputRootAlias);
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const realCwd = join(fixtureDir, "real-cwd");
+      const cwdAlias = join(fixtureDir, "cwd-alias");
+      await mkdir(realCwd, { recursive: true });
+      await symlink(realCwd, cwdAlias);
+      const { runtime: symlinkCwdRuntime } = createActionTestRuntime({ cwd: cwdAlias });
+      const symlinkCwdState = await normalizeMdPdfProjectCodexCommandState(symlinkCwdRuntime, {
+        output: "cwd-project",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime: symlinkCwdRuntime,
+            state: symlinkCwdState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Project output directory parent directory is a symlink",
+        },
+      );
+
       const outputParentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         output: "output-root-alias/pdf-project",
         overwrite: true,
@@ -609,6 +631,8 @@ describe("cli action modules: md pdf-project codex output planning", () => {
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
       await writeFile(join(fixtureDir, "shared.md"), "# Shared\n", "utf8");
+      await writeFile(join(fixtureDir, "shared-source.png"), minimalPng(1200, 800));
+      await symlink(join(fixtureDir, "shared-source.png"), join(fixtureDir, "cover-alias.png"));
       await mkdir(join(fixtureDir, "shared-source-directory"), { recursive: true });
       const sourceCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         input: "shared.md",
@@ -646,6 +670,24 @@ describe("cli action modules: md pdf-project codex output planning", () => {
         },
       );
 
+      const sourceAliasCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        baseProfile: "shared-source.png",
+        coverImage: "cover-alias.png",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: sourceAliasCollisionState,
+            signalMode: "codex-assisted",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--base-profile cannot be the same file as --cover-image",
+        },
+      );
+
       const outputSourceCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         baseProfile: "shared-source-directory",
         output: "shared-source-directory",
@@ -662,6 +704,48 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "--output cannot be the same path as --base-profile",
+        },
+      );
+
+      const outputCoverCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "shared-source-directory",
+        output: "shared-source-directory",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: outputCoverCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same path as --cover-image",
+        },
+      );
+
+      await symlink(
+        join(fixtureDir, "shared-source-directory"),
+        join(fixtureDir, "source-directory-alias"),
+      );
+      const outputCoverAliasCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "source-directory-alias",
+        output: "shared-source-directory",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: outputCoverAliasCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same file as --cover-image",
         },
       );
 
