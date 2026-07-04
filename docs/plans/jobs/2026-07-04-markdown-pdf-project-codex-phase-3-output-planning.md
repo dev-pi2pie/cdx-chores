@@ -43,10 +43,27 @@ allows the command to proceed.
 Path planning preserves selected CLI paths for display and replay, while
 collision checks use both resolved paths and existing-file identity checks.
 
+## Review Follow-up
+
+Phase 3 commit review found useful maintainability and coverage gaps:
+
+- output-directory retry logic should not build a dummy identity before the
+  winning directory is known.
+- project output collision checks and writability checks should derive from one
+  planned-target inventory.
+- project and template output safety checks should share one path-policy helper
+  to avoid drift.
+- tests should cover actual planned target files, non-directory output paths,
+  generated file-name collisions, and more source/sink collision pairs.
+
+Follow-up changes split identity-value derivation from final identity assembly,
+centralized planned project path targets, extracted shared Codex output path
+policy helpers, and added the missing regression coverage.
+
 ## Verification
 
 ```bash
-bun test test/cli-actions-md-to-pdf-project-codex/command-state.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts test/cli-actions-md-to-pdf-project-codex-command-wiring.test.ts test/cli-actions-md-to-pdf-commands.test.ts
+bun test test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts test/cli-actions-md-to-pdf-project-codex/command-state.test.ts test/cli-actions-md-to-pdf-template-codex/output-directory.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-template-codex/output-collisions.test.ts test/cli-actions-md-to-pdf-template-codex/output-paths.test.ts
 bunx tsc --noEmit
 bun run format:check
 bun run lint

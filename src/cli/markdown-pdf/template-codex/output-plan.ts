@@ -1,15 +1,16 @@
-import { lstat, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { basename, extname, join, parse } from "node:path";
 
-import { CliError } from "../../errors";
 import { isNotFoundError } from "../../actions/markdown/common";
 import { assertNonEmpty } from "../../actions/shared";
+import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { createMdPdfTemplateCodexBundleId } from "./identity";
 import {
   assertDistinctPathPairs,
   assertPathInsideDirectory,
   assertUsableTemplateCodexOutputDirectory,
+  assertWritableTemplateCodexPlannedFile,
 } from "./path-collisions";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -36,51 +37,6 @@ async function pathExists(path: string): Promise<boolean> {
       return false;
     }
     throw error;
-  }
-}
-
-async function assertWritablePlannedFile(
-  file: { path: string },
-  options: { label: string; overwrite?: boolean },
-): Promise<void> {
-  try {
-    const stats = await lstat(file.path);
-    if (stats.isSymbolicLink()) {
-      throw new CliError(
-        `${options.label} is a symlink and cannot be written safely: ${file.path}`,
-        {
-          code: "OUTPUT_SYMLINK",
-          exitCode: 2,
-        },
-      );
-    }
-    if (stats.isDirectory()) {
-      throw new CliError(`${options.label} is a directory: ${file.path}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    if (!options.overwrite) {
-      throw new CliError(
-        `${options.label} already exists: ${file.path}. Use --overwrite to replace it.`,
-        {
-          code: "OUTPUT_EXISTS",
-          exitCode: 2,
-        },
-      );
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-    if (isNotFoundError(error)) {
-      return;
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to inspect ${options.label}: ${file.path} (${message})`, {
-      code: "FILE_READ_ERROR",
-      exitCode: 2,
-    });
   }
 }
 
@@ -338,7 +294,7 @@ export async function validateMdPdfTemplateCodexOutputWritability(input: {
   );
   await Promise.all(
     writablePlannedFiles({ plan: input.plan, writeMode: input.writeMode }).map((file) =>
-      assertWritablePlannedFile(file, {
+      assertWritableTemplateCodexPlannedFile(file, {
         label: file.label,
         overwrite: input.state.overwrite,
       }),

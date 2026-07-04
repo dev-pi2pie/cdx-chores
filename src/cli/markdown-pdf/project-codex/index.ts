@@ -1,5 +1,5 @@
 export { normalizeMdPdfProjectCodexCommandState } from "./options";
-export { createMdPdfProjectCodexIdentity } from "./identity";
+export { createMdPdfProjectCodexIdentity, createMdPdfProjectCodexIdentityValues } from "./identity";
 export {
   planMdPdfProjectCodexOutput,
   validateMdPdfProjectCodexOutputWritability,

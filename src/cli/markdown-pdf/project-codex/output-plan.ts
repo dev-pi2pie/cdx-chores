@@ -8,7 +8,7 @@ import {
   assertDistinctPathPairs,
   assertPathInsideDirectory,
 } from "../template-codex/path-collisions";
-import { createMdPdfProjectCodexIdentity } from "./identity";
+import { createMdPdfProjectCodexIdentity, createMdPdfProjectCodexIdentityValues } from "./identity";
 import {
   assertUsableProjectCodexOutputDirectory,
   assertWritableProjectCodexPlannedFile,
@@ -134,24 +134,21 @@ async function resolveOutputIdentity(input: {
   }
 
   for (let attempt = 0; attempt < PROJECT_CODEX_OUTPUT_RETRY_LIMIT; attempt += 1) {
-    const projectBundleIdOnly = createMdPdfProjectCodexIdentity({
+    const identityValues = createMdPdfProjectCodexIdentityValues({
       now,
       attempt,
-      outputDirectory: "",
       identityUidFactory: input.state.identityUidFactory,
-    }).projectBundleId;
+    });
     const outputDirectory = generatedProjectOutputDirectory({
-      projectBundleId: projectBundleIdOnly,
+      projectBundleId: identityValues.projectBundleId,
       runtime: input.runtime,
     });
     if (!(await pathExists(outputDirectory))) {
       return {
-        identity: createMdPdfProjectCodexIdentity({
-          now,
-          attempt,
+        identity: {
+          ...identityValues,
           outputDirectory,
-          identityUidFactory: input.state.identityUidFactory,
-        }),
+        },
         generatedOutputDirectory: true,
       };
     }
@@ -163,12 +160,16 @@ async function resolveOutputIdentity(input: {
   });
 }
 
-interface ProjectCodexCollisionEntry {
+interface ProjectCodexPathEntry {
   label: string;
   path: string | undefined;
 }
 
-function pairwiseCollisionPairs(entries: ProjectCodexCollisionEntry[]): Array<{
+interface ProjectCodexPlannedPathTarget extends ProjectCodexPathEntry {
+  writable: boolean;
+}
+
+function pairwiseCollisionPairs(entries: ProjectCodexPathEntry[]): Array<{
   left: string | undefined;
   leftLabel: string;
   right: string | undefined;
@@ -184,6 +185,66 @@ function pairwiseCollisionPairs(entries: ProjectCodexCollisionEntry[]): Array<{
   );
 }
 
+function collectSourcePathEntries(
+  state: NormalizedMdPdfProjectCodexCommandState,
+): ProjectCodexPathEntry[] {
+  return [
+    {
+      label: "Markdown input",
+      path: state.inputPath,
+    },
+    {
+      label: "--base-profile",
+      path: state.baseProfilePath,
+    },
+    {
+      label: "--cover-image",
+      path: state.coverImagePath,
+    },
+  ];
+}
+
+function collectPlannedPathTargets(
+  plan: MarkdownPdfProjectCodexOutputPlan,
+): ProjectCodexPlannedPathTarget[] {
+  return [
+    {
+      label: "--output",
+      path: plan.outputDirectory,
+      writable: false,
+    },
+    {
+      label: "planned profile.yml",
+      path: plan.profile.path,
+      writable: true,
+    },
+    {
+      label: "planned template.html",
+      path: plan.templateHtml.path,
+      writable: true,
+    },
+    {
+      label: "planned style.css",
+      path: plan.styleCss.path,
+      writable: true,
+    },
+    ...(plan.report
+      ? [
+          {
+            label: "--codex-report-output",
+            path: plan.report.path,
+            writable: true,
+          },
+        ]
+      : []),
+    ...plan.assets.map((asset) => ({
+      label: `planned asset ${asset.bundlePath}`,
+      path: asset.path,
+      writable: true,
+    })),
+  ];
+}
+
 function collectPathCollisionPairs(input: {
   plan: MarkdownPdfProjectCodexOutputPlan;
   state: NormalizedMdPdfProjectCodexCommandState;
@@ -193,52 +254,8 @@ function collectPathCollisionPairs(input: {
   right: string | undefined;
   rightLabel: string;
 }> {
-  const sourceEntries: ProjectCodexCollisionEntry[] = [
-    {
-      label: "Markdown input",
-      path: input.state.inputPath,
-    },
-    {
-      label: "--base-profile",
-      path: input.state.baseProfilePath,
-    },
-    {
-      label: "--cover-image",
-      path: input.state.coverImagePath,
-    },
-  ];
-  const plannedEntries: ProjectCodexCollisionEntry[] = [
-    {
-      label: "--output",
-      path: input.plan.outputDirectory,
-    },
-    {
-      label: "planned profile.yml",
-      path: input.plan.profile.path,
-    },
-    {
-      label: "planned template.html",
-      path: input.plan.templateHtml.path,
-    },
-    {
-      label: "planned style.css",
-      path: input.plan.styleCss.path,
-    },
-  ];
-
-  if (input.plan.report) {
-    plannedEntries.push({
-      label: "--codex-report-output",
-      path: input.plan.report.path,
-    });
-  }
-
-  for (const asset of input.plan.assets) {
-    plannedEntries.push({
-      label: `planned asset ${asset.bundlePath}`,
-      path: asset.path,
-    });
-  }
+  const sourceEntries = collectSourcePathEntries(input.state);
+  const plannedEntries = collectPlannedPathTargets(input.plan);
 
   return [
     ...pairwiseCollisionPairs(sourceEntries),
@@ -258,32 +275,10 @@ function writablePlannedFiles(plan: MarkdownPdfProjectCodexOutputPlan): Array<{
   label: string;
   path: string;
 }> {
-  return [
-    {
-      label: "planned profile.yml",
-      path: plan.profile.path,
-    },
-    {
-      label: "planned template.html",
-      path: plan.templateHtml.path,
-    },
-    {
-      label: "planned style.css",
-      path: plan.styleCss.path,
-    },
-    ...(plan.report
-      ? [
-          {
-            label: "--codex-report-output",
-            path: plan.report.path,
-          },
-        ]
-      : []),
-    ...plan.assets.map((asset) => ({
-      label: `planned asset ${asset.bundlePath}`,
-      path: asset.path,
-    })),
-  ];
+  return collectPlannedPathTargets(plan).filter(
+    (target): target is ProjectCodexPlannedPathTarget & { path: string } =>
+      target.writable && Boolean(target.path),
+  );
 }
 
 export async function validateMdPdfProjectCodexOutputWritability(input: {

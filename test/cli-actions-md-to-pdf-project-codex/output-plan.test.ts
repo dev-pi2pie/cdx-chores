@@ -177,6 +177,29 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       expect(plan.outputDirectory).toBe(join(fixtureDir, bundleIdForAttempt(1)));
     });
 
+    await withTempFixtureDir("md-pdf-project-codex-output-retry-file", async (fixtureDir) => {
+      const bundleIdForAttempt = (attempt: number) =>
+        `md-pdf-project-20260704T010203Z-file${String(attempt).padStart(3, "0")}`;
+      await writeFile(join(fixtureDir, bundleIdForAttempt(0)), "not a directory\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "client report",
+        identityUidFactory: (_now, attempt) => `file${String(attempt).padStart(3, "0")}`,
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "codex-assisted",
+      });
+
+      expect(plan.identity.projectBundleId).toBe(bundleIdForAttempt(1));
+      expect(plan.outputDirectory).toBe(join(fixtureDir, bundleIdForAttempt(1)));
+    });
+
     await withTempFixtureDir("md-pdf-project-codex-output-retry-exhausted", async (fixtureDir) => {
       const bundleIdForAttempt = (attempt: number) =>
         `md-pdf-project-20260704T010203Z-collide${String(attempt).padStart(2, "0")}`;
@@ -199,6 +222,26 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           code: "OUTPUT_EXISTS",
           exitCode: 2,
           messageIncludes: "Unable to generate a non-colliding Markdown PDF project directory",
+        },
+      );
+    });
+  });
+
+  test("rejects explicit output paths that are not directories", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-output-file", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "pdf-project"), "not a directory\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "pdf-project",
+      });
+
+      await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "deterministic" }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Project output path is not a directory",
         },
       );
     });
@@ -239,6 +282,91 @@ describe("cli action modules: md pdf-project codex output planning", () => {
     });
   });
 
+  test("validates actual planned output targets before writes", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-planned-targets", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      const existingOutputDirectory = join(fixtureDir, "existing-target-project");
+      await mkdir(existingOutputDirectory, { recursive: true });
+      await writeFile(join(existingOutputDirectory, "profile.yml"), "existing profile\n", "utf8");
+      const existingState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "existing-target-project",
+        overwrite: true,
+      });
+      const existingPlan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state: existingState,
+        signalMode: "deterministic",
+      });
+      expect(existingPlan.profile.path).toBe(join(existingOutputDirectory, "profile.yml"));
+      expect(await pathExists(join(existingOutputDirectory, "profile.yml"))).toBe(true);
+
+      const directoryOutputDirectory = join(fixtureDir, "directory-target-project");
+      await mkdir(join(directoryOutputDirectory, "template.html"), { recursive: true });
+      const directoryState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "directory-target-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: directoryState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned template.html is a directory",
+        },
+      );
+
+      const symlinkOutputDirectory = join(fixtureDir, "symlink-target-project");
+      await mkdir(symlinkOutputDirectory, { recursive: true });
+      await writeFile(join(fixtureDir, "target-style.css"), "body {}\n", "utf8");
+      await symlink(
+        join(fixtureDir, "target-style.css"),
+        join(symlinkOutputDirectory, "style.css"),
+      );
+      const symlinkState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "symlink-target-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: symlinkState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "planned style.css is a symlink",
+        },
+      );
+
+      await writeFile(join(fixtureDir, "existing-report.json"), '{"existing":true}\n', "utf8");
+      const reportState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        codexReportOutput: "existing-report.json",
+        output: "external-report-project",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output already exists",
+        },
+      );
+    });
+  });
+
   test("rejects symlink output directories", async () => {
     await withTempFixtureDir("md-pdf-project-codex-output-symlink", async (fixtureDir) => {
       const realOutputPath = join(fixtureDir, "real-output");
@@ -269,6 +397,25 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       await writeFile(inputPath, "# Report\n", "utf8");
 
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await writeFile(join(fixtureDir, "shared.md"), "# Shared\n", "utf8");
+      const sourceCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        input: "shared.md",
+        baseProfile: "shared.md",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: sourceCollisionState,
+            signalMode: "codex-assisted",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Markdown input cannot be the same path as --base-profile",
+        },
+      );
+
       const reportCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         input: "report.json",
         codexReportOutput: "report.json",
@@ -284,6 +431,43 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           code: "INVALID_INPUT",
           exitCode: 2,
           messageIncludes: "--codex-report-output cannot be the same path as Markdown input",
+        },
+      );
+
+      await writeFile(join(fixtureDir, "base.json"), '{"profile":true}\n', "utf8");
+      const reportBaseCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        baseProfile: "base.json",
+        codexReportOutput: "base.json",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportBaseCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as --base-profile",
+        },
+      );
+
+      const outputReportCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "same-output-report.json",
+        codexReportOutput: "same-output-report.json",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: outputReportCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output cannot be the same path as --codex-report-output",
         },
       );
 

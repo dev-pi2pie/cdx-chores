@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
 import type {
+  MarkdownPdfProjectCodexIdentity,
   MarkdownPdfProjectCodexIdentityUidFactory,
   MarkdownPdfProjectCodexPlannedIdentity,
 } from "./types";
@@ -18,12 +19,11 @@ function createIdentityUid(
   return identityUidFactory ? identityUidFactory(now, attempt) : randomUUID().slice(0, 8);
 }
 
-export function createMdPdfProjectCodexIdentity(input: {
+export function createMdPdfProjectCodexIdentityValues(input: {
   now: Date;
   attempt: number;
-  outputDirectory: string;
   identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
-}): MarkdownPdfProjectCodexPlannedIdentity {
+}): MarkdownPdfProjectCodexIdentity {
   const timestamp = formatUtcFileDateTimeISO(input.now);
   const uid = createIdentityUid(input.now, input.attempt, input.identityUidFactory);
   return {
@@ -31,6 +31,17 @@ export function createMdPdfProjectCodexIdentity(input: {
     projectBundleId: `md-pdf-project-${timestamp}-${uid}`,
     profileId: `md-pdf-profile-${timestamp}-${uid}`,
     templateBundleId: `md-pdf-template-${timestamp}-${uid}`,
+  };
+}
+
+export function createMdPdfProjectCodexIdentity(input: {
+  now: Date;
+  attempt: number;
+  outputDirectory: string;
+  identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
+}): MarkdownPdfProjectCodexPlannedIdentity {
+  return {
+    ...createMdPdfProjectCodexIdentityValues(input),
     outputDirectory: input.outputDirectory,
   };
 }
