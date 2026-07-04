@@ -30,3 +30,9 @@ export type {
   MarkdownPdfProjectCodexTemplatePhaseSummary,
 } from "./types-phase";
 export type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
+export type {
+  MarkdownPdfProjectCodexBaseProfileSignals,
+  MarkdownPdfProjectCodexFontSignals,
+  MarkdownPdfProjectCodexTemplateOwnedSignals,
+  MdPdfProjectCodexSignalCollection,
+} from "./types-signals";

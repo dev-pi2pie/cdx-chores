@@ -335,24 +335,28 @@ Job record:
 
 ### Phase 4: Project Signal Collection And Classification
 
-- [ ] Collect shared document, intent, font-hint, base-profile, and cover-image
+- [x] Collect shared document, intent, font-hint, base-profile, and cover-image
       signals once.
-- [ ] Reuse profile-Codex document and font signal collectors.
-- [ ] Reuse template-Codex base-profile, recipe, and cover-image signal logic
+- [x] Reuse profile-Codex document and font signal collectors.
+- [x] Reuse template-Codex base-profile, recipe, and cover-image signal logic
       where possible.
-- [ ] Classify no-signal input as `too-low-signal`.
-- [ ] Classify base-profile-only, cover-image-only, and
+- [x] Classify no-signal input as `too-low-signal`.
+- [x] Classify base-profile-only, cover-image-only, and
       base-profile-plus-cover-image paths as deterministic project requests.
-- [ ] Classify Markdown input, intent, font hints, or unmatched
+- [x] Classify Markdown input, intent, font hints, or unmatched
       template-backed profile directions as Codex-assisted when they require
       Codex in either phase.
-- [ ] Preserve phase-native signal modes in project summaries and reports.
-- [ ] Add tests for each signal-ladder row from the research.
+- [x] Preserve phase-native signal modes in project summaries and reports.
+- [x] Add tests for each signal-ladder row from the research.
 
 Recommended module targets:
 
 - `src/cli/markdown-pdf/project-codex/signals.ts`
 - `src/cli/markdown-pdf/project-codex/signal-mode.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 4 signal classification](jobs/2026-07-04-markdown-pdf-project-codex-phase-4-signal-classification.md)
 
 ### Phase 5: Profile Phase Orchestration
 
@@ -516,7 +520,8 @@ land. Expected records:
 - Phase 2 command surface.
 - Phase 3 output planning and collision checks.
 - Phase 4 signal classification.
-- Phase 5-6 phase orchestration.
+- Phase 5 profile phase orchestration.
+- Phase 6 template phase orchestration.
 - Phase 7-8 validation, reports, writes, and dry run.
 - Phase 9 integration coverage and render compatibility.
 - Phase 10 docs validation and plan completion.

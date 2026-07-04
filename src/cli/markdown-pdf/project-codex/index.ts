@@ -4,9 +4,18 @@ export {
   planMdPdfProjectCodexOutput,
   validateMdPdfProjectCodexOutputWritability,
 } from "./output-plan";
+export {
+  classifyMdPdfProjectCodexProfileSignalMode,
+  classifyMdPdfProjectCodexSignalMode,
+  classifyMdPdfProjectCodexTemplateSignalMode,
+  collectTemplateOwnedProjectDirections,
+} from "./signal-mode";
+export { collectMdPdfProjectCodexSignals } from "./signals";
 export { actionMdPdfProjectCodex } from "./run";
 export type {
+  MarkdownPdfProjectCodexBaseProfileSignals,
   MarkdownPdfProjectCodexDecisionMode,
+  MarkdownPdfProjectCodexFontSignals,
   MarkdownPdfProjectCodexIdentity,
   MarkdownPdfProjectCodexIdentityUidFactory,
   MarkdownPdfProjectCodexOutputPlan,
@@ -23,8 +32,10 @@ export type {
   MarkdownPdfProjectCodexProfilePhaseSignalMode,
   MarkdownPdfProjectCodexReportArtifact,
   MarkdownPdfProjectCodexSignalMode,
+  MarkdownPdfProjectCodexTemplateOwnedSignals,
   MarkdownPdfProjectCodexTemplatePhaseSummary,
   MarkdownPdfProjectCodexTemplatePhaseSignalMode,
+  MdPdfProjectCodexSignalCollection,
   MdPdfProjectCodexCliOptions,
   MdPdfProjectCodexOptions,
   NormalizedMdPdfProjectCodexCommandState,
