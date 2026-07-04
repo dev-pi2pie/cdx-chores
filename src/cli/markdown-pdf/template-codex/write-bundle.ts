@@ -1,5 +1,3 @@
-import { mkdir } from "node:fs/promises";
-
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
@@ -45,7 +43,6 @@ export async function writeMdPdfTemplateCodexBundle(input: {
     return;
   }
 
-  await mkdir(input.outputPlan.outputDirectory, { recursive: true });
   await writeTextFileSafe(input.outputPlan.templateHtml.path, input.synthesis.templateHtml, {
     label: "planned template.html",
     overwrite: input.overwrite,

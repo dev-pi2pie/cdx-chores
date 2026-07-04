@@ -236,6 +236,34 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
     });
   });
 
+  test("rejects managed asset sources that are symlinks at the copy boundary", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-copy-symlink-source", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "source-cover.png");
+      const coverAliasPath = join(fixtureDir, "source-cover-alias.png");
+      await writeFile(coverImagePath, minimalPng(1200, 800));
+      await symlink(coverImagePath, coverAliasPath);
+      const plan = outputPlan({
+        coverImagePath: coverAliasPath,
+        outputDirectory: join(fixtureDir, "bundle"),
+      });
+
+      await expectCliError(
+        () =>
+          writeMdPdfTemplateCodexBundle({
+            outputPlan: plan,
+            ...bundleWriteContext(plan),
+            synthesis: synthesizeForPlan(plan),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "managed asset assets/cover.png source is a symlink",
+        },
+      );
+      expect(await pathExists(join(plan.outputDirectory, "assets", "cover.png"))).toBe(false);
+    });
+  });
+
   test("rejects managed asset writes through symlinked parent directories", async () => {
     await withTempFixtureDir("md-pdf-template-codex-copy-symlink-parent", async (fixtureDir) => {
       const coverImagePath = join(fixtureDir, "source-cover.png");
@@ -265,6 +293,37 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         },
       );
       expect(await pathExists(join(outsideDir, "cover.png"))).toBe(false);
+    });
+  });
+
+  test("replaces hard-linked managed asset targets without clobbering the other link", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-write-hardlink-asset", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "source-cover.png");
+      const outsideAssetPath = join(fixtureDir, "outside-cover.png");
+      const outputDirectory = join(fixtureDir, "bundle");
+      await writeFile(coverImagePath, minimalPng(1200, 800));
+      await writeFile(outsideAssetPath, "outside cover\n", "utf8");
+      await mkdir(join(outputDirectory, "assets"), { recursive: true });
+      await link(outsideAssetPath, join(outputDirectory, "assets", "cover.png"));
+      const plan = outputPlan({
+        coverImagePath,
+        outputDirectory,
+      });
+
+      await writeMdPdfTemplateCodexBundle({
+        outputPlan: plan,
+        ...bundleWriteContext(plan),
+        overwrite: true,
+        synthesis: synthesizeForPlan(plan),
+      });
+
+      expect(await readFile(outsideAssetPath, "utf8")).toBe("outside cover\n");
+      expect(
+        Buffer.compare(
+          await readFile(join(plan.outputDirectory, "assets", "cover.png")),
+          minimalPng(1200, 800),
+        ),
+      ).toBe(0);
     });
   });
 
@@ -312,6 +371,30 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
 
       expect(await readFile(outsideTemplatePath, "utf8")).toBe("outside template\n");
       expect(await readFile(plan.templateHtml.path, "utf8")).toContain("$body$");
+    });
+  });
+
+  test("replaces hard-linked report targets without clobbering the other link", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-write-hardlink-report", async (fixtureDir) => {
+      const outsideReportPath = join(fixtureDir, "outside-report.json");
+      const reportPath = join(fixtureDir, "report.json");
+      await writeFile(outsideReportPath, '{"outside":true}\n', "utf8");
+      await link(outsideReportPath, reportPath);
+      const plan = outputPlan({
+        outputDirectory: join(fixtureDir, "bundle"),
+        reportPath,
+      });
+
+      await writeMdPdfTemplateCodexBundle({
+        outputPlan: plan,
+        ...bundleWriteContext(plan),
+        overwrite: true,
+        synthesis: synthesizeForPlan(plan),
+      });
+
+      expect(await readFile(outsideReportPath, "utf8")).toBe('{"outside":true}\n');
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as { artifactType: string };
+      expect(report.artifactType).toBe(MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE);
     });
   });
 
@@ -544,6 +627,42 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
       );
       expect(report.followUpRenderCommand).toContain("--css '<template-bundle>/style.css'");
       expect(report.followUpRenderCommand).toContain("--output '<output.pdf>'");
+    });
+  });
+
+  test("keeps the selected input alias in diagnostic report display and replay command", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-alias-followup", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "source-report.md");
+      const inputAliasPath = join(fixtureDir, "source-report-alias.md");
+      const reportPath = join(fixtureDir, "report.json");
+      await writeFile(inputPath, "# Source report\n", "utf8");
+      await symlink(inputPath, inputAliasPath);
+      const plan = outputPlan({
+        outputDirectory: join(fixtureDir, "bundle"),
+        reportPath,
+      });
+      const signals = signalsForPlan(plan);
+
+      await writeMdPdfTemplateCodexBundle({
+        outputPlan: plan,
+        runtime: createCapturedRuntime().runtime,
+        signals,
+        state: {
+          ...commandStateForSignals(signals),
+          inputPath: inputAliasPath,
+        },
+        synthesis: synthesizeForPlan(plan),
+      });
+
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        followUpRenderCommand: string;
+        input: { markdown: { display: string } };
+      };
+      expect(report.input.markdown.display).toBe(toRepoRelativePath(inputAliasPath));
+      expect(report.followUpRenderCommand).toContain(
+        `--input '${toRepoRelativePath(inputAliasPath)}'`,
+      );
+      expect(report.followUpRenderCommand).not.toContain(toRepoRelativePath(inputPath));
     });
   });
 

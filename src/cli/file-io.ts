@@ -24,21 +24,18 @@ function isInsideDirectory(input: { directory: string; path: string }): boolean 
   return relativePath.length === 0 || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
 }
 
-async function assertNoSymlinkParentSegments(input: {
+export async function assertNoSymlinkPathParents(input: {
   label: string;
   parentRootDirectory?: string;
   path: string;
 }): Promise<void> {
-  if (!input.parentRootDirectory) {
-    return;
-  }
-
   const absolutePath = resolve(input.path);
   const parentDirectory = dirname(absolutePath);
-  const preferredRoot = resolve(input.parentRootDirectory);
-  const root = isInsideDirectory({ directory: preferredRoot, path: parentDirectory })
-    ? preferredRoot
-    : parse(parentDirectory).root;
+  const preferredRoot = input.parentRootDirectory ? resolve(input.parentRootDirectory) : undefined;
+  const root =
+    preferredRoot && isInsideDirectory({ directory: preferredRoot, path: parentDirectory })
+      ? preferredRoot
+      : parse(parentDirectory).root;
   const relativeParentDirectory = relative(root, parentDirectory);
 
   let currentPath = root;
@@ -80,6 +77,17 @@ async function assertNoSymlinkParentSegments(input: {
       );
     }
   }
+}
+
+async function assertNoSymlinkParentSegments(input: {
+  label: string;
+  parentRootDirectory?: string;
+  path: string;
+}): Promise<void> {
+  if (!input.parentRootDirectory) {
+    return;
+  }
+  await assertNoSymlinkPathParents(input);
 }
 
 async function writeFileHandleContent(

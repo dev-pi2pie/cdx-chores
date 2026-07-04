@@ -124,10 +124,34 @@ Template Codex bundle, report, and managed-asset sinks now use that shared
 writer, with regression coverage for symlinked output roots, report-only
 symlink parents, and hardlink replacement.
 
+A post-commit review found smaller sink-level follow-ups:
+
+- parent-symlink traversal had drifted between the shared writer and the
+  Markdown PDF output path policy.
+- the template bundle writer still had a standalone recursive directory create
+  before the sink-level writer checks.
+- managed cover asset sources needed copy-time symlink refusal, not only
+  earlier local-file validation.
+- report and managed-asset overwrites needed the same hardlink replacement
+  coverage as `template.html`.
+- replay/display tests needed to pin selected input alias spelling.
+
+Those follow-ups are now covered by the shared parent-path helper, direct
+`O_NOFOLLOW` managed-asset source reads, early cover-image symlink rejection,
+and regression tests for report/asset hardlink replacement plus input-alias
+report display.
+
+The remaining local concurrent path-swap risk is bounded by Node path APIs:
+the implementation rechecks trusted parents immediately around directory
+creation and writes, uses `O_NOFOLLOW` for leaf source/temporary file opens, and
+uses same-directory temp replacement for trusted overwrites. It does not claim a
+kernel-level `openat` directory-fd guarantee.
+
 ## Verification
 
 ```bash
 bun test test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts
+bun test test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts test/cli-actions-md-to-pdf-template-codex/command-state.test.ts test/cli-actions-md-to-pdf-template-codex/output-targets.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts
 bun test test/cli-actions-md-to-pdf-profile-init.test.ts test/cli-actions-data.test.ts test/cli-actions-data-extract-validation.test.ts test/cli-actions-data-stack/validation.test.ts
 bunx tsc --noEmit
 bun run format:check
@@ -137,7 +161,7 @@ bun test
 git diff --check
 ```
 
-Result: all commands passed. The full suite reported 1380 tests passed and 0
+Result: all commands passed. The full suite reported 1386 tests passed and 0
 failed.
 
 ## Artifact Safety

@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
@@ -58,6 +59,24 @@ async function resolveCoverImage(
   const coverImagePath = await resolveExistingFile(runtime, normalized, "Cover image");
   if (!coverImagePath) {
     return undefined;
+  }
+  try {
+    const stats = await lstat(coverImagePath);
+    if (stats.isSymbolicLink()) {
+      throw new CliError("Cover image path must not be a symlink.", {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliError(`Failed to inspect cover image path: ${coverImagePath} (${message})`, {
+      code: "FILE_READ_ERROR",
+      exitCode: 2,
+    });
   }
   const extension = extname(coverImagePath).toLowerCase();
   if (!SUPPORTED_TEMPLATE_CODEX_COVER_IMAGE_EXTENSIONS.has(extension)) {
