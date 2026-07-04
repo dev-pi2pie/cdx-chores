@@ -605,6 +605,28 @@ describe("cli command: md pdf-project codex", () => {
       expect(result.stderr).toContain("project Codex report path must end with .json");
     });
   });
+
+  test("reaches the placeholder action for valid project command wiring", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-placeholder", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        toRepoRelativePath(inputPath),
+        "--intent",
+        "client report",
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "pdf-project")),
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("md pdf-project codex orchestration is not implemented yet");
+    });
+  });
 });
 
 describe("cli command: md pdf-profile init", () => {

@@ -58,6 +58,7 @@ export async function resolveOptionalMarkdownInputPath(
     }
   }
 
+  // Preserve the selected CLI spelling for replay/display; collision checks use file identity.
   const inputPath = resolvedOptionInput ?? resolvedPositionalInput;
   if (inputPath) {
     await ensureExistingFile(inputPath, "Markdown input");

@@ -1,0 +1,339 @@
+import { link, mkdir, symlink, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import { describe, expect, test } from "bun:test";
+
+import {
+  createMdPdfProjectCodexIdentity,
+  normalizeMdPdfProjectCodexCommandState,
+  planMdPdfProjectCodexOutput,
+} from "../../src/cli/markdown-pdf/project-codex";
+import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { minimalPng, pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+
+describe("cli action modules: md pdf-project codex output planning", () => {
+  test("generates shared project, profile, and template identities", () => {
+    expect(
+      createMdPdfProjectCodexIdentity({
+        now: new Date("2026-07-04T01:02:03.000Z"),
+        attempt: 0,
+        outputDirectory: "/tmp/project",
+        identityUidFactory: () => "fixed001",
+      }),
+    ).toEqual({
+      createdAt: "2026-07-04T01:02:03Z",
+      outputDirectory: "/tmp/project",
+      profileId: "md-pdf-profile-20260704T010203Z-fixed001",
+      projectBundleId: "md-pdf-project-20260704T010203Z-fixed001",
+      templateBundleId: "md-pdf-template-20260704T010203Z-fixed001",
+    });
+    expect(
+      createMdPdfProjectCodexIdentity({
+        now: new Date("2026-07-04T01:02:03.000Z"),
+        attempt: 0,
+        outputDirectory: "/tmp/project",
+      }).projectBundleId,
+    ).toMatch(/^md-pdf-project-20260704T010203Z-[0-9a-f]{8}$/);
+  });
+
+  test("rejects output planning before project signal classification can proceed", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-low-signal-plan", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        identityUidFactory: () => "fixed001",
+      });
+
+      await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "too-low-signal" }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_LOW_SIGNAL",
+          exitCode: 2,
+          messageIncludes: "before project signal classification succeeds",
+        },
+      );
+      expect(await pathExists(join(fixtureDir, "md-pdf-project-20260704T010203Z-fixed001"))).toBe(
+        false,
+      );
+    });
+  });
+
+  test("plans generated fixed project outputs without input-derived directory names", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-generated-output", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "README.md"), "# Report\n", "utf8");
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        input: "README.md",
+        coverImage: "cover.png",
+        keepCodexReport: true,
+        identityUidFactory: () => "fixed001",
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "deterministic",
+      });
+
+      const outputDirectory = join(fixtureDir, "md-pdf-project-20260704T010203Z-fixed001");
+      expect(plan).toMatchObject({
+        generatedOutputDirectory: true,
+        outputDirectory,
+        identity: {
+          createdAt: "2026-07-04T01:02:03Z",
+          outputDirectory,
+          profileId: "md-pdf-profile-20260704T010203Z-fixed001",
+          projectBundleId: "md-pdf-project-20260704T010203Z-fixed001",
+          templateBundleId: "md-pdf-template-20260704T010203Z-fixed001",
+        },
+        profile: {
+          bundlePath: "profile.yml",
+          path: join(outputDirectory, "profile.yml"),
+        },
+        templateHtml: {
+          bundlePath: "template.html",
+          path: join(outputDirectory, "template.html"),
+        },
+        styleCss: {
+          bundlePath: "style.css",
+          path: join(outputDirectory, "style.css"),
+        },
+        report: {
+          bundlePath: "project.codex-report.json",
+          location: "in-bundle",
+          path: join(outputDirectory, "project.codex-report.json"),
+        },
+        assets: [
+          {
+            bundlePath: "assets/cover.png",
+            path: join(outputDirectory, "assets", "cover.png"),
+            role: "cover-image",
+            sourceBasename: "cover.png",
+            sourcePath: join(fixtureDir, "cover.png"),
+          },
+        ],
+      });
+      expect(plan.outputDirectory).not.toContain("README");
+      expect(plan.outputDirectory).not.toContain(".md");
+      expect(await pathExists(outputDirectory)).toBe(false);
+    });
+  });
+
+  test("uses explicit output directories and explicit report paths exactly after resolution", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-explicit-output", async (fixtureDir) => {
+      const outputDirectory = join(fixtureDir, "reviewable-project");
+      const reportPath = join(fixtureDir, "project-report.json");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "reviewable-project",
+        codexReportOutput: reportPath,
+        identityUidFactory: () => "fixed001",
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "deterministic",
+      });
+
+      expect(plan.generatedOutputDirectory).toBe(false);
+      expect(plan.outputDirectory).toBe(outputDirectory);
+      expect(plan.identity.projectBundleId).toBe("md-pdf-project-20260704T010203Z-fixed001");
+      expect(plan.report).toEqual({
+        location: "external",
+        path: reportPath,
+      });
+    });
+  });
+
+  test("retries generated output paths and fails after bounded retry exhaustion", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-output-retry", async (fixtureDir) => {
+      const bundleIdForAttempt = (attempt: number) =>
+        `md-pdf-project-20260704T010203Z-retry${String(attempt).padStart(3, "0")}`;
+      await mkdir(join(fixtureDir, bundleIdForAttempt(0)), { recursive: true });
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "client report",
+        identityUidFactory: (_now, attempt) => `retry${String(attempt).padStart(3, "0")}`,
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "codex-assisted",
+      });
+
+      expect(plan.identity.projectBundleId).toBe(bundleIdForAttempt(1));
+      expect(plan.outputDirectory).toBe(join(fixtureDir, bundleIdForAttempt(1)));
+    });
+
+    await withTempFixtureDir("md-pdf-project-codex-output-retry-exhausted", async (fixtureDir) => {
+      const bundleIdForAttempt = (attempt: number) =>
+        `md-pdf-project-20260704T010203Z-collide${String(attempt).padStart(2, "0")}`;
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        await mkdir(join(fixtureDir, bundleIdForAttempt(attempt)), { recursive: true });
+      }
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "client report",
+        identityUidFactory: (_now, attempt) => `collide${String(attempt).padStart(2, "0")}`,
+      });
+
+      await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "codex-assisted" }),
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+          messageIncludes: "Unable to generate a non-colliding Markdown PDF project directory",
+        },
+      );
+    });
+  });
+
+  test("rejects non-empty output directories without overwrite and preserves unrelated files with overwrite", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-overwrite", async (fixtureDir) => {
+      const outputDirectory = join(fixtureDir, "pdf-project");
+      const unrelatedPath = join(outputDirectory, "unrelated.txt");
+      await mkdir(outputDirectory, { recursive: true });
+      await writeFile(unrelatedPath, "keep me\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "pdf-project",
+      });
+      await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "deterministic" }),
+        {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+          messageIncludes: "Project output directory is not empty",
+        },
+      );
+
+      const overwriteState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "pdf-project",
+        overwrite: true,
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state: overwriteState,
+        signalMode: "deterministic",
+      });
+      expect(plan.outputDirectory).toBe(outputDirectory);
+      expect(await pathExists(unrelatedPath)).toBe(true);
+      expect(await pathExists(join(outputDirectory, "profile.yml"))).toBe(false);
+    });
+  });
+
+  test("rejects symlink output directories", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-output-symlink", async (fixtureDir) => {
+      const realOutputPath = join(fixtureDir, "real-output");
+      const outputDirectory = join(fixtureDir, "pdf-project");
+      await mkdir(realOutputPath, { recursive: true });
+      await symlink(realOutputPath, outputDirectory);
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "pdf-project",
+        overwrite: true,
+      });
+
+      await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "deterministic" }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "Project output directory is a symlink",
+        },
+      );
+    });
+  });
+
+  test("rejects source and sink collisions across reports, assets, and generated files", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-collisions", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.json");
+      await writeFile(inputPath, "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const reportCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        input: "report.json",
+        codexReportOutput: "report.json",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportCollisionState,
+            signalMode: "codex-assisted",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output cannot be the same path as Markdown input",
+        },
+      );
+
+      const outputDirectory = join(fixtureDir, "pdf-project");
+      const assetPath = join(outputDirectory, "assets", "cover.png");
+      await mkdir(join(outputDirectory, "assets"), { recursive: true });
+      await writeFile(assetPath, minimalPng(1200, 800));
+      const assetCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: assetPath,
+        output: "pdf-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: assetCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes:
+            "planned asset assets/cover.png cannot be the same path as --cover-image",
+        },
+      );
+
+      const hardlinkOutputDirectory = join(fixtureDir, "hardlink-project");
+      const baseProfilePath = join(fixtureDir, "base.yml");
+      await mkdir(hardlinkOutputDirectory, { recursive: true });
+      await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
+      await link(baseProfilePath, join(hardlinkOutputDirectory, "style.css"));
+      const generatedFileCollisionState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        baseProfile: "base.yml",
+        output: "hardlink-project",
+        overwrite: true,
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: generatedFileCollisionState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "planned style.css cannot be the same file as --base-profile",
+        },
+      );
+    });
+  });
+});

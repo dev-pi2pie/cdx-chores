@@ -305,22 +305,22 @@ Job record:
 
 ### Phase 3: Project Output Planning And Collision Checks
 
-- [ ] Generate shared timestamp/UID identity values for `projectBundleId`,
+- [x] Generate shared timestamp/UID identity values for `projectBundleId`,
       `profile.id`, and `templateBundleId`.
-- [ ] Resolve explicit `--output <directory>` exactly as provided.
-- [ ] Derive default project directories from `projectBundleId` only after
+- [x] Resolve explicit `--output <directory>` exactly as provided.
+- [x] Derive default project directories from `projectBundleId` only after
       signal classification succeeds.
-- [ ] Plan fixed project outputs for `profile.yml`, `template.html`,
+- [x] Plan fixed project outputs for `profile.yml`, `template.html`,
       `style.css`, optional `assets/`, and optional
       `project.codex-report.json`.
-- [ ] Enforce non-empty output directory failure unless `--overwrite` is
+- [x] Enforce non-empty output directory failure unless `--overwrite` is
       supplied.
-- [ ] Make `--overwrite` apply to the project-owned output set, not to
+- [x] Make `--overwrite` apply to the project-owned output set, not to
       user-supplied inputs.
-- [ ] Reject source/sink collisions across input Markdown, base profile, cover
+- [x] Reject source/sink collisions across input Markdown, base profile, cover
       image, project output directory, generated files, managed asset targets,
       and explicit report output.
-- [ ] Add tests for generated output naming, explicit output, bounded retries,
+- [x] Add tests for generated output naming, explicit output, bounded retries,
       overwrite behavior, unrelated-file preservation, and collision failures.
 
 Recommended module targets:
@@ -328,6 +328,10 @@ Recommended module targets:
 - `src/cli/markdown-pdf/project-codex/identity.ts`
 - `src/cli/markdown-pdf/project-codex/output-plan.ts`
 - `src/cli/markdown-pdf/project-codex/path-collisions.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 3 output planning and collision checks](jobs/2026-07-04-markdown-pdf-project-codex-phase-3-output-planning.md)
 
 ### Phase 4: Project Signal Collection And Classification
 

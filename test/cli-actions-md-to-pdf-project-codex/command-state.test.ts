@@ -106,4 +106,16 @@ describe("cli action modules: md pdf-project codex command state", () => {
       );
     });
   });
+
+  test("keeps standalone report flag without requiring an explicit report path", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-keep-report", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        keepCodexReport: true,
+      });
+
+      expect(state.keepCodexReport).toBe(true);
+      expect(state.codexReportOutputPath).toBeUndefined();
+    });
+  });
 });

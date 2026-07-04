@@ -52,6 +52,18 @@ Follow-up changes added a shared Markdown PDF Codex command-state helper, moved
 template and project normalization to that helper, tightened project phase
 summaries into a discriminated union, and added explicit alias coverage.
 
+A second Phase 2 review pass found two test gaps and one maintainability
+boundary to carry into the next checkpoint:
+
+- valid project command wiring should be covered through the placeholder action
+  error contract.
+- standalone `--keep-codex-report` normalization should be covered without
+  relying on an explicit report output path.
+- project-Codex types should be split by command-state, identity, modes, output,
+  phase summary, and report concerns before Phase 3 adds more contracts.
+
+Those follow-ups are handled in the Phase 3 output-planning checkpoint.
+
 ## Verification
 
 ```bash
