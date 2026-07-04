@@ -48,6 +48,17 @@ Follow-up changes split write serialization into `write-profile.ts`, kept
 added regression coverage for both JSON output and document-informed precedence
 when input and font hints are supplied together.
 
+A second test-focused review found two remaining regression gaps in the
+extracted output/report paths:
+
+- generated `--keep-codex-report` failure reports were only covered through
+  explicit `--codex-report-output` paths.
+- generated profile path retry coverage only covered no-input output names, not
+  Markdown-input-derived output names.
+
+Follow-up tests now cover generated failure report paths for no-usable-profile
+and unavailable failures, plus input-derived generated profile path retries.
+
 ## Notes
 
 The service boundary is intentionally behavior-preserving. Some recommended

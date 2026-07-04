@@ -786,6 +786,34 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("retries generated input-derived paths when the first profile name exists", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-input-collision", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "report-md-pdf-profile-20260615T081500Z-aaaaaaaa.yml"),
+        "existing",
+        "utf8",
+      );
+      const profileIds = [
+        "md-pdf-profile-20260615T081500Z-aaaaaaaa",
+        "md-pdf-profile-20260615T081500Z-bbbbbbbb",
+      ];
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: adaptedRunner("article"),
+        dryRun: true,
+        input: "report.md",
+        profileUidFactory: () => profileIds.shift() ?? "md-pdf-profile-20260615T081500Z-cccccccc",
+      });
+
+      expect(stdout.text).toContain("Profile: report-md-pdf-profile-20260615T081500Z-bbbbbbbb.yml");
+    });
+  });
+
   test("records mixed-with-base signal mode for base profile refinements with target signals", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-mixed-base", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Base\n", "utf8");
@@ -1143,6 +1171,51 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("writes a generated no-usable-profile report when keep report is requested", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-no-usable-keep-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Unsupported\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "no-usable-profile",
+                selected_candidate_id: "none",
+                accepted_patches: [],
+                accepted_font_patches: [],
+                reasoning: "Template-only request.",
+                warnings: [],
+                unmatched_directions: ["custom CSS"],
+              }),
+            input: "report.md",
+            intent: "custom CSS template",
+            keepCodexReport: true,
+            output: "profile.yml",
+            profileUidFactory: () => "md-pdf-profile-20260615T081500Z-deadbeef",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_NO_USABLE_PROFILE",
+          exitCode: 1,
+          messageIncludes: "did not find a usable",
+        },
+      );
+
+      await expect(readFile(join(fixtureDir, "profile.yml"), "utf8")).rejects.toThrow();
+      const reportPath = join(
+        fixtureDir,
+        "profile-md-pdf-profile-20260615T081500Z-deadbeef-codex-report.json",
+      );
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.result.status).toBe("failed");
+      expect(report.result.failure).toMatchObject({ kind: "no-usable-profile" });
+    });
+  });
+
   test("does not write a no-usable-profile report without report flags", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-no-report", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Unsupported\n", "utf8");
@@ -1243,6 +1316,43 @@ describe("cli action modules: md pdf-profile codex", () => {
       const report = await readMarkdownPdfCodexReportArtifact(
         join(fixtureDir, "codex-report.json"),
       );
+      expect(report.result.status).toBe("failed");
+      expect(report.result.failure).toMatchObject({ kind: "unavailable" });
+    });
+  });
+
+  test("writes a generated unavailable failure report when keep report is requested", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-unavailable-keep-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner: async () => {
+              throw new Error("network unavailable");
+            },
+            input: "report.md",
+            intent: "report",
+            keepCodexReport: true,
+            output: "profile.yml",
+            profileUidFactory: () => "md-pdf-profile-20260615T081500Z-deadbeef",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "unavailable",
+        },
+      );
+
+      const reportPath = join(
+        fixtureDir,
+        "profile-md-pdf-profile-20260615T081500Z-deadbeef-codex-report.json",
+      );
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
       expect(report.result.status).toBe("failed");
       expect(report.result.failure).toMatchObject({ kind: "unavailable" });
     });
