@@ -69,6 +69,16 @@ A final test-review pass found two remaining coverage gaps:
 
 Those final coverage gaps are now covered in the project output-plan tests.
 
+A later test-review pass found two remaining output safety boundaries that were
+still implicit:
+
+- generated project directory retry should prove success on the final allowed
+  attempt, not only first retry and exhaustion.
+- external `--codex-report-output` paths should reject directories and symlinks,
+  matching the same path-policy guardrails used for managed project outputs.
+
+Those boundaries are now covered in the project output-plan tests.
+
 ## Verification
 
 ```bash

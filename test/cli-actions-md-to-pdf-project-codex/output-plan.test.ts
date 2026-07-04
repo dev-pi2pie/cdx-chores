@@ -243,6 +243,31 @@ describe("cli action modules: md pdf-project codex output planning", () => {
       expect(plan.outputDirectory).toBe(join(fixtureDir, bundleIdForAttempt(1)));
     });
 
+    await withTempFixtureDir("md-pdf-project-codex-output-final-retry", async (fixtureDir) => {
+      const bundleIdForAttempt = (attempt: number) =>
+        `md-pdf-project-20260704T010203Z-final${String(attempt).padStart(3, "0")}`;
+      for (let attempt = 0; attempt < 9; attempt += 1) {
+        await mkdir(join(fixtureDir, bundleIdForAttempt(attempt)), { recursive: true });
+      }
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "client report",
+        identityUidFactory: (_now, attempt) => `final${String(attempt).padStart(3, "0")}`,
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "codex-assisted",
+      });
+
+      expect(plan.identity.projectBundleId).toBe(bundleIdForAttempt(9));
+      expect(plan.outputDirectory).toBe(join(fixtureDir, bundleIdForAttempt(9)));
+    });
+
     await withTempFixtureDir("md-pdf-project-codex-output-retry-exhausted", async (fixtureDir) => {
       const bundleIdForAttempt = (attempt: number) =>
         `md-pdf-project-20260704T010203Z-collide${String(attempt).padStart(2, "0")}`;
@@ -405,6 +430,48 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           code: "OUTPUT_EXISTS",
           exitCode: 2,
           messageIncludes: "--codex-report-output already exists",
+        },
+      );
+
+      await mkdir(join(fixtureDir, "report-directory.json"), { recursive: true });
+      const reportDirectoryState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        codexReportOutput: "report-directory.json",
+        output: "external-report-directory-project",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportDirectoryState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output is a directory",
+        },
+      );
+
+      await writeFile(join(fixtureDir, "report-target.json"), '{"target":true}\n', "utf8");
+      await symlink(
+        join(fixtureDir, "report-target.json"),
+        join(fixtureDir, "report-symlink.json"),
+      );
+      const reportSymlinkState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        codexReportOutput: "report-symlink.json",
+        output: "external-report-symlink-project",
+      });
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: reportSymlinkState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output is a symlink",
         },
       );
     });
