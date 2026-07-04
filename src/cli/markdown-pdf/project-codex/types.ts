@@ -38,4 +38,8 @@ export type {
   MarkdownPdfProjectCodexTemplateOwnedIntentDirection,
   MarkdownPdfProjectCodexTemplateOwnedSignals,
   MdPdfProjectCodexSignalCollection,
+  MdPdfProjectCodexSignalModes,
+  MdPdfProjectCodexProfileSignals,
+  MdPdfProjectCodexSharedSignals,
+  MdPdfProjectCodexTemplateSignals,
 } from "./types-signals";

@@ -29,9 +29,9 @@ async function collectModes(
   const state = await normalizeMdPdfProjectCodexCommandState(runtime, options);
   const signals = await collectMdPdfProjectCodexSignals(runtime, state);
   return {
-    profileSignalMode: signals.profileSignalMode,
-    signalMode: signals.signalMode,
-    templateSignalMode: signals.templateSignalMode,
+    profileSignalMode: signals.modes.profile,
+    signalMode: signals.modes.project,
+    templateSignalMode: signals.modes.template,
   };
 }
 
@@ -163,6 +163,14 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       for (const { expected, name, options } of cases) {
         expect(await collectModes(fixtureDir, options), name).toEqual(expected);
       }
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const defaultState = await normalizeMdPdfProjectCodexCommandState(runtime, {});
+      const defaultSignals = await collectMdPdfProjectCodexSignals(runtime, defaultState);
+      expect(defaultSignals.profile.baseProfile.available).toBe(false);
+      expect(defaultSignals.profile.baseProfile.candidate).toBeUndefined();
+      expect(defaultSignals.profile.basis.source).toBe("default-profile");
+      expect(defaultSignals.shared.title.baseProfileMetadataTitle).toBeUndefined();
     });
   });
 
@@ -187,11 +195,11 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       });
       const wideTableSignals = await collectMdPdfProjectCodexSignals(runtime, wideTableState);
 
-      expect(wideTableSignals.signalMode).toBe("codex-assisted");
-      expect(wideTableSignals.profileSignalMode).toBe("document-informed");
-      expect(wideTableSignals.templateSignalMode).toBe("codex-assisted");
-      expect(wideTableSignals.templateOwnedSignals.requiresCodex).toBe(true);
-      expect(wideTableSignals.templateOwnedSignals.documentDirections).toEqual([
+      expect(wideTableSignals.modes.project).toBe("codex-assisted");
+      expect(wideTableSignals.modes.profile).toBe("document-informed");
+      expect(wideTableSignals.modes.template).toBe("codex-assisted");
+      expect(wideTableSignals.template.ownedSignals.requiresCodex).toBe(true);
+      expect(wideTableSignals.template.ownedSignals.documentDirections).toEqual([
         "wide-table-document-signal",
         "custom table column widths",
         "arbitrary table CSS",
@@ -204,14 +212,42 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       });
       const intentSignals = await collectMdPdfProjectCodexSignals(runtime, intentState);
 
-      expect(intentSignals.signalMode).toBe("codex-assisted");
-      expect(intentSignals.profileSignalMode).toBe("hint-only");
-      expect(intentSignals.templateSignalMode).toBe("codex-assisted");
-      expect(intentSignals.templateOwnedSignals.requiresCodex).toBe(true);
-      expect(intentSignals.templateOwnedSignals.intentDirections).toEqual([
+      expect(intentSignals.modes.project).toBe("codex-assisted");
+      expect(intentSignals.modes.profile).toBe("hint-only");
+      expect(intentSignals.modes.template).toBe("codex-assisted");
+      expect(intentSignals.template.ownedSignals.requiresCodex).toBe(true);
+      expect(intentSignals.template.ownedSignals.intentDirections).toEqual([
         "cover-composition-intent",
         "brand-styling-intent",
       ]);
+
+      const htmlTableIntentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "custom HTML and CSS for tables",
+      });
+      const htmlTableIntentSignals = await collectMdPdfProjectCodexSignals(
+        runtime,
+        htmlTableIntentState,
+      );
+
+      expect(htmlTableIntentSignals.modes.template).toBe("codex-assisted");
+      expect(htmlTableIntentSignals.template.ownedSignals.requiresCodex).toBe(true);
+      expect(htmlTableIntentSignals.template.ownedSignals.intentDirections).toEqual([
+        "custom-html-css-intent",
+        "table-layout-intent",
+      ]);
+
+      const nonTemplateIntentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        intent: "client report",
+      });
+      const nonTemplateIntentSignals = await collectMdPdfProjectCodexSignals(
+        runtime,
+        nonTemplateIntentState,
+      );
+
+      expect(nonTemplateIntentSignals.modes.profile).toBe("hint-only");
+      expect(nonTemplateIntentSignals.modes.template).toBe("deterministic");
+      expect(nonTemplateIntentSignals.template.ownedSignals.requiresCodex).toBe(false);
+      expect(nonTemplateIntentSignals.template.ownedSignals.intentDirections).toEqual([]);
     });
   });
 });

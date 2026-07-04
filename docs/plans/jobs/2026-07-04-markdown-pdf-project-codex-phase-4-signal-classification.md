@@ -55,8 +55,8 @@ bun test
 git diff --check
 ```
 
-Result: passed. Focused signal tests reported 2 passing tests and the full
-suite reported 1388 passing tests with no failures.
+Result: passed. Focused signal tests reported 2 passing tests with 32
+assertions and the full suite reported 1388 passing tests with no failures.
 
 ## Code Review Follow-up
 
@@ -73,6 +73,12 @@ Follow-up changes:
 - Added tests for base-profile plus intent/font-hint cross-products.
 - Added assertions for `requiresCodex` and the full forwarded table-only
   direction list.
+- Nested the collected signal payload into `shared`, `profile`, and `template`
+  groups so later phases do not depend on one flat catch-all record.
+- Removed the premature untyped forwarded-profile direction hook until a later
+  phase has a concrete profile-result source to type against.
+- Added direct assertions for default-profile basis behavior and the remaining
+  template-owned intent direction branches.
 
 ## Artifact Safety
 

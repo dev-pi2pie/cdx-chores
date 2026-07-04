@@ -39,7 +39,6 @@ const TEMPLATE_OWNED_INTENT_PATTERNS: Array<{
 ];
 
 export function collectTemplateOwnedProjectDirections(input: {
-  forwardedProfileDirections?: string[];
   intent?: string;
   recipe: MarkdownPdfTemplateCodexRecipeSignals;
 }): MarkdownPdfProjectCodexTemplateOwnedSignals {
@@ -55,15 +54,10 @@ export function collectTemplateOwnedProjectDirections(input: {
           ...input.recipe.layoutPolicy.tableLayoutSignal.templateOnlyDirections,
         ] satisfies MarkdownPdfProjectCodexTemplateOwnedSignals["documentDirections"])
       : [];
-  const forwardedProfileDirections = input.forwardedProfileDirections ?? [];
-  const requiresCodex =
-    intentDirections.length > 0 ||
-    documentDirections.length > 0 ||
-    forwardedProfileDirections.length > 0;
+  const requiresCodex = intentDirections.length > 0 || documentDirections.length > 0;
 
   return {
     documentDirections,
-    forwardedProfileDirections,
     intentDirections,
     requiresCodex,
   };

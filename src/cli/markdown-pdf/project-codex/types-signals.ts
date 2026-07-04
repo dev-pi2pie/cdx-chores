@@ -36,7 +36,6 @@ export type MarkdownPdfProjectCodexTemplateOwnedDocumentDirection =
 
 export interface MarkdownPdfProjectCodexTemplateOwnedSignals {
   documentDirections: MarkdownPdfProjectCodexTemplateOwnedDocumentDirection[];
-  forwardedProfileDirections: string[];
   intentDirections: MarkdownPdfProjectCodexTemplateOwnedIntentDirection[];
   requiresCodex: boolean;
 }
@@ -46,16 +45,32 @@ export interface MarkdownPdfProjectCodexFontSignals {
   profileFonts: MarkdownPdfFontSignals;
 }
 
-export interface MdPdfProjectCodexSignalCollection {
-  signalMode: MarkdownPdfProjectCodexSignalMode;
-  profileSignalMode: MarkdownPdfProjectCodexProfilePhaseSignalMode;
-  templateSignalMode: MarkdownPdfProjectCodexTemplatePhaseSignalMode;
-  documentSignals: MarkdownPdfDocumentSignals;
-  baseProfile: MarkdownPdfProjectCodexBaseProfileSignals;
-  profileBasis: MarkdownPdfProjectCodexProfileBasisSignals;
+export interface MdPdfProjectCodexSignalModes {
+  profile: MarkdownPdfProjectCodexProfilePhaseSignalMode;
+  project: MarkdownPdfProjectCodexSignalMode;
+  template: MarkdownPdfProjectCodexTemplatePhaseSignalMode;
+}
+
+export interface MdPdfProjectCodexSharedSignals {
+  document: MarkdownPdfDocumentSignals;
   recipe: MarkdownPdfTemplateCodexRecipeSignals;
   title: MarkdownPdfTemplateCodexTitleSignals;
+}
+
+export interface MdPdfProjectCodexProfileSignals {
+  baseProfile: MarkdownPdfProjectCodexBaseProfileSignals;
+  basis: MarkdownPdfProjectCodexProfileBasisSignals;
   fonts: MarkdownPdfProjectCodexFontSignals;
+}
+
+export interface MdPdfProjectCodexTemplateSignals {
   coverImage: MarkdownPdfTemplateCodexCoverImageSignals;
-  templateOwnedSignals: MarkdownPdfProjectCodexTemplateOwnedSignals;
+  ownedSignals: MarkdownPdfProjectCodexTemplateOwnedSignals;
+}
+
+export interface MdPdfProjectCodexSignalCollection {
+  modes: MdPdfProjectCodexSignalModes;
+  profile: MdPdfProjectCodexProfileSignals;
+  shared: MdPdfProjectCodexSharedSignals;
+  template: MdPdfProjectCodexTemplateSignals;
 }

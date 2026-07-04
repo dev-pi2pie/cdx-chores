@@ -75,36 +75,44 @@ export async function collectMdPdfProjectCodexSignals(
     classifyMdPdfProjectCodexSignalModes(signalFacts);
 
   return {
-    signalMode,
-    profileSignalMode,
-    templateSignalMode,
-    documentSignals,
-    baseProfile: {
-      available: Boolean(baseProfileCandidate),
-      candidate: baseProfileCandidate,
+    modes: {
+      profile: profileSignalMode,
+      project: signalMode,
+      template: templateSignalMode,
     },
-    profileBasis: {
-      candidate: selectedProfile,
-      normalizedProfile: normalizedSelectedProfile.profile,
-      source: baseProfileCandidate ? "base-profile" : "default-profile",
+    shared: {
+      document: documentSignals,
+      recipe,
+      title: {
+        ...(baseProfileCandidate
+          ? {
+              baseProfileMetadataTitle: normalizedSelectedProfile.profile.titleBlock.metadataTitle,
+            }
+          : {}),
+        explicitKeepMetadataTitleIntent: hasExplicitKeepMetadataTitleIntent(state.intent ?? ""),
+        explicitHideMetadataTitleIntent: hasExplicitHideMetadataTitleIntent(state.intent ?? ""),
+      },
     },
-    recipe,
-    title: {
-      ...(baseProfileCandidate
-        ? {
-            baseProfileMetadataTitle: normalizedSelectedProfile.profile.titleBlock.metadataTitle,
-          }
-        : {}),
-      explicitKeepMetadataTitleIntent: hasExplicitKeepMetadataTitleIntent(state.intent ?? ""),
-      explicitHideMetadataTitleIntent: hasExplicitHideMetadataTitleIntent(state.intent ?? ""),
+    profile: {
+      baseProfile: {
+        available: Boolean(baseProfileCandidate),
+        candidate: baseProfileCandidate,
+      },
+      basis: {
+        candidate: selectedProfile,
+        normalizedProfile: normalizedSelectedProfile.profile,
+        source: baseProfileCandidate ? "base-profile" : "default-profile",
+      },
+      fonts: {
+        hints: state.fontHints,
+        profileFonts: collectMarkdownPdfFontSignals({
+          profile: normalizedSelectedProfile.profile,
+        }),
+      },
     },
-    fonts: {
-      hints: state.fontHints,
-      profileFonts: collectMarkdownPdfFontSignals({
-        profile: normalizedSelectedProfile.profile,
-      }),
+    template: {
+      coverImage,
+      ownedSignals: templateOwnedSignals,
     },
-    coverImage,
-    templateOwnedSignals,
   };
 }
