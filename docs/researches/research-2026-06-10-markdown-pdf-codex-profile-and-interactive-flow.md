@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Helper Roadmap"
 created-date: 2026-06-10
-modified-date: 2026-06-25
+modified-date: 2026-07-03
 status: in-progress
 agent: codex
 ---
@@ -14,8 +14,8 @@ This research now covers four related layers:
 
 1. a direct Codex-assisted profile helper that selects and adapts reusable Markdown PDF profiles
 2. a direct Codex-assisted template helper that drafts reviewable HTML/CSS recipe artifacts
-3. a later hybrid one-shot helper that chooses profile-only or template-backed output
-4. a later Interactive mode flow that reuses the same direct contracts instead of inventing a separate assistant surface
+3. the `md pdf-project codex` helper that writes a coordinated profile/template project folder for `v0.1.5-canary.4`
+4. the later Interactive mode feature track for `v0.1.6` or `v0.1.6-canary.*`
 
 The main product boundary is:
 
@@ -44,7 +44,7 @@ The remaining assistant surfaces are not renderer problems. They are workflow an
 - how font choices should be suggested from deterministic facts instead of prompt guesses
 - how profile, template, and diagnostic artifacts should remain replayable across projects
 - how the helper should explain fallback or low-signal decisions
-- how a later hybrid helper should choose between profile-only and template-backed outputs
+- how the project helper should coordinate profile and template artifacts
 - how Interactive mode should offer the helpers while keeping user review and deterministic replay clear
 - how to avoid ambiguity between `pdf-profile` and `pdf-template`
 
@@ -63,7 +63,7 @@ cdx-chores font check --text "..." --family "Noto Serif CJK TC"
 
 At the start of this research, the public Markdown PDF guide stated that Interactive Markdown PDF and Codex-assisted PDF helper flows were deferred. Earlier Markdown PDF research also deferred Codex SDK helper behavior until the deterministic renderer, profile, template, font, and code-highlighting layers were proven.
 
-The first direct helper, `md pdf-profile codex`, was completed for the previous canary line, `v0.1.5-canary.2`. The second direct helper, `md pdf-template codex`, is completed for the current canary target, `v0.1.5-canary.3`. The remaining roadmap layers are the later hybrid one-shot helper and Interactive Markdown PDF flow.
+The first direct helper, `md pdf-profile codex`, was completed for `v0.1.5-canary.2`. The second direct helper, `md pdf-template codex`, was completed for `v0.1.5-canary.3`. The current canary target is `md pdf-project codex` for `v0.1.5-canary.4`. Interactive Markdown PDF mode should move to the next feature track, `v0.1.6` or `v0.1.6-canary.*`, after the `v0.1.5` stable release review.
 
 The interactive Markdown submenu currently has Markdown actions for `to-docx` and `frontmatter-to-json`, but not `to-pdf`, `pdf-profile init`, or `pdf-template init`.
 
@@ -79,7 +79,7 @@ This research covers:
 - direct CLI output and diagnostic sidecar behavior
 - deterministic font signal collection for Codex profile adaptation
 - low-signal fallback behavior and diagnostic reporting
-- canary sequencing for profile, template, hybrid one-shot, and Interactive work
+- canary sequencing for profile, template, project orchestration, and Interactive work
 - the intended later Interactive mode flow
 
 This research does not implement:
@@ -135,7 +135,7 @@ cdx-chores md pdf-profile codex report.md --intent "..." --output report-profile
 
 This is preferred over `md pdf-profile suggest` because `suggest` hides the Codex dependency and makes the command sound like a deterministic heuristic. It is also preferred over `md to-pdf --codex` for the first slice because adapting a profile and rendering a PDF are different decisions.
 
-The command should be a subcommand, not only a flag, because it creates a durable profile artifact. Flags should be reserved for optional Codex checkpoints inside a later hybrid or Interactive workflow.
+The command should be a subcommand, not only a flag, because it creates a durable profile artifact. Flags should be reserved for optional Codex checkpoints inside a later project or Interactive workflow.
 
 Recommended command roles:
 
@@ -146,7 +146,7 @@ Recommended command roles:
 | `md to-pdf --profile <path>` | deterministic render from an accepted profile |
 | `md pdf-template init` | low-level editable HTML/CSS recipe snapshot |
 | `md pdf-template codex [path]` | Codex-assisted advanced template recipe drafting, completed for `v0.1.5-canary.3` |
-| later hybrid one-shot helper | chooses profile-only or template-backed artifacts before deterministic render |
+| `md pdf-project codex` helper | writes a coordinated project folder with profile, template, CSS, and assets before deterministic render |
 
 ### 3. The helper should choose and adapt profile candidates
 
@@ -314,7 +314,7 @@ Recommended `--base-profile` behavior:
 - reject invalid base profiles before calling Codex
 - keep `--output` separate from `--base-profile` so the helper writes a reviewed derivative instead of mutating the source profile in place
 
-### 4. `pdf-profile`, `pdf-template`, and hybrid one-shot must stay distinct
+### 4. `pdf-profile`, `pdf-template`, and `pdf-project` must stay distinct
 
 The simplest distinction is:
 
@@ -370,9 +370,9 @@ template path
   -> write template.html, style.css, and any managed local assets
   -> deterministic render with --template and --css
 
-later hybrid one-shot path
-  -> decide whether the request can stay profile-only
-  -> escalate to template artifacts only when the requested output needs them
+pdf-project path
+  -> coordinate profile and template artifact decisions
+  -> write a project folder with profile.yml, template.html, style.css, and assets when needed
   -> still render from accepted deterministic artifacts
 ```
 
@@ -720,128 +720,27 @@ cdx-chores md to-pdf \
 
 The focused template-Codex research owns the bounded contract for signal ladder, decision modes, render posture, asset copying, relative references, remote-asset policy, template identity, diagnostic report fields, later-render template placeholders, Shiki hooks, and how much raw CSS/HTML Codex may propose versus how much deterministic code should synthesize.
 
-### 12. Hybrid one-shot comes after template artifacts prove out
+### 12. Current Sequence
 
-A one-shot Codex helper remains useful for users who want to ask for a finished PDF direction without understanding the profile/template split. It should not be the next implementation layer. The one-shot route depends on both direct artifact contracts:
-
-```text
-user request
-  -> collect document, intent, profile, template, font, and asset signals
-  -> decide:
-       profile-only is enough
-       or template artifacts are required
-  -> write accepted artifacts
-  -> optionally render through deterministic md to-pdf
-```
-
-The hybrid helper should not replace `md pdf-profile codex` or `md pdf-template codex`. It should orchestrate them once both are stable. That keeps the easy path easy without forcing every advanced request into profile fields or every simple request into generated CSS.
-
-### 13. Interactive mode should reuse stable direct contracts later
-
-Interactive mode should be a later orchestration layer after the direct profile helper, direct template helper, and hybrid one-shot helper have stable contracts. It should not invent a second assistant model.
-
-The later Interactive flow should orchestrate the same direct capabilities:
+This roadmap now tracks the layer order and links to focused research for the
+details:
 
 ```text
-md -> to-pdf
-  -> choose Markdown input
-  -> choose PDF output
-  -> choose profile behavior
-     - no profile
-     - use existing profile
-     - create from preset
-     - adapt profile with Codex
-  -> choose template behavior
-     - use built-in template/CSS
-     - use custom template/CSS
-     - write deterministic template snapshot
-     - draft template with Codex
-  -> choose one-shot assist only after direct helper contracts are stable
-  -> deterministic preview
-     - page settings
-     - ToC
-     - code highlighting
-     - cover/header/footer/page numbers
-     - template assets and CSS/default-CSS behavior
-     - font warnings
-     - output paths
-  -> choose action
-     - render now
-     - save profile only
-     - save template only
-     - save diagnostic report
-     - revise choices
-     - cancel
+v0.1.5-canary.2  profile-Codex        completed
+v0.1.5-canary.3  template-Codex       completed
+v0.1.5-canary.4  pdf-project-Codex    current target
+v0.1.5           stable review        after canary.4
+v0.1.6           Interactive mode     next feature track
 ```
 
-The Codex helper inside Interactive mode should appear only as an opt-in choice under profile, template, or later one-shot behavior. It should not be a hidden dependency of `md:to-pdf`.
+Focused docs own the implementation contracts:
 
-### 14. Implementation should follow canary milestones
+- [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md) owns the completed direct template helper.
+- [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md) owns the `v0.1.5-canary.4` project folder contract.
+- [Markdown PDF Interactive Mode](research-2026-07-03-markdown-pdf-interactive-mode.md) owns the later `v0.1.6` or `v0.1.6-canary.*` interaction flow.
 
-This research should now sequence work by canary milestones instead of a two-plan profile-then-Interactive path:
-
-| Milestone | Target | Status |
-| --- | --- | --- |
-| Profile helper | `v0.1.5-canary.2` | completed |
-| Template helper | `v0.1.5-canary.3` | completed |
-| Hybrid one-shot helper | next canary | deferred until template artifacts prove out |
-| Interactive Markdown PDF mode | later canary | deferred until direct helpers stabilize |
-
-Completed profile plan:
-
-```text
-docs/plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md
-```
-
-Completed profile-helper scope:
-
-- `md pdf-profile codex` command surface
-- profile candidate selection and bounded adaptation
-- `--base-profile <path>` refinement from an existing validated profile
-- Markdown structure and profile-signal introspection
-- font summary and font-check orchestration
-- bounded, strict Codex structured output using enum-backed profile patches
-- decision modes, including conservative fallback and no usable profile
-- schema-supported preset identity and profile replay through `md to-pdf --profile`
-- profile identity schema extension
-- deterministic profile serialization
-- adapter boundary under the existing Codex adapter layer
-- artifact path collision checks for generated and custom profile/report paths
-- `--dry-run`, `--output`, `--keep-codex-report`, `--codex-report-output`, and `--overwrite`
-- optional Codex diagnostic report JSON
-- focused tests for unavailable Codex, invalid structured output, overwrite behavior, and deterministic replay through `md to-pdf --profile`
-
-Completed current canary implementation plan:
-
-```text
-docs/plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md
-```
-
-Related focused research:
-
-```text
-docs/researches/research-2026-06-18-markdown-pdf-template-codex-helper.md
-```
-
-Current canary implementation scope now completed:
-
-- `md pdf-template codex` command surface
-- explicit `-o, --output <directory>` behavior plus generated default output directory behavior
-- recipe-flag parity with `md pdf-template init` and `md to-pdf`
-- input document, user intent, base-profile, and cover/media signal collection
-- signal ladder for deterministic, Codex-assisted, and too-low-signal cases
-- decision modes and exit/write behavior
-- template artifact identity and optional diagnostic report identity
-- output directory and overwrite/collision behavior
-- managed asset copy/reference behavior
-- generated `template.html` and `style.css` reviewability
-- later-render template placeholder, profile-renderer, and Shiki hook preservation
-- local and remote asset policy
-- compatibility with `md to-pdf --template`, `--css`, `--profile`, and `--no-default-css`
-- dry-run or preview behavior
-- failure behavior when Codex is unavailable or generated artifacts fail validation
-
-The research remains `in-progress` because the hybrid one-shot and Interactive layers remain deferred.
+The research remains `in-progress` because the PDF project layer is the current
+canary target and Interactive mode remains a later feature track.
 
 ## Alternatives Considered
 
@@ -851,7 +750,7 @@ This would align with `data stack --codex-assist`, but it blurs deterministic pr
 
 ### `md to-pdf --codex`
 
-This is attractive for users who want one command to produce a PDF, but it mixes profile adaptation, template drafting, and rendering. The first implementation kept profile adaptation separate so the accepted profile can be inspected, committed, and replayed without Codex. The same principle should hold for template-Codex: the direct template helper should write accepted artifacts first. A later hybrid one-shot helper can orchestrate profile/template choices after both direct contracts are stable.
+This is attractive for users who want one command to produce a PDF, but it mixes profile adaptation, template drafting, and rendering. The first implementation kept profile adaptation separate so the accepted profile can be inspected, committed, and replayed without Codex. The same principle should hold for template-Codex and project-Codex: the helpers should write accepted artifacts first, and `md to-pdf` should render those artifacts deterministically.
 
 ### `md pdf-profile suggest --provider codex`
 
@@ -884,9 +783,10 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 5. Let template-Codex accept profile, document, intent, font, and asset signals, while keeping template/CSS as the stronger visual layer when rendered.
 6. Support explicit `-o, --output <directory>` behavior, generated default output directory behavior, overwrite behavior, managed asset behavior, and optional diagnostic report behavior for template-Codex.
 7. Keep `md to-pdf` deterministic: render accepted profile/template/CSS artifacts without requiring Codex.
-8. Defer the hybrid one-shot helper until both direct profile and template helper contracts are stable.
-9. Defer Interactive Markdown PDF mode until direct profile, direct template, and hybrid one-shot surfaces have stable contracts.
-10. Keep public docs and release notes clear about canary boundaries: `v0.1.5-canary.3` should not be described as released until its target work is complete and tagged.
+8. Target `md pdf-project codex` for `v0.1.5-canary.4`, now that the direct profile and template helper contracts are implemented and documented.
+9. Review and release `v0.1.5` only after the project helper lands, is verified, and is documented.
+10. Move Interactive Markdown PDF mode to `v0.1.6` or `v0.1.6-canary.*`.
+11. Keep public docs and release notes clear about canary boundaries: `v0.1.5-canary.4` should not be described as released until its target work is complete and tagged.
 
 ## Related Research
 
@@ -895,6 +795,8 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 - [Font Inspect and Check Commands](research-2026-05-07-font-inspect-and-check-commands.md)
 - [Markdown PDF Shiki Code Highlighting](research-2026-05-16-markdown-pdf-shiki-code-highlighting.md)
 - [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md)
+- [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md)
+- [Markdown PDF Interactive Mode](research-2026-07-03-markdown-pdf-interactive-mode.md)
 - [Data stack replay records, duplicate handling, and Codex schema assist](research-2026-04-24-data-stack-replay-and-codex-schema-assist.md)
 - [Data stack artifact and Codex contract cleanup](research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md)
 

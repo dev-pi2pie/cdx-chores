@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Template Codex Helper"
 created-date: 2026-06-18
-modified-date: 2026-06-25
+modified-date: 2026-07-03
 status: completed
 agent: codex
 ---
@@ -28,11 +28,11 @@ That roadmap keeps the settled profile-Codex history and the overall sequence:
 ```text
 profile-Codex
   -> template-Codex
-  -> hybrid one-shot helper
+  -> pdf-project helper
   -> Interactive mode
 ```
 
-This document should stay focused on the second layer only: `md pdf-template codex`.
+This document should stay focused on the second layer only: `md pdf-template codex`. The project layer is now tracked separately in [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md) as the `v0.1.5-canary.4` target.
 
 ## Starting State
 
@@ -68,7 +68,7 @@ This research does not implement:
 - Codex SDK calls
 - renderer changes
 - profile schema changes for cover images
-- hybrid one-shot orchestration
+- pdf-project orchestration
 - Interactive mode
 
 ## Settled V1 Direction
@@ -695,7 +695,7 @@ Operationally, v1 should not read an existing `template.html` or `style.css` as 
 5. Accept profile input as a signal and compatibility target, while documenting that template/CSS is the stronger visual layer.
 6. Prefer copied local assets inside the output directory, referenced relatively from generated HTML/CSS.
 7. Use bounded template decisions plus deterministic file synthesis instead of raw full-file Codex dumps.
-8. Defer hybrid one-shot and Interactive mode until this direct command contract is implemented and verified.
+8. Treat `md pdf-project codex` as the `v0.1.5-canary.4` follow-up now that this direct command contract is implemented and verified; defer only Interactive mode to `v0.1.6` or `v0.1.6-canary.*`.
 
 ## Completion Evidence
 
@@ -711,6 +711,8 @@ font-hint/profile ownership boundary, and redacted diagnostic report behavior.
 ## Related Research
 
 - [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
+- [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md)
+- [Markdown PDF Interactive Mode](research-2026-07-03-markdown-pdf-interactive-mode.md)
 - [Markdown to PDF with WeasyPrint](research-2026-05-06-markdown-to-pdf-weasyprint.md)
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
 - [Markdown PDF Shiki Code Highlighting](research-2026-05-16-markdown-pdf-shiki-code-highlighting.md)
