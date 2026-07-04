@@ -198,6 +198,16 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       expect(wideTableSignals.modes.project).toBe("codex-assisted");
       expect(wideTableSignals.modes.profile).toBe("document-informed");
       expect(wideTableSignals.modes.template).toBe("codex-assisted");
+      expect(wideTableSignals.shared.recipe.layoutPolicy.tableLayoutSignal.level).toBe("strong");
+      expect(wideTableSignals.shared.recipe.layoutPolicy.tableLayoutSignal.signalLadder).toEqual([
+        "overflowRows",
+        "maxLineWidth",
+        "maxColumns",
+        "scannedRows",
+      ]);
+      expect(wideTableSignals.shared.recipe.layoutPolicy.tableLayoutSignal.reasons).toContain(
+        "table rows have many columns",
+      );
       expect(wideTableSignals.template.ownedSignals.requiresCodex).toBe(true);
       expect(wideTableSignals.template.ownedSignals.documentDirections).toEqual([
         "wide-table-document-signal",

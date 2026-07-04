@@ -55,7 +55,7 @@ bun test
 git diff --check
 ```
 
-Result: passed. Focused signal tests reported 2 passing tests with 32
+Result: passed. Focused signal tests reported 2 passing tests with 35
 assertions and the full suite reported 1388 passing tests with no failures.
 
 ## Code Review Follow-up
@@ -79,6 +79,8 @@ Follow-up changes:
   phase has a concrete profile-result source to type against.
 - Added direct assertions for default-profile basis behavior and the remaining
   template-owned intent direction branches.
+- Added direct assertions for the table layout signal level, ladder ordering,
+  and reason text that trigger template-owned table directions.
 
 ## Artifact Safety
 
