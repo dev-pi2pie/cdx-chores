@@ -518,6 +518,95 @@ describe("cli command: md pdf-template codex", () => {
   });
 });
 
+describe("cli command: md pdf-project codex", () => {
+  test("documents the project Codex helper options", () => {
+    const result = runCli(["md", "pdf-project", "codex", "--help"]);
+    const normalizedStdout = result.stdout.replace(/\s+/g, " ");
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Usage: cdx-chores md pdf-project codex [options] [input]");
+    expect(normalizedStdout).toContain(
+      "Draft a coordinated Markdown PDF profile and template project bundle",
+    );
+    expect(result.stdout).toContain("input");
+    expect(normalizedStdout).toContain("Markdown sample for shared project signals");
+    expect(result.stdout).toContain("-i, --input <path>");
+    expect(result.stdout).toContain("--intent <text>");
+    expect(result.stdout).toContain("--font-hint <text>");
+    expect(result.stdout).toContain("--base-profile <path>");
+    expect(result.stdout).toContain("--cover-image <path>");
+    expect(result.stdout).toContain("-o, --output <directory>");
+    expect(result.stdout).toContain("--dry-run");
+    expect(result.stdout).toContain("--keep-codex-report");
+    expect(result.stdout).toContain("--codex-report-output <path>");
+    expect(result.stdout).toContain("--overwrite");
+    expect(result.stdout).not.toContain("--preset <value>");
+    expect(result.stdout).not.toContain("--page-size <value>");
+    expect(result.stdout).not.toContain("--orientation <value>");
+    expect(result.stdout).not.toContain("--margin <length>");
+    expect(result.stdout).not.toContain("--margin-x <length>");
+    expect(result.stdout).not.toContain("--margin-y <length>");
+    expect(result.stdout).not.toContain("--margin-top <length>");
+    expect(result.stdout).not.toContain("--margin-right <length>");
+    expect(result.stdout).not.toContain("--margin-bottom <length>");
+    expect(result.stdout).not.toContain("--margin-left <length>");
+    expect(result.stdout).not.toContain("--toc");
+    expect(result.stdout).not.toContain("--toc-depth <n>");
+    expect(result.stdout).not.toContain("--toc-page-break <value>");
+    expect(result.stderr).toBe("");
+  });
+
+  test("rejects recipe flags from the project Codex command surface", () => {
+    for (const flag of ["--preset", "--margin", "--toc"] as const) {
+      const result = runCli(["md", "pdf-project", "codex", flag, "report"]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`unknown option '${flag}'`);
+    }
+  });
+
+  test("rejects conflicting positional and explicit project inputs from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-input-conflict", async (fixtureDir) => {
+      const firstInputPath = join(fixtureDir, "one.md");
+      const secondInputPath = join(fixtureDir, "two.md");
+      await writeFile(firstInputPath, "# One\n", "utf8");
+      await writeFile(secondInputPath, "# Two\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        toRepoRelativePath(firstInputPath),
+        "--input",
+        toRepoRelativePath(secondInputPath),
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "pdf-project")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Positional input and --input");
+    });
+  });
+
+  test("rejects invalid project report paths before later orchestration work", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-report-path", async (fixtureDir) => {
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        "--codex-report-output",
+        toRepoRelativePath(join(fixtureDir, "project-report.txt")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("project Codex report path must end with .json");
+    });
+  });
+});
+
 describe("cli command: md pdf-profile init", () => {
   test("writes a profile file from the command layer", async () => {
     await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {

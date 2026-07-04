@@ -1,17 +1,17 @@
 import { Command } from "commander";
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { registerMarkdownCommands } from "../src/cli/commands/markdown";
 import { createCapturedRuntime } from "./helpers/cli-test-utils";
 
-test("md pdf-profile codex command forwards positional input and repeated font hints", async () => {
+test("md pdf-project codex command forwards positional input and project options", async () => {
   const calls: unknown[] = [];
   const actionStubs = {
     actionMdFrontmatterToJson: async () => {},
-    actionMdPdfProjectCodex: async () => {},
-    actionMdPdfProfileCodex: async (_runtime: unknown, options: unknown) => {
+    actionMdPdfProjectCodex: async (_runtime: unknown, options: unknown) => {
       calls.push(options);
     },
+    actionMdPdfProfileCodex: async () => {},
     actionMdPdfProfileInit: async () => {},
     actionMdPdfTemplateCodex: async () => {},
     actionMdPdfTemplateInit: async () => {},
@@ -27,24 +27,35 @@ test("md pdf-profile codex command forwards positional input and repeated font h
     "node",
     "test",
     "md",
-    "pdf-profile",
+    "pdf-project",
     "codex",
     "report.md",
+    "--intent",
+    "client report",
     "--font-hint",
     "   ",
     "--font-hint",
     "prefer Noto Serif CJK TC",
+    "--base-profile",
+    "base-profile.yml",
+    "--cover-image",
+    "cover.png",
     "--output",
-    "profile.yml",
+    "pdf-project",
+    "--keep-codex-report",
+    "--overwrite",
   ]);
 
   expect(calls).toEqual([
     {
+      baseProfile: "base-profile.yml",
+      coverImage: "cover.png",
       dryRun: false,
       fontHint: ["   ", "prefer Noto Serif CJK TC"],
-      keepCodexReport: false,
-      output: "profile.yml",
-      overwrite: false,
+      intent: "client report",
+      keepCodexReport: true,
+      output: "pdf-project",
+      overwrite: true,
       positionalInput: "report.md",
     },
   ]);

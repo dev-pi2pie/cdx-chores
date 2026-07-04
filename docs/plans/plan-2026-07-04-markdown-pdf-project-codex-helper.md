@@ -277,20 +277,20 @@ Job record:
 
 ### Phase 2: Project Command Surface And Shared Types
 
-- [ ] Register `md pdf-project codex` under the Markdown command tree.
-- [ ] Add project CLI option types and normalized command-state types.
-- [ ] Support positional `[input]` and `-i, --input <path>` aliasing.
-- [ ] Add `--intent`, repeatable `--font-hint`, `--base-profile`,
+- [x] Register `md pdf-project codex` under the Markdown command tree.
+- [x] Add project CLI option types and normalized command-state types.
+- [x] Support positional `[input]` and `-i, --input <path>` aliasing.
+- [x] Add `--intent`, repeatable `--font-hint`, `--base-profile`,
       `--cover-image`, `--output`, `--dry-run`, `--keep-codex-report`,
       `--codex-report-output`, and `--overwrite`.
-- [ ] Reject conflicting positional and `--input` paths before signal
+- [x] Reject conflicting positional and `--input` paths before signal
       collection.
-- [ ] Reject public recipe flags as unknown options.
-- [ ] Add project signal-mode, decision-mode, identity, phase-summary, and
+- [x] Reject public recipe flags as unknown options.
+- [x] Add project signal-mode, decision-mode, identity, phase-summary, and
       report types.
-- [ ] Keep `src/cli/actions/markdown/pdf-project-codex.ts` thin by importing
+- [x] Keep `src/cli/actions/markdown/pdf-project-codex.ts` thin by importing
       project-Codex orchestration helpers from `project-codex/index.ts`.
-- [ ] Add CLI help and command-wiring tests.
+- [x] Add CLI help and command-wiring tests.
 
 Recommended module targets:
 
@@ -298,6 +298,10 @@ Recommended module targets:
 - `src/cli/markdown-pdf/project-codex/types.ts`
 - `src/cli/markdown-pdf/project-codex/options.ts`
 - `src/cli/markdown-pdf/project-codex/index.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 2 command surface](jobs/2026-07-04-markdown-pdf-project-codex-phase-2-command-surface.md)
 
 ### Phase 3: Project Output Planning And Collision Checks
 
@@ -505,7 +509,9 @@ Create focused job records under `docs/plans/jobs/` as implementation phases
 land. Expected records:
 
 - Phase 1 profile service extraction.
-- Phase 2-4 command, output planning, and signal classification.
+- Phase 2 command surface.
+- Phase 3 output planning and collision checks.
+- Phase 4 signal classification.
 - Phase 5-6 phase orchestration.
 - Phase 7-8 validation, reports, writes, and dry run.
 - Phase 9 integration coverage and render compatibility.
