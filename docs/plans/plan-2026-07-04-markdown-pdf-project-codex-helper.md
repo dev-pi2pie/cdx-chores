@@ -360,28 +360,32 @@ Job record:
 
 ### Phase 5: Profile Phase Orchestration
 
-- [ ] Run the extracted profile service first.
-- [ ] Force project output to `profile.yml` while preserving the generated
+- [x] Run the extracted profile service first.
+- [x] Force project output to `profile.yml` while preserving the generated
       `profile.id`.
-- [ ] Support deterministic profile output for base-profile-only and
+- [x] Support deterministic profile output for base-profile-only and
       cover-image-only project requests.
-- [ ] For cover-image-only requests, materialize the same deterministic default
+- [x] For cover-image-only requests, materialize the same deterministic default
       profile path used by profile-Codex `basic-default`; the cover image
       remains a template-phase signal.
-- [ ] Support Codex-assisted profile adaptation for Markdown input, intent,
+- [x] Support Codex-assisted profile adaptation for Markdown input, intent,
       font hints, and base-profile-plus-target-signal requests.
-- [ ] Preserve unmatched template directions for the template phase.
-- [ ] Use phase-aware progress text when invoking profile Codex from the project
+- [x] Preserve unmatched template directions for the template phase.
+- [x] Use phase-aware progress text when invoking profile Codex from the project
       command.
-- [ ] Validate the final profile before passing it to template synthesis.
-- [ ] Avoid writing `profile.yml` until the template phase and project
+- [x] Validate the final profile before passing it to template synthesis.
+- [x] Avoid writing `profile.yml` until the template phase and project
       validation have also succeeded.
-- [ ] Add tests for deterministic and Codex-assisted profile phase results,
+- [x] Add tests for deterministic and Codex-assisted profile phase results,
       unmatched-direction forwarding, and no partial profile writes.
 
 Recommended module targets:
 
 - `src/cli/markdown-pdf/project-codex/profile-phase.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 5 profile orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-5-profile-orchestration.md)
 
 ### Phase 6: Template Phase Orchestration
 

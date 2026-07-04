@@ -14,6 +14,10 @@ export {
   type MdPdfProjectCodexSignalFacts,
 } from "./signal-mode";
 export { collectMdPdfProjectCodexSignals } from "./signals";
+export {
+  runMdPdfProjectCodexProfilePhase,
+  type MdPdfProjectCodexProfilePhaseResult,
+} from "./profile-phase";
 export { actionMdPdfProjectCodex } from "./run";
 export type {
   MarkdownPdfProjectCodexBaseProfileSignals,

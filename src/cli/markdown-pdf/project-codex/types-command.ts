@@ -1,4 +1,5 @@
 import type { MarkdownPdfProjectCodexIdentityUidFactory } from "./types-identity";
+import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
 
 export interface MdPdfProjectCodexOptions {
   input?: string;
@@ -13,9 +14,13 @@ export interface MdPdfProjectCodexOptions {
   codexReportOutput?: string;
   overwrite?: boolean;
   identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
+  profileCodexRunner?: MarkdownPdfCodexProfileRunner;
 }
 
-type MdPdfProjectCodexNonCliOption = "identityUidFactory" | "positionalInput";
+type MdPdfProjectCodexNonCliOption =
+  | "identityUidFactory"
+  | "positionalInput"
+  | "profileCodexRunner";
 
 export type MdPdfProjectCodexCliOptions = Omit<
   MdPdfProjectCodexOptions,
