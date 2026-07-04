@@ -33,6 +33,9 @@ export type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
 export type {
   MarkdownPdfProjectCodexBaseProfileSignals,
   MarkdownPdfProjectCodexFontSignals,
+  MarkdownPdfProjectCodexProfileBasisSignals,
+  MarkdownPdfProjectCodexTemplateOwnedDocumentDirection,
+  MarkdownPdfProjectCodexTemplateOwnedIntentDirection,
   MarkdownPdfProjectCodexTemplateOwnedSignals,
   MdPdfProjectCodexSignalCollection,
 } from "./types-signals";

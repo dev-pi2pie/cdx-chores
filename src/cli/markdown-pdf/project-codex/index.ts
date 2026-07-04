@@ -7,8 +7,11 @@ export {
 export {
   classifyMdPdfProjectCodexProfileSignalMode,
   classifyMdPdfProjectCodexSignalMode,
+  classifyMdPdfProjectCodexSignalModes,
   classifyMdPdfProjectCodexTemplateSignalMode,
   collectTemplateOwnedProjectDirections,
+  type MdPdfProjectCodexClassifiedSignalModes,
+  type MdPdfProjectCodexSignalFacts,
 } from "./signal-mode";
 export { collectMdPdfProjectCodexSignals } from "./signals";
 export { actionMdPdfProjectCodex } from "./run";
@@ -28,10 +31,13 @@ export type {
   MarkdownPdfProjectCodexPlannedIdentity,
   MarkdownPdfProjectCodexPlannedReport,
   MarkdownPdfProjectCodexProceedingSignalMode,
+  MarkdownPdfProjectCodexProfileBasisSignals,
   MarkdownPdfProjectCodexProfilePhaseSummary,
   MarkdownPdfProjectCodexProfilePhaseSignalMode,
   MarkdownPdfProjectCodexReportArtifact,
   MarkdownPdfProjectCodexSignalMode,
+  MarkdownPdfProjectCodexTemplateOwnedDocumentDirection,
+  MarkdownPdfProjectCodexTemplateOwnedIntentDirection,
   MarkdownPdfProjectCodexTemplateOwnedSignals,
   MarkdownPdfProjectCodexTemplatePhaseSummary,
   MarkdownPdfProjectCodexTemplatePhaseSignalMode,

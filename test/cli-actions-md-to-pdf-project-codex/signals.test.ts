@@ -132,6 +132,24 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
           },
         },
         {
+          name: "base profile plus intent",
+          options: { baseProfile: "base.yml", intent: "client report" },
+          expected: {
+            signalMode: "codex-assisted",
+            profileSignalMode: "mixed-with-base",
+            templateSignalMode: "base-profile-only",
+          },
+        },
+        {
+          name: "base profile plus font hint",
+          options: { baseProfile: "base.yml", fontHint: ["prefer Noto Sans"] },
+          expected: {
+            signalMode: "codex-assisted",
+            profileSignalMode: "mixed-with-base",
+            templateSignalMode: "base-profile-only",
+          },
+        },
+        {
           name: "cover image plus plain markdown input",
           options: { coverImage: "cover.png", input: "report.md" },
           expected: {
@@ -172,9 +190,14 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       expect(wideTableSignals.signalMode).toBe("codex-assisted");
       expect(wideTableSignals.profileSignalMode).toBe("document-informed");
       expect(wideTableSignals.templateSignalMode).toBe("codex-assisted");
-      expect(wideTableSignals.templateOwnedSignals.documentDirections).toContain(
+      expect(wideTableSignals.templateOwnedSignals.requiresCodex).toBe(true);
+      expect(wideTableSignals.templateOwnedSignals.documentDirections).toEqual([
         "wide-table-document-signal",
-      );
+        "custom table column widths",
+        "arbitrary table CSS",
+        "rotated individual pages",
+        "exact table beautification",
+      ]);
 
       const intentState = await normalizeMdPdfProjectCodexCommandState(runtime, {
         intent: "custom cover composition with brand styling",
@@ -184,6 +207,7 @@ describe("cli action modules: md pdf-project codex signal classification", () =>
       expect(intentSignals.signalMode).toBe("codex-assisted");
       expect(intentSignals.profileSignalMode).toBe("hint-only");
       expect(intentSignals.templateSignalMode).toBe("codex-assisted");
+      expect(intentSignals.templateOwnedSignals.requiresCodex).toBe(true);
       expect(intentSignals.templateOwnedSignals.intentDirections).toEqual([
         "cover-composition-intent",
         "brand-styling-intent",

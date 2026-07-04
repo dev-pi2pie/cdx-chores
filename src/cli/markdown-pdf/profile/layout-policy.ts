@@ -2,12 +2,22 @@ import type { MarkdownPdfTableSignals } from "./signals";
 
 export type MarkdownPdfTableLayoutRiskLevel = "none" | "weak" | "strong";
 
+export const MARKDOWN_PDF_TABLE_TEMPLATE_ONLY_DIRECTIONS = [
+  "custom table column widths",
+  "arbitrary table CSS",
+  "rotated individual pages",
+  "exact table beautification",
+] as const;
+
+export type MarkdownPdfTableTemplateOnlyDirection =
+  (typeof MARKDOWN_PDF_TABLE_TEMPLATE_ONLY_DIRECTIONS)[number];
+
 export interface MarkdownPdfTableLayoutSignal {
   level: MarkdownPdfTableLayoutRiskLevel;
   reasons: string[];
   recommendation: string;
   signalLadder: string[];
-  templateOnlyDirections: string[];
+  templateOnlyDirections: MarkdownPdfTableTemplateOnlyDirection[];
 }
 
 export function markdownPdfTableLayoutRiskLevel(
@@ -54,11 +64,6 @@ export function buildMarkdownPdfTableLayoutSignal(
           ? "Treat table presence as supporting evidence only; do not force landscape by itself."
           : "No table layout signal.",
     signalLadder: ["overflowRows", "maxLineWidth", "maxColumns", "scannedRows"],
-    templateOnlyDirections: [
-      "custom table column widths",
-      "arbitrary table CSS",
-      "rotated individual pages",
-      "exact table beautification",
-    ],
+    templateOnlyDirections: [...MARKDOWN_PDF_TABLE_TEMPLATE_ONLY_DIRECTIONS],
   };
 }

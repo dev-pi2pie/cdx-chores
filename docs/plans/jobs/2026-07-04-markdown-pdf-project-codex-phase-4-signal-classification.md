@@ -58,6 +58,22 @@ git diff --check
 Result: passed. Focused signal tests reported 2 passing tests and the full
 suite reported 1388 passing tests with no failures.
 
+## Code Review Follow-up
+
+The post-commit Phase 4 review found no material security issue, then requested
+stronger regression coverage and a tighter signal contract before Phase 5.
+
+Follow-up changes:
+
+- Added typed table-only direction constants so project template-owned document
+  directions use the same source of truth as profile layout policy.
+- Split the selected profile basis from base-profile availability so fallback
+  default profiles are not exposed as a base-profile payload.
+- Added one full signal-mode classifier entry point for the typed project facts.
+- Added tests for base-profile plus intent/font-hint cross-products.
+- Added assertions for `requiresCodex` and the full forwarded table-only
+  direction list.
+
 ## Artifact Safety
 
 Tests collect and classify signals only. No project bundles, profiles,

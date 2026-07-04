@@ -17,9 +17,7 @@ import {
 import { collectTemplateCodexCoverImageSignals } from "../template-codex/cover-assets";
 import { collectMdPdfTemplateCodexRecipeSignals } from "../template-codex/recipe-signals";
 import {
-  classifyMdPdfProjectCodexProfileSignalMode,
-  classifyMdPdfProjectCodexSignalMode,
-  classifyMdPdfProjectCodexTemplateSignalMode,
+  classifyMdPdfProjectCodexSignalModes,
   collectTemplateOwnedProjectDirections,
 } from "./signal-mode";
 import type {
@@ -65,26 +63,16 @@ export async function collectMdPdfProjectCodexSignals(
     intent: state.intent,
     recipe,
   });
-  const profileSignalMode = classifyMdPdfProjectCodexProfileSignalMode({
+  const signalFacts = {
     hasBaseProfile: Boolean(baseProfileCandidate),
     hasFontHints: state.fontHints.length > 0,
     hasInput: Boolean(state.inputPath),
     hasIntent: Boolean(state.intent),
-  });
-  const templateSignalMode = classifyMdPdfProjectCodexTemplateSignalMode({
-    hasBaseProfile: Boolean(baseProfileCandidate),
     hasCoverImage: coverImage.available,
     templateOwnedSignals,
-  });
-  const signalMode = classifyMdPdfProjectCodexSignalMode({
-    hasBaseProfile: Boolean(baseProfileCandidate),
-    hasCoverImage: coverImage.available,
-    hasFontHints: state.fontHints.length > 0,
-    hasInput: Boolean(state.inputPath),
-    hasIntent: Boolean(state.intent),
-    profileSignalMode,
-    templateSignalMode,
-  });
+  };
+  const { profileSignalMode, signalMode, templateSignalMode } =
+    classifyMdPdfProjectCodexSignalModes(signalFacts);
 
   return {
     signalMode,
@@ -94,7 +82,11 @@ export async function collectMdPdfProjectCodexSignals(
     baseProfile: {
       available: Boolean(baseProfileCandidate),
       candidate: baseProfileCandidate,
+    },
+    profileBasis: {
+      candidate: selectedProfile,
       normalizedProfile: normalizedSelectedProfile.profile,
+      source: baseProfileCandidate ? "base-profile" : "default-profile",
     },
     recipe,
     title: {
