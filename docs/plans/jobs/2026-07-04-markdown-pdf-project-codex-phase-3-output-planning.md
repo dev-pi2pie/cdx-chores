@@ -60,6 +60,15 @@ Follow-up changes split identity-value derivation from final identity assembly,
 centralized planned project path targets, extracted shared Codex output path
 policy helpers, and added the missing regression coverage.
 
+A final test-review pass found two remaining coverage gaps:
+
+- explicit report output paths should be checked against generated project
+  targets by existing-file identity, not only by exact path.
+- project cover asset bundle paths should pin uppercase-extension
+  normalization and extensionless-source fallback behavior.
+
+Those final coverage gaps are now covered in the project output-plan tests.
+
 ## Verification
 
 ```bash
@@ -72,7 +81,7 @@ bun test
 git diff --check
 ```
 
-Result: all commands passed. The full suite reported 1373 tests passed and 0
+Result: all commands passed. The full suite reported 1376 tests passed and 0
 failed.
 
 ## Artifact Safety

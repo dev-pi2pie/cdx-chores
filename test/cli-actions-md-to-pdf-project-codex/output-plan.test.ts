@@ -123,6 +123,49 @@ describe("cli action modules: md pdf-project codex output planning", () => {
     });
   });
 
+  test("normalizes project cover asset bundle extensions", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cover-extension", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "Cover.PNG"), minimalPng(1200, 800));
+      await writeFile(join(fixtureDir, "cover-source"), minimalPng(1200, 800));
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T01:02:03.000Z"),
+      });
+      const uppercaseState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "Cover.PNG",
+        output: "uppercase-project",
+      });
+      const extensionlessState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "cover-source",
+        output: "extensionless-project",
+      });
+      const [uppercasePlan, extensionlessPlan] = await Promise.all([
+        planMdPdfProjectCodexOutput({
+          runtime,
+          state: uppercaseState,
+          signalMode: "deterministic",
+        }),
+        planMdPdfProjectCodexOutput({
+          runtime,
+          state: extensionlessState,
+          signalMode: "deterministic",
+        }),
+      ]);
+
+      expect(uppercasePlan.assets[0]).toMatchObject({
+        bundlePath: "assets/cover.png",
+        path: join(fixtureDir, "uppercase-project", "assets", "cover.png"),
+        sourceBasename: "Cover.PNG",
+      });
+      expect(extensionlessPlan.assets[0]).toMatchObject({
+        bundlePath: "assets/cover.png",
+        path: join(fixtureDir, "extensionless-project", "assets", "cover.png"),
+        sourceBasename: "cover-source",
+      });
+    });
+  });
+
   test("uses explicit output directories and explicit report paths exactly after resolution", async () => {
     await withTempFixtureDir("md-pdf-project-codex-explicit-output", async (fixtureDir) => {
       const outputDirectory = join(fixtureDir, "reviewable-project");
@@ -470,6 +513,67 @@ describe("cli action modules: md pdf-project codex output planning", () => {
           messageIncludes: "--output cannot be the same path as --codex-report-output",
         },
       );
+
+      await writeFile(join(fixtureDir, "cover-source.png"), minimalPng(1200, 800));
+      for (const { coverImage, expected, output, reportFile, targetSegments } of [
+        {
+          expected: "planned profile.yml cannot be the same file as --codex-report-output",
+          output: "report-profile-target-project",
+          reportFile: "profile-report.json",
+          targetSegments: ["profile.yml"],
+        },
+        {
+          expected: "planned template.html cannot be the same file as --codex-report-output",
+          output: "report-template-target-project",
+          reportFile: "template-report.json",
+          targetSegments: ["template.html"],
+        },
+        {
+          expected: "planned style.css cannot be the same file as --codex-report-output",
+          output: "report-style-target-project",
+          reportFile: "style-report.json",
+          targetSegments: ["style.css"],
+        },
+        {
+          coverImage: "cover-source.png",
+          expected:
+            "--codex-report-output cannot be the same file as planned asset assets/cover.png",
+          output: "report-asset-target-project",
+          reportFile: "asset-report.json",
+          targetSegments: ["assets", "cover.png"],
+        },
+      ] as const) {
+        const outputDirectory = join(fixtureDir, output);
+        const targetPath = join(outputDirectory, ...targetSegments);
+        const reportPath = join(fixtureDir, reportFile);
+        await mkdir(
+          targetSegments.length > 1
+            ? join(outputDirectory, targetSegments[0] ?? "")
+            : outputDirectory,
+          { recursive: true },
+        );
+        await writeFile(targetPath, "planned target\n", "utf8");
+        await link(targetPath, reportPath);
+        const reportTargetState = await normalizeMdPdfProjectCodexCommandState(runtime, {
+          codexReportOutput: reportPath,
+          coverImage,
+          output,
+          overwrite: true,
+        });
+        await expectCliError(
+          () =>
+            planMdPdfProjectCodexOutput({
+              runtime,
+              state: reportTargetState,
+              signalMode: "deterministic",
+            }),
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+            messageIncludes: expected,
+          },
+        );
+      }
 
       const outputDirectory = join(fixtureDir, "pdf-project");
       const assetPath = join(outputDirectory, "assets", "cover.png");
