@@ -20,6 +20,21 @@ This job was reopened because the original manual smoke used injected Codex
 runners. That evidence remains useful for orchestration, but it is not live
 Codex smoke evidence.
 
+This job was reopened again for timeout review. The recorded live smoke
+validated the direct read-only runner plus timeout combination, but it did not
+isolate timeout as the earlier failure cause.
+
+## Reopened Timeout Review
+
+- [x] Re-run the Phase 7 live-smoke matrix with the current Markdown PDF Codex
+      timeout defaults as the baseline.
+- [x] Temporarily rebuild with only the Markdown PDF profile/template Codex
+      timeout constants set back to 30s and rerun the same live-smoke matrix.
+- [x] Keep the final committed timeout value aligned with the controlled smoke
+      result before any commit.
+- [x] Record sanitized evidence that states whether 30s passes with the corrected
+      direct read-only runner or whether 120s is required.
+
 ## Implementation Notes
 
 - Added `validate-project.ts` to compose existing profile validation,
@@ -49,8 +64,9 @@ Codex smoke evidence.
 - Split project validation into a result collector and a summary resolver so
   decision precedence, fallback selection, and render-command creation are
   resolved in one place.
-- Raised direct Markdown PDF profile/template Codex helper timeouts from 30s to
-  120s so live Codex smoke has enough time to finish.
+- Restored direct Markdown PDF profile/template Codex helper defaults to 30s
+  after controlled smoke showed the corrected read-only runner passes the Phase
+  7 matrix without requiring 120s.
 - Kept the existing TTY progress spinner path and verified progress output
   through focused CLI tests; non-TTY output remains static.
 - Restored profile, template, and project live Codex smoke paths to the shared
@@ -177,6 +193,10 @@ node dist/esm/bin.mjs md pdf-project codex examples/playground/md-pdf/tool-cover
 
 Sanitized live-smoke result:
 
+These results validated the current runner and timeout combination, but they did
+not prove that timeout was the earlier failure cause. The timeout-specific
+review below isolates that question.
+
 - Direct `md pdf-profile codex` multilingual smoke passed with four repeated
   `--font-hint` flags for English body, Japanese body, Traditional Chinese
   body, and code monospace.
@@ -197,6 +217,33 @@ Sanitized live-smoke result:
   request, and no bundle writes.
 - Smoke outputs remained under the ignored
   `examples/playground/md-pdf/smoke/` tree.
+
+## Timeout Review Smoke
+
+Controlled timeout smoke reran the same Phase 7 live-smoke matrix twice:
+
+- Baseline build with the previous 120s Markdown PDF Codex helper defaults.
+- Comparison build with only the Markdown PDF profile/template helper defaults
+  set to 30s.
+
+Sanitized timeout-review result:
+
+- 120s baseline passed for direct profile, direct template, project
+  multilingual/font dry-run, and project cover-image dry-run.
+- 30s comparison passed for the same four commands with the corrected direct
+  read-only runner.
+- Direct profile completed in about 11-13 seconds across the two runs.
+- Direct template completed in about 14-16 seconds across the two runs.
+- Project multilingual/font dry-run completed in about 11-13 seconds across the
+  two runs.
+- Project cover-image dry-run completed in about 24-32 seconds wall-clock across
+  the two runs. This command performs separate profile and template Codex
+  requests, so wall-clock time can exceed 30 seconds without violating the
+  per-request 30s timeout.
+- No timeout abort occurred during the 30s comparison.
+- The controlled smoke rejects the earlier timeout hypothesis for the Phase 7
+  matrix; 30s is the preferred default for the direct Markdown PDF Codex helper
+  requests.
 
 ## Verification
 

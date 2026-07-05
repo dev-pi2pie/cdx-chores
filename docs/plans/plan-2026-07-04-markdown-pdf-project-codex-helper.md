@@ -446,6 +446,15 @@ Job record:
       Codex helper behavior before write smoke.
 - [x] Record live-smoke evidence separately from injected-runner smoke and keep
       manual outputs under `examples/playground/md-pdf/smoke/`.
+- [x] Re-run the Phase 7 live-smoke matrix with the current Markdown PDF Codex
+      timeout defaults as the baseline for timeout review.
+- [x] Temporarily rebuild with only the Markdown PDF profile/template Codex
+      timeout constants set back to 30s, rerun the same Phase 7 live-smoke
+      matrix, then keep the committed timeout value aligned with the smoke
+      result before any commit.
+- [x] Update the Phase 7 record to state whether the corrected direct
+      read-only runner still passes at 30s, or whether 120s is required by
+      controlled smoke evidence.
 
 Recommended module targets:
 
@@ -496,6 +505,12 @@ Job record:
       bundle for visual inspection without adding it to the regular test suite.
 - [x] Record sanitized live-smoke evidence and cleanup expectations for
       `examples/playground/md-pdf/smoke/`.
+- [ ] Re-run the Phase 8 project write-smoke matrix with the committed 30s
+      Markdown PDF Codex timeout defaults.
+- [ ] If any Phase 8 write smoke fails from a real timeout, temporarily compare
+      the same write-smoke matrix against 120s before changing the default.
+- [ ] Update the Phase 8 record with sanitized timeout-review evidence, including
+      whether the earlier timeout hypothesis was confirmed or rejected.
 
 Recommended module targets:
 

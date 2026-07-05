@@ -15,7 +15,7 @@ import type {
   MarkdownPdfTemplateCodexRunner,
 } from "./types";
 
-export const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 120_000;
+export const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 30_000;
 const MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS = 1;
 
 export type MarkdownPdfTemplateCodexFailureKind =

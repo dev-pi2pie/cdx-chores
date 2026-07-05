@@ -2,7 +2,7 @@
 title: "Markdown PDF project Codex phase 8 report, summary, writes, and dry run"
 created-date: 2026-07-04
 modified-date: 2026-07-05
-status: completed
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-04-markdown-pdf-project-codex-helper.md
 ---
@@ -22,6 +22,22 @@ landed before live Codex write and render-smoke evidence was recorded. The
 reopened pass restored the project helper to the same direct read-only Codex
 workspace contract as the successful direct profile and template helpers, then
 recorded sanitized write-smoke and render-smoke evidence.
+
+This job is reopened again for timeout review. Phase 7 controlled smoke restored
+the direct Markdown PDF Codex helper defaults to 30s, so Phase 8 now needs write
+and render-replay smoke against that committed default.
+
+## Reopened Timeout Review
+
+- [ ] Re-run the Phase 8 project write-smoke matrix with the committed 30s
+      Markdown PDF Codex timeout defaults.
+- [ ] If any write smoke fails from a real timeout, temporarily compare the same
+      write-smoke matrix against 120s before changing the default.
+- [ ] Keep the final committed timeout value aligned with the controlled smoke
+      result before any commit.
+- [ ] Record sanitized evidence that states whether 30s passes with the corrected
+      direct read-only runner for write and render replay, or whether 120s is
+      required.
 
 ## Implementation Notes
 
@@ -193,6 +209,9 @@ node dist/esm/bin.mjs md to-pdf \
 ```
 
 Current sanitized live-smoke result:
+
+These results validate the current runner and timeout combination. They do not
+yet prove that timeout was the earlier failure cause.
 
 - Direct `md pdf-profile codex` multilingual smoke passed with four repeated
   `--font-hint` flags for English body, Japanese body, Traditional Chinese

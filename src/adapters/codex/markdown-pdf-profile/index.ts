@@ -8,7 +8,7 @@ import type {
 } from "./types";
 import { MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES, MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
 
-export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 120_000;
+export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 30_000;
 
 export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   type: "object",
