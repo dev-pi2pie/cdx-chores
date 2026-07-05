@@ -21,6 +21,11 @@ stays under `examples/playground/md-pdf/smoke/`.
   `md pdf-project codex` bundle, then feeds the generated `profile.yml`,
   `template.html`, and `style.css` into the `md to-pdf` action with an injected
   renderer.
+- Added an action-level regression test for a document-informed project whose
+  frontmatter title matches the first H1. The test verifies the project profile
+  writes `titleBlock.metadataTitle: auto`, the project template suppresses the
+  metadata title block, and the project report records a document-informed
+  profile phase with deterministic template synthesis.
 - Kept the regular test deterministic by using the existing injected PDF runner
   rather than requiring external render tools.
 - Confirmed existing command coverage documents the `md pdf-project codex`
@@ -33,9 +38,12 @@ stays under `examples/playground/md-pdf/smoke/`.
 
 - Added coverage in
   `test/cli-actions-md-to-pdf-project-codex/action-write.test.ts`.
-- The new test verifies that a written project bundle can be consumed by
+- The render-feed test verifies that a written project bundle can be consumed by
   `md to-pdf --profile --template --css`.
-- The test asserts the generated template reaches Pandoc, the generated
+- The duplicate-title test verifies that document-informed project generation
+  preserves the duplicate visible title suppression already used by the direct
+  profile and template helpers.
+- The render-feed test asserts the generated template reaches Pandoc, the generated
   stylesheet reaches WeasyPrint, the PDF output is written, and the render
   command reports the expected output path.
 
@@ -47,9 +55,10 @@ Manual smoke used existing public playground inputs:
 - `examples/playground/md-pdf/tool-cover-smoke.md`
 - `examples/playground/md-pdf/assets/tool-cover-sample.jpg`
 
-Smoke commands generated deterministic project bundles under
+Initial smoke commands generated deterministic project bundles under
 `examples/playground/md-pdf/smoke/phase9-closeout/` and replayed them through
-`md to-pdf --profile --template --css`.
+`md to-pdf --profile --template --css`. This covered base-profile-only project
+replay, not document-informed project generation.
 
 Sanitized smoke result:
 
@@ -62,20 +71,42 @@ Sanitized smoke result:
 - PDF page previews were generated under the ignored smoke folder.
 - Visual inspection confirmed readable CJK/body/code content and cover-first
   layout with body content on the following page.
-- The CJK smoke used a generic deterministic base profile, so the preview keeps
-  the expected title duplication from the source H1 plus metadata title. This is
-  a fixture/profile choice, not a project render-compatibility failure.
+- The initial CJK smoke used a generic deterministic base profile, so the
+  preview kept visible title duplication from the source H1 plus metadata title.
+  That result proved base-profile-only replay compatibility, but it did not
+  prove document-informed duplicate-title handling.
+
+Follow-up document-informed CJK smoke generated a project with
+`examples/playground/md-pdf/cjk-font-smoke.md` as the direct
+`md pdf-project codex` input under
+`examples/playground/md-pdf/smoke/phase9-document-informed-cjk/`.
+
+Sanitized follow-up result:
+
+- Project generation passed with project signal mode `codex-assisted`.
+- Profile phase passed with decision mode `adapted` and signal mode
+  `document-informed`.
+- Template phase passed with decision mode `deterministic`.
+- The generated `profile.yml` included `titleBlock.metadataTitle: auto`.
+- The generated `template.html` suppressed the metadata title block.
+- Render replay through `md to-pdf --profile --template --css` passed and wrote
+  a one-page A4 PDF.
+- PDF text extraction found one visible `CJK Font Smoke` occurrence, confirming
+  frontmatter/H1 duplicate-title suppression for the document-informed project
+  path.
 
 ## Verification
 
 - `bun test test/cli-actions-md-to-pdf-project-codex/action-write.test.ts`
-  - Passed: 18 tests, 612 assertions.
+  - Passed: 19 tests, 622 assertions.
 - `bun test test/cli-actions-md-to-pdf-project-codex/*.test.ts test/cli-actions-md-to-pdf-commands.test.ts`
   - Passed: 105 tests, 1411 assertions.
 - `bun run build`
   - Passed before manual smoke.
 - Manual deterministic project render smoke
   - Passed for CJK and cover-image project bundles.
+- Manual document-informed CJK project render smoke
+  - Passed and confirmed one visible title occurrence.
 - PDF metadata inspection
   - Passed: CJK replay produced one A4 page; cover replay produced two A4 pages.
 - PDF page-preview visual smoke

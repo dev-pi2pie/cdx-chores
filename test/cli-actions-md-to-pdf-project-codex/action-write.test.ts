@@ -54,6 +54,35 @@ function adaptedProfileRunner(unmatchedDirections: string[] = []): MarkdownPdfCo
     });
 }
 
+function profilePromptFacts(prompt: string): Record<string, unknown> {
+  const marker = "Deterministic facts:\n";
+  const index = prompt.indexOf(marker);
+  if (index < 0) {
+    throw new Error("profile Codex prompt did not include deterministic facts");
+  }
+  return JSON.parse(prompt.slice(index + marker.length)) as Record<string, unknown>;
+}
+
+function duplicateTitleProfileRunner(): MarkdownPdfCodexProfileRunner {
+  return async ({ prompt }) => {
+    const facts = profilePromptFacts(prompt);
+    expect(facts.titleDecisionSignal).toMatchObject({
+      duplicateVisibleTitleRisk: true,
+      supportedPatch: "/titleBlock/metadataTitle",
+    });
+    return JSON.stringify({
+      decision_mode: "adapted",
+      selected_candidate_id: "article",
+      accepted_patches: [{ op: "replace", path: "/titleBlock/metadataTitle", value: "auto" }],
+      accepted_font_patches: [],
+      reasoning: "The first H1 already provides the visible title.",
+      warnings: [],
+      fallback_reason: "",
+      unmatched_directions: [],
+    });
+  };
+}
+
 function adaptedTemplateResponse(): string {
   return JSON.stringify({
     decision_mode: "adapted",
@@ -520,6 +549,67 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           source: { display: "cover.png", basename: "cover.png", redacted: true },
         }),
       ]);
+    });
+  });
+
+  test("writes document-informed projects that suppress duplicate metadata titles", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-action-title-dedup", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "project-output");
+      const reportPath = join(outputPath, "project.codex-report.json");
+
+      await writeFile(
+        join(fixtureDir, "cjk.md"),
+        [
+          "---",
+          "title: CJK Font Smoke",
+          "lang: en",
+          "---",
+          "",
+          "# CJK Font Smoke",
+          "",
+          "This document checks mixed English, Japanese, Traditional Chinese, and code font handling.",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T08:00:00.000Z"),
+      });
+
+      await actionMdPdfProjectCodex(runtime, {
+        input: "cjk.md",
+        output: "project-output",
+        keepCodexReport: true,
+        profileCodexRunner: duplicateTitleProfileRunner(),
+        identityUidFactory: () => "abc12345",
+      });
+
+      expect(stdout.text).toContain("Project signal mode: codex-assisted");
+      expect(stdout.text).toContain("Profile decision mode: adapted");
+      expect(stdout.text).toContain("Template decision mode: deterministic");
+
+      const profileText = await readFile(join(outputPath, "profile.yml"), "utf8");
+      const templateText = await readFile(join(outputPath, "template.html"), "utf8");
+      expect(profileText).toContain("titleBlock:");
+      expect(profileText).toContain("metadataTitle: auto");
+      expect(templateText).not.toContain('<header class="document-title">');
+      expect(templateText).toContain("$body$");
+
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        phases: {
+          profile: { decisionMode: string; signalMode: string };
+          template: { decisionMode: string; signalMode: string };
+        };
+      };
+      expect(report.phases.profile).toMatchObject({
+        decisionMode: "adapted",
+        signalMode: "document-informed",
+      });
+      expect(report.phases.template).toMatchObject({
+        decisionMode: "deterministic",
+        signalMode: "deterministic",
+      });
     });
   });
 

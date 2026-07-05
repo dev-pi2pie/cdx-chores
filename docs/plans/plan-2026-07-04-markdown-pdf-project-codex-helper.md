@@ -533,6 +533,11 @@ Job record:
 - [x] Add failure-path tests for invalid base profiles, invalid cover images,
       output/report collisions, and no-usable-project results.
 - [x] Run focused tests first, then repo gates.
+- [x] Run a document-informed CJK project smoke that passes
+      `examples/playground/md-pdf/cjk-font-smoke.md` directly to
+      `md pdf-project codex`, renders the generated project through
+      `md to-pdf --profile --template --css`, and verifies duplicate visible
+      title suppression.
 
 Focused validation target:
 
