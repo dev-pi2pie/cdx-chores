@@ -505,11 +505,11 @@ Job record:
       bundle for visual inspection without adding it to the regular test suite.
 - [x] Record sanitized live-smoke evidence and cleanup expectations for
       `examples/playground/md-pdf/smoke/`.
-- [ ] Re-run the Phase 8 project write-smoke matrix with the committed 30s
+- [x] Re-run the Phase 8 project write-smoke matrix with the committed 30s
       Markdown PDF Codex timeout defaults.
-- [ ] If any Phase 8 write smoke fails from a real timeout, temporarily compare
+- [x] If any Phase 8 write smoke fails from a real timeout, temporarily compare
       the same write-smoke matrix against 120s before changing the default.
-- [ ] Update the Phase 8 record with sanitized timeout-review evidence, including
+- [x] Update the Phase 8 record with sanitized timeout-review evidence, including
       whether the earlier timeout hypothesis was confirmed or rejected.
 
 Recommended module targets:

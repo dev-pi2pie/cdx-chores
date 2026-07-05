@@ -2,7 +2,7 @@
 title: "Markdown PDF project Codex phase 8 report, summary, writes, and dry run"
 created-date: 2026-07-04
 modified-date: 2026-07-05
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-04-markdown-pdf-project-codex-helper.md
 ---
@@ -23,19 +23,19 @@ reopened pass restored the project helper to the same direct read-only Codex
 workspace contract as the successful direct profile and template helpers, then
 recorded sanitized write-smoke and render-smoke evidence.
 
-This job is reopened again for timeout review. Phase 7 controlled smoke restored
-the direct Markdown PDF Codex helper defaults to 30s, so Phase 8 now needs write
-and render-replay smoke against that committed default.
+This job was reopened again for timeout review. Phase 7 controlled smoke
+restored the direct Markdown PDF Codex helper defaults to 30s, so Phase 8 reran
+write and render-replay smoke against that committed default.
 
 ## Reopened Timeout Review
 
-- [ ] Re-run the Phase 8 project write-smoke matrix with the committed 30s
+- [x] Re-run the Phase 8 project write-smoke matrix with the committed 30s
       Markdown PDF Codex timeout defaults.
-- [ ] If any write smoke fails from a real timeout, temporarily compare the same
+- [x] If any write smoke fails from a real timeout, temporarily compare the same
       write-smoke matrix against 120s before changing the default.
-- [ ] Keep the final committed timeout value aligned with the controlled smoke
+- [x] Keep the final committed timeout value aligned with the controlled smoke
       result before any commit.
-- [ ] Record sanitized evidence that states whether 30s passes with the corrected
+- [x] Record sanitized evidence that states whether 30s passes with the corrected
       direct read-only runner for write and render replay, or whether 120s is
       required.
 
@@ -210,8 +210,8 @@ node dist/esm/bin.mjs md to-pdf \
 
 Current sanitized live-smoke result:
 
-These results validate the current runner and timeout combination. They do not
-yet prove that timeout was the earlier failure cause.
+These results validated the runner and timeout combination that existed at the
+time. The timeout-specific review below isolates the committed 30s default.
 
 - Direct `md pdf-profile codex` multilingual smoke passed with four repeated
   `--font-hint` flags for English body, Japanese body, Traditional Chinese
@@ -232,9 +232,43 @@ yet prove that timeout was the earlier failure cause.
 - Manual `md to-pdf --profile --template --css` render replay from the combined
   project bundle passed and wrote a PDF.
 - PDF inspection reported a two-page A4 document. Rendered page previews were
-  generated outside the repository for visual smoke inspection.
+  generated under the ignored smoke folder for visual smoke inspection.
 - Smoke outputs remained under the ignored
   `examples/playground/md-pdf/smoke/` tree.
+
+## Timeout Review Smoke
+
+Timeout-review smoke reran the Phase 8 write and render-replay matrix with the
+committed 30s Markdown PDF Codex helper defaults. A temporary 120s comparison was
+not needed because no 30s run failed from timeout.
+
+Sanitized timeout-review result:
+
+- Multilingual/font project write smoke passed with `codex-assisted` project
+  mode, final decision `adapted`, adapted profile phase, deterministic template
+  phase, zero managed assets, and a project report.
+- Cover-image project write smoke passed with `codex-assisted` project mode,
+  final decision `adapted`, adapted profile phase, adapted template phase, one
+  managed cover asset, and a project report.
+- Combined project write smoke passed with multilingual content, four repeated
+  `--font-hint` values, a repo-relative cover image fixture, and page-number
+  intent.
+- The combined report preserved the repeated font hints and managed cover-image
+  metadata.
+- The combined profile selected dedicated Japanese, Traditional Chinese, and code
+  font entries and enabled body page numbers.
+- The combined template decision used a conservative fallback for the
+  template-owned page-number wording while keeping page numbers profile-owned
+  and preserving the managed cover asset.
+- Render replay from the combined bundle passed and wrote a two-page A4 PDF.
+- Rendered page previews showed cover image first with title below it, readable
+  Japanese and Traditional Chinese body text, code styling, and a visible body
+  page number.
+- Project write smoke completed in about 21-35 seconds wall-clock depending on
+  whether one or two Codex requests were needed. No per-request 30s timeout abort
+  occurred.
+- The controlled Phase 8 smoke supports keeping 30s as the committed Markdown
+  PDF Codex helper default for these project write and render-replay cases.
 
 ## Verification
 
@@ -251,7 +285,8 @@ yet prove that timeout was the earlier failure cause.
 - `bun run lint`
   - Passed.
 - `bun run build`
-  - Passed.
+  - Passed after committing the 30s timeout default and before Phase 8 timeout
+    review smoke.
 - `git diff --check`
   - Passed.
 - Docs privacy scan for raw local paths, private temporary paths, local resource
@@ -268,6 +303,22 @@ yet prove that timeout was the earlier failure cause.
   - Passed.
 - Manual render smoke
   - Passed.
+- Timeout-review live `md pdf-project codex` write smoke for multilingual/font
+  project output with the committed 30s default
+  - Passed.
+- Timeout-review live `md pdf-project codex` write smoke for cover-image project
+  output with the committed 30s default
+  - Passed.
+- Timeout-review live combined `md pdf-project codex` write smoke for
+  multilingual content, cover image, and page-number intent with the committed
+  30s default
+  - Passed.
+- Timeout-review manual `md to-pdf --profile --template --css` render replay
+  from the combined bundle
+  - Passed.
+- Timeout-review PDF inspection and page-preview visual smoke
+  - Passed: two-page A4 PDF; cover-first page, readable multilingual body text,
+    code block styling, and visible body page number.
 
 ## Artifact Safety
 
