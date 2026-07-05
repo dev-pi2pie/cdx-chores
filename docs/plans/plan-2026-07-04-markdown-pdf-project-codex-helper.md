@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF project Codex helper implementation"
 created-date: 2026-07-04
+modified-date: 2026-07-05
 status: active
 agent: codex
 ---
@@ -389,81 +390,122 @@ Job record:
 
 ### Phase 6: Template Phase Orchestration
 
-- [ ] Run the template phase second with the final profile as the compatibility
+- [x] Run the template phase second with the final profile as the compatibility
       target.
-- [ ] Use the project output plan for `templateBundleId`, `template.html`,
+- [x] Use the project output plan for `templateBundleId`, `template.html`,
       `style.css`, managed assets, and report behavior.
-- [ ] Select `document-layered` when no managed cover image is present.
-- [ ] Select `cover-media-layered` when `--cover-image` is present.
-- [ ] Skip template Codex when deterministic project inputs are sufficient.
-- [ ] Call template Codex only for template-owned directions, forwarded
+- [x] Select `document-layered` when no managed cover image is present.
+- [x] Select `cover-media-layered` when `--cover-image` is present.
+- [x] Skip template Codex when deterministic project inputs are sufficient.
+- [x] Call template Codex only for template-owned directions, forwarded
       unmatched profile directions, or document/intent signals that specifically
       affect template-owned layout such as tables, cover composition, brand
       styling, or custom HTML/CSS.
-- [ ] Do not escalate the template phase merely because shared Markdown input
+- [x] Do not escalate the template phase merely because shared Markdown input
       made the profile phase `document-informed`.
-- [ ] Use phase-aware progress text when invoking template Codex from the
+- [x] Use phase-aware progress text when invoking template Codex from the
       project command.
-- [ ] Keep local cover image copying inside the project `assets/` directory.
-- [ ] Avoid writing template files or copying assets until project validation
+- [x] Keep local cover image copying inside the project `assets/` directory.
+- [x] Avoid writing template files or copying assets until project validation
       passes.
-- [ ] Add tests for base-profile-only, cover-image-only, combined deterministic,
+- [x] Add tests for base-profile-only, cover-image-only, combined deterministic,
       profile-assisted plus deterministic-template, and template-assisted paths.
 
 Recommended module targets:
 
 - `src/cli/markdown-pdf/project-codex/template-phase.ts`
 
+Job record:
+
+- [Markdown PDF project Codex phase 6 template orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-6-template-orchestration.md)
+
 ### Phase 7: Project Validation And Render Compatibility
 
-- [ ] Validate `profile.yml` with existing Markdown PDF profile validation.
-- [ ] Validate generated template placeholders and later-render hooks.
-- [ ] Validate CSS for unsafe URLs, absolute local source paths, and
+- [x] Validate `profile.yml` with existing Markdown PDF profile validation.
+- [x] Validate generated template placeholders and later-render hooks.
+- [x] Validate CSS for unsafe URLs, absolute local source paths, and
       profile-hook breakage.
-- [ ] Validate copied assets and report paths stay within allowed boundaries.
-- [ ] Validate the follow-up `md to-pdf --profile --template --css` command is
+- [x] Validate copied assets and report paths stay within allowed boundaries.
+- [x] Validate the follow-up `md to-pdf --profile --template --css` command is
       well formed.
-- [ ] Assert that template/CSS decisions do not silently defeat profile-owned
+- [x] Assert that template/CSS decisions do not silently defeat profile-owned
       ToC, page number, font, title, cover, or Shiki hooks.
-- [ ] Treat unrecoverable phase or compatibility failures as
+- [x] Treat unrecoverable phase or compatibility failures as
       `no-usable-project`.
-- [ ] Add tests for hard validation failures, fallback-compatible reductions,
+- [x] Add tests for hard validation failures, fallback-compatible reductions,
       no-usable-project reports, and render-command compatibility.
+- [x] Run live direct `md pdf-profile codex` smoke with
+      `examples/playground/md-pdf/cjk-font-smoke.md` to verify multilingual
+      font signals through real Codex.
+- [x] Run live direct `md pdf-template codex` smoke with
+      `examples/playground/md-pdf/tool-cover-smoke.md` and
+      `examples/playground/md-pdf/assets/tool-cover-sample.jpg` to verify cover
+      image behavior through real Codex.
+- [x] Run live `md pdf-project codex --dry-run` smoke for the multilingual/font
+      and cover-image paths so project orchestration is checked against real
+      Codex helper behavior before write smoke.
+- [x] Record live-smoke evidence separately from injected-runner smoke and keep
+      manual outputs under `examples/playground/md-pdf/smoke/`.
 
 Recommended module targets:
 
 - `src/cli/markdown-pdf/project-codex/validate-project.ts`
 - `src/cli/markdown-pdf/project-codex/render-command.ts`
 
+Job record:
+
+- [Markdown PDF project Codex phase 7 validation and render compatibility](jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md)
+
 ### Phase 8: Report, Summary, Writes, And Dry Run
 
-- [ ] Define the `markdown-pdf-codex-project-report` JSON artifact.
-- [ ] Mark project reports as `advisoryOnly: true`, matching the direct profile
+- [x] Define the `markdown-pdf-codex-project-report` JSON artifact.
+- [x] Mark project reports as `advisoryOnly: true`, matching the direct profile
       and template report posture.
-- [ ] Record project, profile, and template identities.
-- [ ] Record project-relative artifact paths.
-- [ ] Record input summaries, intent, font hints, cover-image metadata, phase
+- [x] Record project, profile, and template identities.
+- [x] Record project-relative artifact paths.
+- [x] Record input summaries, intent, font hints, cover-image metadata, phase
       signal modes, phase decision modes, final project decision mode,
       unsupported directions, fallback reasons, validation results, and
       follow-up render command arguments.
-- [ ] Use `<input.md>` and `<output.pdf>` placeholders when no Markdown input is
+- [x] Use `<input.md>` and `<output.pdf>` placeholders when no Markdown input is
       available.
-- [ ] Keep persisted reports privacy-safe by default.
-- [ ] Print a concise CLI summary with project signal mode, final decision mode,
+- [x] Keep persisted reports privacy-safe by default.
+- [x] Validate requested report writes before normal bundle artifact writes so
+      report failures do not leave partial project bundles.
+- [x] Write requested reports only after successful normal bundle writes so
+      stale reports cannot describe a bundle that failed while writing.
+- [x] Print a concise CLI summary with project signal mode, final decision mode,
       output directory, artifacts, report path when written, and follow-up
       render command.
-- [ ] Implement normal writes only after both phases and project validation
+- [x] Implement normal writes only after both phases and project validation
       succeed.
-- [ ] Implement dry-run behavior with report-only writes when explicitly
+- [x] Implement dry-run behavior with report-only writes when explicitly
       requested.
-- [ ] Add report schema, redaction, summary, dry-run, and no-partial-write
+- [x] Add report schema, redaction, summary, dry-run, and no-partial-write
       tests.
+- [x] Add review follow-up tests for persisted replay display, direct profile
+      no-usable reports, direct template default runner behavior, symlinked
+      managed assets, and stale-report prevention after bundle write failures.
+- [x] Run live `md pdf-project codex` write smoke for multilingual/font project
+      output.
+- [x] Run live `md pdf-project codex` write smoke for cover-image project
+      output.
+- [x] Run live combined `md pdf-project codex` write smoke with multilingual
+      content, cover image, and page-number intent.
+- [x] Run at least one manual `md to-pdf` render from the combined project
+      bundle for visual inspection without adding it to the regular test suite.
+- [x] Record sanitized live-smoke evidence and cleanup expectations for
+      `examples/playground/md-pdf/smoke/`.
 
 Recommended module targets:
 
 - `src/cli/markdown-pdf/project-codex/report.ts`
 - `src/cli/markdown-pdf/project-codex/summary.ts`
 - `src/cli/markdown-pdf/project-codex/write-project.ts`
+
+Job record:
+
+- [Markdown PDF project Codex phase 8 report, summary, writes, and dry run](jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md)
 
 ### Phase 9: Integration Coverage And Render Compatibility
 
@@ -525,8 +567,9 @@ land. Expected records:
 - Phase 3 output planning and collision checks.
 - Phase 4 signal classification.
 - Phase 5 profile phase orchestration.
-- Phase 6 template phase orchestration.
-- Phase 7-8 validation, reports, writes, and dry run.
+- [Markdown PDF project Codex phase 6 template orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-6-template-orchestration.md)
+- [Markdown PDF project Codex phase 7 validation and render compatibility](jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md)
+- [Markdown PDF project Codex phase 8 report, summary, writes, and dry run](jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md)
 - Phase 9 integration coverage and render compatibility.
 - Phase 10 docs validation and plan completion.
 
