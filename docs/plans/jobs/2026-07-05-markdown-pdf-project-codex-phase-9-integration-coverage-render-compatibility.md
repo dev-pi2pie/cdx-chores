@@ -100,7 +100,7 @@ Sanitized follow-up result:
 - `bun test test/cli-actions-md-to-pdf-project-codex/action-write.test.ts`
   - Passed: 19 tests, 622 assertions.
 - `bun test test/cli-actions-md-to-pdf-project-codex/*.test.ts test/cli-actions-md-to-pdf-commands.test.ts`
-  - Passed: 105 tests, 1411 assertions.
+  - Passed: 106 tests, 1421 assertions.
 - `bun run build`
   - Passed before manual smoke.
 - Manual deterministic project render smoke
