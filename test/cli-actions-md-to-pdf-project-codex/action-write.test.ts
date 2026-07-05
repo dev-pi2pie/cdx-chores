@@ -5,7 +5,8 @@ import { describe, expect, test } from "bun:test";
 
 import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
-import { actionMdPdfProjectCodex } from "../../src/cli/actions/markdown";
+import { actionMdPdfProjectCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
+import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
 import {
   collectMdPdfProjectCodexSignals,
   createMdPdfProjectCodexReportArtifact,
@@ -20,6 +21,7 @@ import {
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { createPdfRunner } from "../cli-actions-md-to-pdf.helpers";
 import { minimalPng, pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
 
 const BASE_PROFILE = [
@@ -518,6 +520,83 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           source: { display: "cover.png", basename: "cover.png", redacted: true },
         }),
       ]);
+    });
+  });
+
+  test("writes a project bundle that can feed md to-pdf with profile, template, and css", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-action-render-feed", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "project-output");
+      const pdfPath = join(fixtureDir, "rendered.pdf");
+      const htmlPath = join(fixtureDir, "rendered.html");
+      const renderedStyles: string[] = [];
+      let renderedTemplate = "";
+
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      await writeFile(inputPath, "# Report\n\n```ts\nconst ok = true;\n```\n", "utf8");
+
+      const { runtime: projectRuntime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T08:00:00.000Z"),
+      });
+
+      await actionMdPdfProjectCodex(projectRuntime, {
+        baseProfile: "base.yml",
+        output: "project-output",
+        identityUidFactory: () => "abc12345",
+      });
+
+      const { calls, runner } = createPdfRunner({
+        html: "<html><body><pre><code>const ok = true;</code></pre></body></html>",
+      });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const {
+        runtime: renderRuntime,
+        stdout,
+        expectNoStderr,
+      } = createActionTestRuntime({
+        cwd: fixtureDir,
+      });
+
+      await actionMdToPdf(renderRuntime, {
+        input: "report.md",
+        profile: "project-output/profile.yml",
+        template: "project-output/template.html",
+        css: "project-output/style.css",
+        output: "rendered.pdf",
+        htmlOutput: "rendered.html",
+        runner: capturingRunner,
+      });
+
+      const weasyprintRender = calls.find(
+        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      );
+      expect(weasyprintRender?.args).toContain(join(outputPath, "style.css"));
+      expect(await readFile(pdfPath, "utf8")).toContain("%PDF");
+      expect(await readFile(htmlPath, "utf8")).toContain("<html>");
+      expect(renderedTemplate).toContain("$body$");
+      expect(renderedStyles.join("\n")).toContain(".cdx-code-line");
+      expect(stdout.text).toContain("Wrote PDF: rendered.pdf");
+      expectNoStderr();
     });
   });
 

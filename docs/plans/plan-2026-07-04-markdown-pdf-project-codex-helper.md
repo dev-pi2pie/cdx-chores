@@ -524,15 +524,15 @@ Job record:
 
 ### Phase 9: Integration Coverage And Render Compatibility
 
-- [ ] Add action-level tests for deterministic project paths.
-- [ ] Add action-level tests for Codex-assisted project paths with stubbed
+- [x] Add action-level tests for deterministic project paths.
+- [x] Add action-level tests for Codex-assisted project paths with stubbed
       runners.
-- [ ] Add command tests for help output and unsupported recipe flags.
-- [ ] Add render-compatibility tests proving generated project outputs can feed
+- [x] Add command tests for help output and unsupported recipe flags.
+- [x] Add render-compatibility tests proving generated project outputs can feed
       `md to-pdf --profile --template --css`.
-- [ ] Add failure-path tests for invalid base profiles, invalid cover images,
+- [x] Add failure-path tests for invalid base profiles, invalid cover images,
       output/report collisions, and no-usable-project results.
-- [ ] Run focused tests first, then repo gates.
+- [x] Run focused tests first, then repo gates.
 
 Focused validation target:
 
@@ -549,6 +549,10 @@ bun run build
 bun test
 git diff --check
 ```
+
+Job record:
+
+- [Markdown PDF project Codex phase 9 integration coverage and render compatibility](jobs/2026-07-05-markdown-pdf-project-codex-phase-9-integration-coverage-render-compatibility.md)
 
 ### Phase 10: Docs Validation And Closeout
 
@@ -585,7 +589,7 @@ land. Expected records:
 - [Markdown PDF project Codex phase 6 template orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-6-template-orchestration.md)
 - [Markdown PDF project Codex phase 7 validation and render compatibility](jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md)
 - [Markdown PDF project Codex phase 8 report, summary, writes, and dry run](jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md)
-- Phase 9 integration coverage and render compatibility.
+- [Markdown PDF project Codex phase 9 integration coverage and render compatibility](jobs/2026-07-05-markdown-pdf-project-codex-phase-9-integration-coverage-render-compatibility.md)
 - Phase 10 docs validation and plan completion.
 
 Keep this top-level plan in `draft` until Phase 1 starts. Move it to `active`
