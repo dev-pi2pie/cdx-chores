@@ -81,6 +81,44 @@ process.stdout.write(JSON.stringify({
   return stubPath;
 }
 
+async function createProfileCodexStub(fixtureDir: string): Promise<string> {
+  const stubPath = join(fixtureDir, "profile-codex-stub.mjs");
+  const response = JSON.stringify({
+    decision_mode: "no-usable-profile",
+    selected_candidate_id: "none",
+    accepted_patches: [],
+    accepted_font_patches: [],
+    reasoning: "The requested profile direction is unsupported.",
+    warnings: ["Unsupported profile direction."],
+    fallback_reason: "Unsupported profile direction.",
+    unmatched_directions: ["unsupported profile direction"],
+  });
+  await writeFile(
+    stubPath,
+    `#!/usr/bin/env node
+await new Promise((resolve, reject) => {
+  process.stdin.resume();
+  process.stdin.on("end", resolve);
+  process.stdin.on("error", reject);
+});
+const response = ${JSON.stringify(response)};
+process.stdout.write(JSON.stringify({ type: "thread.started", thread_id: "stub-thread" }) + "\\n");
+process.stdout.write(JSON.stringify({ type: "turn.started" }) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "item.completed",
+  item: { id: "msg-1", type: "agent_message", text: response },
+}) + "\\n");
+process.stdout.write(JSON.stringify({
+  type: "turn.completed",
+  usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
+}) + "\\n");
+`,
+    "utf8",
+  );
+  await chmod(stubPath, 0o755);
+  return stubPath;
+}
+
 async function createFakeMarkdownPdfDependencies(binDir: string, html: string): Promise<void> {
   await mkdir(binDir, { recursive: true });
   const escapedHtml = html.replaceAll("\\", "\\\\").replaceAll("'", "'\\''");
@@ -869,6 +907,58 @@ describe("cli command: md pdf-profile codex", () => {
       expect(result.stdout).toContain("Decision: deterministic");
       expect(result.stderr).toContain("Wrote Markdown PDF profile:");
       expect(await readFile(outputPath, "utf8")).toContain("source: deterministic");
+    });
+  });
+
+  test("writes no-usable failure reports from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-no-usable-report", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "profile.yml");
+      const reportPath = join(fixtureDir, "profile.codex-report.json");
+      const codexStubPath = await createProfileCodexStub(fixtureDir);
+
+      const result = runCli(
+        [
+          "md",
+          "pdf-profile",
+          "codex",
+          "--intent",
+          "unsupported profile direction",
+          "--output",
+          toRepoRelativePath(outputPath),
+          "--codex-report-output",
+          toRepoRelativePath(reportPath),
+        ],
+        undefined,
+        {
+          CDX_CHORES_CODEX_PATH: codexStubPath,
+          CODEX_API_KEY: "",
+          OPENAI_API_KEY: "",
+        },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Requesting Codex Markdown PDF profile recommendation");
+      expect(result.stderr).toContain("Wrote Codex report:");
+      expect(result.stderr).toContain("Codex did not find a usable Markdown PDF profile.");
+      expect(await pathExists(outputPath)).toBe(false);
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        artifact: { type: string };
+        result: {
+          failure?: { kind: string; message: string };
+          status: string;
+          unmatchedDirections: string[];
+        };
+      };
+      expect(report.artifact.type).toBe("markdown-pdf-codex-profile-report");
+      expect(report.result).toMatchObject({
+        failure: {
+          kind: "no-usable-profile",
+          message: "Codex did not find a usable Markdown PDF profile.",
+        },
+        status: "failed",
+        unmatchedDirections: [],
+      });
     });
   });
 

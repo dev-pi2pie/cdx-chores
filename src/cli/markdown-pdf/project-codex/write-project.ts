@@ -19,6 +19,17 @@ import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
 
+type MdPdfProjectCodexWriteInput = {
+  outputPlan: MarkdownPdfProjectCodexOutputPlan;
+  overwrite?: boolean;
+  profilePhase: MdPdfProjectCodexProfilePhaseResult;
+  runtime: CliRuntime;
+  signals: MdPdfProjectCodexSignalCollection;
+  state: NormalizedMdPdfProjectCodexCommandState;
+  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
+  validation: MarkdownPdfProjectCodexValidationSummary;
+};
+
 function publicProjectWritePath(runtime: CliRuntime): (path: string) => string {
   return (path) => publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
 }
@@ -104,16 +115,9 @@ async function copyMdPdfProjectCodexManagedAssets(input: {
   }
 }
 
-export async function writeMdPdfProjectCodexReportIfRequested(input: {
-  outputPlan: MarkdownPdfProjectCodexOutputPlan;
-  overwrite?: boolean;
-  profilePhase: MdPdfProjectCodexProfilePhaseResult;
-  runtime: CliRuntime;
-  signals: MdPdfProjectCodexSignalCollection;
-  state: NormalizedMdPdfProjectCodexCommandState;
-  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
-  validation: MarkdownPdfProjectCodexValidationSummary;
-}): Promise<void> {
+async function validateMdPdfProjectCodexReportIfRequested(
+  input: Pick<MdPdfProjectCodexWriteInput, "outputPlan" | "runtime" | "state">,
+): Promise<void> {
   if (!input.outputPlan.report) {
     return;
   }
@@ -122,25 +126,24 @@ export async function writeMdPdfProjectCodexReportIfRequested(input: {
     runtime: input.runtime,
     state: input.state,
   });
+}
+
+export async function writeMdPdfProjectCodexReportIfRequested(
+  input: MdPdfProjectCodexWriteInput,
+): Promise<void> {
+  await validateMdPdfProjectCodexReportIfRequested(input);
   await writeMdPdfProjectCodexReportArtifact(input);
 }
 
-export async function writeMdPdfProjectCodexBundle(input: {
-  outputPlan: MarkdownPdfProjectCodexOutputPlan;
-  overwrite?: boolean;
-  profilePhase: MdPdfProjectCodexProfilePhaseResult;
-  runtime: CliRuntime;
-  signals: MdPdfProjectCodexSignalCollection;
-  state: NormalizedMdPdfProjectCodexCommandState;
-  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
-  validation: MarkdownPdfProjectCodexValidationSummary;
-}): Promise<void> {
+export async function writeMdPdfProjectCodexBundle(
+  input: MdPdfProjectCodexWriteInput,
+): Promise<void> {
   if (input.validation.decisionMode === "no-usable-project") {
     await writeMdPdfProjectCodexReportIfRequested(input);
     return;
   }
 
-  await writeMdPdfProjectCodexReportIfRequested(input);
+  await validateMdPdfProjectCodexReportIfRequested(input);
   await writeTextFileSafe(input.outputPlan.profile.path, input.profilePhase.serializedProfile, {
     displayPath: publicProjectWritePath(input.runtime),
     label: "planned profile.yml",
@@ -172,4 +175,5 @@ export async function writeMdPdfProjectCodexBundle(input: {
     runtime: input.runtime,
     templatePhase: input.templatePhase,
   });
+  await writeMdPdfProjectCodexReportArtifact(input);
 }

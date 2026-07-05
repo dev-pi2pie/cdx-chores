@@ -1,9 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import {
   applyMarkdownPdfTemplateCodexDecision,
   buildMarkdownPdfTemplateCodexPrompt,
   MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
+  MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
   parseMarkdownPdfTemplateCodexDecision,
   suggestMarkdownPdfTemplateWithCodex,
   type MarkdownPdfTemplateCodexRequest,
@@ -163,6 +164,10 @@ function assertStrictSchemaObjects(value: unknown, context = "schema"): void {
 }
 
 describe("Markdown PDF template Codex adapter", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
   test("builds bounded prompt facts with families, slots, hooks, and asset sizing signals", () => {
     const prompt = buildMarkdownPdfTemplateCodexPrompt(requestBase({ coverImage: true }));
     const facts = promptFacts(prompt);
@@ -323,6 +328,81 @@ describe("Markdown PDF template Codex adapter", () => {
         code: { lineWrap: "wrap", preserveSelectors: true, style: "shiki-compatible" },
       },
     });
+  });
+
+  test("starts the default Codex runner in the request working directory", async () => {
+    let capturedThreadOptions: unknown;
+    let capturedRunMessages: unknown;
+    let capturedRunOptions: unknown;
+    const originalTimeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+    const timeoutCalls: number[] = [];
+    if (!originalTimeoutDescriptor || typeof originalTimeoutDescriptor.value !== "function") {
+      throw new Error("AbortSignal.timeout is not available");
+    }
+    const originalTimeout = originalTimeoutDescriptor.value as typeof AbortSignal.timeout;
+    Object.defineProperty(AbortSignal, "timeout", {
+      ...originalTimeoutDescriptor,
+      value: (milliseconds: number) => {
+        timeoutCalls.push(milliseconds);
+        return originalTimeout.call(AbortSignal, milliseconds);
+      },
+    });
+
+    mock.module("@openai/codex-sdk", () => ({
+      Codex: class {
+        startThread(options: unknown) {
+          capturedThreadOptions = options;
+          return {
+            run: async (messages: unknown, options: unknown) => {
+              capturedRunMessages = messages;
+              capturedRunOptions = options;
+              return {
+                finalResponse: responseFromDecision({
+                  coverEnabled: false,
+                  templateFamily: "document-layered",
+                }),
+              };
+            },
+          };
+        }
+      },
+    }));
+
+    let result: Awaited<ReturnType<typeof suggestMarkdownPdfTemplateWithCodex>>;
+    try {
+      result = await suggestMarkdownPdfTemplateWithCodex(requestBase());
+    } finally {
+      Object.defineProperty(AbortSignal, "timeout", originalTimeoutDescriptor);
+    }
+
+    const threadOptions = capturedThreadOptions as {
+      approvalPolicy: string;
+      modelReasoningEffort: string;
+      networkAccessEnabled: boolean;
+      sandboxMode: string;
+      webSearchMode: string;
+      workingDirectory: string;
+    };
+    const runMessages = capturedRunMessages as Array<{ text: string; type: string }>;
+    const runOptions = capturedRunOptions as { outputSchema: unknown; signal: AbortSignal };
+    expect(result.decision.decisionMode).toBe("adapted");
+    expect(threadOptions).toMatchObject({
+      approvalPolicy: "never",
+      modelReasoningEffort: "low",
+      networkAccessEnabled: true,
+      sandboxMode: "read-only",
+      webSearchMode: "disabled",
+    });
+    expect(threadOptions.workingDirectory).toBe("/repo");
+    expect(runMessages).toEqual([
+      expect.objectContaining({
+        text: expect.stringContaining("Deterministic facts:"),
+        type: "text",
+      }),
+    ]);
+    expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA);
+    expect(runOptions.signal).toBeInstanceOf(AbortSignal);
+    expect(timeoutCalls).toEqual([MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS]);
   });
 
   test("rejects unbounded cover composition values", () => {

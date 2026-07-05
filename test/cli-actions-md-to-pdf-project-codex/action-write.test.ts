@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -214,7 +214,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         advisoryOnly: boolean;
         artifactType: string;
         files: Array<{ role: string }>;
-        followUpRenderCommand: { args: string[] };
+        followUpRenderCommand: { args: string[]; display: string; executable: string };
         identities: Record<string, unknown>;
         input: { baseProfile: { basename: string; display: string; redacted: boolean } };
         project: { decisionMode: string; signalMode: string };
@@ -242,8 +242,14 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         "style-css",
         "project-report",
       ]);
-      expect(report.followUpRenderCommand.args).toContain("<input.md>");
-      expect(report.followUpRenderCommand.args).toContain("<output.pdf>");
+      expect(report.followUpRenderCommand).toMatchObject({
+        executable: "cdx-chores",
+        args: expect.arrayContaining(["<input.md>", "<output.pdf>"]),
+      });
+      expect(report.followUpRenderCommand.display).toContain("'md' 'to-pdf'");
+      expect(report.followUpRenderCommand.display).toContain("'<input.md>'");
+      expect(report.followUpRenderCommand.display).toContain("'<output.pdf>'");
+      expect(report.followUpRenderCommand.display).not.toContain(fixtureDir);
     });
   });
 
@@ -591,6 +597,86 @@ describe("cli action modules: md pdf-project codex action writes", () => {
     );
   });
 
+  test("rejects symlinked managed asset sources without writing reports", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-action-asset-symlink-rejection",
+      async (fixtureDir) => {
+        const sourceDir = join(fixtureDir, "source");
+        const coverPath = join(sourceDir, "cover.png");
+        const targetPath = join(sourceDir, "target.png");
+        const reportPath = join(fixtureDir, "project-output", "project.codex-report.json");
+
+        await mkdir(sourceDir, { recursive: true });
+        await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+        await writeFile(coverPath, minimalPng(1200, 800));
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-07-04T08:00:00.000Z"),
+        });
+        const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+          baseProfile: "base.yml",
+          coverImage: "source/cover.png",
+          keepCodexReport: true,
+          output: "project-output",
+        });
+        const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+        const outputPlan = await planMdPdfProjectCodexOutput({
+          identityUidFactory: () => "abc12345",
+          runtime,
+          signalMode: signals.modes.project,
+          state,
+          writeMode: "bundle",
+        });
+        const profilePhase = await runMdPdfProjectCodexProfilePhase({
+          outputPlan,
+          runtime,
+          signals,
+          state,
+        });
+        const templatePhase = await runMdPdfProjectCodexTemplatePhase({
+          outputPlan,
+          profilePhase,
+          runtime,
+          signals,
+          state,
+        });
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase,
+        });
+
+        await rm(coverPath);
+        await writeFile(targetPath, minimalPng(1200, 800));
+        await symlink(targetPath, coverPath);
+
+        const error = await expectCliError(
+          () =>
+            writeMdPdfProjectCodexBundle({
+              outputPlan,
+              profilePhase,
+              runtime,
+              signals,
+              state,
+              templatePhase,
+              validation,
+            }),
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+            messageIncludes: "managed asset assets/cover.png source is a symlink",
+          },
+        );
+
+        expectPrivacySafeReport(error.message, fixtureDir);
+        expect(await pathExists(reportPath)).toBe(false);
+      },
+    );
+  });
+
   test("redacts local report target paths from late write failures", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-action-report-write-redaction",
@@ -679,6 +765,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         });
         const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
           baseProfile: "base.yml",
+          keepCodexReport: true,
           output: "project-output",
         });
         const signals = await collectMdPdfProjectCodexSignals(runtime, state);
@@ -732,6 +819,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
 
         expect(error.message).toContain("project-output/profile.yml");
         expectPrivacySafeReport(error.message, fixtureDir);
+        expect(await pathExists(join(outputPath, "project.codex-report.json"))).toBe(false);
       },
     );
   });
