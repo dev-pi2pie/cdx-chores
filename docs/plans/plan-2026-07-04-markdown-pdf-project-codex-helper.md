@@ -2,7 +2,7 @@
 title: "Markdown PDF project Codex helper implementation"
 created-date: 2026-07-04
 modified-date: 2026-07-05
-status: active
+status: completed
 agent: codex
 ---
 
@@ -564,21 +564,21 @@ Job record:
 This phase is the final documentation guardrail. It should run only after the
 project helper behavior is implemented and Phase 9 verification evidence exists.
 
-- [ ] Add `docs/guides/markdown-pdf-codex-project-helper.md` for the shipped
+- [x] Add `docs/guides/markdown-pdf-codex-project-helper.md` for the shipped
       project helper contract.
-- [ ] Update `docs/guides/markdown-pdf-usage.md` to document shipped project
+- [x] Update `docs/guides/markdown-pdf-usage.md` to document shipped project
       helper behavior and link the dedicated guide.
-- [ ] Update `README.md` guide links and release-boundary wording for
+- [x] Update `README.md` guide links and release-boundary wording for
       `v0.1.5-canary.4`.
-- [ ] Link all focused implementation job records from this plan.
-- [ ] Update related research status only after implementation evidence and job
+- [x] Link all focused implementation job records from this plan.
+- [x] Update related research status only after implementation evidence and job
       records are linked.
-- [ ] Confirm public docs do not contain raw local paths, private URLs, stale
+- [x] Confirm public docs do not contain raw local paths, private URLs, stale
       planned-behavior wording, or unsupported command examples.
-- [ ] Run a docs-review pass over the plan, research, and guide updates.
-- [ ] Record final verification commands and any environment limits in the
+- [x] Run a docs-review pass over the plan, research, and guide updates.
+- [x] Record final verification commands and any environment limits in the
       closeout job record.
-- [ ] Move this plan to `completed` only after the docs-review and final gates
+- [x] Move this plan to `completed` only after the docs-review and final gates
       are recorded.
 
 ## Job Records
@@ -586,16 +586,16 @@ project helper behavior is implemented and Phase 9 verification evidence exists.
 Create focused job records under `docs/plans/jobs/` as implementation phases
 land. Expected records:
 
-- Phase 1 profile service extraction.
-- Phase 2 command surface.
-- Phase 3 output planning and collision checks.
-- Phase 4 signal classification.
-- Phase 5 profile phase orchestration.
+- [Markdown PDF project Codex phase 1 profile service extraction](jobs/2026-07-04-markdown-pdf-project-codex-phase-1-profile-service-extraction.md)
+- [Markdown PDF project Codex phase 2 command surface](jobs/2026-07-04-markdown-pdf-project-codex-phase-2-command-surface.md)
+- [Markdown PDF project Codex phase 3 output planning](jobs/2026-07-04-markdown-pdf-project-codex-phase-3-output-planning.md)
+- [Markdown PDF project Codex phase 4 signal classification](jobs/2026-07-04-markdown-pdf-project-codex-phase-4-signal-classification.md)
+- [Markdown PDF project Codex phase 5 profile phase orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-5-profile-orchestration.md)
 - [Markdown PDF project Codex phase 6 template orchestration](jobs/2026-07-04-markdown-pdf-project-codex-phase-6-template-orchestration.md)
 - [Markdown PDF project Codex phase 7 validation and render compatibility](jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md)
 - [Markdown PDF project Codex phase 8 report, summary, writes, and dry run](jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md)
 - [Markdown PDF project Codex phase 9 integration coverage and render compatibility](jobs/2026-07-05-markdown-pdf-project-codex-phase-9-integration-coverage-render-compatibility.md)
-- Phase 10 docs validation and plan completion.
+- [Markdown PDF project Codex phase 10 docs validation and closeout](jobs/2026-07-05-markdown-pdf-project-codex-phase-10-docs-validation-closeout.md)
 
 Keep this top-level plan in `draft` until Phase 1 starts. Move it to `active`
 when implementation begins, and to `completed` only after Phase 10 evidence and

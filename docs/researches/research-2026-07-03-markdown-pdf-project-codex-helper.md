@@ -1,8 +1,8 @@
 ---
 title: "Markdown PDF Project Codex Helper"
 created-date: 2026-07-03
-modified-date: 2026-07-04
-status: in-progress
+modified-date: 2026-07-05
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ Define the `md pdf-project codex` helper as the `v0.1.5-canary.4`
 orchestration layer between the completed direct Markdown PDF profile and
 template Codex helpers.
 
-The project helper should produce a reviewable folder that contains the accepted
+The project helper produces a reviewable folder that contains the accepted
 rendering ingredients:
 
 ```text
@@ -34,19 +34,25 @@ pdf-project owns coordination between those artifacts.
 md to-pdf remains the deterministic renderer.
 ```
 
+## Document Status
+
+This completed research preserves the accepted design criteria that drove the
+implementation. Sections that use recommendation language describe the settled
+pre-implementation contract; current user-facing behavior is documented in the
+shipped project-helper guide and the closeout evidence below.
+
 ## Milestone Goal
 
-`v0.1.5-canary.4` should not be tagged until `md pdf-project codex` is
-implemented, verified, and documented, or until a separate release decision
-records why it moved out of the canary.
+`v0.1.5-canary.4` kept `md pdf-project codex` in scope until it was
+implemented, verified, and documented.
 
 After `v0.1.5-canary.4` is complete, the intended release path is to review and
 release `v0.1.5` before starting Interactive Markdown PDF mode as the
 `v0.1.6` or `v0.1.6-canary.*` feature track.
 
-This milestone is the current roadmap bridge between the completed direct
+This milestone is the roadmap bridge between the completed direct
 profile/template helpers and the later Interactive Markdown PDF mode. The
-project helper should lock the reusable artifact contracts before Interactive
+project helper locks the reusable artifact contracts before Interactive
 mode adds conversational iteration on top of them.
 
 ## Why This Research
@@ -72,7 +78,7 @@ user request
   -> deterministic md to-pdf render command
 ```
 
-This layer should make the direct helper split easier to use without weakening
+This layer makes the direct helper split easier to use without weakening
 the ownership rules that made the direct helpers safe and reviewable.
 
 ## Starting State
@@ -86,7 +92,8 @@ Current Markdown PDF support includes:
 - `md pdf-template codex` for Codex-assisted reviewable template bundles and
   managed local cover images.
 
-The current public guide distinguishes profile and template ownership:
+At the start of this research, the public guide distinguished profile and
+template ownership:
 
 | Need | `md pdf-profile codex` | `md pdf-template codex` |
 | --- | --- | --- |
@@ -98,8 +105,8 @@ The current public guide distinguishes profile and template ownership:
 | Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
 | Render with | `md to-pdf --profile ...` | `md to-pdf --template ... --css ...` |
 
-`md pdf-template codex` already established the bundle-output posture that the
-project helper should reuse:
+`md pdf-template codex` established the bundle-output posture that the project
+helper reuses:
 
 - the command resolves both a `bundleId` and an `outputDirectory`
 - generated default directories use `md-pdf-template-<timestamp>-<uid>/`
@@ -633,8 +640,8 @@ Validation should include at least:
 
 ## Guide Direction After Implementation
 
-After the command is implemented and verified for `v0.1.5-canary.4`, the public
-guide table can grow from two columns to three:
+The command is now implemented and verified for `v0.1.5-canary.4`, so the
+public guide table can grow from two columns to three:
 
 | Need | `md pdf-profile codex` | `md pdf-template codex` | `md pdf-project codex` |
 | --- | --- | --- | --- |
@@ -646,13 +653,13 @@ guide table can grow from two columns to three:
 | Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset | Routes `--cover-image` into template-managed project `assets/` |
 | Render with | `md to-pdf --profile ...` | `md to-pdf --template ... --css ...` | `md to-pdf --profile ... --template ... --css ...` |
 
-The guide should not describe `md pdf-project codex` as current user-facing
-behavior until implementation and verification records exist.
+The public guide can now describe `md pdf-project codex` as current
+user-facing behavior because implementation and verification records exist.
 
 ## Release Boundary
 
-`md pdf-project codex` is not deferred. It is the current Markdown PDF Codex
-target for `v0.1.5-canary.4`.
+`md pdf-project codex` was not deferred. It is the completed Markdown PDF Codex
+implementation target for `v0.1.5-canary.4`.
 
 The intended sequence is:
 
@@ -660,8 +667,8 @@ The intended sequence is:
 | --- | --- | --- |
 | Profile helper | `v0.1.5-canary.2` | completed |
 | Template helper | `v0.1.5-canary.3` | completed |
-| PDF project helper | `v0.1.5-canary.4` | current target |
-| Stable release review | `v0.1.5` | after canary.4 is complete |
+| PDF project helper | `v0.1.5-canary.4` | implementation completed |
+| Stable release review | `v0.1.5` | after canary.4 release review |
 | Interactive Markdown PDF mode | `v0.1.6` or `v0.1.6-canary.*` | next feature track |
 
 Interactive mode should reuse the accepted direct and project contracts after
@@ -757,9 +764,9 @@ default.
 
 ## Completion Criteria
 
-Keep this research `in-progress` while the project helper is still only planned.
-Move it to `completed` only after implementation evidence is linked from the
-project-helper plan or focused job records.
+This research stayed open while the project helper was only proposed. It moved
+to `completed` after implementation evidence was linked from the project-helper
+plan and focused job records.
 
 Minimum closure evidence:
 
@@ -768,7 +775,20 @@ Minimum closure evidence:
   validation, report, and guide closeout
 - verification records show the project output feeds
   `md to-pdf --profile --template --css`
-- guide updates document shipped behavior rather than planned behavior
+- guide updates document shipped behavior rather than proposed behavior
+
+## Closeout Evidence
+
+The project helper implementation completed under the linked project-helper
+plan. Focused job records cover command surface, output planning, signal
+classification, profile orchestration, template orchestration, validation,
+reporting, dry-run/write behavior, integration coverage, render compatibility,
+and documentation closeout.
+
+The dedicated shipped-behavior guide is
+[Markdown PDF Codex Project Helper](../guides/markdown-pdf-codex-project-helper.md).
+The Phase 9 job record includes render-compatibility evidence for generated
+project outputs feeding `md to-pdf --profile --template --css`.
 
 ## Related Research
 
