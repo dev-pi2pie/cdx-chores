@@ -8,6 +8,7 @@ import {
   resolveOptionalMarkdownInputPath,
   resolveOptionalPath,
 } from "../codex-command-state";
+import { sanitizeMdPdfProjectCodexCliError } from "./error-sanitization";
 import type { MdPdfProjectCodexOptions, NormalizedMdPdfProjectCodexCommandState } from "./types";
 
 function resolveOptionalReportPath(
@@ -29,9 +30,19 @@ export async function normalizeMdPdfProjectCodexCommandState(
   options: MdPdfProjectCodexOptions,
 ): Promise<NormalizedMdPdfProjectCodexCommandState> {
   const codexReportOutputPath = resolveOptionalReportPath(runtime, options.codexReportOutput);
+  const inputPath = await (async () => {
+    try {
+      return await resolveOptionalMarkdownInputPath(runtime, options);
+    } catch (error) {
+      sanitizeMdPdfProjectCodexCliError(runtime, error, [
+        resolveOptionalPath(runtime, options.input),
+        resolveOptionalPath(runtime, options.positionalInput),
+      ]);
+    }
+  })();
 
   return {
-    inputPath: await resolveOptionalMarkdownInputPath(runtime, options),
+    inputPath,
     intent: normalizeOptionalText(options.intent),
     fontHints: normalizeTextList(options.fontHint),
     baseProfilePath: resolveOptionalPath(runtime, options.baseProfile),

@@ -1,31 +1,24 @@
 import {
-  suggestMarkdownPdfProfileWithCodex,
+  classifyMarkdownPdfCodexProfileFailure,
   type MarkdownPdfCodexProfileResult,
   type MarkdownPdfCodexProfileRunner,
 } from "../../../adapters/codex/markdown-pdf-profile";
-import { MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY } from "../profile";
+import { type MarkdownPdfProfileCandidate } from "../profile/candidates";
 import {
-  createMarkdownPdfProfileCandidates,
-  type MarkdownPdfProfileCandidate,
-} from "../profile/candidates";
-import {
-  materializeMarkdownPdfProfileCodexProfile,
+  createMarkdownPdfCodexProfileOrchestrationContext,
+  runMarkdownPdfCodexProfileOrchestration,
   serializeMarkdownPdfProfileCodexProfile,
 } from "../profile-codex";
-import { executionModeForMarkdownPdfProfileCodexSignalMode } from "../profile-codex/signal-mode";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
-import {
-  startDirectCodexProgress,
-  type DirectCodexProgressStatus,
-} from "../../actions/codex-progress";
 import type {
   MarkdownPdfProjectCodexOutputPlan,
   MarkdownPdfProjectCodexProfilePhaseSummary,
   MdPdfProjectCodexSignalCollection,
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
+import { collectTemplateOwnedIntentDirections } from "./signal-mode";
 
 export interface MdPdfProjectCodexProfilePhaseResult {
   codexResult?: MarkdownPdfCodexProfileResult;
@@ -37,64 +30,23 @@ export interface MdPdfProjectCodexProfilePhaseResult {
   unmatchedProfileDirections: string[];
 }
 
-function createProjectProfileIdentity(input: {
-  basedOn: string;
-  outputPlan: MarkdownPdfProjectCodexOutputPlan;
-  selectedCandidate?: MarkdownPdfProfileCandidate;
-  source: NormalizedMarkdownPdfProfileIdentity["source"];
-}): NormalizedMarkdownPdfProfileIdentity {
-  const basedOn =
-    input.selectedCandidate?.summary.basedOn ??
-    input.selectedCandidate?.summary.id ??
-    input.basedOn;
-  return {
-    id: input.outputPlan.identity.profileId,
-    source: input.source,
-    basedOn,
-    preset: input.selectedCandidate?.summary.preset,
-    createdAt: input.outputPlan.identity.createdAt,
-  };
-}
-
-function projectProfileCandidates(
-  signals: MdPdfProjectCodexSignalCollection,
-): MarkdownPdfProfileCandidate[] {
-  const candidates = createMarkdownPdfProfileCandidates();
-  if (signals.profile.baseProfile.candidate) {
-    candidates.unshift(signals.profile.baseProfile.candidate);
+function profileCodexFailureMessage(
+  kind: ReturnType<typeof classifyMarkdownPdfCodexProfileFailure>,
+): string {
+  if (kind === "structured-output-schema") {
+    return "Codex failed while preparing a Markdown PDF project profile structured-output request.";
   }
-  return candidates;
-}
-
-function selectedCandidate(
-  candidates: MarkdownPdfProfileCandidate[],
-  selectedCandidateId: string,
-): MarkdownPdfProfileCandidate | undefined {
-  return candidates.find((candidate) => candidate.summary.id === selectedCandidateId);
-}
-
-function requireSelectedCandidate(
-  candidates: MarkdownPdfProfileCandidate[],
-  selectedCandidateId: string,
-): MarkdownPdfProfileCandidate {
-  const candidate = selectedCandidate(candidates, selectedCandidateId);
-  if (candidate) {
-    return candidate;
+  if (kind === "malformed-output") {
+    return "Codex returned malformed Markdown PDF project profile structured output.";
   }
-  throw new CliError(
-    `Markdown PDF project profile phase selected unknown candidate: ${selectedCandidateId}.`,
-    {
-      code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID",
-      exitCode: 1,
-    },
-  );
+  return "Codex failed while generating a Markdown PDF project profile decision.";
 }
 
 function materializeProfilePhaseResult(input: {
   codexResult?: MarkdownPdfCodexProfileResult;
   decisionMode: MarkdownPdfProjectCodexProfilePhaseSummary["decisionMode"];
   fallbackReason?: string;
-  finalProfileSource: Record<string, unknown>;
+  finalProfile: Record<string, unknown>;
   identity: NormalizedMarkdownPdfProfileIdentity;
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   selectedCandidate: MarkdownPdfProfileCandidate;
@@ -102,13 +54,9 @@ function materializeProfilePhaseResult(input: {
   unmatchedProfileDirections?: string[];
   warnings?: string[];
 }): MdPdfProjectCodexProfilePhaseResult {
-  const { finalProfile } = materializeMarkdownPdfProfileCodexProfile({
-    identity: input.identity,
-    profile: input.finalProfileSource,
-  });
   return {
     codexResult: input.codexResult,
-    finalProfile,
+    finalProfile: input.finalProfile,
     identity: input.identity,
     phase: {
       decisionMode: input.decisionMode,
@@ -119,48 +67,29 @@ function materializeProfilePhaseResult(input: {
     },
     selectedCandidate: input.selectedCandidate,
     serializedProfile: serializeMarkdownPdfProfileCodexProfile({
-      finalProfile,
+      finalProfile: input.finalProfile,
       outputPath: input.outputPlan.profile.path,
     }),
     unmatchedProfileDirections: input.unmatchedProfileDirections ?? [],
   };
 }
 
-async function suggestProjectProfileWithCodexProgress(input: {
-  candidates: MarkdownPdfProfileCandidate[];
-  outputPlan: MarkdownPdfProjectCodexOutputPlan;
-  profileCodexRunner?: MarkdownPdfCodexProfileRunner;
-  runtime: CliRuntime;
+function filterTemplateOwnedProfileDirections(input: {
+  directions: readonly string[];
   signals: MdPdfProjectCodexSignalCollection;
-  state: NormalizedMdPdfProjectCodexCommandState;
-}): Promise<MarkdownPdfCodexProfileResult> {
-  const codexProgress = startDirectCodexProgress(
-    input.runtime.stderr,
-    "Requesting Codex Markdown PDF project profile recommendation",
-  );
-  let codexProgressStatus: DirectCodexProgressStatus = "error";
-  try {
-    const result = await suggestMarkdownPdfProfileWithCodex({
-      candidates: input.candidates,
-      documentSignals: input.signals.shared.document,
-      fontHints: input.signals.profile.fonts.hints,
-      fontSignals: input.signals.profile.fonts.profileFonts,
-      intent: input.state.intent,
-      runner: input.profileCodexRunner,
-      selectedBaseProfileSummary: input.signals.profile.baseProfile.candidate?.summary,
-      signalMode: input.signals.modes.profile,
-      supportedSchemaSummary: MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
-      workingDirectory: input.runtime.cwd,
-    });
-    codexProgressStatus = result.profile
-      ? result.decision.decisionMode === "conservative-fallback"
-        ? "fallback"
-        : "done"
-      : "error";
-    return result;
-  } finally {
-    codexProgress.stop(codexProgressStatus);
+}): string[] {
+  if (input.directions.length === 0) {
+    return [];
   }
+  const coverCompositionIsTemplateOwned =
+    input.signals.template.ownedSignals.intentDirections.includes("cover-composition-intent");
+  if (!coverCompositionIsTemplateOwned) {
+    return [...input.directions];
+  }
+  return input.directions.filter((direction) => {
+    const directionTemplateOwners = collectTemplateOwnedIntentDirections(direction);
+    return !directionTemplateOwners.includes("cover-composition-intent");
+  });
 }
 
 export async function runMdPdfProjectCodexProfilePhase(input: {
@@ -171,66 +100,63 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
   const signalMode = input.signals.modes.profile;
-  const candidates = projectProfileCandidates(input.signals);
+  const orchestrationContext = createMarkdownPdfCodexProfileOrchestrationContext({
+    baseProfileCandidate: input.signals.profile.baseProfile.candidate,
+    createdAt: input.outputPlan.identity.createdAt,
+    documentSignals: input.signals.shared.document,
+    fontHints: input.signals.profile.fonts.hints,
+    fontSignals: input.signals.profile.fonts.profileFonts,
+    intent: input.state.intent,
+    profileId: input.outputPlan.identity.profileId,
+    signalMode,
+    workingDirectory: input.runtime.cwd,
+  });
 
-  if (executionModeForMarkdownPdfProfileCodexSignalMode(signalMode) === "deterministic") {
-    const selected =
-      signalMode === "base-only-deterministic"
-        ? input.signals.profile.baseProfile.candidate
-        : input.signals.profile.basis.candidate;
-    if (!selected) {
-      throw new CliError("No Markdown PDF profile candidate is available.", {
+  let decision: Awaited<ReturnType<typeof runMarkdownPdfCodexProfileOrchestration>>;
+  try {
+    decision = await runMarkdownPdfCodexProfileOrchestration({
+      context: orchestrationContext,
+      profileCodexRunner: input.profileCodexRunner,
+      progressLabel: "Requesting Codex Markdown PDF project profile recommendation",
+      runtime: input.runtime,
+    });
+  } catch (error) {
+    const failureKind = classifyMarkdownPdfCodexProfileFailure(error);
+    if (failureKind === "invalid-application") {
+      throw new CliError("Codex returned an invalid Markdown PDF project profile decision.", {
         code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID",
         exitCode: 1,
       });
     }
-    const identity = createProjectProfileIdentity({
-      basedOn: "default",
-      outputPlan: input.outputPlan,
-      selectedCandidate: selected,
-      source: "deterministic",
-    });
-    return materializeProfilePhaseResult({
-      decisionMode: "deterministic",
-      finalProfileSource: selected.fullProfile,
-      identity,
-      outputPlan: input.outputPlan,
-      selectedCandidate: selected,
-      signalMode,
+    throw new CliError(profileCodexFailureMessage(failureKind), {
+      code: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED",
+      exitCode: 1,
     });
   }
-
-  const codexResult = await suggestProjectProfileWithCodexProgress({
-    candidates,
-    outputPlan: input.outputPlan,
-    profileCodexRunner: input.profileCodexRunner,
-    runtime: input.runtime,
-    signals: input.signals,
-    state: input.state,
-  });
-  if (!codexResult.profile || codexResult.decision.decisionMode === "no-usable-profile") {
-    throw new CliError("Codex did not find a usable Markdown PDF project profile.", {
+  if (decision.kind === "no-usable-profile") {
+    throw new CliError(decision.failureMessage, {
       code: "MARKDOWN_PDF_PROJECT_NO_USABLE_PROFILE",
       exitCode: 1,
     });
   }
-  const selected = requireSelectedCandidate(candidates, codexResult.decision.selectedCandidateId);
-  const identity = createProjectProfileIdentity({
-    basedOn: "none",
-    outputPlan: input.outputPlan,
-    selectedCandidate: selected,
-    source: "codex",
-  });
+  const unmatchedProfileDirections =
+    decision.kind === "codex-profile"
+      ? filterTemplateOwnedProfileDirections({
+          directions: decision.codexResult.decision.unmatchedDirections,
+          signals: input.signals,
+        })
+      : [];
   return materializeProfilePhaseResult({
-    codexResult,
-    decisionMode: codexResult.decision.decisionMode,
-    fallbackReason: codexResult.decision.fallbackReason,
-    finalProfileSource: codexResult.profile,
-    identity,
+    codexResult: decision.kind === "codex-profile" ? decision.codexResult : undefined,
+    decisionMode: decision.decisionMode,
+    fallbackReason:
+      decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
+    finalProfile: decision.finalProfile,
+    identity: decision.identity,
     outputPlan: input.outputPlan,
-    selectedCandidate: selected,
+    selectedCandidate: decision.selectedCandidate,
     signalMode,
-    unmatchedProfileDirections: codexResult.decision.unmatchedDirections,
-    warnings: codexResult.decision.warnings,
+    unmatchedProfileDirections,
+    warnings: decision.kind === "codex-profile" ? decision.codexResult.decision.warnings : [],
   });
 }

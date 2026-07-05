@@ -38,15 +38,20 @@ const TEMPLATE_OWNED_INTENT_PATTERNS: Array<{
   { label: "table-layout-intent", pattern: /\b(?:wide|dense|complex)?\s*tables?\b/iu },
 ];
 
+export function collectTemplateOwnedIntentDirections(
+  intent?: string,
+): MarkdownPdfProjectCodexTemplateOwnedIntentDirection[] {
+  const intentText = intent ?? "";
+  return TEMPLATE_OWNED_INTENT_PATTERNS.filter(({ pattern }) => pattern.test(intentText)).map(
+    ({ label }) => label,
+  );
+}
+
 export function collectTemplateOwnedProjectDirections(input: {
   intent?: string;
   recipe: MarkdownPdfTemplateCodexRecipeSignals;
 }): MarkdownPdfProjectCodexTemplateOwnedSignals {
-  const intent = input.intent ?? "";
-  const intentDirections: MarkdownPdfProjectCodexTemplateOwnedIntentDirection[] =
-    TEMPLATE_OWNED_INTENT_PATTERNS.filter(({ pattern }) => pattern.test(intent)).map(
-      ({ label }) => label,
-    );
+  const intentDirections = collectTemplateOwnedIntentDirections(input.intent);
   const documentDirections =
     input.recipe.layoutPolicy.tableLayoutSignal.level === "strong"
       ? ([

@@ -1,14 +1,23 @@
-import { link, lstat, readdir, readFile, symlink, writeFile } from "node:fs/promises";
+import { link, lstat, mkdir, readdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+  MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
+} from "../src/adapters/codex/markdown-pdf-profile";
 import { actionMdPdfProfileCodex } from "../src/cli/actions";
 import { readMarkdownPdfCodexReportArtifact } from "../src/cli/markdown-pdf/codex-report";
 import { readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../src/cli/markdown-pdf/profile";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { pathExists } from "./cli-actions-md-to-pdf-template-codex/fixtures";
+
+afterEach(() => {
+  mock.restore();
+});
 
 function adaptedRunner(candidateId = "wide-table") {
   return async () =>
@@ -48,6 +57,21 @@ function allFontPatchRunner(candidateId = "default") {
       fallback_reason: "",
       unmatched_directions: [],
     });
+}
+
+function profilePromptFacts(prompt: string): Record<string, unknown> {
+  const marker = "Deterministic facts:\n";
+  const index = prompt.indexOf(marker);
+  if (index < 0) {
+    throw new Error("profile Codex prompt did not include deterministic facts");
+  }
+  return JSON.parse(prompt.slice(index + marker.length)) as Record<string, unknown>;
+}
+
+function candidateSummaryIds(facts: Record<string, unknown>): string[] {
+  return ((facts.candidateSummaries as Array<{ id: string }> | undefined) ?? []).map(
+    (summary) => summary.id,
+  );
 }
 
 describe("cli action modules: md pdf-profile codex", () => {
@@ -105,6 +129,260 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.result.acceptedFontPatches).toEqual([
         { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
       ]);
+    });
+  });
+
+  test("uses the default direct Codex runner in the current read-only workspace", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-default-runner", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nDefault runner.\n", "utf8");
+
+      let capturedCodexOptions: unknown;
+      let capturedThreadOptions: unknown;
+      let capturedRunMessages: unknown;
+      let capturedRunOptions: unknown;
+      const originalTimeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+      const timeoutCalls: number[] = [];
+      if (!originalTimeoutDescriptor || typeof originalTimeoutDescriptor.value !== "function") {
+        throw new Error("AbortSignal.timeout is not available");
+      }
+      const originalTimeout = originalTimeoutDescriptor.value as typeof AbortSignal.timeout;
+      Object.defineProperty(AbortSignal, "timeout", {
+        ...originalTimeoutDescriptor,
+        value: (milliseconds: number) => {
+          timeoutCalls.push(milliseconds);
+          return originalTimeout.call(AbortSignal, milliseconds);
+        },
+      });
+      mock.module("@openai/codex-sdk", () => ({
+        Codex: class {
+          constructor(options: unknown) {
+            capturedCodexOptions = options;
+          }
+
+          startThread(options: unknown) {
+            capturedThreadOptions = options;
+            return {
+              run: async (messages: unknown, options: unknown) => {
+                capturedRunMessages = messages;
+                capturedRunOptions = options;
+                return {
+                  finalResponse: JSON.stringify({
+                    decision_mode: "adapted",
+                    selected_candidate_id: "default",
+                    accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+                    accepted_font_patches: [],
+                    reasoning: "The default direct runner can adapt the profile.",
+                    warnings: [],
+                    fallback_reason: "",
+                    unmatched_directions: [],
+                  }),
+                };
+              },
+            };
+          }
+        },
+      }));
+
+      const { runtime, stderr } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      try {
+        await actionMdPdfProfileCodex(runtime, {
+          codexReportOutput: "default-runner-report.json",
+          input: "report.md",
+          intent: "default direct runner",
+          output: "profile.yml",
+        });
+      } finally {
+        Object.defineProperty(AbortSignal, "timeout", originalTimeoutDescriptor);
+      }
+
+      const threadOptions = capturedThreadOptions as {
+        approvalPolicy: string;
+        networkAccessEnabled: boolean;
+        sandboxMode: string;
+        webSearchMode: string;
+        workingDirectory: string;
+      };
+      expect(capturedCodexOptions).toBeUndefined();
+      expect(threadOptions).toMatchObject({
+        approvalPolicy: "never",
+        networkAccessEnabled: true,
+        sandboxMode: "read-only",
+        webSearchMode: "disabled",
+      });
+      expect(threadOptions.workingDirectory).toBe(fixtureDir);
+      const runMessages = capturedRunMessages as Array<{ text: string; type: string }>;
+      const runOptions = capturedRunOptions as { outputSchema: unknown; signal: AbortSignal };
+      expect(runMessages).toEqual([
+        expect.objectContaining({
+          text: expect.stringContaining("Deterministic facts:"),
+          type: "text",
+        }),
+      ]);
+      expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA);
+      expect(runOptions.signal).toBeInstanceOf(AbortSignal);
+      expect(timeoutCalls).toEqual([MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS]);
+      expect(stderr.text).toContain("Wrote Markdown PDF profile: profile.yml");
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.profile).toMatchObject({
+        basedOn: "default",
+        source: "codex",
+      });
+      expect(profile.toc).toMatchObject({ enabled: true });
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "default-runner-report.json"),
+      );
+      expect(report.profile.identity).toMatchObject({
+        basedOn: "default",
+        source: "codex",
+      });
+      expect(report.selectedBase).toMatchObject({
+        candidateId: "default",
+        untracked: false,
+      });
+      expect(report.selectedBase.basedOn).toBeUndefined();
+      expect(report.selectedBase.profileId).toBeUndefined();
+      expect(report.selectedBase.path).toBeUndefined();
+    });
+  });
+
+  test("reports default direct Codex failures without writing profiles", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-default-runner-failure", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nDefault failure.\n", "utf8");
+
+      let capturedThreadOptions: unknown;
+      let runCallCount = 0;
+      mock.module("@openai/codex-sdk", () => ({
+        Codex: class {
+          startThread(options: unknown) {
+            capturedThreadOptions = options;
+            return {
+              run: async () => {
+                runCallCount += 1;
+                throw new Error("transport closed");
+              },
+            };
+          }
+        },
+      }));
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "failure-report.json",
+            input: "report.md",
+            intent: "default direct runner failure",
+            output: "profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "unavailable",
+        },
+      );
+
+      const threadOptions = capturedThreadOptions as {
+        networkAccessEnabled: boolean;
+        workingDirectory: string;
+      };
+      expect(runCallCount).toBe(1);
+      expect(threadOptions.networkAccessEnabled).toBe(true);
+      expect(threadOptions.workingDirectory).toBe(fixtureDir);
+      await expect(readFile(join(fixtureDir, "profile.yml"), "utf8")).rejects.toThrow();
+      const report = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "failure-report.json"),
+      );
+      expect(report.result.status).toBe("failed");
+      expect(report.result.failure).toMatchObject({ kind: "unavailable" });
+    });
+  });
+
+  test("passes base-profile facts through the default direct read-only runner", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-default-runner-base", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\nfonts:\n  body:\n    default: Source Serif 4\n",
+        "utf8",
+      );
+      await writeFile(
+        join(fixtureDir, "report.md"),
+        "# Report\n\n| A | B | C |\n| - | - | - |\n| 1 | 2 | 3 |\n",
+        "utf8",
+      );
+
+      let capturedRunMessages: unknown;
+      mock.module("@openai/codex-sdk", () => ({
+        Codex: class {
+          startThread() {
+            return {
+              run: async (messages: unknown) => {
+                capturedRunMessages = messages;
+                return {
+                  finalResponse: JSON.stringify({
+                    decision_mode: "adapted",
+                    selected_candidate_id: "base-profile",
+                    accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+                    accepted_font_patches: [],
+                    reasoning: "The base profile matches the direct read-only facts.",
+                    warnings: [],
+                    fallback_reason: "",
+                    unmatched_directions: [],
+                  }),
+                };
+              },
+            };
+          }
+        },
+      }));
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.yml",
+        codexReportOutput: "base-report.json",
+        input: "report.md",
+        intent: "wide table report",
+        output: "profile.yml",
+      });
+
+      const runMessages = capturedRunMessages as Array<{ text: string; type: string }>;
+      const facts = profilePromptFacts(runMessages[0]?.text ?? "");
+      expect(facts).toMatchObject({
+        selectedBaseProfileSummary: {
+          basedOn: "md-pdf-profile-20260101T000000Z-ba5e0001",
+          id: "base-profile",
+        },
+        signalMode: "mixed-with-base",
+      });
+      expect(candidateSummaryIds(facts)[0]).toBe("base-profile");
+      expect(facts.fontSignals).toMatchObject({
+        families: expect.arrayContaining([
+          expect.objectContaining({
+            family: "Source Serif 4",
+            key: "default",
+            role: "body",
+          }),
+        ]),
+      });
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.profile).toMatchObject({
+        basedOn: "md-pdf-profile-20260101T000000Z-ba5e0001",
+        source: "codex",
+      });
+      expect(profile.toc).toMatchObject({ enabled: true });
+      const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, "base-report.json"));
+      expect(report.selectedBase).toMatchObject({
+        basedOn: "md-pdf-profile-20260101T000000Z-ba5e0001",
+        candidateId: "base-profile",
+      });
     });
   });
 
@@ -601,6 +879,12 @@ describe("cli action modules: md pdf-profile codex", () => {
   test("keeps document-informed signal mode when input and font hints are both present", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-input-plus-font-hint", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Report\n\n日本語 and English.\n", "utf8");
+      const fontHints = [
+        "English body text should use a readable Latin serif font",
+        "Japanese body text should prefer Hiragino Mincho or an equivalent Japanese Mincho serif font",
+        "Traditional Chinese body text should use Noto Serif CJK TC or an equivalent Traditional Chinese serif font",
+        "code blocks should use a dedicated monospace font such as JetBrains Mono",
+      ];
       let prompt = "";
 
       const { runtime } = createActionTestRuntime({
@@ -613,16 +897,17 @@ describe("cli action modules: md pdf-profile codex", () => {
           prompt = options.prompt;
           return await adaptedRunner("reader")();
         },
-        fontHint: ["prefer Noto Serif CJK TC"],
+        fontHint: ["  ", ...fontHints],
         input: "report.md",
         output: "profile.yml",
       });
 
       expect(prompt).toContain('"signalMode": "document-informed"');
+      expect((profilePromptFacts(prompt).fontHints as string[]) ?? []).toEqual(fontHints);
       const report = await readMarkdownPdfCodexReportArtifact(join(fixtureDir, "report.json"));
       expect(report.signalMode).toBe("document-informed");
       expect(report.input.path).toBe("report.md");
-      expect(report.request.fontHints).toEqual(["prefer Noto Serif CJK TC"]);
+      expect(report.request.fontHints).toEqual(fontHints);
     });
   });
 
@@ -1168,6 +1453,17 @@ describe("cli action modules: md pdf-profile codex", () => {
       );
       expect(report.result.status).toBe("failed");
       expect(report.result.failure).toMatchObject({ kind: "no-usable-profile" });
+      expect(report.profile.identity).toMatchObject({
+        basedOn: "none",
+        source: "codex",
+      });
+      expect(report.selectedBase).toMatchObject({
+        candidateId: "none",
+        untracked: false,
+      });
+      expect(report.selectedBase.basedOn).toBeUndefined();
+      expect(report.selectedBase.profileId).toBeUndefined();
+      expect(report.selectedBase.path).toBeUndefined();
     });
   });
 
@@ -1213,6 +1509,18 @@ describe("cli action modules: md pdf-profile codex", () => {
       const report = await readMarkdownPdfCodexReportArtifact(reportPath);
       expect(report.result.status).toBe("failed");
       expect(report.result.failure).toMatchObject({ kind: "no-usable-profile" });
+      expect(report.profile.identity).toMatchObject({
+        id: "md-pdf-profile-20260615T081500Z-deadbeef",
+        basedOn: "none",
+        source: "codex",
+      });
+      expect(report.selectedBase).toMatchObject({
+        candidateId: "none",
+        untracked: false,
+      });
+      expect(report.selectedBase.basedOn).toBeUndefined();
+      expect(report.selectedBase.profileId).toBeUndefined();
+      expect(report.selectedBase.path).toBeUndefined();
     });
   });
 
@@ -1623,6 +1931,96 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("rejects symlink parents and hardlinked overwrite targets before calling Codex", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-parent-safety", async (fixtureDir) => {
+      const realOutputDirectory = join(fixtureDir, "real-output");
+      const outputAliasDirectory = join(fixtureDir, "output-link");
+      const realReportDirectory = join(fixtureDir, "real-report");
+      const reportAliasDirectory = join(fixtureDir, "report-link");
+      await mkdir(realOutputDirectory, { recursive: true });
+      await mkdir(realReportDirectory, { recursive: true });
+      await symlink(realOutputDirectory, outputAliasDirectory);
+      await symlink(realReportDirectory, reportAliasDirectory);
+
+      let codexCalls = 0;
+      const codexRunner = async () => {
+        codexCalls += 1;
+        return "{}";
+      };
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner,
+            output: join(outputAliasDirectory, "profile.yml"),
+            overwrite: true,
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "--output parent directory is a symlink",
+        },
+      );
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: join(reportAliasDirectory, "codex-report.json"),
+            codexRunner,
+            dryRun: true,
+            output: "profile.yml",
+            overwrite: true,
+          }),
+        {
+          code: "OUTPUT_SYMLINK",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output parent directory is a symlink",
+        },
+      );
+
+      const hardlinkProfileTarget = join(fixtureDir, "hardlink-profile-target.yml");
+      const hardlinkProfilePath = join(fixtureDir, "profile-hardlink.yml");
+      await writeFile(hardlinkProfileTarget, "profile target\n", "utf8");
+      await link(hardlinkProfileTarget, hardlinkProfilePath);
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexRunner,
+            output: hardlinkProfilePath,
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--output is hard-linked",
+        },
+      );
+
+      const hardlinkReportTarget = join(fixtureDir, "hardlink-report-target.json");
+      const hardlinkReportPath = join(fixtureDir, "report-hardlink.json");
+      await writeFile(hardlinkReportTarget, "{}\n", "utf8");
+      await link(hardlinkReportTarget, hardlinkReportPath);
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: hardlinkReportPath,
+            codexRunner,
+            dryRun: true,
+            output: "profile.yml",
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "--codex-report-output is hard-linked",
+        },
+      );
+
+      expect(codexCalls).toBe(0);
+    });
+  });
+
   test("rejects symlink and hardlink aliases between source and output artifacts", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-alias-collisions", async (fixtureDir) => {
       const profilePath = join(fixtureDir, "profile.yml");
@@ -1706,7 +2104,7 @@ describe("cli action modules: md pdf-profile codex", () => {
         {
           code: "INVALID_INPUT",
           exitCode: 2,
-          messageIncludes: "--codex-report-output cannot be the same file as Markdown input",
+          messageIncludes: "--codex-report-output is hard-linked",
         },
       );
       expect(codexCalls).toBe(0);

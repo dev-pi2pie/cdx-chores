@@ -20,6 +20,7 @@ import {
   classifyMdPdfProjectCodexSignalModes,
   collectTemplateOwnedProjectDirections,
 } from "./signal-mode";
+import { sanitizeMdPdfProjectCodexCliError } from "./error-sanitization";
 import type {
   MdPdfProjectCodexSignalCollection,
   NormalizedMdPdfProjectCodexCommandState,
@@ -29,12 +30,18 @@ export async function collectMdPdfProjectCodexSignals(
   runtime: CliRuntime,
   state: NormalizedMdPdfProjectCodexCommandState,
 ): Promise<MdPdfProjectCodexSignalCollection> {
-  const markdown = state.inputPath ? await readTextFileRequired(state.inputPath) : undefined;
+  const markdown = state.inputPath
+    ? await readTextFileRequired(state.inputPath).catch((error: unknown) =>
+        sanitizeMdPdfProjectCodexCliError(runtime, error, [state.inputPath]),
+      )
+    : undefined;
   const baseProfileCandidate = state.baseProfilePath
     ? await loadMarkdownPdfBaseProfileCandidate({
         cwd: runtime.cwd,
         path: state.baseProfilePath,
-      })
+      }).catch((error: unknown) =>
+        sanitizeMdPdfProjectCodexCliError(runtime, error, [state.baseProfilePath]),
+      )
     : undefined;
   const fallbackProfileCandidate = createMarkdownPdfProfileCandidates()[0];
   if (!baseProfileCandidate && !fallbackProfileCandidate) {

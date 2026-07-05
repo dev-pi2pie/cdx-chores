@@ -1,23 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { lstat, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { extname, join, parse, relative, resolve } from "node:path";
 
-import {
-  classifyMarkdownPdfCodexProfileFailure,
-  MarkdownPdfCodexProfileError,
-  suggestMarkdownPdfProfileWithCodex,
-} from "../../../adapters/codex/markdown-pdf-profile";
+import { classifyMarkdownPdfCodexProfileFailure } from "../../../adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfCodexSignalMode } from "../../../adapters/codex/markdown-pdf-profile/types";
 import { CliError } from "../../errors";
 import { readTextFileRequired, writeTextFileSafe } from "../../file-io";
 import {
-  createMarkdownPdfProfileCandidates,
   loadMarkdownPdfBaseProfileCandidate,
   type MarkdownPdfProfileCandidate,
 } from "../../markdown-pdf/profile/candidates";
 import {
   collectMarkdownPdfDocumentSignals,
-  collectMarkdownPdfFontSignals,
   createAbsentMarkdownPdfDocumentSignals,
 } from "../../markdown-pdf/profile/signals";
 import {
@@ -26,29 +20,20 @@ import {
   writeMarkdownPdfCodexReportArtifact,
   type MarkdownPdfCodexReportFailure,
 } from "../../markdown-pdf/codex-report";
-import {
-  inferMarkdownPdfProfileFormat,
-  MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
-  normalizeMarkdownPdfProfile,
-} from "../../markdown-pdf";
-import type {
-  MarkdownPdfProfileSource,
-  NormalizedMarkdownPdfProfileIdentity,
-} from "../../markdown-pdf/profile";
+import { inferMarkdownPdfProfileFormat } from "../../markdown-pdf";
+import type { NormalizedMarkdownPdfProfileIdentity } from "../../markdown-pdf/profile";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
-import {
-  startDirectCodexProgress,
-  type DirectCodexProgressStatus,
-} from "../../actions/codex-progress";
+import { assertWritableCodexPlannedFile } from "../codex-output-path-policy";
 import { assertNonEmpty, displayPath, printLine } from "../../actions/shared";
 import type { MarkdownPdfCodexProfileResult } from "../../../adapters/codex/markdown-pdf-profile/types";
+import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
 import {
-  classifyMarkdownPdfProfileCodexSignalMode,
-  executionModeForMarkdownPdfProfileCodexSignalMode,
-} from "./signal-mode";
-import { materializeMarkdownPdfProfileCodexProfile } from "./synthesis";
+  createMarkdownPdfCodexProfileOrchestrationContext,
+  runMarkdownPdfCodexProfileOrchestration,
+} from "./orchestration";
+import { createMarkdownPdfCodexProfileIdentity } from "./profile-identity";
 import type { MdPdfProfileCodexOptions } from "./types";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
 
@@ -170,58 +155,12 @@ function normalizeFontHints(values: string[] | undefined): string[] {
   return (values ?? []).map((value) => value.trim()).filter((value) => value.length > 0);
 }
 
-function selectedCandidate(
-  candidates: MarkdownPdfProfileCandidate[],
-  selectedCandidateId: string,
-): MarkdownPdfProfileCandidate | undefined {
-  return candidates.find((candidate) => candidate.summary.id === selectedCandidateId);
-}
-
-function requireSelectedCandidate(
-  candidates: MarkdownPdfProfileCandidate[],
-  selectedCandidateId: string,
-): MarkdownPdfProfileCandidate {
-  const candidate = selectedCandidate(candidates, selectedCandidateId);
-  if (candidate) {
-    return candidate;
-  }
-  throw new MarkdownPdfCodexProfileError(
-    `Markdown PDF Codex response selected unknown candidate: ${selectedCandidateId}.`,
-    "invalid-application",
-  );
-}
-
 async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path);
     return true;
   } catch {
     return false;
-  }
-}
-
-async function assertWritableOutputPath(
-  path: string,
-  options: { overwrite?: boolean },
-): Promise<void> {
-  try {
-    const outputStats = await lstat(path);
-    if (outputStats.isSymbolicLink()) {
-      throw new CliError(`Output path is a symlink and cannot be written safely: ${path}`, {
-        code: "OUTPUT_SYMLINK",
-        exitCode: 2,
-      });
-    }
-    if (!options.overwrite) {
-      throw new CliError(`Output file already exists: ${path}. Use --overwrite to replace it.`, {
-        code: "OUTPUT_EXISTS",
-        exitCode: 2,
-      });
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
   }
 }
 
@@ -244,26 +183,6 @@ async function resolveGeneratedProfileOutputPath(
     code: "OUTPUT_EXISTS",
     exitCode: 2,
   });
-}
-
-function createProfileIdentity(input: {
-  basedOn: string;
-  createdAt: string;
-  profileId: string;
-  selectedCandidate?: MarkdownPdfProfileCandidate;
-  source?: MarkdownPdfProfileSource;
-}): NormalizedMarkdownPdfProfileIdentity {
-  const basedOn =
-    input.selectedCandidate?.summary.basedOn ??
-    input.selectedCandidate?.summary.id ??
-    input.basedOn;
-  return {
-    id: input.profileId,
-    source: input.source ?? "codex",
-    basedOn,
-    preset: input.selectedCandidate?.summary.preset,
-    createdAt: input.createdAt,
-  };
 }
 
 function normalizeOptionalText(value: string | undefined): string | undefined {
@@ -319,6 +238,7 @@ function isNoUsableProfileError(error: unknown): boolean {
 async function writeFailureReportIfRequested(input: {
   failure: MarkdownPdfCodexReportFailure;
   overwrite?: boolean;
+  parentRootDirectory: string;
   profileIdentity: NormalizedMarkdownPdfProfileIdentity;
   reportBase: MarkdownPdfCodexReportBaseInput;
   reportOutputPath?: string;
@@ -334,7 +254,7 @@ async function writeFailureReportIfRequested(input: {
       failure: input.failure,
       profileIdentity: input.profileIdentity,
     }),
-    { overwrite: input.overwrite },
+    { overwrite: input.overwrite, parentRootDirectory: input.parentRootDirectory },
   );
   printLine(
     input.runtime.stderr,
@@ -346,10 +266,12 @@ async function finalizeSuccessfulProfileDecision(input: {
   decisionLabel: string;
   displayOutputPath: string;
   dryRun?: boolean;
+  finalProfile: Record<string, unknown>;
   identity: NormalizedMarkdownPdfProfileIdentity;
   outputPath: string;
   overwrite?: boolean;
-  profile: Record<string, unknown>;
+  profileParentRootDirectory: string;
+  reportParentRootDirectory: string;
   reportBase: MarkdownPdfCodexReportBaseInput;
   reportOutputPath?: string;
   result?: MarkdownPdfCodexProfileResult;
@@ -357,12 +279,8 @@ async function finalizeSuccessfulProfileDecision(input: {
   selectedCandidate: MarkdownPdfProfileCandidate;
   signalMode?: MarkdownPdfCodexSignalMode;
 }): Promise<void> {
-  const { finalProfile } = materializeMarkdownPdfProfileCodexProfile({
-    identity: input.identity,
-    profile: input.profile,
-  });
   const serialized = serializeMarkdownPdfProfileCodexProfile({
-    finalProfile,
+    finalProfile: input.finalProfile,
     outputPath: input.outputPath,
   });
 
@@ -384,6 +302,7 @@ async function finalizeSuccessfulProfileDecision(input: {
   } else {
     await writeTextFileSafe(input.outputPath, serialized, {
       overwrite: input.overwrite,
+      parentRootDirectory: input.profileParentRootDirectory,
     });
     printLine(input.runtime.stderr, `Wrote Markdown PDF profile: ${input.displayOutputPath}`);
   }
@@ -397,7 +316,7 @@ async function finalizeSuccessfulProfileDecision(input: {
         result: input.result,
         selectedCandidate: input.selectedCandidate,
       }),
-      { overwrite: input.overwrite },
+      { overwrite: input.overwrite, parentRootDirectory: input.reportParentRootDirectory },
     );
     printLine(
       input.runtime.stderr,
@@ -480,57 +399,49 @@ export async function actionMdPdfProfileCodex(
     assertDifferentPaths(pair);
   }
   if (!options.dryRun) {
-    await assertWritableOutputPath(outputResolution.outputPath, { overwrite: options.overwrite });
+    await assertWritableCodexPlannedFile(
+      { path: outputResolution.outputPath },
+      { label: "--output", overwrite: options.overwrite, parentRootDirectory: runtime.cwd },
+    );
   }
   if (reportOutputPath) {
-    await assertWritableOutputPath(reportOutputPath, { overwrite: options.overwrite });
+    await assertWritableCodexPlannedFile(
+      { path: reportOutputPath },
+      {
+        label: "--codex-report-output",
+        overwrite: options.overwrite,
+        parentRootDirectory: runtime.cwd,
+      },
+    );
   }
   await assertDistinctExistingFilePairs(pathCollisionPairs);
 
   printLine(runtime.stderr, "Collecting Markdown PDF profile signals...");
-  const candidates = createMarkdownPdfProfileCandidates();
   const baseProfileCandidate = baseProfilePath
     ? await loadMarkdownPdfBaseProfileCandidate({
         cwd: runtime.cwd,
         path: baseProfilePath,
       })
     : undefined;
-  if (baseProfileCandidate) {
-    candidates.unshift(baseProfileCandidate);
-  }
-  const strongestCandidate = baseProfileCandidate ?? candidates[0];
-  if (!strongestCandidate) {
-    throw new CliError("No Markdown PDF profile candidates are available.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
-  }
-  const normalizedStrongestProfile = normalizeMarkdownPdfProfile({
-    profile: strongestCandidate.fullProfile,
-  }).profile;
-  const documentSignals = markdown
-    ? collectMarkdownPdfDocumentSignals(markdown)
-    : createAbsentMarkdownPdfDocumentSignals();
-  const fontSignals = collectMarkdownPdfFontSignals({
-    profile: normalizedStrongestProfile,
-  });
   const signalMode = classifyMarkdownPdfProfileCodexSignalMode({
     hasBaseProfile: Boolean(baseProfileCandidate),
     hasFontHints: fontHints.length > 0,
     hasInput: Boolean(inputPath),
     hasIntent: Boolean(intent),
   });
-  const request = {
-    candidates,
+  const documentSignals = markdown
+    ? collectMarkdownPdfDocumentSignals(markdown)
+    : createAbsentMarkdownPdfDocumentSignals();
+  const orchestrationContext = createMarkdownPdfCodexProfileOrchestrationContext({
+    baseProfileCandidate,
+    createdAt,
     documentSignals,
     fontHints,
-    fontSignals,
     intent,
-    selectedBaseProfileSummary: baseProfileCandidate?.summary,
+    profileId: outputResolution.profileId,
     signalMode,
-    supportedSchemaSummary: MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
     workingDirectory: runtime.cwd,
-  };
+  });
 
   const displayOutputPath = displayPath(runtime, outputResolution.outputPath);
   const reportInputPath = inputPath ? persistedReportPath(runtime, inputPath) : undefined;
@@ -548,73 +459,20 @@ export async function actionMdPdfProfileCodex(
     displayInputPath: reportInputPath,
     displayProfileOutputPath: reportOutputProfilePath,
     inputSha256: markdown ? fingerprintMarkdownPdfCodexInput(markdown) : undefined,
-    request,
+    request: orchestrationContext.request,
   };
 
-  if (executionModeForMarkdownPdfProfileCodexSignalMode(signalMode) === "deterministic") {
-    const selected =
-      signalMode === "base-only-deterministic" ? baseProfileCandidate : strongestCandidate;
-    if (!selected) {
-      throw new CliError("No Markdown PDF profile candidate is available.", {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    const identity = createProfileIdentity({
-      ...profileIdentityBase,
-      basedOn: "default",
-      selectedCandidate: selected,
-      source: "deterministic",
-    });
-    await finalizeSuccessfulProfileDecision({
-      decisionLabel: "deterministic",
-      displayOutputPath,
-      dryRun: options.dryRun,
-      identity,
-      outputPath: outputResolution.outputPath,
-      overwrite: options.overwrite,
-      profile: selected.fullProfile,
-      reportBase,
-      reportOutputPath,
-      runtime,
-      selectedCandidate: selected,
-      signalMode,
-    });
-    return;
-  }
-
   try {
-    const result = await (async (): Promise<MarkdownPdfCodexProfileResult> => {
-      const codexProgress = startDirectCodexProgress(
-        runtime.stderr,
-        "Requesting Codex Markdown PDF profile recommendation",
-      );
-      let codexProgressStatus: DirectCodexProgressStatus = "error";
-      try {
-        const codexResult = await suggestMarkdownPdfProfileWithCodex({
-          ...request,
-          runner: options.codexRunner,
-        });
-        codexProgressStatus = codexResult.profile
-          ? codexResult.decision.decisionMode === "conservative-fallback"
-            ? "fallback"
-            : "done"
-          : "error";
-        return codexResult;
-      } finally {
-        codexProgress.stop(codexProgressStatus);
-      }
-    })();
-    if (!result.profile) {
-      const selected = selectedCandidate(candidates, result.decision.selectedCandidateId);
-      const identity = createProfileIdentity({
-        ...profileIdentityBase,
-        basedOn: "none",
-        selectedCandidate: selected,
-      });
+    const decision = await runMarkdownPdfCodexProfileOrchestration({
+      context: orchestrationContext,
+      profileCodexRunner: options.codexRunner,
+      progressLabel: "Requesting Codex Markdown PDF profile recommendation",
+      runtime,
+    });
+    if (decision.kind === "no-usable-profile") {
       const failure: MarkdownPdfCodexReportFailure = {
         kind: "no-usable-profile",
-        message: "Codex did not find a usable Markdown PDF profile.",
+        message: decision.failureMessage,
       };
       if (reportOutputPath) {
         await writeMarkdownPdfCodexReportArtifact(
@@ -622,39 +480,35 @@ export async function actionMdPdfProfileCodex(
           createMarkdownPdfCodexReportArtifact({
             ...reportBase,
             failure,
-            profileIdentity: identity,
-            selectedCandidate: selected,
+            profileIdentity: decision.identity,
+            selectedCandidate: decision.selectedCandidate,
           }),
-          { overwrite: options.overwrite },
+          { overwrite: options.overwrite, parentRootDirectory: runtime.cwd },
         );
         printLine(runtime.stderr, `Wrote Codex report: ${displayPath(runtime, reportOutputPath)}`);
       }
-      throw new CliError(failure.message, {
+      throw new CliError(decision.failureMessage, {
         code: "MARKDOWN_PDF_CODEX_NO_USABLE_PROFILE",
         exitCode: 1,
       });
     }
 
-    const selected = requireSelectedCandidate(candidates, result.decision.selectedCandidateId);
-    const identity = createProfileIdentity({
-      ...profileIdentityBase,
-      basedOn: "none",
-      selectedCandidate: selected,
-    });
-
     await finalizeSuccessfulProfileDecision({
-      decisionLabel: result.decision.decisionMode,
+      decisionLabel: decision.decisionMode,
       displayOutputPath,
       dryRun: options.dryRun,
-      identity,
+      finalProfile: decision.finalProfile,
+      identity: decision.identity,
       outputPath: outputResolution.outputPath,
       overwrite: options.overwrite,
-      profile: result.profile,
+      profileParentRootDirectory: runtime.cwd,
+      reportParentRootDirectory: runtime.cwd,
       reportBase,
       reportOutputPath,
-      result,
+      result: decision.kind === "codex-profile" ? decision.codexResult : undefined,
       runtime,
-      selectedCandidate: selected,
+      selectedCandidate: decision.selectedCandidate,
+      signalMode: decision.kind === "deterministic" ? signalMode : undefined,
     });
   } catch (error) {
     if (isNoUsableProfileError(error)) {
@@ -672,7 +526,12 @@ export async function actionMdPdfProfileCodex(
       await writeFailureReportIfRequested({
         failure,
         overwrite: options.overwrite,
-        profileIdentity: createProfileIdentity({ ...profileIdentityBase, basedOn: "none" }),
+        parentRootDirectory: runtime.cwd,
+        profileIdentity: createMarkdownPdfCodexProfileIdentity({
+          ...profileIdentityBase,
+          basedOn: "none",
+          source: "codex",
+        }),
         reportBase,
         reportOutputPath,
         runtime,
@@ -689,7 +548,12 @@ export async function actionMdPdfProfileCodex(
     await writeFailureReportIfRequested({
       failure,
       overwrite: options.overwrite,
-      profileIdentity: createProfileIdentity({ ...profileIdentityBase, basedOn: "none" }),
+      parentRootDirectory: runtime.cwd,
+      profileIdentity: createMarkdownPdfCodexProfileIdentity({
+        ...profileIdentityBase,
+        basedOn: "none",
+        source: "codex",
+      }),
       reportBase,
       reportOutputPath,
       runtime,

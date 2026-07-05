@@ -120,7 +120,12 @@ function hasExplicitCoverIntent(intent: string): boolean {
   return /\b(cover|cover page|title page|title-page)\b/i.test(intent);
 }
 
-function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {
+type MarkdownPdfCodexProfilePromptRequest = Omit<
+  MarkdownPdfCodexProfileRequest,
+  "workingDirectory"
+>;
+
+function buildTitleDecisionSignal(request: MarkdownPdfCodexProfilePromptRequest) {
   const intent = request.intent ?? "";
   const explicitCoverIntent = hasExplicitCoverIntent(intent);
   const explicitNoCoverIntent = hasExplicitNoCoverIntent(intent);
@@ -158,7 +163,7 @@ function buildTitleDecisionSignal(request: MarkdownPdfCodexProfileRequest) {
 }
 
 export function buildMarkdownPdfProfileCodexPrompt(
-  request: MarkdownPdfCodexProfileRequest,
+  request: MarkdownPdfCodexProfilePromptRequest,
 ): string {
   const facts = {
     candidateSummaries: request.candidates.map((candidate) => candidate.summary),

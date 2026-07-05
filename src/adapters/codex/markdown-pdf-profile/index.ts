@@ -8,7 +8,7 @@ import type {
 } from "./types";
 import { MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES, MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
 
-const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 30_000;
+export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 120_000;
 
 export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   type: "object",
@@ -66,19 +66,6 @@ export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-async function runMarkdownPdfProfileCodexPrompt(options: {
-  prompt: string;
-  timeoutMs?: number;
-  workingDirectory: string;
-}): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
-  const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
-  });
-  return turn.finalResponse;
-}
-
 export type MarkdownPdfCodexProfileFailureKind =
   | "structured-output-schema"
   | "malformed-output"
@@ -104,41 +91,15 @@ function isCodexStructuredOutputSchemaError(error: unknown): boolean {
   );
 }
 
-export function classifyMarkdownPdfCodexProfileFailure(
-  error: unknown,
-): MarkdownPdfCodexProfileFailureKind {
-  if (error instanceof MarkdownPdfCodexProfileError) {
-    return error.kind;
-  }
-  return "unavailable";
-}
-
-export async function suggestMarkdownPdfProfileWithCodex(
-  request: MarkdownPdfCodexProfileRequest & {
-    runner?: MarkdownPdfCodexProfileRunner;
-    timeoutMs?: number;
-  },
-): Promise<MarkdownPdfCodexProfileResult> {
-  const runner = request.runner ?? runMarkdownPdfProfileCodexPrompt;
-  let finalResponse: string;
+function applyMarkdownPdfProfileCodexFinalResponse(input: {
+  candidates: MarkdownPdfCodexProfileRequest["candidates"];
+  finalResponse: string;
+}): MarkdownPdfCodexProfileResult {
   try {
-    finalResponse = await runner({
-      prompt: buildMarkdownPdfProfileCodexPrompt(request),
-      timeoutMs: request.timeoutMs,
-      workingDirectory: request.workingDirectory,
-    });
-  } catch (error) {
-    if (isCodexStructuredOutputSchemaError(error)) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new MarkdownPdfCodexProfileError(message, "structured-output-schema");
-    }
-    throw error;
-  }
-  try {
-    const decision = parseMarkdownPdfCodexDecision(finalResponse);
+    const decision = parseMarkdownPdfCodexDecision(input.finalResponse);
     try {
       return applyMarkdownPdfCodexDecision({
-        candidates: request.candidates,
+        candidates: input.candidates,
         decision,
       });
     } catch (error) {
@@ -152,6 +113,55 @@ export async function suggestMarkdownPdfProfileWithCodex(
     const message = error instanceof Error ? error.message : String(error);
     throw new MarkdownPdfCodexProfileError(message, "malformed-output");
   }
+}
+
+export function classifyMarkdownPdfCodexProfileFailure(
+  error: unknown,
+): MarkdownPdfCodexProfileFailureKind {
+  if (error instanceof MarkdownPdfCodexProfileError) {
+    return error.kind;
+  }
+  return "unavailable";
+}
+
+async function runMarkdownPdfProfileCodexPrompt(options: {
+  prompt: string;
+  timeoutMs?: number;
+  workingDirectory: string;
+}): Promise<string> {
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const turn = await thread.run([{ type: "text", text: options.prompt }], {
+    outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
+  });
+  return turn.finalResponse;
+}
+
+export async function suggestMarkdownPdfProfileWithCodex(
+  request: MarkdownPdfCodexProfileRequest & {
+    runner?: MarkdownPdfCodexProfileRunner;
+    timeoutMs?: number;
+  },
+): Promise<MarkdownPdfCodexProfileResult> {
+  let finalResponse: string;
+  const runner = request.runner ?? runMarkdownPdfProfileCodexPrompt;
+  try {
+    finalResponse = await runner({
+      prompt: buildMarkdownPdfProfileCodexPrompt(request),
+      timeoutMs: request.timeoutMs,
+      workingDirectory: request.workingDirectory,
+    });
+  } catch (error) {
+    if (isCodexStructuredOutputSchemaError(error)) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new MarkdownPdfCodexProfileError(message, "structured-output-schema");
+    }
+    throw error;
+  }
+  return applyMarkdownPdfProfileCodexFinalResponse({
+    candidates: request.candidates,
+    finalResponse,
+  });
 }
 
 export type {

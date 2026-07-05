@@ -30,6 +30,12 @@ export type {
   MarkdownPdfProjectCodexTemplatePhaseSummary,
 } from "./types-phase";
 export type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
+export type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
+export type {
+  MarkdownPdfProjectCodexValidationResult,
+  MarkdownPdfProjectCodexValidationStatus,
+  MarkdownPdfProjectCodexValidationSummary,
+} from "./validate-project";
 export type {
   MarkdownPdfProjectCodexBaseProfileSignals,
   MarkdownPdfProjectCodexFontSignals,

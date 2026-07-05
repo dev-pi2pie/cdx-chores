@@ -2,7 +2,9 @@ export { normalizeMdPdfProjectCodexCommandState } from "./options";
 export { createMdPdfProjectCodexIdentity, createMdPdfProjectCodexIdentityValues } from "./identity";
 export {
   planMdPdfProjectCodexOutput,
+  validateMdPdfProjectCodexReportWritability,
   validateMdPdfProjectCodexOutputWritability,
+  type MdPdfProjectCodexOutputWriteMode,
 } from "./output-plan";
 export {
   classifyMdPdfProjectCodexProfileSignalMode,
@@ -18,6 +20,31 @@ export {
   runMdPdfProjectCodexProfilePhase,
   type MdPdfProjectCodexProfilePhaseResult,
 } from "./profile-phase";
+export {
+  runMdPdfProjectCodexTemplatePhase,
+  type MdPdfProjectCodexTemplatePhaseResult,
+} from "./template-phase";
+export {
+  createMdPdfProjectCodexRenderCommand,
+  type MarkdownPdfProjectCodexRenderCommand,
+} from "./render-command";
+export {
+  validateMdPdfProjectCodexProject,
+  type MarkdownPdfProjectCodexValidationResult,
+  type MarkdownPdfProjectCodexValidationStatus,
+  type MarkdownPdfProjectCodexValidationSummary,
+} from "./validate-project";
+export {
+  createMdPdfProjectCodexReportArtifact,
+  serializeMdPdfProjectCodexReportArtifact,
+  writeMdPdfProjectCodexReportArtifact,
+} from "./report";
+export { MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE } from "./types-report";
+export { printMdPdfProjectCodexSummary } from "./summary";
+export {
+  writeMdPdfProjectCodexBundle,
+  writeMdPdfProjectCodexReportIfRequested,
+} from "./write-project";
 export { actionMdPdfProjectCodex } from "./run";
 export type {
   MarkdownPdfProjectCodexBaseProfileSignals,

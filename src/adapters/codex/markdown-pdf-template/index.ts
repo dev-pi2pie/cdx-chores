@@ -15,7 +15,7 @@ import type {
   MarkdownPdfTemplateCodexRunner,
 } from "./types";
 
-const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 30_000;
+export const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 120_000;
 const MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS = 1;
 
 export type MarkdownPdfTemplateCodexFailureKind =
@@ -99,7 +99,7 @@ async function runMarkdownPdfTemplateCodexPrompt(options: {
 
 function createNoUsableTemplateDecision(input: {
   reason: string;
-  request: MarkdownPdfTemplateCodexRequest;
+  request: Omit<MarkdownPdfTemplateCodexRequest, "workingDirectory">;
 }): MarkdownPdfTemplateCodexDecision {
   return {
     decisionMode: "no-usable-template",
@@ -118,10 +118,68 @@ function createNoUsableTemplateDecision(input: {
 
 function noUsableTemplateResult(input: {
   reason: string;
-  request: MarkdownPdfTemplateCodexRequest;
+  request: Omit<MarkdownPdfTemplateCodexRequest, "workingDirectory">;
 }): MarkdownPdfTemplateCodexResult {
   return applyMarkdownPdfTemplateCodexDecision({
     decision: createNoUsableTemplateDecision(input),
+    request: { ...input.request, workingDirectory: "" },
+  });
+}
+
+async function suggestMarkdownPdfTemplateWithPrompt(input: {
+  request: Omit<MarkdownPdfTemplateCodexRequest, "workingDirectory">;
+  runPrompt: (options: { prompt: string }) => Promise<string>;
+}): Promise<MarkdownPdfTemplateCodexResult> {
+  const basePrompt = buildMarkdownPdfTemplateCodexPrompt(input.request);
+  let prompt = basePrompt;
+  for (
+    let attempt = 0;
+    attempt <= MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS;
+    attempt += 1
+  ) {
+    let finalResponse: string;
+    try {
+      finalResponse = await input.runPrompt({ prompt });
+    } catch (error) {
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure(
+          isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
+        ),
+        request: input.request,
+      });
+    }
+
+    let decision: MarkdownPdfTemplateCodexDecision;
+    try {
+      decision = parseMarkdownPdfTemplateCodexDecision(finalResponse);
+    } catch {
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure("malformed-output"),
+        request: input.request,
+      });
+    }
+
+    try {
+      return applyMarkdownPdfTemplateCodexDecision({
+        decision,
+        request: { ...input.request, workingDirectory: "" },
+      });
+    } catch (error) {
+      if (attempt < MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS) {
+        prompt = buildApplicationRepairPrompt({
+          basePrompt,
+          validationError: summarizeApplicationError(error),
+        });
+        continue;
+      }
+      return noUsableTemplateResult({
+        reason: fallbackReasonForFailure("invalid-application"),
+        request: input.request,
+      });
+    }
+  }
+  return noUsableTemplateResult({
+    reason: fallbackReasonForFailure("invalid-application"),
     request: input.request,
   });
 }
@@ -133,58 +191,14 @@ export async function suggestMarkdownPdfTemplateWithCodex(
   },
 ): Promise<MarkdownPdfTemplateCodexResult> {
   const runner = request.runner ?? runMarkdownPdfTemplateCodexPrompt;
-  const basePrompt = buildMarkdownPdfTemplateCodexPrompt(request);
-  let prompt = basePrompt;
-  for (
-    let attempt = 0;
-    attempt <= MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS;
-    attempt += 1
-  ) {
-    let finalResponse: string;
-    try {
-      finalResponse = await runner({
+  return suggestMarkdownPdfTemplateWithPrompt({
+    request,
+    runPrompt: ({ prompt }) =>
+      runner({
         prompt,
         timeoutMs: request.timeoutMs,
         workingDirectory: request.workingDirectory,
-      });
-    } catch (error) {
-      return noUsableTemplateResult({
-        reason: fallbackReasonForFailure(
-          isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
-        ),
-        request,
-      });
-    }
-
-    let decision: MarkdownPdfTemplateCodexDecision;
-    try {
-      decision = parseMarkdownPdfTemplateCodexDecision(finalResponse);
-    } catch {
-      return noUsableTemplateResult({
-        reason: fallbackReasonForFailure("malformed-output"),
-        request,
-      });
-    }
-
-    try {
-      return applyMarkdownPdfTemplateCodexDecision({ decision, request });
-    } catch (error) {
-      if (attempt < MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS) {
-        prompt = buildApplicationRepairPrompt({
-          basePrompt,
-          validationError: summarizeApplicationError(error),
-        });
-        continue;
-      }
-      return noUsableTemplateResult({
-        reason: fallbackReasonForFailure("invalid-application"),
-        request,
-      });
-    }
-  }
-  return noUsableTemplateResult({
-    reason: fallbackReasonForFailure("invalid-application"),
-    request,
+      }),
   });
 }
 

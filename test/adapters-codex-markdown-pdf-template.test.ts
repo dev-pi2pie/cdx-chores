@@ -76,6 +76,9 @@ function responseFromDecision(input: {
   recipeSource?: string;
   templateFamily?: string;
   textAlign?: string;
+  warnings?: string[];
+  unsupportedDirections?: string[];
+  fallbackReason?: string;
 }): string {
   const coverEnabled = input.coverEnabled ?? true;
   const recipePreset = input.recipePreset ?? "article";
@@ -113,9 +116,9 @@ function responseFromDecision(input: {
     managed_assets:
       input.managedAssets ??
       (coverEnabled ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }] : []),
-    warnings: [],
-    unsupported_directions: [],
-    fallback_reason: "",
+    warnings: input.warnings ?? [],
+    unsupported_directions: input.unsupportedDirections ?? [],
+    fallback_reason: input.fallbackReason ?? "",
   });
 }
 
@@ -451,6 +454,31 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(result.decision.cssBlocks).toEqual([
       { css: ".pdf-cover-media__caption { color: #555555; }", slot: "cover" },
     ]);
+  });
+
+  test("redacts model-originated paths and URLs in template free text", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          decisionMode: "conservative-fallback",
+          fallbackReason: "Could not use /Users/example/private.css or https://example.com/a.css",
+          templateFamily: "document-layered",
+          unsupportedDirections: ["Read file:///Users/example/secret.css"],
+          warnings: ["Skipped C:\\Users\\example\\secret.css"],
+        }),
+    });
+
+    expect(result.decision).toMatchObject({
+      decisionMode: "conservative-fallback",
+      fallbackReason: "Could not use [local-path] or [remote-url]",
+      unsupportedDirections: ["Read [local-path]"],
+      warnings: ["Skipped [local-path]"],
+    });
+    expect(JSON.stringify(result.decision)).not.toContain("/Users/example");
+    expect(JSON.stringify(result.decision)).not.toContain("C:\\Users\\example");
+    expect(JSON.stringify(result.decision)).not.toContain("https://example.com");
   });
 
   test("accepts bounded template font decisions", async () => {

@@ -145,6 +145,18 @@ function assertNonEmptyString(value: string, context: string): string {
   return trimmed;
 }
 
+function sanitizeCodexFreeText(value: string): string {
+  return value
+    .replace(/\bhttps?:\/\/[^\s"'`<>)]*/giu, "[remote-url]")
+    .replace(/\bfile:\/\/[^\s"'`<>)]*/giu, "[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:[A-Za-z]:[\\/][^\s"'`<>),;}]*)/gu, "$1[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:\\\\[^\s"'`<>),;}]*)/gu, "$1[local-path]")
+    .replace(/(^|[\s"'`(=:[,])(?:\/(?!\/)|~\/|\.\.\/)[^\s"'`<>),;}]*/gu, "$1[local-path]")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 600);
+}
+
 function assertBoolean(value: boolean, context: string): boolean {
   if (typeof value !== "boolean") {
     throw new Error(`Markdown PDF template Codex response ${context} must be a boolean.`);
@@ -153,7 +165,16 @@ function assertBoolean(value: boolean, context: string): boolean {
 }
 
 function validateStringArray(values: readonly string[], context: string): string[] {
-  return values.map((value, index) => assertNonEmptyString(value, `${context}[${index}]`));
+  return values.map((value, index) =>
+    sanitizeCodexFreeText(assertNonEmptyString(value, `${context}[${index}]`)),
+  );
+}
+
+function validateOptionalFreeText(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  return sanitizeCodexFreeText(value) || undefined;
 }
 
 function validateSlots(
@@ -546,7 +567,7 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
         input.decision.unsupportedDirections,
         "unsupported_directions",
       ),
-      fallbackReason: input.decision.fallbackReason?.trim() || undefined,
+      fallbackReason: validateOptionalFreeText(input.decision.fallbackReason),
     };
   }
 
@@ -630,7 +651,7 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
       input.decision.unsupportedDirections,
       "unsupported_directions",
     ),
-    fallbackReason: input.decision.fallbackReason?.trim() || undefined,
+    fallbackReason: validateOptionalFreeText(input.decision.fallbackReason),
   };
 }
 

@@ -6,9 +6,11 @@ import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } fr
 import { CliError } from "./errors";
 
 interface SafeWriteOptions {
+  displayPath?: (path: string) => string;
   label?: string;
   overwrite?: boolean;
   parentRootDirectory?: string;
+  sanitizeMessage?: (message: string) => string;
 }
 
 type FileContent = Buffer | string;
@@ -25,9 +27,11 @@ function isInsideDirectory(input: { directory: string; path: string }): boolean 
 }
 
 export async function assertNoSymlinkPathParents(input: {
+  displayPath?: (path: string) => string;
   label: string;
   parentRootDirectory?: string;
   path: string;
+  sanitizeMessage?: (message: string) => string;
 }): Promise<void> {
   const absolutePath = resolve(input.path);
   const parentDirectory = dirname(absolutePath);
@@ -47,7 +51,9 @@ export async function assertNoSymlinkPathParents(input: {
       const stats = await lstat(currentPath);
       if (stats.isSymbolicLink()) {
         throw new CliError(
-          `${input.label} parent directory is a symlink and cannot be written safely: ${currentPath}`,
+          `${input.label} parent directory is a symlink and cannot be written safely: ${
+            input.displayPath?.(currentPath) ?? currentPath
+          }`,
           {
             code: "OUTPUT_SYMLINK",
             exitCode: 2,
@@ -55,10 +61,15 @@ export async function assertNoSymlinkPathParents(input: {
         );
       }
       if (!stats.isDirectory()) {
-        throw new CliError(`${input.label} parent path is not a directory: ${currentPath}`, {
-          code: "INVALID_INPUT",
-          exitCode: 2,
-        });
+        throw new CliError(
+          `${input.label} parent path is not a directory: ${
+            input.displayPath?.(currentPath) ?? currentPath
+          }`,
+          {
+            code: "INVALID_INPUT",
+            exitCode: 2,
+          },
+        );
       }
     } catch (error) {
       if (error instanceof CliError) {
@@ -69,7 +80,9 @@ export async function assertNoSymlinkPathParents(input: {
       }
       const message = error instanceof Error ? error.message : String(error);
       throw new CliError(
-        `Failed to inspect ${input.label} parent path: ${currentPath} (${message})`,
+        `Failed to inspect ${input.label} parent path: ${
+          input.displayPath?.(currentPath) ?? currentPath
+        } (${input.sanitizeMessage?.(message) ?? message})`,
         {
           code: "FILE_READ_ERROR",
           exitCode: 2,
@@ -80,9 +93,11 @@ export async function assertNoSymlinkPathParents(input: {
 }
 
 async function assertNoSymlinkParentSegments(input: {
+  displayPath?: (path: string) => string;
   label: string;
   parentRootDirectory?: string;
   path: string;
+  sanitizeMessage?: (message: string) => string;
 }): Promise<void> {
   if (!input.parentRootDirectory) {
     return;
@@ -102,16 +117,19 @@ async function writeFileHandleContent(
 }
 
 async function assertExistingOutputPathWritable(input: {
+  displayPath?: (path: string) => string;
   existingFileLabel: string;
   label: string;
   overwrite: boolean;
   path: string;
+  sanitizeMessage?: (message: string) => string;
 }): Promise<void> {
+  const displayPath = input.displayPath?.(input.path) ?? input.path;
   try {
     const outputStats = await lstat(input.path);
     if (outputStats.isSymbolicLink()) {
       throw new CliError(
-        `${input.label} is a symlink and cannot be written safely: ${input.path}`,
+        `${input.label} is a symlink and cannot be written safely: ${displayPath}`,
         {
           code: "OUTPUT_SYMLINK",
           exitCode: 2,
@@ -119,14 +137,14 @@ async function assertExistingOutputPathWritable(input: {
       );
     }
     if (outputStats.isDirectory()) {
-      throw new CliError(`${input.label} is a directory: ${input.path}`, {
+      throw new CliError(`${input.label} is a directory: ${displayPath}`, {
         code: "INVALID_INPUT",
         exitCode: 2,
       });
     }
     if (!input.overwrite) {
       throw new CliError(
-        `${input.existingFileLabel} already exists: ${input.path}. Use --overwrite to replace it.`,
+        `${input.existingFileLabel} already exists: ${displayPath}. Use --overwrite to replace it.`,
         {
           code: "OUTPUT_EXISTS",
           exitCode: 2,
@@ -139,19 +157,26 @@ async function assertExistingOutputPathWritable(input: {
     }
     if (!isNotFoundError(error)) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new CliError(`Failed to inspect ${input.label}: ${input.path} (${message})`, {
-        code: "FILE_READ_ERROR",
-        exitCode: 2,
-      });
+      throw new CliError(
+        `Failed to inspect ${input.label}: ${displayPath} (${
+          input.sanitizeMessage?.(message) ?? message
+        })`,
+        {
+          code: "FILE_READ_ERROR",
+          exitCode: 2,
+        },
+      );
     }
   }
 }
 
 async function writeFileViaTempReplace(input: {
   content: FileContent;
+  displayPath?: (path: string) => string;
   label: string;
   parentRootDirectory: string;
   path: string;
+  sanitizeMessage?: (message: string) => string;
 }): Promise<void> {
   const parentDirectory = dirname(input.path);
   const tempPath = join(
@@ -159,6 +184,7 @@ async function writeFileViaTempReplace(input: {
     `.${basename(input.path)}.${process.pid}.${randomUUID()}.tmp`,
   );
   let handle;
+  const displayPath = input.displayPath?.(input.path) ?? input.path;
   try {
     await assertNoSymlinkParentSegments(input);
     handle = await open(
@@ -178,10 +204,15 @@ async function writeFileViaTempReplace(input: {
       throw error;
     }
     const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to write ${input.label}: ${input.path} (${message})`, {
-      code: "FILE_WRITE_ERROR",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `Failed to write ${input.label}: ${displayPath} (${
+        input.sanitizeMessage?.(message) ?? message
+      })`,
+      {
+        code: "FILE_WRITE_ERROR",
+        exitCode: 2,
+      },
+    );
   }
 }
 
@@ -226,24 +257,37 @@ async function writeFileSafe(
   const label = options.label ?? "Output path";
   const existingFileLabel = options.label ?? "Output file";
   await assertNoSymlinkParentSegments({
+    displayPath: options.displayPath,
     label,
     parentRootDirectory: options.parentRootDirectory,
     path,
+    sanitizeMessage: options.sanitizeMessage,
   });
-  await assertExistingOutputPathWritable({ existingFileLabel, label, overwrite, path });
+  await assertExistingOutputPathWritable({
+    displayPath: options.displayPath,
+    existingFileLabel,
+    label,
+    overwrite,
+    path,
+    sanitizeMessage: options.sanitizeMessage,
+  });
 
   await ensureParentDir(path);
   await assertNoSymlinkParentSegments({
+    displayPath: options.displayPath,
     label,
     parentRootDirectory: options.parentRootDirectory,
     path,
+    sanitizeMessage: options.sanitizeMessage,
   });
   if (overwrite && options.parentRootDirectory) {
     await writeFileViaTempReplace({
       content,
+      displayPath: options.displayPath,
       label,
       parentRootDirectory: options.parentRootDirectory,
       path,
+      sanitizeMessage: options.sanitizeMessage,
     });
     return;
   }
@@ -253,15 +297,19 @@ async function writeFileSafe(
     ? constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | noFollow
     : constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | noFollow;
   let handle;
+  const displayPath = options.displayPath?.(path) ?? path;
   try {
     handle = await open(path, flags, 0o666);
     await writeFileHandleContent(handle, content);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to write file: ${path} (${message})`, {
-      code: "FILE_WRITE_ERROR",
-      exitCode: 2,
-    });
+    throw new CliError(
+      `Failed to write file: ${displayPath} (${options.sanitizeMessage?.(message) ?? message})`,
+      {
+        code: "FILE_WRITE_ERROR",
+        exitCode: 2,
+      },
+    );
   } finally {
     await handle?.close();
   }
