@@ -59,6 +59,7 @@ export type {
 } from "./data";
 export {
   actionMdFrontmatterToJson,
+  actionMdPdfProjectCodex,
   actionMdPdfProfileCodex,
   actionMdPdfProfileInit,
   actionMdPdfTemplateCodex,
@@ -68,6 +69,8 @@ export {
 } from "./markdown";
 export type {
   MdFrontmatterToJsonOptions,
+  MdPdfProjectCodexCliOptions,
+  MdPdfProjectCodexOptions,
   MdPdfProfileCodexCliOptions,
   MdPdfProfileCodexOptions,
   MdPdfProfileInitOptions,

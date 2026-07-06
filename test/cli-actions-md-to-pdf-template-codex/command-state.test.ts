@@ -113,6 +113,23 @@ describe("cli action modules: md pdf-template codex command state", () => {
     });
   });
 
+  test("preserves explicit --input alias spelling for replay and display", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-input-alias-display", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const aliasPath = join(fixtureDir, "report-alias.md");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await symlink(inputPath, aliasPath);
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        input: toRepoRelativePath(aliasPath),
+        positionalInput: toRepoRelativePath(inputPath),
+      });
+
+      expect(state.inputPath).toBe(aliasPath);
+    });
+  });
+
   test("rejects invalid base profiles during early validation", async () => {
     await withTempFixtureDir("md-pdf-template-codex-invalid-profile", async (fixtureDir) => {
       const baseProfilePath = join(fixtureDir, "profile.yml");
@@ -226,6 +243,28 @@ describe("cli action modules: md pdf-template codex command state", () => {
           code: "FILE_NOT_FOUND",
           exitCode: 2,
           messageIncludes: "Cover image file not found",
+        },
+      );
+    });
+  });
+
+  test("rejects symlinked cover images during early validation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-symlink-cover", async (fixtureDir) => {
+      const coverImagePath = join(fixtureDir, "cover.png");
+      const coverAliasPath = join(fixtureDir, "cover-alias.png");
+      await writeFile(coverImagePath, "not really an image yet\n", "utf8");
+      await symlink(coverImagePath, coverAliasPath);
+
+      const { runtime } = createActionTestRuntime();
+      await expectCliError(
+        () =>
+          normalizeMdPdfTemplateCodexCommandState(runtime, {
+            coverImage: toRepoRelativePath(coverAliasPath),
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Cover image path must not be a symlink",
         },
       );
     });

@@ -1,5 +1,6 @@
 export {
   actionMdFrontmatterToJson,
+  actionMdPdfProjectCodex,
   actionMdPdfProfileCodex,
   actionMdPdfProfileInit,
   actionMdPdfTemplateCodex,
@@ -9,6 +10,8 @@ export {
 } from "./markdown/index";
 export type {
   MdFrontmatterToJsonOptions,
+  MdPdfProjectCodexCliOptions,
+  MdPdfProjectCodexOptions,
   MdPdfProfileCodexCliOptions,
   MdPdfProfileCodexOptions,
   MdPdfProfileInitOptions,

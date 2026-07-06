@@ -216,7 +216,7 @@ function validateReportArtifact(value: unknown): MarkdownPdfCodexReportArtifact 
 export async function writeMarkdownPdfCodexReportArtifact(
   path: string,
   artifact: MarkdownPdfCodexReportArtifact,
-  options: { overwrite?: boolean } = {},
+  options: { overwrite?: boolean; parentRootDirectory?: string } = {},
 ): Promise<void> {
   await writeTextFileSafe(path, `${JSON.stringify(artifact, null, 2)}\n`, options);
 }

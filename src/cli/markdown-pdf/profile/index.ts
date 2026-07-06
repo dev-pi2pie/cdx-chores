@@ -15,6 +15,7 @@ export { readMarkdownPdfProfileFile } from "./parse";
 export {
   inferMarkdownPdfProfileFormat,
   MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
   validateMarkdownPdfProfileShape,
 } from "./schema";
 export { serializeMarkdownPdfProfile } from "./serialize";

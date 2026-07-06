@@ -1,15 +1,16 @@
-import { lstat, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { basename, extname, join, parse } from "node:path";
 
-import { CliError } from "../../errors";
 import { isNotFoundError } from "../../actions/markdown/common";
 import { assertNonEmpty } from "../../actions/shared";
+import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { createMdPdfTemplateCodexBundleId } from "./identity";
 import {
   assertDistinctPathPairs,
   assertPathInsideDirectory,
   assertUsableTemplateCodexOutputDirectory,
+  assertWritableTemplateCodexPlannedFile,
 } from "./path-collisions";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -36,51 +37,6 @@ async function pathExists(path: string): Promise<boolean> {
       return false;
     }
     throw error;
-  }
-}
-
-async function assertWritablePlannedFile(
-  file: { path: string },
-  options: { label: string; overwrite?: boolean },
-): Promise<void> {
-  try {
-    const stats = await lstat(file.path);
-    if (stats.isSymbolicLink()) {
-      throw new CliError(
-        `${options.label} is a symlink and cannot be written safely: ${file.path}`,
-        {
-          code: "OUTPUT_SYMLINK",
-          exitCode: 2,
-        },
-      );
-    }
-    if (stats.isDirectory()) {
-      throw new CliError(`${options.label} is a directory: ${file.path}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    if (!options.overwrite) {
-      throw new CliError(
-        `${options.label} already exists: ${file.path}. Use --overwrite to replace it.`,
-        {
-          code: "OUTPUT_EXISTS",
-          exitCode: 2,
-        },
-      );
-    }
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-    if (isNotFoundError(error)) {
-      return;
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(`Failed to inspect ${options.label}: ${file.path} (${message})`, {
-      code: "FILE_READ_ERROR",
-      exitCode: 2,
-    });
   }
 }
 
@@ -284,13 +240,18 @@ function collectPathCollisionPairs(input: {
 
 function writablePlannedFiles(input: {
   plan: MarkdownPdfTemplateCodexOutputPlan;
+  runtime: CliRuntime;
   writeMode: MdPdfTemplateCodexOutputWriteMode;
-}): Array<{ label: string; path: string }> {
+}): Array<{ label: string; parentRootDirectory?: string; path: string }> {
   if (input.writeMode === "report-only") {
     return input.plan.report
       ? [
           {
             label: "--codex-report-output",
+            parentRootDirectory:
+              input.plan.report.location === "in-bundle"
+                ? input.plan.outputDirectory
+                : input.runtime.cwd,
             path: input.plan.report.path,
           },
         ]
@@ -299,22 +260,29 @@ function writablePlannedFiles(input: {
   return [
     {
       label: "planned template.html",
+      parentRootDirectory: input.plan.outputDirectory,
       path: input.plan.templateHtml.path,
     },
     {
       label: "planned style.css",
+      parentRootDirectory: input.plan.outputDirectory,
       path: input.plan.styleCss.path,
     },
     ...(input.plan.report
       ? [
           {
             label: "--codex-report-output",
+            parentRootDirectory:
+              input.plan.report.location === "in-bundle"
+                ? input.plan.outputDirectory
+                : input.runtime.cwd,
             path: input.plan.report.path,
           },
         ]
       : []),
     ...input.plan.assets.map((asset) => ({
       label: `planned asset ${asset.bundlePath}`,
+      parentRootDirectory: input.plan.outputDirectory,
       path: asset.path,
     })),
   ];
@@ -322,12 +290,14 @@ function writablePlannedFiles(input: {
 
 export async function validateMdPdfTemplateCodexOutputWritability(input: {
   plan: MarkdownPdfTemplateCodexOutputPlan;
+  runtime: CliRuntime;
   state: NormalizedMdPdfTemplateCodexCommandState;
   writeMode: MdPdfTemplateCodexOutputWriteMode;
 }): Promise<void> {
   await assertUsableTemplateCodexOutputDirectory(input.plan.outputDirectory, {
     allowExistingContents: input.writeMode === "report-only",
     overwrite: input.state.overwrite,
+    parentRootDirectory: input.runtime.cwd,
   });
   await assertDistinctPathPairs(
     collectPathCollisionPairs({
@@ -337,10 +307,15 @@ export async function validateMdPdfTemplateCodexOutputWritability(input: {
     }),
   );
   await Promise.all(
-    writablePlannedFiles({ plan: input.plan, writeMode: input.writeMode }).map((file) =>
-      assertWritablePlannedFile(file, {
+    writablePlannedFiles({
+      plan: input.plan,
+      runtime: input.runtime,
+      writeMode: input.writeMode,
+    }).map((file) =>
+      assertWritableTemplateCodexPlannedFile(file, {
         label: file.label,
         overwrite: input.state.overwrite,
+        parentRootDirectory: file.parentRootDirectory,
       }),
     ),
   );
@@ -391,6 +366,7 @@ export async function planMdPdfTemplateCodexOutput(input: {
 
   await validateMdPdfTemplateCodexOutputWritability({
     plan,
+    runtime: input.runtime,
     state: input.state,
     writeMode: input.writeMode ?? "bundle",
   });

@@ -1,7 +1,6 @@
-import { basename, relative, win32 } from "node:path";
-
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
+import { publicPathBasename, publicPathDisplay, shellQuote } from "../codex-path-display";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexPlannedAsset,
@@ -92,63 +91,6 @@ export interface MdPdfTemplateCodexReportArtifact {
     status: "passed" | "skipped";
   }>;
   followUpRenderCommand?: string;
-}
-
-function pathInsideCwd(runtime: CliRuntime, path: string): boolean {
-  const cwdIsWindowsAbsolute = isWindowsAbsolutePath(runtime.cwd);
-  const pathIsWindowsAbsolute = isWindowsAbsolutePath(path);
-  if (cwdIsWindowsAbsolute || pathIsWindowsAbsolute) {
-    if (!cwdIsWindowsAbsolute || !pathIsWindowsAbsolute) {
-      return false;
-    }
-    const repoRelative = win32.relative(runtime.cwd, path);
-    return (
-      repoRelative === "" ||
-      (!repoRelative.startsWith("..") &&
-        !repoRelative.startsWith("\\") &&
-        !isWindowsAbsolutePath(repoRelative))
-    );
-  }
-  const repoRelative = relative(runtime.cwd, path);
-  return (
-    repoRelative === "" ||
-    (!repoRelative.startsWith("..") &&
-      !repoRelative.startsWith("/") &&
-      !repoRelative.startsWith("\\") &&
-      !isWindowsAbsolutePath(repoRelative))
-  );
-}
-
-function isWindowsAbsolutePath(path: string): boolean {
-  return /^[a-z]:[\\/]/iu.test(path) || path.startsWith("\\\\") || /^\\[^\\]/u.test(path);
-}
-
-function pathBasename(path: string): string {
-  return path.includes("\\") || isWindowsAbsolutePath(path) ? win32.basename(path) : basename(path);
-}
-
-function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", "'\\''")}'`;
-}
-
-function redactedPathDisplay(
-  runtime: CliRuntime,
-  path: string | undefined,
-): MdPdfTemplateCodexReportPathDisplay | undefined {
-  if (!path) {
-    return undefined;
-  }
-  const insideCwd = pathInsideCwd(runtime, path);
-  const relativePath =
-    isWindowsAbsolutePath(runtime.cwd) && isWindowsAbsolutePath(path)
-      ? win32.relative(runtime.cwd, path)
-      : relative(runtime.cwd, path);
-  const basenameValue = pathBasename(path);
-  return {
-    display: insideCwd ? (relativePath.length > 0 ? relativePath : ".") : basenameValue,
-    basename: basenameValue,
-    redacted: !insideCwd,
-  };
 }
 
 function reportArtifactId(bundleId: string): string {
@@ -242,8 +184,8 @@ function reportFiles(input: {
         : {
             role: "diagnostic-report",
             path:
-              redactedPathDisplay(input.runtime, input.outputPlan.report.path)?.display ??
-              pathBasename(input.outputPlan.report.path),
+              publicPathDisplay(input.runtime, input.outputPlan.report.path)?.display ??
+              publicPathBasename(input.outputPlan.report.path),
             planned: true,
           },
     );
@@ -261,7 +203,7 @@ function followUpRenderCommand(input: {
     return undefined;
   }
   const inputPath = input.state.inputPath
-    ? (redactedPathDisplay(input.runtime, input.state.inputPath)?.display ?? "<input.md>")
+    ? (publicPathDisplay(input.runtime, input.state.inputPath)?.display ?? "<input.md>")
     : "<input.md>";
   const templatePath = `<template-bundle>/${input.outputPlan.templateHtml.bundlePath}`;
   const cssPath = `<template-bundle>/${input.outputPlan.styleCss.bundlePath}`;
@@ -304,7 +246,7 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
     },
     input: {
       ...(input.state.inputPath
-        ? { markdown: redactedPathDisplay(input.runtime, input.state.inputPath) }
+        ? { markdown: publicPathDisplay(input.runtime, input.state.inputPath) }
         : {}),
       ...(input.state.intent ? { intent: input.state.intent } : {}),
       fontHints: input.state.fontHints,
@@ -312,7 +254,7 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
     baseProfile: {
       ...input.signals.baseProfile,
       ...(input.state.baseProfilePath
-        ? { source: redactedPathDisplay(input.runtime, input.state.baseProfilePath) }
+        ? { source: publicPathDisplay(input.runtime, input.state.baseProfilePath) }
         : {}),
     },
     recipe: recipeSummary(input.signals),
@@ -360,6 +302,13 @@ export async function writeMdPdfTemplateCodexReportArtifact(input: {
   await writeTextFileSafe(
     input.outputPlan.report.path,
     serializeMdPdfTemplateCodexReportArtifact(createMdPdfTemplateCodexReportArtifact(input)),
-    { overwrite: input.overwrite },
+    {
+      label: "--codex-report-output",
+      overwrite: input.overwrite,
+      parentRootDirectory:
+        input.outputPlan.report.location === "in-bundle"
+          ? input.outputPlan.outputDirectory
+          : input.runtime.cwd,
+    },
   );
 }

@@ -21,6 +21,7 @@ md-pdf/**/*.css
 md-pdf/**/*.json
 md-pdf/**/*-md-pdf-profile-*.yml
 md-pdf/**/md-pdf-template-*/
+md-pdf/smoke/**
 
 # misc
 ### macOS ###

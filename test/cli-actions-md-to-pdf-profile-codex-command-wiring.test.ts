@@ -8,6 +8,7 @@ test("md pdf-profile codex command forwards positional input and repeated font h
   const calls: unknown[] = [];
   const actionStubs = {
     actionMdFrontmatterToJson: async () => {},
+    actionMdPdfProjectCodex: async () => {},
     actionMdPdfProfileCodex: async (_runtime: unknown, options: unknown) => {
       calls.push(options);
     },

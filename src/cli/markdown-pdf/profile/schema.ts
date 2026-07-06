@@ -18,6 +18,19 @@ export const MARKDOWN_PDF_PROFILE_ROOT_KEYS = [
   "code",
 ] as const;
 
+const MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES: Partial<
+  Record<(typeof MARKDOWN_PDF_PROFILE_ROOT_KEYS)[number], string[]>
+> = {
+  page: ["page.size", "page.orientation", "page margins"],
+  toc: ["toc.enabled", "toc.depth", "toc.pageBreak"],
+  fonts: ["fonts.body", "fonts.heading", "fonts.code", "fonts.pageChrome"],
+  titleBlock: ["titleBlock.metadataTitle"],
+};
+
+export const MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
+  (key) => key !== "profile",
+).flatMap((key) => MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES[key] ?? [key]);
+
 const ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
 const PROFILE_IDENTITY_KEYS = new Set(["id", "source", "basedOn", "preset", "createdAt"]);
 const PAGE_KEYS = new Set([

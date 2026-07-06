@@ -1,9 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import {
   applyMarkdownPdfTemplateCodexDecision,
   buildMarkdownPdfTemplateCodexPrompt,
   MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
+  MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
   parseMarkdownPdfTemplateCodexDecision,
   suggestMarkdownPdfTemplateWithCodex,
   type MarkdownPdfTemplateCodexRequest,
@@ -76,6 +77,9 @@ function responseFromDecision(input: {
   recipeSource?: string;
   templateFamily?: string;
   textAlign?: string;
+  warnings?: string[];
+  unsupportedDirections?: string[];
+  fallbackReason?: string;
 }): string {
   const coverEnabled = input.coverEnabled ?? true;
   const recipePreset = input.recipePreset ?? "article";
@@ -113,9 +117,9 @@ function responseFromDecision(input: {
     managed_assets:
       input.managedAssets ??
       (coverEnabled ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }] : []),
-    warnings: [],
-    unsupported_directions: [],
-    fallback_reason: "",
+    warnings: input.warnings ?? [],
+    unsupported_directions: input.unsupportedDirections ?? [],
+    fallback_reason: input.fallbackReason ?? "",
   });
 }
 
@@ -160,6 +164,10 @@ function assertStrictSchemaObjects(value: unknown, context = "schema"): void {
 }
 
 describe("Markdown PDF template Codex adapter", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
   test("builds bounded prompt facts with families, slots, hooks, and asset sizing signals", () => {
     const prompt = buildMarkdownPdfTemplateCodexPrompt(requestBase({ coverImage: true }));
     const facts = promptFacts(prompt);
@@ -322,6 +330,81 @@ describe("Markdown PDF template Codex adapter", () => {
     });
   });
 
+  test("starts the default Codex runner in the request working directory", async () => {
+    let capturedThreadOptions: unknown;
+    let capturedRunMessages: unknown;
+    let capturedRunOptions: unknown;
+    const originalTimeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+    const timeoutCalls: number[] = [];
+    if (!originalTimeoutDescriptor || typeof originalTimeoutDescriptor.value !== "function") {
+      throw new Error("AbortSignal.timeout is not available");
+    }
+    const originalTimeout = originalTimeoutDescriptor.value as typeof AbortSignal.timeout;
+    Object.defineProperty(AbortSignal, "timeout", {
+      ...originalTimeoutDescriptor,
+      value: (milliseconds: number) => {
+        timeoutCalls.push(milliseconds);
+        return originalTimeout.call(AbortSignal, milliseconds);
+      },
+    });
+
+    mock.module("@openai/codex-sdk", () => ({
+      Codex: class {
+        startThread(options: unknown) {
+          capturedThreadOptions = options;
+          return {
+            run: async (messages: unknown, options: unknown) => {
+              capturedRunMessages = messages;
+              capturedRunOptions = options;
+              return {
+                finalResponse: responseFromDecision({
+                  coverEnabled: false,
+                  templateFamily: "document-layered",
+                }),
+              };
+            },
+          };
+        }
+      },
+    }));
+
+    let result: Awaited<ReturnType<typeof suggestMarkdownPdfTemplateWithCodex>>;
+    try {
+      result = await suggestMarkdownPdfTemplateWithCodex(requestBase());
+    } finally {
+      Object.defineProperty(AbortSignal, "timeout", originalTimeoutDescriptor);
+    }
+
+    const threadOptions = capturedThreadOptions as {
+      approvalPolicy: string;
+      modelReasoningEffort: string;
+      networkAccessEnabled: boolean;
+      sandboxMode: string;
+      webSearchMode: string;
+      workingDirectory: string;
+    };
+    const runMessages = capturedRunMessages as Array<{ text: string; type: string }>;
+    const runOptions = capturedRunOptions as { outputSchema: unknown; signal: AbortSignal };
+    expect(result.decision.decisionMode).toBe("adapted");
+    expect(threadOptions).toMatchObject({
+      approvalPolicy: "never",
+      modelReasoningEffort: "low",
+      networkAccessEnabled: true,
+      sandboxMode: "read-only",
+      webSearchMode: "disabled",
+    });
+    expect(threadOptions.workingDirectory).toBe("/repo");
+    expect(runMessages).toEqual([
+      expect.objectContaining({
+        text: expect.stringContaining("Deterministic facts:"),
+        type: "text",
+      }),
+    ]);
+    expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA);
+    expect(runOptions.signal).toBeInstanceOf(AbortSignal);
+    expect(timeoutCalls).toEqual([MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS]);
+  });
+
   test("rejects unbounded cover composition values", () => {
     expect(() =>
       parseMarkdownPdfTemplateCodexDecision(
@@ -451,6 +534,31 @@ describe("Markdown PDF template Codex adapter", () => {
     expect(result.decision.cssBlocks).toEqual([
       { css: ".pdf-cover-media__caption { color: #555555; }", slot: "cover" },
     ]);
+  });
+
+  test("redacts model-originated paths and URLs in template free text", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          decisionMode: "conservative-fallback",
+          fallbackReason: "Could not use /Users/example/private.css or https://example.com/a.css",
+          templateFamily: "document-layered",
+          unsupportedDirections: ["Read file:///Users/example/secret.css"],
+          warnings: ["Skipped C:\\Users\\example\\secret.css"],
+        }),
+    });
+
+    expect(result.decision).toMatchObject({
+      decisionMode: "conservative-fallback",
+      fallbackReason: "Could not use [local-path] or [remote-url]",
+      unsupportedDirections: ["Read [local-path]"],
+      warnings: ["Skipped [local-path]"],
+    });
+    expect(JSON.stringify(result.decision)).not.toContain("/Users/example");
+    expect(JSON.stringify(result.decision)).not.toContain("C:\\Users\\example");
+    expect(JSON.stringify(result.decision)).not.toContain("https://example.com");
   });
 
   test("accepts bounded template font decisions", async () => {

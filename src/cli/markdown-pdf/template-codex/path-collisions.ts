@@ -1,8 +1,12 @@
-import { lstat, readdir, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 import { CliError } from "../../errors";
 import { isNotFoundError } from "../../actions/markdown/common";
+import {
+  assertUsableCodexOutputDirectory,
+  assertWritableCodexPlannedFile,
+} from "../codex-output-path-policy";
 
 export function sameResolvedPath(left: string | undefined, right: string | undefined): boolean {
   return Boolean(left && right && resolve(left) === resolve(right));
@@ -98,49 +102,21 @@ export async function assertDistinctPathPairs(
 
 export async function assertUsableTemplateCodexOutputDirectory(
   outputDirectory: string,
-  options: { allowExistingContents?: boolean; overwrite?: boolean },
+  options: { allowExistingContents?: boolean; overwrite?: boolean; parentRootDirectory?: string },
 ): Promise<"existing" | "missing"> {
-  try {
-    const stats = await lstat(outputDirectory);
-    if (stats.isSymbolicLink()) {
-      throw new CliError(`Template output directory is a symlink: ${outputDirectory}`, {
-        code: "OUTPUT_SYMLINK",
-        exitCode: 2,
-      });
-    }
-    if (!stats.isDirectory()) {
-      throw new CliError(`Template output path is not a directory: ${outputDirectory}`, {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      });
-    }
-    if (!options.overwrite && !options.allowExistingContents) {
-      const entries = await readdir(outputDirectory);
-      if (entries.length > 0) {
-        throw new CliError(
-          `Template output directory is not empty: ${outputDirectory}. Use --overwrite to replace recipe files.`,
-          {
-            code: "OUTPUT_EXISTS",
-            exitCode: 2,
-          },
-        );
-      }
-    }
-    return "existing";
-  } catch (error) {
-    if (error instanceof CliError) {
-      throw error;
-    }
-    if (isNotFoundError(error)) {
-      return "missing";
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CliError(
-      `Failed to inspect template output directory: ${outputDirectory} (${message})`,
-      {
-        code: "FILE_READ_ERROR",
-        exitCode: 2,
-      },
-    );
-  }
+  return assertUsableCodexOutputDirectory(outputDirectory, {
+    allowExistingContents: options.allowExistingContents,
+    failedInspectLabel: "template output directory",
+    kindLabel: "Template",
+    overwrite: options.overwrite,
+    parentRootDirectory: options.parentRootDirectory,
+    replacementLabel: "recipe files",
+  });
+}
+
+export async function assertWritableTemplateCodexPlannedFile(
+  file: { path: string },
+  options: { label: string; overwrite?: boolean; parentRootDirectory?: string },
+): Promise<void> {
+  await assertWritableCodexPlannedFile(file, options);
 }

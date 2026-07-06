@@ -1,5 +1,7 @@
 export { actionMdFrontmatterToJson } from "./frontmatter-to-json";
 export type { MdFrontmatterToJsonOptions } from "./frontmatter-to-json";
+export { actionMdPdfProjectCodex } from "./pdf-project-codex";
+export type { MdPdfProjectCodexCliOptions, MdPdfProjectCodexOptions } from "./pdf-project-codex";
 export { actionMdPdfProfileCodex } from "./pdf-profile-codex";
 export type { MdPdfProfileCodexCliOptions, MdPdfProfileCodexOptions } from "./pdf-profile-codex";
 export { actionMdPdfTemplateCodex } from "./pdf-template-codex";

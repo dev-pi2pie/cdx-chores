@@ -21,40 +21,12 @@ function minimalPng(width: number, height: number): Buffer {
   return bytes;
 }
 
-async function createTemplateCodexStub(fixtureDir: string): Promise<string> {
-  const stubPath = join(fixtureDir, "codex-stub.mjs");
-  const response = JSON.stringify({
-    decision_mode: "no-usable-template",
-    template_family: "none",
-    recipe_preset: "none",
-    slots: {
-      recipe_preset: { preset: "article", source: "renderer-default" },
-      cover: {
-        enabled: false,
-        byline: "none",
-        composition: "media-first-caption",
-        image_fit: "",
-        image_anchor: "center",
-        media_align: "center",
-        media_scale: "balanced",
-        text_align: "center",
-        style: "none",
-        orientation_bucket: "unknown",
-        fit_pressure: "unknown",
-      },
-      tables: { density: "standard", repeat_header: true, width: "content" },
-      code: { style: "shiki-compatible", line_wrap: "wrap", preserve_selectors: true },
-      spacing: { density: "standard" },
-      typography: { scale: "standard" },
-      colors: { palette: "neutral" },
-    },
-    css_blocks: [],
-    font_decisions: [],
-    managed_assets: [],
-    warnings: ["Unsupported template direction."],
-    unsupported_directions: ["Unsupported template direction."],
-    fallback_reason: "Unsupported template direction.",
-  });
+async function createCodexJsonlStub(input: {
+  fixtureDir: string;
+  filename: string;
+  response: string;
+}): Promise<string> {
+  const stubPath = join(input.fixtureDir, input.filename);
   await writeFile(
     stubPath,
     `#!/usr/bin/env node
@@ -63,7 +35,7 @@ await new Promise((resolve, reject) => {
   process.stdin.on("end", resolve);
   process.stdin.on("error", reject);
 });
-const response = ${JSON.stringify(response)};
+const response = ${JSON.stringify(input.response)};
 process.stdout.write(JSON.stringify({ type: "thread.started", thread_id: "stub-thread" }) + "\\n");
 process.stdout.write(JSON.stringify({ type: "turn.started" }) + "\\n");
 process.stdout.write(JSON.stringify({
@@ -79,6 +51,62 @@ process.stdout.write(JSON.stringify({
   );
   await chmod(stubPath, 0o755);
   return stubPath;
+}
+
+async function createTemplateCodexStub(fixtureDir: string): Promise<string> {
+  return await createCodexJsonlStub({
+    fixtureDir,
+    filename: "template-codex-stub.mjs",
+    response: JSON.stringify({
+      decision_mode: "no-usable-template",
+      template_family: "none",
+      recipe_preset: "none",
+      slots: {
+        recipe_preset: { preset: "article", source: "renderer-default" },
+        cover: {
+          enabled: false,
+          byline: "none",
+          composition: "media-first-caption",
+          image_fit: "",
+          image_anchor: "center",
+          media_align: "center",
+          media_scale: "balanced",
+          text_align: "center",
+          style: "none",
+          orientation_bucket: "unknown",
+          fit_pressure: "unknown",
+        },
+        tables: { density: "standard", repeat_header: true, width: "content" },
+        code: { style: "shiki-compatible", line_wrap: "wrap", preserve_selectors: true },
+        spacing: { density: "standard" },
+        typography: { scale: "standard" },
+        colors: { palette: "neutral" },
+      },
+      css_blocks: [],
+      font_decisions: [],
+      managed_assets: [],
+      warnings: ["Unsupported template direction."],
+      unsupported_directions: ["Unsupported template direction."],
+      fallback_reason: "Unsupported template direction.",
+    }),
+  });
+}
+
+async function createProfileCodexStub(fixtureDir: string): Promise<string> {
+  return await createCodexJsonlStub({
+    fixtureDir,
+    filename: "profile-codex-stub.mjs",
+    response: JSON.stringify({
+      decision_mode: "no-usable-profile",
+      selected_candidate_id: "none",
+      accepted_patches: [],
+      accepted_font_patches: [],
+      reasoning: "The requested profile direction is unsupported.",
+      warnings: ["Unsupported profile direction."],
+      fallback_reason: "Unsupported profile direction.",
+      unmatched_directions: ["unsupported profile direction"],
+    }),
+  });
 }
 
 async function createFakeMarkdownPdfDependencies(binDir: string, html: string): Promise<void> {
@@ -518,6 +546,272 @@ describe("cli command: md pdf-template codex", () => {
   });
 });
 
+describe("cli command: md pdf-project codex", () => {
+  test("documents the project Codex helper options", () => {
+    const result = runCli(["md", "pdf-project", "codex", "--help"]);
+    const normalizedStdout = result.stdout.replace(/\s+/g, " ");
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Usage: cdx-chores md pdf-project codex [options] [input]");
+    expect(normalizedStdout).toContain(
+      "Draft a coordinated Markdown PDF profile and template project bundle",
+    );
+    expect(result.stdout).toContain("input");
+    expect(normalizedStdout).toContain("Markdown sample for shared project signals");
+    expect(result.stdout).toContain("-i, --input <path>");
+    expect(result.stdout).toContain("--intent <text>");
+    expect(result.stdout).toContain("--font-hint <text>");
+    expect(result.stdout).toContain("--base-profile <path>");
+    expect(result.stdout).toContain("--cover-image <path>");
+    expect(result.stdout).toContain("-o, --output <directory>");
+    expect(result.stdout).toContain("--dry-run");
+    expect(result.stdout).toContain("--keep-codex-report");
+    expect(result.stdout).toContain("--codex-report-output <path>");
+    expect(result.stdout).toContain("--overwrite");
+    expect(result.stdout).not.toContain("--preset <value>");
+    expect(result.stdout).not.toContain("--page-size <value>");
+    expect(result.stdout).not.toContain("--orientation <value>");
+    expect(result.stdout).not.toContain("--margin <length>");
+    expect(result.stdout).not.toContain("--margin-x <length>");
+    expect(result.stdout).not.toContain("--margin-y <length>");
+    expect(result.stdout).not.toContain("--margin-top <length>");
+    expect(result.stdout).not.toContain("--margin-right <length>");
+    expect(result.stdout).not.toContain("--margin-bottom <length>");
+    expect(result.stdout).not.toContain("--margin-left <length>");
+    expect(result.stdout).not.toContain("--toc");
+    expect(result.stdout).not.toContain("--toc-depth <n>");
+    expect(result.stdout).not.toContain("--toc-page-break <value>");
+    expect(result.stderr).toBe("");
+  });
+
+  test("rejects recipe flags from the project Codex command surface", () => {
+    for (const flag of ["--preset", "--margin", "--toc"] as const) {
+      const result = runCli(["md", "pdf-project", "codex", flag, "report"]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(`unknown option '${flag}'`);
+    }
+  });
+
+  test("rejects conflicting positional and explicit project inputs from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-input-conflict", async (fixtureDir) => {
+      const firstInputPath = join(fixtureDir, "one.md");
+      const secondInputPath = join(fixtureDir, "two.md");
+      await writeFile(firstInputPath, "# One\n", "utf8");
+      await writeFile(secondInputPath, "# Two\n", "utf8");
+
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        toRepoRelativePath(firstInputPath),
+        "--input",
+        toRepoRelativePath(secondInputPath),
+        "--output",
+        toRepoRelativePath(join(fixtureDir, "pdf-project")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Positional input and --input");
+    });
+  });
+
+  test("rejects invalid project report paths before later orchestration work", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-report-path", async (fixtureDir) => {
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        "--codex-report-output",
+        toRepoRelativePath(join(fixtureDir, "project-report.txt")),
+      ]);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("project Codex report path must end with .json");
+    });
+  });
+
+  test("writes deterministic project bundles from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-write", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "base.yml");
+      const outputPath = join(fixtureDir, "pdf-project");
+      await writeFile(
+        baseProfilePath,
+        "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\n",
+        "utf8",
+      );
+
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        "--base-profile",
+        toRepoRelativePath(baseProfilePath),
+        "--output",
+        toRepoRelativePath(outputPath),
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Project signal mode: deterministic");
+      expect(result.stdout).toContain("Final decision mode: deterministic");
+      expect(result.stdout).toContain("Profile: profile.yml");
+      expect(result.stdout).toContain("Template HTML: template.html");
+      expect(result.stdout).toContain("Stylesheet: style.css");
+      expect(result.stderr).toContain("Wrote Markdown PDF project bundle:");
+      expect(await readFile(join(outputPath, "profile.yml"), "utf8")).toContain("md-pdf-profile-");
+      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
+      expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
+    });
+  });
+
+  test("writes dry-run project reports from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-cli-dry-run-report", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "base.yml");
+      const outputPath = join(fixtureDir, "pdf-project");
+      await writeFile(
+        baseProfilePath,
+        "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\n",
+        "utf8",
+      );
+
+      const result = runCli([
+        "md",
+        "pdf-project",
+        "codex",
+        "--base-profile",
+        toRepoRelativePath(baseProfilePath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--dry-run",
+        "--keep-codex-report",
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Project signal mode: deterministic");
+      expect(result.stdout).toContain("Final decision mode: deterministic");
+      expect(result.stdout).toContain("Dry run only. No project bundle files were written.");
+      expect(result.stdout).toContain("Codex report:");
+      expect(result.stdout).toContain(
+        toRepoRelativePath(join(outputPath, "project.codex-report.json")),
+      );
+      expect(result.stdout).toContain("Follow-up render:");
+      expect(result.stdout).toContain("<input.md>");
+      expect(result.stdout).toContain("<output.pdf>");
+      expect(result.stderr).toBe("");
+      expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
+      expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
+      expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
+
+      const reportText = await readFile(join(outputPath, "project.codex-report.json"), "utf8");
+      const report = JSON.parse(reportText) as {
+        advisoryOnly: boolean;
+        artifactType: string;
+        files: Array<{ bundlePath?: string; role: string }>;
+        followUpRenderCommand: { args: string[]; display: string };
+        project: { decisionMode: string; signalMode: string };
+      };
+      expect(report).toMatchObject({
+        advisoryOnly: true,
+        artifactType: "markdown-pdf-codex-project-report",
+        project: {
+          decisionMode: "deterministic",
+          signalMode: "deterministic",
+        },
+      });
+      expect(report.files.map((file) => file.role)).toEqual([
+        "profile",
+        "template-html",
+        "style-css",
+        "project-report",
+      ]);
+      expect(report.files.find((file) => file.role === "project-report")).toMatchObject({
+        bundlePath: "project.codex-report.json",
+      });
+      expect(report.followUpRenderCommand.display).toContain("<input.md>");
+      expect(report.followUpRenderCommand.display).toContain("<output.pdf>");
+      expect(report.followUpRenderCommand.args).toContain("<input.md>");
+      expect(report.followUpRenderCommand.args).toContain("<output.pdf>");
+    });
+  });
+
+  test("writes dry-run reports before no-usable project failures from the command layer", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-cli-dry-run-no-usable-report",
+      async (fixtureDir) => {
+        const baseProfilePath = join(fixtureDir, "base.yml");
+        const reportPath = join(fixtureDir, "project-report.json");
+        const outputPath = join(fixtureDir, "pdf-project");
+        await writeFile(
+          baseProfilePath,
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "page:",
+            "  size: Letter",
+            "cover:",
+            "  enabled: true",
+            "  style: report",
+            "  fields:",
+            "    title: Project Cover",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const result = runCli([
+          "md",
+          "pdf-project",
+          "codex",
+          "--base-profile",
+          toRepoRelativePath(baseProfilePath),
+          "--output",
+          toRepoRelativePath(outputPath),
+          "--dry-run",
+          "--codex-report-output",
+          toRepoRelativePath(reportPath),
+        ]);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("Project signal mode: deterministic");
+        expect(result.stdout).toContain("Final decision mode: no-usable-project");
+        expect(result.stdout).toContain("Dry run only. No project bundle files were written.");
+        expect(result.stdout).toContain("Codex report:");
+        expect(result.stdout).toContain(toRepoRelativePath(reportPath));
+        expect(result.stdout).not.toContain(fixtureDir);
+        expect(result.stderr).toContain("profile-owned text cover");
+        expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
+        expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
+        expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
+
+        expect(await pathExists(join(outputPath, "project.codex-report.json"))).toBe(false);
+
+        const reportText = await readFile(reportPath, "utf8");
+        const report = JSON.parse(reportText) as {
+          files: Array<{ path?: string; role: string }>;
+          followUpRenderCommand?: unknown;
+          input: { baseProfile: { basename: string } };
+          project: { decisionMode: string; fallbackReason?: string };
+        };
+        expect(report.project).toMatchObject({
+          decisionMode: "no-usable-project",
+          fallbackReason:
+            "Project template would defeat the profile-owned text cover; disable the profile cover or provide a compatible cover template.",
+        });
+        expect(report.input.baseProfile.basename).toBe("base.yml");
+        expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
+        expect(report.files[0]?.path).toBe(toRepoRelativePath(reportPath));
+        expect(report.files[0]?.path).not.toContain(fixtureDir);
+        expect(report.followUpRenderCommand).toBeUndefined();
+      },
+    );
+  });
+});
+
 describe("cli command: md pdf-profile init", () => {
   test("writes a profile file from the command layer", async () => {
     await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {
@@ -603,6 +897,58 @@ describe("cli command: md pdf-profile codex", () => {
       expect(result.stdout).toContain("Decision: deterministic");
       expect(result.stderr).toContain("Wrote Markdown PDF profile:");
       expect(await readFile(outputPath, "utf8")).toContain("source: deterministic");
+    });
+  });
+
+  test("writes no-usable failure reports from the command layer", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-cli-no-usable-report", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "profile.yml");
+      const reportPath = join(fixtureDir, "profile.codex-report.json");
+      const codexStubPath = await createProfileCodexStub(fixtureDir);
+
+      const result = runCli(
+        [
+          "md",
+          "pdf-profile",
+          "codex",
+          "--intent",
+          "unsupported profile direction",
+          "--output",
+          toRepoRelativePath(outputPath),
+          "--codex-report-output",
+          toRepoRelativePath(reportPath),
+        ],
+        undefined,
+        {
+          CDX_CHORES_CODEX_PATH: codexStubPath,
+          CODEX_API_KEY: "",
+          OPENAI_API_KEY: "",
+        },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Requesting Codex Markdown PDF profile recommendation");
+      expect(result.stderr).toContain("Wrote Codex report:");
+      expect(result.stderr).toContain("Codex did not find a usable Markdown PDF profile.");
+      expect(await pathExists(outputPath)).toBe(false);
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+        artifact: { type: string };
+        result: {
+          failure?: { kind: string; message: string };
+          status: string;
+          unmatchedDirections: string[];
+        };
+      };
+      expect(report.artifact.type).toBe("markdown-pdf-codex-profile-report");
+      expect(report.result).toMatchObject({
+        failure: {
+          kind: "no-usable-profile",
+          message: "Codex did not find a usable Markdown PDF profile.",
+        },
+        status: "failed",
+        unmatchedDirections: [],
+      });
     });
   });
 

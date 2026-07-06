@@ -19,6 +19,11 @@ import {
 } from "../../../cli/markdown-pdf/template-codex";
 import type { MarkdownPdfTemplateCodexRequest } from "./types";
 
+type MarkdownPdfTemplateCodexPromptRequest = Omit<
+  MarkdownPdfTemplateCodexRequest,
+  "workingDirectory"
+>;
+
 function summarizeOutputPlan(outputPlan: MarkdownPdfTemplateCodexOutputPlan) {
   return {
     bundleId: outputPlan.bundleId,
@@ -56,7 +61,7 @@ function supportedFamilies() {
 }
 
 function expectedRecipePresetSource(
-  request: MarkdownPdfTemplateCodexRequest,
+  request: MarkdownPdfTemplateCodexPromptRequest,
 ): MarkdownPdfTemplateCodexRecipePresetSource {
   if (request.signals.recipe.explicitFields.includes("preset")) {
     return "explicit-recipe";
@@ -71,7 +76,7 @@ function expectedRecipePresetSource(
 }
 
 export function buildMarkdownPdfTemplateCodexPrompt(
-  request: MarkdownPdfTemplateCodexRequest,
+  request: MarkdownPdfTemplateCodexPromptRequest,
 ): string {
   const facts = {
     assetSizingPolicy: {

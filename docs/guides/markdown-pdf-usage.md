@@ -1,14 +1,16 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-06-25
+modified-date: 2026-07-05
 status: completed
 agent: codex
 ---
 
 ## Goal
 
-Document the current `md to-pdf`, `md pdf-profile init`, and `md pdf-template init` workflow for rendering Markdown into PDF through Pandoc-generated HTML and WeasyPrint.
+Document the current `md to-pdf`, profile, template, and project-helper
+workflow for rendering Markdown into PDF through Pandoc-generated HTML and
+WeasyPrint.
 
 ## Requirements
 
@@ -31,7 +33,60 @@ cdx-chores doctor --json
 
 ## Current Release Boundary
 
-Markdown PDF rendering, profile initialization, template initialization, and the direct Codex-assisted profile and template helpers are direct CLI flows. Interactive Markdown PDF flows remain deferred to a later plan.
+Markdown PDF rendering, profile initialization, template initialization, and the
+direct Codex-assisted profile, template, and project helpers are direct CLI
+flows. Interactive Markdown PDF flows remain deferred to a later plan.
+
+## Codex Helper Choice
+
+| Need | Recommended helper |
+| --- | --- |
+| Reusable page shape, ToC, page numbers, fonts, code highlighting, or text cover policy | `md pdf-profile codex` |
+| Reviewable HTML/CSS layout, local cover images, managed assets, or reusable template styling | `md pdf-template codex` |
+| One coordinated project folder containing `profile.yml`, `template.html`, `style.css`, and optional managed assets | `md pdf-project codex` |
+
+The dedicated guides are:
+
+- [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
+- [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
+- [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
+
+## Project Helper
+
+Use `md pdf-project codex` when one request should coordinate the profile and
+template layers:
+
+```bash
+cdx-chores md pdf-project codex ./report.md \
+  --intent "client report with a cover image, table of contents, readable code, and dense tables" \
+  --cover-image ./cover.jpg \
+  --output ./report-pdf-project
+```
+
+Successful normal execution writes a project folder:
+
+```text
+report-pdf-project/
+  profile.yml
+  template.html
+  style.css
+  assets/
+    cover.jpg
+```
+
+Render the accepted project artifacts with `md to-pdf`:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./report-pdf-project/profile.yml \
+  --template ./report-pdf-project/template.html \
+  --css ./report-pdf-project/style.css \
+  --output ./report.pdf
+```
+
+The project helper does not render the PDF automatically. Once the folder is
+written, the render step is deterministic and does not need Codex.
 
 ## Basic Render
 
@@ -596,6 +651,7 @@ cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 
 - `docs/guides/markdown-pdf-codex-profile-helper.md`
 - `docs/guides/markdown-pdf-codex-template-helper.md`
+- `docs/guides/markdown-pdf-codex-project-helper.md`
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
 - `docs/researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md`
 - `docs/researches/research-2026-05-07-font-command-discovery-options.md`
