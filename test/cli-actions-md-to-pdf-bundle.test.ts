@@ -75,6 +75,37 @@ describe("Markdown PDF render bundle discovery", () => {
     });
   });
 
+  test.each([
+    ["profile type in artifactType", { artifactType: "markdown-pdf-codex-profile-report" }],
+    [
+      "template type in artifact.type",
+      { artifact: { type: "markdown-pdf-codex-template-report" } },
+    ],
+    ["project type in artifact.type", { artifact: { type: "markdown-pdf-codex-project-report" } }],
+  ])("keeps an unrelated cross-field %s as a profile candidate", async (_label, payload) => {
+    await withTempFixtureDir("md-pdf-render-bundle-report-cross-field", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "cross-field.json"), `${JSON.stringify(payload)}\n`, "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(candidateNames(result).profile).toEqual(["cross-field.json"]);
+    });
+  });
+
+  test("keeps oversized custom JSON as a profile candidate without report classification", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-large-json", async (fixtureDir) => {
+      const payload = {
+        artifactType: "markdown-pdf-codex-template-report",
+        padding: "x".repeat(64 * 1024),
+      };
+      await writeFile(join(fixtureDir, "large.json"), `${JSON.stringify(payload)}\n`, "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(candidateNames(result).profile).toEqual(["large.json"]);
+    });
+  });
+
   test("keeps malformed and unrelated JSON as profile candidates", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-json", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "broken.json"), "not-json\n", "utf8");

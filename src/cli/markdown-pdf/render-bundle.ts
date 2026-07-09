@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { open, readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
 
 import { CliError } from "../errors";
@@ -33,11 +33,12 @@ export interface MarkdownPdfRenderBundleResolvedInputs {
 
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
 
-const MARKDOWN_PDF_CODEX_REPORT_TYPES = new Set([
-  "markdown-pdf-codex-profile-report",
+const MARKDOWN_PDF_PROFILE_CODEX_REPORT_TYPE = "markdown-pdf-codex-profile-report";
+const MARKDOWN_PDF_TEMPLATE_PROJECT_CODEX_REPORT_TYPES = new Set([
   "markdown-pdf-codex-template-report",
   "markdown-pdf-codex-project-report",
 ]);
+const REPORT_DISCRIMINATOR_READ_LIMIT_BYTES = 64 * 1024;
 
 function isNodeErrorCode(error: unknown, code: string): boolean {
   return (
@@ -57,7 +58,7 @@ function hasMarkdownPdfCodexReportDiscriminator(value: unknown): boolean {
   const record = value as Record<string, unknown>;
   if (
     typeof record.artifactType === "string" &&
-    MARKDOWN_PDF_CODEX_REPORT_TYPES.has(record.artifactType)
+    MARKDOWN_PDF_TEMPLATE_PROJECT_CODEX_REPORT_TYPES.has(record.artifactType)
   ) {
     return true;
   }
@@ -65,18 +66,26 @@ function hasMarkdownPdfCodexReportDiscriminator(value: unknown): boolean {
     return false;
   }
   const artifact = record.artifact as Record<string, unknown>;
-  return typeof artifact.type === "string" && MARKDOWN_PDF_CODEX_REPORT_TYPES.has(artifact.type);
+  return artifact.type === MARKDOWN_PDF_PROFILE_CODEX_REPORT_TYPE;
 }
 
 async function isRecognizedCodexReportJson(path: string, basename: string): Promise<boolean> {
   if (isReservedCodexReportFilename(basename)) {
     return true;
   }
+  let handle;
   try {
-    const value: unknown = JSON.parse(await readFile(path, "utf8"));
+    handle = await open(path, "r");
+    const stats = await handle.stat();
+    if (stats.size > REPORT_DISCRIMINATOR_READ_LIMIT_BYTES) {
+      return false;
+    }
+    const value: unknown = JSON.parse(await handle.readFile({ encoding: "utf8" }));
     return hasMarkdownPdfCodexReportDiscriminator(value);
   } catch {
     return false;
+  } finally {
+    await handle?.close();
   }
 }
 

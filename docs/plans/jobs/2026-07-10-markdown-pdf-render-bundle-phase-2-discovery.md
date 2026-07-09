@@ -42,7 +42,7 @@ The Phase 1 action guard therefore remains active.
 
 | Command                                              | Result                       |
 | ---------------------------------------------------- | ---------------------------- |
-| `bun test test/cli-actions-md-to-pdf-bundle.test.ts` | Passed: 13 tests, 0 failures |
+| `bun test test/cli-actions-md-to-pdf-bundle.test.ts` | Passed: 17 tests, 0 failures |
 | `bun run lint`                                       | Passed                       |
 | `bun run format:check`                               | Passed                       |
 | `bun run build`                                      | Passed                       |
@@ -51,8 +51,15 @@ The Phase 1 action guard therefore remains active.
 
 ## Review
 
-The concrete Phase 2 commit range and review result will be recorded after the
-checkpoint commit exists.
+The initial review of
+`bf9f622942b13fb3d7ff469e792fa0df47c66bc7..d63b65d` requested two changes:
+
+- match only the exact documented discriminator field/value pairs
+- bound custom JSON report classification reads and retain oversized JSON as a
+  profile candidate
+
+Both changes and inverse-field/oversized-file regression tests were added. The
+expanded Phase 2 range remains pending final review.
 
 ## Related Plan
 
