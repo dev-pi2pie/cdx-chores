@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF render bundle Phase 4 render integration"
 created-date: 2026-07-10
-status: in-progress
+modified-date: 2026-07-10
+status: completed
 agent: codex
 ---
 
@@ -43,7 +44,7 @@ later phases.
 - [x] Preserve profile/recipe/CSS/code/default-CSS precedence.
 - [x] Preserve template-relative managed assets.
 - [x] Pass the Phase 4 validation gates.
-- [ ] Review the Phase 4 commit range and resolve actionable findings.
+- [x] Review the Phase 4 commit range and resolve actionable findings.
 
 ## Verification
 
@@ -65,8 +66,29 @@ complete render handoff without external tool availability.
 
 ## Review
 
-The concrete Phase 4 commit range and review result will be recorded after the
-checkpoint commit exists.
+The independent code review covered
+`0e71e24936da84085b22479841b9e8e8c67baed8..c1447fc`.
+
+Verdict: `APPROVE` with no actionable findings.
+
+The reviewer independently confirmed:
+
+- discovery, resolution, selected-file validation, and output checks run before
+  summaries and dependency probes
+- bundle, mixed explicit, and explicit-only behavior remain compatible
+- summaries preserve user-facing paths and provenance
+- profile, template, CSS, recipe, default-CSS, and code-highlight behavior reuse
+  the existing pipeline
+- template-relative assets remain compatible
+- failure paths create neither PDF nor intermediate HTML output
+- the focused 93-test suite, full tests, lint, format, and diff checks pass
+
+## Outcome
+
+Phase 4 is complete. `md to-pdf --bundle <directory>` now renders single-role,
+partial, and complete bundles through the existing deterministic pipeline. The
+plan remains active because helper follow-up adoption and current-behavior guide
+closeout belong to Phases 5 and 6.
 
 ## Related Plan
 

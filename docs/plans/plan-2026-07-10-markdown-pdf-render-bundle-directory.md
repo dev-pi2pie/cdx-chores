@@ -309,7 +309,7 @@ Tasks:
       partial, and complete bundles.
 - [x] Add precedence tests covering profile values, direct recipe flags,
       `--no-default-css`, and code-highlight overrides.
-- [ ] Review the Phase 4 commit range and resolve all actionable findings.
+- [x] Review the Phase 4 commit range and resolve all actionable findings.
 
 Phase gate:
 
