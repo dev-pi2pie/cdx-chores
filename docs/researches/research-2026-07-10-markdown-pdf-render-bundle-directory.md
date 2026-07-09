@@ -402,6 +402,10 @@ An implementation plan should cover:
    `draft`, move it to `in-progress` when implementation work begins, and close
    it only when the evidence required by its conclusions is recorded.
 
+## Related Plans
+
+- [Markdown PDF render bundle directory implementation](../plans/plan-2026-07-10-markdown-pdf-render-bundle-directory.md)
+
 ## Related Research
 
 - [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
