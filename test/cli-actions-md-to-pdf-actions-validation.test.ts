@@ -25,16 +25,16 @@ describe("cli action modules: md to-pdf validation", () => {
     expectNoOutput();
   });
 
-  test("fails closed until render bundle discovery is integrated", async () => {
+  test("rejects missing bundle directories before dependency execution", async () => {
     const { runtime, expectNoOutput } = createActionTestRuntime();
     const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
 
     await expectCliError(
-      () => actionMdToPdf(runtime, { input: "report.md", bundle: "report-project", runner }),
+      () => actionMdToPdf(runtime, { input: "report.md", bundle: "missing-project", runner }),
       {
-        code: "MARKDOWN_PDF_BUNDLE_NOT_INTEGRATED",
+        code: "FILE_NOT_FOUND",
         exitCode: 2,
-        messageIncludes: "render-bundle discovery is not integrated yet",
+        messageIncludes: "Markdown PDF bundle directory not found",
       },
     );
 

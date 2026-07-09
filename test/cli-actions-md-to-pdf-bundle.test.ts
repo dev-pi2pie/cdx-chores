@@ -1,13 +1,18 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
+import { actionMdToPdf } from "../src/cli/actions";
 import {
   discoverMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
+  type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
+import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import { expectCliError } from "./helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 function candidateNames(input: Awaited<ReturnType<typeof discoverMarkdownPdfRenderBundle>>) {
   return {
@@ -15,6 +20,15 @@ function candidateNames(input: Awaited<ReturnType<typeof discoverMarkdownPdfRend
     template: input.template.map((candidate) => candidate.basename),
     css: input.css.map((candidate) => candidate.basename),
   };
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 describe("Markdown PDF render bundle discovery", () => {
@@ -289,6 +303,278 @@ describe("Markdown PDF render bundle resolution", () => {
       expect(error.message.indexOf("Multiple template")).toBeLessThan(
         error.message.indexOf("Multiple stylesheet"),
       );
+    });
+  });
+});
+
+describe("Markdown PDF render bundle action integration", () => {
+  test.each([
+    {
+      label: "profile-only",
+      files: [["profile.yml", "page:\n  size: A4\n"]],
+      expectedLines: ["- profile: profile.yml"],
+    },
+    {
+      label: "template-only",
+      files: [["template.html", "<html><body>$body$</body></html>\n"]],
+      expectedLines: ["- template: template.html"],
+    },
+    {
+      label: "stylesheet-only",
+      files: [["style.css", "body { color: black; }\n"]],
+      expectedLines: ["- css: style.css"],
+    },
+    {
+      label: "partial",
+      files: [
+        ["template.html", "<html><body>$body$</body></html>\n"],
+        ["style.css", "body { color: black; }\n"],
+      ],
+      expectedLines: ["- template: template.html", "- css: style.css"],
+    },
+    {
+      label: "complete",
+      files: [
+        ["profile.yml", "page:\n  size: A4\n"],
+        ["template.html", "<html><body>$body$</body></html>\n"],
+        ["style.css", "body { color: black; }\n"],
+      ],
+      expectedLines: ["- profile: profile.yml", "- template: template.html", "- css: style.css"],
+    },
+  ])("renders a $label bundle through the existing pipeline", async ({ files, expectedLines }) => {
+    await withTempFixtureDir("md-pdf-render-bundle-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      for (const [filename, content] of files) {
+        await writeFile(join(bundleDirectory, filename), content, "utf8");
+      }
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        runner,
+      });
+
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expect(stdout.text).toContain("Resolved Markdown PDF bundle:");
+      for (const line of expectedLines) {
+        expect(stdout.text).toContain(line);
+      }
+      expect(stdout.text).toContain("Wrote PDF:");
+      expect(
+        calls.some((call) => call.command === "pandoc" && !call.args.includes("--version")),
+      ).toBe(true);
+      expectNoStderr();
+    });
+  });
+
+  test("uses explicit paths to resolve bundle conflicts and reports their provenance", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-explicit", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      const explicitTemplate = join(fixtureDir, "selected.html");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(join(bundleDirectory, "compact.html"), "$body$\n", "utf8");
+      await writeFile(join(bundleDirectory, "detailed.html"), "$body$\n", "utf8");
+      await writeFile(join(bundleDirectory, "style.css"), "body {}\n", "utf8");
+      await writeFile(explicitTemplate, "<html><body>$body$</body></html>\n", "utf8");
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        template: toRepoRelativePath(explicitTemplate),
+        runner,
+      });
+
+      expect(stdout.text).toContain(
+        `- template: ${toRepoRelativePath(explicitTemplate)} (explicit)`,
+      );
+      expect(stdout.text).toContain("- css: style.css");
+      expectNoStderr();
+    });
+  });
+
+  test("rejects unresolved conflicts before dependency probes or output writes", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-conflict", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutputPath = join(fixtureDir, "report.html");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(join(bundleDirectory, "compact.html"), "$body$\n", "utf8");
+      await writeFile(join(bundleDirectory, "detailed.html"), "$body$\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            htmlOutput: toRepoRelativePath(htmlOutputPath),
+            bundle: toRepoRelativePath(bundleDirectory),
+            runner,
+          }),
+        {
+          code: "MARKDOWN_PDF_BUNDLE_AMBIGUOUS",
+          exitCode: 2,
+          messageIncludes: "Select one with --template <path>",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      expect(await pathExists(outputPath)).toBe(false);
+      expect(await pathExists(htmlOutputPath)).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("does not print a summary or probe dependencies when a selected profile is invalid", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-invalid", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutputPath = join(fixtureDir, "report.html");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(join(bundleDirectory, "profile.yml"), "unknown: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          htmlOutput: toRepoRelativePath(htmlOutputPath),
+          bundle: toRepoRelativePath(bundleDirectory),
+          runner,
+        }),
+      ).rejects.toThrow("Unknown Markdown PDF profile key: profile.unknown");
+
+      expect(calls).toHaveLength(0);
+      expect(await pathExists(outputPath)).toBe(false);
+      expect(await pathExists(htmlOutputPath)).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("preserves profile overrides, CSS order, and template-relative managed assets", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-complete", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      const templatePath = join(bundleDirectory, "template.html");
+      const cssPath = join(bundleDirectory, "style.css");
+      const coverPath = join(bundleDirectory, "assets", "cover.png");
+      await mkdir(join(bundleDirectory, "assets"), { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        join(bundleDirectory, "profile.yml"),
+        "page:\n  orientation: portrait\n",
+        "utf8",
+      );
+      await writeFile(
+        templatePath,
+        '<html><body><img src="assets/cover.png">$body$</body></html>\n',
+        "utf8",
+      );
+      await writeFile(cssPath, ".bundle-style { color: black; }\n", "utf8");
+      await writeFile(coverPath, "cover", "utf8");
+      const renderedStyles: string[] = [];
+      let rewrittenTemplate = "";
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const selectedTemplate = args[args.indexOf("--template") + 1];
+          if (selectedTemplate) {
+            rewrittenTemplate = await readFile(selectedTemplate, "utf8");
+          }
+        }
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((argument, index) => (argument === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        orientation: "landscape",
+        runner: capturingRunner,
+      });
+
+      expect(rewrittenTemplate).toContain(`src="${pathToFileURL(coverPath).href}"`);
+      expect(renderedStyles.join("\n")).toContain("size: A4 landscape");
+      expect(renderedStyles.at(-1)).toContain(".bundle-style");
+      const weasyprintCall = calls.find(
+        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      );
+      expect(weasyprintCall?.args).toContain(cssPath);
+      expectNoStderr();
+    });
+  });
+
+  test("preserves no-default-css and code-highlight overrides for bundle inputs", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-overrides", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutput = join(fixtureDir, "report.html");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      const cssPath = join(bundleDirectory, "style.css");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n\n```js\nconst x = 1; // [!code ++]\n```\n", "utf8");
+      await writeFile(
+        join(bundleDirectory, "profile.yml"),
+        "code:\n  highlight: true\n  transformerNotation: true\n",
+        "utf8",
+      );
+      await writeFile(cssPath, ".bundle-style { color: black; }\n", "utf8");
+      const html =
+        '<html><body><pre><code class="language-js">const x = 1; // [!code ++]</code></pre></body></html>';
+      const { calls, runner } = createPdfRunner({ html });
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        htmlOutput: toRepoRelativePath(htmlOutput),
+        bundle: toRepoRelativePath(bundleDirectory),
+        noDefaultCss: true,
+        codeHighlight: false,
+        runner,
+      });
+
+      expect(await readFile(htmlOutput, "utf8")).toBe(html);
+      const weasyprintCall = calls.find(
+        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      );
+      expect(weasyprintCall?.args.filter((argument) => argument === "--stylesheet")).toHaveLength(
+        1,
+      );
+      expect(weasyprintCall?.args).toContain(cssPath);
+      expectNoStderr();
     });
   });
 });

@@ -290,25 +290,26 @@ Phase record:
 
 Tasks:
 
-- [ ] Invoke the resolver early in `actionMdToPdf` when `--bundle` is present.
-- [ ] Feed resolved bundle paths into the existing profile, template, and CSS
+- [x] Invoke the resolver early in `actionMdToPdf` when `--bundle` is present.
+- [x] Feed resolved bundle paths into the existing profile, template, and CSS
       variables without creating a parallel rendering path.
-- [ ] Preserve existing explicit-only behavior when `--bundle` is absent.
-- [ ] Run existing profile parsing and file validation after resolution.
-- [ ] Print a concise resolved-bundle summary before Pandoc and WeasyPrint are
+- [x] Preserve existing explicit-only behavior when `--bundle` is absent.
+- [x] Run existing profile parsing and file validation after resolution.
+- [x] Print a concise resolved-bundle summary before Pandoc and WeasyPrint are
       invoked, omitting absent roles.
-- [ ] Mark explicit versus discovered roles only where needed to explain mixed
+- [x] Mark explicit versus discovered roles only where needed to explain mixed
       resolution.
-- [ ] Keep terminal paths user-facing and avoid persisting machine-local
+- [x] Keep terminal paths user-facing and avoid persisting machine-local
       absolute paths.
-- [ ] Prove template-relative local assets still resolve from the selected
+- [x] Prove template-relative local assets still resolve from the selected
       template directory.
-- [ ] Prove discovery, ambiguity, and selected-file validation failures write no
+- [x] Prove discovery, ambiguity, and selected-file validation failures write no
       PDF or intermediate HTML.
-- [ ] Add action-level tests for profile-only, template-only, stylesheet-only,
+- [x] Add action-level tests for profile-only, template-only, stylesheet-only,
       partial, and complete bundles.
-- [ ] Add precedence tests covering profile values, direct recipe flags,
+- [x] Add precedence tests covering profile values, direct recipe flags,
       `--no-default-css`, and code-highlight overrides.
+- [ ] Review the Phase 4 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -317,9 +318,9 @@ Phase gate:
 - Existing explicit render tests remain unchanged and passing.
 - Failure occurs before renderer dependency probes and output writes.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-4-render-integration.md`
+- [Phase 4 render integration](jobs/2026-07-10-markdown-pdf-render-bundle-phase-4-render-integration.md)
 
 ### Phase 5: Helper Follow-Up Commands And Compatibility Coverage
 
