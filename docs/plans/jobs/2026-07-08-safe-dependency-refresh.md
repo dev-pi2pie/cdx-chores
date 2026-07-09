@@ -1,6 +1,7 @@
 ---
 title: "Safe dependency refresh"
 created-date: 2026-07-08
+modified-date: 2026-07-10
 status: completed
 agent: Codex
 ---
@@ -71,3 +72,50 @@ Documentation:
 - `git diff --check` passed.
 - `bun outdated` now reports only the intentionally deferred `@types/node`
   major update from `25.9.4` to `26.1.1`.
+
+## Follow-up: Codex SDK 0.144.0 (2026-07-10)
+
+### Scope
+
+- Update `@openai/codex-sdk` from `^0.143.0` to `^0.144.0` and refresh
+  `bun.lock`.
+- Update the Codex SDK baseline in `README.md` and
+  `docs/guides/cli-action-tool-integration-guide.md` from `0.143.0` to
+  `0.144.0` while keeping the unpublished `v0.1.5-canary.5` label.
+- Continue deferring `@types/node@26.1.1` while the supported runtime remains
+  Node `>=22.23.0` and CI remains on Node 24.
+- Defer TypeScript 7 to a separate migration because `tsdown@0.22.4` declares
+  support for TypeScript 5 and 6, while this repository uses tsdown declaration
+  generation.
+
+### Changes
+
+- Updated `@openai/codex-sdk` from `^0.143.0` to `^0.144.0`.
+- Updated the public Codex SDK baseline wording from `0.143.0` to `0.144.0`.
+- Updated the integration guide's `modified-date` to reflect the substantive
+  baseline change.
+
+### Rationale
+
+- The published SDK JavaScript and TypeScript declaration files are unchanged
+  between `0.143.0` and `0.144.0`; the SDK now pins the matching
+  `@openai/codex@0.144.0` package.
+- The matching Codex launcher adds pnpm-owned installation detection and keeps
+  the existing Bun and npm launcher paths, so the current lazy dynamic import
+  and CJS compatibility boundary remain appropriate.
+
+### Verification
+
+- `bun install --frozen-lockfile` passed with no changes.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bun run build` passed on `tsdown v0.22.4` and `rolldown v1.1.5`.
+- Focused Codex adapter coverage passed with `70` tests and `0` failures.
+- `bun test` passed with `1460` tests and `0` failures across `204` files.
+- CJS built-output smoke passed with `require("./dist/cjs/index.cjs")`.
+- ESM CLI built-output smoke passed with `node dist/esm/bin.mjs --version`,
+  reporting `0.1.5-canary.5`.
+- `bun audit` passed with `No vulnerabilities found`.
+- `git diff --check` passed.
+- Final `bun outdated` reports only the intentionally deferred
+  `@types/node@26.1.1` and TypeScript `7.0.2` major updates.
