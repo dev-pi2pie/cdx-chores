@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF render bundle Phase 3 conflicts"
 created-date: 2026-07-10
-status: in-progress
+modified-date: 2026-07-10
+status: completed
 agent: codex
 ---
 
@@ -38,7 +39,7 @@ stays active.
 - [x] Return resolution provenance for every selected role.
 - [x] Cover unique, mixed, explicit-only, and multi-role conflict behavior.
 - [x] Pass the Phase 3 validation gates.
-- [ ] Review the Phase 3 commit range and resolve actionable findings.
+- [x] Review the Phase 3 commit range and resolve actionable findings.
 
 ## Verification
 
@@ -53,8 +54,26 @@ stays active.
 
 ## Review
 
-The concrete Phase 3 commit range and review result will be recorded after the
-checkpoint commit exists.
+The independent code review covered
+`6b6bd1864236b8d0e47bbaa200b6503b9d378ec7..50e8981`.
+
+Verdict: `APPROVE` with no actionable findings.
+
+The reviewer independently confirmed:
+
+- explicit role selections bypass ambiguity only for the selected role
+- outside-bundle and all-explicit selections work
+- remaining conflicts use stable role and candidate ordering
+- diagnostics identify each resolving flag
+- provenance is preserved for Phase 4 summaries
+- the focused 22-test suite, lint, build, full tests, and diff checks pass
+
+## Outcome
+
+Phase 3 is complete. Explicit disambiguation, stable aggregated errors, and
+resolution provenance are committed and verified. Phase 4 can integrate these
+resolved inputs into the existing renderer without adding resolution policy to
+the action.
 
 ## Related Plan
 

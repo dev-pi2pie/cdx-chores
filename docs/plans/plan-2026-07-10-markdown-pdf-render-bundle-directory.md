@@ -274,7 +274,7 @@ Tasks:
       discovery for later summary output.
 - [x] Add focused tests for single-role and multi-role conflicts, full explicit
       resolution, and mixed bundle/external inputs.
-- [ ] Review the Phase 3 commit range and resolve all actionable findings.
+- [x] Review the Phase 3 commit range and resolve all actionable findings.
 
 Phase gate:
 
