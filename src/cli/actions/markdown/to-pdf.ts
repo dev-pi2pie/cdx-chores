@@ -23,6 +23,7 @@ import { definedRecipeOptions, ensureExistingFile, ensureOutputDoesNotExist } fr
 export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   input: string;
   output?: string;
+  bundle?: string;
   profile?: string;
   meta?: string[];
   template?: string;
@@ -37,6 +38,18 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
 
 export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
+  const bundleInput =
+    options.bundle === undefined ? undefined : assertNonEmpty(options.bundle, "Bundle directory");
+  const bundleDirectory = bundleInput ? resolveFromCwd(runtime, bundleInput) : undefined;
+  if (bundleDirectory) {
+    throw new CliError(
+      "--bundle is registered, but render-bundle discovery is not integrated yet.",
+      {
+        code: "MARKDOWN_PDF_BUNDLE_NOT_INTEGRATED",
+        exitCode: 2,
+      },
+    );
+  }
   const outputPath = resolveFromCwd(
     runtime,
     options.output?.trim() || defaultOutputPath(inputPath, ".pdf"),

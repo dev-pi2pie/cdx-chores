@@ -7,6 +7,13 @@ export type {
   RenderMarkdownPdfInput,
   RenderMarkdownPdfResult,
 } from "./render";
+export type {
+  MarkdownPdfRenderBundleCandidate,
+  MarkdownPdfRenderBundleResolutionSource,
+  MarkdownPdfRenderBundleResolvedInput,
+  MarkdownPdfRenderBundleResolvedInputs,
+  MarkdownPdfRenderBundleRole,
+} from "./render-bundle";
 export {
   MARKDOWN_PDF_ORIENTATIONS,
   MARKDOWN_PDF_PAGE_SIZES,

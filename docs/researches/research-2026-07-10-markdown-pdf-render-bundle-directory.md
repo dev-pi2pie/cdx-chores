@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Render Bundle Directory"
 created-date: 2026-07-10
-status: draft
+modified-date: 2026-07-10
+status: in-progress
 agent: codex
 ---
 
@@ -19,10 +20,9 @@ ownership:
 - project folders still coordinate compatible artifacts
 - `md to-pdf` still owns rendering and render-time overrides
 
-This research begins as `draft` while the new contract is reviewed. If
-implementation planning or active investigation begins, move it to
-`in-progress`; close it according to the repository research-status policy once
-the evidence needed for its conclusions is recorded.
+This research is `in-progress` while the approved implementation plan is being
+executed. Close it according to the repository research-status policy once the
+evidence needed for its conclusions is recorded.
 
 ## Starting State
 
@@ -398,9 +398,8 @@ An implementation plan should cover:
 7. Reuse existing validation, precedence, asset, and output-safety behavior.
 8. Do not require a manifest unless a later runtime feature demonstrates that
    filename discovery and explicit disambiguation are insufficient.
-9. Follow the normal research lifecycle: keep the newly reviewed contract
-   `draft`, move it to `in-progress` when implementation work begins, and close
-   it only when the evidence required by its conclusions is recorded.
+9. Keep this research `in-progress` while the implementation plan is active and
+   close it only when the evidence required by its conclusions is recorded.
 
 ## Related Plans
 

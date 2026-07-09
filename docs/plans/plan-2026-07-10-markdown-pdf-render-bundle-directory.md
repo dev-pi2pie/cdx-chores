@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF render bundle directory implementation"
 created-date: 2026-07-10
-status: draft
+modified-date: 2026-07-10
+status: active
 agent: codex
 ---
 
@@ -204,14 +205,16 @@ large directory hierarchy for this bounded resolver.
 
 Tasks:
 
-- [ ] Register `--bundle <directory>` on `md to-pdf`.
-- [ ] Add `bundle?: string` to command and action option types.
-- [ ] Resolve the bundle path from the CLI working directory without changing
+- [x] Register `--bundle <directory>` on `md to-pdf`.
+- [x] Add `bundle?: string` to command and action option types.
+- [x] Resolve the bundle path from the CLI working directory without changing
       existing explicit artifact path behavior.
-- [ ] Define role, candidate, resolution-source, and resolved-input types.
-- [ ] Keep command-to-action forwarding explicit and testable.
-- [ ] Add help-output and command-wiring tests.
-- [ ] Reject empty option values through the existing CLI/input-error posture.
+- [x] Define role, candidate, resolution-source, and resolved-input types.
+- [x] Keep command-to-action forwarding explicit and testable.
+- [x] Add help-output and command-wiring tests.
+- [x] Reject empty option values through the existing CLI/input-error posture.
+- [x] Keep the partially implemented flag fail closed until renderer integration.
+- [ ] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -438,9 +441,8 @@ with the UTC date when each record begins:
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-helper-adoption.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-docs-closeout.md`
 
-Keep this plan `draft` until Phase 1 begins. Move it to `active` when
-implementation starts, and to `completed` only after Phase 6 evidence and the
-expected job records are linked.
+This plan is `active` from the start of Phase 1. Move it to `completed` only
+after Phase 6 evidence and the expected job records are linked.
 
 ## Completion Criteria
 

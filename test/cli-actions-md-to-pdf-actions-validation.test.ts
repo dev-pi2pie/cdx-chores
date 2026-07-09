@@ -8,6 +8,40 @@ import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-te
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf validation", () => {
+  test("rejects empty bundle values before dependency execution", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+
+    await expectCliError(
+      () => actionMdToPdf(runtime, { input: "report.md", bundle: "   ", runner }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Bundle directory is required.",
+      },
+    );
+
+    expect(calls).toHaveLength(0);
+    expectNoOutput();
+  });
+
+  test("fails closed until render bundle discovery is integrated", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+
+    await expectCliError(
+      () => actionMdToPdf(runtime, { input: "report.md", bundle: "report-project", runner }),
+      {
+        code: "MARKDOWN_PDF_BUNDLE_NOT_INTEGRATED",
+        exitCode: 2,
+        messageIncludes: "render-bundle discovery is not integrated yet",
+      },
+    );
+
+    expect(calls).toHaveLength(0);
+    expectNoOutput();
+  });
+
   test("rejects missing input before dependency execution", async () => {
     await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
       const { runtime, expectNoOutput } = createActionTestRuntime();

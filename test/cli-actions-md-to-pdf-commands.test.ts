@@ -147,10 +147,11 @@ async function createFakeMarkdownPdfDependencies(binDir: string, html: string): 
 }
 
 describe("cli command: md to-pdf", () => {
-  test("lists code highlight flags in help", () => {
+  test("lists bundle and code highlight flags in help", () => {
     const result = runCli(["md", "to-pdf", "--help"]);
 
     expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("--bundle <directory>");
     expect(result.stdout).toContain("--code-highlight");
     expect(result.stdout).toContain("--no-code-highlight");
     expect(result.stderr).toBe("");
