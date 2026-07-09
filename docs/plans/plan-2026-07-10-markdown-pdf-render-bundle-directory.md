@@ -230,19 +230,20 @@ Phase record:
 
 Tasks:
 
-- [ ] Validate that `--bundle` resolves to an existing readable directory.
-- [ ] Read only direct directory entries and accept regular files only.
-- [ ] Classify profile, template, and stylesheet candidates case-insensitively
+- [x] Validate that `--bundle` resolves to an existing readable directory.
+- [x] Read only direct directory entries and accept regular files only.
+- [x] Classify profile, template, and stylesheet candidates case-insensitively
       by supported extension.
-- [ ] Sort candidate basenames deterministically.
-- [ ] Exclude `-codex-report.json` and `.codex-report.json` filename patterns.
-- [ ] Shallow-read remaining JSON only as needed to recognize the three current
+- [x] Sort candidate basenames deterministically.
+- [x] Exclude `-codex-report.json` and `.codex-report.json` filename patterns.
+- [x] Shallow-read remaining JSON only as needed to recognize the three current
       Markdown PDF Codex report discriminators.
-- [ ] Keep reserved report filenames excluded when their JSON is malformed.
-- [ ] Keep malformed or unrelated non-report JSON in the profile-candidate set.
-- [ ] Reject missing, non-directory, empty, and no-recognized-artifact bundles
+- [x] Keep reserved report filenames excluded when their JSON is malformed.
+- [x] Keep malformed or unrelated non-report JSON in the profile-candidate set.
+- [x] Reject missing, non-directory, empty, and no-recognized-artifact bundles
       before external dependency checks.
-- [ ] Add focused unit tests for every artifact role and report form.
+- [x] Add focused unit tests for every artifact role and report form.
+- [ ] Review the Phase 2 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -250,9 +251,9 @@ Phase gate:
 - Complete project folders ignore their optional Codex report and `assets/`.
 - No recursive or heuristic filename selection exists.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-2-discovery.md`
+- [Phase 2 discovery](jobs/2026-07-10-markdown-pdf-render-bundle-phase-2-discovery.md)
 
 ### Phase 3: Ambiguity And Explicit Disambiguation
 

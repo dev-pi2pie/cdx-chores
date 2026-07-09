@@ -9,11 +9,13 @@ export type {
 } from "./render";
 export type {
   MarkdownPdfRenderBundleCandidate,
+  MarkdownPdfRenderBundleCandidates,
   MarkdownPdfRenderBundleResolutionSource,
   MarkdownPdfRenderBundleResolvedInput,
   MarkdownPdfRenderBundleResolvedInputs,
   MarkdownPdfRenderBundleRole,
 } from "./render-bundle";
+export { discoverMarkdownPdfRenderBundle } from "./render-bundle";
 export {
   MARKDOWN_PDF_ORIENTATIONS,
   MARKDOWN_PDF_PAGE_SIZES,
