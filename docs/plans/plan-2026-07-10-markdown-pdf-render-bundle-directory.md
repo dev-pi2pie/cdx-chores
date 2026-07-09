@@ -243,7 +243,7 @@ Tasks:
 - [x] Reject missing, non-directory, empty, and no-recognized-artifact bundles
       before external dependency checks.
 - [x] Add focused unit tests for every artifact role and report form.
-- [ ] Review the Phase 2 commit range and resolve all actionable findings.
+- [x] Review the Phase 2 commit range and resolve all actionable findings.
 
 Phase gate:
 

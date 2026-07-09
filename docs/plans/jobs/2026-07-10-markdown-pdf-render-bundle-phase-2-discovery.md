@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF render bundle Phase 2 discovery"
 created-date: 2026-07-10
-status: in-progress
+modified-date: 2026-07-10
+status: completed
 agent: codex
 ---
 
@@ -36,7 +37,7 @@ The Phase 1 action guard therefore remains active.
 - [x] Keep malformed and unrelated non-report JSON as profile candidates.
 - [x] Reject missing, non-directory, empty, and no-artifact bundles.
 - [x] Pass the Phase 2 validation gates.
-- [ ] Review the Phase 2 commit range and resolve actionable findings.
+- [x] Review the Phase 2 commit range and resolve actionable findings.
 
 ## Verification
 
@@ -62,8 +63,27 @@ Both changes and inverse-field/oversized-file regression tests were added. The
 first rereview then identified that a size check followed by `readFile()` did
 not enforce the bound if a file grew between those operations. Classification
 now reads at most 64 KiB plus one byte directly and keeps the file as a profile
-candidate when the extra byte exists. The expanded Phase 2 range remains
-pending final review.
+candidate when the extra byte exists.
+
+The final independent review covered
+`bf9f622942b13fb3d7ff469e792fa0df47c66bc7..80d5c60`.
+
+Verdict: `APPROVE` with no remaining findings.
+
+The reviewer independently confirmed:
+
+- the read operation is strictly capped at 64 KiB plus one detection byte
+- oversized JSON remains a profile candidate
+- exact discriminator field/value matching remains intact
+- inverse-field regression cases remain covered
+- 17 focused tests passed
+- lint, format, and whitespace checks passed
+
+## Outcome
+
+Phase 2 is complete. Top-level candidate discovery, deterministic ordering,
+bounded report classification, and bundle input failures are committed and
+verified. Phase 3 can add ambiguity resolution without changing discovery.
 
 ## Related Plan
 
