@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF render bundle Phase 1 command surface"
 created-date: 2026-07-10
-status: in-progress
+modified-date: 2026-07-10
+status: completed
 agent: codex
 ---
 
@@ -34,7 +35,7 @@ phases.
 - [x] Cover help output, command forwarding, empty input, and the temporary
       guard.
 - [x] Pass the Phase 1 validation gates.
-- [ ] Review the Phase 1 commit range and resolve actionable findings.
+- [x] Review the Phase 1 commit range and resolve actionable findings.
 
 ## Verification
 
@@ -49,8 +50,23 @@ phases.
 
 ## Review
 
-The concrete Phase 1 commit range and review result will be recorded after the
-checkpoint commit exists.
+The independent code review covered
+`3829eaf0df3e3ed1c2e38464f8fb4c8f3720f6c8..b4d624c`.
+
+Verdict: `APPROVE` with no actionable findings.
+
+The reviewer independently confirmed:
+
+- 44 focused tests passed
+- `bun run lint` passed
+- `bun run build` passed
+- the working tree remained clean after verification
+
+## Outcome
+
+Phase 1 is complete. The CLI surface, action forwarding, resolver types, and
+temporary fail-closed guard are committed and verified. Phase 2 can implement
+top-level discovery without weakening the Phase 1 command boundary.
 
 ## Related Plan
 

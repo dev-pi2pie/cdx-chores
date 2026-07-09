@@ -214,7 +214,7 @@ Tasks:
 - [x] Add help-output and command-wiring tests.
 - [x] Reject empty option values through the existing CLI/input-error posture.
 - [x] Keep the partially implemented flag fail closed until renderer integration.
-- [ ] Review the Phase 1 commit range and resolve all actionable findings.
+- [x] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -222,9 +222,9 @@ Phase gate:
 - Command tests prove the raw directory value reaches the action unchanged.
 - No bundle discovery or render behavior is claimed complete yet.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-1-command-surface.md`
+- [Phase 1 command surface](jobs/2026-07-10-markdown-pdf-render-bundle-phase-1-command-surface.md)
 
 ### Phase 2: Top-Level Discovery And Report Classification
 
