@@ -259,21 +259,22 @@ Phase record:
 
 Tasks:
 
-- [ ] Apply explicit `--profile`, `--template`, and `--css` selections before
+- [x] Apply explicit `--profile`, `--template`, and `--css` selections before
       checking ambiguity for their roles.
-- [ ] Use bundle discovery only for roles that remain unspecified.
-- [ ] Fail when any unresolved role contains multiple candidates.
-- [ ] Aggregate profile, template, and stylesheet conflicts into one stable
+- [x] Use bundle discovery only for roles that remain unspecified.
+- [x] Fail when any unresolved role contains multiple candidates.
+- [x] Aggregate profile, template, and stylesheet conflicts into one stable
       error when practical.
-- [ ] List sorted candidate basenames and the matching resolving flag.
-- [ ] Use `CliError` with the normal invalid-input exit behavior.
-- [ ] Allow an explicit option to resolve the only ambiguous role in a bundle,
+- [x] List sorted candidate basenames and the matching resolving flag.
+- [x] Use `CliError` with the normal invalid-input exit behavior.
+- [x] Allow an explicit option to resolve the only ambiguous role in a bundle,
       even when no unresolved role remains.
-- [ ] Allow explicit artifact paths outside the selected bundle directory.
-- [ ] Return whether each resolved path came from an explicit option or bundle
+- [x] Allow explicit artifact paths outside the selected bundle directory.
+- [x] Return whether each resolved path came from an explicit option or bundle
       discovery for later summary output.
-- [ ] Add focused tests for single-role and multi-role conflicts, full explicit
+- [x] Add focused tests for single-role and multi-role conflicts, full explicit
       resolution, and mixed bundle/external inputs.
+- [ ] Review the Phase 3 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -281,9 +282,9 @@ Phase gate:
 - Every conflict has a deterministic, actionable error.
 - The explicit-disambiguation examples from the research pass unchanged.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-3-conflicts.md`
+- [Phase 3 conflicts](jobs/2026-07-10-markdown-pdf-render-bundle-phase-3-conflicts.md)
 
 ### Phase 4: Renderer Integration And Resolution Summary
 

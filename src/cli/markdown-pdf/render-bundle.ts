@@ -20,6 +20,12 @@ export interface MarkdownPdfRenderBundleCandidates {
   css: MarkdownPdfRenderBundleCandidate[];
 }
 
+export interface MarkdownPdfRenderBundleExplicitInputs {
+  profile?: string;
+  template?: string;
+  css?: string;
+}
+
 export interface MarkdownPdfRenderBundleResolvedInput {
   path: string;
   source: MarkdownPdfRenderBundleResolutionSource;
@@ -29,6 +35,10 @@ export interface MarkdownPdfRenderBundleResolvedInputs {
   profile?: MarkdownPdfRenderBundleResolvedInput;
   template?: MarkdownPdfRenderBundleResolvedInput;
   css?: MarkdownPdfRenderBundleResolvedInput;
+}
+
+export interface ResolveMarkdownPdfRenderBundleOptions {
+  displayDirectory?: string;
 }
 
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
@@ -184,4 +194,76 @@ export async function discoverMarkdownPdfRenderBundle(
   }
 
   return candidates;
+}
+
+const ROLE_RESOLUTION_CONFIG = [
+  { role: "profile", label: "profile", flag: "--profile" },
+  { role: "template", label: "template", flag: "--template" },
+  { role: "css", label: "stylesheet", flag: "--css" },
+] as const;
+
+interface MarkdownPdfRenderBundleConflict {
+  candidates: MarkdownPdfRenderBundleCandidate[];
+  flag: string;
+  label: string;
+}
+
+function bundleConflictMessage(
+  directory: string,
+  conflicts: MarkdownPdfRenderBundleConflict[],
+): string {
+  const sections = conflicts.map((conflict) => {
+    const candidateLines = conflict.candidates
+      .map((candidate) => `- ${candidate.basename}`)
+      .join("\n");
+    return [
+      `Multiple ${conflict.label} candidates were found:`,
+      candidateLines,
+      "",
+      `Select one with ${conflict.flag} <path>, or remove the extra candidate.`,
+    ].join("\n");
+  });
+  return [`Ambiguous Markdown PDF bundle: ${directory}`, ...sections].join("\n\n");
+}
+
+export function resolveMarkdownPdfRenderBundleInputs(
+  candidates: MarkdownPdfRenderBundleCandidates,
+  explicit: MarkdownPdfRenderBundleExplicitInputs = {},
+  options: ResolveMarkdownPdfRenderBundleOptions = {},
+): MarkdownPdfRenderBundleResolvedInputs {
+  const resolved: MarkdownPdfRenderBundleResolvedInputs = {};
+  const conflicts: MarkdownPdfRenderBundleConflict[] = [];
+
+  for (const config of ROLE_RESOLUTION_CONFIG) {
+    const explicitPath = explicit[config.role];
+    if (explicitPath) {
+      resolved[config.role] = { path: explicitPath, source: "explicit" };
+      continue;
+    }
+    const roleCandidates = candidates[config.role];
+    if (roleCandidates.length > 1) {
+      conflicts.push({
+        candidates: roleCandidates,
+        flag: config.flag,
+        label: config.label,
+      });
+      continue;
+    }
+    const candidate = roleCandidates[0];
+    if (candidate) {
+      resolved[config.role] = { path: candidate.path, source: "bundle" };
+    }
+  }
+
+  if (conflicts.length > 0) {
+    throw new CliError(
+      bundleConflictMessage(options.displayDirectory?.trim() || candidates.directory, conflicts),
+      {
+        code: "MARKDOWN_PDF_BUNDLE_AMBIGUOUS",
+        exitCode: 2,
+      },
+    );
+  }
+
+  return resolved;
 }
