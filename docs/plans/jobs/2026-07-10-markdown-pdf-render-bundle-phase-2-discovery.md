@@ -59,7 +59,11 @@ The initial review of
   profile candidate
 
 Both changes and inverse-field/oversized-file regression tests were added. The
-expanded Phase 2 range remains pending final review.
+first rereview then identified that a size check followed by `readFile()` did
+not enforce the bound if a file grew between those operations. Classification
+now reads at most 64 KiB plus one byte directly and keeps the file as a profile
+candidate when the extra byte exists. The expanded Phase 2 range remains
+pending final review.
 
 ## Related Plan
 

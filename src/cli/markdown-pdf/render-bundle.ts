@@ -76,11 +76,19 @@ async function isRecognizedCodexReportJson(path: string, basename: string): Prom
   let handle;
   try {
     handle = await open(path, "r");
-    const stats = await handle.stat();
-    if (stats.size > REPORT_DISCRIMINATOR_READ_LIMIT_BYTES) {
+    const buffer = Buffer.alloc(REPORT_DISCRIMINATOR_READ_LIMIT_BYTES + 1);
+    let offset = 0;
+    while (offset < buffer.length) {
+      const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, offset);
+      if (bytesRead === 0) {
+        break;
+      }
+      offset += bytesRead;
+    }
+    if (offset > REPORT_DISCRIMINATOR_READ_LIMIT_BYTES) {
       return false;
     }
-    const value: unknown = JSON.parse(await handle.readFile({ encoding: "utf8" }));
+    const value: unknown = JSON.parse(buffer.subarray(0, offset).toString("utf8"));
     return hasMarkdownPdfCodexReportDiscriminator(value);
   } catch {
     return false;
