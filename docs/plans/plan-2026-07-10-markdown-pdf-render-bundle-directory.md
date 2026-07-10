@@ -456,7 +456,7 @@ Tasks:
       through both bundle and explicit forms.
 - [x] Update the Phase 6 job record with focused, repository, and smoke
       validation.
-- [ ] Review the Phase 6 commit range and resolve all actionable findings.
+- [x] Review the Phase 6 commit range and resolve all actionable findings.
 
 Phase gate:
 

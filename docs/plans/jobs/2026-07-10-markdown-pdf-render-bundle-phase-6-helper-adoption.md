@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF render bundle Phase 6 helper adoption"
 created-date: 2026-07-10
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-10-markdown-pdf-render-bundle-directory.md
 ---
@@ -139,9 +139,29 @@ Sanitized results:
 
 ## Review
 
-The Phase 6 functional commit range will be reviewed from `2fcff90` through the
-functional Phase 6 head. Review evidence and disposition will be recorded before
-this job is marked completed.
+The independent code review covered `2fcff90..64b0936`.
+
+Verdict: `APPROVE` with no actionable findings.
+
+The reviewer independently confirmed:
+
+- template follow-up commands use only the bundle directory
+- project commands preserve their structured shape and public path behavior
+- no-usable decisions still omit follow-up commands
+- profile-helper ownership remains unchanged
+- bundle and explicit tests compare effective templates, stylesheets, HTML, and
+  PDF output
+- 147 focused tests passed
+- whitespace and public-record privacy checks passed
+- live bundle and explicit PDFs had matching hashes for each helper type
+
+## Outcome
+
+Phase 6 is complete. Template and project helper summaries and reports now use
+the directory-level bundle shorthand, explicit artifact flags remain a tested
+render contract, and profile helpers remain file-oriented. Phase 7 can update
+the public guides and close the plan against the recorded implementation
+evidence.
 
 ## Related Plan
 
