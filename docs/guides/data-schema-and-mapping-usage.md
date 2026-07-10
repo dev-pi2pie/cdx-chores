@@ -1,7 +1,7 @@
 ---
 title: "Data Schema And Mapping Usage"
 created-date: 2026-03-18
-modified-date: 2026-06-04
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -12,7 +12,7 @@ Use this guide for the shared header-mapping artifact contract behind reviewed s
 
 Use `docs/guides/data-source-shape-usage.md` for reviewed source-shape artifacts and shape-first Excel workflows.
 
-As of `v0.1.4`, this guide reflects the shipped split where header mappings stay a separate semantic-renaming layer on top of the current shaped source. They are reusable from both `data query` and `data extract`, but they are not a source-shape artifact and they do not change the `data query codex` surface.
+As of `v0.1.5`, this guide reflects the shipped split where header mappings stay a separate semantic-renaming layer on top of the current shaped source. They are reusable from both `data query` and `data extract`, but they are not a source-shape artifact and they do not change the `data query codex` surface.
 
 Current stable contract:
 

@@ -22,6 +22,9 @@ export const DEFAULT_MARKDOWN_PDF_PROFILE: Record<string, unknown> = {
   pageNumbers: {
     enabled: false,
   },
+  titleBlock: {
+    metadataTitle: "auto",
+  },
   code: {
     highlight: false,
     theme: "github-light",
@@ -53,6 +56,9 @@ export const DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE: NormalizedMarkdownPdfProfi
     position: "bottom-center",
     format: "{page}",
     scope: "body",
+  },
+  titleBlock: {
+    metadataTitle: "auto",
   },
   cover: {
     enabled: false,

@@ -2,11 +2,16 @@ import type { Command } from "commander";
 
 import {
   actionMdFrontmatterToJson,
+  actionMdPdfProjectCodex,
+  actionMdPdfProfileCodex,
   actionMdPdfProfileInit,
+  actionMdPdfTemplateCodex,
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,
 } from "../actions";
+import type { MdPdfProfileCodexCliOptions, MdPdfProjectCodexCliOptions } from "../actions/markdown";
+import type { MdPdfTemplateCodexCliOptions } from "../actions/markdown/pdf-template-codex";
 import { applyCommonFileOptions } from "../options/common";
 import { parsePositiveIntegerOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
@@ -31,6 +36,7 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
   input: string;
   output?: string;
   overwrite?: boolean;
+  bundle?: string;
   template?: string;
   css?: string;
   profile?: string;
@@ -51,6 +57,28 @@ interface MarkdownPdfProfileInitCliOptions extends MarkdownPdfRecipeCliOptions {
   output: string;
   overwrite?: boolean;
 }
+
+interface MarkdownCommandActions {
+  actionMdFrontmatterToJson: typeof actionMdFrontmatterToJson;
+  actionMdPdfProjectCodex: typeof actionMdPdfProjectCodex;
+  actionMdPdfProfileCodex: typeof actionMdPdfProfileCodex;
+  actionMdPdfProfileInit: typeof actionMdPdfProfileInit;
+  actionMdPdfTemplateCodex: typeof actionMdPdfTemplateCodex;
+  actionMdPdfTemplateInit: typeof actionMdPdfTemplateInit;
+  actionMdToDocx: typeof actionMdToDocx;
+  actionMdToPdf: typeof actionMdToPdf;
+}
+
+const defaultMarkdownCommandActions: MarkdownCommandActions = {
+  actionMdFrontmatterToJson,
+  actionMdPdfProjectCodex,
+  actionMdPdfProfileCodex,
+  actionMdPdfProfileInit,
+  actionMdPdfTemplateCodex,
+  actionMdPdfTemplateInit,
+  actionMdToDocx,
+  actionMdToPdf,
+};
 
 function collectStringOption(value: string, previous: string[] = []): string[] {
   return [...previous, value];
@@ -78,7 +106,11 @@ function applyMarkdownPdfRecipeOptions(command: Command): Command {
     );
 }
 
-export function registerMarkdownCommands(program: Command, runtime: CliRuntime): void {
+export function registerMarkdownCommands(
+  program: Command,
+  runtime: CliRuntime,
+  actions: MarkdownCommandActions = defaultMarkdownCommandActions,
+): void {
   const mdCommand = program.command("md").description("Markdown utilities");
 
   applyCommonFileOptions(
@@ -87,7 +119,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
       .description("Convert Markdown to DOCX using Pandoc")
       .requiredOption("-i, --input <path>", "Input Markdown file")
       .action(async (options: { input: string; output?: string; overwrite?: boolean }) => {
-        await actionMdToDocx(runtime, options);
+        await actions.actionMdToDocx(runtime, options);
       }),
   );
 
@@ -97,6 +129,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .command("to-pdf")
         .description("Convert Markdown to PDF using Pandoc and WeasyPrint")
         .requiredOption("-i, --input <path>", "Input Markdown file")
+        .option("--bundle <directory>", "Discover Markdown PDF render inputs from a directory")
         .option("--template <path>", "Custom Pandoc HTML template")
         .option("--css <path>", "Custom print stylesheet")
         .option("--profile <path>", "Markdown PDF profile file (.yml, .yaml, .json)")
@@ -111,7 +144,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         .option("--code-highlight", "Enable Shiki code highlighting")
         .option("--no-code-highlight", "Disable Shiki code highlighting")
         .action(async (options: MarkdownPdfCliOptions) => {
-          await actionMdToPdf(runtime, {
+          await actions.actionMdToPdf(runtime, {
             ...options,
             noDefaultCss: options.noDefaultCss ?? options.defaultCss === false,
           });
@@ -119,31 +152,114 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
     ),
   );
 
+  const pdfTemplateCommand = mdCommand
+    .command("pdf-template")
+    .description("Manage Markdown PDF templates");
+
   applyMarkdownPdfRecipeOptions(
-    mdCommand
-      .command("pdf-template")
-      .description("Manage Markdown PDF templates")
+    pdfTemplateCommand
       .command("init")
       .description("Write the default Markdown PDF template recipe")
       .requiredOption("-o, --output <path>", "Output template directory")
       .option("--overwrite", "Overwrite recipe files if they already exist", false)
       .action(async (options: MarkdownPdfTemplateInitCliOptions) => {
-        await actionMdPdfTemplateInit(runtime, options);
+        await actions.actionMdPdfTemplateInit(runtime, options);
       }),
   );
 
+  pdfTemplateCommand
+    .command("codex")
+    .argument("[input]", "Markdown sample for document-informed template signals")
+    .description("Draft a reviewable Markdown PDF template bundle from bounded signals")
+    .option("-i, --input <path>", "Same as the input argument; useful in scripts")
+    .option("--intent <text>", "Template, layout, and design direction")
+    .option(
+      "--font-hint <text>",
+      "Repeatable font preference hint for the same Codex request",
+      collectStringOption,
+    )
+    .option("--base-profile <path>", "Existing Markdown PDF profile to use as a signal")
+    .option("--cover-image <path>", "Local PNG, JPEG, or WebP cover image")
+    .option("-o, --output <path>", "Output template bundle directory")
+    .option(
+      "--dry-run",
+      "Preview signal collection, decision, synthesis, and validation without writing",
+      false,
+    )
+    .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
+    .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
+    .option("--overwrite", "Overwrite selected generated files if they already exist", false)
+    .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
+      await actions.actionMdPdfTemplateCodex(runtime, { ...options, positionalInput: input });
+    });
+
+  const pdfProfileCommand = mdCommand
+    .command("pdf-profile")
+    .description("Manage Markdown PDF profiles");
+
   applyMarkdownPdfRecipeOptions(
-    mdCommand
-      .command("pdf-profile")
-      .description("Manage Markdown PDF profiles")
+    pdfProfileCommand
       .command("init")
       .description("Write a Markdown PDF profile file")
       .requiredOption("-o, --output <path>", "Output profile file")
       .option("--overwrite", "Overwrite the profile file if it already exists", false)
       .action(async (options: MarkdownPdfProfileInitCliOptions) => {
-        await actionMdPdfProfileInit(runtime, options);
+        await actions.actionMdPdfProfileInit(runtime, options);
       }),
   );
+
+  pdfProfileCommand
+    .command("codex")
+    .argument("[input]", "Markdown sample for document-informed profile signals")
+    .description(
+      "Draft a reusable Markdown PDF profile from sample signals, hints, or fallback defaults",
+    )
+    .option("-i, --input <path>", "Same as the input argument; useful in scripts")
+    .option("--intent <text>", "Rendering direction for the reusable profile")
+    .option(
+      "--font-hint <text>",
+      "Repeatable font preference hint for the same Codex request",
+      collectStringOption,
+    )
+    .option("--base-profile <path>", "Existing Markdown PDF profile to refine")
+    .option("-o, --output <path>", "Output profile file (.yml, .yaml, .json)")
+    .option("--dry-run", "Preview the Codex profile decision without writing the profile", false)
+    .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
+    .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
+    .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
+    .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
+      await actions.actionMdPdfProfileCodex(runtime, { ...options, positionalInput: input });
+    });
+
+  const pdfProjectCommand = mdCommand
+    .command("pdf-project")
+    .description("Manage Markdown PDF project bundles");
+
+  pdfProjectCommand
+    .command("codex")
+    .argument("[input]", "Markdown sample for shared project signals")
+    .description("Draft a coordinated Markdown PDF profile and template project bundle")
+    .option("-i, --input <path>", "Same as the input argument; useful in scripts")
+    .option("--intent <text>", "Project render, layout, and design direction")
+    .option(
+      "--font-hint <text>",
+      "Repeatable font preference hint for the same project request",
+      collectStringOption,
+    )
+    .option("--base-profile <path>", "Existing Markdown PDF profile to refine or target")
+    .option("--cover-image <path>", "Local PNG, JPEG, or WebP cover image")
+    .option("-o, --output <directory>", "Output project bundle directory")
+    .option(
+      "--dry-run",
+      "Preview signal collection, phase decisions, synthesis, and validation without writing",
+      false,
+    )
+    .option("--keep-codex-report", "Write a diagnostic project Codex report", false)
+    .option("--codex-report-output <path>", "Write the diagnostic project report to this JSON path")
+    .option("--overwrite", "Overwrite selected project-generated outputs if safe", false)
+    .action(async (input: string | undefined, options: MdPdfProjectCodexCliOptions) => {
+      await actions.actionMdPdfProjectCodex(runtime, { ...options, positionalInput: input });
+    });
 
   mdCommand
     .command("frontmatter-to-json")
@@ -161,7 +277,7 @@ export function registerMarkdownCommands(program: Command, runtime: CliRuntime):
         pretty?: boolean;
         dataOnly?: boolean;
       }) => {
-        await actionMdFrontmatterToJson(runtime, options);
+        await actions.actionMdFrontmatterToJson(runtime, options);
       },
     );
 }

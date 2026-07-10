@@ -52,7 +52,7 @@ async function suggestSingleBatch(
     return { suggestions: [] };
   }
 
-  const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,

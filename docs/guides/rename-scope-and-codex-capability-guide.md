@@ -163,7 +163,7 @@ Important:
 ## References
 
 - `src/cli/actions/rename/index.ts`
-- `src/cli/actions/rename/codex.ts`
+- `src/cli/actions/rename/codex/`
 - `src/cli/actions/rename/filters.ts`
 - `src/cli/interactive.ts`
 - `src/cli/fs-utils.ts`

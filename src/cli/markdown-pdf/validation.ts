@@ -8,6 +8,35 @@ export const MARKDOWN_PDF_PRESETS = [
   "reader",
 ] as const;
 export type MarkdownPdfPreset = (typeof MARKDOWN_PDF_PRESETS)[number];
+export type MarkdownPdfPresetDensity = "compact" | "standard" | "spacious" | "wide";
+
+export interface MarkdownPdfPresetGuidance {
+  density: MarkdownPdfPresetDensity;
+  bestFor: string[];
+}
+
+export const MARKDOWN_PDF_PRESET_GUIDANCE: Record<MarkdownPdfPreset, MarkdownPdfPresetGuidance> = {
+  article: {
+    bestFor: ["general documents", "README-like technical docs", "short structured writing"],
+    density: "standard",
+  },
+  report: {
+    bestFor: ["formal reports", "specifications", "long-form documents"],
+    density: "standard",
+  },
+  "wide-table": {
+    bestFor: ["wide tables", "landscape reports", "dense tabular documents"],
+    density: "wide",
+  },
+  compact: {
+    bestFor: ["space-constrained output", "dense notes", "short handouts"],
+    density: "compact",
+  },
+  reader: {
+    bestFor: ["long reading documents", "narrative docs", "review copies"],
+    density: "spacious",
+  },
+};
 
 export const MARKDOWN_PDF_ORIENTATIONS = ["portrait", "landscape"] as const;
 export type MarkdownPdfOrientation = (typeof MARKDOWN_PDF_ORIENTATIONS)[number];

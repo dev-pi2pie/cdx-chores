@@ -57,6 +57,19 @@ describe("cli action modules: rename codex internals", () => {
     }
   });
 
+  test("startAnalyzerProgress renders one progress line on non-TTY output", () => {
+    const stdout = new CapturedTtyStream();
+    stdout.isTTY = false;
+    const progress = startAnalyzerProgress(
+      createProgressRuntime(stdout),
+      "Codex: analyzing 1 file",
+    );
+
+    progress.stop("done");
+
+    expect(stdout.chunks).toEqual(["Codex: analyzing 1 file...\n"]);
+  });
+
   test("selectCodexDocumentTextCandidates records PDF and DOCX gate reasons", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {

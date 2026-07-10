@@ -1,8 +1,7 @@
 import { accessSync, constants, existsSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { mkdtemp, rm } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-
-import { Codex } from "@openai/codex-sdk";
 
 import { sleep } from "../../utils/sleep";
 
@@ -65,10 +64,11 @@ export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export function startCodexReadOnlyThread(
+export async function startCodexReadOnlyThread(
   workingDirectory: string,
   options: { codexPathOverride?: string } = {},
 ) {
+  const { Codex } = await import("@openai/codex-sdk");
   const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
   const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
   return codex.startThread({
@@ -79,6 +79,30 @@ export function startCodexReadOnlyThread(
     networkAccessEnabled: true,
     webSearchMode: "disabled",
   });
+}
+
+export async function runCodexPromptOnly<T>(options: {
+  outputSchema: unknown;
+  prompt: string;
+  timeoutMs: number;
+  work: (input: {
+    outputSchema: unknown;
+    prompt: string;
+    signal: AbortSignal;
+    workingDirectory: string;
+  }) => Promise<T>;
+}): Promise<T> {
+  const workingDirectory = await mkdtemp(join(tmpdir(), "cdx-chores-codex-prompt-"));
+  try {
+    return await options.work({
+      outputSchema: options.outputSchema,
+      prompt: options.prompt,
+      signal: AbortSignal.timeout(options.timeoutMs),
+      workingDirectory,
+    });
+  } finally {
+    await rm(workingDirectory, { recursive: true, force: true });
+  }
 }
 
 export function normalizeTitle(value: string): string {

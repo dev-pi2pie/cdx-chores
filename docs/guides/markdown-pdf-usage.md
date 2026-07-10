@@ -1,14 +1,16 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-06-04
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
 
 ## Goal
 
-Document the current `md to-pdf`, `md pdf-profile init`, and `md pdf-template init` workflow for rendering Markdown into PDF through Pandoc-generated HTML and WeasyPrint.
+Document the current `md to-pdf`, profile, template, and project-helper
+workflow for rendering Markdown into PDF through Pandoc-generated HTML and
+WeasyPrint.
 
 ## Requirements
 
@@ -31,7 +33,58 @@ cdx-chores doctor --json
 
 ## Current Release Boundary
 
-In `v0.1.4`, Markdown PDF profile and template workflows are direct CLI flows. Interactive Markdown PDF and Codex-assisted PDF helper flows are deferred to a later release.
+Markdown PDF rendering, profile initialization, template initialization, and the
+direct Codex-assisted profile, template, and project helpers are direct CLI
+flows. Interactive Markdown PDF flows remain deferred to a later plan.
+
+## Codex Helper Choice
+
+| Need | Recommended helper |
+| --- | --- |
+| Reusable page shape, ToC, page numbers, fonts, code highlighting, or text cover policy | `md pdf-profile codex` |
+| Reviewable HTML/CSS layout, local cover images, managed assets, or reusable template styling | `md pdf-template codex` |
+| One coordinated project folder containing `profile.yml`, `template.html`, `style.css`, and optional managed assets | `md pdf-project codex` |
+
+The dedicated guides are:
+
+- [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
+- [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
+- [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
+
+## Project Helper
+
+Use `md pdf-project codex` when one request should coordinate the profile and
+template layers:
+
+```bash
+cdx-chores md pdf-project codex ./report.md \
+  --intent "client report with a cover image, table of contents, readable code, and dense tables" \
+  --cover-image ./cover.jpg \
+  --output ./report-pdf-project
+```
+
+Successful normal execution writes a project folder:
+
+```text
+report-pdf-project/
+  profile.yml
+  template.html
+  style.css
+  assets/
+    cover.jpg
+```
+
+Render the accepted project artifacts with `md to-pdf`:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
+```
+
+The project helper does not render the PDF automatically. Once the folder is
+written, the render step is deterministic and does not need Codex.
 
 ## Basic Render
 
@@ -58,6 +111,134 @@ Use `--overwrite` to replace an existing PDF:
 ```bash
 cdx-chores md to-pdf --input ./docs/report.md --output ./exports/report.pdf --overwrite
 ```
+
+## Choose Render Inputs
+
+`--profile`, `--template`, and `--css` are the direct Markdown PDF render-input
+options. They remain fully supported and can be used independently or together:
+
+| Render input | Direct option |
+| --- | --- |
+| Reusable rendering policy | `--profile <file>` |
+| Custom Pandoc HTML structure | `--template <file>` |
+| Custom print styling | `--css <file>` |
+
+For precise, visible selection, provide each accepted artifact directly:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./report-pdf-project/profile.yml \
+  --template ./report-pdf-project/template.html \
+  --css ./report-pdf-project/style.css \
+  --output ./report.pdf
+```
+
+## Bundle Discovery
+
+`--bundle <directory>` is an optional discovery convenience, not a replacement
+for the direct render-input options. Use it when accepted profile, template, or
+stylesheet artifacts share a directory. The option discovers top-level render
+inputs and then uses the same validation and rendering behavior as `--profile`,
+`--template`, and `--css`.
+
+The complete project shown above can therefore use the shorter equivalent:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
+```
+
+Both commands use the same renderer and the same profile, template, and
+stylesheet behavior. The first selects each input explicitly; the second asks
+`--bundle` to discover the available inputs from one directory.
+
+A bundle may contain only one render role:
+
+```bash
+# Profile-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-policy
+
+# Template-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-template-only
+
+# Stylesheet-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-styles
+```
+
+A partial template bundle can provide both HTML and CSS, including assets
+referenced relatively by the selected template:
+
+```text
+report-template/
+  template.html
+  style.css
+  assets/
+    cover.jpg
+```
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-template \
+  --output ./report.pdf
+```
+
+A complete project bundle can provide all three roles:
+
+```text
+report-pdf-project/
+  profile.yml
+  template.html
+  style.css
+  assets/
+    cover.jpg
+  project.codex-report.json
+```
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
+```
+
+Discovery examines top-level regular files only. It does not recursively load
+`assets/` or other subdirectories. Recognized Markdown PDF Codex report JSON is
+ignored without a warning. When the profile role is unresolved and the bundle
+admits at least one render artifact, unclassified YAML or JSON is ignored with
+one aggregated warning. When no render artifact is admitted, the command
+instead fails once with the ignored basenames in its no-artifacts error and
+writes neither PDF nor intermediate HTML. YAML or JSON that matches the profile
+root namespace but fails structural or semantic profile validation is fatal
+instead of being ignored. An explicit `--profile` resolves the profile role
+before bundle discovery, so bundle profile-file diagnostics are suppressed for
+that role.
+
+Direct artifact options remain authoritative for their corresponding roles.
+They select those roles before bundle discovery, so they can compose an
+external artifact with a bundle or resolve an ambiguous role:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-template \
+  --profile ./profiles/report.yml \
+  --output ./report.pdf
+
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-project \
+  --template ./report-project/detailed.html \
+  --css ./report-project/print.css \
+  --output ./report.pdf
+```
+
+When an unresolved role has multiple candidates, rendering fails instead of
+guessing. Bundle discovery and conflict handling finish before external renderer
+checks and before PDF or intermediate HTML output is written.
 
 ## Layout Options
 
@@ -259,6 +440,25 @@ Generate a starter profile:
 cdx-chores md pdf-profile init --output ./pdf-profile.yml
 ```
 
+Draft a reusable profile from document signals, hints, or fallback defaults with the opt-in Codex helper:
+
+```bash
+cdx-chores md pdf-profile codex ./report.md \
+  --intent "wide internal report with readable code blocks" \
+  --output ./report-profile.yml
+```
+
+The Codex helper writes a profile artifact for later deterministic rendering. It does not render the PDF automatically:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./report-profile.yml \
+  --output ./report.pdf
+```
+
+For the full helper contract, including signal selection, diagnostics, font patching, title deduplication, and unsupported template-only directions, see [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md).
+
 The output extension chooses the profile format. YAML is the primary documented format for human-authored profiles, and JSON is accepted for automation:
 
 ```bash
@@ -278,6 +478,8 @@ cdx-chores md pdf-profile init \
 Unknown profile keys fail by default so misspelled settings do not silently change the output.
 
 `md pdf-profile init --preset <name>` stores profile values derived from the preset. It does not currently store the preset name itself. For example, a generated `wide-table` profile preserves derived page shape such as landscape orientation and margins, but later rendering still uses the default `article` preset CSS unless `--preset wide-table` is also passed to `md to-pdf`.
+
+Profiles generated by `md pdf-profile codex` can include `profile.preset`, which is replayed by `md to-pdf --profile <path>` before renderer defaults. Render-time CLI flags still override matching profile-derived settings.
 
 Profile metadata provides reusable defaults. Markdown frontmatter should hold document-specific values, and repeatable `--meta key=value` is the concise CLI override path:
 
@@ -304,11 +506,49 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 `md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
 
-`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, covers, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
 
-A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile cover settings will not appear in the rendered PDF.
+A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile text cover settings will not appear in the rendered PDF.
+
+The Codex profile helper stays inside the profile boundary. Use custom templates or CSS for local cover images, arbitrary CSS, custom HTML layout, exact table styling, and other template-only behavior.
+
+| Need | `md pdf-profile codex` | `md pdf-template codex` |
+| --- | --- | --- |
+| Output | Reusable profile YAML/JSON | Reviewable template bundle |
+| Best owner | Page shape, ToC, page numbers, fonts, code-highlight settings | Cover images, custom layout, custom CSS, managed assets |
+| ToC | Owns reusable ToC render settings: enabled, depth, page break | Preserves and styles Pandoc ToC hooks only |
+| Code highlighting | Owns Shiki render settings | Owns Shiki-compatible CSS only |
+| Cover/title page | Text/metadata cover fields only | Custom cover layout and composition |
+| Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
+| Render with | `md to-pdf --profile ...` or a profile-only `--bundle` | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
+
+Template bundles can style highlighted code, but Shiki is enabled only by
+`md to-pdf --code-highlight` or an effective profile.
+
+For a Codex-assisted path that drafts reviewable template artifacts, use
+`md pdf-template codex`:
+
+```bash
+cdx-chores md pdf-template codex ./report.md \
+  --intent "client report with a clean cover image and readable code blocks" \
+  --cover-image ./cover.jpg \
+  --output ./report-template
+```
+
+Render the accepted bundle through the deterministic renderer:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-template \
+  --output ./report.pdf
+```
+
+For the full helper contract, including generated bundle contents,
+cover-image behavior, font-hint boundaries, and redacted diagnostic reports,
+see [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md).
 
 Templates generated before Shiki code highlighting was added continue to render, but their `style.css` may not include the newer `.cdx-code` hook styles for highlighted blocks, line numbers, and transformer notation. To pick up the built-in code-block styling, regenerate the template with `md pdf-template init --overwrite` or copy the code-block CSS from a newly generated template.
 
@@ -534,6 +774,9 @@ cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 
 ## Related Docs
 
+- `docs/guides/markdown-pdf-codex-profile-helper.md`
+- `docs/guides/markdown-pdf-codex-template-helper.md`
+- `docs/guides/markdown-pdf-codex-project-helper.md`
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
 - `docs/researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md`
 - `docs/researches/research-2026-05-07-font-command-discovery-options.md`

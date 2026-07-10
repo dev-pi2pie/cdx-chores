@@ -11,7 +11,7 @@ Current command scope:
 - DuckDB-backed query, reviewed header-mapping, source-shape replay, and Parquet preview workflows
 - `data stack` for assembling multiple CSV, TSV, JSONL, or JSON files and directories into one output table
 - replayable `data stack` plan artifacts, dry-run diagnostics, duplicate/key checks, and optional reviewed Codex assistance
-- `md to-docx` via `pandoc` and Markdown-to-PDF rendering via WeasyPrint
+- `md to-docx` via `pandoc`, Markdown-to-PDF rendering via WeasyPrint, and Markdown PDF profile/template/project helpers
 - preview-first rename flows
 - `ffmpeg`-backed video wrappers, including GIF quality modes and profiles
 
@@ -43,7 +43,7 @@ cdx-chores
 
 Runtime requirement:
 
-- Node.js `>= 22.18.0`
+- Node.js `>= 22.23.0`
 
 ## Command Overview
 
@@ -51,7 +51,7 @@ Runtime requirement:
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
 | `data` | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
-| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-template init`, `frontmatter-to-json` | Markdown conversion, PDF profile/template generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
+| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json` | Markdown conversion, PDF profile/template/project generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
 | `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
@@ -77,10 +77,13 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
 | `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
+| `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor` |
 
-Codex SDK baseline for `v0.1.4`: `0.137.0`
+Codex SDK baseline for `v0.1.5`: `0.144.1`
 
-Markdown PDF profile and template workflows are direct CLI flows in `v0.1.4`; interactive Markdown PDF and Codex-assisted PDF helper flows are deferred to a later release.
+Markdown PDF profile, template, and Codex-assisted profile/template/project
+helper workflows are direct CLI flows in `v0.1.5`; interactive
+Markdown PDF flows remain deferred to a later release.
 
 For automation or machine-readable checks, use:
 
@@ -229,6 +232,19 @@ Generate editable Markdown PDF template files:
 
 ```bash
 cdx-chores md pdf-template init --output ./pdf-template
+```
+
+Draft a coordinated Markdown PDF project and render its accepted inputs:
+
+```bash
+cdx-chores md pdf-project codex ./report.md \
+  --intent "client report with a table of contents and readable code" \
+  --output ./report-pdf-project
+
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
 ```
 
 Markdown frontmatter to JSON:
@@ -405,6 +421,9 @@ Video:
 Markdown:
 
 - `docs/guides/markdown-pdf-usage.md`
+- `docs/guides/markdown-pdf-codex-profile-helper.md`
+- `docs/guides/markdown-pdf-codex-template-helper.md`
+- `docs/guides/markdown-pdf-codex-project-helper.md`
 - `docs/guides/md-frontmatter-to-json-output-contract.md`
 
 ## Local Development

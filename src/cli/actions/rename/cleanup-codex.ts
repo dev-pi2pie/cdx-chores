@@ -270,7 +270,7 @@ async function runRenameCleanupCodexPrompt(options: {
   workingDirectory: string;
   timeoutMs?: number;
 }): Promise<string> {
-  const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),

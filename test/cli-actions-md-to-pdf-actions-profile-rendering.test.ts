@@ -71,15 +71,25 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           }
         }
         if (command === "weasyprint" && !args.includes("--info")) {
+          const commandStyles: string[] = [];
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
           for (const index of stylesheetIndexes) {
             const stylesheetPath = args[index + 1];
             if (stylesheetPath) {
-              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+              const css = await readFile(stylesheetPath, "utf8");
+              commandStyles.push(css);
+              renderedStyles.push(css);
             }
           }
+          const result = await runner(command, args, runnerOptions);
+          return commandStyles.some((css) => css.includes("100vh"))
+            ? {
+                ...result,
+                stderr: "WARNING: Ignored `min-height: 100vh`, invalid value.",
+              }
+            : result;
         }
         return runner(command, args, runnerOptions);
       };
@@ -102,6 +112,9 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedTemplate).toContain("Runtime Notes");
       expect(combinedCss).toContain("@page cover");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
+      expect(combinedCss).toContain("min-height: 297mm;");
+      expect(combinedCss).not.toContain("\n  height: 297mm;");
+      expect(combinedCss).not.toContain("100vh");
       expect(combinedCss).toContain(
         'font-family: "Source Serif 4", "Noto Serif TC", "Noto Serif JP", serif;',
       );
@@ -110,6 +123,185 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
       );
       expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("replays profile preset and lets explicit CLI recipe flags override profile fields", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-preset-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "wide-report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Wide Report\n\n| A | B |\n| - | - |\n| 1 | 2 |\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: wide-table",
+          "  preset: wide-table",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "page:",
+          "  orientation: portrait",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body>Wide Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        orientation: "landscape",
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("size: A4 landscape");
+      expect(combinedCss).toContain("margin: 12mm 12mm 12mm 12mm;");
+      expect(combinedCss).toContain('font: 9.5pt/1.45 "Noto Sans", "Arial", sans-serif;');
+      expect(combinedCss).toContain("table, pre, code");
+      expectNoStderr();
+    });
+  });
+
+  test("suppresses duplicate metadata title block for direct profile rendering by default", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-title-block-auto", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "cjk-font-smoke.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      let renderedTemplate = "";
+      await writeFile(
+        inputPath,
+        ["---", "title: CJK Font Smoke", "---", "# CJK Font Smoke", "", "Body."].join("\n"),
+        "utf8",
+      );
+      await writeFile(profilePath, "titleBlock:\n  metadataTitle: auto\n", "utf8");
+
+      const { runner } = createPdfRunner({ html: "<html><body>CJK Font Smoke</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        runner: capturingRunner,
+      });
+
+      expect(renderedTemplate).not.toContain('class="document-title"');
+      expect(renderedTemplate).toContain("$body$");
+      expectNoStderr();
+    });
+  });
+
+  test("preserves duplicate-capable metadata title block when direct profile rendering requests show", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-title-block-show", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "cjk-font-smoke.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      let renderedTemplate = "";
+      await writeFile(
+        inputPath,
+        ["---", "title: CJK Font Smoke", "---", "# CJK Font Smoke", "", "Body."].join("\n"),
+        "utf8",
+      );
+      await writeFile(profilePath, "titleBlock:\n  metadataTitle: show\n", "utf8");
+
+      const { runner } = createPdfRunner({ html: "<html><body>CJK Font Smoke</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            renderedTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        runner: capturingRunner,
+      });
+
+      expect(renderedTemplate).toContain('class="document-title"');
+      expect(renderedTemplate).toContain('<h1 class="title">$title$</h1>');
+      expectNoStderr();
+    });
+  });
+
+  test("lets an explicit CLI preset override profile preset replay", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-cli-preset-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "pdf-profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Report\n\nBody.\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260615T081500Z-a1b2c3d4",
+          "  source: codex",
+          "  basedOn: wide-table",
+          "  preset: wide-table",
+          "  createdAt: 2026-06-15T08:15:00Z",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        preset: "reader",
+        runner: capturingRunner,
+      });
+
+      const combinedCss = renderedStyles.join("\n");
+      expect(combinedCss).toContain("margin: 20mm 22mm 20mm 22mm;");
+      expect(combinedCss).toContain('font: 12pt/1.65 "Noto Serif", "Georgia", serif;');
+      expect(combinedCss).not.toContain('font: 9.5pt/1.45 "Noto Sans", "Arial", sans-serif;');
       expectNoStderr();
     });
   });

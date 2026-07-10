@@ -7,6 +7,21 @@ export type {
   RenderMarkdownPdfInput,
   RenderMarkdownPdfResult,
 } from "./render";
+export type {
+  DiscoverMarkdownPdfRenderBundleOptions,
+  MarkdownPdfRenderBundleCandidate,
+  MarkdownPdfRenderBundleCandidates,
+  MarkdownPdfRenderBundleExplicitInputs,
+  MarkdownPdfRenderBundleResolutionSource,
+  MarkdownPdfRenderBundleResolvedInput,
+  MarkdownPdfRenderBundleResolvedInputs,
+  MarkdownPdfRenderBundleRole,
+  ResolveMarkdownPdfRenderBundleOptions,
+} from "./render-bundle";
+export {
+  discoverMarkdownPdfRenderBundle,
+  resolveMarkdownPdfRenderBundleInputs,
+} from "./render-bundle";
 export {
   MARKDOWN_PDF_ORIENTATIONS,
   MARKDOWN_PDF_PAGE_SIZES,
@@ -19,6 +34,8 @@ export {
   DEFAULT_MARKDOWN_PDF_PROFILE,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
@@ -39,6 +56,7 @@ export type {
   MarkdownPdfCoverStyle,
   MarkdownPdfFontConfig,
   MarkdownPdfFontRole,
+  MarkdownPdfMetadataTitleBlockMode,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfProfileFormat,
@@ -48,6 +66,7 @@ export type {
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
   NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
 export type {

@@ -164,7 +164,7 @@ async function runHeaderSuggestionPrompt(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_HEADER_SUGGESTION_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DATA_HEADER_SUGGESTION_TIMEOUT_MS),
