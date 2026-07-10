@@ -332,37 +332,86 @@ Phase record:
 
 - [Phase 4 render integration](jobs/2026-07-10-markdown-pdf-render-bundle-phase-4-render-integration.md)
 
+### Phase 5 Onward Execution Protocol
+
+The completed Phase 1–4 checklist wording and job records remain historical
+evidence of what was implemented and verified at each phase. Later behavior
+reinforcement must add new unchecked work rather than retroactively rewriting
+checked tasks.
+
+For Phases 5–7:
+
+- Work one phase at a time and record the starting commit before implementation.
+- Keep checklist items unchecked until the matching implementation and evidence
+  exist.
+- Run the phase-focused checks and update its job record before the
+  phase-boundary commit.
+- Notify through `auto_commit_notification`, then create at least one meaningful
+  Conventional Commit for the phase when its implementation and evidence are
+  ready.
+- Review the commit range from the preceding phase boundary through the current
+  phase commit.
+- Resolve every actionable review finding, extend the recorded range when fixes
+  add commits, and re-review that final range before beginning the next phase.
+- Record the commit range, validation commands, results, review disposition,
+  and any environment limitation in the phase job record.
+- Do not mark a phase complete while its review has unresolved actionable
+  findings or its required evidence is missing.
+
 ### Phase 5: Profile Admission Gate And YAML/JSON Classification
 
 Tasks:
 
+- [ ] Audit the completed Phase 2–4 resolver implementation and tests that
+      encode extension-level profile candidacy, then list the affected tests in
+      the Phase 5 job record before changing their expectations.
 - [ ] Add a non-throwing discovery classifier for potential YAML and JSON
       profile files.
 - [ ] Keep generated report filename exclusions and exact Markdown PDF report
       discriminators ahead of profile admission.
+- [ ] Keep the three Markdown PDF report discriminators local to the renderer
+      resolver and document their producing commands without importing a
+      cross-command artifact registry.
+- [ ] Extract or reuse a parse-only helper from the JSON and YAML behavior used
+      by `readMarkdownPdfProfileFile` so discovery can inspect the parsed root
+      before profile shape validation runs.
+- [ ] Convert parse failures and parsed roots that do not match the profile
+      namespace pattern into an unclassified discovery result.
+- [ ] Add parser-classification fixtures for malformed input, empty documents,
+      `null`, arrays, primitive roots, empty objects, multi-document YAML, and
+      BOM-prefixed JSON and YAML; preserve the existing parser result rather
+      than adding bundle-only input normalization.
 - [ ] Require a discoverable profile to be a non-empty plain object with at
-      least one recognized profile root key and no root keys outside the
-      profile namespace.
-- [ ] Reuse existing profile shape validation and semantic normalization as the
-      final admission checks instead of defining a parallel schema.
+      least one key from `MARKDOWN_PDF_PROFILE_ROOT_KEYS` and no root keys
+      outside that namespace.
+- [ ] Reuse `validateMarkdownPdfProfileShape` for structural validation and
+      `normalizeMarkdownPdfProfile` for a side-effect-free semantic admission
+      check instead of defining a parallel schema.
+- [ ] Discard the admission-time normalized value and let the selected profile
+      continue through the existing render-time parsing and normalization path.
 - [ ] Keep explicit `--profile <path>` behavior authoritative and compatible,
       including explicitly selected empty profiles.
 - [ ] Exclude malformed and unrelated YAML or JSON from profile conflict
       counting.
-- [ ] Aggregate ignored unclassified filenames into one stable warning when
-      another render artifact is admitted.
-- [ ] Assert the aggregated warning is written once to stderr with stable
-      basename ordering.
-- [ ] Enrich the no-recognized-artifact error with ignored filenames when no
-      render artifact passes admission.
+- [ ] Fail with the existing invalid-profile posture when a file matches the
+      discoverable profile root pattern but fails structural or semantic
+      validation; do not count it as a candidate or downgrade it to a warning.
+- [ ] When any profile, template, or stylesheet is admitted, aggregate ignored
+      unclassified filenames into one warning written once to stderr in stable
+      basename order without changing the successful exit code.
+- [ ] When no render artifact is admitted, emit no separate warning and enrich
+      the fatal no-recognized-artifact error with the stable ignored basenames.
 - [ ] Keep recognized Markdown PDF reports silent when they coexist with a
-      valid profile.
+      valid profile, template, or stylesheet.
 - [ ] Avoid importing a cross-command registry of `data` or `rename` artifact
       discriminators into the Markdown PDF resolver.
 - [ ] Prove a profile can coexist with profile, template, and project report
       JSON, including custom report filenames with valid discriminators.
 - [ ] Prove data JSON whose root keys fall outside the profile namespace can
       coexist with one profile without creating a false ambiguity conflict.
+- [ ] Add before-and-after regression assertions proving malformed, unrelated,
+      and out-of-namespace YAML or JSON no longer increment the profile
+      conflict count introduced by the completed extension-level discovery.
 - [ ] Preserve the existing multiple-valid-profile ambiguity error.
 - [ ] Prove admission and classification failures write no PDF or intermediate
       HTML.
@@ -374,8 +423,12 @@ Phase gate:
 - Only files that pass the discoverable profile contract participate in profile
   candidate counting.
 - Expected Markdown PDF reports remain silent bundle content.
-- Ignored non-profile files remain visible without causing false conflicts.
+- Ignored non-profile files remain visible through exactly one warning when a
+  render artifact is admitted, or through the fatal error when none is admitted.
+- Profile-pattern matches that fail validation remain fatal invalid profiles.
 - Explicit profile selection retains its existing compatibility contract.
+- Completed Phase 2–4 checklist wording and job records remain unchanged while
+  Phase 5 evidence records the intentional behavior transition.
 
 Expected job record:
 
@@ -386,7 +439,8 @@ Expected job record:
 Tasks:
 
 - [ ] Update template-Codex follow-up summaries to render the output directory
-      through `--bundle` after the renderer contract is verified.
+      through `--bundle` only after the Phase 5 admission gate, focused tests,
+      manual smoke items 5–6, and commit-range review pass.
 - [ ] Update template-Codex report follow-up commands to use a bundle-directory
       placeholder while preserving privacy-safe paths.
 - [ ] Update project-Codex follow-up command generation to use the project
