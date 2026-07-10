@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF render bundle Phase 5 profile admission"
 created-date: 2026-07-10
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-10-markdown-pdf-render-bundle-directory.md
 ---
@@ -139,7 +139,28 @@ warning.
 The resolver now receives explicit profile-role state, suppresses profile
 admission diagnostics for that resolved role, and retains admitted valid bundle
 profiles for the existing explicit-only-role contract. Regression tests cover
-both reported cases. The extended Phase 5 range remains pending rereview.
+both reported cases.
+
+The final independent rereview covered `c44e310..ab0f408`.
+
+Verdict: `APPROVE` with no remaining findings.
+
+The reviewer independently confirmed:
+
+- explicit profiles bypass invalid bundle profile admission
+- explicitly selected in-bundle empty profiles do not emit false warnings
+- valid bundle profiles still satisfy explicit-only-role bundle resolution
+- invalid or unclassified profile files alone do not make an empty bundle valid
+- 134 relevant focused tests passed
+- lint, build, whitespace, and public-record privacy checks passed
+
+## Outcome
+
+Phase 5 is complete. Only admitted Markdown PDF profiles participate in bundle
+profile candidate counting, recognized reports remain silent, unclassified
+files produce stable diagnostics for unresolved profile discovery, and explicit
+profile selection retains precedence and compatibility. Phase 6 may adopt the
+bundle shorthand in helper follow-up commands.
 
 ## Related Plan
 

@@ -418,7 +418,7 @@ Tasks:
 - [x] Prove admission and classification failures write no PDF or intermediate
       HTML.
 - [x] Update the Phase 5 job record with focused and repository validation.
-- [ ] Review the Phase 5 commit range and resolve all actionable findings.
+- [x] Review the Phase 5 commit range and resolve all actionable findings.
 
 Phase gate:
 
