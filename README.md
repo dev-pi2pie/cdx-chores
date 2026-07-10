@@ -78,7 +78,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
 | `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
 
-Codex SDK baseline for `v0.1.5-canary.5`: `0.144.0`
+Codex SDK baseline for `v0.1.5-canary.5`: `0.144.1`
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
 helper workflows are direct CLI flows in the current canary line; interactive

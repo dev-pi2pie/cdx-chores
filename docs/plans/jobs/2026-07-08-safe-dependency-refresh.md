@@ -119,3 +119,44 @@ Documentation:
 - `git diff --check` passed.
 - Final `bun outdated` reports only the intentionally deferred
   `@types/node@26.1.1` and TypeScript `7.0.2` major updates.
+
+## Follow-up: Codex SDK 0.144.1 (2026-07-10)
+
+### Scope
+
+- Update `@openai/codex-sdk` from `^0.144.0` to `^0.144.1` and refresh
+  `bun.lock`.
+- Update the Codex SDK baseline in `README.md` and
+  `docs/guides/cli-action-tool-integration-guide.md` from `0.144.0` to
+  `0.144.1` while keeping the unpublished `v0.1.5-canary.5` label.
+- Continue deferring the `@types/node@26.1.1` and TypeScript `7.0.2` major
+  updates for the previously recorded runtime and toolchain reasons.
+
+### Changes
+
+- Updated `@openai/codex-sdk` from `^0.144.0` to `^0.144.1`.
+- Updated the public Codex SDK baseline wording from `0.144.0` to `0.144.1`.
+
+### Rationale
+
+- The published SDK JavaScript and TypeScript declaration files are unchanged
+  between `0.144.0` and `0.144.1`; the patch advances the package version and
+  pins the matching `@openai/codex@0.144.1` package.
+- The matching Codex launcher JavaScript is unchanged; its package metadata
+  advances the optional platform package set from `0.144.0` to `0.144.1`.
+
+### Verification
+
+- `bun install --frozen-lockfile` passed with no changes.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bun run build` passed on `tsdown v0.22.4` and `rolldown v1.1.5`.
+- Focused Codex adapter coverage passed with `70` tests and `0` failures.
+- `bun test` passed with `1495` tests and `0` failures across `206` files.
+- CJS built-output smoke passed with `require("./dist/cjs/index.cjs")`.
+- ESM CLI built-output smoke passed with `node dist/esm/bin.mjs --version`,
+  reporting `0.1.5-canary.5`.
+- `bun audit` passed with `No vulnerabilities found`.
+- `git diff --check` passed.
+- Final `bun outdated` reports only the intentionally deferred
+  `@types/node@26.1.1` and TypeScript `7.0.2` major updates.

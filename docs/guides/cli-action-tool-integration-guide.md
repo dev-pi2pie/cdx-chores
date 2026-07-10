@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration Guidance (Current + Planned)
 
-Codex SDK baseline for `v0.1.5-canary.5`: `0.144.0`
+Codex SDK baseline for `v0.1.5-canary.5`: `0.144.1`
 
 `@openai/codex-sdk` is used in runtime code through `src/adapters/codex/shared.ts`, with feature-specific adapters for rename suggestions, document rename analysis, Markdown PDF profile suggestions, and data workflow Codex assistance.
 
