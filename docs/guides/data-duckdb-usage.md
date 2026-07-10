@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-06-04
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -17,7 +17,7 @@ Current stable scope:
 - managed extensions:
   - `sqlite`
   - `excel`
-- no uninstall command in `v0.1.4`
+- no uninstall command in `v0.1.5`
 
 ### Commands
 
