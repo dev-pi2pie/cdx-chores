@@ -355,6 +355,8 @@ For Phases 5–7:
   add commits, and re-review that final range before beginning the next phase.
 - Record the commit range, validation commands, results, review disposition,
   and any environment limitation in the phase job record.
+- Keep public phase records scoped to repository-relative or sanitized behavior
+  and verification evidence without machine-local environment setup details.
 - Do not mark a phase complete while its review has unresolved actionable
   findings or its required evidence is missing.
 
@@ -362,60 +364,60 @@ For Phases 5–7:
 
 Tasks:
 
-- [ ] Audit the completed Phase 2–4 resolver implementation and tests that
+- [x] Audit the completed Phase 2–4 resolver implementation and tests that
       encode extension-level profile candidacy, then list the affected tests in
       the Phase 5 job record before changing their expectations.
-- [ ] Add a non-throwing discovery classifier for potential YAML and JSON
+- [x] Add a non-throwing discovery classifier for potential YAML and JSON
       profile files.
-- [ ] Keep generated report filename exclusions and exact Markdown PDF report
+- [x] Keep generated report filename exclusions and exact Markdown PDF report
       discriminators ahead of profile admission.
-- [ ] Keep the three Markdown PDF report discriminators local to the renderer
+- [x] Keep the three Markdown PDF report discriminators local to the renderer
       resolver and document their producing commands without importing a
       cross-command artifact registry.
-- [ ] Extract or reuse a parse-only helper from the JSON and YAML behavior used
+- [x] Extract or reuse a parse-only helper from the JSON and YAML behavior used
       by `readMarkdownPdfProfileFile` so discovery can inspect the parsed root
       before profile shape validation runs.
-- [ ] Convert parse failures and parsed roots that do not match the profile
+- [x] Convert parse failures and parsed roots that do not match the profile
       namespace pattern into an unclassified discovery result.
-- [ ] Add parser-classification fixtures for malformed input, empty documents,
+- [x] Add parser-classification fixtures for malformed input, empty documents,
       `null`, arrays, primitive roots, empty objects, multi-document YAML, and
       BOM-prefixed JSON and YAML; preserve the existing parser result rather
       than adding bundle-only input normalization.
-- [ ] Require a discoverable profile to be a non-empty plain object with at
+- [x] Require a discoverable profile to be a non-empty plain object with at
       least one key from `MARKDOWN_PDF_PROFILE_ROOT_KEYS` and no root keys
       outside that namespace.
-- [ ] Reuse `validateMarkdownPdfProfileShape` for structural validation and
+- [x] Reuse `validateMarkdownPdfProfileShape` for structural validation and
       `normalizeMarkdownPdfProfile` for a side-effect-free semantic admission
       check instead of defining a parallel schema.
-- [ ] Discard the admission-time normalized value and let the selected profile
+- [x] Discard the admission-time normalized value and let the selected profile
       continue through the existing render-time parsing and normalization path.
-- [ ] Keep explicit `--profile <path>` behavior authoritative and compatible,
+- [x] Keep explicit `--profile <path>` behavior authoritative and compatible,
       including explicitly selected empty profiles.
-- [ ] Exclude malformed and unrelated YAML or JSON from profile conflict
+- [x] Exclude malformed and unrelated YAML or JSON from profile conflict
       counting.
-- [ ] Fail with the existing invalid-profile posture when a file matches the
+- [x] Fail with the existing invalid-profile posture when a file matches the
       discoverable profile root pattern but fails structural or semantic
       validation; do not count it as a candidate or downgrade it to a warning.
-- [ ] When any profile, template, or stylesheet is admitted, aggregate ignored
+- [x] When any profile, template, or stylesheet is admitted, aggregate ignored
       unclassified filenames into one warning written once to stderr in stable
       basename order without changing the successful exit code.
-- [ ] When no render artifact is admitted, emit no separate warning and enrich
+- [x] When no render artifact is admitted, emit no separate warning and enrich
       the fatal no-recognized-artifact error with the stable ignored basenames.
-- [ ] Keep recognized Markdown PDF reports silent when they coexist with a
+- [x] Keep recognized Markdown PDF reports silent when they coexist with a
       valid profile, template, or stylesheet.
-- [ ] Avoid importing a cross-command registry of `data` or `rename` artifact
+- [x] Avoid importing a cross-command registry of `data` or `rename` artifact
       discriminators into the Markdown PDF resolver.
-- [ ] Prove a profile can coexist with profile, template, and project report
+- [x] Prove a profile can coexist with profile, template, and project report
       JSON, including custom report filenames with valid discriminators.
-- [ ] Prove data JSON whose root keys fall outside the profile namespace can
+- [x] Prove data JSON whose root keys fall outside the profile namespace can
       coexist with one profile without creating a false ambiguity conflict.
-- [ ] Add before-and-after regression assertions proving malformed, unrelated,
+- [x] Add before-and-after regression assertions proving malformed, unrelated,
       and out-of-namespace YAML or JSON no longer increment the profile
       conflict count introduced by the completed extension-level discovery.
-- [ ] Preserve the existing multiple-valid-profile ambiguity error.
-- [ ] Prove admission and classification failures write no PDF or intermediate
+- [x] Preserve the existing multiple-valid-profile ambiguity error.
+- [x] Prove admission and classification failures write no PDF or intermediate
       HTML.
-- [ ] Update the Phase 5 job record with focused and repository validation.
+- [x] Update the Phase 5 job record with focused and repository validation.
 - [ ] Review the Phase 5 commit range and resolve all actionable findings.
 
 Phase gate:
@@ -430,9 +432,9 @@ Phase gate:
 - Completed Phase 2–4 checklist wording and job records remain unchanged while
   Phase 5 evidence records the intentional behavior transition.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-profile-admission.md`
+- [Phase 5 profile admission](jobs/2026-07-10-markdown-pdf-render-bundle-phase-5-profile-admission.md)
 
 ### Phase 6: Helper Follow-Up Commands And Compatibility Coverage
 

@@ -63,6 +63,16 @@ function printRenderBundleSummary(input: {
   }
 }
 
+function printIgnoredRenderBundleFiles(runtime: CliRuntime, ignoredProfileFiles: string[]): void {
+  if (ignoredProfileFiles.length === 0) {
+    return;
+  }
+  printLine(runtime.stderr, "Warning: ignored unclassified YAML or JSON bundle files:");
+  for (const filename of ignoredProfileFiles) {
+    printLine(runtime.stderr, `- ${filename}`);
+  }
+}
+
 export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
   const bundleInput =
@@ -81,9 +91,11 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   const profileInput = options.profile?.trim();
   let profilePath = profileInput ? resolveFromCwd(runtime, profileInput) : undefined;
   let resolvedBundle: MarkdownPdfRenderBundleResolvedInputs | undefined;
+  let ignoredBundleProfileFiles: string[] = [];
 
   if (bundleDirectory) {
     const candidates = await discoverMarkdownPdfRenderBundle(bundleDirectory);
+    ignoredBundleProfileFiles = candidates.ignoredProfileFiles;
     resolvedBundle = resolveMarkdownPdfRenderBundleInputs(
       candidates,
       {
@@ -139,6 +151,7 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   }
 
   if (bundleDirectory && resolvedBundle) {
+    printIgnoredRenderBundleFiles(runtime, ignoredBundleProfileFiles);
     printRenderBundleSummary({ bundleDirectory, resolved: resolvedBundle, runtime });
   }
 

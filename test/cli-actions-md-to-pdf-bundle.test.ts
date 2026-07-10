@@ -33,12 +33,17 @@ async function pathExists(path: string): Promise<boolean> {
 
 describe("Markdown PDF render bundle discovery", () => {
   test.each([
-    ["profile", "report.YAML", { profile: ["report.YAML"], template: [], css: [] }],
-    ["template", "template.HTML", { profile: [], template: ["template.HTML"], css: [] }],
-    ["stylesheet", "print.CSS", { profile: [], template: [], css: ["print.CSS"] }],
-  ] as const)("discovers a single %s artifact", async (_label, filename, expected) => {
+    ["profile", "report.YAML", "page: {}\n", { profile: ["report.YAML"], template: [], css: [] }],
+    [
+      "template",
+      "template.HTML",
+      "$body$\n",
+      { profile: [], template: ["template.HTML"], css: [] },
+    ],
+    ["stylesheet", "print.CSS", "body {}\n", { profile: [], template: [], css: ["print.CSS"] }],
+  ] as const)("discovers a single %s artifact", async (_label, filename, content, expected) => {
     await withTempFixtureDir("md-pdf-render-bundle-single", async (fixtureDir) => {
-      await writeFile(join(fixtureDir, filename), "artifact\n", "utf8");
+      await writeFile(join(fixtureDir, filename), content, "utf8");
 
       const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
 
@@ -50,7 +55,7 @@ describe("Markdown PDF render bundle discovery", () => {
     await withTempFixtureDir("md-pdf-render-bundle-complete", async (fixtureDir) => {
       await mkdir(join(fixtureDir, "assets"));
       await writeFile(join(fixtureDir, "z-profile.yml"), "page: {}\n", "utf8");
-      await writeFile(join(fixtureDir, "a-profile.json"), "{}\n", "utf8");
+      await writeFile(join(fixtureDir, "a-profile.json"), '{"toc":{}}\n', "utf8");
       await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
       await writeFile(join(fixtureDir, "style.css"), "body {}\n", "utf8");
       await writeFile(join(fixtureDir, "assets", "nested.css"), "body {}\n", "utf8");
@@ -99,38 +104,118 @@ describe("Markdown PDF render bundle discovery", () => {
       { artifact: { type: "markdown-pdf-codex-template-report" } },
     ],
     ["project type in artifact.type", { artifact: { type: "markdown-pdf-codex-project-report" } }],
-  ])("keeps an unrelated cross-field %s as a profile candidate", async (_label, payload) => {
+  ])("ignores an unrelated cross-field %s", async (_label, payload) => {
     await withTempFixtureDir("md-pdf-render-bundle-report-cross-field", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "cross-field.json"), `${JSON.stringify(payload)}\n`, "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
 
       const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
 
-      expect(candidateNames(result).profile).toEqual(["cross-field.json"]);
+      expect(candidateNames(result).profile).toEqual([]);
+      expect(result.ignoredProfileFiles).toEqual(["cross-field.json"]);
     });
   });
 
-  test("keeps oversized custom JSON as a profile candidate without report classification", async () => {
+  test("ignores oversized custom JSON when bounded report classification cannot admit it", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-large-json", async (fixtureDir) => {
       const payload = {
         artifactType: "markdown-pdf-codex-template-report",
         padding: "x".repeat(64 * 1024),
       };
       await writeFile(join(fixtureDir, "large.json"), `${JSON.stringify(payload)}\n`, "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
 
       const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
 
-      expect(candidateNames(result).profile).toEqual(["large.json"]);
+      expect(candidateNames(result).profile).toEqual([]);
+      expect(result.ignoredProfileFiles).toEqual(["large.json"]);
     });
   });
 
-  test("keeps malformed and unrelated JSON as profile candidates", async () => {
+  test("keeps malformed and unrelated JSON out of profile candidate counting", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-json", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "broken.json"), "not-json\n", "utf8");
       await writeFile(join(fixtureDir, "unrelated.json"), '{"kind":"other"}\n', "utf8");
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
 
       const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
 
-      expect(candidateNames(result).profile).toEqual(["broken.json", "unrelated.json"]);
+      expect(candidateNames(result).profile).toEqual(["profile.yml"]);
+      expect(result.ignoredProfileFiles).toEqual(["broken.json", "unrelated.json"]);
+    });
+  });
+
+  test.each([
+    ["malformed JSON", "broken.json", "{"],
+    ["empty YAML document", "empty.yml", ""],
+    ["null root", "null.json", "null\n"],
+    ["array root", "array.yaml", "- page\n"],
+    ["primitive root", "primitive.json", "1\n"],
+    ["empty object", "empty.json", "{}\n"],
+    ["multi-document YAML", "multi.yml", "page: {}\n---\ntoc: {}\n"],
+    ["BOM-prefixed JSON", "bom.json", '\uFEFF{"page":{}}\n'],
+    ["out-of-namespace object", "data.json", '{"rows":[]}\n'],
+    ["mixed profile and outside keys", "mixed.yml", "page: {}\nrows: []\n"],
+  ])("classifies %s as unclassified", async (_label, filename, content) => {
+    await withTempFixtureDir("md-pdf-render-bundle-unclassified", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, filename), content, "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(result.profile).toEqual([]);
+      expect(result.ignoredProfileFiles).toEqual([filename]);
+    });
+  });
+
+  test("preserves YAML parser handling for a BOM-prefixed profile", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-yaml-bom", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "profile.yml"), "\uFEFFpage: {}\n", "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(candidateNames(result).profile).toEqual(["profile.yml"]);
+      expect(result.ignoredProfileFiles).toEqual([]);
+    });
+  });
+
+  test.each([
+    ["structural", "page: true\n", "profile.page must be a plain object"],
+    ["semantic", 'toc:\n  enabled: "yes"\n', "profile.toc.enabled must be a boolean"],
+  ])(
+    "rejects a profile-pattern match that fails %s validation",
+    async (_label, content, message) => {
+      await withTempFixtureDir("md-pdf-render-bundle-invalid-profile", async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "profile.yml"), content, "utf8");
+
+        await expect(discoverMarkdownPdfRenderBundle(fixtureDir)).rejects.toThrow(message);
+      });
+    },
+  );
+
+  test("keeps all recognized Markdown PDF report forms silent beside a profile", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-all-reports", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "profile-report.json"),
+        `${JSON.stringify({ artifact: { type: "markdown-pdf-codex-profile-report" } })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        join(fixtureDir, "template-report.json"),
+        `${JSON.stringify({ artifactType: "markdown-pdf-codex-template-report" })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        join(fixtureDir, "project-report.json"),
+        `${JSON.stringify({ artifactType: "markdown-pdf-codex-project-report" })}\n`,
+        "utf8",
+      );
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(candidateNames(result).profile).toEqual(["profile.yml"]);
+      expect(result.ignoredProfileFiles).toEqual([]);
     });
   });
 
@@ -171,6 +256,21 @@ describe("Markdown PDF render bundle discovery", () => {
         exitCode: 2,
         messageIncludes: "No Markdown PDF render artifacts found in bundle",
       });
+    });
+  });
+
+  test("enriches an unclassified-only bundle error with stable filenames", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-unclassified-only", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "z-data.json"), '{"rows":[]}\n', "utf8");
+      await writeFile(join(fixtureDir, "a-broken.yml"), ":\n", "utf8");
+
+      const error = await expectCliError(() => discoverMarkdownPdfRenderBundle(fixtureDir), {
+        code: "MARKDOWN_PDF_BUNDLE_EMPTY",
+        exitCode: 2,
+        messageIncludes: "Ignored unclassified YAML or JSON files:",
+      });
+
+      expect(error.message).toContain("- a-broken.yml\n- z-data.json");
     });
   });
 });
@@ -243,7 +343,8 @@ describe("Markdown PDF render bundle resolution", () => {
         "style-a.css",
         "style-b.css",
       ]) {
-        await writeFile(join(fixtureDir, filename), "artifact\n", "utf8");
+        const content = filename.endsWith(".yml") ? "page: {}\n" : "artifact\n";
+        await writeFile(join(fixtureDir, filename), content, "utf8");
       }
 
       const candidates = await discoverMarkdownPdfRenderBundle(fixtureDir);
@@ -272,7 +373,8 @@ describe("Markdown PDF render bundle resolution", () => {
         "z-style.css",
         "a-style.css",
       ]) {
-        await writeFile(join(fixtureDir, filename), "artifact\n", "utf8");
+        const content = filename.endsWith(".yml") ? "page: {}\n" : "artifact\n";
+        await writeFile(join(fixtureDir, filename), content, "utf8");
       }
 
       const candidates = await discoverMarkdownPdfRenderBundle(fixtureDir);
@@ -338,6 +440,7 @@ describe("Markdown PDF render bundle action integration", () => {
         ["profile.yml", "page:\n  size: A4\n"],
         ["template.html", "<html><body>$body$</body></html>\n"],
         ["style.css", "body { color: black; }\n"],
+        ["project.codex-report.json", "not-json\n"],
       ],
       expectedLines: ["- profile: profile.yml", "- template: template.html", "- css: style.css"],
     },
@@ -449,7 +552,7 @@ describe("Markdown PDF render bundle action integration", () => {
       const bundleDirectory = join(fixtureDir, "bundle");
       await mkdir(bundleDirectory);
       await writeFile(inputPath, "# Report\n", "utf8");
-      await writeFile(join(bundleDirectory, "profile.yml"), "unknown: true\n", "utf8");
+      await writeFile(join(bundleDirectory, "profile.yml"), "page: true\n", "utf8");
       const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const { runtime, expectNoOutput } = createActionTestRuntime();
 
@@ -461,7 +564,100 @@ describe("Markdown PDF render bundle action integration", () => {
           bundle: toRepoRelativePath(bundleDirectory),
           runner,
         }),
-      ).rejects.toThrow("Unknown Markdown PDF profile key: profile.unknown");
+      ).rejects.toThrow("profile.page must be a plain object");
+
+      expect(calls).toHaveLength(0);
+      expect(await pathExists(outputPath)).toBe(false);
+      expect(await pathExists(htmlOutputPath)).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("prints one stable warning for ignored files without creating a false conflict", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-ignored", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(join(bundleDirectory, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(join(bundleDirectory, "z-data.json"), '{"rows":[]}\n', "utf8");
+      await writeFile(join(bundleDirectory, "a-broken.yml"), ":\n", "utf8");
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, stderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        runner,
+      });
+
+      expect(await pathExists(outputPath)).toBe(true);
+      expect(stderr.text).toBe(
+        [
+          "Warning: ignored unclassified YAML or JSON bundle files:",
+          "- a-broken.yml",
+          "- z-data.json",
+          "",
+        ].join("\n"),
+      );
+    });
+  });
+
+  test("keeps an explicitly selected empty profile compatible", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-explicit-empty", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const explicitProfilePath = join(fixtureDir, "empty-profile.json");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(explicitProfilePath, "{}\n", "utf8");
+      await writeFile(join(bundleDirectory, "template.html"), "$body$\n", "utf8");
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        profile: toRepoRelativePath(explicitProfilePath),
+        runner,
+      });
+
+      expect(await pathExists(outputPath)).toBe(true);
+      expectNoStderr();
+    });
+  });
+
+  test("keeps unclassified-only failures side-effect free and emits no separate warning", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-unclassified", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutputPath = join(fixtureDir, "report.html");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(join(bundleDirectory, "data.json"), '{"rows":[]}\n', "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            htmlOutput: toRepoRelativePath(htmlOutputPath),
+            bundle: toRepoRelativePath(bundleDirectory),
+            runner,
+          }),
+        {
+          code: "MARKDOWN_PDF_BUNDLE_EMPTY",
+          exitCode: 2,
+          messageIncludes: "- data.json",
+        },
+      );
 
       expect(calls).toHaveLength(0);
       expect(await pathExists(outputPath)).toBe(false);

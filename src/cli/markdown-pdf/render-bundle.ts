@@ -2,6 +2,12 @@ import { open, readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
 
 import { CliError } from "../errors";
+import {
+  MARKDOWN_PDF_PROFILE_ROOT_KEYS,
+  normalizeMarkdownPdfProfile,
+  parseMarkdownPdfProfileFile,
+  validateMarkdownPdfProfileShape,
+} from "./profile";
 
 export type MarkdownPdfRenderBundleRole = "profile" | "template" | "css";
 
@@ -18,6 +24,7 @@ export interface MarkdownPdfRenderBundleCandidates {
   profile: MarkdownPdfRenderBundleCandidate[];
   template: MarkdownPdfRenderBundleCandidate[];
   css: MarkdownPdfRenderBundleCandidate[];
+  ignoredProfileFiles: string[];
 }
 
 export interface MarkdownPdfRenderBundleExplicitInputs {
@@ -42,6 +49,7 @@ export interface ResolveMarkdownPdfRenderBundleOptions {
 }
 
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
+const PROFILE_ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
 
 const MARKDOWN_PDF_PROFILE_CODEX_REPORT_TYPE = "markdown-pdf-codex-profile-report";
 const MARKDOWN_PDF_TEMPLATE_PROJECT_CODEX_REPORT_TYPES = new Set([
@@ -107,6 +115,46 @@ async function isRecognizedCodexReportJson(path: string, basename: string): Prom
   }
 }
 
+type MarkdownPdfRenderBundleProfileClassification =
+  | { kind: "profile" }
+  | { kind: "unclassified" }
+  | { error: unknown; kind: "invalid-profile" };
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
+async function classifyMarkdownPdfRenderBundleProfile(
+  path: string,
+): Promise<MarkdownPdfRenderBundleProfileClassification> {
+  const parsed = await parseMarkdownPdfProfileFile(path);
+  if (!parsed.ok || !isPlainObject(parsed.value)) {
+    return { kind: "unclassified" };
+  }
+
+  const rootKeys = Object.keys(parsed.value);
+  if (
+    rootKeys.length === 0 ||
+    !rootKeys.some((key) => PROFILE_ROOT_KEYS.has(key)) ||
+    rootKeys.some((key) => !PROFILE_ROOT_KEYS.has(key))
+  ) {
+    return { kind: "unclassified" };
+  }
+
+  try {
+    validateMarkdownPdfProfileShape(parsed.value);
+    normalizeMarkdownPdfProfile({ profile: parsed.value });
+    return { kind: "profile" };
+  } catch (error) {
+    return { error, kind: "invalid-profile" };
+  }
+}
+
 function compareCandidates(
   left: MarkdownPdfRenderBundleCandidate,
   right: MarkdownPdfRenderBundleCandidate,
@@ -160,6 +208,7 @@ export async function discoverMarkdownPdfRenderBundle(
     profile: [],
     template: [],
     css: [],
+    ignoredProfileFiles: [],
   };
 
   for (const entry of entries) {
@@ -175,22 +224,43 @@ export async function discoverMarkdownPdfRenderBundle(
     if (extension === ".json" && (await isRecognizedCodexReportJson(path, entry.name))) {
       continue;
     }
+    if (role === "profile") {
+      const classification = await classifyMarkdownPdfRenderBundleProfile(path);
+      if (classification.kind === "unclassified") {
+        candidates.ignoredProfileFiles.push(entry.name);
+        continue;
+      }
+      if (classification.kind === "invalid-profile") {
+        throw classification.error;
+      }
+    }
     candidates[role].push({ basename: entry.name, path, role });
   }
 
   candidates.profile.sort(compareCandidates);
   candidates.template.sort(compareCandidates);
   candidates.css.sort(compareCandidates);
+  candidates.ignoredProfileFiles.sort();
 
   if (
     candidates.profile.length === 0 &&
     candidates.template.length === 0 &&
     candidates.css.length === 0
   ) {
-    throw new CliError(`No Markdown PDF render artifacts found in bundle: ${directory}`, {
-      code: "MARKDOWN_PDF_BUNDLE_EMPTY",
-      exitCode: 2,
-    });
+    const ignoredFiles = candidates.ignoredProfileFiles;
+    const ignoredSection =
+      ignoredFiles.length === 0
+        ? ""
+        : `\n\nIgnored unclassified YAML or JSON files:\n${ignoredFiles
+            .map((filename) => `- ${filename}`)
+            .join("\n")}`;
+    throw new CliError(
+      `No Markdown PDF render artifacts found in bundle: ${directory}${ignoredSection}`,
+      {
+        code: "MARKDOWN_PDF_BUNDLE_EMPTY",
+        exitCode: 2,
+      },
+    );
   }
 
   return candidates;
