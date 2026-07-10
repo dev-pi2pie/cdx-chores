@@ -117,29 +117,55 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
   outputPath: string;
   runtime: ReturnType<typeof createActionTestRuntime>["runtime"];
 }): Promise<void> {
-  const pdfPath = join(input.fixtureDir, "report.pdf");
-  const { calls, runner } = createPdfRunner({
-    html: "<html><body><main>Body.</main></body></html>",
-  });
-  await actionMdToPdf(input.runtime, {
-    input: toRepoRelativePath(input.inputPath),
-    output: toRepoRelativePath(pdfPath),
-    template: toRepoRelativePath(join(input.outputPath, "template.html")),
-    css: toRepoRelativePath(join(input.outputPath, "style.css")),
-    runner,
-  });
+  async function render(mode: "bundle" | "explicit") {
+    const pdfPath = join(input.fixtureDir, `report-${mode}.pdf`);
+    const { calls, runner } = createPdfRunner({
+      html: "<html><body><main>Body.</main></body></html>",
+    });
+    let renderedTemplate = "";
+    const capturingRunner: MarkdownPdfProcessRunner = async (command, args, options) => {
+      if (command === "pandoc" && !args.includes("--version")) {
+        const templatePath = args[args.indexOf("--template") + 1];
+        if (templatePath) {
+          renderedTemplate = await readFile(templatePath, "utf8");
+        }
+      }
+      return runner(command, args, options);
+    };
+    await actionMdToPdf(input.runtime, {
+      input: toRepoRelativePath(input.inputPath),
+      output: toRepoRelativePath(pdfPath),
+      ...(mode === "bundle"
+        ? { bundle: toRepoRelativePath(input.outputPath) }
+        : {
+            template: toRepoRelativePath(join(input.outputPath, "template.html")),
+            css: toRepoRelativePath(join(input.outputPath, "style.css")),
+          }),
+      runner: capturingRunner,
+    });
 
-  const pandocRender = calls.find(
-    (call) => call.command === "pandoc" && !call.args.includes("--version"),
-  );
-  const templateArg = pandocRender?.args[pandocRender.args.indexOf("--template") + 1];
-  expect(templateArg).toBeDefined();
-  expect(templateArg).not.toBe(join(input.outputPath, "template.html"));
-  const weasyprintRender = calls.find(
-    (call) => call.command === "weasyprint" && !call.args.includes("--info"),
-  );
-  expect(weasyprintRender?.args).toContain(join(input.outputPath, "style.css"));
-  expect(await readFile(pdfPath, "utf8")).toContain("%PDF");
+    const pandocRender = calls.find(
+      (call) => call.command === "pandoc" && !call.args.includes("--version"),
+    );
+    const templateArg = pandocRender?.args[pandocRender.args.indexOf("--template") + 1];
+    expect(templateArg).toBeDefined();
+    expect(templateArg).not.toBe(join(input.outputPath, "template.html"));
+    const weasyprintRender = calls.find(
+      (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+    );
+    expect(weasyprintRender?.args).toContain(join(input.outputPath, "style.css"));
+    return {
+      pdf: await readFile(pdfPath, "utf8"),
+      template: renderedTemplate,
+    };
+  }
+
+  const bundleRender = await render("bundle");
+  const explicitRender = await render("explicit");
+
+  expect(bundleRender.pdf).toContain("%PDF");
+  expect(bundleRender.pdf).toBe(explicitRender.pdf);
+  expect(bundleRender.template).toBe(explicitRender.template);
 }
 
 describe("cli action modules: md pdf-template codex integration", () => {
@@ -727,7 +753,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
     });
   });
 
-  test("generated cover template bundles can feed md to-pdf template and CSS options", async () => {
+  test("generated cover template bundles render equivalently through bundle and explicit inputs", async () => {
     await withTempFixtureDir("md-pdf-template-codex-render-compat", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const coverImagePath = join(fixtureDir, "cover.png");

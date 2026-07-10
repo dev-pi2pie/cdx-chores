@@ -11,7 +11,8 @@ export {
 } from "./normalize";
 export { createMarkdownPdfPageChromeCss } from "./page-chrome";
 export { resolveMarkdownPdfPlaceholderText } from "./placeholders";
-export { readMarkdownPdfProfileFile } from "./parse";
+export { parseMarkdownPdfProfileFile, readMarkdownPdfProfileFile } from "./parse";
+export type { MarkdownPdfProfileParseResult } from "./parse";
 export {
   inferMarkdownPdfProfileFormat,
   MARKDOWN_PDF_PROFILE_ROOT_KEYS,

@@ -234,6 +234,10 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(stdout.text).toContain("Codex report: project-output/project.codex-report.json");
       expect(stdout.text).toContain("Follow-up render: cdx-chores");
       expect(stdout.text).toContain("'md' 'to-pdf'");
+      expect(stdout.text).toContain("'--bundle' 'project-output'");
+      expect(stdout.text).not.toContain("'--profile'");
+      expect(stdout.text).not.toContain("'--template'");
+      expect(stdout.text).not.toContain("'--css'");
       expect(stdout.text).toContain("Dry run only. No project bundle files were written.");
       expect(await readFile(join(outputPath, "profile.yml"), "utf8")).toBe(existingProfile);
       expect(await readFile(join(outputPath, "template.html"), "utf8")).toBe(existingTemplate);
@@ -275,7 +279,16 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       ]);
       expect(report.followUpRenderCommand).toMatchObject({
         executable: "cdx-chores",
-        args: expect.arrayContaining(["<input.md>", "<output.pdf>"]),
+        args: [
+          "md",
+          "to-pdf",
+          "--input",
+          "<input.md>",
+          "--bundle",
+          "project-output",
+          "--output",
+          "<output.pdf>",
+        ],
       });
       expect(report.followUpRenderCommand.display).toContain("'md' 'to-pdf'");
       expect(report.followUpRenderCommand.display).toContain("'<input.md>'");
@@ -613,7 +626,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
     });
   });
 
-  test("writes a project bundle that can feed md to-pdf with profile, template, and css", async () => {
+  test("renders a project bundle equivalently through bundle and explicit inputs", async () => {
     await withTempFixtureDir("md-pdf-project-codex-action-render-feed", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const outputPath = join(fixtureDir, "project-output");
@@ -687,6 +700,62 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(renderedStyles.join("\n")).toContain(".cdx-code-line");
       expect(stdout.text).toContain("Wrote PDF: rendered.pdf");
       expectNoStderr();
+
+      const bundlePdfPath = join(fixtureDir, "rendered-bundle.pdf");
+      const bundleHtmlPath = join(fixtureDir, "rendered-bundle.html");
+      const bundleStyles: string[] = [];
+      let bundleTemplate = "";
+      const { calls: bundleCalls, runner: bundleRunner } = createPdfRunner({
+        html: "<html><body><pre><code>const ok = true;</code></pre></body></html>",
+      });
+      const bundleCapturingRunner: MarkdownPdfProcessRunner = async (
+        command,
+        args,
+        runnerOptions,
+      ) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const templatePath = args[args.indexOf("--template") + 1];
+          if (templatePath) {
+            bundleTemplate = await readFile(templatePath, "utf8");
+          }
+        }
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              bundleStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return bundleRunner(command, args, runnerOptions);
+      };
+      const {
+        runtime: bundleRenderRuntime,
+        stdout: bundleStdout,
+        expectNoStderr: expectNoBundleStderr,
+      } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdToPdf(bundleRenderRuntime, {
+        input: "report.md",
+        bundle: "project-output",
+        output: "rendered-bundle.pdf",
+        htmlOutput: "rendered-bundle.html",
+        runner: bundleCapturingRunner,
+      });
+
+      const bundleWeasyprintRender = bundleCalls.find(
+        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+      );
+      expect(bundleWeasyprintRender?.args).toContain(join(outputPath, "style.css"));
+      expect(await readFile(bundlePdfPath, "utf8")).toBe(await readFile(pdfPath, "utf8"));
+      expect(await readFile(bundleHtmlPath, "utf8")).toBe(await readFile(htmlPath, "utf8"));
+      expect(bundleTemplate).toBe(renderedTemplate);
+      expect(bundleStyles).toEqual(renderedStyles);
+      expect(bundleStdout.text).toContain("Resolved Markdown PDF bundle: project-output");
+      expectNoBundleStderr();
     });
   });
 

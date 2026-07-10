@@ -242,12 +242,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
             "to-pdf",
             "--input",
             "<input.md>",
-            "--profile",
-            "md-pdf-project-20260704T080000Z-abc12345/profile.yml",
-            "--template",
-            "md-pdf-project-20260704T080000Z-abc12345/template.html",
-            "--css",
-            "md-pdf-project-20260704T080000Z-abc12345/style.css",
+            "--bundle",
+            "md-pdf-project-20260704T080000Z-abc12345",
             "--output",
             "<output.pdf>",
           ],
@@ -500,12 +496,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
       "to-pdf",
       "--input",
       "<input.md>",
-      "--profile",
-      "<project-bundle>/profile.yml",
-      "--template",
-      "<project-bundle>/template.html",
-      "--css",
-      "<project-bundle>/style.css",
+      "--bundle",
+      "<project-bundle>",
       "--output",
       "<output.pdf>",
     ]);
@@ -528,9 +520,12 @@ describe("cli action modules: md pdf-project codex validation", () => {
     });
 
     expect(command.args).toContain("report's file.md");
-    expect(command.args).toContain("project dir/profile.yml");
+    expect(command.args).toContain("project dir");
     expect(command.display).toContain("'report'\\''s file.md'");
-    expect(command.display).toContain("'project dir/profile.yml'");
+    expect(command.display).toContain("'project dir'");
+    expect(command.display).not.toContain("--profile");
+    expect(command.display).not.toContain("--template");
+    expect(command.display).not.toContain("--css");
   });
 
   test("normalizes Windows-style render command paths relative to Windows cwd", () => {
@@ -548,7 +543,7 @@ describe("cli action modules: md pdf-project codex validation", () => {
     });
 
     expect(command.args).toContain("draft.md");
-    expect(command.args).toContain("project/profile.yml");
+    expect(command.args).toContain("project");
     expect(command.display).not.toContain("C:\\work");
   });
 

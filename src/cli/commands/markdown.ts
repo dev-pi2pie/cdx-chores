@@ -36,6 +36,7 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
   input: string;
   output?: string;
   overwrite?: boolean;
+  bundle?: string;
   template?: string;
   css?: string;
   profile?: string;
@@ -128,6 +129,7 @@ export function registerMarkdownCommands(
         .command("to-pdf")
         .description("Convert Markdown to PDF using Pandoc and WeasyPrint")
         .requiredOption("-i, --input <path>", "Input Markdown file")
+        .option("--bundle <directory>", "Discover Markdown PDF render inputs from a directory")
         .option("--template <path>", "Custom Pandoc HTML template")
         .option("--css <path>", "Custom print stylesheet")
         .option("--profile <path>", "Markdown PDF profile file (.yml, .yaml, .json)")

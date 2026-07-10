@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-05
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -79,9 +79,7 @@ Render the accepted project artifacts with `md to-pdf`:
 ```bash
 cdx-chores md to-pdf \
   --input ./report.md \
-  --profile ./report-pdf-project/profile.yml \
-  --template ./report-pdf-project/template.html \
-  --css ./report-pdf-project/style.css \
+  --bundle ./report-pdf-project \
   --output ./report.pdf
 ```
 
@@ -113,6 +111,97 @@ Use `--overwrite` to replace an existing PDF:
 ```bash
 cdx-chores md to-pdf --input ./docs/report.md --output ./exports/report.pdf --overwrite
 ```
+
+## Render Bundles
+
+Use `--bundle <directory>` when accepted profile, template, or stylesheet
+artifacts share a directory. The option discovers top-level render inputs and
+then uses the same validation and render behavior as the explicit `--profile`,
+`--template`, and `--css` options.
+
+A bundle may contain only one render role:
+
+```bash
+# Profile-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-policy
+
+# Template-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-template-only
+
+# Stylesheet-only bundle
+cdx-chores md to-pdf --input ./report.md --bundle ./report-styles
+```
+
+A partial template bundle can provide both HTML and CSS, including assets
+referenced relatively by the selected template:
+
+```text
+report-template/
+  template.html
+  style.css
+  assets/
+    cover.jpg
+```
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-template \
+  --output ./report.pdf
+```
+
+A complete project bundle can provide all three roles:
+
+```text
+report-pdf-project/
+  profile.yml
+  template.html
+  style.css
+  assets/
+    cover.jpg
+  project.codex-report.json
+```
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
+```
+
+Discovery examines top-level regular files only. It does not recursively load
+`assets/` or other subdirectories. Recognized Markdown PDF Codex report JSON is
+ignored without a warning. When the profile role is unresolved and the bundle
+admits at least one render artifact, unclassified YAML or JSON is ignored with
+one aggregated warning. When no render artifact is admitted, the command
+instead fails once with the ignored basenames in its no-artifacts error and
+writes neither PDF nor intermediate HTML. YAML or JSON that matches the profile
+root namespace but fails structural or semantic profile validation is fatal
+instead of being ignored. An explicit `--profile` resolves the profile role
+before bundle discovery, so bundle profile-file diagnostics are suppressed for
+that role.
+
+Explicit artifact options select their role before bundle discovery, so they
+can compose an external artifact with a bundle or resolve an ambiguous role:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-template \
+  --profile ./profiles/report.yml \
+  --output ./report.pdf
+
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-project \
+  --template ./report-project/detailed.html \
+  --css ./report-project/print.css \
+  --output ./report.pdf
+```
+
+When an unresolved role has multiple candidates, rendering fails instead of
+guessing. Bundle discovery and conflict handling finish before external renderer
+checks and before PDF or intermediate HTML output is written.
 
 ## Layout Options
 
@@ -396,7 +485,7 @@ The Codex profile helper stays inside the profile boundary. Use custom templates
 | Code highlighting | Owns Shiki render settings | Owns Shiki-compatible CSS only |
 | Cover/title page | Text/metadata cover fields only | Custom cover layout and composition |
 | Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
-| Render with | `md to-pdf --profile ...` | `md to-pdf --template ... --css ...` |
+| Render with | `md to-pdf --profile ...` or a profile-only `--bundle` | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
 
 Template bundles can style highlighted code, but Shiki is enabled only by
 `md to-pdf --code-highlight` or an effective profile.
@@ -416,8 +505,7 @@ Render the accepted bundle through the deterministic renderer:
 ```bash
 cdx-chores md to-pdf \
   --input ./report.md \
-  --template ./report-template/template.html \
-  --css ./report-template/style.css \
+  --bundle ./report-template \
   --output ./report.pdf
 ```
 

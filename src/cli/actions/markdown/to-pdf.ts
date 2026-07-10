@@ -1,16 +1,20 @@
 import { parseMarkdown } from "../../../markdown";
+import { relative } from "node:path";
 import { requireCommandAvailable } from "../../deps";
 import { CliError } from "../../errors";
 import { readTextFileRequired } from "../../file-io";
 import {
   createMarkdownPdfRecipe,
+  discoverMarkdownPdfRenderBundle,
   normalizeMarkdownPdfProfile,
   normalizeMarkdownPdfOptions,
   readMarkdownPdfProfileFile,
   renderMarkdownPdf,
+  resolveMarkdownPdfRenderBundleInputs,
   resolveMarkdownPdfCodeOptions,
   type MarkdownPdfCodeHighlighter,
   type MarkdownPdfProcessRunner,
+  type MarkdownPdfRenderBundleResolvedInputs,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
 import { collectMarkdownPdfTitleSignals } from "../../markdown-pdf/profile/signals";
@@ -23,6 +27,7 @@ import { definedRecipeOptions, ensureExistingFile, ensureOutputDoesNotExist } fr
 export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   input: string;
   output?: string;
+  bundle?: string;
   profile?: string;
   meta?: string[];
   template?: string;
@@ -35,8 +40,44 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
 
+function printRenderBundleSummary(input: {
+  bundleDirectory: string;
+  resolved: MarkdownPdfRenderBundleResolvedInputs;
+  runtime: CliRuntime;
+}): void {
+  printLine(
+    input.runtime.stdout,
+    `Resolved Markdown PDF bundle: ${displayPath(input.runtime, input.bundleDirectory)}`,
+  );
+  for (const role of ["profile", "template", "css"] as const) {
+    const resolvedInput = input.resolved[role];
+    if (!resolvedInput) {
+      continue;
+    }
+    const resolvedPath =
+      resolvedInput.source === "bundle"
+        ? relative(input.bundleDirectory, resolvedInput.path)
+        : displayPath(input.runtime, resolvedInput.path);
+    const sourceLabel = resolvedInput.source === "explicit" ? " (explicit)" : "";
+    printLine(input.runtime.stdout, `- ${role}: ${resolvedPath}${sourceLabel}`);
+  }
+}
+
+function printIgnoredRenderBundleFiles(runtime: CliRuntime, ignoredProfileFiles: string[]): void {
+  if (ignoredProfileFiles.length === 0) {
+    return;
+  }
+  printLine(runtime.stderr, "Warning: ignored unclassified YAML or JSON bundle files:");
+  for (const filename of ignoredProfileFiles) {
+    printLine(runtime.stderr, `- ${filename}`);
+  }
+}
+
 export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
+  const bundleInput =
+    options.bundle === undefined ? undefined : assertNonEmpty(options.bundle, "Bundle directory");
+  const bundleDirectory = bundleInput ? resolveFromCwd(runtime, bundleInput) : undefined;
   const outputPath = resolveFromCwd(
     runtime,
     options.output?.trim() || defaultOutputPath(inputPath, ".pdf"),
@@ -44,11 +85,32 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   const htmlOutputInput = options.htmlOutput?.trim();
   const htmlOutputPath = htmlOutputInput ? resolveFromCwd(runtime, htmlOutputInput) : undefined;
   const templateInput = options.template?.trim();
-  const customTemplatePath = templateInput ? resolveFromCwd(runtime, templateInput) : undefined;
+  let customTemplatePath = templateInput ? resolveFromCwd(runtime, templateInput) : undefined;
   const cssInput = options.css?.trim();
-  const customCssPath = cssInput ? resolveFromCwd(runtime, cssInput) : undefined;
+  let customCssPath = cssInput ? resolveFromCwd(runtime, cssInput) : undefined;
   const profileInput = options.profile?.trim();
-  const profilePath = profileInput ? resolveFromCwd(runtime, profileInput) : undefined;
+  let profilePath = profileInput ? resolveFromCwd(runtime, profileInput) : undefined;
+  let resolvedBundle: MarkdownPdfRenderBundleResolvedInputs | undefined;
+  let ignoredBundleProfileFiles: string[] = [];
+
+  if (bundleDirectory) {
+    const candidates = await discoverMarkdownPdfRenderBundle(bundleDirectory, {
+      profileResolved: profilePath !== undefined,
+    });
+    ignoredBundleProfileFiles = candidates.ignoredProfileFiles;
+    resolvedBundle = resolveMarkdownPdfRenderBundleInputs(
+      candidates,
+      {
+        profile: profilePath,
+        template: customTemplatePath,
+        css: customCssPath,
+      },
+      { displayDirectory: displayPath(runtime, bundleDirectory) },
+    );
+    profilePath = resolvedBundle.profile?.path;
+    customTemplatePath = resolvedBundle.template?.path;
+    customCssPath = resolvedBundle.css?.path;
+  }
 
   await ensureFileExists(inputPath, "Input");
   const rawMarkdown = await readTextFileRequired(inputPath);
@@ -88,6 +150,11 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   await ensureOutputDoesNotExist(outputPath, options.overwrite);
   if (htmlOutputPath) {
     await ensureOutputDoesNotExist(htmlOutputPath, options.overwrite);
+  }
+
+  if (bundleDirectory && resolvedBundle) {
+    printIgnoredRenderBundleFiles(runtime, ignoredBundleProfileFiles);
+    printRenderBundleSummary({ bundleDirectory, resolved: resolvedBundle, runtime });
   }
 
   const runner = options.runner ?? execCommand;
