@@ -55,6 +55,9 @@ describe("cli action modules: md pdf-template codex action", () => {
       expect(stdout.text).toContain("Stylesheet: style.css");
       expect(stdout.text).toContain("Managed assets: 0");
       expect(stdout.text).toContain("Follow-up render: cdx-chores md to-pdf");
+      expect(stdout.text).toContain(`--bundle '${toRepoRelativePath(outputPath)}'`);
+      expect(stdout.text).not.toContain("--template");
+      expect(stdout.text).not.toContain("--css");
       expect(stderr.text).not.toContain("Requesting Codex Markdown PDF template recommendation");
       expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
       expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
@@ -79,6 +82,9 @@ describe("cli action modules: md pdf-template codex action", () => {
       expect(stdout.text).toContain("Template family: document-layered");
       expect(stdout.text).toContain("Recipe preset: report (explicit-recipe)");
       expect(stdout.text).toContain("Follow-up render: cdx-chores md to-pdf");
+      expect(stdout.text).toContain(`--bundle '${toRepoRelativePath(outputPath)}'`);
+      expect(stdout.text).not.toContain("--template");
+      expect(stdout.text).not.toContain("--css");
       expect(stdout.text).toContain("Dry run only. No template bundle files were written.");
       expect(await pathExists(outputPath)).toBe(false);
     });

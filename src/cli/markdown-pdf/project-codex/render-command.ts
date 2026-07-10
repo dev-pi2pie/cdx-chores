@@ -1,5 +1,3 @@
-import { join } from "node:path";
-
 import type { CliRuntime } from "../../types";
 import { publicPathFromCwd, shellQuote } from "../codex-path-display";
 import type {
@@ -18,19 +16,14 @@ function publicInputPath(runtime: CliRuntime, inputPath: string | undefined): st
 }
 
 function publicProjectBundlePath(input: {
-  bundlePath: string;
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   runtime: CliRuntime;
 }): string {
-  const outputDirectory = publicPathFromCwd({
+  return publicPathFromCwd({
     path: input.outputPlan.outputDirectory,
     placeholder: "<project-bundle>",
     runtime: input.runtime,
   });
-  if (outputDirectory === "<project-bundle>") {
-    return join("<project-bundle>", input.bundlePath);
-  }
-  return join(outputDirectory, input.bundlePath);
 }
 
 export function createMdPdfProjectCodexRenderCommand(input: {
@@ -43,21 +36,8 @@ export function createMdPdfProjectCodexRenderCommand(input: {
     "to-pdf",
     "--input",
     publicInputPath(input.runtime, input.state.inputPath),
-    "--profile",
+    "--bundle",
     publicProjectBundlePath({
-      bundlePath: input.outputPlan.profile.bundlePath,
-      outputPlan: input.outputPlan,
-      runtime: input.runtime,
-    }),
-    "--template",
-    publicProjectBundlePath({
-      bundlePath: input.outputPlan.templateHtml.bundlePath,
-      outputPlan: input.outputPlan,
-      runtime: input.runtime,
-    }),
-    "--css",
-    publicProjectBundlePath({
-      bundlePath: input.outputPlan.styleCss.bundlePath,
       outputPlan: input.outputPlan,
       runtime: input.runtime,
     }),

@@ -1,6 +1,7 @@
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
-import { publicPathBasename, publicPathDisplay, shellQuote } from "../codex-path-display";
+import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
+import { createMdPdfTemplateCodexRenderCommand } from "./render-command";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexPlannedAsset,
@@ -205,11 +206,10 @@ function followUpRenderCommand(input: {
   const inputPath = input.state.inputPath
     ? (publicPathDisplay(input.runtime, input.state.inputPath)?.display ?? "<input.md>")
     : "<input.md>";
-  const templatePath = `<template-bundle>/${input.outputPlan.templateHtml.bundlePath}`;
-  const cssPath = `<template-bundle>/${input.outputPlan.styleCss.bundlePath}`;
-  return `cdx-chores md to-pdf --input ${shellQuote(inputPath)} --template ${shellQuote(
-    templatePath,
-  )} --css ${shellQuote(cssPath)} --output ${shellQuote("<output.pdf>")}`;
+  return createMdPdfTemplateCodexRenderCommand({
+    bundlePath: "<template-bundle>",
+    inputPath,
+  });
 }
 
 export function createMdPdfTemplateCodexReportArtifact(input: {

@@ -1,16 +1,13 @@
 import { printLine } from "../../actions/shared";
 import { formatPathForDisplay } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import { createMdPdfTemplateCodexRenderCommand } from "./render-command";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexSynthesisResult,
   MdPdfTemplateCodexSignalCollection,
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";
-
-function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", "'\\''")}'`;
-}
 
 function renderFollowUpRenderCommand(input: {
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
@@ -24,9 +21,10 @@ function renderFollowUpRenderCommand(input: {
   const inputPath = input.state.inputPath
     ? formatPathForDisplay(input.runtime, input.state.inputPath)
     : "<input.md>";
-  return `cdx-chores md to-pdf --input ${shellQuote(inputPath)} --template ${shellQuote(
-    formatPathForDisplay(input.runtime, input.outputPlan.templateHtml.path),
-  )} --css ${shellQuote(formatPathForDisplay(input.runtime, input.outputPlan.styleCss.path))} --output ${shellQuote("<output.pdf>")}`;
+  return createMdPdfTemplateCodexRenderCommand({
+    bundlePath: formatPathForDisplay(input.runtime, input.outputPlan.outputDirectory),
+    inputPath,
+  });
 }
 
 export function printMdPdfTemplateCodexSummary(

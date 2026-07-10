@@ -440,20 +440,23 @@ Phase record:
 
 Tasks:
 
-- [ ] Update template-Codex follow-up summaries to render the output directory
+- [x] Update template-Codex follow-up summaries to render the output directory
       through `--bundle` only after the Phase 5 admission gate, focused tests,
       manual smoke items 5–6, and commit-range review pass.
-- [ ] Update template-Codex report follow-up commands to use a bundle-directory
+- [x] Update template-Codex report follow-up commands to use a bundle-directory
       placeholder while preserving privacy-safe paths.
-- [ ] Update project-Codex follow-up command generation to use the project
+- [x] Update project-Codex follow-up command generation to use the project
       output directory through `--bundle`.
-- [ ] Update project report and summary tests for the shorter command.
-- [ ] Keep profile-Codex follow-up commands on `--profile` because the profile
+- [x] Update project report and summary tests for the shorter command.
+- [x] Keep profile-Codex follow-up commands on `--profile` because the profile
       helper writes a file rather than a directory.
-- [ ] Retain integration tests proving explicit `--profile --template --css`
+- [x] Retain integration tests proving explicit `--profile --template --css`
       rendering remains supported.
-- [ ] Add render-equivalence coverage for template and project helper outputs
+- [x] Add render-equivalence coverage for template and project helper outputs
       through both bundle and explicit forms.
+- [x] Update the Phase 6 job record with focused, repository, and smoke
+      validation.
+- [ ] Review the Phase 6 commit range and resolve all actionable findings.
 
 Phase gate:
 
@@ -461,9 +464,9 @@ Phase gate:
 - Advisory reports contain replayable, privacy-safe bundle commands.
 - The old explicit render form remains a tested public contract.
 
-Expected job record:
+Phase record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-helper-adoption.md`
+- [Phase 6 helper adoption](jobs/2026-07-10-markdown-pdf-render-bundle-phase-6-helper-adoption.md)
 
 ### Phase 7: Documentation, Validation, And Closeout
 

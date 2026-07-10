@@ -547,10 +547,9 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
       );
       expect(report.followUpRenderCommand).toContain("cdx-chores md to-pdf");
       expect(report.followUpRenderCommand).toContain(`--input '${toRepoRelativePath(inputPath)}'`);
-      expect(report.followUpRenderCommand).toContain(
-        "--template '<template-bundle>/template.html'",
-      );
-      expect(report.followUpRenderCommand).toContain("--css '<template-bundle>/style.css'");
+      expect(report.followUpRenderCommand).toContain("--bundle '<template-bundle>'");
+      expect(report.followUpRenderCommand).not.toContain("--template");
+      expect(report.followUpRenderCommand).not.toContain("--css");
       expect(report.followUpRenderCommand).toContain("--output '<output.pdf>'");
       expect(report.followUpRenderCommand).not.toContain(fixtureDir);
       expect(report.followUpRenderCommand).not.toContain("private-cover.png");
@@ -622,10 +621,9 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         "--input 'examples/playground/.tmp-tests/md-pdf-template-codex-quoted-followup-",
       );
       expect(report.followUpRenderCommand).toContain("'\\''s draft.md'");
-      expect(report.followUpRenderCommand).toContain(
-        "--template '<template-bundle>/template.html'",
-      );
-      expect(report.followUpRenderCommand).toContain("--css '<template-bundle>/style.css'");
+      expect(report.followUpRenderCommand).toContain("--bundle '<template-bundle>'");
+      expect(report.followUpRenderCommand).not.toContain("--template");
+      expect(report.followUpRenderCommand).not.toContain("--css");
       expect(report.followUpRenderCommand).toContain("--output '<output.pdf>'");
     });
   });
