@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF render bundle Phase 7 documentation and closeout"
 created-date: 2026-07-10
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-10-markdown-pdf-render-bundle-directory.md
 ---
@@ -97,7 +97,28 @@ actionable findings and confirmed the Phase 7 documentation is ready to commit.
 
 ## Commit-Range Reviews
 
-Pending Phase 7 and independent complete-plan reviews.
+The initial Phase 7 review covered `13587e3..cb8a960` and found one actionable
+documentation issue: the usage guide did not distinguish fatal invalid
+profile-shaped YAML/JSON from ignored unclassified files. The correction at
+`cab83fb` documents the structural and semantic validation failure path and was
+verified by 51 focused bundle tests with 153 assertions.
+
+The final Phase 7 rereview covered `13587e3..cab83fb`.
+
+Verdict: `APPROVE` with no remaining actionable findings.
+
+A different reviewer assessed the complete substantive plan range
+`2a3b291..cab83fb` as one integrated feature. The reviewer covered command
+wiring, discovery, report classification, profile admission, explicit
+precedence, ambiguity handling, dependency and output ordering, renderer
+compatibility, helper commands, Node-target compatibility, tests, guides,
+lifecycle evidence, and public-record safety.
+
+Verdict: `APPROVE` with no actionable findings.
+
+The whole-plan review identified `afab6cf` as an interleaved dependency commit
+outside this plan's attribution. It remains part of the validated repository
+state. Independent CJS require and ESM CLI-help smoke also passed.
 
 ## Public Artifact Safety
 
@@ -109,5 +130,8 @@ unsupported claims were recorded.
 
 ## Outcome
 
-In progress. The plan remains `active` and the related research remains
-`in-progress` until all Phase 7 gates and both commit-range reviews pass.
+Phase 7 is complete. The public guides describe the shipped bundle behavior,
+focused and repository validation pass, live smoke covers the planned success
+and failure paths, and the documentation, Phase 7, and complete-plan reviews
+have no unresolved actionable findings. The plan and related research are
+closed in the evidence-only lifecycle commit that records this outcome.

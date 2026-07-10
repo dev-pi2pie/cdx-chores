@@ -2,7 +2,7 @@
 title: "Markdown PDF render bundle directory implementation"
 created-date: 2026-07-10
 modified-date: 2026-07-10
-status: active
+status: completed
 agent: codex
 ---
 
@@ -484,13 +484,13 @@ Tasks:
 - [x] Run a documentation review after implementation evidence is recorded.
 - [x] Update the Phase 7 job record with documentation-review, validation,
       smoke, and artifact-safety evidence.
-- [ ] Review the Phase 7 commit range and resolve all actionable findings.
-- [ ] Review the complete render-bundle plan commit range from the last
+- [x] Review the Phase 7 commit range and resolve all actionable findings.
+- [x] Review the complete render-bundle plan commit range from the last
       pre-initiative commit through the final substantive Phase 7 or correction
       commit, use a different reviewer, identify any interleaved out-of-scope
       commits, and resolve all actionable findings.
 - [x] Link all phase job records from this plan.
-- [ ] Update research and plan status only after both commit-range reviews are
+- [x] Update research and plan status only after both commit-range reviews are
       recorded and the repository lifecycle policy supports the transition.
 - [x] Run focused tests, repository gates, and a proportional manual smoke.
 
@@ -589,8 +589,9 @@ with the UTC date when each record begins:
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-helper-adoption.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-7-docs-closeout.md`
 
-This plan is `active` from the start of Phase 1. Move it to `completed` only
-after Phase 7 evidence and the expected job records are linked.
+This plan remained `active` from the start of Phase 1 through the substantive
+Phase 7 reviews. It moved to `completed` after the Phase 7 evidence and all
+expected job records were linked with no unresolved actionable findings.
 
 ## Completion Criteria
 

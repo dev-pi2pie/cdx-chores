@@ -2,7 +2,7 @@
 title: "Markdown PDF Render Bundle Directory"
 created-date: 2026-07-10
 modified-date: 2026-07-10
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -20,9 +20,9 @@ ownership:
 - project folders still coordinate compatible artifacts
 - `md to-pdf` still owns rendering and render-time overrides
 
-This research is `in-progress` while the approved implementation plan is being
-executed. Close it according to the repository research-status policy once the
-evidence needed for its conclusions is recorded.
+This research is `completed`. The linked implementation plan and phase records
+provide the implementation, validation, live-smoke, documentation, and review
+evidence needed to support its settled conclusions.
 
 ## Starting State
 
@@ -531,8 +531,16 @@ An implementation plan should cover:
    Markdown PDF reports as warning-worthy content.
 10. Do not require a manifest unless a later runtime feature demonstrates that
     filename discovery and explicit disambiguation are insufficient.
-11. Keep this research `in-progress` while the implementation plan is active and
-    close it only when the evidence required by its conclusions is recorded.
+
+## Implementation Evidence
+
+The settled direction was implemented and verified through the linked plan.
+The key completion records are:
+
+- [Phase 4 renderer integration](../plans/jobs/2026-07-10-markdown-pdf-render-bundle-phase-4-render-integration.md)
+- [Phase 5 profile admission](../plans/jobs/2026-07-10-markdown-pdf-render-bundle-phase-5-profile-admission.md)
+- [Phase 6 helper adoption](../plans/jobs/2026-07-10-markdown-pdf-render-bundle-phase-6-helper-adoption.md)
+- [Phase 7 documentation and closeout](../plans/jobs/2026-07-10-markdown-pdf-render-bundle-phase-7-docs-closeout.md)
 
 ## Related Plans
 
