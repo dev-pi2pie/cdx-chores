@@ -112,12 +112,48 @@ Use `--overwrite` to replace an existing PDF:
 cdx-chores md to-pdf --input ./docs/report.md --output ./exports/report.pdf --overwrite
 ```
 
-## Render Bundles
+## Choose Render Inputs
 
-Use `--bundle <directory>` when accepted profile, template, or stylesheet
-artifacts share a directory. The option discovers top-level render inputs and
-then uses the same validation and render behavior as the explicit `--profile`,
-`--template`, and `--css` options.
+`--profile`, `--template`, and `--css` are the direct Markdown PDF render-input
+options. They remain fully supported and can be used independently or together:
+
+| Render input | Direct option |
+| --- | --- |
+| Reusable rendering policy | `--profile <file>` |
+| Custom Pandoc HTML structure | `--template <file>` |
+| Custom print styling | `--css <file>` |
+
+For precise, visible selection, provide each accepted artifact directly:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./report-pdf-project/profile.yml \
+  --template ./report-pdf-project/template.html \
+  --css ./report-pdf-project/style.css \
+  --output ./report.pdf
+```
+
+## Bundle Discovery
+
+`--bundle <directory>` is an optional discovery convenience, not a replacement
+for the direct render-input options. Use it when accepted profile, template, or
+stylesheet artifacts share a directory. The option discovers top-level render
+inputs and then uses the same validation and rendering behavior as `--profile`,
+`--template`, and `--css`.
+
+The complete project shown above can therefore use the shorter equivalent:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
+```
+
+Both commands use the same renderer and the same profile, template, and
+stylesheet behavior. The first selects each input explicitly; the second asks
+`--bundle` to discover the available inputs from one directory.
 
 A bundle may contain only one render role:
 
@@ -181,8 +217,9 @@ instead of being ignored. An explicit `--profile` resolves the profile role
 before bundle discovery, so bundle profile-file diagnostics are suppressed for
 that role.
 
-Explicit artifact options select their role before bundle discovery, so they
-can compose an external artifact with a bundle or resolve an ambiguous role:
+Direct artifact options remain authoritative for their corresponding roles.
+They select those roles before bundle discovery, so they can compose an
+external artifact with a bundle or resolve an ambiguous role:
 
 ```bash
 cdx-chores md to-pdf \
