@@ -482,9 +482,16 @@ Tasks:
 - [ ] Confirm public docs contain no private URLs, machine-local absolute paths,
       sandbox traces, or unsupported release claims.
 - [ ] Run a documentation review after implementation evidence is recorded.
+- [ ] Update the Phase 7 job record with documentation-review, validation,
+      smoke, and artifact-safety evidence.
+- [ ] Review the Phase 7 commit range and resolve all actionable findings.
+- [ ] Review the complete render-bundle plan commit range from the last
+      pre-initiative commit through the final substantive Phase 7 or correction
+      commit, use a different reviewer, identify any interleaved out-of-scope
+      commits, and resolve all actionable findings.
 - [ ] Link all phase job records from this plan.
-- [ ] Update research and plan status only when the repository lifecycle policy
-      and recorded evidence support the transition.
+- [ ] Update research and plan status only after both commit-range reviews are
+      recorded and the repository lifecycle policy supports the transition.
 - [ ] Run focused tests, repository gates, and a proportional manual smoke.
 
 Phase gate:
@@ -492,11 +499,27 @@ Phase gate:
 - Guides describe shipped behavior rather than proposed behavior.
 - All implementation and documentation checks pass or record a concrete
   environment limitation.
+- The Phase 7 and complete-plan commit-range reviews have no unresolved
+  actionable findings.
 - The plan moves to `completed` only after linked closeout evidence exists.
 
 Expected job record:
 
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-7-docs-closeout.md`
+
+Closeout review order:
+
+1. Review the Phase 7 documentation and evidence before its implementation
+   commit.
+2. Review the committed Phase 7 range from the Phase 6 boundary.
+3. Use a different reviewer to assess the complete plan range from the last
+   pre-initiative commit through the final substantive Phase 7 or correction
+   commit.
+4. Resolve findings and repeat the applicable reviews until neither range has
+   unresolved actionable findings.
+5. Record both review dispositions, complete the plan and research lifecycle
+   transition, and create an evidence-only closeout commit after pre-commit
+   review. The closeout commit is not a new substantive implementation boundary.
 
 ## Validation Plan
 
@@ -588,6 +611,8 @@ This plan is complete only when:
 - focused tests and repository gates pass
 - manual-smoke evidence or environment limitations are recorded
 - phase job records and documentation-review evidence are linked
+- the Phase 7 and complete-plan commit ranges have no unresolved actionable
+  findings
 
 ## Related Research
 
