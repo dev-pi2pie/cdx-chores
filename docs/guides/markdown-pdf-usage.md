@@ -172,12 +172,14 @@ cdx-chores md to-pdf \
 Discovery examines top-level regular files only. It does not recursively load
 `assets/` or other subdirectories. Recognized Markdown PDF Codex report JSON is
 ignored without a warning. When the profile role is unresolved and the bundle
-admits at least one render artifact, YAML or JSON that does not satisfy the
-discoverable profile contract is ignored with one aggregated warning. When no
-render artifact is admitted, the command instead fails once with the ignored
-basenames in its no-artifacts error and writes neither PDF nor intermediate
-HTML. An explicit `--profile` resolves the profile role before bundle
-discovery, so bundle profile-file diagnostics are suppressed for that role.
+admits at least one render artifact, unclassified YAML or JSON is ignored with
+one aggregated warning. When no render artifact is admitted, the command
+instead fails once with the ignored basenames in its no-artifacts error and
+writes neither PDF nor intermediate HTML. YAML or JSON that matches the profile
+root namespace but fails structural or semantic profile validation is fatal
+instead of being ignored. An explicit `--profile` resolves the profile role
+before bundle discovery, so bundle profile-file diagnostics are suppressed for
+that role.
 
 Explicit artifact options select their role before bundle discovery, so they
 can compose an external artifact with a bundle or resolve an ambiguous role:
