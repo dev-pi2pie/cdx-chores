@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-07-05
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -84,9 +84,7 @@ deterministic follow-up render command and writes the accepted render inputs:
 ```bash
 cdx-chores md to-pdf \
   --input ./report.md \
-  --profile ./report-pdf-project/profile.yml \
-  --template ./report-pdf-project/template.html \
-  --css ./report-pdf-project/style.css \
+  --bundle ./report-pdf-project \
   --output ./report.pdf
 ```
 
@@ -110,7 +108,12 @@ rendering owner.
 | Code highlighting | Emits Shiki settings | Provides Shiki-compatible CSS | Coordinates profile output with CSS compatibility validation |
 | Cover/title page | Emits text/metadata fields | Emits custom layout/composition | Persists compatible profile and template outputs together |
 | Cover image asset | Not supported | Local managed asset | Routes asset input to project `assets/` through the template phase |
-| Render with | `--profile` | `--template --css` | `--profile --template --css` |
+| Render with | `--profile <file>` or profile-only `--bundle <directory>` | `--bundle <directory>` or explicit `--template --css` | `--bundle <directory>` or explicit `--profile --template --css` |
+
+`--bundle` is discovery shorthand only. It does not change which helper owns
+the selected profile, template, stylesheet, or managed assets. Keep the
+explicit forms for cross-directory composition and role-specific
+troubleshooting.
 
 Use `md pdf-profile codex` first when the main goal is reusable typography, page
 shape, ToC, page numbers, page chrome, or Shiki code-highlight settings. Use

@@ -472,27 +472,27 @@ Phase record:
 
 Tasks:
 
-- [ ] Update `docs/guides/markdown-pdf-usage.md` with single-role, partial, and
+- [x] Update `docs/guides/markdown-pdf-usage.md` with single-role, partial, and
       complete bundle examples.
-- [ ] Update the template and project Codex helper guides so their primary
+- [x] Update the template and project Codex helper guides so their primary
       follow-up render examples match shipped `--bundle` behavior.
-- [ ] Keep explicit render examples where composition or troubleshooting makes
+- [x] Keep explicit render examples where composition or troubleshooting makes
       them clearer.
-- [ ] Update helper comparison tables without changing artifact ownership.
-- [ ] Confirm public docs contain no private URLs, machine-local absolute paths,
+- [x] Update helper comparison tables without changing artifact ownership.
+- [x] Confirm public docs contain no private URLs, machine-local absolute paths,
       sandbox traces, or unsupported release claims.
-- [ ] Run a documentation review after implementation evidence is recorded.
-- [ ] Update the Phase 7 job record with documentation-review, validation,
+- [x] Run a documentation review after implementation evidence is recorded.
+- [x] Update the Phase 7 job record with documentation-review, validation,
       smoke, and artifact-safety evidence.
 - [ ] Review the Phase 7 commit range and resolve all actionable findings.
 - [ ] Review the complete render-bundle plan commit range from the last
       pre-initiative commit through the final substantive Phase 7 or correction
       commit, use a different reviewer, identify any interleaved out-of-scope
       commits, and resolve all actionable findings.
-- [ ] Link all phase job records from this plan.
+- [x] Link all phase job records from this plan.
 - [ ] Update research and plan status only after both commit-range reviews are
       recorded and the repository lifecycle policy supports the transition.
-- [ ] Run focused tests, repository gates, and a proportional manual smoke.
+- [x] Run focused tests, repository gates, and a proportional manual smoke.
 
 Phase gate:
 
@@ -503,9 +503,9 @@ Phase gate:
   actionable findings.
 - The plan moves to `completed` only after linked closeout evidence exists.
 
-Expected job record:
+Job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-7-docs-closeout.md`
+- [Phase 7 documentation and closeout](jobs/2026-07-10-markdown-pdf-render-bundle-phase-7-docs-closeout.md)
 
 Closeout review order:
 

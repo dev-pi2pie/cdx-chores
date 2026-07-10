@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-06-25
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -49,8 +49,7 @@ Render with the accepted bundle:
 ```bash
 cdx-chores md to-pdf \
   --input ./report.md \
-  --template ./report-template/template.html \
-  --css ./report-template/style.css \
+  --bundle ./report-template \
   --output ./report.pdf
 ```
 
@@ -150,19 +149,19 @@ bundle should be rendered through `md to-pdf`:
 ```bash
 cdx-chores md to-pdf \
   --input ./report.md \
-  --template ./report-template/template.html \
-  --css ./report-template/style.css \
+  --bundle ./report-template \
   --output ./report.pdf
 ```
 
-By default, `md to-pdf --template --css` uses the custom template and applies
-the helper stylesheet after the built-in default stylesheet. This layered render
-keeps built-in renderer behavior, profile-derived page chrome, and newer code
-highlighting hooks available unless the custom template intentionally replaces
-that structure.
+`--bundle` discovers the helper's top-level `template.html` and `style.css`.
+The renderer then uses the custom template and applies the helper stylesheet
+after the built-in default stylesheet. This layered render keeps built-in
+renderer behavior, profile-derived page chrome, and newer code highlighting
+hooks available unless the custom template intentionally replaces that
+structure.
 
-Use `--no-default-css` only when the template bundle is intentionally
-self-contained:
+Use the explicit form when inspecting composition or when the template bundle
+is intentionally self-contained with `--no-default-css`:
 
 ```bash
 cdx-chores md to-pdf \
