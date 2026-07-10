@@ -605,15 +605,42 @@ describe("Markdown PDF render bundle action integration", () => {
     });
   });
 
-  test("keeps an explicitly selected empty profile compatible", async () => {
+  test("keeps an explicitly selected in-bundle empty profile compatible without a warning", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-action-explicit-empty", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const outputPath = join(fixtureDir, "report.pdf");
-      const explicitProfilePath = join(fixtureDir, "empty-profile.json");
       const bundleDirectory = join(fixtureDir, "bundle");
+      const explicitProfilePath = join(bundleDirectory, "empty-profile.json");
       await mkdir(bundleDirectory);
       await writeFile(inputPath, "# Report\n", "utf8");
       await writeFile(explicitProfilePath, "{}\n", "utf8");
+      await writeFile(join(bundleDirectory, "template.html"), "$body$\n", "utf8");
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        profile: toRepoRelativePath(explicitProfilePath),
+        runner,
+      });
+
+      expect(await pathExists(outputPath)).toBe(true);
+      expectNoStderr();
+    });
+  });
+
+  test("lets an explicit profile bypass invalid bundle profile admission", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-action-explicit-bypass", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const explicitProfilePath = join(fixtureDir, "selected-profile.yml");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(explicitProfilePath, "page: {}\n", "utf8");
+      await writeFile(join(bundleDirectory, "broken-profile.yml"), "page: true\n", "utf8");
       await writeFile(join(bundleDirectory, "template.html"), "$body$\n", "utf8");
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const { runtime, expectNoStderr } = createActionTestRuntime();

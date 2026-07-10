@@ -48,6 +48,10 @@ export interface ResolveMarkdownPdfRenderBundleOptions {
   displayDirectory?: string;
 }
 
+export interface DiscoverMarkdownPdfRenderBundleOptions {
+  profileResolved?: boolean;
+}
+
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
 const PROFILE_ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
 
@@ -180,6 +184,7 @@ function candidateRole(extension: string): MarkdownPdfRenderBundleRole | undefin
 
 export async function discoverMarkdownPdfRenderBundle(
   directory: string,
+  options: DiscoverMarkdownPdfRenderBundleOptions = {},
 ): Promise<MarkdownPdfRenderBundleCandidates> {
   let entries;
   try {
@@ -227,11 +232,16 @@ export async function discoverMarkdownPdfRenderBundle(
     if (role === "profile") {
       const classification = await classifyMarkdownPdfRenderBundleProfile(path);
       if (classification.kind === "unclassified") {
-        candidates.ignoredProfileFiles.push(entry.name);
+        if (!options.profileResolved) {
+          candidates.ignoredProfileFiles.push(entry.name);
+        }
         continue;
       }
       if (classification.kind === "invalid-profile") {
-        throw classification.error;
+        if (!options.profileResolved) {
+          throw classification.error;
+        }
+        continue;
       }
     }
     candidates[role].push({ basename: entry.name, path, role });

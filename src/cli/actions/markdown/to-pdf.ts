@@ -94,7 +94,9 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
   let ignoredBundleProfileFiles: string[] = [];
 
   if (bundleDirectory) {
-    const candidates = await discoverMarkdownPdfRenderBundle(bundleDirectory);
+    const candidates = await discoverMarkdownPdfRenderBundle(bundleDirectory, {
+      profileResolved: profilePath !== undefined,
+    });
     ignoredBundleProfileFiles = candidates.ignoredProfileFiles;
     resolvedBundle = resolveMarkdownPdfRenderBundleInputs(
       candidates,

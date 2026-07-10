@@ -8,6 +8,7 @@ export type {
   RenderMarkdownPdfResult,
 } from "./render";
 export type {
+  DiscoverMarkdownPdfRenderBundleOptions,
   MarkdownPdfRenderBundleCandidate,
   MarkdownPdfRenderBundleCandidates,
   MarkdownPdfRenderBundleExplicitInputs,

@@ -56,6 +56,9 @@ record captures the intentional Phase 5 behavior transition.
   `normalizeMarkdownPdfProfile` for structural and semantic admission checks.
 - Discarded admission-time normalization and retained the existing render-time
   profile read and normalization path.
+- Scoped profile admission diagnostics to unresolved profile roles so an
+  explicit `--profile` remains authoritative while valid bundle profiles still
+  support explicit resolution of the only represented role.
 - Collected malformed, non-object, empty, and out-of-namespace YAML or JSON as
   stable unclassified basenames rather than profile candidates.
 - Kept profile-pattern inputs that fail structural or semantic validation fatal.
@@ -77,6 +80,10 @@ record captures the intentional Phase 5 behavior transition.
   conflicts.
 - Preserved multiple-valid-profile ambiguity behavior.
 - Preserved explicitly selected empty-profile compatibility.
+- Covered an explicitly selected in-bundle empty profile without a false
+  ignored-file warning.
+- Covered an explicit external profile bypassing an invalid bundle profile when
+  another bundle role remains discoverable.
 - Covered stable warning aggregation and enriched no-artifacts errors.
 - Covered admission failures before dependency probes, PDF writes, or
   intermediate HTML writes.
@@ -96,7 +103,7 @@ behavioral evidence.
 ## Verification
 
 - Focused bundle, profile, command, validation, rendering, and asset suite
-  - Passed: 132 tests, 0 failures.
+  - Passed: 133 tests, 0 failures.
 - `bun run lint`
   - Passed.
 - `bun run format:check`
@@ -104,7 +111,7 @@ behavioral evidence.
 - `bun run build`
   - Passed.
 - `bun test`
-  - Passed: 1513 tests, 8046 assertions.
+  - Passed: 1514 tests, 8048 assertions.
 - `git diff --check`
   - Passed.
 - Recognized-report coexistence render smoke
@@ -123,9 +130,16 @@ behavioral evidence.
 
 ## Review
 
-The Phase 5 functional commit range will be reviewed from `c44e310` through the
-functional Phase 5 head. Review evidence and disposition will be recorded before
-this job is marked completed.
+The initial independent review of `c44e310..35d5379` found that explicit
+`--profile` selection did not bypass bundle profile admission. An invalid
+profile-pattern file could therefore block an explicit profile, and an
+explicitly selected in-bundle empty profile could produce a false ignored-file
+warning.
+
+The resolver now receives explicit profile-role state, suppresses profile
+admission diagnostics for that resolved role, and retains admitted valid bundle
+profiles for the existing explicit-only-role contract. Regression tests cover
+both reported cases. The extended Phase 5 range remains pending rereview.
 
 ## Related Plan
 
