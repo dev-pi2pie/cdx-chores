@@ -66,6 +66,7 @@ Missing pieces:
 - stable ambiguity reporting
 - explicit per-role disambiguation
 - resolved-bundle summary output
+- profile-pattern admission before candidate counting
 - helper follow-up commands that use the new shorthand
 - bundle-specific tests and current-behavior guide updates
 
@@ -106,11 +107,11 @@ supported.
 
 Inspect top-level regular files only:
 
-| Role       | Candidate extensions     |
-| ---------- | ------------------------ |
-| Profile    | `.yml`, `.yaml`, `.json` |
-| Template   | `.html`                  |
-| Stylesheet | `.css`                   |
+| Role       | Candidate rule                                            |
+| ---------- | --------------------------------------------------------- |
+| Profile    | `.yml`, `.yaml`, or `.json` that passes profile admission |
+| Template   | `.html`                                                   |
+| Stylesheet | `.css`                                                    |
 
 Do not descend into `assets/` or other subdirectories. Do not discover the
 Markdown input or PDF output.
@@ -123,9 +124,13 @@ Exclude recognized Markdown PDF Codex report JSON through:
 - `artifactType: markdown-pdf-codex-template-report`
 - `artifactType: markdown-pdf-codex-project-report`
 
-A reserved report filename remains excluded even if its JSON is malformed. Any
-other malformed or unrelated JSON remains a profile candidate and reaches the
-normal ambiguity or profile-validation path.
+A reserved report filename remains excluded even if its JSON is malformed.
+Other YAML and JSON inputs must parse as non-empty plain objects, use only the
+recognized Markdown PDF profile root namespace, and pass existing shape and
+semantic validation before they become profile candidates. Unclassified files
+are ignored with an aggregated warning; recognized Markdown PDF reports remain
+silent. Explicit `--profile` selection retains its existing broader validation
+contract.
 
 ### Conflict And Resolution Contract
 
@@ -182,6 +187,7 @@ renderer-side bundle module responsible for:
 validate directory
   -> inspect top-level regular files
   -> exclude recognized report JSON
+  -> admit only profile-pattern YAML or JSON
   -> group and sort candidates by role
   -> apply explicit-role selection
   -> report unresolved ambiguity
@@ -255,6 +261,10 @@ Phase record:
 
 - [Phase 2 discovery](jobs/2026-07-10-markdown-pdf-render-bundle-phase-2-discovery.md)
 
+Phase 2 records the initial extension-level profile classification. Phase 5
+reinforces that completed foundation with a parsed profile-admission gate; it
+does not rewrite the Phase 2 implementation history.
+
 ### Phase 3: Ambiguity And Explicit Disambiguation
 
 Tasks:
@@ -322,7 +332,56 @@ Phase record:
 
 - [Phase 4 render integration](jobs/2026-07-10-markdown-pdf-render-bundle-phase-4-render-integration.md)
 
-### Phase 5: Helper Follow-Up Commands And Compatibility Coverage
+### Phase 5: Profile Admission Gate And YAML/JSON Classification
+
+Tasks:
+
+- [ ] Add a non-throwing discovery classifier for potential YAML and JSON
+      profile files.
+- [ ] Keep generated report filename exclusions and exact Markdown PDF report
+      discriminators ahead of profile admission.
+- [ ] Require a discoverable profile to be a non-empty plain object with at
+      least one recognized profile root key and no root keys outside the
+      profile namespace.
+- [ ] Reuse existing profile shape validation and semantic normalization as the
+      final admission checks instead of defining a parallel schema.
+- [ ] Keep explicit `--profile <path>` behavior authoritative and compatible,
+      including explicitly selected empty profiles.
+- [ ] Exclude malformed and unrelated YAML or JSON from profile conflict
+      counting.
+- [ ] Aggregate ignored unclassified filenames into one stable warning when
+      another render artifact is admitted.
+- [ ] Assert the aggregated warning is written once to stderr with stable
+      basename ordering.
+- [ ] Enrich the no-recognized-artifact error with ignored filenames when no
+      render artifact passes admission.
+- [ ] Keep recognized Markdown PDF reports silent when they coexist with a
+      valid profile.
+- [ ] Avoid importing a cross-command registry of `data` or `rename` artifact
+      discriminators into the Markdown PDF resolver.
+- [ ] Prove a profile can coexist with profile, template, and project report
+      JSON, including custom report filenames with valid discriminators.
+- [ ] Prove data JSON whose root keys fall outside the profile namespace can
+      coexist with one profile without creating a false ambiguity conflict.
+- [ ] Preserve the existing multiple-valid-profile ambiguity error.
+- [ ] Prove admission and classification failures write no PDF or intermediate
+      HTML.
+- [ ] Update the Phase 5 job record with focused and repository validation.
+- [ ] Review the Phase 5 commit range and resolve all actionable findings.
+
+Phase gate:
+
+- Only files that pass the discoverable profile contract participate in profile
+  candidate counting.
+- Expected Markdown PDF reports remain silent bundle content.
+- Ignored non-profile files remain visible without causing false conflicts.
+- Explicit profile selection retains its existing compatibility contract.
+
+Expected job record:
+
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-profile-admission.md`
+
+### Phase 6: Helper Follow-Up Commands And Compatibility Coverage
 
 Tasks:
 
@@ -348,9 +407,9 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-helper-adoption.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-helper-adoption.md`
 
-### Phase 6: Documentation, Validation, And Closeout
+### Phase 7: Documentation, Validation, And Closeout
 
 Tasks:
 
@@ -378,7 +437,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-docs-closeout.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-7-docs-closeout.md`
 
 ## Validation Plan
 
@@ -426,8 +485,11 @@ When Pandoc and WeasyPrint are available:
 2. Render a template/CSS bundle with a bundle-relative local image.
 3. Render a complete `md pdf-project codex` output directory.
 4. Resolve one ambiguous role through an explicit artifact option.
-5. Confirm an unresolved conflict fails before creating PDF or HTML output.
-6. Compare the successful bundle route with the equivalent explicit command.
+5. Render one profile alongside recognized report JSON without a warning.
+6. Render one profile alongside data JSON whose root keys fall outside the
+   profile namespace, with one ignored-file warning and no false conflict.
+7. Confirm an unresolved conflict fails before creating PDF or HTML output.
+8. Compare the successful bundle route with the equivalent explicit command.
 
 Record environment limitations rather than treating unavailable external PDF
 tools as product failures.
@@ -441,11 +503,12 @@ with the UTC date when each record begins:
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-2-discovery.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-3-conflicts.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-4-render-integration.md`
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-helper-adoption.md`
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-docs-closeout.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-5-profile-admission.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-6-helper-adoption.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-render-bundle-phase-7-docs-closeout.md`
 
 This plan is `active` from the start of Phase 1. Move it to `completed` only
-after Phase 6 evidence and the expected job records are linked.
+after Phase 7 evidence and the expected job records are linked.
 
 ## Completion Criteria
 
@@ -454,6 +517,10 @@ This plan is complete only when:
 - `md to-pdf --bundle <directory>` is implemented and documented
 - every single-role and combined bundle shape is covered
 - report JSON cannot become a false profile conflict under the settled rules
+- unclassified YAML or JSON that does not satisfy the discoverable profile
+  contract cannot become a false profile conflict
+- ignored unclassified files produce stable diagnostics without warning for
+  recognized Markdown PDF reports
 - unresolved ambiguity never selects a candidate silently
 - explicit role options resolve bundle conflicts as documented
 - existing render precedence and asset behavior remain intact

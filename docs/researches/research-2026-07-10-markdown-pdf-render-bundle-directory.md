@@ -53,6 +53,7 @@ This research covers:
 - the `--bundle <directory>` option on `md to-pdf`
 - partial and complete bundle behavior
 - top-level artifact discovery
+- profile-pattern admission before candidate counting
 - conflict detection and explicit disambiguation
 - interaction with existing `--profile`, `--template`, and `--css` options
 - validation, failure, and user-facing summary behavior
@@ -145,11 +146,11 @@ candidate.
 Discovery should inspect only regular file entries directly inside the selected
 directory.
 
-| Role       | Top-level candidate rule                                                 |
-| ---------- | ------------------------------------------------------------------------ |
-| Profile    | `.yml`, `.yaml`, or `.json`, excluding recognized Codex report artifacts |
-| Template   | `.html`                                                                  |
-| Stylesheet | `.css`                                                                   |
+| Role       | Top-level candidate rule                                           |
+| ---------- | ------------------------------------------------------------------ |
+| Profile    | `.yml`, `.yaml`, or `.json` that passes the profile admission gate |
+| Template   | `.html`                                                            |
+| Stylesheet | `.css`                                                             |
 
 Discovery should not descend into `assets/` or any other subdirectory. Managed
 assets remain reachable through bundle-relative references from the selected
@@ -173,18 +174,143 @@ classification; the report's full schema remains owned by its existing report
 reader.
 
 A malformed JSON file whose name matches a reserved report pattern should stay
-excluded from profile discovery. Any other malformed or unrelated JSON file is
-a profile candidate by extension and should follow normal ambiguity or profile
-validation behavior. This keeps discovery deterministic and treats the bundle
-as a dedicated render-input directory rather than a general project root.
-
-After one candidate is selected for a role, the existing role-specific parser
-and validation path remains authoritative. A uniquely discovered YAML or JSON
-candidate that is not a valid Markdown PDF profile should fail profile
-validation; it should not be silently ignored.
+excluded from profile discovery. Other YAML and JSON files should not become
+profile candidates by extension alone; they should first pass the profile
+admission gate defined below.
 
 An empty directory or a directory with no recognized render artifacts should
 fail before Pandoc or WeasyPrint is invoked.
+
+## Reinforced Profile Admission
+
+The initial implementation routes every non-report `.yml`, `.yaml`, or `.json`
+file directly into profile candidate counting:
+
+```text
+Potential profile-extension file
+          |
+          v
+       Is JSON?
+      | no      | yes
+      v         v
+   Profile    JSON report?
+  candidate     | yes     | no
+      |         v         v
+      |       Ignore   Profile candidate
+      |                     |
+      +----------+----------+
+                 |
+                 v
+         Candidate counting
+                 |
+                 v
+        Selected-file parsing
+```
+
+This is deterministic, but unrelated JSON can create a false profile conflict
+before the existing profile parser gets a chance to reject it. The reinforced
+flow should separate artifact routing from profile admission.
+
+### Step 1: Bundle Artifact Routing
+
+```text
+Top-level regular file
+          |
+          v
+     File extension
+          |
+   +------+------+-------------+
+   |             |             |
+.html          .css      .yml/.yaml/.json
+   |             |             |
+   v             v             v
+Template      CSS       JSON report check
+candidate   candidate      when applicable
+                              |
+                       +------+------+
+                       |             |
+                    report       not report
+                       |             |
+                       v             v
+                     Ignore    Profile admission
+                                     gate
+```
+
+The report check applies only to JSON. YAML proceeds directly to profile
+admission. A recognized Markdown PDF report is expected bundle content and is
+ignored without a warning.
+
+### Step 2: Profile Admission Gate
+
+```text
+Potential profile file
+          |
+          v
+ Parse as plain object
+          |
+     +----+----+
+     |         |
+   fail       pass
+     |         |
+     v         v
+Unclassified  Profile root
+              pattern matches?
+                  |
+             +----+----+
+             |         |
+            no        yes
+             |         |
+             v         v
+      Unclassified  Validate shape
+                    and normalize
+                         |
+                    +----+----+
+                    |         |
+                  fail       pass
+                    |         |
+                    v         v
+              Invalid profile  Admit as
+                   error       candidate
+                                   |
+                                   v
+                            Candidate counting
+```
+
+A file matches the discoverable profile pattern when it is a non-empty plain
+object, contains at least one recognized Markdown PDF profile root key, and
+contains no root key outside that namespace. Shape validation and semantic
+normalization remain the final admission checks. This reuses the existing
+profile contract and does not introduce a new profile schema.
+
+Automatic discovery intentionally has a higher confidence threshold than an
+explicit `--profile <path>`. An explicitly selected empty profile can retain
+its existing behavior, while an empty `{}` file does not automatically become
+a discovered profile candidate.
+
+Classification behavior should be:
+
+| Classification                              | Bundle behavior                         |
+| ------------------------------------------- | --------------------------------------- |
+| Recognized Markdown PDF report              | Ignore without warning                  |
+| Valid discoverable profile                  | Admit as a profile candidate            |
+| Parsed non-profile YAML or JSON             | Ignore with one aggregated warning      |
+| Malformed potential profile                 | Ignore with the same aggregated warning |
+| Profile-pattern match that fails validation | Fail as an invalid profile              |
+| Multiple admitted profiles                  | Use the existing ambiguity error        |
+
+When ignored files coexist with another admitted render artifact, print one
+concise warning that lists their stable sorted basenames. When no render
+artifact is admitted, enrich the existing no-artifacts error with the ignored
+filenames instead of emitting a warning followed by a separate error.
+
+This permits a profile and any recognized Markdown PDF report to coexist
+without a conflict or warning. It also permits data artifacts whose root keys
+fall outside the profile namespace to coexist with a profile: they are not
+profile candidates, but their ignored status remains visible. A generic object
+that independently satisfies the discoverable profile contract remains a
+profile candidate because content alone cannot prove another intended role.
+The classifier should not import a registry of every artifact type owned by the
+`data` or `rename` command families.
 
 ## Conflict Contract
 
@@ -374,6 +500,9 @@ An implementation plan should cover:
 - one test for each single-role bundle
 - partial and complete bundle resolution tests
 - report JSON exclusion tests
+- profile admission tests for valid, invalid, empty, malformed, and unrelated
+  YAML or JSON
+- coexistence tests for a profile with report JSON and unrelated data JSON
 - missing, empty, and non-directory bundle failures
 - multiple-candidate failures for every role
 - stable multi-role conflict reporting
@@ -396,10 +525,14 @@ An implementation plan should cover:
 5. Use existing explicit artifact options to disambiguate individual roles.
 6. Keep the current explicit render form supported.
 7. Reuse existing validation, precedence, asset, and output-safety behavior.
-8. Do not require a manifest unless a later runtime feature demonstrates that
-   filename discovery and explicit disambiguation are insufficient.
-9. Keep this research `in-progress` while the implementation plan is active and
-   close it only when the evidence required by its conclusions is recorded.
+8. Admit discovered profiles by parsed profile pattern and existing validation,
+   not by extension alone.
+9. Warn once for ignored unclassified YAML or JSON without treating recognized
+   Markdown PDF reports as warning-worthy content.
+10. Do not require a manifest unless a later runtime feature demonstrates that
+    filename discovery and explicit disambiguation are insufficient.
+11. Keep this research `in-progress` while the implementation plan is active and
+    close it only when the evidence required by its conclusions is recorded.
 
 ## Related Plans
 
