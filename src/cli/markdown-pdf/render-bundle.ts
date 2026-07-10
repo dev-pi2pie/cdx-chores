@@ -215,6 +215,7 @@ export async function discoverMarkdownPdfRenderBundle(
     css: [],
     ignoredProfileFiles: [],
   };
+  const profileCandidates: MarkdownPdfRenderBundleCandidate[] = [];
 
   for (const entry of entries) {
     if (!entry.isFile()) {
@@ -226,14 +227,33 @@ export async function discoverMarkdownPdfRenderBundle(
       continue;
     }
     const path = join(directory, entry.name);
-    if (extension === ".json" && (await isRecognizedCodexReportJson(path, entry.name))) {
+    const candidate = { basename: entry.name, path, role };
+    if (role === "profile") {
+      profileCandidates.push(candidate);
       continue;
     }
-    if (role === "profile") {
-      const classification = await classifyMarkdownPdfRenderBundleProfile(path);
+    candidates[role].push(candidate);
+  }
+
+  candidates.template.sort(compareCandidates);
+  candidates.css.sort(compareCandidates);
+
+  const inspectProfileCandidates =
+    !options.profileResolved || (candidates.template.length === 0 && candidates.css.length === 0);
+  if (inspectProfileCandidates) {
+    profileCandidates.sort(compareCandidates);
+    for (const candidate of profileCandidates) {
+      const extension = extname(candidate.basename).toLowerCase();
+      if (
+        extension === ".json" &&
+        (await isRecognizedCodexReportJson(candidate.path, candidate.basename))
+      ) {
+        continue;
+      }
+      const classification = await classifyMarkdownPdfRenderBundleProfile(candidate.path);
       if (classification.kind === "unclassified") {
         if (!options.profileResolved) {
-          candidates.ignoredProfileFiles.push(entry.name);
+          candidates.ignoredProfileFiles.push(candidate.basename);
         }
         continue;
       }
@@ -243,13 +263,11 @@ export async function discoverMarkdownPdfRenderBundle(
         }
         continue;
       }
+      candidates.profile.push(candidate);
     }
-    candidates[role].push({ basename: entry.name, path, role });
   }
 
   candidates.profile.sort(compareCandidates);
-  candidates.template.sort(compareCandidates);
-  candidates.css.sort(compareCandidates);
   candidates.ignoredProfileFiles.sort();
 
   if (

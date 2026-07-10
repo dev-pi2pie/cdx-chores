@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -66,6 +66,40 @@ describe("Markdown PDF render bundle discovery", () => {
         profile: ["a-profile.json", "z-profile.yml"],
         template: ["template.html"],
         css: ["style.css"],
+      });
+    });
+  });
+
+  test("skips profile discovery when an explicit profile resolves the role and another artifact exists", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-resolved-profile", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir, {
+        profileResolved: true,
+      });
+
+      expect(candidateNames(result)).toEqual({
+        profile: [],
+        template: ["template.html"],
+        css: [],
+      });
+      expect(result.ignoredProfileFiles).toEqual([]);
+    });
+  });
+
+  test("keeps profile-only bundle admission when an explicit profile resolves the role", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-resolved-profile-only", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
+
+      const result = await discoverMarkdownPdfRenderBundle(fixtureDir, {
+        profileResolved: true,
+      });
+
+      expect(candidateNames(result)).toEqual({
+        profile: ["profile.yml"],
+        template: [],
+        css: [],
       });
     });
   });
@@ -657,6 +691,48 @@ describe("Markdown PDF render bundle action integration", () => {
       expectNoStderr();
     });
   });
+
+  if (process.platform !== "win32") {
+    test("does not read unused bundle profiles after an explicit profile resolves the role", async () => {
+      await withTempFixtureDir(
+        "md-pdf-render-bundle-action-unreadable-profile",
+        async (fixtureDir) => {
+          const inputPath = join(fixtureDir, "report.md");
+          const outputPath = join(fixtureDir, "report.pdf");
+          const explicitProfilePath = join(fixtureDir, "selected-profile.yml");
+          const bundleDirectory = join(fixtureDir, "bundle");
+          const unusedProfilePath = join(bundleDirectory, "unused-profile.yml");
+          await mkdir(bundleDirectory);
+          await writeFile(inputPath, "# Report\n", "utf8");
+          await writeFile(explicitProfilePath, "page: {}\n", "utf8");
+          await writeFile(unusedProfilePath, "page: {}\n", "utf8");
+          await writeFile(join(bundleDirectory, "template.html"), "$body$\n", "utf8");
+          await chmod(unusedProfilePath, 0o000);
+          const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+          const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+          try {
+            await actionMdToPdf(runtime, {
+              input: toRepoRelativePath(inputPath),
+              output: toRepoRelativePath(outputPath),
+              bundle: toRepoRelativePath(bundleDirectory),
+              profile: toRepoRelativePath(explicitProfilePath),
+              runner,
+            });
+          } finally {
+            await chmod(unusedProfilePath, 0o600);
+          }
+
+          expect(await pathExists(outputPath)).toBe(true);
+          expect(stdout.text).toContain("- profile:");
+          expect(stdout.text).toContain("(explicit)");
+          expect(stdout.text).toContain("- template: template.html");
+          expect(stdout.text).not.toContain("unused-profile.yml");
+          expectNoStderr();
+        },
+      );
+    });
+  }
 
   test("keeps unclassified-only failures side-effect free and emits no separate warning", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-action-unclassified", async (fixtureDir) => {

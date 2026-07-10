@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF render bundle Phase 7 documentation and closeout"
 created-date: 2026-07-10
+modified-date: 2026-07-10
 status: completed
 agent: codex
 plan: ../plan-2026-07-10-markdown-pdf-render-bundle-directory.md
@@ -120,6 +121,23 @@ The whole-plan review identified `afab6cf` as an interleaved dependency commit
 outside this plan's attribution. It remains part of the validated repository
 state. Independent CJS require and ESM CLI-help smoke also passed.
 
+## Post-Closeout Follow-Up
+
+A follow-up review found that explicitly resolving the profile role suppressed
+bundle profile diagnostics but still opened unused YAML or JSON files. This
+could block a valid mixed bundle render when one of those irrelevant files was
+unreadable.
+
+Discovery now defers profile-file inspection until after template and
+stylesheet candidates are known. With an explicit profile and another admitted
+bundle role, YAML and JSON files are not opened. Profile-only bundle admission
+remains unchanged.
+
+The correction is covered by candidate-selection, profile-only admission, and
+unreadable-file render regressions. The 54-test bundle suite, 169-test related
+suite, and 1,517-test full suite pass, together with lint, format, build, and
+whitespace checks.
+
 ## Public Artifact Safety
 
 The changed public documentation and this job record were scanned for private
@@ -133,5 +151,6 @@ unsupported claims were recorded.
 Phase 7 is complete. The public guides describe the shipped bundle behavior,
 focused and repository validation pass, live smoke covers the planned success
 and failure paths, and the documentation, Phase 7, and complete-plan reviews
-have no unresolved actionable findings. The plan and related research are
-closed in the evidence-only lifecycle commit that records this outcome.
+have no unresolved actionable findings after the recorded follow-up correction.
+The plan and related research are closed in the evidence-only lifecycle commit
+that records this outcome.

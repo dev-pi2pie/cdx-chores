@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF render bundle Phase 5 profile admission"
 created-date: 2026-07-10
+modified-date: 2026-07-10
 status: completed
 agent: codex
 plan: ../plan-2026-07-10-markdown-pdf-render-bundle-directory.md
@@ -154,13 +155,43 @@ The reviewer independently confirmed:
 - 134 relevant focused tests passed
 - lint, build, whitespace, and public-record privacy checks passed
 
+### Follow-Up Correction
+
+A follow-up review found that an explicit `--profile` suppressed diagnostics
+for bundle profile files but did not prevent those unused files from being
+read. An unreadable YAML or JSON file could therefore block a valid render even
+when a template or stylesheet had already established the bundle and the
+profile role was resolved explicitly.
+
+Discovery now collects top-level role candidates before profile admission. When
+an explicit profile resolves the role and a template or stylesheet is present,
+the resolver does not open bundle YAML or JSON files. Profile-only bundles keep
+their existing admission behavior so that at least one recognized bundle
+artifact is still required.
+
+Regression coverage confirms that:
+
+- explicit profiles skip profile discovery when another bundle role is present
+- unreadable unused profile files do not block rendering
+- profile-only bundles still admit valid profiles when the role is explicit
+- unresolved profile admission, diagnostics, and failure behavior remain intact
+
+Follow-up verification passed:
+
+- bundle suite: 54 tests, 0 failures, 162 assertions
+- related bundle, command, renderer, and helper suite: 169 tests, 0 failures,
+  1,520 assertions
+- full suite: 1,517 tests, 0 failures, 8,093 assertions
+- lint, format check, build, and whitespace checks
+
 ## Outcome
 
 Phase 5 is complete. Only admitted Markdown PDF profiles participate in bundle
 profile candidate counting, recognized reports remain silent, unclassified
 files produce stable diagnostics for unresolved profile discovery, and explicit
-profile selection retains precedence and compatibility. Phase 6 may adopt the
-bundle shorthand in helper follow-up commands.
+profile selection retains precedence and compatibility without reading unused
+bundle profile files when another role establishes the bundle. Phase 6 may
+adopt the bundle shorthand in helper follow-up commands.
 
 ## Related Plan
 
