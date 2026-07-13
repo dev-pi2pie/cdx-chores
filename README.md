@@ -79,7 +79,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor` |
 
-Codex SDK baseline for `v0.1.5`: `0.144.1`
+Codex SDK baseline for `v0.1.6-canary.1`: `0.144.3`
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
 helper workflows are direct CLI flows in `v0.1.5`; interactive
