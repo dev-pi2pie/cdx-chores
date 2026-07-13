@@ -44,7 +44,17 @@ cdx-chores md pdf-template codex ./report.md \
   --output ./report-template
 ```
 
-Render with the accepted bundle:
+Render by selecting the accepted template and stylesheet directly:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --template ./report-template/template.html \
+  --css ./report-template/style.css \
+  --output ./report.pdf
+```
+
+When the artifacts stay together, `--bundle` provides a shorter discovery form:
 
 ```bash
 cdx-chores md to-pdf \
@@ -53,8 +63,8 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-The render step is deterministic. Once the template bundle is written,
-`md to-pdf` does not need Codex.
+Both forms use the same deterministic render path. Once the template bundle is
+written, `md to-pdf` does not need Codex.
 
 ## Generated Bundle
 
@@ -143,8 +153,10 @@ implies report writing.
 
 ## Render Boundary
 
-`md pdf-template codex` does not render the PDF automatically. The accepted
-bundle should be rendered through `md to-pdf`:
+`md pdf-template codex` does not render the PDF automatically. Render the
+accepted artifacts through `md to-pdf` by selecting `--template` and `--css`
+directly, or by using `--bundle` to discover both files from their directory.
+For example, the discovery form is:
 
 ```bash
 cdx-chores md to-pdf \
@@ -153,15 +165,17 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-`--bundle` discovers the helper's top-level `template.html` and `style.css`.
-The renderer then uses the custom template and applies the helper stylesheet
-after the built-in default stylesheet. This layered render keeps built-in
-renderer behavior, profile-derived page chrome, and newer code highlighting
-hooks available unless the custom template intentionally replaces that
-structure.
+`--bundle` discovers the helper's top-level `template.html` and `style.css`; it
+does not replace or deprecate the direct options. Either form makes the renderer
+use the custom template and apply the helper stylesheet after the built-in
+default stylesheet. This layered render keeps built-in renderer behavior,
+profile-derived page chrome, and newer code highlighting hooks available unless
+the custom template intentionally replaces that structure.
 
-Use the explicit form when inspecting composition or when the template bundle
-is intentionally self-contained with `--no-default-css`:
+The direct form remains fully supported. It is especially useful when the files
+live in different directories, when the selected paths should be visible in the
+command, or when the template bundle is intentionally self-contained with
+`--no-default-css`:
 
 ```bash
 cdx-chores md to-pdf \

@@ -79,7 +79,9 @@ Pass `--output` when the bundle needs a project-specific directory name.
 ## Render Boundary
 
 `md pdf-project codex` does not render the final PDF automatically. It prints a
-deterministic follow-up render command and writes the accepted render inputs:
+deterministic follow-up render command and writes the accepted render inputs.
+Because all three artifacts share the generated project directory, the printed
+command uses the optional `--bundle` discovery form:
 
 ```bash
 cdx-chores md to-pdf \
@@ -89,6 +91,21 @@ cdx-chores md to-pdf \
 ```
 
 Once the project folder is written, `md to-pdf` does not need Codex.
+
+The same project can be rendered by selecting each input directly:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --profile ./report-pdf-project/profile.yml \
+  --template ./report-pdf-project/template.html \
+  --css ./report-pdf-project/style.css \
+  --output ./report.pdf
+```
+
+Both forms use the same renderer and input precedence. `--profile`,
+`--template`, and `--css` remain fully supported for precise selection,
+cross-directory composition, and role-specific troubleshooting.
 
 By default, the follow-up render uses layered CSS: the profile-derived default
 stylesheet stays enabled and the project `style.css` is applied after it. This
@@ -110,10 +127,11 @@ rendering owner.
 | Cover image asset | Not supported | Local managed asset | Routes asset input to project `assets/` through the template phase |
 | Render with | `--profile <file>` or profile-only `--bundle <directory>` | `--bundle <directory>` or explicit `--template --css` | `--bundle <directory>` or explicit `--profile --template --css` |
 
-`--bundle` is discovery shorthand only. It does not change which helper owns
-the selected profile, template, stylesheet, or managed assets. Keep the
-explicit forms for cross-directory composition and role-specific
-troubleshooting.
+`--bundle` is optional discovery shorthand only. It does not change which
+helper owns the selected profile, template, stylesheet, or managed assets. The
+direct options remain authoritative when combined with `--bundle`, allowing a
+specific role to be selected explicitly while the remaining roles are
+discovered from the directory.
 
 Use `md pdf-profile codex` first when the main goal is reusable typography, page
 shape, ToC, page numbers, page chrome, or Shiki code-highlight settings. Use

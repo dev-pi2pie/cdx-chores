@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-06-25
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -53,6 +53,12 @@ cdx-chores md to-pdf \
 
 The render step is deterministic. Once the profile is written, `md to-pdf` does
 not need Codex.
+
+`--profile` directly selects the accepted profile and remains the clearest form
+when the helper writes one profile file. If a profile is later stored alone in
+a render-input directory, `--bundle <directory>` may discover it as a
+profile-only bundle; this is optional convenience rather than a different
+profile-rendering mode.
 
 `--font-hint` is intentionally repeatable, but repeated flags are collected into
 the same Codex profile request. Use one flag per distinct font preference when a

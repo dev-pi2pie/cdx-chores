@@ -77,11 +77,12 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
 | `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
+| `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor` |
 
-Codex SDK baseline for `v0.1.5-canary.5`: `0.144.1`
+Codex SDK baseline for `v0.1.6-canary.1`: `0.144.3`
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
-helper workflows are direct CLI flows in the current canary line; interactive
+helper workflows are direct CLI flows in `v0.1.5`; interactive
 Markdown PDF flows remain deferred to a later release.
 
 For automation or machine-readable checks, use:
@@ -231,6 +232,19 @@ Generate editable Markdown PDF template files:
 
 ```bash
 cdx-chores md pdf-template init --output ./pdf-template
+```
+
+Draft a coordinated Markdown PDF project and render its accepted inputs:
+
+```bash
+cdx-chores md pdf-project codex ./report.md \
+  --intent "client report with a table of contents and readable code" \
+  --output ./report-pdf-project
+
+cdx-chores md to-pdf \
+  --input ./report.md \
+  --bundle ./report-pdf-project \
+  --output ./report.pdf
 ```
 
 Markdown frontmatter to JSON:

@@ -1,7 +1,7 @@
 ---
 title: "Data Preview Usage"
 created-date: 2026-03-09
-modified-date: 2026-06-04
+modified-date: 2026-07-10
 status: completed
 agent: codex
 ---
@@ -202,7 +202,7 @@ Current stable boundary:
   - `--rows`
   - `--offset`
   - `--columns`
-- `--contains` is intentionally not supported in `v0.1.4`
+- `--contains` is intentionally not supported in `v0.1.5`
 - SQL is out of scope for this action
 
 Command shape:
