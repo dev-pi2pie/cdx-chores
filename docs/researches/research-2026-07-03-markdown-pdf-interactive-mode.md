@@ -1,49 +1,62 @@
 ---
 title: "Markdown PDF Interactive Mode"
 created-date: 2026-07-03
-modified-date: 2026-07-04
-status: draft
+modified-date: 2026-07-21
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
-Record the deferred product boundary for a possible future Interactive Markdown
-PDF mode after the `v0.1.5` stable release review.
+Define a dedicated Interactive Markdown PDF mode over the shipped profile,
+template, project, bundle-discovery, and deterministic rendering contracts.
 
-Interactive mode should reuse the accepted direct and project contracts:
+Interactive mode should support both of these user goals:
+
+1. prepare durable profile, template, or project recipe layers for later reuse
+   through one `pdf-recipes` authoring branch
+2. run one `to-pdf` flow that can choose or generate a recipe, review it, render
+   the PDF, and remove only CLI-owned temporary artifacts after success
+
+The direct command contracts remain the source of truth:
 
 ```text
-md pdf-profile codex
-md pdf-template codex
+md pdf-profile init|codex
+md pdf-template init|codex
 md pdf-project codex
-md to-pdf
+md to-pdf [--profile | --template | --css | --bundle]
 ```
 
-It should not invent a second assistant model, and it should not be a blocker for
-`v0.1.5-canary.4` or the stable `v0.1.5` release.
+Interactive mode should orchestrate these capabilities without creating a
+second artifact model, assistant model, or renderer.
 
-This document stays `draft` because the release timing and exact prompt shape are
-not committed.
+This research is `in-progress` because the main interaction and lifecycle
+direction is now chosen, while the exact deterministic formal-guide contract
+for a coordinated project bundle still needs to be settled.
 
-## Deferred Boundary
+## Current State
 
-Interactive Markdown PDF mode should remain future work until:
+The earlier deferred prerequisites are complete:
 
-- `md pdf-project codex` is implemented, verified, and documented for
-  `v0.1.5-canary.4`
-- the `v0.1.5` stable release review is complete
-- the direct profile, direct template, and project folder contracts are stable
-  enough for an interactive flow to orchestrate them
+- `md pdf-profile codex` writes reusable profile artifacts.
+- `md pdf-template codex` writes reviewable template/CSS/assets bundles.
+- `md pdf-project codex` writes coordinated project bundles containing
+  `profile.yml`, `template.html`, `style.css`, and optional managed assets.
+- `md to-pdf --bundle <directory>` discovers accepted top-level profile,
+  template, and stylesheet inputs from partial or complete bundles.
+- explicit `--profile`, `--template`, and `--css` paths remain authoritative for
+  their corresponding render roles.
+- `md to-pdf` remains the deterministic renderer after inputs are accepted.
 
-This records ordering only. It does not commit a release number or require the
-next feature track to be Interactive Markdown PDF mode.
+The current Interactive Markdown submenu still exposes `to-docx` and
+`frontmatter-to-json`, but no Markdown PDF branches. The remaining problem is
+therefore interaction orchestration rather than artifact or renderer design.
 
 ## Relationship To Roadmap
 
 The parent roadmap is [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md).
 
-That roadmap should stay lightweight and sequence the layers:
+That roadmap established the layer order:
 
 ```text
 profile-Codex
@@ -52,173 +65,756 @@ profile-Codex
   -> Interactive mode
 ```
 
-This research owns the later Interactive mode details so the roadmap does not
-continue accumulating prompt-flow specifics.
-
-## Starting State
-
-Current Markdown PDF work is intentionally direct-CLI first:
-
-- `md to-pdf` renders accepted artifacts deterministically.
-- `md pdf-profile codex` drafts reusable profile artifacts.
-- `md pdf-template codex` drafts reviewable template/CSS/assets bundles.
-- `md pdf-project codex` is the current `v0.1.5-canary.4` target for
-  coordinating `profile.yml`, `template.html`, `style.css`, and optional
-  `assets/` in one project folder.
-
-Interactive mode should start only after that project contract is stable enough
-to be reused instead of redefined.
+This research now owns the active Interactive mode contract. The roadmap should
+stay a lightweight history and layer overview rather than duplicate the prompt,
+dry-run, output, and cleanup decisions recorded here.
 
 ## Scope
 
 This research covers:
 
-- the deferred boundary for Interactive Markdown PDF mode
-- the product rule that Interactive mode reuses direct and project contracts
-- a small first-pass interaction shape
-- the explicit non-goals for `v0.1.5` and `v0.1.5-canary.4`
+- the Interactive Markdown submenu branches for rendering and artifact creation
+- the one-shot `to-pdf` orchestration flow
+- existing, starter, formal-guide, and Codex-assisted input paths
+- mandatory prepared-result dry-runs before writes or rendering
+- output-question ordering and conditional output prompts
+- durable versus CLI-owned temporary artifact lifecycles
+- safe cleanup after successful rendering
+- reuse of existing profile, template, project, bundle, and render services
 
 This research does not implement:
 
-- prompt wiring
-- command routing
-- terminal UI behavior
-- Codex SDK calls
-- PDF rendering changes
+- prompt wiring or menu routing
+- a raw YAML, HTML, or CSS terminal editor
+- a new profile, template, project, or report schema
+- automatic cleanup of user-owned or explicitly saved artifacts
+- changes to Pandoc, WeasyPrint, or the deterministic renderer
+- a project starter or project formal-guide mode in the first Interactive cut
 - a committed release target
-- guide updates for shipped Interactive behavior
-
-## Release Boundary
-
-Interactive Markdown PDF mode should be out of scope for `v0.1.5-canary.4`.
-
-The current ordering is:
-
-| Milestone | Target | Status |
-| --- | --- | --- |
-| Profile helper | `v0.1.5-canary.2` | completed |
-| Template helper | `v0.1.5-canary.3` | completed |
-| PDF project helper | `v0.1.5-canary.4` | current target |
-| Stable release review | `v0.1.5` | after canary.4 is complete |
-| Interactive Markdown PDF mode | future post-`v0.1.5` work | draft, not scheduled |
-
-This keeps the `v0.1.5` story focused:
-
-```text
-profile helper
-  -> template helper
-  -> project folder coordinator
-  -> stable release review
-```
-
-Interactive mode is a possible later layer after the stable release, not a
-prerequisite for it.
 
 ## Product Boundary
 
-Interactive mode should be an orchestration UI over existing contracts.
+Interactive mode is an orchestration UI over accepted direct contracts.
 
 It should not:
 
-- hide Codex inside `md to-pdf`
-- generate unreviewed HTML/CSS during rendering
-- create a separate profile/schema model
-- create a separate template/schema model
-- bypass the `md pdf-project codex` folder contract
-- make networked Codex assistance mandatory for deterministic rendering
+- hide Codex inside an unreviewed render step
+- make Codex mandatory for Markdown PDF rendering
+- rerun Codex after the user has accepted a prepared candidate
+- generate unreviewed HTML or CSS during rendering
+- treat `--bundle` as a new artifact owner
+- delete existing, external, or explicitly saved artifacts
+- invent an Interactive-only profile or template schema
 
 It should:
 
-- gather user choices with prompts
-- show deterministic previews before writes or renders
-- call the same underlying profile, template, project, and render services used
-  by direct commands
-- make Codex assistance an explicit opt-in branch
-- preserve a clear save/revise/render/cancel loop
+- expose `to-pdf` rendering and `pdf-recipes` durable authoring as related but
+  distinct branches
+- keep `to-pdf` as the only branch that owns rendering
+- let `pdf-recipes` hand an accepted saved artifact to `to-pdf` without creating
+  another render implementation
+- offer deterministic starter and formal-guide paths without Codex
+- make Codex Assistant an explicit generation mode
+- prepare and validate candidates before writing them
+- show concrete artifact and render reviews
+- let the user revise, regenerate, change mode, save, render, or cancel
+- reuse `--bundle` as the common application path for partial and complete
+  generated bundles
+- remove CLI-owned temporary bundles only after a successful render
 
-## First-Pass Shape
+## Interactive Command Model
 
-Draft shape:
+The Markdown submenu should expose two PDF-oriented user goals. `to-pdf`
+uses a recipe to produce a PDF. `pdf-recipes` prepares durable profile,
+template, or project layers and can hand a saved result to `to-pdf`.
+
+Here, **recipe** is the user-facing name for the effective rendering
+composition. It does not introduce a fourth artifact type or serialized recipe
+schema. The existing artifacts retain their established ownership:
+
+| Recipe component | Existing contract |
+| --- | --- |
+| Built-in recipe | renderer defaults and normalized render options |
+| Profile | declarative policy consumed by the built-in recipe |
+| Template bundle | explicit HTML, CSS, and managed asset overrides |
+| Project bundle | coordinated profile, template, stylesheet, and assets |
+
+`pdf-recipes` is therefore an Interactive umbrella for preparing reusable
+components of a recipe, not a replacement for `md pdf-profile`,
+`md pdf-template`, or `md pdf-project`. The menu name does not imply a new
+direct `md pdf-recipes` command.
 
 ```text
-md -> Markdown PDF entry point
-  -> choose Markdown input
-  -> choose PDF output
-  -> choose render inputs
-     - use existing profile/template inputs
-     - create or use deterministic starter artifacts
-     - explicitly choose assisted project drafting
-  -> review resolved inputs and output paths
-  -> choose action
-     - render now, if supported
-     - save artifacts or follow-up command, if supported
-     - revise choices
-     - cancel
+✔ Choose a command md
+? Choose a markdown command
+❯ to-pdf               Create a PDF
+  pdf-recipes           Prepare reusable profile, template, or project layers
+  to-docx
+  frontmatter-to-json
+  Back
+  Cancel
+
+↑↓ navigate • ⏎ select
 ```
 
-This is not a full wizard spec. The exact prompt order can change during
-implementation, but the ownership boundary should not. Interactive mode should
-reduce decisions into the same stable direct-command inputs that scripts can use.
+The artifact layers remain explicit after entering `pdf-recipes`:
 
-## Project Assist Role
+```text
+? Choose a recipe layer
+❯ Profile
+  Template bundle
+  Project bundle
+  Back
+  Cancel
+```
 
-Once `md pdf-project codex` exists, it should become the clean assisted path for
-Interactive users who want one coherent PDF direction.
+This keeps the three direct ownership contracts without crowding the Markdown
+submenu or creating four render entry points. It also mirrors the relationship
+between rename plan generation and `rename apply` without adding an `apply`
+alias to Markdown PDF. The meaningful application operation is already named
+`to-pdf`.
 
-Interactive project assist should:
+`pdf-recipes` does not render independently. After saving, it may offer a
+context-specific handoff such as `Continue to to-pdf with this profile`, which
+transfers control and the saved artifact path to the `to-pdf` flow.
 
-- gather input Markdown, intent, font hints, base profile, and cover image paths
-- show planned project output paths
-- run the project helper through shared services
-- present a concise summary of profile and template decisions
-- offer the deterministic follow-up render
+## Artifact Lifecycles
 
-Project assist should stay behind an explicit assisted-project choice. It should
-not automatically render before the user has reviewed the project summary unless
-a later implementation adds a confirmed render-now step.
+Interactive mode needs two explicit artifact lifecycles.
 
-## Direct Helper Branches
+| Entry path | Primary goal | Default artifact lifecycle |
+| --- | --- | --- |
+| `pdf-recipes` -> Profile | Author a reusable render policy | durable |
+| `pdf-recipes` -> Template bundle | Author reusable HTML/CSS/assets | durable |
+| `pdf-recipes` -> Project bundle | Author a coordinated render project | durable |
+| `to-pdf` with an existing recipe | Replay accepted artifacts | external artifacts are untouched |
+| `to-pdf` with a generated recipe | Produce one PDF in one flow | CLI-owned session bundle, removed after successful render |
 
-Interactive mode can expose direct branches for users who know the artifact they
-want, but the first pass does not need to expose every direct helper at once:
+The same profile, template, and project generation services can support both
+lifecycles. The entry path and the user's final action determine whether the
+prepared candidate is written to a durable destination or a temporary session
+bundle.
 
-| User need | Interactive branch |
+## `to-pdf` One-Shot Flow
+
+`to-pdf` should support direct replay and in-session generation.
+
+```text
+to-pdf
+  -> choose Markdown input
+  -> choose a recipe for this PDF
+     - built-in recipe
+     - existing profile
+     - existing bundle
+     - advanced composition
+     - generate a recipe for this PDF
+  -> resolve or generate the recipe
+  -> show mandatory recipe dry-run review
+  -> choose render/save lifecycle
+  -> ask only for applicable outputs
+  -> show final transaction review
+  -> apply
+```
+
+PDF output belongs near execution, after the recipe is known and reviewed.
+This follows the existing Interactive data-query rhythm:
+
+```text
+input
+  -> mode
+  -> candidate
+  -> candidate review
+  -> output selection
+  -> execution
+```
+
+It also prevents irrelevant questions. A user who chooses `Save recipe layer
+without rendering` should never be asked for a PDF output path.
+
+## Recipe Source Modes
+
+The `to-pdf` recipe prompt should use one selection rather than a sequence of
+yes/no questions.
+
+```text
+? Choose a recipe for this PDF
+❯ Built-in recipe
+  Existing profile
+  Existing bundle
+  Advanced composition
+  Generate a recipe for this PDF
+  Back
+  Cancel
+```
+
+The recipe choices map to existing renderer inputs:
+
+| Interactive recipe choice | Renderer mapping |
 | --- | --- |
-| reusable render policy only | profile behavior |
-| HTML/CSS/assets only | template behavior |
-| coordinated profile/template/assets | project assist |
-| deterministic final PDF | render action through `md to-pdf` |
+| Built-in recipe | no profile, template, CSS, or bundle path |
+| Existing profile | `--profile <file>` |
+| Existing bundle | `--bundle <directory>` |
+| Advanced composition | explicit profile/template/CSS plus optional bundle |
+| Generate a recipe for this PDF | prepared artifact materialized into a CLI-owned session bundle |
 
-This keeps expert direct flows and guided project flows available without
-forcing every Interactive session into a Codex-assisted project.
+`Existing bundle` intentionally covers profile-only, template-only, stylesheet-
+only, template/CSS, and complete project bundles. Interactive mode should reuse
+the existing bundle admission, conflict, warning, and explicit-override rules.
+
+### Built-In Recipe Review
+
+The built-in path still needs a meaningful recipe review even though it has no
+external artifact paths. The first review should show the effective recipe
+without asking for the later PDF output yet:
+
+```text
+Markdown PDF recipe dry-run
+
+Input: report.md
+Recipe source: built-in
+Preset: article
+Page: A4 portrait
+Margins: 18mm
+ToC: disabled
+Code highlighting: disabled
+Default CSS: enabled
+
+No files have been written.
+```
+
+The final transaction review adds the selected PDF output and overwrite policy.
+
+### Advanced Composition
+
+Advanced composition should reuse the direct renderer's precedence instead of
+introducing Interactive-only conflict behavior. The flow may collect an
+optional bundle first, then optional explicit role overrides:
+
+```text
+Optional bundle directory
+Optional explicit profile
+Optional explicit template
+Optional explicit stylesheet
+```
+
+The dry-run should label the resolved source for each role:
+
+```text
+Markdown PDF recipe dry-run
+
+Input: report.md
+Bundle: report-pdf-project
+Profile: profiles/report.yml (explicit)
+Template: template.html (bundle)
+Stylesheet: print.css (explicit)
+
+No files have been written.
+```
+
+Bundle ambiguity and invalid-profile errors should retain the current direct
+messages and resolving flags. Explicit inputs continue to resolve their roles
+before bundle discovery.
+
+## Generation Modes
+
+When the user generates a recipe from either `to-pdf` or `pdf-recipes`, the flow
+should first choose the artifact layer and then the generation mode.
+
+```text
+? Which recipe layer should be generated?
+❯ Profile
+  Template bundle
+  Project bundle
+  Back
+  Cancel
+```
+
+```text
+? Choose generation mode
+❯ Starter
+  Formal guide
+  Codex Assistant
+  Change recipe layer
+  Cancel
+```
+
+The available mode choices are filtered by artifact capability. In the first
+Interactive cut, Project bundle offers only Codex Assistant; it should not show
+unimplemented Starter or Formal guide choices.
+
+The intended capability matrix is:
+
+| Artifact | Starter | Formal guide | Codex Assistant |
+| --- | --- | --- | --- |
+| Profile | current deterministic profile-init behavior | structured recipe questions | document signals, intent, font hints, optional base profile |
+| Template | current deterministic template-init behavior | structured safe recipe questions | document signals, intent, font hints, optional base profile and cover image |
+| Project | out of the first Interactive cut | out of the first Interactive cut pending a deterministic coordination contract | current project-helper orchestration |
+
+Interactive generation choices map back to the direct command contracts:
+
+| Interactive choice | Direct contract reused |
+| --- | --- |
+| Profile starter | `md pdf-profile init` |
+| Profile Codex Assistant | `md pdf-profile codex` |
+| Template starter | `md pdf-template init` |
+| Template Codex Assistant | `md pdf-template codex` |
+| Project Codex Assistant | `md pdf-project codex` |
+
+Formal-guide profile and template modes compile structured answers into the
+same deterministic profile and recipe services used by the corresponding
+starter commands. They do not define new artifact schemas.
+
+### Starter
+
+Starter mode exposes the existing deterministic initialization behavior with a
+small prompt surface. It should not call Codex.
+
+### Formal Guide
+
+Formal guide should work like Interactive `data query formal-guide`: collect
+structured answers, compile them deterministically into accepted inputs, show
+the result, and let the user revise the answers before application.
+
+The first formal-guide surface should stay within the current normalized recipe
+contract:
+
+- preset
+- page size
+- orientation
+- preset or custom margins
+- ToC enabled
+- ToC depth and page-break behavior when enabled
+
+Formal guide is not a raw artifact editor and should not claim arbitrary HTML,
+CSS, cover composition, font discovery, or design interpretation.
+
+### Codex Assistant
+
+Codex Assistant should reuse the interaction pattern established by data query:
+
+```text
+? Use multiline editor? Yes
+? Describe the PDF direction:
+
+Formal client report with a restrained cover, table of contents,
+readable TypeScript examples, and dense financial tables.
+
+? Send this intent to Codex drafting? Yes
+```
+
+The primary hint remains one natural-language `intent`. Additional prompts are
+conditional on the chosen artifact:
+
+| Artifact | Additional signals |
+| --- | --- |
+| Profile | optional base profile and repeatable font hints |
+| Template | optional base profile, repeatable font hints, and optional cover image |
+| Project | optional base profile, repeatable font hints, and optional cover image |
+
+After generation, the review loop should offer mode-specific recovery:
+
+```text
+? Recipe candidate next step
+❯ Apply this candidate
+  Revise intent
+  Regenerate with the same intent
+  Change generation mode
+  Change recipe layer
+  Cancel
+```
+
+`Regenerate` explicitly performs another Codex request. `Apply this candidate`
+must use the exact prepared result already shown to the user.
+
+Changing generation mode or recipe layer explicitly discards the current
+in-memory candidate. No cleanup is needed because it has not been written.
+
+## Mandatory Dry-Run Contract
+
+Every render and generation branch should prepare and review before applying.
+
+```text
+collect choices
+  -> normalize inputs
+  -> resolve paths and bundle roles
+  -> generate candidate when requested
+  -> validate candidate and planned outputs
+  -> display dry-run review
+  -> await user decision
+```
+
+The Interactive dry-run contract is stricter than merely invoking a direct
+helper with `--dry-run`:
+
+- no profile, template, project, PDF, HTML, or report file is written before the
+  user chooses a committing action
+- generated content remains available in memory for the subsequent save or
+  render action
+- accepting a candidate does not repeat Codex generation
+- revision returns to the smallest relevant checkpoint
+- changing output does not regenerate an accepted candidate
+- cancelling before application leaves no filesystem artifact
+
+Diagnostic-report retention may be selected and included in the dry-run plan,
+but the report remains in memory until the user chooses a committing action.
+The Interactive preview must not preserve the direct helper behavior where a
+requested report can be written during `--dry-run`.
+
+The implementation therefore needs a reusable prepared-result boundary:
+
+```text
+prepare once
+  -> review
+  -> commit the same prepared result
+```
+
+It should not implement review by running a helper once with `dryRun: true` and
+again with `dryRun: false`.
+
+## Output Ordering
+
+Outputs should be requested only after the recipe candidate is accepted.
+
+```text
+to-pdf
+  -> Markdown input
+  -> choose or generate a recipe
+  -> dry-run and review the recipe
+  -> choose render/save lifecycle
+  -> choose applicable artifact output
+  -> choose applicable PDF output
+  -> final review
+  -> apply
+```
+
+The required outputs depend on the selected continuation:
+
+| Continuation | Artifact output | PDF output |
+| --- | --- | --- |
+| Render a built-in or existing recipe | none | required or defaulted |
+| Render and remove temporary bundle | internal temporary bundle | required or defaulted |
+| Save recipe layer and render | user-selected durable output | required or defaulted |
+| Save recipe layer without rendering | user-selected durable output | not requested |
+
+Output selection should allow returning to artifact review without discarding
+or regenerating the prepared candidate.
+
+`pdf-recipes` requests only its durable artifact destination before committing.
+If the user then chooses a context-specific `Continue to to-pdf` action, the
+saved artifact becomes an existing renderer input to `to-pdf`, which owns the
+later Markdown input, PDF output, final review, and rendering prompts.
+
+## Apply And Cleanup Semantics
+
+The one-shot temporary path should behave as a small transaction:
+
+```text
+accepted in-memory candidate
+  -> create a unique CLI-owned session bundle
+  -> write the exact accepted candidate
+  -> render through md to-pdf --bundle
+  -> confirm successful PDF output
+  -> remove the CLI-owned session bundle
+```
+
+All generated artifact scopes can use this path:
+
+```text
+profile session bundle
+  profile.yml
+
+template session bundle
+  template.html
+  style.css
+  assets/
+
+project session bundle
+  profile.yml
+  template.html
+  style.css
+  assets/
+```
+
+The cleanup policy is ownership- and outcome-based:
+
+| Artifact origin or outcome | Cleanup behavior |
+| --- | --- |
+| Existing profile, template, CSS, or bundle | never remove |
+| Explicitly saved generated artifact | never remove |
+| CLI-owned session bundle after successful render | remove |
+| CLI-owned session bundle after failed render | retain and print its path |
+| Successful render followed by cleanup failure | keep PDF, warn, and print the remaining bundle path |
+| Cancellation before commit | nothing was written |
+
+Cleanup must target only the exact unique directory created and retained in the
+current session state. It must never derive a deletion target from a broad root,
+glob, unresolved environment variable, existing bundle path, or user-selected
+durable output.
+
+Diagnostic report retention is separate:
+
+```text
+? Keep a Codex diagnostic report?
+❯ No
+  Keep it with the generated bundle
+  Write it to a separate path
+```
+
+Keeping a report inside the generated bundle implies keeping the bundle. A
+separately persisted report can survive while the temporary render bundle is
+removed. A selected report is written only after the user commits the prepared
+result, never during the pre-commit dry-run review.
+
+## Simulated Existing-Bundle Render
+
+```text
+✔ Choose a command md
+✔ Choose a markdown command to-pdf
+✔ Input Markdown file report.md
+✔ Choose a recipe for this PDF Existing bundle
+✔ Bundle directory report-pdf-project
+
+Markdown PDF recipe dry-run
+
+Input: report.md
+Recipe source: existing bundle
+Profile: profile.yml
+Template: template.html
+Stylesheet: style.css
+Recipe bundle: report-pdf-project
+
+No files have been written.
+
+? Recipe next step
+❯ Continue to PDF output
+  Change recipe
+  Cancel
+
+✔ PDF output report.pdf
+✔ Overwrite if it exists? No
+
+Final render review
+
+Input: report.md
+Bundle: report-pdf-project
+PDF output: report.pdf
+Existing bundle cleanup: never
+
+? Render this PDF? Yes
+```
+
+## Simulated One-Shot Codex Project Render
+
+```text
+✔ Choose a command md
+✔ Choose a markdown command to-pdf
+✔ Input Markdown file report.md
+✔ Choose a recipe for this PDF Generate a recipe for this PDF
+✔ Which recipe layer should be generated? Project bundle
+✔ Choose generation mode Codex Assistant
+✔ Use multiline editor? Yes
+✔ Send this intent to Codex drafting? Yes
+
+Markdown PDF recipe dry-run
+
+Recipe layer: project bundle
+Generation mode: Codex Assistant
+Profile decision: adapted
+Template decision: adapted
+Managed assets: 1
+Validation: passed
+
+Planned bundle files:
+- profile.yml
+- template.html
+- style.css
+- assets/cover.jpg
+
+No files have been written.
+
+? What should happen next?
+❯ Render and remove temporary bundle
+  Save recipe layer and render
+  Save recipe layer without rendering
+  Revise intent
+  Regenerate
+  Change generation mode
+  Cancel
+
+✔ PDF output report.pdf
+✔ Overwrite if it exists? No
+
+Final render review
+
+Input: report.md
+Generated bundle: temporary CLI-owned session bundle
+PDF output: report.pdf
+Bundle retention: remove after successful render
+Codex report: not retained
+
+? Render this PDF? Yes
+
+Wrote PDF: report.pdf
+Removed temporary Markdown PDF session bundle.
+```
+
+## Simulated Formal-Guide Profile Authoring And Handoff
+
+```text
+✔ Choose a command md
+✔ Choose a markdown command pdf-recipes
+✔ Choose a recipe layer Profile
+✔ Choose profile generation mode Formal guide
+✔ Preset report
+✔ Page size A4
+✔ Orientation portrait
+✔ Use preset margins? Yes
+✔ Generate a table of contents? Yes
+✔ Table of contents depth 3
+✔ Table of contents page break after
+
+Markdown PDF profile dry-run
+
+Generation mode: formal-guide
+Preset: report
+Page: A4 portrait
+Margins: preset
+ToC: enabled, depth 3, break after
+Validation: passed
+
+No files have been written.
+
+? What should happen next?
+❯ Save profile
+  Revise formal-guide answers
+  Change generation mode
+  Cancel
+
+✔ Profile output report-profile.yml
+
+Final profile save review
+
+Profile output: report-profile.yml
+Profile retention: keep
+
+? Save this profile? Yes
+
+Wrote Markdown PDF profile: report-profile.yml
+
+? What next?
+❯ Continue to to-pdf with this profile
+  Create another recipe layer
+  Exit
+
+✔ Input Markdown file report.md
+
+Markdown PDF recipe dry-run
+
+Input: report.md
+Profile: report-profile.yml (explicit)
+
+No PDF or additional artifacts have been written by to-pdf.
+
+✔ PDF output report.pdf
+? Render this PDF? Yes
+```
+
+## Simulated Render Failure
+
+```text
+Rendering failed before a PDF was completed.
+
+The generated session bundle was retained for diagnosis:
+<temporary-session-bundle>
+
+You can revise the recipe or retry rendering from this bundle.
+
+? Next step
+❯ Retry render
+  Keep bundle and exit
+  Remove bundle and exit
+  Cancel
+```
+
+The explicit remove choice after failure is separate from automatic cleanup.
+Automatic cleanup occurs only after successful rendering. `Retry render` reuses
+the already-materialized session bundle and never repeats starter,
+formal-guide, or Codex generation.
+
+## Implementation Implications
+
+The Interactive flow should reuse shared services instead of invoking direct
+CLI actions as subprocess-like steps.
+
+The implementation should copy different aspects from two existing Interactive
+precedents:
+
+- use data query for input, mode, candidate review, output selection, execution,
+  and checkpoint-backtracking order
+- use data stack's `prepare* -> Prepared* -> writePrepared*` shape for the
+  filesystem and generated-candidate boundary, without copying any
+  output-before-prepare ordering
+
+The required architectural boundary is:
+
+```text
+prompt collection
+  -> shared preparation service
+  -> prepared profile/template/project/render result
+  -> Interactive review loop
+  -> shared commit or render service
+```
+
+In particular:
+
+- `md to-pdf` needs a preparation boundary that resolves bundle roles,
+  normalizes profiles and recipe options, validates output collisions, and
+  returns the render plan before invoking external renderers.
+- profile, template, and project generation need prepared results that can be
+  reviewed and later written without recomputing Codex decisions.
+- temporary bundle materialization must accept the same prepared artifacts as
+  durable writes.
+- the final renderer should consume the same resolved options used by the
+  direct CLI.
+- Interactive tests should cover checkpoint backtracking, output ordering,
+  candidate reuse, successful cleanup, render-failure retention, cleanup
+  failure warnings, and protection of external artifacts.
 
 ## Open Questions
 
-- Should the first Interactive Markdown PDF flow start under `md -> to-pdf`, or
-  should there be a separate `md -> pdf-project` menu entry?
-- Should the first implemented Interactive flow support a confirmed render-now
-  step, or initially save artifacts only?
+- What deterministic ownership and layering rules should a project
+  `formal-guide` use so `profile.yml` and `style.css` remain coordinated without
+  duplicating or competing over the same settings?
+- Should the first template formal-guide expose only the current template-init
+  recipe surface, or add a small fixed set of separately researched safe layout
+  choices?
 
 ## Recommendations
 
-1. Keep Interactive Markdown PDF mode out of `v0.1.5-canary.4` and `v0.1.5`.
-2. Keep this research `draft` until a future implementation scope is explicitly
-   chosen.
-3. Reuse the direct profile, direct template, project, and `md to-pdf` services.
-4. Treat `md pdf-project codex` as an explicit assisted path for users who want a
-   coherent PDF direction.
-5. Keep Codex opt-in and artifact-producing; do not hide assistant work inside
-   rendering.
-6. Reuse existing interactive menu, path prompt, select, confirm, and review-loop
-   utilities before adding prompt primitives.
-7. Reuse direct helper diagnostic report behavior instead of adding a separate
-   report-control prompt matrix.
-8. Require a visible preview/review step before rendering or writing complex
-   artifact sets.
+1. Add `to-pdf` and `pdf-recipes` as the two PDF-oriented Interactive Markdown
+   branches.
+2. Let `to-pdf` support built-in, existing, and one-shot generated recipes.
+3. Let `pdf-recipes` author durable profile, template, or project recipe layers
+   and hand saved results to `to-pdf` when the user wants to continue.
+4. Keep `to-pdf` as the only render/application owner rather than introducing a
+   new `apply` alias or separate artifact-branch render paths.
+5. Make prepared-result dry-run review mandatory before writes or rendering.
+6. Ask for artifact and PDF outputs only after the recipe candidate is
+   accepted.
+7. Add deterministic starter and formal-guide modes for profile and template
+   creation.
+8. Keep Codex Assistant explicit and reuse its accepted result without a second
+   request during application.
+9. Default one-shot generated recipes to a CLI-owned temporary bundle that is
+   removed only after successful rendering.
+10. Keep durable helper outputs and all existing external artifacts by default.
+11. Keep project starter and formal-guide modes out of the first Interactive cut
+    and settle their deterministic coordination contract separately.
 
 ## Related Research
 
 - [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
 - [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md)
+- [Markdown PDF Render Bundle Directory](research-2026-07-10-markdown-pdf-render-bundle-directory.md)
 - [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
