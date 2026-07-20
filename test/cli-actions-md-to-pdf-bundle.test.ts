@@ -47,7 +47,11 @@ describe("Markdown PDF render bundle discovery", () => {
 
       const result = await discoverMarkdownPdfRenderBundle(fixtureDir);
 
-      expect(candidateNames(result)).toEqual(expected);
+      expect(candidateNames(result)).toEqual({
+        profile: [...expected.profile],
+        template: [...expected.template],
+        css: [...expected.css],
+      });
     });
   });
 
