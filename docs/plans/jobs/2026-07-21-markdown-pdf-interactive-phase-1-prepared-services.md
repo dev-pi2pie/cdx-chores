@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode Phase 1 prepared services"
 created-date: 2026-07-21
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -28,7 +28,7 @@ Phase base: `f80bf87d9abb683ffcd13fdb537eaa214b25720d`.
       compatible.
 - [x] Add focused prepare-once and direct-command regression coverage.
 - [x] Pass focused and repository validation.
-- [ ] Review the exact Phase 1 commit range and resolve actionable findings.
+- [x] Review the exact Phase 1 commit range and resolve actionable findings.
 
 ## Changes
 
@@ -67,7 +67,8 @@ Implementation checkpoints:
 
 ## Review
 
-Pending a validated Phase 1 commit range.
+Validated the exact Phase 1 commit range `f80bf87..37f2606`. No material
+documentation or implementation gaps remained in the reviewed scope.
 
 ## Artifact Safety
 

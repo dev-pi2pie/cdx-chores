@@ -243,7 +243,7 @@ Tasks:
       compatible.
 - [x] Add focused regression tests proving direct commands still prepare and
       commit once.
-- [ ] Review the Phase 1 change range before proceeding.
+- [x] Review the Phase 1 change range before proceeding.
 
 Phase gate:
 
