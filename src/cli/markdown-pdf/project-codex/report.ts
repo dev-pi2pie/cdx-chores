@@ -255,6 +255,7 @@ export async function writeMdPdfProjectCodexReportArtifact(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
+  reportArtifact?: MarkdownPdfProjectCodexReportArtifact;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
@@ -266,7 +267,9 @@ export async function writeMdPdfProjectCodexReportArtifact(input: {
   }
   await writeTextFileSafe(
     input.outputPlan.report.path,
-    serializeMdPdfProjectCodexReportArtifact(createMdPdfProjectCodexReportArtifact(input)),
+    serializeMdPdfProjectCodexReportArtifact(
+      input.reportArtifact ?? createMdPdfProjectCodexReportArtifact(input),
+    ),
     {
       displayPath: publicProjectReportWritePath(input.runtime),
       label: "--codex-report-output",

@@ -17,6 +17,16 @@ export {
 } from "./signal-mode";
 export { collectMdPdfProjectCodexSignals } from "./signals";
 export {
+  prepareMdPdfProjectCodex,
+  rebindMdPdfProjectCodexPreparedArtifact,
+  writePreparedMdPdfProjectCodexBundle,
+  writePreparedMdPdfProjectCodexReportIfRequested,
+  type MarkdownPdfProjectCodexPreparedArtifact,
+  type MarkdownPdfProjectCodexPreparedBinding,
+  type MarkdownPdfProjectCodexPreparedLayout,
+  type MdPdfProjectCodexAcceptedTemplatePhase,
+} from "./prepared";
+export {
   runMdPdfProjectCodexProfilePhase,
   type MdPdfProjectCodexProfilePhaseResult,
 } from "./profile-phase";

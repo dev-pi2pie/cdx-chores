@@ -17,18 +17,26 @@ import type {
 } from "./types";
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
+import type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
 
 type MdPdfProjectCodexWriteInput = {
+  managedAssetContents?: readonly MarkdownPdfProjectCodexManagedAssetContent[];
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
+  reportArtifact?: MarkdownPdfProjectCodexReportArtifact;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
   validation: MarkdownPdfProjectCodexValidationSummary;
 };
+
+export interface MarkdownPdfProjectCodexManagedAssetContent {
+  bundlePath: string;
+  content: Buffer;
+}
 
 function publicProjectWritePath(runtime: CliRuntime): (path: string) => string {
   return (path) => publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
@@ -87,11 +95,15 @@ async function readManagedAssetSource(asset: MarkdownPdfProjectCodexPlannedAsset
 }
 
 async function copyMdPdfProjectCodexManagedAssets(input: {
+  managedAssetContents?: readonly MarkdownPdfProjectCodexManagedAssetContent[];
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
   runtime: CliRuntime;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
 }): Promise<void> {
+  const preparedContents = new Map(
+    input.managedAssetContents?.map((asset) => [asset.bundlePath, asset.content]),
+  );
   const acceptedBundlePaths = new Set(
     input.templatePhase.synthesis.managedAssets.map((asset) => asset.bundlePath),
   );
@@ -104,7 +116,7 @@ async function copyMdPdfProjectCodexManagedAssets(input: {
       path: asset.path,
       pathLabel: `managed asset ${asset.bundlePath}`,
     });
-    const content = await readManagedAssetSource(asset);
+    const content = preparedContents.get(asset.bundlePath) ?? (await readManagedAssetSource(asset));
     await writeBufferFileSafe(asset.path, content, {
       displayPath: publicProjectWritePath(input.runtime),
       label: `managed asset ${asset.bundlePath}`,
@@ -113,6 +125,23 @@ async function copyMdPdfProjectCodexManagedAssets(input: {
       sanitizeMessage: sanitizeMdPdfProjectCodexReportText,
     });
   }
+}
+
+export async function snapshotMdPdfProjectCodexManagedAssets(input: {
+  outputPlan: MarkdownPdfProjectCodexOutputPlan;
+  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
+}): Promise<MarkdownPdfProjectCodexManagedAssetContent[]> {
+  const acceptedBundlePaths = new Set(
+    input.templatePhase.synthesis.managedAssets.map((asset) => asset.bundlePath),
+  );
+  return Promise.all(
+    input.outputPlan.assets
+      .filter((asset) => acceptedBundlePaths.has(asset.bundlePath))
+      .map(async (asset) => ({
+        bundlePath: asset.bundlePath,
+        content: await readManagedAssetSource(asset),
+      })),
+  );
 }
 
 async function validateMdPdfProjectCodexReportIfRequested(
@@ -170,6 +199,7 @@ export async function writeMdPdfProjectCodexBundle(
     sanitizeMessage: sanitizeMdPdfProjectCodexReportText,
   });
   await copyMdPdfProjectCodexManagedAssets({
+    managedAssetContents: input.managedAssetContents,
     outputPlan: input.outputPlan,
     overwrite: input.overwrite,
     runtime: input.runtime,
