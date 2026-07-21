@@ -272,7 +272,7 @@ Tasks:
       shared helpers are insufficient.
 - [x] Extend the Interactive harness and route tests.
 - [x] Keep incomplete branches fail-closed until their first usable path lands.
-- [ ] Review the Phase 2 change range before proceeding.
+- [x] Review the Phase 2 change range before proceeding.
 
 Phase gate:
 

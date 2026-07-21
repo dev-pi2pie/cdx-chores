@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Mode Phase 2 routing and state"
 created-date: 2026-07-21
-status: in-progress
+modified-date: 2026-07-21
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -25,7 +26,7 @@ Phase base: `48ffde96ca271f8dd3a4e4e0a4b31185495fe00f`.
 - [x] Add menu-order and fail-closed route coverage.
 - [x] Keep incomplete Markdown PDF routes fail-closed before prompts or writes.
 - [x] Pass focused and repository validation.
-- [ ] Review the exact Phase 2 commit range and resolve actionable findings.
+- [x] Review the exact Phase 2 commit range and resolve actionable findings.
 
 ## Changes
 
@@ -49,18 +50,24 @@ bun test
 git diff --check
 ```
 
-The focused routing suite passed with 10 tests and zero failures. The full
-suite passed with 1,528 tests and zero failures.
+The focused routing suite passed with 11 tests and zero failures. The final
+full suite passed with 1,529 tests and zero failures.
 
 Implementation checkpoints:
 
 - `271fd6b` — Markdown PDF menu routes, module move, typed shells, and tests
 - `74eed27` — shell-route and entry-state simplification
 - `4e54c21` — narrowed state vocabulary, route parity coverage, and job record
+- `8b69fb9` — review fixes for lifecycle paths, menu copy, and Back coverage
 
 ## Review
 
-Pending a validated Phase 2 commit range.
+Reviewed the exact Phase 2 implementation range `48ffde9..8b69fb9`.
+
+The review-driven fixes separated artifact, PDF, report, and owned temporary
+paths; restored the broad Markdown root description; added explicit Back
+coverage; and refreshed documentation traceability. Correctness,
+maintainability, and test re-reviews found no remaining actionable issue.
 
 ## Artifact Safety
 
