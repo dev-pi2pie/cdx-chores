@@ -3,8 +3,13 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
+import { prepareMdPdfTemplateCodex } from "../../src/cli/actions/markdown/pdf-template-codex";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
+import {
+  bindPreparedMdPdfTemplateCodexOutput,
+  writePreparedMdPdfTemplateCodexBundle,
+} from "../../src/cli/markdown-pdf/template-codex";
 import { createPdfRunner } from "../cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -169,6 +174,65 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
 }
 
 describe("cli action modules: md pdf-template codex integration", () => {
+  test("prepares once, rebinds the destination, and writes the accepted artifact", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-prepared-rebind", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const coverImagePath = join(fixtureDir, "cover.png");
+      const initialOutputPath = join(fixtureDir, "initial-template-output");
+      const reboundOutputPath = join(fixtureDir, "rebound-template-output");
+      const acceptedCover = minimalPng(1200, 800);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(coverImagePath, acceptedCover);
+
+      let runnerCalls = 0;
+      const { runtime } = createActionTestRuntime();
+      const prepared = await prepareMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "create a report cover",
+        coverImage: toRepoRelativePath(coverImagePath),
+        output: toRepoRelativePath(initialOutputPath),
+        keepCodexReport: true,
+        templateBundleIdFactory: () => "md-pdf-template-prepared-test",
+        codexRunner: async () => {
+          runnerCalls += 1;
+          return codexTemplateResponse({ coverEnabled: true });
+        },
+      });
+      const acceptedTemplate = prepared.synthesis.templateHtml;
+      const acceptedStyle = prepared.synthesis.styleCss;
+      const acceptedReport = JSON.stringify(prepared.reportArtifact);
+
+      await writeFile(coverImagePath, minimalPng(640, 480));
+      const rebound = bindPreparedMdPdfTemplateCodexOutput(prepared, {
+        outputDirectory: reboundOutputPath,
+      });
+      await writePreparedMdPdfTemplateCodexBundle({ prepared: rebound, runtime });
+
+      expect(runnerCalls).toBe(1);
+      expect(rebound.bundleId).toBe("md-pdf-template-prepared-test");
+      expect(rebound.outputPlan.bundleId).toBe(prepared.outputPlan.bundleId);
+      expect(rebound.synthesis.templateHtml).toBe(acceptedTemplate);
+      expect(rebound.synthesis.styleCss).toBe(acceptedStyle);
+      expect(JSON.stringify(rebound.reportArtifact)).toBe(acceptedReport);
+      expect(await pathExists(initialOutputPath)).toBe(false);
+      expect(await readFile(join(reboundOutputPath, "template.html"), "utf8")).toBe(
+        acceptedTemplate,
+      );
+      expect(await readFile(join(reboundOutputPath, "style.css"), "utf8")).toBe(acceptedStyle);
+      expect(
+        Buffer.compare(
+          await readFile(join(reboundOutputPath, "assets", "cover.png")),
+          acceptedCover,
+        ),
+      ).toBe(0);
+      expect(
+        JSON.stringify(
+          JSON.parse(await readFile(join(reboundOutputPath, "template.codex-report.json"), "utf8")),
+        ),
+      ).toBe(acceptedReport);
+    });
+  });
+
   test("writes only requested diagnostic reports during dry runs", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-dry-run-report", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

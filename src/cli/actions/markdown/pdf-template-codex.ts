@@ -2,6 +2,7 @@ import { suggestMarkdownPdfTemplateWithCodex } from "../../../adapters/codex/mar
 import {
   assertUsableMdPdfTemplateCodexSignalMode,
   collectMdPdfTemplateCodexSignals,
+  createPreparedMdPdfTemplateCodexArtifact,
   normalizeMdPdfTemplateCodexCommandState,
   planMdPdfTemplateCodexOutput,
   printMdPdfTemplateCodexSummary,
@@ -9,14 +10,15 @@ import {
   synthesizeMdPdfTemplateCodexFromDecision,
   validateMdPdfTemplateCodexOutputWritability,
   validateMdPdfTemplateCodexSynthesis,
-  writeMdPdfTemplateCodexBundle,
-  writeMdPdfTemplateCodexReportIfRequested,
+  writePreparedMdPdfTemplateCodexBundle,
+  writePreparedMdPdfTemplateCodexReport,
   type MarkdownPdfTemplateCodexOutputPlan,
   type MarkdownPdfTemplateCodexSynthesisResult,
   type MdPdfTemplateCodexCliOptions,
   type MdPdfTemplateCodexOptions,
   type MdPdfTemplateCodexSignalCollection,
   type NormalizedMdPdfTemplateCodexCommandState,
+  type PreparedMdPdfTemplateCodexArtifact,
 } from "../../markdown-pdf/template-codex";
 import { startDirectCodexProgress, type DirectCodexProgressStatus } from "../codex-progress";
 import { displayPath, printLine } from "../shared";
@@ -25,17 +27,10 @@ import type { CliRuntime } from "../../types";
 
 export type { MdPdfTemplateCodexCliOptions, MdPdfTemplateCodexOptions };
 
-interface MdPdfTemplateCodexPreflight {
-  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
-  signals: MdPdfTemplateCodexSignalCollection;
-  state: NormalizedMdPdfTemplateCodexCommandState;
-  synthesis: MarkdownPdfTemplateCodexSynthesisResult;
-}
-
-async function preflightMdPdfTemplateCodex(
+export async function prepareMdPdfTemplateCodex(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
-): Promise<MdPdfTemplateCodexPreflight> {
+): Promise<PreparedMdPdfTemplateCodexArtifact> {
   const state = await normalizeMdPdfTemplateCodexCommandState(runtime, options);
   const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
@@ -70,7 +65,13 @@ async function preflightMdPdfTemplateCodex(
     });
   }
   validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
-  return { outputPlan, signals, state, synthesis };
+  return createPreparedMdPdfTemplateCodexArtifact({
+    outputPlan,
+    runtime,
+    signals,
+    state,
+    synthesis,
+  });
 }
 
 async function suggestMdPdfTemplateWithCodexProgress(input: {
@@ -120,17 +121,13 @@ export async function actionMdPdfTemplateCodex(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
 ): Promise<void> {
-  const preflight = await preflightMdPdfTemplateCodex(runtime, options);
+  const preflight = await prepareMdPdfTemplateCodex(runtime, options);
   printMdPdfTemplateCodexSummary(runtime, preflight);
 
   if (preflight.state.dryRun) {
-    await writeMdPdfTemplateCodexReportIfRequested({
-      outputPlan: preflight.outputPlan,
-      overwrite: preflight.state.overwrite,
+    await writePreparedMdPdfTemplateCodexReport({
+      prepared: preflight,
       runtime,
-      signals: preflight.signals,
-      state: preflight.state,
-      synthesis: preflight.synthesis,
     });
     if (preflight.synthesis.decisionMode === "no-usable-template") {
       throwNoUsableTemplate(preflight.synthesis);
@@ -138,13 +135,9 @@ export async function actionMdPdfTemplateCodex(
     return;
   }
 
-  await writeMdPdfTemplateCodexBundle({
-    outputPlan: preflight.outputPlan,
-    overwrite: preflight.state.overwrite,
+  await writePreparedMdPdfTemplateCodexBundle({
+    prepared: preflight,
     runtime,
-    signals: preflight.signals,
-    state: preflight.state,
-    synthesis: preflight.synthesis,
   });
   if (preflight.synthesis.decisionMode === "no-usable-template") {
     if (preflight.outputPlan.report) {

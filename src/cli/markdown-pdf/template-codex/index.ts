@@ -22,6 +22,13 @@ export {
 export { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
 export { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
 export {
+  bindPreparedMdPdfTemplateCodexOutput,
+  createPreparedMdPdfTemplateCodexArtifact,
+  writePreparedMdPdfTemplateCodexBundle,
+  writePreparedMdPdfTemplateCodexReport,
+  type PreparedMdPdfTemplateCodexArtifact,
+} from "./prepared";
+export {
   createMdPdfTemplateCodexReportArtifact,
   MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,
   serializeMdPdfTemplateCodexReportArtifact,
