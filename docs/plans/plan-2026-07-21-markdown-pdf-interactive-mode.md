@@ -262,15 +262,15 @@ Expected job record:
 
 Tasks:
 
-- [ ] Add `md:to-pdf` and `md:pdf-recipes` action keys and menu descriptions.
-- [ ] Move the existing Markdown handler into
+- [x] Add `md:to-pdf` and `md:pdf-recipes` action keys and menu descriptions.
+- [x] Move the existing Markdown handler into
       `src/cli/interactive/markdown/index.ts` without changing existing routes.
-- [ ] Add narrow state types for entry, source, preparation, review, lifecycle,
+- [x] Add narrow state types for entry, source, preparation, review, lifecycle,
       and materialization checkpoints.
-- [ ] Add reusable select-description and checkpoint helpers only where current
+- [x] Add reusable select-description and checkpoint helpers only where current
       shared helpers are insufficient.
-- [ ] Extend the Interactive harness and route tests.
-- [ ] Keep incomplete branches fail-closed until their first usable path lands.
+- [x] Extend the Interactive harness and route tests.
+- [x] Keep incomplete branches fail-closed until their first usable path lands.
 - [ ] Review the Phase 2 change range before proceeding.
 
 Phase gate:
@@ -282,7 +282,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-2-routing-state.md`
+- [Phase 2 routing and state](jobs/2026-07-21-markdown-pdf-interactive-phase-2-routing-state.md)
 
 ### Phase 3: Built-In, Existing, And Custom Render Paths
 

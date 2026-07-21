@@ -1,6 +1,4 @@
-export type MarkdownPdfInteractiveActionKey = "md:to-pdf" | "md:pdf-recipes";
-
-export type MarkdownPdfInteractiveEntry = MarkdownPdfInteractiveActionKey;
+export type MarkdownPdfInteractiveEntry = "to-pdf" | "pdf-recipes";
 
 export type MarkdownPdfInteractiveCheckpoint =
   | "entry"
@@ -11,6 +9,8 @@ export type MarkdownPdfInteractiveCheckpoint =
   | "materialization";
 
 export type MarkdownPdfInteractiveNavigation = "continue" | "back" | "cancel";
+
+export type MarkdownPdfInteractiveReviewDecision = "accept" | "revise" | "back" | "cancel";
 
 export type MarkdownPdfInteractiveSource =
   | "built-in"
@@ -41,15 +41,4 @@ export interface MarkdownPdfInteractiveMaterialization {
   reportPath?: string;
   status: MarkdownPdfInteractiveMaterializationStatus;
   outputPath?: string;
-}
-
-export interface MarkdownPdfInteractiveSessionState {
-  checkpoint: MarkdownPdfInteractiveCheckpoint;
-  entry?: MarkdownPdfInteractiveEntry;
-  source?: MarkdownPdfInteractiveSource;
-  artifact?: MarkdownPdfInteractiveArtifact;
-  preparation?: MarkdownPdfInteractivePreparation;
-  lifecycle?: MarkdownPdfInteractiveLifecycle;
-  navigation?: MarkdownPdfInteractiveNavigation;
-  materialization?: MarkdownPdfInteractiveMaterialization;
 }

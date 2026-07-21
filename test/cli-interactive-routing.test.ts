@@ -143,6 +143,27 @@ describe("interactive mode routing: top-level smoke", () => {
     ]);
   });
 
+  test("preserves the existing markdown to-docx route after the module move", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "md:to-docx"],
+      requiredPathQueue: ["fixtures/doc.md"],
+      optionalPathQueue: ["fixtures/doc.docx"],
+      confirmQueue: [true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "md:to-docx",
+        options: {
+          input: "fixtures/doc.md",
+          output: "fixtures/doc.docx",
+          overwrite: true,
+        },
+      },
+    ]);
+  });
+
   test("routes a rename flow through apply", () => {
     const result = runInteractiveHarness({
       mode: "run",
