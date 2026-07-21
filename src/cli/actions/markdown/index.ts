@@ -13,3 +13,15 @@ export { actionMdToDocx } from "./to-docx";
 export type { MdToDocxOptions } from "./to-docx";
 export { actionMdToPdf } from "./to-pdf";
 export type { MdToPdfOptions } from "./to-pdf";
+export {
+  executePlannedMarkdownPdfRender,
+  planMarkdownPdfRender,
+  prepareMarkdownPdfRender,
+} from "./to-pdf-service";
+export type {
+  ExecutePlannedMarkdownPdfRenderOptions,
+  MarkdownPdfRenderOutputInput,
+  PlannedMarkdownPdfRender,
+  PreparedMarkdownPdfRender,
+  PrepareMarkdownPdfRenderInput,
+} from "./to-pdf-service";

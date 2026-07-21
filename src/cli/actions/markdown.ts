@@ -7,6 +7,9 @@ export {
   actionMdPdfTemplateInit,
   actionMdToDocx,
   actionMdToPdf,
+  executePlannedMarkdownPdfRender,
+  planMarkdownPdfRender,
+  prepareMarkdownPdfRender,
 } from "./markdown/index";
 export type {
   MdFrontmatterToJsonOptions,
@@ -18,4 +21,9 @@ export type {
   MdPdfTemplateInitOptions,
   MdToDocxOptions,
   MdToPdfOptions,
+  ExecutePlannedMarkdownPdfRenderOptions,
+  MarkdownPdfRenderOutputInput,
+  PlannedMarkdownPdfRender,
+  PreparedMarkdownPdfRender,
+  PrepareMarkdownPdfRenderInput,
 } from "./markdown/index";

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
-status: draft
+status: active
 agent: codex
 ---
 
@@ -73,10 +73,10 @@ No implementation plan currently owns Interactive Markdown PDF mode.
 
 ### Entry matrix
 
-| Entry path | Profile | Template bundle | Project bundle |
-| --- | --- | --- | --- |
-| `to-pdf -> Create a recipe` | `starter`, `formal-guide` | `starter`, `formal-guide` | `Codex Assistant` |
-| `pdf-recipes` | `starter`, `formal-guide`, `Codex Assistant` | `starter`, `formal-guide`, `Codex Assistant` | `Codex Assistant` |
+| Entry path                  | Profile                                      | Template bundle                              | Project bundle    |
+| --------------------------- | -------------------------------------------- | -------------------------------------------- | ----------------- |
+| `to-pdf -> Create a recipe` | `starter`, `formal-guide`                    | `starter`, `formal-guide`                    | `Codex Assistant` |
+| `pdf-recipes`               | `starter`, `formal-guide`, `Codex Assistant` | `starter`, `formal-guide`, `Codex Assistant` | `Codex Assistant` |
 
 Project selection skips a one-option preparation-mode menu. Interactive mode
 must not synthesize Project `starter` or `formal-guide` from separate Profile
@@ -256,7 +256,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-1-prepared-services.md`
+- [Phase 1 prepared services](jobs/2026-07-21-markdown-pdf-interactive-phase-1-prepared-services.md)
 
 ### Phase 2: Routing, Module Structure, And Session State
 
