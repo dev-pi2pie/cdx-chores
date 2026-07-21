@@ -15,7 +15,7 @@ Interactive mode should support both of these user goals:
 
 1. prepare durable profile, template, or project recipe layers for later reuse
    through one `pdf-recipes` authoring branch
-2. run one `to-pdf` flow that can choose or generate a recipe, review it, render
+2. run one `to-pdf` flow that can choose or create a recipe, review it, render
    the PDF, and remove only CLI-owned temporary artifacts after success
 
 The direct command contracts remain the source of truth:
@@ -114,7 +114,7 @@ It should:
 - let `pdf-recipes` hand an accepted saved artifact to `to-pdf` without creating
   another render implementation
 - offer deterministic starter and formal-guide paths without Codex
-- make Codex Assistant an explicit generation mode
+- make Codex Assistant an explicit preparation mode
 - prepare and validate candidates before writing them
 - show concrete artifact and render reviews
 - let the user revise, regenerate, change mode, save, render, or cancel
@@ -197,7 +197,7 @@ bundle.
 
 ## `to-pdf` One-Shot Flow
 
-`to-pdf` should support direct replay and in-session generation.
+`to-pdf` should support direct replay and in-session recipe creation.
 
 ```text
 to-pdf
@@ -206,9 +206,10 @@ to-pdf
      - built-in recipe
      - existing profile
      - existing bundle
-     - advanced composition
-     - generate a recipe for this PDF
-  -> resolve or generate the recipe
+     - custom composition
+     - create a recipe
+  -> when creating, choose recipe layer and preparation mode
+  -> resolve or prepare the recipe
   -> show mandatory recipe dry-run review
   -> choose render/save lifecycle
   -> ask only for applicable outputs
@@ -239,10 +240,15 @@ yes/no questions.
 ```text
 ? Choose a recipe for this PDF
 ❯ Built-in recipe
+    Use the renderer defaults
   Existing profile
+    Apply a reusable PDF profile
   Existing bundle
-  Advanced composition
-  Generate a recipe for this PDF
+    Discover profile, template, and CSS from a bundle
+  Custom composition
+    Combine a bundle with explicit profile, template, or CSS overrides
+  Create a recipe
+    Choose a recipe layer, then an available preparation mode
   Back
   Cancel
 ```
@@ -254,8 +260,22 @@ The recipe choices map to existing renderer inputs:
 | Built-in recipe | no profile, template, CSS, or bundle path |
 | Existing profile | `--profile <file>` |
 | Existing bundle | `--bundle <directory>` |
-| Advanced composition | explicit profile/template/CSS plus optional bundle |
-| Generate a recipe for this PDF | prepared artifact materialized into a CLI-owned session bundle |
+| Custom composition | explicit profile/template/CSS plus optional bundle |
+| Create a recipe | prepared recipe layer materialized into a CLI-owned session bundle |
+
+The source choice also establishes whether this flow can invoke Codex:
+
+| Recipe choice | Codex behavior |
+| --- | --- |
+| Built-in recipe | never invokes Codex |
+| Existing profile | never invokes Codex; replays the selected artifact |
+| Existing bundle | never invokes Codex; replays discovered artifacts |
+| Custom composition | never invokes Codex; resolves explicitly selected artifacts |
+| Create a recipe | invokes Codex only if the later preparation mode is `Codex Assistant` |
+
+Interactive mode should not infer that an existing artifact was originally
+created by Codex. Existing artifacts are accepted renderer inputs and are
+replayed deterministically.
 
 `Existing bundle` intentionally covers profile-only, template-only, stylesheet-
 only, template/CSS, and complete project bundles. Interactive mode should reuse
@@ -284,9 +304,9 @@ No files have been written.
 
 The final transaction review adds the selected PDF output and overwrite policy.
 
-### Advanced Composition
+### Custom Composition
 
-Advanced composition should reuse the direct renderer's precedence instead of
+Custom composition should reuse the direct renderer's precedence instead of
 introducing Interactive-only conflict behavior. The flow may collect an
 optional bundle first, then optional explicit role overrides:
 
@@ -296,6 +316,16 @@ Optional explicit profile
 Optional explicit template
 Optional explicit stylesheet
 ```
+
+At least one bundle or explicit role must be selected. Otherwise, the flow
+should return to recipe selection or use `Built-in recipe` rather than creating
+a second defaults path.
+
+Precedence is role-by-role and deterministic: an explicit `--profile`,
+`--template`, or `--css` selection wins for that role, while the optional bundle
+fills only roles that remain unresolved. Paths are not content-merged within a
+role; profile, template, and stylesheet remain independently optional as long
+as the custom composition selects at least one accepted external artifact.
 
 The dry-run should label the resolved source for each role:
 
@@ -315,13 +345,13 @@ Bundle ambiguity and invalid-profile errors should retain the current direct
 messages and resolving flags. Explicit inputs continue to resolve their roles
 before bundle discovery.
 
-## Generation Modes
+## Recipe Preparation Modes
 
-When the user generates a recipe from either `to-pdf` or `pdf-recipes`, the flow
-should first choose the artifact layer and then the generation mode.
+When the user creates a recipe from either `to-pdf` or `pdf-recipes`, the flow
+should first choose the recipe layer and then an explicit preparation mode.
 
 ```text
-? Which recipe layer should be generated?
+? Which recipe layer should be prepared?
 ❯ Profile
   Template bundle
   Project bundle
@@ -330,27 +360,30 @@ should first choose the artifact layer and then the generation mode.
 ```
 
 ```text
-? Choose generation mode
+? How should this recipe be prepared?
 ❯ Starter
+    Use the deterministic starter configuration
   Formal guide
+    Answer structured questions without Codex
   Codex Assistant
+    Draft and adapt the recipe with Codex Helper
   Change recipe layer
   Cancel
 ```
 
-The available mode choices are filtered by artifact capability. In the first
+The available mode choices are filtered by recipe-layer capability. In the first
 Interactive cut, Project bundle offers only Codex Assistant; it should not show
 unimplemented Starter or Formal guide choices.
 
 The intended capability matrix is:
 
-| Artifact | Starter | Formal guide | Codex Assistant |
+| Recipe layer | Starter | Formal guide | Codex Assistant |
 | --- | --- | --- | --- |
 | Profile | current deterministic profile-init behavior | structured recipe questions | document signals, intent, font hints, optional base profile |
 | Template | current deterministic template-init behavior | structured safe recipe questions | document signals, intent, font hints, optional base profile and cover image |
 | Project | out of the first Interactive cut | out of the first Interactive cut pending a deterministic coordination contract | current project-helper orchestration |
 
-Interactive generation choices map back to the direct command contracts:
+Interactive preparation choices map back to the direct command contracts:
 
 | Interactive choice | Direct contract reused |
 | --- | --- |
@@ -392,6 +425,11 @@ CSS, cover composition, font discovery, or design interpretation.
 
 Codex Assistant should reuse the interaction pattern established by data query:
 
+`Codex Assistant` is the canonical Interactive preparation-mode label. It is
+powered by the existing Markdown PDF Codex Helper contracts, such as
+`md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`;
+`Codex Helper` does not identify a second Interactive actor or mode.
+
 ```text
 ? Use multiline editor? Yes
 ? Describe the PDF direction:
@@ -399,26 +437,35 @@ Codex Assistant should reuse the interaction pattern established by data query:
 Formal client report with a restrained cover, table of contents,
 readable TypeScript examples, and dense financial tables.
 
-? Send this intent to Codex drafting? Yes
+? Send this intent to Codex Assistant? Yes
 ```
 
-The primary hint remains one natural-language `intent`. Additional prompts are
-conditional on the chosen artifact:
+Codex use must remain visible at three checkpoints:
 
-| Artifact | Additional signals |
+1. before invocation, the preparation-mode description says that Codex Helper
+   will draft and adapt the recipe
+2. at consent, the user explicitly confirms sending the intent to Codex
+   Assistant
+3. during review, the dry-run identifies `Preparation mode: Codex Assistant`
+   plus the reused helper contract and whether the request completed
+
+The primary hint remains one natural-language `intent`. Additional prompts are
+conditional on the chosen recipe layer:
+
+| Recipe layer | Additional signals |
 | --- | --- |
 | Profile | optional base profile and repeatable font hints |
 | Template | optional base profile, repeatable font hints, and optional cover image |
 | Project | optional base profile, repeatable font hints, and optional cover image |
 
-After generation, the review loop should offer mode-specific recovery:
+After Codex preparation, the review loop should offer mode-specific recovery:
 
 ```text
 ? Recipe candidate next step
 ❯ Apply this candidate
   Revise intent
   Regenerate with the same intent
-  Change generation mode
+  Change preparation mode
   Change recipe layer
   Cancel
 ```
@@ -426,12 +473,13 @@ After generation, the review loop should offer mode-specific recovery:
 `Regenerate` explicitly performs another Codex request. `Apply this candidate`
 must use the exact prepared result already shown to the user.
 
-Changing generation mode or recipe layer explicitly discards the current
+Changing preparation mode or recipe layer explicitly discards the current
 in-memory candidate. No cleanup is needed because it has not been written.
 
 ## Mandatory Dry-Run Contract
 
-Every render and generation branch should prepare and review before applying.
+Every render and recipe-creation branch should prepare and review before
+applying.
 
 ```text
 collect choices
@@ -478,7 +526,7 @@ Outputs should be requested only after the recipe candidate is accepted.
 ```text
 to-pdf
   -> Markdown input
-  -> choose or generate a recipe
+  -> choose or create a recipe
   -> dry-run and review the recipe
   -> choose render/save lifecycle
   -> choose applicable artifact output
@@ -609,16 +657,20 @@ Existing bundle cleanup: never
 ✔ Choose a command md
 ✔ Choose a markdown command to-pdf
 ✔ Input Markdown file report.md
-✔ Choose a recipe for this PDF Generate a recipe for this PDF
-✔ Which recipe layer should be generated? Project bundle
-✔ Choose generation mode Codex Assistant
+✔ Choose a recipe for this PDF Create a recipe
+✔ Which recipe layer should be prepared? Project bundle
+✔ How should this recipe be prepared? Codex Assistant
 ✔ Use multiline editor? Yes
-✔ Send this intent to Codex drafting? Yes
+✔ Send this intent to Codex Assistant? Yes
+
+Codex Thinking... Drafting Markdown PDF project recipe
 
 Markdown PDF recipe dry-run
 
 Recipe layer: project bundle
-Generation mode: Codex Assistant
+Preparation mode: Codex Assistant
+Helper contract: md pdf-project codex
+Codex request: completed
 Profile decision: adapted
 Template decision: adapted
 Managed assets: 1
@@ -638,7 +690,7 @@ No files have been written.
   Save recipe layer without rendering
   Revise intent
   Regenerate
-  Change generation mode
+  Change preparation mode
   Cancel
 
 ✔ PDF output report.pdf
@@ -664,7 +716,7 @@ Removed temporary Markdown PDF session bundle.
 ✔ Choose a command md
 ✔ Choose a markdown command pdf-recipes
 ✔ Choose a recipe layer Profile
-✔ Choose profile generation mode Formal guide
+✔ How should this recipe be prepared? Formal guide
 ✔ Preset report
 ✔ Page size A4
 ✔ Orientation portrait
@@ -675,7 +727,7 @@ Removed temporary Markdown PDF session bundle.
 
 Markdown PDF profile dry-run
 
-Generation mode: formal-guide
+Preparation mode: formal-guide
 Preset: report
 Page: A4 portrait
 Margins: preset
@@ -687,7 +739,7 @@ No files have been written.
 ? What should happen next?
 ❯ Save profile
   Revise formal-guide answers
-  Change generation mode
+  Change preparation mode
   Cancel
 
 ✔ Profile output report-profile.yml
@@ -803,8 +855,9 @@ In particular:
    accepted.
 7. Add deterministic starter and formal-guide modes for profile and template
    creation.
-8. Keep Codex Assistant explicit and reuse its accepted result without a second
-   request during application.
+8. Keep Codex Assistant explicit in the preparation-mode choice, consent prompt,
+   progress state, and dry-run provenance, then reuse its accepted result without
+   a second request during application.
 9. Default one-shot generated recipes to a CLI-owned temporary bundle that is
    removed only after successful rendering.
 10. Keep durable helper outputs and all existing external artifacts by default.
