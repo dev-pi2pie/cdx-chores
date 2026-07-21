@@ -634,7 +634,12 @@ After a durable save, the handoff uses plain user-facing language:
 ```
 
 The saved artifact enters `to-pdf` as an existing renderer input. `to-pdf`
-continues to own the Markdown input, PDF output, final review, and render.
+continues to own the Markdown input, PDF output, final review, and render. An
+optional Markdown sample collected during `pdf-recipes` preparation is not an
+implicit render input: the handoff asks whether to use it or select another
+Markdown file. When a sample exists, the handoff offers `Use <sample>` and
+`Choose another Markdown file`; without a sample, `to-pdf` collects its normal
+required Markdown input. Only that explicit choice becomes the render input.
 
 ## Outputs And Commit
 
@@ -946,3 +951,7 @@ Interactive tests should cover:
 - [Markdown PDF Render Bundle Directory](research-2026-07-10-markdown-pdf-render-bundle-directory.md)
 - [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
+
+## Related Plans
+
+- [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md)
