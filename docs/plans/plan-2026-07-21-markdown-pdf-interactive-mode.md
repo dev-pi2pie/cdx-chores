@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
+modified-date: 2026-07-21
 status: active
 agent: codex
 ---

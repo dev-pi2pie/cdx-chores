@@ -55,7 +55,7 @@ describe("interactive mode routing: top-level smoke", () => {
     expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
       name: "md",
       value: "md",
-      description: "Markdown PDF tools",
+      description: "Markdown utilities",
     });
     expect(
       result.selectChoicesByMessage["Choose a markdown command"]?.map((choice) => choice.value),
@@ -78,6 +78,20 @@ describe("interactive mode routing: top-level smoke", () => {
       "",
       "Return to the main command menu",
       "Exit interactive mode",
+    ]);
+  });
+
+  test("returns from the markdown submenu to the root menu", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "back", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+      "select:Choose a command",
     ]);
   });
 

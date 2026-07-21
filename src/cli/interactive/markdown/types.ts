@@ -38,7 +38,9 @@ export type MarkdownPdfInteractiveMaterializationStatus =
   | "discarded";
 
 export interface MarkdownPdfInteractiveMaterialization {
-  reportPath?: string;
   status: MarkdownPdfInteractiveMaterializationStatus;
-  outputPath?: string;
+  artifactOutputPath?: string;
+  pdfOutputPath?: string;
+  reportOutputPath?: string;
+  ownedTemporaryBundlePath?: string;
 }

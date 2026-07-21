@@ -55,7 +55,7 @@ interface SelectInteractiveActionOptions {
 const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
   { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
   { name: "data", value: "data", description: "Preview and convert tabular data" },
-  { name: "md", value: "md", description: "Markdown PDF tools" },
+  { name: "md", value: "md", description: "Markdown utilities" },
   { name: "rename", value: "rename", description: "File/batch rename workflows" },
   { name: "video", value: "video", description: "Video conversion tools" },
   { name: "cancel", value: "cancel" },
