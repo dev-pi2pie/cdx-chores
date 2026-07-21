@@ -16,23 +16,54 @@ Phase base: `f80bf87d9abb683ffcd13fdb537eaa214b25720d`.
 
 ## Implementation Checklist
 
-- [ ] Extract prepare and render/commit services from `actionMdToPdf`.
-- [ ] Preserve bundle discovery, explicit-role precedence, warnings, Profile
+- [x] Extract prepare and render/commit services from `actionMdToPdf`.
+- [x] Preserve bundle discovery, explicit-role precedence, warnings, Profile
       normalization, title signals, code options, and renderer behavior.
-- [ ] Expose prepared Profile, Template, and Project generation results.
-- [ ] Separate prepared report payloads from report writes.
-- [ ] Separate stable prepared artifact identity and bundle-relative paths from
+- [x] Expose prepared Profile, Template, and Project generation results.
+- [x] Separate prepared report payloads from report writes.
+- [x] Separate stable prepared artifact identity and bundle-relative paths from
       physical destination binding.
-- [ ] Add writers for the exact accepted prepared artifacts.
-- [ ] Keep direct command output, errors, defaults, and overwrite behavior
+- [x] Add writers for the exact accepted prepared artifacts.
+- [x] Keep direct command output, errors, defaults, and overwrite behavior
       compatible.
-- [ ] Add focused prepare-once and direct-command regression coverage.
-- [ ] Pass focused and repository validation.
+- [x] Add focused prepare-once and direct-command regression coverage.
+- [x] Pass focused and repository validation.
 - [ ] Review the exact Phase 1 commit range and resolve actionable findings.
+
+## Changes
+
+- Split Markdown-to-PDF preparation, output binding, and render execution while
+  retaining the direct action as the public adapter.
+- Exposed destination-neutral prepared Profile, Template, and Project results,
+  then added binding and commit functions that reuse the accepted candidate.
+- Preserved generated artifact identity, relative layout, report data, and
+  asset content when rebinding a destination.
+- Added focused prepare-once, rebind, and direct-command regression coverage.
 
 ## Verification
 
-Pending implementation.
+Passed:
+
+```bash
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test
+git diff --check
+```
+
+The full suite passed with 1,524 tests and zero failures. Focused prepared-flow
+and direct-action suites also passed for renderer, Profile, Template, and
+Project boundaries. A built CLI renderer smoke produced a non-empty PDF from
+the repository Markdown fixture, and its isolated scratch output was removed.
+
+Implementation checkpoints:
+
+- `a4abc06` — prepared renderer boundary
+- `35a8540` — prepared Template artifact boundary
+- `7923dd0` — prepared Profile artifact boundary
+- `a91889e` — prepared Project artifact boundary
 
 ## Review
 
@@ -40,9 +71,10 @@ Pending a validated Phase 1 commit range.
 
 ## Artifact Safety
 
-No durable Profile, Template, Project, report, HTML, or PDF artifacts should be
+No durable Profile, Template, Project, report, HTML, or PDF artifacts were
 created by the automated Phase 1 verification path. Renderer and writer tests
-must use isolated temporary fixtures and injected runners.
+used isolated temporary fixtures and injected runners. The manual renderer
+smoke used isolated scratch space that was removed after validation.
 
 ## Related Research
 

@@ -231,17 +231,17 @@ unless the user changes an input that affects preparation.
 
 Tasks:
 
-- [ ] Extract prepare and render/commit services from `actionMdToPdf`.
-- [ ] Preserve bundle discovery, explicit-role precedence, warnings, Profile
+- [x] Extract prepare and render/commit services from `actionMdToPdf`.
+- [x] Preserve bundle discovery, explicit-role precedence, warnings, Profile
       normalization, title signals, code options, and renderer behavior.
-- [ ] Expose prepared Profile, Template, and Project generation results.
-- [ ] Separate prepared report payloads from report writes.
-- [ ] Separate stable prepared artifact identity and bundle-relative paths from
+- [x] Expose prepared Profile, Template, and Project generation results.
+- [x] Separate prepared report payloads from report writes.
+- [x] Separate stable prepared artifact identity and bundle-relative paths from
       destination binding at materialization time.
-- [ ] Add write functions for the exact accepted prepared artifacts.
-- [ ] Keep direct command output, errors, defaults, and overwrite behavior
+- [x] Add write functions for the exact accepted prepared artifacts.
+- [x] Keep direct command output, errors, defaults, and overwrite behavior
       compatible.
-- [ ] Add focused regression tests proving direct commands still prepare and
+- [x] Add focused regression tests proving direct commands still prepare and
       commit once.
 - [ ] Review the Phase 1 change range before proceeding.
 
