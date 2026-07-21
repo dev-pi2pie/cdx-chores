@@ -18,12 +18,12 @@ export async function handleMarkdownInteractiveAction(
   action: MarkdownInteractiveActionKey,
 ): Promise<void> {
   if (action === "md:to-pdf") {
-    await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
+    await handleMarkdownPdfToPdfInteractiveAction();
     return;
   }
 
   if (action === "md:pdf-recipes") {
-    await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext);
+    await handleMarkdownPdfRecipesInteractiveAction();
     return;
   }
 

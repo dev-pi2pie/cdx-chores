@@ -1,4 +1,6 @@
-export type MarkdownPdfInteractiveEntry = "to-pdf" | "pdf-recipes";
+export type MarkdownPdfInteractiveActionKey = "md:to-pdf" | "md:pdf-recipes";
+
+export type MarkdownPdfInteractiveEntry = MarkdownPdfInteractiveActionKey;
 
 export type MarkdownPdfInteractiveCheckpoint =
   | "entry"
