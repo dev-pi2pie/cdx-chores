@@ -211,7 +211,7 @@ Recipe review
     +-- Choose durable output
     +-- Final save review
     +-- Save artifact
-    `-- Optional: render a PDF with it
+    `-- Optional handoff to to-pdf
 ```
 
 ## Recipe Sources
