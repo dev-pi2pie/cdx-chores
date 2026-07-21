@@ -1,20 +1,32 @@
 import { confirm, select } from "@inquirer/prompts";
 
-import { actionMdFrontmatterToJson, actionMdToDocx } from "../actions";
+import { actionMdFrontmatterToJson, actionMdToDocx } from "../../actions";
 import {
   formatDefaultOutputPathHint,
   promptOptionalOutputPathChoice,
   promptRequiredPathWithConfig,
-} from "../prompts/path";
-import type { CliRuntime } from "../types";
-import type { MarkdownInteractiveActionKey } from "./menu";
-import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
+} from "../../prompts/path";
+import type { CliRuntime } from "../../types";
+import type { MarkdownInteractiveActionKey } from "../menu";
+import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "../shared";
+import { handleMarkdownPdfRecipesInteractiveAction } from "./pdf-recipes";
+import { handleMarkdownPdfToPdfInteractiveAction } from "./to-pdf";
 
 export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
 ): Promise<void> {
+  if (action === "md:to-pdf") {
+    await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
+    return;
+  }
+
+  if (action === "md:pdf-recipes") {
+    await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext);
+    return;
+  }
+
   if (action === "md:to-docx") {
     const inputPath = await promptRequiredPathWithConfig("Input Markdown file", {
       kind: "file",

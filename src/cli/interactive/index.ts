@@ -66,6 +66,8 @@ export async function runInteractiveMode(
     case "data:tsv-to-json":
       await handleDataInteractiveAction(runtime, pathPromptContext, action);
       return;
+    case "md:to-pdf":
+    case "md:pdf-recipes":
     case "md:to-docx":
     case "md:frontmatter-to-json":
       await handleMarkdownInteractiveAction(runtime, pathPromptContext, action);

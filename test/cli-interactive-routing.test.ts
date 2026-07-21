@@ -45,6 +45,80 @@ describe("interactive mode routing: top-level smoke", () => {
     ]);
   });
 
+  test("shows the markdown pdf submenu entries before the existing markdown routes", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
+      name: "md",
+      value: "md",
+      description: "Markdown PDF tools",
+    });
+    expect(
+      result.selectChoicesByMessage["Choose a markdown command"]?.map((choice) => choice.value),
+    ).toEqual([
+      "md:to-pdf",
+      "md:pdf-recipes",
+      "md:to-docx",
+      "md:frontmatter-to-json",
+      "back",
+      "cancel",
+    ]);
+    expect(
+      result.selectChoicesByMessage["Choose a markdown command"]?.map(
+        (choice) => choice.description ?? "",
+      ),
+    ).toEqual([
+      "Create a PDF",
+      "Prepare reusable PDF recipes",
+      "",
+      "",
+      "Return to the main command menu",
+      "Exit interactive mode",
+    ]);
+  });
+
+  test("fails closed when the markdown pdf shell route is selected", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["md", "md:to-pdf"],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.pathCalls).toHaveLength(0);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+    ]);
+    expect(result.error).toBe("Interactive Markdown PDF route md:to-pdf is not implemented yet.");
+  });
+
+  test("fails closed when the markdown pdf recipes shell route is selected", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        selectQueue: ["md", "md:pdf-recipes"],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.pathCalls).toHaveLength(0);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+    ]);
+    expect(result.error).toBe(
+      "Interactive Markdown PDF route md:pdf-recipes is not implemented yet.",
+    );
+  });
+
   test("routes a markdown flow through file output options", () => {
     const result = runInteractiveHarness({
       mode: "run",

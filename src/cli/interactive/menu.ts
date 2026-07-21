@@ -14,6 +14,8 @@ export type InteractiveActionKey =
   | "data:csv-to-tsv"
   | "data:tsv-to-csv"
   | "data:tsv-to-json"
+  | "md:to-pdf"
+  | "md:pdf-recipes"
   | "md:to-docx"
   | "md:frontmatter-to-json"
   | "rename:file"
@@ -53,7 +55,7 @@ interface SelectInteractiveActionOptions {
 const INTERACTIVE_ROOT_CHOICES: Array<InteractiveMenuChoice<InteractiveRootChoice>> = [
   { name: "doctor", value: "doctor", description: "Check dependencies and capabilities" },
   { name: "data", value: "data", description: "Preview and convert tabular data" },
-  { name: "md", value: "md", description: "Markdown utilities" },
+  { name: "md", value: "md", description: "Markdown PDF tools" },
   { name: "rename", value: "rename", description: "File/batch rename workflows" },
   { name: "video", value: "video", description: "Video conversion tools" },
   { name: "cancel", value: "cancel" },
@@ -74,6 +76,12 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   md: {
     message: "Choose a markdown command",
     choices: [
+      { name: "to-pdf", value: "md:to-pdf", description: "Create a PDF" },
+      {
+        name: "pdf-recipes",
+        value: "md:pdf-recipes",
+        description: "Prepare reusable PDF recipes",
+      },
       { name: "to-docx", value: "md:to-docx" },
       { name: "frontmatter-to-json", value: "md:frontmatter-to-json" },
     ],
