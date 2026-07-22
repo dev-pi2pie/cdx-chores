@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Interactive Phase 7 validation and closeout"
 created-date: 2026-07-22
+modified-date: 2026-07-22
 status: in-progress
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
@@ -44,12 +45,12 @@ status without becoming another implementation boundary.
 ### Validation
 
 - [x] Run the focused Interactive Markdown PDF matrix.
-- [ ] Run direct Profile, Template, Project, bundle, and renderer regressions.
-- [ ] Run repository lint, format, build, full tests, and whitespace checks.
-- [ ] Complete proportional live smoke for temporary, durable, handoff,
+- [x] Run direct Profile, Template, Project, bundle, and renderer regressions.
+- [x] Run repository lint, format, build, full tests, and whitespace checks.
+- [x] Complete proportional live smoke for temporary, durable, handoff,
       report, cleanup, and recovery behavior.
-- [ ] Visually inspect representative PDF output.
-- [ ] Record unavailable capabilities as environment limitations rather than
+- [x] Visually inspect representative PDF output.
+- [x] Record unavailable capabilities as environment limitations rather than
       product failures.
 
 ### Review And Closure
@@ -85,11 +86,47 @@ The focused Interactive Markdown PDF matrix passed:
 - 0 failures
 - 453 assertions
 
-Direct-helper regressions, repository gates, and live smoke remain pending.
+The direct Profile, Template, Project, bundle, and renderer regression slice
+passed with 530 tests, zero failures, and 3,914 assertions. Repository lint,
+format checking, build, and whitespace checking passed. The full repository
+suite passed with 1,687 tests, zero failures, and 8,942 assertions across 222
+files.
+
+Final built-CLI smoke generated a Profile and a Template bundle, rendered both
+against `examples/playground/md-pdf/cjk-font-smoke.md`, and produced valid
+one-page A4 PDFs. Metadata inspection, page rasterization, and visual review
+confirmed readable English, Japanese, Traditional Chinese, and code content.
+A separate local-asset smoke confirmed that the renderer resolved the tracked
+playground image into PDF output.
+
+Lifecycle acceptance combines this final renderer smoke with the linked Phase
+6 and Phase 6.7 evidence: automated coverage exercises temporary and durable
+materialization, saved-recipe handoff, conditional reports, exact-session
+cleanup, cleanup-failure retention, retry, and recovery; prior live Interactive
+smoke exercised a temporary deterministic Template render through successful
+cleanup. Durable Profile and Template creation were repeated in this phase.
+
+The Codex-dependent Project preparation capability was unavailable during the
+prior live attempt, so Project candidate, report, handoff, and recovery behavior
+remain evidenced by the injected Project command and Interactive regression
+suites. This is an environment limitation, not a product failure.
 
 ## Review Evidence
 
 Pending Phase 7 and complete-range reviews.
+
+## Phase Evidence
+
+- [Phase 1 prepared services](2026-07-21-markdown-pdf-interactive-phase-1-prepared-services.md)
+- [Phase 2 routing and state](2026-07-22-markdown-pdf-interactive-phase-2-routing-state.md)
+- [Phase 3 render sources](2026-07-22-markdown-pdf-interactive-phase-3-render-sources.md)
+- [Phase 4 deterministic authoring](2026-07-22-markdown-pdf-interactive-phase-4-deterministic-authoring.md)
+- [Phase 5 Codex authoring](2026-07-22-markdown-pdf-interactive-phase-5-codex-authoring.md)
+- [Phase 6 lifecycle and handoff](2026-07-22-markdown-pdf-interactive-phase-6-lifecycle-handoff.md)
+- [Phase 6.5 Codex Assistant UX](2026-07-22-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md)
+- [Phase 6.6 font hint suggestions](2026-07-22-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md)
+- [Phase 6.7 temporary-session portability](2026-07-22-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md)
+- [Phase 6.7 repeatable font-hint flow](2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)
 
 ## Public Record Boundary
 

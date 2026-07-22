@@ -651,18 +651,18 @@ Tasks:
 Validation:
 
 - [x] Run the focused Interactive Markdown PDF matrix.
-- [ ] Run direct Profile, Template, Project, bundle, and renderer regression
+- [x] Run direct Profile, Template, Project, bundle, and renderer regression
       suites.
-- [ ] Run repository lint, format, build, and full tests.
-- [ ] Perform manual Profile, Template, Project, temporary, durable, handoff,
+- [x] Run repository lint, format, build, and full tests.
+- [x] Perform manual Profile, Template, Project, temporary, durable, handoff,
       report, cleanup, and failure-recovery smoke checks under
       `examples/playground/`.
-- [ ] Visually inspect representative rendered PDFs for readable layout,
+- [x] Visually inspect representative rendered PDFs for readable layout,
       mixed-language text, code, and asset handling.
-- [ ] Verify canonical temporary-session ownership, successful cleanup,
+- [x] Verify canonical temporary-session ownership, successful cleanup,
       cleanup-failure retention, and retained-session recovery without
       deleting user-owned or durable artifacts.
-- [ ] Record unavailable Pandoc, WeasyPrint, Codex, or filesystem capabilities
+- [x] Record unavailable Pandoc, WeasyPrint, Codex, or filesystem capabilities
       as environment limitations rather than product failures.
 
 Guides:
@@ -684,7 +684,7 @@ Guides:
 
 Review and closure:
 
-- [ ] Link all phase job records and verification evidence.
+- [x] Link all phase job records and verification evidence.
 - [ ] Review the exact Phase 7 range from `785c49d` through its final
       substantive commit.
 - [ ] Review the complete implementation range from the pre-implementation
