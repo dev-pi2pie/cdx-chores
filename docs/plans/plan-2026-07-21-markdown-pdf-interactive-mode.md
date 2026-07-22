@@ -309,7 +309,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-3-render-sources.md`
+- [Phase 3 render sources](jobs/2026-07-22-markdown-pdf-interactive-phase-3-render-sources.md)
 
 ### Phase 4: Deterministic Recipe Authoring
 
