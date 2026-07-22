@@ -77,7 +77,9 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     });
 
     expect(result.markdownPdfSessionRetainCalls).toEqual(result.markdownPdfSessionCreateCalls);
-    expect(result.stderr).toContain("Temporary recipe session retained:");
+    expect(result.stderr).toContain(
+      `Temporary recipe session retained:\n${result.markdownPdfSessionCreateCalls[0]}\n`,
+    );
   });
 
   test("deletes only the confirmed failed temporary session", () => {

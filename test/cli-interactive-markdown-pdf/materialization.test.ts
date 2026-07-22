@@ -119,7 +119,9 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
     expect(bound.rendererSource).toEqual(
       artifact === "profile" ? { profile: bound.destination } : { bundle: bound.destination },
     );
-    expect(bound.destination.startsWith(`${session.path}/`)).toBe(true);
+    expect(bound.destination).toBe(
+      join(session.path, artifact === "profile" ? "profile.yml" : "project-bundle"),
+    );
     await cleanupOwnedMarkdownPdfSession(session);
   });
 

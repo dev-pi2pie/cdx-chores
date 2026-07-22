@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -15,12 +15,21 @@ export interface OwnedMarkdownPdfSession {
 
 interface OwnedMarkdownPdfSessionRecord {
   readonly path: string;
-  readonly remove: typeof rm;
+  readonly remove: RemoveOwnedMarkdownPdfSessionDirectory;
   state: OwnedMarkdownPdfSessionState;
 }
 
+type CreateOwnedMarkdownPdfSessionDirectory = (prefix: string) => Promise<string>;
+type CanonicalizeOwnedMarkdownPdfSessionDirectory = (path: string) => Promise<string>;
+type RemoveOwnedMarkdownPdfSessionDirectory = (
+  path: string,
+  options: { readonly force: false; readonly recursive: true },
+) => Promise<void>;
+
 export interface OwnedMarkdownPdfSessionDependencies {
-  readonly removeDirectory?: typeof rm;
+  readonly createDirectory?: CreateOwnedMarkdownPdfSessionDirectory;
+  readonly canonicalizeDirectory?: CanonicalizeOwnedMarkdownPdfSessionDirectory;
+  readonly removeDirectory?: RemoveOwnedMarkdownPdfSessionDirectory;
 }
 
 const ownedSessions = new WeakMap<OwnedMarkdownPdfSession, OwnedMarkdownPdfSessionRecord>();
@@ -36,10 +45,27 @@ function ownedSessionRecord(session: OwnedMarkdownPdfSession): OwnedMarkdownPdfS
 export async function createOwnedMarkdownPdfSession(
   dependencies: OwnedMarkdownPdfSessionDependencies = {},
 ): Promise<OwnedMarkdownPdfSession> {
-  const path = await mkdtemp(join(tmpdir(), OWNED_MARKDOWN_PDF_SESSION_PREFIX));
+  const createDirectory = dependencies.createDirectory ?? mkdtemp;
+  const canonicalizeDirectory = dependencies.canonicalizeDirectory ?? realpath;
+  const removeDirectory = dependencies.removeDirectory ?? rm;
+  const rawPath = await createDirectory(join(tmpdir(), OWNED_MARKDOWN_PDF_SESSION_PREFIX));
+  let path: string;
+  try {
+    path = await canonicalizeDirectory(rawPath);
+  } catch (canonicalizationError) {
+    try {
+      await removeDirectory(rawPath, { force: false, recursive: true });
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [canonicalizationError, cleanupError],
+        "Unable to canonicalize or remove the new Markdown PDF session.",
+      );
+    }
+    throw canonicalizationError;
+  }
   const record: OwnedMarkdownPdfSessionRecord = {
     path,
-    remove: dependencies.removeDirectory ?? rm,
+    remove: removeDirectory,
     state: "active",
   };
   const session = Object.freeze({

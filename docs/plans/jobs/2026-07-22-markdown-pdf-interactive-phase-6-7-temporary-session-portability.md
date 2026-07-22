@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Phase 6.7 temporary-session portability"
 created-date: 2026-07-22
-status: draft
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -14,18 +14,31 @@ and compatible with existing symlink-aware output validation.
 
 ## Implementation Checklist
 
-- [ ] Canonicalize the exact directory returned for every newly created owned
+- [x] Canonicalize the exact directory returned for every newly created owned
       temporary session.
-- [ ] Use that path consistently for materialization, retention, display, and
+- [x] Use that path consistently for materialization, retention, display, and
       cleanup.
-- [ ] Keep temporary recipes out of the current working directory.
-- [ ] Preserve exact-session ownership and cleanup while retaining failures for
+- [x] Keep temporary recipes out of the current working directory.
+- [x] Preserve exact-session ownership and cleanup while retaining failures for
       diagnosis.
-- [ ] Preserve symlink rejection for user-selected durable and PDF outputs.
-- [ ] Cover aliased and ordinary temporary roots without assuming one operating
+- [x] Preserve symlink rejection for user-selected durable and PDF outputs.
+- [x] Cover aliased and ordinary temporary roots without assuming one operating
       system's path syntax.
-- [ ] Pass focused, repository, and public-safe manual render verification.
+- [x] Pass focused, repository, and public-safe manual render verification.
 - [ ] Review the exact implementation range and resolve actionable findings.
+
+## Verification Evidence
+
+- Focused lifecycle, materialization, and recovery coverage passed with 28
+  tests.
+- The complete repository suite passed with 1,681 tests, alongside type,
+  lint, format, build, and diff checks.
+- A temporary deterministic Template-bundle render completed without temp-root
+  symlink rejection and produced a valid one-page A4 PDF with readable mixed
+  English, Japanese, Traditional Chinese, and code text.
+- The Codex-dependent Project-bundle smoke could not reach materialization in
+  the available verification environment; automated Project-bundle coverage
+  exercises the same canonical owned-session boundary.
 
 ## Traceability
 

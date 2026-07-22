@@ -37,7 +37,7 @@ function printRenderWarnings(runtime: CliRuntime, warnings: readonly string[]): 
 export function printRetainedSession(runtime: CliRuntime, session: OwnedMarkdownPdfSession): void {
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Temporary recipe session retained:");
-  printLine(runtime.stderr, displayPath(runtime, session.path));
+  printLine(runtime.stderr, session.path);
 }
 
 function printRetainedDurableRecipe(

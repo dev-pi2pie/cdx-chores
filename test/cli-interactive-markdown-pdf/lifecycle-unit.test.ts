@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { access, rm, writeFile } from "node:fs/promises";
+import { access, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -27,7 +27,8 @@ describe("interactive Markdown PDF owned lifecycle", () => {
     await writeFile(ownedFile, "profile: true\n");
     await writeFile(externalFile, "{}\n");
 
-    expect(session.path.startsWith(join(tmpdir(), "cdx-chores-markdown-pdf-"))).toBe(true);
+    expect(dirname(session.path)).toBe(await realpath(tmpdir()));
+    expect(basename(session.path).startsWith("cdx-chores-markdown-pdf-")).toBe(true);
     await cleanupOwnedMarkdownPdfSession(session);
 
     expect(session.state).toBe("removed");
@@ -70,6 +71,49 @@ describe("interactive Markdown PDF owned lifecycle", () => {
 
     await cleanupOwnedMarkdownPdfSession(session);
     expect(session.state).toBe("removed");
+  });
+
+  test("stores and removes the canonical factory result for an aliased temporary root", async () => {
+    const rawPath = join("temporary-root-alias", "owned-session");
+    const canonicalPath = join("canonical-temporary-root", "owned-session");
+    const canonicalizeCalls: string[] = [];
+    const removeCalls: Array<{ path: string; options: unknown }> = [];
+    const session = await createOwnedMarkdownPdfSession({
+      createDirectory: async () => rawPath,
+      canonicalizeDirectory: async (path) => {
+        canonicalizeCalls.push(path);
+        return canonicalPath;
+      },
+      removeDirectory: async (path, options) => {
+        removeCalls.push({ path, options });
+      },
+    });
+
+    expect(canonicalizeCalls).toEqual([rawPath]);
+    expect(session.path).toBe(canonicalPath);
+
+    await cleanupOwnedMarkdownPdfSession(session);
+    expect(removeCalls).toEqual([
+      { path: canonicalPath, options: { force: false, recursive: true } },
+    ]);
+  });
+
+  test("removes only the raw directory when canonicalization fails", async () => {
+    const rawPath = join("temporary-root-alias", "failed-session");
+    const removeCalls: Array<{ path: string; options: unknown }> = [];
+
+    await expect(
+      createOwnedMarkdownPdfSession({
+        createDirectory: async () => rawPath,
+        canonicalizeDirectory: async () => {
+          throw new Error("injected canonicalization failure");
+        },
+        removeDirectory: async (path, options) => {
+          removeCalls.push({ path, options });
+        },
+      }),
+    ).rejects.toThrow("injected canonicalization failure");
+    expect(removeCalls).toEqual([{ path: rawPath, options: { force: false, recursive: true } }]);
   });
 
   test("fails closed for a raw path disguised as a session", async () => {
