@@ -111,6 +111,9 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.removedPaths).toEqual([]);
     expect(result.stdout).toContain("Wrote PDF:");
     expect(result.stderr).toContain("cleanup denied");
+    expect(result.stderr).toContain(
+      `Temporary recipe session retained:\n${result.markdownPdfSessionCreateCalls[0]}\n`,
+    );
   });
 
   test("retains a temporary session when renderer preparation fails", () => {

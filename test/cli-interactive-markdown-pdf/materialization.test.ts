@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { access, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import type { CliRuntime } from "../../src/cli/types";
 import type {
@@ -123,6 +123,40 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
       join(session.path, artifact === "profile" ? "profile.yml" : "project-bundle"),
     );
     await cleanupOwnedMarkdownPdfSession(session);
+  });
+
+  test("derives materialization and cleanup paths from the canonical owned session", async () => {
+    const { runtime } = createActionTestRuntime();
+    const rawPath = resolve("temporary-root-alias", "owned-session");
+    const canonicalPath = resolve("canonical-temporary-root", "owned-session");
+    const removeCalls: Array<{ path: string; options: unknown }> = [];
+    const session = await createOwnedMarkdownPdfSession({
+      createDirectory: async () => rawPath,
+      canonicalizeDirectory: async (path) => {
+        expect(path).toBe(rawPath);
+        return canonicalPath;
+      },
+      removeDirectory: async (path, options) => {
+        removeCalls.push({ path, options });
+      },
+    });
+    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+
+    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+      runtime,
+      fakeCandidate("deterministic", "profile"),
+      { kind: "temporary", report: { kind: "none" }, session },
+      createServices({ calls }),
+    );
+
+    expect(session.path).toBe(canonicalPath);
+    expect(bound.destination).toBe(join(canonicalPath, "profile.yml"));
+    expect(calls.binds[0]?.output).toBe(join(canonicalPath, "profile.yml"));
+
+    await cleanupOwnedMarkdownPdfSession(session);
+    expect(removeCalls).toEqual([
+      { path: canonicalPath, options: { force: false, recursive: true } },
+    ]);
   });
 
   test("rejects a repeated write of the same bound candidate", async () => {

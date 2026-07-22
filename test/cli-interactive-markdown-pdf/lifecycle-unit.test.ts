@@ -116,6 +116,38 @@ describe("interactive Markdown PDF owned lifecycle", () => {
     expect(removeCalls).toEqual([{ path: rawPath, options: { force: false, recursive: true } }]);
   });
 
+  test("preserves canonicalization and raw-cleanup failures without returning a session", async () => {
+    const rawPath = join("temporary-root-alias", "failed-cleanup-session");
+    const canonicalizationError = new Error("injected canonicalization failure");
+    const cleanupError = new Error("injected raw cleanup failure");
+    const removeCalls: Array<{ path: string; options: unknown }> = [];
+    let returnedSession: OwnedMarkdownPdfSession | undefined;
+    let thrown: unknown;
+
+    try {
+      returnedSession = await createOwnedMarkdownPdfSession({
+        createDirectory: async () => rawPath,
+        canonicalizeDirectory: async () => {
+          throw canonicalizationError;
+        },
+        removeDirectory: async (path, options) => {
+          removeCalls.push({ path, options });
+          throw cleanupError;
+        },
+      });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(returnedSession).toBeUndefined();
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).message).toBe(
+      "Unable to canonicalize or remove the new Markdown PDF session.",
+    );
+    expect((thrown as AggregateError).errors).toEqual([canonicalizationError, cleanupError]);
+    expect(removeCalls).toEqual([{ path: rawPath, options: { force: false, recursive: true } }]);
+  });
+
   test("fails closed for a raw path disguised as a session", async () => {
     const session = await createOwnedMarkdownPdfSession();
     const rawSession = {
