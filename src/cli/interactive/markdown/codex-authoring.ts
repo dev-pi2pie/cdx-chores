@@ -14,6 +14,7 @@ import { collectMarkdownPdfCodexSetup } from "./codex-setup";
 import type {
   MarkdownPdfCodexArtifact,
   MarkdownPdfCodexSetup,
+  MarkdownPdfGeneratedLifecycleHandler,
   MarkdownPdfGeneratedLifecycleSelection,
   MarkdownPdfSavedRecipe,
   PreparedMarkdownPdfCodexCandidate,
@@ -56,6 +57,7 @@ export async function runMarkdownPdfCodexAuthoring(
     artifact: MarkdownPdfCodexArtifact;
     backToMode: boolean;
     entry: MarkdownPdfInteractiveEntry;
+    onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
     markdownInput?: string;
   },
 ): Promise<MarkdownPdfCodexAuthoringOutcome> {
@@ -127,13 +129,19 @@ export async function runMarkdownPdfCodexAuthoring(
       }
       const lifecycle = action;
       const report = await promptMarkdownPdfCodexReportRetention(lifecycle, pathPromptContext);
-      return {
+      const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "codex", candidate: prepared },
         kind: "generated-lifecycle",
         lifecycle,
         markdownInput: input.markdownInput!,
         report,
       };
+      if (!input.onGeneratedLifecycle) {
+        return selection;
+      }
+      if ((await input.onGeneratedLifecycle(selection)) === "complete") {
+        return { kind: "complete" };
+      }
     }
   }
 }

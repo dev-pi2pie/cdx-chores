@@ -6,6 +6,7 @@ import type { HarnessRunnerContext } from "../context";
 import {
   markdownPdfCodexServiceModuleUrl,
   markdownPdfDeterministicAuthoringModuleUrl,
+  markdownPdfLifecycleModuleUrl,
   markdownPdfRenderBundleModuleUrl,
   markdownPdfRenderServiceModuleUrl,
 } from "../module-urls";
@@ -56,11 +57,42 @@ function defaultPdfOutput(inputPath: string): string {
 export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   let preparedCount = 0;
   let deterministicPreparedCount = 0;
+  let sessionCount = 0;
   const codexPreparedCounts: Record<CodexArtifact, number> = {
     profile: 0,
     "template-bundle": 0,
     "project-bundle": 0,
   };
+
+  mock.module(markdownPdfLifecycleModuleUrl, () => ({
+    createOwnedMarkdownPdfSession: async () => {
+      sessionCount += 1;
+      const session = {
+        path: context.resolveHarnessPath(`.harness-md-pdf-session-${sessionCount}`),
+        state: "active",
+      };
+      context.result.markdownPdfSessionCreateCalls.push(session.path);
+      return session;
+    },
+    assertActiveOwnedMarkdownPdfSession: (session: { state: string }) => {
+      if (session.state !== "active") {
+        throw new TypeError(`Markdown PDF session is ${session.state}, not active.`);
+      }
+    },
+    retainOwnedMarkdownPdfSession: (session: { path: string; state: string }) => {
+      session.state = "retained";
+      context.result.markdownPdfSessionRetainCalls.push(session.path);
+    },
+    cleanupOwnedMarkdownPdfSession: async (session: { path: string; state: string }) => {
+      context.result.markdownPdfSessionCleanupCalls.push(session.path);
+      if (context.scenario.markdownPdfCleanupErrorMessage) {
+        session.state = "retained";
+        throw new Error(context.scenario.markdownPdfCleanupErrorMessage);
+      }
+      session.state = "removed";
+      context.recordRemovedPath(session.path);
+    },
+  }));
 
   mock.module(markdownPdfCodexServiceModuleUrl, () => ({
     prepareMarkdownPdfCodexCandidate: async (_runtime: unknown, setup: Record<string, unknown>) => {
@@ -277,6 +309,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       const destination = bound.destination as Record<string, unknown>;
       return String(destination.displayOutputPath ?? destination.displayOutputDirectory);
     },
+    markdownPdfDeterministicDestinationPath: (bound: Record<string, unknown>) => {
+      const destination = bound.destination as Record<string, unknown>;
+      return String(destination.outputPath ?? destination.outputDirectory);
+    },
     markdownPdfDeterministicOutputFiles: (bound: Record<string, unknown>) => {
       const destination = bound.destination as Record<string, unknown>;
       return bound.artifact === "profile"
@@ -394,12 +430,37 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       });
       return { prepared, outputPath, overwrite: input.overwrite };
     },
+    resolveMarkdownPdfRenderOutput: async (
+      _runtime: unknown,
+      inputPath: string,
+      input: Record<string, unknown>,
+    ) => {
+      const outputPath =
+        typeof input.output === "string"
+          ? context.resolveHarnessPath(input.output)
+          : defaultPdfOutput(context.resolveHarnessPath(inputPath));
+      context.result.markdownPdfPlanCalls.push({
+        ...input,
+        inputPath,
+        outputPath,
+        stage: "resolve-output",
+      });
+      return { outputPath, overwrite: input.overwrite };
+    },
+    bindResolvedMarkdownPdfRenderOutput: (
+      prepared: Record<string, unknown>,
+      output: Record<string, unknown>,
+    ) => ({ ...output, prepared }),
     executePlannedMarkdownPdfRender: async (_runtime: unknown, plan: Record<string, unknown>) => {
       const prepared = plan.prepared as Record<string, unknown>;
       context.result.markdownPdfExecuteCalls.push({
         outputPath: plan.outputPath,
         preparedId: prepared.__harnessPreparedId,
       });
+      const renderError = context.scenario.markdownPdfRenderErrorMessages?.shift();
+      if (renderError) {
+        throw new Error(renderError);
+      }
       return {
         outputPath: plan.outputPath,
         warnings: context.scenario.markdownPdfRenderWarnings ?? [],

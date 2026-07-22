@@ -6,6 +6,7 @@ import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import { MARKDOWN_PDF_ARTIFACT_LABELS, renderFinalRecipeSaveReview } from "./authoring-review";
+import type { MarkdownPdfSavedRecipe } from "./codex-types";
 import {
   bindMarkdownPdfDeterministicRecipeDestination,
   markdownPdfDeterministicOutputFiles,
@@ -39,7 +40,9 @@ export async function saveMarkdownPdfDeterministicCandidate(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   candidate: PreparedMarkdownPdfDeterministicRecipe,
-): Promise<"complete" | "review"> {
+): Promise<
+  { kind: "saved"; saved: MarkdownPdfSavedRecipe } | { kind: "review" } | { kind: "cancel" }
+> {
   while (true) {
     let next: RecipeSaveNextStep;
     try {
@@ -76,7 +79,17 @@ export async function saveMarkdownPdfDeterministicCandidate(
           runtime.stdout,
           `Wrote Markdown PDF ${candidate.artifact === "profile" ? "profile" : "template"}: ${markdownPdfDeterministicOutputPath(bound)}`,
         );
-        return "complete";
+        const outputPath = markdownPdfDeterministicOutputPath(bound);
+        return {
+          kind: "saved",
+          saved: {
+            artifact: candidate.artifact,
+            kind: "saved-recipe",
+            outputPath,
+            rendererSource:
+              candidate.artifact === "profile" ? "existing-profile" : "existing-bundle",
+          },
+        };
       }
       next = await promptRecipeSaveNextStep("Recipe save next step");
     } catch (error) {
@@ -87,10 +100,10 @@ export async function saveMarkdownPdfDeterministicCandidate(
       next = await promptRecipeSaveNextStep("Recipe save recovery");
     }
     if (next === "review") {
-      return "review";
+      return { kind: "review" };
     }
     if (next === "cancel") {
-      return "complete";
+      return { kind: "cancel" };
     }
   }
 }

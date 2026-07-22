@@ -77,6 +77,12 @@ export interface PlannedMarkdownPdfRender {
   prepared: PreparedMarkdownPdfRender;
 }
 
+export interface ResolvedMarkdownPdfRenderOutput {
+  htmlOutputPath?: string;
+  outputPath: string;
+  overwrite?: boolean;
+}
+
 export interface ExecutePlannedMarkdownPdfRenderOptions {
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
@@ -178,9 +184,20 @@ export async function planMarkdownPdfRender(
   prepared: PreparedMarkdownPdfRender,
   input: MarkdownPdfRenderOutputInput,
 ): Promise<PlannedMarkdownPdfRender> {
+  return bindResolvedMarkdownPdfRenderOutput(
+    prepared,
+    await resolveMarkdownPdfRenderOutput(runtime, prepared.inputPath, input),
+  );
+}
+
+export async function resolveMarkdownPdfRenderOutput(
+  runtime: CliRuntime,
+  inputPath: string,
+  input: MarkdownPdfRenderOutputInput,
+): Promise<ResolvedMarkdownPdfRenderOutput> {
   const outputPath = resolveFromCwd(
     runtime,
-    input.output?.trim() || defaultOutputPath(prepared.inputPath, ".pdf"),
+    input.output?.trim() || defaultOutputPath(inputPath, ".pdf"),
   );
   const htmlOutputInput = input.htmlOutput?.trim();
   const htmlOutputPath = htmlOutputInput ? resolveFromCwd(runtime, htmlOutputInput) : undefined;
@@ -196,7 +213,14 @@ export async function planMarkdownPdfRender(
     await ensureOutputDoesNotExist(htmlOutputPath, input.overwrite);
   }
 
-  return { htmlOutputPath, outputPath, overwrite: input.overwrite, prepared };
+  return { htmlOutputPath, outputPath, overwrite: input.overwrite };
+}
+
+export function bindResolvedMarkdownPdfRenderOutput(
+  prepared: PreparedMarkdownPdfRender,
+  output: ResolvedMarkdownPdfRenderOutput,
+): PlannedMarkdownPdfRender {
+  return { ...output, prepared };
 }
 
 export async function executePlannedMarkdownPdfRender(

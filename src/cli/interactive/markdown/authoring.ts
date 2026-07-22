@@ -15,6 +15,7 @@ import {
 } from "./codex-authoring";
 import type {
   MarkdownPdfCodexArtifact,
+  MarkdownPdfGeneratedLifecycleHandler,
   MarkdownPdfGeneratedLifecycleSelection,
   MarkdownPdfSavedRecipe,
 } from "./codex-types";
@@ -147,8 +148,13 @@ async function reviewCandidate(
   entry: MarkdownPdfInteractiveEntry,
   initialCandidate: PreparedMarkdownPdfDeterministicRecipe,
   markdownInput?: string,
+  onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler,
 ): Promise<
-  "complete" | "change-mode" | "change-artifact" | MarkdownPdfGeneratedLifecycleSelection
+  | "complete"
+  | "change-mode"
+  | "change-artifact"
+  | MarkdownPdfGeneratedLifecycleSelection
+  | MarkdownPdfSavedRecipe
 > {
   let candidate = initialCandidate;
   while (true) {
@@ -164,19 +170,31 @@ async function reviewCandidate(
       return action;
     }
     if (action === "temporary-render" || action === "save-and-render") {
-      return {
+      const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "deterministic", candidate },
         kind: "generated-lifecycle",
         lifecycle: action,
         markdownInput: markdownInput!,
         report: { kind: "none" },
       };
+      if (!onGeneratedLifecycle) {
+        return selection;
+      }
+      if ((await onGeneratedLifecycle(selection)) === "complete") {
+        return "complete";
+      }
+      continue;
     }
     if (action === "save") {
-      if (
-        (await saveMarkdownPdfDeterministicCandidate(runtime, pathPromptContext, candidate)) ===
-        "complete"
-      ) {
+      const saved = await saveMarkdownPdfDeterministicCandidate(
+        runtime,
+        pathPromptContext,
+        candidate,
+      );
+      if (saved.kind === "saved") {
+        return saved.saved;
+      }
+      if (saved.kind === "cancel") {
         return "complete";
       }
       continue;
@@ -204,7 +222,11 @@ function isNavigationOutcome(
 export async function runMarkdownPdfAuthoring(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-  input: { entry: MarkdownPdfInteractiveEntry; markdownInput?: string },
+  input: {
+    entry: MarkdownPdfInteractiveEntry;
+    markdownInput?: string;
+    onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
+  },
 ): Promise<MarkdownPdfAuthoringOutcome> {
   while (true) {
     const artifact = await promptArtifact(input.entry);
@@ -224,6 +246,7 @@ export async function runMarkdownPdfAuthoring(
         backToMode: false,
         entry: input.entry,
         markdownInput: input.markdownInput,
+        onGeneratedLifecycle: input.onGeneratedLifecycle,
       });
       if (outcome.kind === "change-artifact" || outcome.kind === "change-mode") {
         continue;
@@ -246,6 +269,7 @@ export async function runMarkdownPdfAuthoring(
           backToMode: true,
           entry: input.entry,
           markdownInput: input.markdownInput,
+          onGeneratedLifecycle: input.onGeneratedLifecycle,
         });
         if (!isNavigationOutcome(outcome)) {
           return outcome;
@@ -265,6 +289,7 @@ export async function runMarkdownPdfAuthoring(
         input.entry,
         candidate,
         input.markdownInput,
+        input.onGeneratedLifecycle,
       );
       if (typeof outcome !== "string") {
         return outcome;

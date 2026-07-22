@@ -8,6 +8,8 @@ export interface InteractiveHarnessScenario {
   markdownPdfCodexBindErrorMessage?: string;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];
+  markdownPdfRenderErrorMessages?: string[];
+  markdownPdfCleanupErrorMessage?: string;
   selectQueue?: unknown[];
   nowIsoString?: string;
   checkboxQueue?: unknown[];
@@ -92,6 +94,9 @@ export interface InteractiveHarnessResult {
   markdownPdfCodexPrepareCalls: Array<Record<string, unknown>>;
   markdownPdfCodexBindCalls: Array<Record<string, unknown>>;
   markdownPdfCodexWriteCalls: Array<Record<string, unknown>>;
+  markdownPdfSessionCreateCalls: string[];
+  markdownPdfSessionRetainCalls: string[];
+  markdownPdfSessionCleanupCalls: string[];
   stdout: string;
   stderr: string;
   error?: string;

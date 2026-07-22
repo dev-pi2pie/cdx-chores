@@ -24,6 +24,9 @@ export const markdownPdfDeterministicAuthoringModuleUrl = pathToFileURL(
 export const markdownPdfCodexServiceModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/markdown/codex-service.ts"),
 ).href;
+export const markdownPdfLifecycleModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/interactive/markdown/lifecycle.ts"),
+).href;
 export const interactiveIndexUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/index.ts"),
 ).href;

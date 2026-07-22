@@ -51,6 +51,10 @@ export interface MarkdownPdfGeneratedLifecycleSelection {
   report: MarkdownPdfCodexReportRetention;
 }
 
+export type MarkdownPdfGeneratedLifecycleHandler = (
+  selection: MarkdownPdfGeneratedLifecycleSelection,
+) => Promise<"complete" | "review">;
+
 export interface MarkdownPdfSavedRecipe {
   artifact: MarkdownPdfCodexArtifact;
   kind: "saved-recipe";

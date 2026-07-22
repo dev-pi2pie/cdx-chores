@@ -256,6 +256,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "save",
           "with-artifact",
           "suggested",
+          "exit",
         ],
         inputQueue: [""],
         confirmQueue: [true, false, true],
@@ -303,6 +304,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "save",
         "none",
         "custom",
+        "exit",
       ],
       inputQueue: [""],
       requiredPathQueue: ["reports/first.json", "recipes/first.yml", "recipes/final.yml"],
@@ -370,6 +372,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "save",
           "none",
           "custom",
+          "exit",
         ],
         inputQueue: [""],
         requiredPathQueue: [output],
@@ -392,6 +395,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "save",
         "none",
         "suggested",
+        "exit",
       ],
       inputQueue: [""],
       requiredPathQueue: ["recipes/exact-project"],
@@ -425,68 +429,62 @@ describe("interactive Markdown PDF Codex authoring", () => {
   );
 
   test("temporary Project rendering ignores an explicit durable output preference", () => {
-    const result = runInteractiveHarness(
-      {
-        mode: "run",
-        markdownPdfMocks: true,
-        selectQueue: [
-          ...TO_PDF_ENTRY,
-          "generated",
-          "project-bundle",
-          "output",
-          "continue",
-          "temporary-render",
-          "none",
-        ],
-        inputQueue: [""],
-        requiredPathQueue: ["fixtures/report.md", "recipes/durable-project"],
-        confirmQueue: [true],
-      },
-      { allowFailure: true },
-    );
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "output",
+        "continue",
+        "temporary-render",
+        "none",
+        "default",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-project"],
+      confirmQueue: [true, false, true],
+    });
 
-    expect(result.error).toBe(
-      "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
-    );
     expect(result.markdownPdfCodexPrepareCalls).toEqual([
       expect.objectContaining({ outputPreference: "recipes/durable-project" }),
     ]);
-    expect(result.markdownPdfCodexBindCalls).toEqual([]);
-    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+    expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexBindCalls[0]?.output).not.toBe("recipes/durable-project");
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
 
   test.each([
     ["temporary-render", "external"],
     ["save-and-render", "with-artifact"],
   ] as const)(
-    "keeps accepted to-pdf lifecycle %s fail-closed after report selection",
+    "materializes and renders accepted to-pdf lifecycle %s after report selection",
     (lifecycle, report) => {
       const requiredPathQueue = ["fixtures/report.md"];
       if (report === "external") {
         requiredPathQueue.push("reports/render.json");
       }
-      const result = runInteractiveHarness(
-        {
-          mode: "run",
-          markdownPdfMocks: true,
-          selectQueue: [
-            ...TO_PDF_ENTRY,
-            "generated",
-            "project-bundle",
-            "continue",
-            lifecycle,
-            report,
-          ],
-          inputQueue: [""],
-          requiredPathQueue,
-          confirmQueue: [true],
-        },
-        { allowFailure: true },
-      );
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          "project-bundle",
+          "continue",
+          lifecycle,
+          report,
+          ...(lifecycle === "save-and-render" ? ["suggested"] : []),
+          "default",
+        ],
+        inputQueue: [""],
+        requiredPathQueue,
+        confirmQueue:
+          lifecycle === "save-and-render" ? [true, false, false, true] : [true, false, true],
+      });
 
-      expect(result.error).toBe(
-        "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
-      );
       expect(result.markdownPdfCodexPrepareCalls).toEqual([
         expect.objectContaining({
           artifact: "project-bundle",
@@ -501,10 +499,10 @@ describe("interactive Markdown PDF Codex authoring", () => {
         kind: "select",
         message: "Keep a Codex diagnostic report?",
       });
-      expect(result.markdownPdfCodexBindCalls).toEqual([]);
-      expect(result.markdownPdfCodexWriteCalls).toEqual([]);
-      expect(result.markdownPdfPlanCalls).toEqual([]);
-      expect(result.markdownPdfExecuteCalls).toEqual([]);
+      expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+      expect(result.markdownPdfPlanCalls).toHaveLength(1);
+      expect(result.markdownPdfExecuteCalls).toHaveLength(1);
     },
   );
 });

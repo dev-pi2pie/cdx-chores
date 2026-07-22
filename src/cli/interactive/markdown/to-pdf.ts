@@ -6,14 +6,16 @@ import {
   type PlannedMarkdownPdfRender,
 } from "../../actions/markdown/to-pdf-service";
 import { displayPath, printLine } from "../../actions/shared";
-import { CliError } from "../../errors";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import { runMarkdownPdfAuthoring } from "./authoring";
+import type { MarkdownPdfSavedRecipe } from "./codex-types";
+import { handleMarkdownPdfGeneratedLifecycle } from "./generated-lifecycle";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
+  prepareSavedMarkdownPdfRenderSource,
   promptMarkdownPdfRenderInput,
   type MarkdownPdfInteractivePreparedRenderSource,
 } from "./render-source";
@@ -132,9 +134,45 @@ export async function handleMarkdownPdfToPdfInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<InteractiveNavigationOutcome> {
-  const input = await promptMarkdownPdfRenderInput(pathPromptContext);
+  return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext);
+}
+
+async function promptMarkdownPdfHandoffInput(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  saved: MarkdownPdfSavedRecipe,
+): Promise<string> {
+  if (!saved.sample) {
+    return await promptMarkdownPdfRenderInput(pathPromptContext);
+  }
+  const choice = await select<"sample" | "choose">({
+    message: "Markdown input for rendering",
+    choices: [
+      {
+        name: `Use ${displayPath(runtime, saved.sample)}`,
+        value: "sample",
+        description: "Use the preparation sample as the render input",
+      },
+      { name: "Choose another Markdown file", value: "choose" },
+    ],
+  });
+  return choice === "sample" ? saved.sample : await promptMarkdownPdfRenderInput(pathPromptContext);
+}
+
+export async function runMarkdownPdfToPdfInteractiveFlow(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  options: { savedRecipe?: MarkdownPdfSavedRecipe } = {},
+): Promise<InteractiveNavigationOutcome> {
+  const input = options.savedRecipe
+    ? await promptMarkdownPdfHandoffInput(runtime, pathPromptContext, options.savedRecipe)
+    : await promptMarkdownPdfRenderInput(pathPromptContext);
+  let preselected = options.savedRecipe;
   while (true) {
-    const source = await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
+    const source = preselected
+      ? await prepareSavedMarkdownPdfRenderSource(runtime, input, preselected)
+      : await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
+    preselected = undefined;
     if (source.kind === "back") {
       return { kind: "open-submenu", group: "md" };
     }
@@ -145,18 +183,14 @@ export async function handleMarkdownPdfToPdfInteractiveAction(
       const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
         entry: "to-pdf",
         markdownInput: input,
+        onGeneratedLifecycle: async (selection) =>
+          await handleMarkdownPdfGeneratedLifecycle(runtime, pathPromptContext, selection),
       });
       if (outcome.kind === "change-source") {
         continue;
       }
       if (outcome.kind === "generated-lifecycle") {
-        throw new CliError(
-          "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
-          {
-            code: "MARKDOWN_PDF_INTERACTIVE_MATERIALIZATION_NOT_READY",
-            exitCode: 2,
-          },
-        );
+        return { kind: "complete" };
       }
       if (outcome.kind === "saved-recipe") {
         return { kind: "complete" };

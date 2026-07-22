@@ -22,6 +22,7 @@ import type {
   MarkdownPdfInteractiveRenderSource,
   MarkdownPdfInteractiveSource,
 } from "./types";
+import type { MarkdownPdfSavedRecipe } from "./codex-types";
 
 export type MarkdownPdfInteractiveRenderSourceOutcome =
   | MarkdownPdfInteractivePreparedRenderSource
@@ -255,4 +256,19 @@ export async function collectPreparedMarkdownPdfRenderSource(
     collected.input,
   );
   return { kind: "prepared", source: collected.source, prepared };
+}
+
+export async function prepareSavedMarkdownPdfRenderSource(
+  runtime: CliRuntime,
+  input: string,
+  saved: MarkdownPdfSavedRecipe,
+  implementations: Pick<MarkdownPdfRenderSourceImplementations, "prepareRender"> = {},
+): Promise<MarkdownPdfInteractivePreparedRenderSource> {
+  const prepared = await (implementations.prepareRender ?? prepareMarkdownPdfRender)(runtime, {
+    input,
+    ...(saved.rendererSource === "existing-profile"
+      ? { profile: saved.outputPath }
+      : { bundle: saved.outputPath }),
+  });
+  return { kind: "prepared", prepared, source: saved.rendererSource };
 }

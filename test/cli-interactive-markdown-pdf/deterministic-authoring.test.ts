@@ -10,7 +10,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save"],
+      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "exit"],
       requiredPathQueue: ["recipes/report.yml"],
       confirmQueue: [false, true],
     });
@@ -43,7 +43,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...RECIPES_ENTRY, "template-bundle", "starter", "save"],
+      selectQueue: [...RECIPES_ENTRY, "template-bundle", "starter", "save", "exit"],
       requiredPathQueue: ["recipes/report-template"],
       confirmQueue: [true, true],
     });
@@ -80,6 +80,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "revise-margins",
         "custom",
         "save",
+        "exit",
       ],
       inputQueue: ["15mm", "10mm", "11mm", "12mm", "13mm"],
       requiredPathQueue: ["recipes/formal.json"],
@@ -167,7 +168,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "change-output"],
+      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "change-output", "exit"],
       requiredPathQueue: ["recipes/first.yml", "recipes/final.yml"],
       confirmQueue: [false, false, true, true],
     });
@@ -202,7 +203,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfDeterministicBindErrorMessage: "Output already exists",
-      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "change-output"],
+      selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "change-output", "exit"],
       requiredPathQueue: ["recipes/existing.yml", "recipes/final.yml"],
       confirmQueue: [false, true, true],
     });
@@ -276,33 +277,58 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(result.markdownPdfDeterministicPrepareCalls).toEqual([]);
   });
 
-  test.each([
-    ["temporary render", "profile", "temporary-render"],
-    ["save and render", "template-bundle", "save-and-render"],
-  ] as const)(
-    "fails closed for deferred to-pdf %s before any materialization",
-    (_label, artifact, lifecycle) => {
-      const result = runInteractiveHarness(
-        {
-          mode: "run",
-          markdownPdfMocks: true,
-          selectQueue: [...TO_PDF_ENTRY, "generated", artifact, "starter", lifecycle],
-          requiredPathQueue: ["fixtures/report.md"],
-        },
-        { allowFailure: true },
-      );
+  test("materializes and renders a temporary deterministic Profile once", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "temporary-render",
+        "default",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true],
+    });
 
-      expect(result.error).toBe(
-        "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
-      );
-      expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
-      expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
-      expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
-      expect(result.markdownPdfPlanCalls).toEqual([]);
-      expect(result.markdownPdfExecuteCalls).toEqual([]);
-      expect(result.removedPaths).toEqual([]);
-    },
-  );
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([
+      { artifact: "profile", candidateId: "deterministic-1" },
+    ]);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stdout).toContain("Wrote PDF:");
+  });
+
+  test("saves and renders a durable deterministic Template once", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "custom",
+        "default",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toEqual([
+      expect.objectContaining({ output: "recipes/durable-template", overwrite: false }),
+    ]);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stderr).toContain("Recipe cleanup: never");
+  });
 
   test("cancels a reviewed deterministic candidate without binding or writing", () => {
     const result = runInteractiveHarness({
