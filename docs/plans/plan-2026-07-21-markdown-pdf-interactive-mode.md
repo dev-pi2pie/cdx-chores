@@ -347,21 +347,21 @@ Expected job record:
 
 Tasks:
 
-- [ ] Add `pdf-recipes` Codex preparation for Profile, Template, and Project.
-- [ ] Add Project-only Codex preparation under `to-pdf`.
-- [ ] Reuse the selected `to-pdf` Markdown input and request an optional sample
+- [x] Add `pdf-recipes` Codex preparation for Profile, Template, and Project.
+- [x] Add Project-only Codex preparation under `to-pdf`.
+- [x] Reuse the selected `to-pdf` Markdown input and request an optional sample
       only under `pdf-recipes`.
-- [ ] Always prompt for optional intent and support repeatable font-hint
+- [x] Always prompt for optional intent and support repeatable font-hint
       add/remove editing.
-- [ ] Collect artifact-specific base Profile and cover-image signals.
-- [ ] Show bounded signal consent before every Codex request.
-- [ ] Hold candidate and report data in memory through review and revision.
-- [ ] Regenerate only through the explicit regeneration action.
-- [ ] Add report-retention choices filtered by lifecycle and retain the choice
+- [x] Collect artifact-specific base Profile and cover-image signals.
+- [x] Show bounded signal consent before every Codex request.
+- [x] Hold candidate and report data in memory through review and revision.
+- [x] Regenerate only through the explicit regeneration action.
+- [x] Add report-retention choices filtered by lifecycle and retain the choice
       in session state for Phase 6 materialization.
-- [ ] Add injected-runner tests proving review, output changes, and acceptance do
+- [x] Add injected-runner tests proving review, output changes, and acceptance do
       not repeat Codex requests.
-- [ ] Review the Phase 5 change range before proceeding.
+- [x] Review the Phase 5 change range before proceeding.
 
 Phase gate:
 
