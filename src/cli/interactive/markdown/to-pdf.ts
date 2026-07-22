@@ -13,6 +13,7 @@ import { runMarkdownPdfAuthoring } from "./authoring";
 import { createMarkdownPdfInteractiveCodexSession } from "./codex-session";
 import type { MarkdownPdfSavedRecipe } from "./codex-types";
 import { handleMarkdownPdfGeneratedLifecycle } from "./generated-lifecycle";
+import { isRecoverableGeneratedLifecycleBindError } from "./generated-lifecycle/guards";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
@@ -32,38 +33,50 @@ async function promptMarkdownPdfOutput(
   pathPromptContext: InteractivePathPromptContext,
   selection: MarkdownPdfInteractivePreparedRenderSource,
 ): Promise<MarkdownPdfOutputSelection> {
-  const defaultHint = formatDefaultOutputPathHint(runtime, selection.prepared.inputPath, ".pdf");
-  const destination = await select<"default" | "custom" | "change-source" | "cancel">({
-    message: "PDF output destination",
-    choices: [
-      {
-        name: "Use default output",
-        value: "default",
-        description: defaultHint,
-      },
-      {
-        name: "Custom output path",
-        value: "custom",
-        description: "Choose where to write the PDF",
-      },
-      { name: "Change recipe source", value: "change-source" },
-      { name: "Cancel", value: "cancel" },
-    ],
-  });
-  if (destination === "change-source" || destination === "cancel") {
-    return { kind: destination };
-  }
+  while (true) {
+    const defaultHint = formatDefaultOutputPathHint(runtime, selection.prepared.inputPath, ".pdf");
+    const destination = await select<"default" | "custom" | "change-source" | "cancel">({
+      message: "PDF output destination",
+      choices: [
+        {
+          name: "Use default output",
+          value: "default",
+          description: defaultHint,
+        },
+        {
+          name: "Custom output path",
+          value: "custom",
+          description: "Choose where to write the PDF",
+        },
+        { name: "Change recipe source", value: "change-source" },
+        { name: "Cancel", value: "cancel" },
+      ],
+    });
+    if (destination === "change-source" || destination === "cancel") {
+      return { kind: destination };
+    }
 
-  const output =
-    destination === "custom"
-      ? await promptRequiredPathWithConfig("Custom PDF output path", {
-          kind: "file",
-          ...pathPromptContext,
-        })
-      : undefined;
-  const overwrite = await confirm({ message: "Overwrite PDF if it exists?", default: false });
-  const plan = await planMarkdownPdfRender(runtime, selection.prepared, { output, overwrite });
-  return { kind: "plan", plan };
+    const output =
+      destination === "custom"
+        ? await promptRequiredPathWithConfig("Custom PDF output path", {
+            kind: "file",
+            ...pathPromptContext,
+          })
+        : undefined;
+    const overwrite = await confirm({ message: "Overwrite PDF if it exists?", default: false });
+    try {
+      const plan = await planMarkdownPdfRender(runtime, selection.prepared, {
+        output,
+        overwrite,
+      });
+      return { kind: "plan", plan };
+    } catch (error) {
+      if (!isRecoverableGeneratedLifecycleBindError(error)) {
+        throw error;
+      }
+      printLine(runtime.stderr, `Unable to prepare PDF output: ${error.message}`);
+    }
+  }
 }
 
 function renderMarkdownPdfFinalReview(

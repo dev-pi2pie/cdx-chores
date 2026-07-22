@@ -10,6 +10,7 @@ import {
 import { displayPath, printLine } from "../../../actions/shared";
 import type { CliRuntime } from "../../../types";
 import type { MarkdownPdfGeneratedLifecycleSelection } from "../codex-types";
+import { assertPdfOutputDoesNotAliasMaterializedOutput } from "./guards";
 import {
   cleanupOwnedMarkdownPdfSession,
   retainOwnedMarkdownPdfSession,
@@ -184,6 +185,12 @@ export async function executeDurableMaterializationAndRender(
     }
 
     try {
+      await assertPdfOutputDoesNotAliasMaterializedOutput(
+        runtime,
+        pdf.outputPath,
+        materialization,
+        selection.report,
+      );
       const prepared = await prepareMarkdownPdfRender(runtime, {
         input: selection.markdownInput,
         ...materialization.rendererSource,

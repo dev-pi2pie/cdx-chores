@@ -473,6 +473,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         outputPath,
         preparedId: prepared.__harnessPreparedId,
       });
+      const outputError = context.scenario.markdownPdfOutputErrorMessages?.shift();
+      if (outputError) {
+        throw new CliError(outputError, { code: "OUTPUT_EXISTS", exitCode: 2 });
+      }
       return { prepared, outputPath, overwrite: input.overwrite };
     },
     resolveMarkdownPdfRenderOutput: async (
@@ -490,6 +494,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         outputPath,
         stage: "resolve-output",
       });
+      const outputError = context.scenario.markdownPdfOutputErrorMessages?.shift();
+      if (outputError) {
+        throw new CliError(outputError, { code: "OUTPUT_EXISTS", exitCode: 2 });
+      }
       return { outputPath, overwrite: input.overwrite };
     },
     bindResolvedMarkdownPdfRenderOutput: (

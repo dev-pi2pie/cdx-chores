@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { access, writeFile } from "node:fs/promises";
+import { access, link, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import type { CliRuntime } from "../../src/cli/types";
@@ -8,6 +8,7 @@ import type {
   PreparedMarkdownPdfGeneratedCandidate,
 } from "../../src/cli/interactive/markdown/codex-types";
 import type { PreparedMarkdownPdfDeterministicRecipe } from "../../src/cli/interactive/markdown/deterministic-authoring";
+import { assertPdfOutputDoesNotAliasMaterializedOutput } from "../../src/cli/interactive/markdown/generated-lifecycle/guards";
 import {
   cleanupOwnedMarkdownPdfSession,
   createOwnedMarkdownPdfSession,
@@ -15,6 +16,7 @@ import {
 import {
   bindPreparedMarkdownPdfGeneratedCandidate,
   writeBoundMarkdownPdfGeneratedCandidate,
+  type BoundMarkdownPdfGeneratedMaterialization,
   type MarkdownPdfMaterializationServices,
 } from "../../src/cli/interactive/markdown/materialization";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
@@ -242,6 +244,56 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
         overwrite: true,
         report: { kind: "with-artifact" },
       });
+    });
+  });
+
+  test("rejects a PDF path that aliases a materialized recipe filesystem entry", async () => {
+    await withTempFixtureDir("md-pdf-materialization-pdf-alias", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const recipePath = join(fixtureDir, "recipe.yml");
+      const pdfAliasPath = join(fixtureDir, "report.pdf");
+      await writeFile(recipePath, "page:\n  size: A4\n", "utf8");
+      await link(recipePath, pdfAliasPath);
+      const candidate = fakeCandidate("deterministic", "profile");
+      const materialization = {
+        acceptedCandidate: candidate,
+        destination: recipePath,
+        kind: "durable",
+        outputFiles: [recipePath],
+        rendererSource: { profile: recipePath },
+      } as BoundMarkdownPdfGeneratedMaterialization;
+
+      await expect(
+        assertPdfOutputDoesNotAliasMaterializedOutput(runtime, pdfAliasPath, materialization, {
+          kind: "none",
+        }),
+      ).rejects.toThrow("PDF output must be different from generated recipe");
+    });
+  });
+
+  test("rejects a PDF path that aliases an external Codex report", async () => {
+    await withTempFixtureDir("md-pdf-materialization-report-alias", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const recipePath = join(fixtureDir, "recipe.yml");
+      const reportPath = join(fixtureDir, "codex-report.json");
+      const pdfAliasPath = join(fixtureDir, "report.pdf");
+      await writeFile(reportPath, "{}\n", "utf8");
+      await link(reportPath, pdfAliasPath);
+      const candidate = fakeCandidate("codex", "profile");
+      const materialization = {
+        acceptedCandidate: candidate,
+        destination: recipePath,
+        kind: "durable",
+        outputFiles: [recipePath],
+        rendererSource: { profile: recipePath },
+      } as BoundMarkdownPdfGeneratedMaterialization;
+
+      await expect(
+        assertPdfOutputDoesNotAliasMaterializedOutput(runtime, pdfAliasPath, materialization, {
+          kind: "external",
+          path: reportPath,
+        }),
+      ).rejects.toThrow("PDF output must be different from generated recipe");
     });
   });
 

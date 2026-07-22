@@ -17,6 +17,7 @@ import {
   type BoundMarkdownPdfGeneratedMaterialization,
 } from "./materialization";
 import {
+  assertPdfOutputDoesNotAliasMaterializedOutput,
   assertPdfOutputDoesNotCollide,
   isRecoverableGeneratedLifecycleBindError,
 } from "./generated-lifecycle/guards";
@@ -42,6 +43,12 @@ async function materializeTemporaryAndRender(
 ): Promise<GeneratedLifecycleOutcome> {
   assertPdfOutputDoesNotCollide(runtime, pdfOutput.outputPath, materialization, selection.report);
   await writeBoundMarkdownPdfGeneratedCandidate(materialization);
+  await assertPdfOutputDoesNotAliasMaterializedOutput(
+    runtime,
+    pdfOutput.outputPath,
+    materialization,
+    selection.report,
+  );
   const prepared = await prepareMarkdownPdfRender(runtime, {
     input: selection.markdownInput,
     ...materialization.rendererSource,

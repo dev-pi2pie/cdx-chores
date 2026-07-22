@@ -148,6 +148,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
       confirmQueue: [false, true, true],
     });
 
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
     expect(result.markdownPdfPrepareCalls).toEqual([]);
     expect(result.markdownPdfExecuteCalls).toEqual([]);
@@ -178,8 +179,93 @@ describe("interactive Markdown PDF generated lifecycle", () => {
       confirmQueue: [false, false],
     });
 
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
     expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr).toContain("PDF output must be different from generated recipe");
+  });
+
+  test("rejects a PDF output equal to a durable bundle directory", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "custom",
+        "custom",
+        "review",
+        "cancel",
+      ],
+      requiredPathQueue: [
+        "fixtures/report.md",
+        "recipes/durable-template",
+        "recipes/durable-template",
+      ],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr).toContain("PDF output must be different from generated recipe");
+  });
+
+  test("rejects a PDF output that would contain a generated recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "save-and-render",
+        "custom",
+        "custom",
+        "review",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-profile.yml", "recipes"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr).toContain("PDF output must be different from generated recipe");
+  });
+
+  test("rejects a PDF output that would overwrite a with-artifact Codex report", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "save-and-render",
+        "with-artifact",
+        "suggested",
+        "custom",
+        "review",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: [
+        "fixtures/report.md",
+        "generated/codex-project-bundle-1/codex-report.json",
+      ],
+      confirmQueue: [false, true, false, false],
+    });
+
+    expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
     expect(result.markdownPdfExecuteCalls).toEqual([]);
     expect(result.stderr).toContain("PDF output must be different from generated recipe");
   });
@@ -208,6 +294,45 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.markdownPdfSessionCreateCalls).toEqual([]);
     expect(result.markdownPdfExecuteCalls).toEqual([]);
     expect(result.stderr).toContain("PDF and report paths must differ");
+  });
+
+  test("re-prompts generated PDF output after a recoverable resolution error", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfOutputErrorMessages: ["Output already exists"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "temporary-render",
+        "default",
+        "custom",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "output/recovered.pdf"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(2);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stderr).toContain("Unable to prepare PDF output: Output already exists");
+  });
+
+  test("returns from final render confirmation to the same generated recipe review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: temporaryProfileSelections("review", "cancel"),
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.markdownPdfSessionCreateCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr.match(/Markdown PDF recipe review/g)).toHaveLength(2);
   });
 
   test("retries durable renderer preparation without rewriting the recipe", () => {

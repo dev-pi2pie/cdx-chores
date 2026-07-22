@@ -11,6 +11,7 @@ export interface InteractiveHarnessScenario {
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];
   markdownPdfRenderErrorMessages?: string[];
+  markdownPdfOutputErrorMessages?: string[];
   markdownPdfCleanupErrorMessage?: string;
   markdownPdfFontFamilies?: string[];
   markdownPdfFontFamilyRuns?: string[][];

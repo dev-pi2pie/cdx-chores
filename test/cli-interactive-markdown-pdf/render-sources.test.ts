@@ -182,6 +182,22 @@ describe("interactive Markdown PDF render sources", () => {
     ]);
   });
 
+  test("re-prompts PDF output after a recoverable planning error", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfOutputErrorMessages: ["Output already exists"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "default", "custom"],
+      requiredPathQueue: ["fixtures/report.md", "output/recovered.pdf"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(2);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stderr).toContain("Unable to prepare PDF output: Output already exists");
+  });
+
   test("plans a custom output and preserves explicit overwrite intent", () => {
     const result = runInteractiveHarness({
       mode: "run",

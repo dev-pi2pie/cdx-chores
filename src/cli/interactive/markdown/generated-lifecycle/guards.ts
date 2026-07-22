@@ -1,5 +1,7 @@
+import { stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
+import { isNotFoundError } from "../../../actions/markdown/common";
 import { CliError } from "../../../errors";
 import type { CliRuntime } from "../../../types";
 import type {
@@ -33,7 +35,12 @@ export function assertPdfOutputDoesNotCollide(
   report: MarkdownPdfCodexReportRetention,
 ): void {
   const resolvedPdf = resolve(pdfOutput);
-  if (materialization.outputFiles.some((file) => resolve(file) === resolvedPdf)) {
+  const generatedPaths = [materialization.destination, ...materialization.outputFiles];
+  if (
+    generatedPaths.some(
+      (path) => resolve(path) === resolvedPdf || isWithin(resolvedPdf, resolve(path)),
+    )
+  ) {
     throw new CliError("PDF output must be different from generated recipe and report files.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -47,6 +54,54 @@ export function assertPdfOutputDoesNotCollide(
   }
   if (materialization.kind === "temporary" && isWithin(materialization.session.path, resolvedPdf)) {
     throw new CliError("PDF output must be outside the temporary recipe session.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+}
+
+async function existingPathIdentity(
+  path: string,
+): Promise<{ dev: number; ino: number; isFile: boolean } | undefined> {
+  try {
+    const stats = await stat(path);
+    return { dev: stats.dev, ino: stats.ino, isFile: stats.isFile() };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+export async function assertPdfOutputDoesNotAliasMaterializedOutput(
+  runtime: CliRuntime,
+  pdfOutput: string,
+  materialization: BoundMarkdownPdfGeneratedMaterialization,
+  report: MarkdownPdfCodexReportRetention,
+): Promise<void> {
+  assertPdfOutputDoesNotCollide(runtime, pdfOutput, materialization, report);
+  const pdfIdentity = await existingPathIdentity(pdfOutput);
+  if (!pdfIdentity) {
+    return;
+  }
+  if (!pdfIdentity.isFile) {
+    throw new CliError("PDF output must identify a file, not a directory.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  const protectedPaths = [materialization.destination, ...materialization.outputFiles];
+  if (report.kind === "external") {
+    protectedPaths.push(resolve(runtime.cwd, report.path));
+  }
+  const protectedIdentities = await Promise.all(protectedPaths.map(existingPathIdentity));
+  if (
+    protectedIdentities.some(
+      (identity) => identity?.dev === pdfIdentity.dev && identity.ino === pdfIdentity.ino,
+    )
+  ) {
+    throw new CliError("PDF output must be different from generated recipe and report files.", {
       code: "INVALID_INPUT",
       exitCode: 2,
     });

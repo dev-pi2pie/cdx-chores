@@ -200,6 +200,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
       discover: async (options) => {
         discoveryCalls += 1;
         expect(options?.discovery).toBe("fontconfig");
+        expect(options?.platform).toBe(runtime.platform);
         expect(options?.timeoutMs).toBe(1_000);
         return {
           ...discoveryResult(["Source Serif 4", "Source Serif Pro"]),

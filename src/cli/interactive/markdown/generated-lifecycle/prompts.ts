@@ -11,7 +11,7 @@ import type { InteractivePathPromptContext } from "../../shared";
 import { suggestedMarkdownPdfCodexOutputPath } from "../codex-service";
 import type { MarkdownPdfGeneratedLifecycleSelection } from "../codex-types";
 import type { BoundMarkdownPdfGeneratedMaterialization } from "../materialization";
-import { artifactLabel } from "./guards";
+import { artifactLabel, isRecoverableGeneratedLifecycleBindError } from "./guards";
 
 export type ArtifactDestinationOutcome =
   | { kind: "destination"; output: string; overwrite: boolean }
@@ -95,30 +95,39 @@ export async function promptGeneratedPdfOutput(
   pathPromptContext: InteractivePathPromptContext,
   inputPath: string,
 ): Promise<PdfOutputOutcome> {
-  const destination = await select<"default" | "custom" | "review" | "cancel">({
-    message: "PDF output destination",
-    choices: [
-      { name: "Use default output", value: "default" },
-      { name: "Custom output path", value: "custom" },
-      { name: "Back to recipe review", value: "review" },
-      { name: "Cancel", value: "cancel" },
-    ],
-  });
-  if (destination === "review" || destination === "cancel") {
-    return { kind: destination };
+  while (true) {
+    const destination = await select<"default" | "custom" | "review" | "cancel">({
+      message: "PDF output destination",
+      choices: [
+        { name: "Use default output", value: "default" },
+        { name: "Custom output path", value: "custom" },
+        { name: "Back to recipe review", value: "review" },
+        { name: "Cancel", value: "cancel" },
+      ],
+    });
+    if (destination === "review" || destination === "cancel") {
+      return { kind: destination };
+    }
+    const output =
+      destination === "custom"
+        ? await promptRequiredPathWithConfig("Custom PDF output path", {
+            kind: "file",
+            ...pathPromptContext,
+          })
+        : undefined;
+    const overwrite = await confirm({ message: "Overwrite PDF if it exists?", default: false });
+    try {
+      return {
+        kind: "output",
+        output: await resolveMarkdownPdfRenderOutput(runtime, inputPath, { output, overwrite }),
+      };
+    } catch (error) {
+      if (!isRecoverableGeneratedLifecycleBindError(error)) {
+        throw error;
+      }
+      printLine(runtime.stderr, `Unable to prepare PDF output: ${error.message}`);
+    }
   }
-  const output =
-    destination === "custom"
-      ? await promptRequiredPathWithConfig("Custom PDF output path", {
-          kind: "file",
-          ...pathPromptContext,
-        })
-      : undefined;
-  const overwrite = await confirm({ message: "Overwrite PDF if it exists?", default: false });
-  return {
-    kind: "output",
-    output: await resolveMarkdownPdfRenderOutput(runtime, inputPath, { output, overwrite }),
-  };
 }
 
 export async function promptGeneratedFinalRenderNextStep(): Promise<FinalRenderNextStep> {
