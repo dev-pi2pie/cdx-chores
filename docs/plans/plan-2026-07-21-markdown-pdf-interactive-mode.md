@@ -406,7 +406,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-lifecycle-handoff.md`
+- [Phase 6 lifecycle and handoff](jobs/2026-07-22-markdown-pdf-interactive-phase-6-lifecycle-handoff.md)
 
 ### Phase 7: Validation, Guides, And Closeout
 
