@@ -299,6 +299,68 @@ describe("interactive Markdown PDF Codex authoring", () => {
     ]);
   });
 
+  test("retries unavailable suggestions from the editor before building another hint", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfFontFamilyRuns: [[], ["Inter"]],
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "add",
+        "builder",
+        { kind: "body" },
+        "accept",
+        "add",
+        "retry",
+        "builder",
+        { kind: "general-body" },
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Brand Sans"],
+      searchQueue: [{ term: "Int", value: "Inter" }],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfFontDiscoveryCalls).toHaveLength(2);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual([
+      "Prefer Brand Sans for body text",
+      "Prefer Inter",
+    ]);
+  });
+
+  test("preserves mode transitions while editing a font hint", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfFontFamilies: ["Inter"],
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "add",
+        "custom",
+        "accept",
+        "edit",
+        0,
+        "builder",
+        { kind: "body" },
+        "switch-to-custom",
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Initial custom hint", "Initial custom hint", "Final custom hint"],
+      searchQueue: [{ term: "Int", value: "Inter" }],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual(["Final custom hint"]);
+  });
+
   test("shows and rejects an exact duplicate compiled hint", () => {
     const result = runInteractiveHarness({
       mode: "run",

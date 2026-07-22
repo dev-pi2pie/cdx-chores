@@ -13,6 +13,7 @@ export interface InteractiveHarnessScenario {
   markdownPdfRenderErrorMessages?: string[];
   markdownPdfCleanupErrorMessage?: string;
   markdownPdfFontFamilies?: string[];
+  markdownPdfFontFamilyRuns?: string[][];
   markdownPdfFontDiscoveryErrorMessage?: string;
   selectQueue?: unknown[];
   nowIsoString?: string;

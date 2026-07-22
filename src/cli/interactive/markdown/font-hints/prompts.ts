@@ -27,6 +27,12 @@ import type {
 
 type DraftOutcome = MarkdownPdfInteractiveFontHintDraft | "back";
 
+interface DraftModeSwitch {
+  kind: "switch-mode";
+  mode: "builder" | "custom";
+  previous: MarkdownPdfInteractiveFontHintDraft;
+}
+
 function draftKey(compiled: string): string {
   return normalizeMarkdownPdfInteractiveFontHintFamilyName(compiled);
 }
@@ -56,7 +62,7 @@ async function promptCompleteCustomText(current = ""): Promise<string> {
 async function promptCustomDraft(
   runtime: CliRuntime,
   current?: Extract<MarkdownPdfInteractiveFontHintDraft, { kind: "custom" }>,
-): Promise<DraftOutcome | "builder"> {
+): Promise<DraftOutcome | DraftModeSwitch> {
   let text = await promptCompleteCustomText(current?.text);
   while (true) {
     const draft = { kind: "custom" as const, text };
@@ -71,7 +77,10 @@ async function promptCustomDraft(
       ],
     });
     if (action === "accept") return draft;
-    if (action === "back" || action === "builder") return action;
+    if (action === "back") return action;
+    if (action === "builder") {
+      return { kind: "switch-mode", mode: "builder", previous: draft };
+    }
     text = await promptCompleteCustomText(text);
   }
 }
@@ -81,7 +90,7 @@ async function promptBuiltDraft(
   artifact: MarkdownPdfInteractiveFontHintArtifact,
   suggestions: MarkdownPdfInteractiveFontHintSuggestionService,
   current?: MarkdownPdfInteractiveFontHintBuiltDraft,
-): Promise<DraftOutcome | "custom"> {
+): Promise<DraftOutcome | DraftModeSwitch> {
   let preference = await suggestions.promptPreference(current?.preference);
   if (preference === undefined) return "back";
   let intendedUse = current?.intendedUse;
@@ -104,7 +113,9 @@ async function promptBuiltDraft(
     });
     if (action === "accept") return draft;
     if (action === "back") return "back";
-    if (action === "switch-to-custom") return "custom";
+    if (action === "switch-to-custom") {
+      return { kind: "switch-mode", mode: "custom", previous: draft };
+    }
     if (action === "revise-preference") {
       const revisedPreference = await suggestions.promptPreference(preference);
       if (revisedPreference !== undefined) {
@@ -116,6 +127,34 @@ async function promptBuiltDraft(
     if (selected !== "back") {
       intendedUse = normalizedIntendedUse(selected);
     }
+  }
+}
+
+async function promptDraftEditor(
+  runtime: CliRuntime,
+  artifact: MarkdownPdfInteractiveFontHintArtifact,
+  suggestions: MarkdownPdfInteractiveFontHintSuggestionService,
+  mode: "builder" | "custom",
+  current?: MarkdownPdfInteractiveFontHintDraft,
+): Promise<DraftOutcome> {
+  let builtDraft = current?.kind === "built" ? current : undefined;
+  let customDraft = current?.kind === "custom" ? current : undefined;
+  let activeMode = mode;
+
+  while (true) {
+    const outcome =
+      activeMode === "builder"
+        ? await promptBuiltDraft(runtime, artifact, suggestions, builtDraft)
+        : await promptCustomDraft(runtime, customDraft);
+    if (typeof outcome === "string" || outcome.kind !== "switch-mode") {
+      return outcome;
+    }
+    if (outcome.previous.kind === "built") {
+      builtDraft = outcome.previous;
+    } else {
+      customDraft = outcome.previous;
+    }
+    activeMode = outcome.mode;
   }
 }
 
@@ -143,18 +182,7 @@ async function promptDraftMode(
       await suggestions.retryUnavailable();
       continue;
     }
-    if (mode === "custom") {
-      const custom = await promptCustomDraft(runtime);
-      if (custom === "builder") continue;
-      return custom;
-    }
-    const built = await promptBuiltDraft(runtime, artifact, suggestions);
-    if (built === "custom") {
-      const custom = await promptCustomDraft(runtime);
-      if (custom === "builder") continue;
-      return custom;
-    }
-    return built;
+    return await promptDraftEditor(runtime, artifact, suggestions, mode);
   }
 }
 
@@ -237,26 +265,15 @@ export function createMarkdownPdfInteractiveFontHintEditorSession(
             : undefined;
         const currentDraft =
           editIndex === undefined ? undefined : drafts.get(draftKey(hints[editIndex] ?? ""));
-        let next: DraftOutcome;
-        if (currentDraft?.kind === "built") {
-          const built = await promptBuiltDraft(runtime, artifact, suggestions, currentDraft);
-          if (built === "custom") {
-            const custom = await promptCustomDraft(runtime);
-            next = custom === "builder" ? "back" : custom;
-          } else {
-            next = built;
-          }
-        } else if (currentDraft?.kind === "custom") {
-          const custom = await promptCustomDraft(runtime, currentDraft);
-          if (custom === "builder") {
-            const built = await promptBuiltDraft(runtime, artifact, suggestions);
-            next = built === "custom" ? "back" : built;
-          } else {
-            next = custom;
-          }
-        } else {
-          next = await promptDraftMode(runtime, artifact, suggestions);
-        }
+        const next = currentDraft
+          ? await promptDraftEditor(
+              runtime,
+              artifact,
+              suggestions,
+              currentDraft.kind === "built" ? "builder" : "custom",
+              currentDraft,
+            )
+          : await promptDraftMode(runtime, artifact, suggestions);
         if (next === "back") continue;
 
         const otherHints = hints.filter((_hint, index) => index !== editIndex);

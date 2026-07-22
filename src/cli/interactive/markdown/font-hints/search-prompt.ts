@@ -1,3 +1,4 @@
+import type { input } from "@inquirer/prompts";
 import type search from "@inquirer/search";
 import { emitKeypressEvents } from "node:readline";
 
@@ -13,12 +14,11 @@ function isEscapeNavigation(error: unknown): boolean {
   );
 }
 
-export async function promptMarkdownPdfInteractiveFontHintSearch(
+async function promptWithEscapeNavigation<T>(
   runtime: CliRuntime,
-  searchPrompt: typeof search,
-  config: Parameters<typeof search>[0],
   sessionSignal: AbortSignal,
-): Promise<string | undefined> {
+  runPrompt: (signal: AbortSignal) => Promise<T>,
+): Promise<T | undefined> {
   const promptController = new AbortController();
   const cancelActivePrompt = () => promptController.abort(sessionSignal.reason);
   const navigateBack = (_input: string, key: { name?: string }) => {
@@ -31,15 +31,7 @@ export async function promptMarkdownPdfInteractiveFontHintSearch(
   runtime.stdin.on("keypress", navigateBack);
   sessionSignal.addEventListener("abort", cancelActivePrompt, { once: true });
   try {
-    const selected = await searchPrompt(config, {
-      input: runtime.stdin,
-      output: runtime.stderr,
-      signal: promptController.signal,
-    });
-    if (typeof selected !== "string") {
-      throw new TypeError("The font preference prompt returned a non-string value.");
-    }
-    return selected;
+    return await runPrompt(promptController.signal);
   } catch (error) {
     if (isEscapeNavigation(error)) {
       return undefined;
@@ -49,4 +41,37 @@ export async function promptMarkdownPdfInteractiveFontHintSearch(
     sessionSignal.removeEventListener("abort", cancelActivePrompt);
     runtime.stdin.removeListener("keypress", navigateBack);
   }
+}
+
+export async function promptMarkdownPdfInteractiveFontHintSearch(
+  runtime: CliRuntime,
+  searchPrompt: typeof search,
+  config: Parameters<typeof search>[0],
+  sessionSignal: AbortSignal,
+): Promise<string | undefined> {
+  const selected = await promptWithEscapeNavigation(runtime, sessionSignal, async (signal) => {
+    return await searchPrompt(config, { input: runtime.stdin, output: runtime.stderr, signal });
+  });
+  if (selected === undefined) {
+    return undefined;
+  }
+  if (typeof selected !== "string") {
+    throw new TypeError("The font preference prompt returned a non-string value.");
+  }
+  return selected;
+}
+
+export async function promptMarkdownPdfInteractiveFontHintInput(
+  runtime: CliRuntime,
+  inputPrompt: typeof input,
+  config: Parameters<typeof input>[0],
+  sessionSignal: AbortSignal,
+): Promise<string | undefined> {
+  return await promptWithEscapeNavigation(runtime, sessionSignal, async (signal) => {
+    return await inputPrompt(config, {
+      input: runtime.stdin,
+      output: runtime.stderr,
+      signal,
+    });
+  });
 }

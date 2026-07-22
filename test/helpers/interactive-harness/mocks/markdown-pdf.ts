@@ -67,6 +67,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
 
   mock.module(fontDiscoveryModuleUrl, () => ({
     discoverSystemFonts: async (input: Record<string, unknown>) => {
+      const discoveryIndex = context.result.markdownPdfFontDiscoveryCalls.length;
       context.result.markdownPdfFontDiscoveryCalls.push({
         discovery: input.discovery,
         hasSignal: input.signal instanceof AbortSignal,
@@ -75,10 +76,14 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       if (context.scenario.markdownPdfFontDiscoveryErrorMessage) {
         throw new Error(context.scenario.markdownPdfFontDiscoveryErrorMessage);
       }
+      const families =
+        context.scenario.markdownPdfFontFamilyRuns?.[discoveryIndex] ??
+        context.scenario.markdownPdfFontFamilies ??
+        [];
       return {
         adapter: "fontconfig",
         discovery: "fontconfig",
-        faces: (context.scenario.markdownPdfFontFamilies ?? []).map((family, index) => ({
+        faces: families.map((family, index) => ({
           family,
           fullName: family,
           path: `/private/font-${index}.otf`,

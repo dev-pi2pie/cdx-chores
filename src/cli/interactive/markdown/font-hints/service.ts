@@ -8,7 +8,10 @@ import {
   buildMarkdownPdfInteractiveFontHintPreferenceChoices,
   collectInstalledFontFamilies,
 } from "./suggestions";
-import { promptMarkdownPdfInteractiveFontHintSearch } from "./search-prompt";
+import {
+  promptMarkdownPdfInteractiveFontHintInput,
+  promptMarkdownPdfInteractiveFontHintSearch,
+} from "./search-prompt";
 import { normalizeMarkdownPdfInteractiveFontHintText } from "./text";
 import type {
   MarkdownPdfInteractiveFontHintSuggestionService,
@@ -40,7 +43,9 @@ async function discoverInstalledFamilies(
   runtime: CliRuntime,
   signal: AbortSignal,
   discover: typeof discoverSystemFonts,
+  now: () => number,
 ): Promise<DiscoveryResolution> {
+  const startedAt = now();
   try {
     const discovery = await discover({
       platform: runtime.platform,
@@ -52,6 +57,9 @@ async function discoverInstalledFamilies(
       return { kind: "unavailable", retriable: false, showNotice: false };
     }
     const families = collectInstalledFontFamilies(discovery.faces);
+    if (now() - startedAt >= FONT_HINT_DISCOVERY_TIMEOUT_MS) {
+      return { kind: "unavailable", retriable: true, showNotice: true };
+    }
     if (families.length === 0) {
       return { kind: "unavailable", retriable: true, showNotice: true };
     }
@@ -69,11 +77,13 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
   options: {
     discover?: typeof discoverSystemFonts;
     inputPrompt?: typeof input;
+    now?: () => number;
     searchPrompt?: typeof search;
   } = {},
 ): MarkdownPdfInteractiveFontHintSuggestionService {
   const discover = options.discover ?? discoverSystemFonts;
   const inputPrompt = options.inputPrompt ?? input;
+  const now = options.now ?? Date.now;
   const searchPrompt = options.searchPrompt ?? search;
   const controller = new AbortController();
   let state: MarkdownPdfInteractiveFontHintSuggestionState = { kind: "idle" };
@@ -114,7 +124,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     if (!discoveryPromise || forceRetry) {
       state = { kind: "loading" };
       armStatus();
-      discoveryPromise = discoverInstalledFamilies(runtime, controller.signal, discover)
+      discoveryPromise = discoverInstalledFamilies(runtime, controller.signal, discover, now)
         .then((resolution) => {
           state =
             resolution.kind === "ready"
@@ -152,15 +162,21 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
         if (resolution.showNotice) {
           printLine(runtime.stderr, FONT_HINT_UNAVAILABLE_NOTICE);
         }
-        return normalizeMarkdownPdfInteractiveFontHintText(
-          await inputPrompt({
+        const selected = await promptMarkdownPdfInteractiveFontHintInput(
+          runtime,
+          inputPrompt,
+          {
             message: "Font preference",
             default: current ?? "",
             validate: (value) =>
               normalizeMarkdownPdfInteractiveFontHintText(String(value)).length > 0 ||
               "Enter a font preference.",
-          }),
+          },
+          controller.signal,
         );
+        return selected === undefined
+          ? undefined
+          : normalizeMarkdownPdfInteractiveFontHintText(selected);
       }
 
       const defaultPreference = normalizeMarkdownPdfInteractiveFontHintText(current ?? "");

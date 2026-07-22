@@ -256,6 +256,19 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(await service.promptPreference()).toBe("Inter");
   });
 
+  test("rejects discovery results that finish outside the total Interactive budget", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    const timestamps = [0, 1_000];
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => discoveryResult(["Inter"]),
+      inputPrompt: (async () => "Brand Sans") as typeof input,
+      now: () => timestamps.shift() ?? 1_000,
+    });
+
+    expect(await service.promptPreference()).toBe("Brand Sans");
+    expect(stderr.text).toContain("Installed font suggestions are unavailable");
+  });
+
   test("shows and clears delayed TTY discovery status before search", async () => {
     const { runtime, stderr } = createCapturedRuntime();
     (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
@@ -336,6 +349,29 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     await Promise.resolve();
     service.cancel();
     await expect(pending).rejects.toMatchObject({ name: "AbortPromptError" });
+  });
+
+  test("uses Escape as back navigation from unavailable-discovery text input", async () => {
+    const { runtime } = createCapturedRuntime();
+    runtime.stdin = new PassThrough() as unknown as NodeJS.ReadStream;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => discoveryResult([]),
+      inputPrompt: ((_options, context) =>
+        new Promise<string>((_resolve, reject) => {
+          context?.signal?.addEventListener(
+            "abort",
+            () => {
+              const error = new Error("Prompt was aborted", { cause: context.signal?.reason });
+              error.name = "AbortPromptError";
+              reject(error);
+            },
+            { once: true },
+          );
+          runtime.stdin.emit("keypress", "", { name: "escape" });
+        })) as typeof input,
+    });
+
+    expect(await service.promptPreference()).toBeUndefined();
   });
 
   test("keeps the pinned real search keyboard contract usable in a narrow terminal", async () => {
