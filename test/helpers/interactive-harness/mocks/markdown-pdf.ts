@@ -1,6 +1,7 @@
 import { mock } from "bun:test";
 import { extname, resolve } from "node:path";
 
+import { CliError } from "../../../../src/cli/errors";
 import type { HarnessRunnerContext } from "../context";
 import {
   markdownPdfDeterministicAuthoringModuleUrl,
@@ -69,8 +70,14 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         artifact: candidate.artifact,
         candidateId: candidate.candidateId,
       });
-      if (context.scenario.markdownPdfDeterministicBindErrorMessage) {
-        throw new Error(context.scenario.markdownPdfDeterministicBindErrorMessage);
+      if (
+        context.scenario.markdownPdfDeterministicBindErrorMessage &&
+        context.result.markdownPdfDeterministicBindCalls.length === 1
+      ) {
+        throw new CliError(context.scenario.markdownPdfDeterministicBindErrorMessage, {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+        });
       }
       const outputPath = context.resolveHarnessPath(input.output);
       return candidate.artifact === "profile"

@@ -198,11 +198,14 @@ export async function runMarkdownPdfDeterministicAuthoring(
         candidate,
         input.markdownInput,
       );
-      if (outcome === "complete") {
-        return { kind: "complete" };
-      }
-      if (outcome === "change-artifact") {
-        changeArtifact = true;
+      switch (outcome) {
+        case "complete":
+          return { kind: "complete" };
+        case "change-mode":
+          continue;
+        case "change-artifact":
+          changeArtifact = true;
+          continue;
       }
     }
   }

@@ -149,4 +149,32 @@ describe("cli action modules: md to-pdf template init", () => {
       expectNoStderr();
     });
   });
+
+  test("leaves an existing bundle unchanged when either overwrite target is invalid", async () => {
+    await withTempFixtureDir("md-pdf-template-action", async (fixtureDir) => {
+      const outputDir = join(fixtureDir, "pdf-template");
+      const templatePath = join(outputDir, "template.html");
+      const stylePath = join(outputDir, "style.css");
+      await mkdir(stylePath, { recursive: true });
+      await writeFile(templatePath, "old template", "utf8");
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfTemplateInit(runtime, {
+            output: toRepoRelativePath(outputDir),
+            overwrite: true,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Markdown PDF stylesheet is not a file",
+        },
+      );
+
+      expect(await readFile(templatePath, "utf8")).toBe("old template");
+      expect(await readdir(stylePath)).toEqual([]);
+      expectNoOutput();
+    });
+  });
 });
