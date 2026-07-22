@@ -289,15 +289,15 @@ Expected job record:
 
 Tasks:
 
-- [ ] Collect the Markdown input and recipe source for `to-pdf`.
-- [ ] Implement built-in and existing Profile/bundle resolution.
-- [ ] Implement Custom inputs as composition mode followed by explicit-role
+- [x] Collect the Markdown input and recipe source for `to-pdf`.
+- [x] Implement built-in and existing Profile/bundle resolution.
+- [x] Implement Custom inputs as composition mode followed by explicit-role
       selection.
-- [ ] Reuse direct bundle admission, ambiguity, warning, and precedence rules.
-- [ ] Render a grouped recipe review with role provenance and no writes.
-- [ ] Collect the PDF output only after recipe review.
-- [ ] Render the accepted prepared result with one final confirmation.
-- [ ] Add source-routing, provenance, conflict, backtracking, and render tests.
+- [x] Reuse direct bundle admission, ambiguity, warning, and precedence rules.
+- [x] Render a grouped recipe review with role provenance and no writes.
+- [x] Collect the PDF output only after recipe review.
+- [x] Render the accepted prepared result with one final confirmation.
+- [x] Add source-routing, provenance, conflict, backtracking, and render tests.
 - [ ] Review the Phase 3 change range before proceeding.
 
 Phase gate:
