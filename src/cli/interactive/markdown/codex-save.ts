@@ -49,11 +49,9 @@ async function promptOutput(
     message: `${MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[candidate.artifact]} output destination`,
     choices: [
       {
-        name: candidate.setup.outputPreference ? "Use setup output" : "Use generated output",
+        name: "Use generated output",
         value: "suggested",
-        description: candidate.setup.outputPreference
-          ? displayPath(runtime, candidate.setup.outputPreference)
-          : "Resolve a non-conflicting destination",
+        description: "Resolve a non-conflicting destination",
       },
       { name: "Custom output", value: "custom", description: "Choose another destination" },
       { name: "Back to recipe review", value: "review" },
@@ -66,9 +64,7 @@ async function promptOutput(
     }
     return {
       kind: "output",
-      path: candidate.setup.outputPreference
-        ? candidate.setup.outputPreference
-        : await suggestedMarkdownPdfCodexOutputPath(candidate),
+      path: await suggestedMarkdownPdfCodexOutputPath(candidate),
     };
   }
   return {

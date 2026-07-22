@@ -1,4 +1,4 @@
-import { input, select } from "@inquirer/prompts";
+import { confirm, editor, input, select } from "@inquirer/prompts";
 
 import { displayPath, printLine } from "../../actions/shared";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
@@ -34,6 +34,27 @@ function artifactLabel(artifact: MarkdownPdfCodexArtifact): string {
 function normalizedOptionalText(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const PDF_INTENT_PROMPT =
+  "Describe the PDF intent:\n  Optional. Describe the audience, tone, layout, or visual direction.";
+
+async function promptPdfIntent(current?: string): Promise<string | undefined> {
+  const useMultilineEditor = await confirm({
+    message: "Use multiline editor?",
+    default: false,
+  });
+  const value = useMultilineEditor
+    ? await editor({
+        message: PDF_INTENT_PROMPT,
+        default: current ?? "",
+        postfix: ".md",
+      })
+    : await input({
+        message: PDF_INTENT_PROMPT,
+        default: current ?? "",
+      });
+  return normalizedOptionalText(value);
 }
 
 async function promptOptionalSample(
@@ -95,8 +116,8 @@ async function editFontHints(current: readonly string[]): Promise<string[]> {
     }
     const hint = (
       await input({
-        message: "Font family hint",
-        validate: (value) => value.trim().length > 0 || "Enter a font family.",
+        message: "Font preference",
+        validate: (value) => value.trim().length > 0 || "Enter a font preference.",
       })
     ).trim();
     if (!hints.includes(hint)) {
@@ -117,15 +138,19 @@ function renderSetup(runtime: CliRuntime, setup: MarkdownPdfCodexSetup): void {
     runtime.stderr,
     `Base profile: ${setup.baseProfile ? displayPath(runtime, setup.baseProfile) : "none"}`,
   );
-  printLine(
-    runtime.stderr,
-    `Font hints: ${setup.fontHints.length > 0 ? setup.fontHints.join(", ") : "none"}`,
-  );
   if (setup.artifact !== "profile") {
     printLine(
       runtime.stderr,
       `Cover image: ${setup.coverImage ? displayPath(runtime, setup.coverImage) : "none"}`,
     );
+  }
+  printLine(runtime.stderr, "Font hints:");
+  if (setup.fontHints.length === 0) {
+    printLine(runtime.stderr, "- none");
+  } else {
+    for (const hint of setup.fontHints) {
+      printLine(runtime.stderr, `- ${hint}`);
+    }
   }
 }
 
@@ -151,9 +176,7 @@ export async function collectMarkdownPdfCodexSetup(
     setup = {
       artifact: context.artifact,
       fontHints: [],
-      intent: normalizedOptionalText(
-        await input({ message: "Describe the PDF direction (optional)", default: "" }),
-      ),
+      intent: await promptPdfIntent(),
       sample: sampleOutcome.sample,
     };
   }
@@ -163,13 +186,11 @@ export async function collectMarkdownPdfCodexSetup(
     const action: CodexSetupAction = await select<CodexSetupAction>({
       message: `${artifactLabel(context.artifact)} setup next step`,
       choices: [
-        { name: "Continue", value: "continue" },
-        { name: "Revise intent", value: "intent" },
+        { name: setup.intent ? "Revise PDF intent" : "Set PDF intent", value: "intent" },
         { name: "Set base profile", value: "base-profile" },
         ...(setup.baseProfile
           ? [{ name: "Clear base profile", value: "clear-base-profile" as const }]
           : []),
-        { name: "Edit font hints", value: "font-hints" },
         ...(context.artifact !== "profile"
           ? [
               { name: "Set cover image", value: "cover-image" as const },
@@ -178,6 +199,8 @@ export async function collectMarkdownPdfCodexSetup(
                 : []),
             ]
           : []),
+        { name: "Edit font hints", value: "font-hints" },
+        { name: "Continue", value: "continue" },
         { name: "Back", value: "back" },
         { name: "Cancel", value: "cancel" },
       ],
@@ -191,12 +214,7 @@ export async function collectMarkdownPdfCodexSetup(
     if (action === "intent") {
       setup = {
         ...setup,
-        intent: normalizedOptionalText(
-          await input({
-            message: "Describe the PDF direction (optional)",
-            default: setup.intent ?? "",
-          }),
-        ),
+        intent: await promptPdfIntent(setup.intent),
       };
       continue;
     }

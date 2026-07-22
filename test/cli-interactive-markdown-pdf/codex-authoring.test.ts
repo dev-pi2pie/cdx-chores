@@ -45,12 +45,13 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfCodexPrepareCalls).toEqual([]);
   });
 
-  test("offers direct Project authoring from to-pdf without Profile or Template Codex modes", () => {
+  test("offers the full helper-aligned Codex matrix from to-pdf", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
       requiredPathQueue: ["fixtures/report.md"],
       inputQueue: [""],
+      confirmQueue: [false],
       selectQueue: [
         ...TO_PDF_ENTRY,
         "generated",
@@ -70,7 +71,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     ).toContain("project-bundle");
     expect(
       result.selectChoicesByMessage["Choose preparation mode"]?.map((choice) => choice.value),
-    ).toEqual(["starter", "formal-guide", "back", "cancel"]);
+    ).toEqual(["starter", "formal-guide", "codex-assistant", "back", "cancel"]);
     expect(result.promptCalls.some((call) => call.message === "Markdown preparation sample")).toBe(
       false,
     );
@@ -78,13 +79,45 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfCodexPrepareCalls).toEqual([]);
   });
 
+  test.each(["profile", "template-bundle"] as const)(
+    "reuses the selected to-pdf Markdown input for %s Codex preparation",
+    (artifact) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        requiredPathQueue: ["fixtures/report.md"],
+        inputQueue: ["Editorial report"],
+        confirmQueue: [false, true],
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          artifact,
+          "codex-assistant",
+          "continue",
+          "cancel",
+        ],
+      });
+
+      expect(result.markdownPdfCodexPrepareCalls).toEqual([
+        expect.objectContaining({
+          artifact,
+          intent: "Editorial report",
+          sample: "fixtures/report.md",
+        }),
+      ]);
+      expect(
+        result.promptCalls.some((call) => call.message === "Markdown preparation sample"),
+      ).toBe(false);
+    },
+  );
+
   test("keeps the optional sample in pdf-recipes and treats blank intent as empty", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...recipesCodexSelections("profile"), "continue", "cancel"],
       inputQueue: ["   "],
-      confirmQueue: [false],
+      confirmQueue: [false, false],
     });
 
     expect(result.promptCalls).toContainEqual({
@@ -107,6 +140,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       markdownPdfMocks: true,
       selectQueue: [...recipesCodexSelections(artifact), "cancel"],
       inputQueue: [""],
+      confirmQueue: [false],
     });
 
     const setupMessage =
@@ -116,8 +150,36 @@ describe("interactive Markdown PDF Codex authoring", () => {
           ? "Template bundle setup next step"
           : "Project bundle setup next step";
     const choices = result.selectChoicesByMessage[setupMessage]?.map((choice) => choice.value);
-    expect(choices?.includes("cover-image")).toBe(hasCoverChoice);
-    expect(choices?.includes("output")).toBe(false);
+    expect(choices).toEqual([
+      "intent",
+      "base-profile",
+      ...(hasCoverChoice ? ["cover-image"] : []),
+      "font-hints",
+      "continue",
+      "back",
+      "cancel",
+    ]);
+  });
+
+  test("collects optional multiline PDF intent before the setup review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...recipesCodexSelections("profile"), "continue", "cancel"],
+      editorQueue: ["  Restrained report\nwith compact tables  "],
+      confirmQueue: [true, true],
+    });
+
+    expect(result.promptCalls).toContainEqual({
+      kind: "editor",
+      message:
+        "Describe the PDF intent:\n  Optional. Describe the audience, tone, layout, or visual direction.",
+      defaultValue: "",
+      postfix: ".md",
+    });
+    expect(result.markdownPdfCodexPrepareCalls).toEqual([
+      expect.objectContaining({ intent: "Restrained report\nwith compact tables" }),
+    ]);
   });
 
   test("adds and removes font hints and retains a Template cover choice", () => {
@@ -138,7 +200,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: ["", "Inter", "Source Serif 4"],
       requiredPathQueue: ["fixtures/cover.png"],
-      confirmQueue: [true],
+      confirmQueue: [false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toEqual([
@@ -164,6 +226,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/base.yml", "fixtures/cover.png"],
+      confirmQueue: [false],
     });
 
     expect(
@@ -188,7 +251,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/base.yml", "fixtures/cover.png"],
-      confirmQueue: [true],
+      confirmQueue: [false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
@@ -209,7 +272,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "cancel",
       ],
       inputQueue: ["", "Revised direction"],
-      confirmQueue: [false, true],
+      confirmQueue: [false, false, false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toEqual([
@@ -225,7 +288,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       markdownPdfMocks: true,
       selectQueue: [...recipesCodexSelections("profile"), "continue", "regenerate", "cancel"],
       inputQueue: [""],
-      confirmQueue: [true, true],
+      confirmQueue: [false, true, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toEqual([
@@ -259,7 +322,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "exit",
         ],
         inputQueue: [""],
-        confirmQueue: [true, false, true],
+        confirmQueue: [false, true, false, true],
       });
 
       const candidateId = `codex-${artifact}-1`;
@@ -308,7 +371,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["reports/first.json", "recipes/first.yml", "recipes/final.yml"],
-      confirmQueue: [true, false, true, true],
+      confirmQueue: [false, true, false, true, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
@@ -348,7 +411,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           ...(next === "review" ? ["cancel"] : []),
         ],
         inputQueue: [""],
-        confirmQueue: [true],
+        confirmQueue: [false, true],
       });
 
       expect(
@@ -376,7 +439,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         ],
         inputQueue: [""],
         requiredPathQueue: [output],
-        confirmQueue: [true, false, true],
+        confirmQueue: [false, true, false, true],
       });
 
       expect(result.markdownPdfCodexBindCalls).toEqual([expect.objectContaining({ output })]);
@@ -398,7 +461,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["recipes/exact-project"],
-      confirmQueue: [true, false, true],
+      confirmQueue: [false, true, false, true],
     });
 
     expect(result.markdownPdfCodexBindCalls).toEqual([
@@ -415,7 +478,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         markdownPdfCodexUnusableArtifacts: [artifact],
         selectQueue: [...recipesCodexSelections(artifact), "continue", "cancel"],
         inputQueue: [""],
-        confirmQueue: [true],
+        confirmQueue: [false, true],
       });
 
       expect(result.stderr).toContain("Codex request: no usable candidate");
@@ -427,7 +490,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
-  test("temporary Project rendering ignores an explicit durable output preference", () => {
+  test("temporary Project rendering resolves output only after lifecycle choice", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
@@ -442,7 +505,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/report.md"],
-      confirmQueue: [true, false, true],
+      confirmQueue: [false, true, false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
@@ -477,7 +540,9 @@ describe("interactive Markdown PDF Codex authoring", () => {
         inputQueue: [""],
         requiredPathQueue,
         confirmQueue:
-          lifecycle === "save-and-render" ? [true, false, false, true] : [true, false, true],
+          lifecycle === "save-and-render"
+            ? [false, true, false, false, true]
+            : [false, true, false, true],
       });
 
       expect(result.markdownPdfCodexPrepareCalls).toEqual([

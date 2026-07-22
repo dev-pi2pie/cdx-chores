@@ -54,16 +54,13 @@ export async function promptArtifactDestination(
       },
     );
   } else {
-    const explicit = candidate.candidate.setup.outputPreference;
     const action = await select<"suggested" | "custom" | "review" | "cancel">({
       message: `${artifactLabel(selection)} output destination`,
       choices: [
         {
-          name: explicit ? "Use setup output" : "Use generated output",
+          name: "Use generated output",
           value: "suggested",
-          description: explicit
-            ? displayPath(runtime, explicit)
-            : "Resolve a non-conflicting destination",
+          description: "Resolve a non-conflicting destination",
         },
         { name: "Custom output", value: "custom" },
         { name: "Back to recipe review", value: "review" },
@@ -84,7 +81,7 @@ export async function promptArtifactDestination(
               ...pathPromptContext,
             },
           )
-        : (explicit ?? (await suggestedMarkdownPdfCodexOutputPath(candidate.candidate)));
+        : await suggestedMarkdownPdfCodexOutputPath(candidate.candidate);
   }
   const overwrite = await confirm({
     message: "Overwrite recipe output if it exists?",

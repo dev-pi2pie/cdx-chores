@@ -70,9 +70,9 @@ async function promptArtifact(
   });
 }
 
-async function promptPreparationMode(
-  entry: MarkdownPdfInteractiveEntry,
-): Promise<MarkdownPdfDeterministicPreparation | "codex-assistant" | "back" | "cancel"> {
+async function promptPreparationMode(): Promise<
+  MarkdownPdfDeterministicPreparation | "codex-assistant" | "back" | "cancel"
+> {
   return await select({
     message: "Choose preparation mode",
     choices: [
@@ -86,15 +86,11 @@ async function promptPreparationMode(
         value: "formal-guide",
         description: "Answer structured layout, margin, and ToC questions",
       },
-      ...(entry === "pdf-recipes"
-        ? [
-            {
-              name: "Codex Assistant",
-              value: "codex-assistant" as const,
-              description: "Draft and adapt the recipe from bounded signals",
-            },
-          ]
-        : []),
+      {
+        name: "Codex Assistant",
+        value: "codex-assistant",
+        description: "Draft and adapt the recipe from bounded signals",
+      },
       { name: "Back", value: "back", description: "Choose another artifact" },
       { name: "Cancel", value: "cancel", description: "Exit without writing" },
     ],
@@ -256,7 +252,7 @@ export async function runMarkdownPdfAuthoring(
 
     let changeArtifact = false;
     while (!changeArtifact) {
-      const preparation = await promptPreparationMode(input.entry);
+      const preparation = await promptPreparationMode();
       if (preparation === "cancel") {
         return { kind: "complete" };
       }

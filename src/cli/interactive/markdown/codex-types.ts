@@ -11,7 +11,6 @@ export interface MarkdownPdfCodexSetup {
   coverImage?: string;
   fontHints: string[];
   intent?: string;
-  outputPreference?: string;
   sample?: string;
 }
 
