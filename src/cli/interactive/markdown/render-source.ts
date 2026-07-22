@@ -20,10 +20,12 @@ import type {
   MarkdownPdfInteractiveCustomInputMode,
   MarkdownPdfInteractiveExplicitRole,
   MarkdownPdfInteractiveRenderSource,
+  MarkdownPdfInteractiveSource,
 } from "./types";
 
 export type MarkdownPdfInteractiveRenderSourceOutcome =
   | MarkdownPdfInteractivePreparedRenderSource
+  | { kind: "generated" }
   | { kind: "back" }
   | { kind: "cancel" };
 
@@ -156,9 +158,11 @@ async function collectMarkdownPdfRenderSource(
   pathPromptContext: InteractivePathPromptContext,
   input: string,
   previewBundle: typeof previewMarkdownPdfRenderBundle,
-): Promise<CollectedMarkdownPdfRenderSource | { kind: "back" } | { kind: "cancel" }> {
+): Promise<
+  CollectedMarkdownPdfRenderSource | { kind: "generated" } | { kind: "back" } | { kind: "cancel" }
+> {
   while (true) {
-    const source = await select<MarkdownPdfInteractiveRenderSource | "back" | "cancel">({
+    const source = await select<MarkdownPdfInteractiveSource | "back" | "cancel">({
       message: "Choose a recipe for this PDF",
       choices: [
         {
@@ -181,12 +185,20 @@ async function collectMarkdownPdfRenderSource(
           value: "custom-inputs",
           description: "Combine explicit roles with an optional bundle",
         },
+        {
+          name: "Create a recipe",
+          value: "generated",
+          description: "Prepare a deterministic Profile or Template bundle",
+        },
         { name: "Back", value: "back", description: "Return to the Markdown menu" },
         { name: "Cancel", value: "cancel", description: "Exit without rendering" },
       ],
     });
     if (source === "back" || source === "cancel") {
       return { kind: source };
+    }
+    if (source === "generated") {
+      return { kind: "generated" };
     }
     if (source === "built-in") {
       return { source, input: { input } };

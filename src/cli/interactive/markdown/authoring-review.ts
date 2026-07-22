@@ -1,0 +1,128 @@
+import { displayPath, printLine } from "../../actions/shared";
+import type { CliRuntime } from "../../types";
+import type {
+  MarkdownPdfDeterministicArtifact,
+  PreparedMarkdownPdfDeterministicRecipe,
+} from "./deterministic-authoring";
+import type { MarkdownPdfInteractiveEntry } from "./types";
+
+export type MarkdownPdfCandidateReviewAction =
+  | "save"
+  | "temporary-render"
+  | "save-and-render"
+  | "revise-layout"
+  | "revise-margins"
+  | "revise-toc"
+  | "change-mode"
+  | "change-artifact"
+  | "cancel";
+
+export const MARKDOWN_PDF_ARTIFACT_LABELS: Record<MarkdownPdfDeterministicArtifact, string> = {
+  profile: "Profile",
+  "template-bundle": "Template bundle",
+};
+
+function formatMargins(candidate: PreparedMarkdownPdfDeterministicRecipe): string {
+  const { top, right, bottom, left } = candidate.prepared.normalizedOptions.margins;
+  return top === right && top === bottom && top === left
+    ? top
+    : `${top} ${right} ${bottom} ${left}`;
+}
+
+export function renderDeterministicRecipeReview(
+  runtime: CliRuntime,
+  candidate: PreparedMarkdownPdfDeterministicRecipe,
+  markdownInput?: string,
+): void {
+  const options = candidate.prepared.normalizedOptions;
+  printLine(runtime.stderr, "Markdown PDF recipe review");
+  printLine(runtime.stderr, "");
+  if (markdownInput) {
+    printLine(runtime.stderr, `Input: ${markdownInput}`);
+  }
+  printLine(runtime.stderr, `Artifact: ${MARKDOWN_PDF_ARTIFACT_LABELS[candidate.artifact]}`);
+  printLine(runtime.stderr, `Preparation mode: ${candidate.preparation}`);
+  printLine(runtime.stderr, "Validation: passed");
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, "Effective recipe:");
+  printLine(runtime.stderr, `- Preset: ${options.preset}`);
+  printLine(runtime.stderr, `- Page: ${options.pageSize} ${options.orientation}`);
+  printLine(runtime.stderr, `- Margins: ${formatMargins(candidate)}`);
+  printLine(
+    runtime.stderr,
+    `- ToC: ${options.toc ? `enabled (depth ${options.tocDepth}, page break ${options.tocPageBreak})` : "disabled"}`,
+  );
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, "Planned recipe files:");
+  if (candidate.artifact === "profile") {
+    printLine(runtime.stderr, "- profile.yml or profile.json (selected at save time)");
+  } else {
+    printLine(runtime.stderr, "- template.html");
+    printLine(runtime.stderr, "- style.css");
+  }
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, "Dry run: no files have been written.");
+}
+
+export function markdownPdfCandidateReviewChoices(
+  entry: MarkdownPdfInteractiveEntry,
+  candidate: PreparedMarkdownPdfDeterministicRecipe,
+) {
+  const label = MARKDOWN_PDF_ARTIFACT_LABELS[candidate.artifact].toLowerCase();
+  const acceptChoices =
+    entry === "pdf-recipes"
+      ? [
+          {
+            name: `Save ${label}`,
+            value: "save" as const,
+            description: "Choose the required durable output and save",
+          },
+        ]
+      : [
+          {
+            name: `Render with temporary ${label}`,
+            value: "temporary-render" as const,
+            description: "Remove the generated artifact after a successful render",
+          },
+          {
+            name: `Save ${label} and render`,
+            value: "save-and-render" as const,
+            description: "Keep the generated artifact after rendering",
+          },
+        ];
+  const revisionChoices =
+    candidate.preparation === "formal-guide"
+      ? ([
+          { name: "Revise layout", value: "revise-layout" },
+          { name: "Revise margins", value: "revise-margins" },
+          { name: "Revise table of contents", value: "revise-toc" },
+        ] as const)
+      : [];
+  return [
+    ...acceptChoices,
+    ...revisionChoices,
+    { name: "Change preparation mode", value: "change-mode" as const },
+    { name: "Change artifact", value: "change-artifact" as const },
+    { name: "Cancel", value: "cancel" as const },
+  ];
+}
+
+export function renderFinalRecipeSaveReview(
+  runtime: CliRuntime,
+  candidate: PreparedMarkdownPdfDeterministicRecipe,
+  outputPath: string,
+  outputFiles: readonly string[],
+  overwrite: boolean,
+): void {
+  printLine(runtime.stderr, "Final recipe save review");
+  printLine(runtime.stderr, "");
+  printLine(runtime.stderr, `Artifact: ${MARKDOWN_PDF_ARTIFACT_LABELS[candidate.artifact]}`);
+  printLine(runtime.stderr, `Output: ${outputPath}`);
+  if (outputFiles.length > 1) {
+    printLine(runtime.stderr, "Files:");
+    for (const file of outputFiles) {
+      printLine(runtime.stderr, `- ${displayPath(runtime, file)}`);
+    }
+  }
+  printLine(runtime.stderr, `Overwrite: ${overwrite ? "enabled" : "disabled"}`);
+}

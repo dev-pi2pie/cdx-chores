@@ -127,24 +127,21 @@ describe("interactive mode routing: top-level smoke", () => {
     ]);
   });
 
-  test("fails closed when the markdown pdf recipes shell route is selected", () => {
-    const result = runInteractiveHarness(
-      {
-        mode: "run",
-        selectQueue: ["md", "md:pdf-recipes"],
-      },
-      { allowFailure: true },
-    );
+  test("routes the markdown pdf recipes branch into deterministic artifact selection", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: ["md", "md:pdf-recipes", "cancel"],
+    });
 
     expect(result.actionCalls).toEqual([]);
     expect(result.pathCalls).toHaveLength(0);
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
       "select:Choose a command",
       "select:Choose a markdown command",
+      "select:What would you like to create?",
     ]);
-    expect(result.error).toBe(
-      "Interactive Markdown PDF route md:pdf-recipes is not implemented yet.",
-    );
+    expect(result.error).toBeUndefined();
   });
 
   test("routes a markdown flow through file output options", () => {

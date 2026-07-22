@@ -42,6 +42,9 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     markdownPdfPlanCalls: [],
     markdownPdfExecuteCalls: [],
     markdownPdfBundleDiscoveryCalls: [],
+    markdownPdfDeterministicPrepareCalls: [],
+    markdownPdfDeterministicBindCalls: [],
+    markdownPdfDeterministicWriteCalls: [],
   };
 }
 

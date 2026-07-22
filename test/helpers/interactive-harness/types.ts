@@ -4,6 +4,7 @@ export interface InteractiveHarnessScenario {
   markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
   markdownPdfIgnoredBundleFiles?: string[];
   markdownPdfPrepareErrorMessage?: string;
+  markdownPdfDeterministicBindErrorMessage?: string;
   markdownPdfRenderWarnings?: string[];
   selectQueue?: unknown[];
   nowIsoString?: string;
@@ -83,6 +84,9 @@ export interface InteractiveHarnessResult {
   markdownPdfPlanCalls: Array<Record<string, unknown>>;
   markdownPdfExecuteCalls: Array<Record<string, unknown>>;
   markdownPdfBundleDiscoveryCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicBindCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicWriteCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;

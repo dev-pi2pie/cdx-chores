@@ -9,6 +9,7 @@ import { displayPath, printLine } from "../../actions/shared";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
+import { runMarkdownPdfDeterministicAuthoring } from "./authoring";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
@@ -138,6 +139,16 @@ export async function handleMarkdownPdfToPdfInteractiveAction(
     }
     if (source.kind === "cancel") {
       return { kind: "complete" };
+    }
+    if (source.kind === "generated") {
+      const outcome = await runMarkdownPdfDeterministicAuthoring(runtime, pathPromptContext, {
+        entry: "to-pdf",
+        markdownInput: input,
+      });
+      if (outcome.kind === "change-source") {
+        continue;
+      }
+      return outcome;
     }
 
     if ((await handlePreparedMarkdownPdfRender(runtime, pathPromptContext, source)) === "done") {

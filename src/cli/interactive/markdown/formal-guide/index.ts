@@ -5,6 +5,7 @@ export {
   reviseMarkdownPdfFormalGuideToc,
 } from "./collection";
 export { compileMarkdownPdfFormalGuideOptions } from "./compile";
+export { createMarkdownPdfFormalGuidePrompts } from "./prompts";
 export type {
   MarkdownPdfFormalGuideAnswers,
   MarkdownPdfFormalGuideCustomMargins,

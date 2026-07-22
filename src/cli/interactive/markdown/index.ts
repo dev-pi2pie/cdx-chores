@@ -26,8 +26,7 @@ export async function handleMarkdownInteractiveAction(
   }
 
   if (action === "md:pdf-recipes") {
-    await handleMarkdownPdfRecipesInteractiveAction();
-    return { kind: "complete" };
+    return await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext);
   }
 
   if (action === "md:to-docx") {
