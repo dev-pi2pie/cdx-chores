@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-07-10
+modified-date: 2026-07-22
 status: completed
 agent: codex
 ---
@@ -12,8 +12,9 @@ Document the direct `md pdf-profile codex` helper for drafting reusable Markdown
 PDF profiles from bounded document signals, user intent, font hints, existing
 profiles, and deterministic fallback defaults.
 
-This guide covers the direct profile helper only. Interactive Markdown PDF
-flows remain a later workflow layer.
+This guide covers the direct profile helper only. For guided Profile
+preparation, temporary or durable rendering, and saved-recipe handoff, see
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -351,6 +352,7 @@ template-only behavior.
 
 ## Related Docs
 
+- [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [PDF Backend License Guidance](pdf-backend-license-guidance.md)

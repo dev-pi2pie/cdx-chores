@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-10
+modified-date: 2026-07-22
 status: completed
 agent: codex
 ---
@@ -31,11 +31,15 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-## Current Release Boundary
+## Current Command Boundary
 
-Markdown PDF rendering, profile initialization, template initialization, and the
-direct Codex-assisted profile, template, and project helpers are direct CLI
-flows. Interactive Markdown PDF flows remain deferred to a later plan.
+Markdown PDF rendering, profile initialization, template initialization, and
+the Codex-assisted profile, template, and project helpers remain available as
+direct CLI flows. Interactive mode now orchestrates the same artifacts through
+`md -> to-pdf` for rendering and `md -> pdf-recipes` for durable authoring.
+
+See [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md) for the
+guided preparation, review, lifecycle, recovery, and handoff behavior.
 
 ## Codex Helper Choice
 

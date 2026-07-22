@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
-modified-date: 2026-07-23
+modified-date: 2026-07-22
 status: active
 agent: codex
 ---
@@ -650,7 +650,7 @@ Tasks:
 
 Validation:
 
-- [ ] Run the focused Interactive Markdown PDF matrix.
+- [x] Run the focused Interactive Markdown PDF matrix.
 - [ ] Run direct Profile, Template, Project, bundle, and renderer regression
       suites.
 - [ ] Run repository lint, format, build, and full tests.
@@ -667,19 +667,19 @@ Validation:
 
 Guides:
 
-- [ ] Create `docs/guides/markdown-pdf-interactive-usage.md` for the two entry
+- [x] Create `docs/guides/markdown-pdf-interactive-usage.md` for the two entry
       goals, preparation choices, review checkpoints, outputs, and recovery.
-- [ ] Explain the Interactive workflow with three short ASCII diagram blocks
+- [x] Explain the Interactive workflow with three short ASCII diagram blocks
       for `to-pdf`, `pdf-recipes`, and temporary rendering.
-- [ ] Document prepare-once review and the temporary, durable, and handoff
+- [x] Document prepare-once review and the temporary, durable, and handoff
       lifecycle boundaries.
-- [ ] Explain cross-platform OS temporary-directory selection without
+- [x] Explain cross-platform OS temporary-directory selection without
       promising a fixed absolute path, including canonical ownership,
       cleanup-after-success, retention-after-failure, and cleanup-failure
       behavior.
-- [ ] Update `docs/guides/markdown-pdf-usage.md` and other current references
+- [x] Update `docs/guides/markdown-pdf-usage.md` and other current references
       only for verified shipped behavior.
-- [ ] Review the new guide and closeout wording with a documentation reviewer
+- [x] Review the new guide and closeout wording with a documentation reviewer
       and resolve all actionable findings.
 
 Review and closure:
@@ -710,7 +710,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-7-validation-closeout.md`
+- [Phase 7 validation and closeout](jobs/2026-07-22-markdown-pdf-interactive-phase-7-validation-closeout.md)
 
 ## Validation Plan
 
