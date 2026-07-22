@@ -196,7 +196,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
       ],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/report.md", "reports/render.json", "reports/render.json"],
-      confirmQueue: [true, false],
+      confirmQueue: [false, true, false],
     });
 
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);

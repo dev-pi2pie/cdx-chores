@@ -25,7 +25,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
       selectQueue: [...projectSaveSelections("choose"), "sample", "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/sample.md"],
-      confirmQueue: [true, false, true, false, true],
+      confirmQueue: [false, true, false, true, false, true],
     });
 
     expect(result.markdownPdfPrepareCalls).toEqual([
@@ -47,7 +47,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
       selectQueue: [...projectSaveSelections("choose"), "choose", "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/sample.md", "fixtures/render.md"],
-      confirmQueue: [true, false, true, false, true],
+      confirmQueue: [false, true, false, true, false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls[0]?.sample).toBe("fixtures/sample.md");
@@ -61,7 +61,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
       selectQueue: [...projectSaveSelections("none"), "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/render.md"],
-      confirmQueue: [true, false, true, false, true],
+      confirmQueue: [false, true, false, true, false, true],
     });
 
     expect(result.markdownPdfCodexPrepareCalls[0]?.sample).toBeUndefined();
