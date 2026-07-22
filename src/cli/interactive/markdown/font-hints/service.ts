@@ -30,6 +30,13 @@ type DiscoveryResolution =
   | { kind: "ready"; families: string[] }
   | { kind: "unavailable"; retriable: boolean; showNotice: boolean };
 
+type ScheduleDeadline = (callback: () => void, timeoutMs: number) => () => void;
+
+const scheduleDeadlineWithTimer: ScheduleDeadline = (callback, timeoutMs) => {
+  const timeout = setTimeout(callback, timeoutMs);
+  return () => clearTimeout(timeout);
+};
+
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
@@ -46,11 +53,12 @@ async function discoverInstalledFamilies(
   signal: AbortSignal,
   discover: typeof discoverSystemFonts,
   now: () => number,
+  scheduleDeadline: ScheduleDeadline,
   timeoutMs: number,
 ): Promise<DiscoveryResolution> {
   const startedAt = now();
   const discoveryController = new AbortController();
-  let timeout: NodeJS.Timeout | undefined;
+  let cancelDeadline: (() => void) | undefined;
   let resolveSessionAbort: ((value: typeof FONT_HINT_DISCOVERY_ABORTED) => void) | undefined;
   const abortDiscovery = () => {
     discoveryController.abort(signal.reason);
@@ -65,7 +73,7 @@ async function discoverInstalledFamilies(
       resolveSessionAbort = resolve;
     });
     const deadline = new Promise<typeof FONT_HINT_DISCOVERY_TIMED_OUT>((resolve) => {
-      timeout = setTimeout(() => {
+      cancelDeadline = scheduleDeadline(() => {
         discoveryController.abort(new DOMException("Font discovery timed out.", "TimeoutError"));
         resolve(FONT_HINT_DISCOVERY_TIMED_OUT);
       }, timeoutMs);
@@ -100,9 +108,7 @@ async function discoverInstalledFamilies(
     }
     return { kind: "unavailable", retriable: true, showNotice: true };
   } finally {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+    cancelDeadline?.();
     signal.removeEventListener("abort", abortDiscovery);
   }
 }
@@ -114,6 +120,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     discoveryTimeoutMs?: number;
     inputPrompt?: typeof input;
     now?: () => number;
+    scheduleDeadline?: ScheduleDeadline;
     searchPrompt?: typeof search;
   } = {},
 ): MarkdownPdfInteractiveFontHintSuggestionService {
@@ -121,6 +128,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
   const discoveryTimeoutMs = options.discoveryTimeoutMs ?? FONT_HINT_DISCOVERY_TIMEOUT_MS;
   const inputPrompt = options.inputPrompt ?? input;
   const now = options.now ?? Date.now;
+  const scheduleDeadline = options.scheduleDeadline ?? scheduleDeadlineWithTimer;
   const searchPrompt = options.searchPrompt ?? search;
   const controller = new AbortController();
   let state: MarkdownPdfInteractiveFontHintSuggestionState = { kind: "idle" };
@@ -166,6 +174,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
         controller.signal,
         discover,
         now,
+        scheduleDeadline,
         discoveryTimeoutMs,
       )
         .then((resolution) => {

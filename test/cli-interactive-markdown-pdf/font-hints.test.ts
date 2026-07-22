@@ -279,6 +279,10 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
       },
       discoveryTimeoutMs: 20,
       inputPrompt: (async () => "Brand Sans") as typeof input,
+      scheduleDeadline: (callback) => {
+        queueMicrotask(callback);
+        return () => {};
+      },
     });
     const startedAt = Date.now();
 
