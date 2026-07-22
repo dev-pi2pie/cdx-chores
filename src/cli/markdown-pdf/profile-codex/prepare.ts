@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { stat } from "node:fs/promises";
-import { join, parse, relative, resolve } from "node:path";
+import { join, parse, resolve } from "node:path";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
@@ -25,6 +25,7 @@ import { CliError } from "../../errors";
 import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
 import {
   bindMarkdownPdfProfileCodexDestination,
   type MarkdownPdfProfileCodexDestinationOptions,
@@ -167,8 +168,7 @@ function resolveOptionalInputPath(
 }
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
-  const value = relative(runtime.cwd, path);
-  return value.length > 0 ? value : ".";
+  return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
 }
 
 function codexFailureMessage(kind: string): string {

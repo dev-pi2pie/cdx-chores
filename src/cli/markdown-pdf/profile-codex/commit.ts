@@ -1,18 +1,16 @@
-import { relative } from "node:path";
-
 import { createMarkdownPdfCodexReportArtifact } from "../../markdown-pdf/codex-report";
 import { writeMarkdownPdfCodexReportArtifact } from "../../markdown-pdf/codex-report";
 import { CliError } from "../../errors";
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import { displayPath, printLine } from "../../actions/shared";
+import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
 import type { BoundMarkdownPdfProfileCodexDestination } from "./destination";
 import type { PreparedMarkdownPdfProfileCodex } from "./prepare";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
-  const value = relative(runtime.cwd, path);
-  return value.length > 0 ? value : ".";
+  return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
 }
 
 async function writeReportIfRequested(input: {

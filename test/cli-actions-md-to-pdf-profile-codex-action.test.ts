@@ -1926,6 +1926,40 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("redacts parent traversal from report paths outside cwd", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-public-report-paths", async (fixtureDir) => {
+      const workspace = join(fixtureDir, "workspace");
+      const external = join(fixtureDir, "private-inputs");
+      await mkdir(workspace, { recursive: true });
+      await mkdir(external, { recursive: true });
+      const inputPath = join(external, "client-report.md");
+      const baseProfilePath = join(external, "client-base.yml");
+      const outputPath = join(external, "client-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: workspace,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: baseProfilePath,
+        codexReportOutput: "codex-report.json",
+        codexRunner: adaptedRunner("base-profile"),
+        input: inputPath,
+        intent: "article profile",
+        output: outputPath,
+      });
+
+      const reportPath = join(workspace, "codex-report.json");
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.input.path).toBe("client-report.md");
+      expect(report.selectedBase.path).toBe("client-base.yml");
+      expect(report.profile.outputPath).toBe("client-profile.yml");
+      expect(await readFile(reportPath, "utf8")).not.toContain("../");
+    });
+  });
+
   test("rejects symlink report outputs without replacing the target profile", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-symlink", async (fixtureDir) => {
       const profilePath = join(fixtureDir, "profile.json");
