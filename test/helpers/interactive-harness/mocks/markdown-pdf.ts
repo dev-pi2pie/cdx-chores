@@ -4,6 +4,7 @@ import { extname, resolve } from "node:path";
 import { CliError } from "../../../../src/cli/errors";
 import type { HarnessRunnerContext } from "../context";
 import {
+  markdownPdfCodexServiceModuleUrl,
   markdownPdfDeterministicAuthoringModuleUrl,
   markdownPdfRenderBundleModuleUrl,
   markdownPdfRenderServiceModuleUrl,
@@ -19,6 +20,34 @@ const DEFAULT_OPTIONS = {
   tocPageBreak: "auto",
 };
 
+type CodexArtifact = "profile" | "template-bundle" | "project-bundle";
+
+const CODEX_ARTIFACT_FILE_NAMES: Record<CodexArtifact, string[]> = {
+  profile: ["profile.yml"],
+  "template-bundle": ["template.html", "style.css"],
+  "project-bundle": ["profile.yml", "template.html", "style.css"],
+};
+
+function codexOutputFiles(artifact: CodexArtifact, output: string, report: unknown): string[] {
+  const files =
+    artifact === "profile"
+      ? [output]
+      : CODEX_ARTIFACT_FILE_NAMES[artifact].map((file) => resolve(output, file));
+  if (typeof report === "object" && report !== null) {
+    const reportRecord = report as Record<string, unknown>;
+    if (reportRecord.kind === "external") {
+      files.push(String(reportRecord.path));
+    } else if (reportRecord.kind === "with-artifact") {
+      files.push(
+        artifact === "profile"
+          ? `${output}.codex-report.json`
+          : resolve(output, "codex-report.json"),
+      );
+    }
+  }
+  return files;
+}
+
 function defaultPdfOutput(inputPath: string): string {
   const extension = extname(inputPath);
   return extension ? `${inputPath.slice(0, -extension.length)}.pdf` : `${inputPath}.pdf`;
@@ -27,6 +56,141 @@ function defaultPdfOutput(inputPath: string): string {
 export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   let preparedCount = 0;
   let deterministicPreparedCount = 0;
+  const codexPreparedCounts: Record<CodexArtifact, number> = {
+    profile: 0,
+    "template-bundle": 0,
+    "project-bundle": 0,
+  };
+
+  mock.module(markdownPdfCodexServiceModuleUrl, () => ({
+    prepareMarkdownPdfCodexCandidate: async (_runtime: unknown, setup: Record<string, unknown>) => {
+      const artifact = setup.artifact as CodexArtifact;
+      codexPreparedCounts[artifact] += 1;
+      const artifactCount = codexPreparedCounts[artifact];
+      const candidateId = `codex-${artifact}-${artifactCount}`;
+      const suggestedOutput =
+        artifact === "profile" ? `generated/${candidateId}.yml` : `generated/${candidateId}`;
+      const unusable =
+        context.scenario.markdownPdfCodexUnusableArtifacts?.includes(artifact) ?? false;
+      context.result.markdownPdfCodexPrepareCalls.push({
+        ...setup,
+        artifactCount,
+        candidateId,
+        suggestedOutput,
+        unusable,
+      });
+      const prepared =
+        artifact === "profile"
+          ? unusable
+            ? { kind: "no-usable-profile" }
+            : {
+                decisionMode: "generated",
+                kind: "profile",
+                signalMode: setup.sample ? "document-informed" : "intent-only",
+                suggestedOutputPath: suggestedOutput,
+              }
+          : artifact === "template-bundle"
+            ? {
+                outputPlan: {
+                  assets: [],
+                  outputDirectory: suggestedOutput,
+                  styleCss: {
+                    bundlePath: "style.css",
+                    path: resolve(suggestedOutput, "style.css"),
+                  },
+                  templateHtml: {
+                    bundlePath: "template.html",
+                    path: resolve(suggestedOutput, "template.html"),
+                  },
+                },
+                signals: { signalMode: setup.sample ? "document-informed" : "intent-only" },
+                synthesis: { decisionMode: unusable ? "no-usable-template" : "generated" },
+              }
+            : {
+                binding: {
+                  outputPlan: {
+                    assets: [],
+                    outputDirectory: suggestedOutput,
+                    profile: { path: resolve(suggestedOutput, "profile.yml") },
+                    styleCss: { path: resolve(suggestedOutput, "style.css") },
+                    templateHtml: { path: resolve(suggestedOutput, "template.html") },
+                  },
+                  validation: { decisionMode: unusable ? "no-usable-project" : "generated" },
+                },
+                layout: {
+                  assets: [],
+                  profile: { bundlePath: "profile.yml" },
+                  styleCss: { bundlePath: "style.css" },
+                  templateHtml: { bundlePath: "template.html" },
+                },
+                signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
+              };
+      return { artifact, artifactCount, candidateId, prepared, setup, suggestedOutput };
+    },
+    suggestedMarkdownPdfCodexOutputPath: (candidate: Record<string, unknown>) => {
+      const candidateId = String(candidate.candidateId);
+      return candidate.artifact === "profile"
+        ? `generated/${candidateId}.yml`
+        : `generated/${candidateId}`;
+    },
+    bindMarkdownPdfCodexCandidate: async (
+      _runtime: unknown,
+      candidate: Record<string, unknown>,
+      input: Record<string, unknown>,
+    ) => {
+      const artifact = candidate.artifact as CodexArtifact;
+      const outputPath = String(input.output);
+      const outputFiles = codexOutputFiles(artifact, outputPath, input.report);
+      context.result.markdownPdfCodexBindCalls.push({
+        artifact,
+        artifactCount: candidate.artifactCount,
+        candidateId: candidate.candidateId,
+        output: input.output,
+        outputFiles,
+        outputPath,
+        overwrite: input.overwrite,
+        report: input.report,
+        suggestedOutput: candidate.suggestedOutput,
+      });
+      if (
+        context.scenario.markdownPdfCodexBindErrorMessage &&
+        context.result.markdownPdfCodexBindCalls.length === 1
+      ) {
+        throw new CliError(context.scenario.markdownPdfCodexBindErrorMessage, {
+          code: "OUTPUT_EXISTS",
+          exitCode: 2,
+        });
+      }
+      return {
+        artifact,
+        artifactCount: candidate.artifactCount,
+        candidate,
+        outputFiles,
+        outputPath,
+        overwrite: input.overwrite,
+        report: input.report,
+        suggestedOutput: candidate.suggestedOutput,
+      };
+    },
+    boundMarkdownPdfCodexOutputPath: (bound: Record<string, unknown>) => bound.outputPath,
+    boundMarkdownPdfCodexOutputFiles: (bound: Record<string, unknown>) => bound.outputFiles,
+    writeBoundMarkdownPdfCodexCandidate: async (
+      _runtime: unknown,
+      bound: Record<string, unknown>,
+    ) => {
+      const candidate = bound.candidate as Record<string, unknown>;
+      context.result.markdownPdfCodexWriteCalls.push({
+        artifact: bound.artifact,
+        artifactCount: bound.artifactCount,
+        candidateId: candidate.candidateId,
+        outputFiles: bound.outputFiles,
+        outputPath: bound.outputPath,
+        overwrite: bound.overwrite,
+        report: bound.report,
+        suggestedOutput: bound.suggestedOutput,
+      });
+    },
+  }));
 
   mock.module(markdownPdfDeterministicAuthoringModuleUrl, () => ({
     prepareMarkdownPdfDeterministicRecipe: (input: Record<string, unknown>) => {

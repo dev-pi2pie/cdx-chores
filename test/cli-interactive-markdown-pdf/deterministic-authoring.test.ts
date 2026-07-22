@@ -258,7 +258,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
   });
 
-  test("keeps Project and Codex modes out of the deterministic Phase 4 matrix", () => {
+  test("adds Phase 5 Project and Codex choices without preparing a deterministic candidate", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
@@ -269,10 +269,10 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       result.selectChoicesByMessage["What would you like to create?"]?.map(
         (choice) => choice.value,
       ),
-    ).toEqual(["profile", "template-bundle", "back", "cancel"]);
+    ).toEqual(["profile", "template-bundle", "project-bundle", "back", "cancel"]);
     expect(
       result.selectChoicesByMessage["Choose preparation mode"]?.map((choice) => choice.value),
-    ).toEqual(["starter", "formal-guide", "back", "cancel"]);
+    ).toEqual(["starter", "formal-guide", "codex-assistant", "back", "cancel"]);
     expect(result.markdownPdfDeterministicPrepareCalls).toEqual([]);
   });
 
@@ -293,7 +293,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       );
 
       expect(result.error).toBe(
-        "Interactive rendering for a generated Markdown PDF recipe is not implemented yet.",
+        "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
       );
       expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
       expect(result.markdownPdfDeterministicBindCalls).toEqual([]);

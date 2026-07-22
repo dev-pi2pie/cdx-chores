@@ -1,6 +1,5 @@
 import { select } from "@inquirer/prompts";
 
-import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import {
@@ -9,6 +8,15 @@ import {
   type MarkdownPdfCandidateReviewAction,
 } from "./authoring-review";
 import { saveMarkdownPdfDeterministicCandidate } from "./authoring-save";
+import {
+  runMarkdownPdfCodexAuthoring,
+  type MarkdownPdfCodexAuthoringOutcome,
+} from "./codex-authoring";
+import type {
+  MarkdownPdfCodexArtifact,
+  MarkdownPdfGeneratedLifecycleSelection,
+  MarkdownPdfSavedRecipe,
+} from "./codex-types";
 import {
   prepareMarkdownPdfDeterministicRecipe,
   type MarkdownPdfDeterministicArtifact,
@@ -26,13 +34,15 @@ import {
 } from "./formal-guide";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 
-export type MarkdownPdfDeterministicAuthoringOutcome =
+export type MarkdownPdfAuthoringOutcome =
   | InteractiveNavigationOutcome
-  | { kind: "change-source" };
+  | { kind: "change-source" }
+  | MarkdownPdfGeneratedLifecycleSelection
+  | MarkdownPdfSavedRecipe;
 
 async function promptArtifact(
   entry: MarkdownPdfInteractiveEntry,
-): Promise<MarkdownPdfDeterministicArtifact | "back" | "cancel"> {
+): Promise<MarkdownPdfCodexArtifact | "back" | "cancel"> {
   return await select({
     message: "What would you like to create?",
     choices: [
@@ -41,6 +51,11 @@ async function promptArtifact(
         name: "Template bundle",
         value: "template-bundle",
         description: "Pandoc template and stylesheet bundle",
+      },
+      {
+        name: "Project bundle",
+        value: "project-bundle",
+        description: "Coordinated Profile, Template, stylesheet, and assets",
       },
       {
         name: "Back",
@@ -53,9 +68,9 @@ async function promptArtifact(
   });
 }
 
-async function promptPreparationMode(): Promise<
-  MarkdownPdfDeterministicPreparation | "back" | "cancel"
-> {
+async function promptPreparationMode(
+  entry: MarkdownPdfInteractiveEntry,
+): Promise<MarkdownPdfDeterministicPreparation | "codex-assistant" | "back" | "cancel"> {
   return await select({
     message: "Choose preparation mode",
     choices: [
@@ -69,6 +84,15 @@ async function promptPreparationMode(): Promise<
         value: "formal-guide",
         description: "Answer structured layout, margin, and ToC questions",
       },
+      ...(entry === "pdf-recipes"
+        ? [
+            {
+              name: "Codex Assistant",
+              value: "codex-assistant" as const,
+              description: "Draft and adapt the recipe from bounded signals",
+            },
+          ]
+        : []),
       { name: "Back", value: "back", description: "Choose another artifact" },
       { name: "Cancel", value: "cancel", description: "Exit without writing" },
     ],
@@ -116,23 +140,15 @@ async function reviseCandidate(
   });
 }
 
-function deferredLifecycleError(): CliError {
-  return new CliError(
-    "Interactive rendering for a generated Markdown PDF recipe is not implemented yet.",
-    {
-      code: "MARKDOWN_PDF_INTERACTIVE_MATERIALIZATION_NOT_READY",
-      exitCode: 2,
-    },
-  );
-}
-
 async function reviewCandidate(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   entry: MarkdownPdfInteractiveEntry,
   initialCandidate: PreparedMarkdownPdfDeterministicRecipe,
   markdownInput?: string,
-): Promise<"complete" | "change-mode" | "change-artifact"> {
+): Promise<
+  "complete" | "change-mode" | "change-artifact" | MarkdownPdfGeneratedLifecycleSelection
+> {
   let candidate = initialCandidate;
   while (true) {
     renderDeterministicRecipeReview(runtime, candidate, markdownInput);
@@ -147,7 +163,13 @@ async function reviewCandidate(
       return action;
     }
     if (action === "temporary-render" || action === "save-and-render") {
-      throw deferredLifecycleError();
+      return {
+        candidate: { kind: "deterministic", candidate },
+        kind: "generated-lifecycle",
+        lifecycle: action,
+        markdownInput: markdownInput!,
+        report: { kind: "none" },
+      };
     }
     if (action === "save") {
       if (
@@ -165,11 +187,24 @@ async function reviewCandidate(
   }
 }
 
-export async function runMarkdownPdfDeterministicAuthoring(
+function isNavigationOutcome(
+  outcome: MarkdownPdfCodexAuthoringOutcome,
+): outcome is Extract<
+  MarkdownPdfCodexAuthoringOutcome,
+  { kind: "complete" | "change-mode" | "change-artifact" }
+> {
+  return (
+    outcome.kind === "complete" ||
+    outcome.kind === "change-mode" ||
+    outcome.kind === "change-artifact"
+  );
+}
+
+export async function runMarkdownPdfAuthoring(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: { entry: MarkdownPdfInteractiveEntry; markdownInput?: string },
-): Promise<MarkdownPdfDeterministicAuthoringOutcome> {
+): Promise<MarkdownPdfAuthoringOutcome> {
   while (true) {
     const artifact = await promptArtifact(input.entry);
     if (artifact === "cancel") {
@@ -181,14 +216,45 @@ export async function runMarkdownPdfDeterministicAuthoring(
         : { kind: "open-submenu", group: "md" };
     }
 
+    if (artifact === "project-bundle") {
+      const outcome = await runMarkdownPdfCodexAuthoring(runtime, pathPromptContext, {
+        artifact,
+        backToMode: false,
+        entry: input.entry,
+        markdownInput: input.markdownInput,
+      });
+      if (outcome.kind === "change-artifact" || outcome.kind === "change-mode") {
+        continue;
+      }
+      return outcome;
+    }
+
     let changeArtifact = false;
     while (!changeArtifact) {
-      const preparation = await promptPreparationMode();
+      const preparation = await promptPreparationMode(input.entry);
       if (preparation === "cancel") {
         return { kind: "complete" };
       }
       if (preparation === "back") {
         break;
+      }
+      if (preparation === "codex-assistant") {
+        const outcome = await runMarkdownPdfCodexAuthoring(runtime, pathPromptContext, {
+          artifact,
+          backToMode: true,
+          entry: input.entry,
+          markdownInput: input.markdownInput,
+        });
+        if (!isNavigationOutcome(outcome)) {
+          return outcome;
+        }
+        if (outcome.kind === "complete") {
+          return outcome;
+        }
+        if (outcome.kind === "change-artifact") {
+          changeArtifact = true;
+        }
+        continue;
       }
       const candidate = await prepareCandidate(artifact, preparation);
       const outcome = await reviewCandidate(
@@ -198,6 +264,9 @@ export async function runMarkdownPdfDeterministicAuthoring(
         candidate,
         input.markdownInput,
       );
+      if (typeof outcome !== "string") {
+        return outcome;
+      }
       switch (outcome) {
         case "complete":
           return { kind: "complete" };

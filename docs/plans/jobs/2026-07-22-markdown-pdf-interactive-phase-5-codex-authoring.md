@@ -18,9 +18,9 @@ Phase base: `48669f8738e4c690273554b4cabb028e6cfd11a1`.
 
 ## Implementation Checklist
 
-- [ ] Expose destination-neutral prepared Profile, Template, and Project Codex
+- [x] Expose destination-neutral prepared Profile, Template, and Project Codex
       candidates with late output, overwrite, and report binding.
-- [ ] Keep direct Profile, Template, and Project Codex actions compatible.
+- [x] Keep direct Profile, Template, and Project Codex actions compatible.
 - [ ] Enforce the entry-specific artifact and preparation matrix.
 - [ ] Reuse the selected `to-pdf` Markdown input and collect an optional
       preparation sample only under `pdf-recipes`.
@@ -41,7 +41,22 @@ Phase base: `48669f8738e4c690273554b4cabb028e6cfd11a1`.
 
 ## Verification
 
-Pending implementation evidence.
+Current checkpoint:
+
+```bash
+bun test test/cli-actions-md-to-pdf-profile-codex-prepared.test.ts test/cli-actions-md-to-pdf-template-codex/prepared.test.ts test/cli-actions-md-to-pdf-project-codex/prepared.test.ts
+bunx tsc --noEmit
+git diff --check
+```
+
+The prepared-service slice passed with four tests and zero failures. Broader
+direct Profile, Template, and Project Codex coverage passed with 261 tests and
+zero failures before the Interactive authoring slice began.
+
+Implementation checkpoint:
+
+- `27b0f81` — destination-neutral Codex preparation and destination-time
+  overwrite and report binding
 
 ## Review
 

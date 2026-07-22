@@ -5,6 +5,8 @@ export interface InteractiveHarnessScenario {
   markdownPdfIgnoredBundleFiles?: string[];
   markdownPdfPrepareErrorMessage?: string;
   markdownPdfDeterministicBindErrorMessage?: string;
+  markdownPdfCodexBindErrorMessage?: string;
+  markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];
   selectQueue?: unknown[];
   nowIsoString?: string;
@@ -87,6 +89,9 @@ export interface InteractiveHarnessResult {
   markdownPdfDeterministicPrepareCalls: Array<Record<string, unknown>>;
   markdownPdfDeterministicBindCalls: Array<Record<string, unknown>>;
   markdownPdfDeterministicWriteCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexBindCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexWriteCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;

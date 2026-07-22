@@ -6,10 +6,11 @@ import {
   type PlannedMarkdownPdfRender,
 } from "../../actions/markdown/to-pdf-service";
 import { displayPath, printLine } from "../../actions/shared";
+import { CliError } from "../../errors";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
-import { runMarkdownPdfDeterministicAuthoring } from "./authoring";
+import { runMarkdownPdfAuthoring } from "./authoring";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
@@ -141,12 +142,24 @@ export async function handleMarkdownPdfToPdfInteractiveAction(
       return { kind: "complete" };
     }
     if (source.kind === "generated") {
-      const outcome = await runMarkdownPdfDeterministicAuthoring(runtime, pathPromptContext, {
+      const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
         entry: "to-pdf",
         markdownInput: input,
       });
       if (outcome.kind === "change-source") {
         continue;
+      }
+      if (outcome.kind === "generated-lifecycle") {
+        throw new CliError(
+          "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
+          {
+            code: "MARKDOWN_PDF_INTERACTIVE_MATERIALIZATION_NOT_READY",
+            exitCode: 2,
+          },
+        );
+      }
+      if (outcome.kind === "saved-recipe") {
+        return { kind: "complete" };
       }
       return outcome;
     }
