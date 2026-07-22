@@ -1,7 +1,8 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-status: draft
+modified-date: 2026-07-22
+status: completed
 agent: codex
 ---
 
@@ -200,8 +201,9 @@ retried.
 
 The owned recipe session is different from the renderer's internal scratch
 directory. Pandoc and WeasyPrint use separate renderer scratch space, which is
-always cleaned by the renderer. Only the generated recipe session can be
-retained and shown for Interactive recovery.
+removed on a best-effort basis when the renderer finishes. That internal
+cleanup has no Interactive recovery menu. Only the generated recipe session can
+be retained and shown for Interactive recovery.
 
 ### Cross-platform temporary location
 

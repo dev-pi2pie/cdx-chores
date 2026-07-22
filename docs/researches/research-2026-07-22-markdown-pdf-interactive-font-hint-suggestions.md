@@ -21,10 +21,10 @@ The direct helper contract remains authoritative:
 Interactive mode may help a user build each text value, but it must ultimately
 produce the same ordered `fontHints: string[]` payload.
 
-Phase 6.6 implemented and verified the first selected direction. This research
-returned to `in-progress` after field use showed that the collection is
-repeatable but the add path hides that fact behind an unnecessary mode menu.
-Phase 6.7 refines the collection flow without changing the direct repeatable
+Phase 6.6 implemented and verified the first selected direction. Field use then
+briefly reopened the research because the repeatable collection hid its add
+path behind an unnecessary mode menu. Completed Phase 6.7 evidence records the
+refined collection flow without changing the direct repeatable
 `fontHints: string[]` contract or discarding the Phase 6.6 evidence.
 
 ## Problem

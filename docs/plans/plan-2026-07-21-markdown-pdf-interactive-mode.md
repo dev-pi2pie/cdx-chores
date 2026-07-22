@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
 modified-date: 2026-07-22
-status: active
+status: completed
 agent: codex
 ---
 
@@ -39,9 +39,9 @@ The related research now settles:
 - output defaults, cleanup, failure recovery, and `pdf-recipes -> to-pdf`
   handoff ownership
 
-The remaining work is implementation sequencing. The current direct actions
-still combine preparation with writes or rendering, so the first phase must
-establish reusable prepared-result boundaries before Interactive prompts are
+At the start of implementation, the remaining work was sequencing. The direct
+actions combined preparation with writes or rendering, so Phase 1 first
+established reusable prepared-result boundaries before Interactive prompts were
 wired.
 
 ## Starting State
@@ -72,7 +72,8 @@ Current implementation seams:
   `prepare* -> Prepared* -> writePrepared*` boundary and checkpoint-oriented
   Interactive organization.
 
-No implementation plan currently owns Interactive Markdown PDF mode.
+Before this plan was created, no implementation plan owned Interactive Markdown
+PDF mode.
 
 ## Product Contract
 
@@ -288,7 +289,7 @@ Phase gate:
 
 Expected job record:
 
-- [Phase 2 routing and state](jobs/2026-07-22-markdown-pdf-interactive-phase-2-routing-state.md)
+- [Phase 2 routing and state](jobs/2026-07-21-markdown-pdf-interactive-phase-2-routing-state.md)
 
 ### Phase 3: Built-In, Existing, And Custom Render Paths
 
@@ -654,9 +655,11 @@ Validation:
 - [x] Run direct Profile, Template, Project, bundle, and renderer regression
       suites.
 - [x] Run repository lint, format, build, and full tests.
-- [x] Perform manual Profile, Template, Project, temporary, durable, handoff,
-      report, cleanup, and failure-recovery smoke checks under
-      `examples/playground/`.
+- [x] Perform proportional manual Profile, Template, durable creation,
+      temporary render, successful cleanup, and final-renderer smoke checks
+      under `examples/playground/`.
+- [x] Cover Project, handoff, report, cleanup-failure, and recovery paths with
+      automated evidence, and record the unavailable live Project capability.
 - [x] Visually inspect representative rendered PDFs for readable layout,
       mixed-language text, code, and asset handling.
 - [x] Verify canonical temporary-session ownership, successful cleanup,
@@ -685,17 +688,17 @@ Guides:
 Review and closure:
 
 - [x] Link all phase job records and verification evidence.
-- [ ] Review the exact Phase 7 range from `785c49d` through its final
+- [x] Review the exact Phase 7 range from `785c49d` through its final
       substantive commit.
-- [ ] Review the complete implementation range from the pre-implementation
-      baseline `f80bf87` through the final implementation tip.
-- [ ] Review the complete initiative range, including the original plan and
+- [x] Review the complete implementation range from implementation review base
+      `f80bf87` through the final implementation tip.
+- [x] Review the complete initiative range, including the original plan and
       final closeout documentation.
-- [ ] Resolve every actionable finding and rerun each affected range review
+- [x] Resolve every actionable finding and rerun each affected range review
       and validation gate against the widened final tip.
-- [ ] Complete and link the Phase 7 validation-and-closeout job record.
-- [ ] Move the plan to `completed` only after all completion criteria pass.
-- [ ] Reassess the related research status using linked implementation evidence.
+- [x] Complete and link the Phase 7 validation-and-closeout job record.
+- [x] Move the plan to `completed` only after all completion criteria pass.
+- [x] Reassess the related research status using linked implementation evidence.
 
 Phase gate:
 

@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Mode"
 created-date: 2026-07-03
 modified-date: 2026-07-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -30,11 +30,10 @@ md to-pdf [--profile | --template | --css | --bundle]
 Interactive mode should orchestrate these capabilities without creating a
 second artifact model, assistant model, or renderer.
 
-The implementation records for completed Phases 1 through 6.6 evidence only
-the flow each phase originally scoped. This research remains `in-progress`
-because Phase 6.7 field-use refinements and Phase 7 validation, guide
-alignment, complete-range review, and final closure reassessment remain
-pending.
+The completed phase records preserve the scope and evidence of each
+implementation checkpoint. Phase 6.7 field-use refinements and Phase 7
+validation, guide alignment, complete-range review, and final closure
+reassessment are now linked below and support completion of this research.
 
 ## Current Contracts And Boundaries
 
@@ -53,8 +52,8 @@ The required direct capabilities are shipped:
 
 The research started from an Interactive Markdown submenu that exposed
 `to-docx` and `frontmatter-to-json` but no Markdown PDF branches. The linked
-implementation now adds the two designed branches; final validation and guide
-alignment remain under Phase 7 rather than requiring a new artifact or renderer
+implementation added the two designed branches; Phase 7 then completed final
+validation and guide alignment without requiring a new artifact or renderer
 design.
 
 This research covers:
@@ -1050,8 +1049,21 @@ Interactive tests should cover:
 - Existing and explicitly saved artifacts are never automatically removed.
 - Codex reports are written only after commit and follow lifecycle-filtered
   retention rules.
-- The research remains `in-progress` until implementation and verification
-  evidence supports closure under the documentation policy.
+- The research is completed only with the linked implementation, validation,
+  review, and guide evidence required by the documentation policy.
+
+## Implementation Evidence
+
+The completed implementation plan preserves direct-helper ownership while
+shipping both Interactive entry goals. Phase 7 validation passed with 142
+focused Interactive tests and 1,696 repository tests, plus lint, format, type,
+build, whitespace, built-CLI render, metadata, rasterization, and visual checks.
+
+The exact Phase 7 range `785c49d..b308282` and complete implementation range
+`f80bf87..b308282` were reviewed for correctness, security, tests, and
+maintainability. Accepted findings were corrected and the widened reviews found
+no remaining actionable issue. The Phase 7 record also documents the live
+Project/Codex capability limitation without treating it as a product failure.
 
 ## Related Research
 
@@ -1065,5 +1077,6 @@ Interactive tests should cover:
 ## Related Plans
 
 - [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md)
+- [Phase 7 validation and closeout](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-7-validation-closeout.md)
 - [Phase 6.7 temporary-session portability](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md)
 - [Phase 6.7 repeatable font-hint flow](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)

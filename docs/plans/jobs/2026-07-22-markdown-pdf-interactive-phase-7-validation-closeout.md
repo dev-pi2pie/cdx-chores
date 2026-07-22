@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Phase 7 validation and closeout"
 created-date: 2026-07-22
 modified-date: 2026-07-22
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -21,7 +21,7 @@ real defect.
 
 - Phase 7 base: `785c49d`.
 - Phase 7 acceptance revision: `77838e9`.
-- Whole implementation pre-initiative baseline: `f80bf87`.
+- Whole implementation review base: `f80bf87`.
 
 The Phase 7 review starts after `785c49d`. The whole implementation code review
 starts after `f80bf87`. Both ranges end at their final substantive or correction
@@ -47,21 +47,23 @@ status without becoming another implementation boundary.
 - [x] Run the focused Interactive Markdown PDF matrix.
 - [x] Run direct Profile, Template, Project, bundle, and renderer regressions.
 - [x] Run repository lint, format, build, full tests, and whitespace checks.
-- [x] Complete proportional live smoke for temporary, durable, handoff,
-      report, cleanup, and recovery behavior.
+- [x] Complete proportional live smoke for Profile, Template, durable creation,
+      temporary rendering, successful cleanup, and final renderer behavior.
+- [x] Cover Project, handoff, report, cleanup-failure, and recovery behavior
+      through automated evidence and record the unavailable live capability.
 - [x] Visually inspect representative PDF output.
 - [x] Record unavailable capabilities as environment limitations rather than
       product failures.
 
 ### Review And Closure
 
-- [ ] Review the exact Phase 7 range.
-- [ ] Review the complete implementation code range for correctness, security,
+- [x] Review the exact Phase 7 range.
+- [x] Review the complete implementation code range for correctness, security,
       tests, and maintainability.
-- [ ] Review the complete initiative documentation range.
-- [ ] Resolve every actionable finding and rerun affected reviews.
-- [ ] Link all phase records and verification evidence from the plan.
-- [ ] Reassess the parent research against the completed implementation
+- [x] Review the complete initiative documentation range.
+- [x] Resolve every actionable finding and rerun affected reviews.
+- [x] Link all phase records and verification evidence from the plan.
+- [x] Reassess the parent research against the completed implementation
       evidence.
 
 ## Documentation Evidence
@@ -82,15 +84,15 @@ remaining actionable documentation issue.
 
 The focused Interactive Markdown PDF matrix passed:
 
-- 133 tests
+- 142 tests
 - 0 failures
-- 453 assertions
+- 483 assertions
 
 The direct Profile, Template, Project, bundle, and renderer regression slice
-passed with 530 tests, zero failures, and 3,914 assertions. Repository lint,
-format checking, build, and whitespace checking passed. The full repository
-suite passed with 1,687 tests, zero failures, and 8,942 assertions across 222
-files.
+passed with 531 tests, zero failures, and 3,918 assertions. Repository lint,
+format checking, build, type checking, and whitespace checking passed. The full
+repository suite passed with 1,696 tests, zero failures, and 8,975 assertions
+across 222 files.
 
 Final built-CLI smoke generated a Profile and a Template bundle, rendered both
 against `examples/playground/md-pdf/cjk-font-smoke.md`, and produced valid
@@ -113,12 +115,23 @@ suites. This is an environment limitation, not a product failure.
 
 ## Review Evidence
 
-Pending Phase 7 and complete-range reviews.
+The exact Phase 7 range `785c49d..b308282` and the complete implementation
+range `f80bf87..b308282` were reviewed for correctness, security, tests, and
+maintainability. The complete initiative range `f80bf87^..b308282` plus this
+administrative closeout delta was reviewed for documentation and lifecycle
+consistency.
+
+Accepted findings corrected Profile Codex report path disclosure, PDF output
+re-prompting, generated-output directory and filesystem-identity collisions,
+missing collision and navigation regressions, overstated manual-smoke wording,
+stale validation counts, renderer scratch-cleanup wording, and lifecycle status
+contradictions. The widened code reviews and final documentation rereview found
+no remaining actionable issue.
 
 ## Phase Evidence
 
 - [Phase 1 prepared services](2026-07-21-markdown-pdf-interactive-phase-1-prepared-services.md)
-- [Phase 2 routing and state](2026-07-22-markdown-pdf-interactive-phase-2-routing-state.md)
+- [Phase 2 routing and state](2026-07-21-markdown-pdf-interactive-phase-2-routing-state.md)
 - [Phase 3 render sources](2026-07-22-markdown-pdf-interactive-phase-3-render-sources.md)
 - [Phase 4 deterministic authoring](2026-07-22-markdown-pdf-interactive-phase-4-deterministic-authoring.md)
 - [Phase 5 Codex authoring](2026-07-22-markdown-pdf-interactive-phase-5-codex-authoring.md)
