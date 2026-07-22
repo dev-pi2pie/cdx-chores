@@ -12,6 +12,8 @@ export interface InteractiveHarnessScenario {
   markdownPdfRenderWarnings?: string[];
   markdownPdfRenderErrorMessages?: string[];
   markdownPdfCleanupErrorMessage?: string;
+  markdownPdfFontFamilies?: string[];
+  markdownPdfFontDiscoveryErrorMessage?: string;
   selectQueue?: unknown[];
   nowIsoString?: string;
   checkboxQueue?: unknown[];
@@ -19,6 +21,7 @@ export interface InteractiveHarnessScenario {
   editorQueue?: string[];
   existingPaths?: string[];
   inputQueue?: string[];
+  searchQueue?: Array<string | { term?: string; value: string }>;
   requiredPathQueue?: string[];
   statExistsQueue?: boolean[];
   optionalPathQueue?: Array<string | undefined>;
@@ -65,12 +68,16 @@ export interface InteractiveHarnessScenario {
 
 export interface InteractiveHarnessResult {
   promptCalls: Array<{
-    kind: "select" | "checkbox" | "confirm" | "input" | "editor";
+    kind: "select" | "checkbox" | "confirm" | "input" | "editor" | "search";
     message: string;
     defaultValue?: string;
     postfix?: string;
   }>;
   selectChoicesByMessage: Record<
+    string,
+    Array<{ name: string; value: string; description?: string }>
+  >;
+  searchChoicesByMessage: Record<
     string,
     Array<{ name: string; value: string; description?: string }>
   >;
@@ -99,6 +106,7 @@ export interface InteractiveHarnessResult {
   markdownPdfSessionCreateCalls: string[];
   markdownPdfSessionRetainCalls: string[];
   markdownPdfSessionCleanupCalls: string[];
+  markdownPdfFontDiscoveryCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;

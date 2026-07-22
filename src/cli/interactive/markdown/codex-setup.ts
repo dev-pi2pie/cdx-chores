@@ -5,6 +5,7 @@ import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
 import type { MarkdownPdfCodexArtifact, MarkdownPdfCodexSetup } from "./codex-types";
+import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 
 type CodexSetupOutcome =
@@ -92,40 +93,6 @@ async function promptOptionalSample(
   };
 }
 
-async function editFontHints(current: readonly string[]): Promise<string[]> {
-  const hints = [...current];
-  while (true) {
-    const action = await select<"add" | "remove" | "done">({
-      message: "Edit font hints",
-      choices: [
-        { name: "Add font hint", value: "add" },
-        ...(hints.length > 0 ? [{ name: "Remove font hint", value: "remove" as const }] : []),
-        { name: "Done", value: "done" },
-      ],
-    });
-    if (action === "done") {
-      return hints;
-    }
-    if (action === "remove") {
-      const removed = await select<string>({
-        message: "Remove font hint",
-        choices: hints.map((hint) => ({ name: hint, value: hint })),
-      });
-      hints.splice(hints.indexOf(removed), 1);
-      continue;
-    }
-    const hint = (
-      await input({
-        message: "Font preference",
-        validate: (value) => value.trim().length > 0 || "Enter a font preference.",
-      })
-    ).trim();
-    if (!hints.includes(hint)) {
-      hints.push(hint);
-    }
-  }
-}
-
 function renderSetup(runtime: CliRuntime, setup: MarkdownPdfCodexSetup): void {
   printLine(runtime.stderr, `${artifactLabel(setup.artifact)} setup`);
   printLine(runtime.stderr, "");
@@ -161,6 +128,7 @@ export async function collectMarkdownPdfCodexSetup(
     artifact: MarkdownPdfCodexArtifact;
     entry: MarkdownPdfInteractiveEntry;
     initialSetup?: MarkdownPdfCodexSetup;
+    fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
   },
 ): Promise<CodexSetupOutcome> {
@@ -219,7 +187,10 @@ export async function collectMarkdownPdfCodexSetup(
       continue;
     }
     if (action === "font-hints") {
-      setup = { ...setup, fontHints: await editFontHints(setup.fontHints) };
+      setup = {
+        ...setup,
+        fontHints: await context.fontHintEditor.edit(runtime, setup.fontHints, context.artifact),
+      };
       continue;
     }
     if (action === "clear-base-profile") {

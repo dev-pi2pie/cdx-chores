@@ -4,6 +4,7 @@ import { extname, resolve } from "node:path";
 import { CliError } from "../../../../src/cli/errors";
 import type { HarnessRunnerContext } from "../context";
 import {
+  fontDiscoveryModuleUrl,
   markdownPdfCodexServiceModuleUrl,
   markdownPdfDeterministicAuthoringModuleUrl,
   markdownPdfLifecycleModuleUrl,
@@ -63,6 +64,31 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
     "template-bundle": 0,
     "project-bundle": 0,
   };
+
+  mock.module(fontDiscoveryModuleUrl, () => ({
+    discoverSystemFonts: async (input: Record<string, unknown>) => {
+      context.result.markdownPdfFontDiscoveryCalls.push({
+        discovery: input.discovery,
+        hasSignal: input.signal instanceof AbortSignal,
+        timeoutMs: input.timeoutMs,
+      });
+      if (context.scenario.markdownPdfFontDiscoveryErrorMessage) {
+        throw new Error(context.scenario.markdownPdfFontDiscoveryErrorMessage);
+      }
+      return {
+        adapter: "fontconfig",
+        discovery: "fontconfig",
+        faces: (context.scenario.markdownPdfFontFamilies ?? []).map((family, index) => ({
+          family,
+          fullName: family,
+          path: `/private/font-${index}.otf`,
+          source: "system",
+          style: "normal",
+        })),
+        warnings: [],
+      };
+    },
+  }));
 
   mock.module(markdownPdfLifecycleModuleUrl, () => ({
     createOwnedMarkdownPdfSession: async () => {
@@ -136,7 +162,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   },
                 },
                 signals: { signalMode: setup.sample ? "document-informed" : "intent-only" },
-                synthesis: { decisionMode: unusable ? "no-usable-template" : "generated" },
+                synthesis: {
+                  decisionMode: unusable ? "no-usable-template" : "generated",
+                  fontDecisions: [],
+                  unsupportedDirections: [],
+                },
               }
             : {
                 binding: {
@@ -147,6 +177,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                     styleCss: { path: resolve(suggestedOutput, "style.css") },
                     templateHtml: { path: resolve(suggestedOutput, "template.html") },
                   },
+                  reportArtifact: { unsupportedDirections: [] },
                   validation: { decisionMode: unusable ? "no-usable-project" : "generated" },
                 },
                 layout: {
@@ -155,7 +186,9 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   styleCss: { bundlePath: "style.css" },
                   templateHtml: { bundlePath: "template.html" },
                 },
+                profilePhase: {},
                 signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
+                templatePhase: { synthesis: { fontDecisions: [] } },
               };
       return { artifact, artifactCount, candidateId, prepared, setup, suggestedOutput };
     },

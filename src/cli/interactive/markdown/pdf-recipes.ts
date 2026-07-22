@@ -4,42 +4,49 @@ import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import { runMarkdownPdfAuthoring } from "./authoring";
 import { MARKDOWN_PDF_CODEX_ARTIFACT_LABELS } from "./codex-review";
+import { createMarkdownPdfInteractiveCodexSession } from "./codex-session";
 import { runMarkdownPdfToPdfInteractiveFlow } from "./to-pdf";
 
 export async function handleMarkdownPdfRecipesInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
 ): Promise<InteractiveNavigationOutcome> {
-  while (true) {
-    const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
-      entry: "pdf-recipes",
-    });
-    if (outcome.kind === "change-source") {
-      return { kind: "open-submenu", group: "md" };
-    }
-    if (outcome.kind === "saved-recipe") {
-      const artifact = MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[outcome.artifact].toLowerCase();
-      const next = await select<"render" | "create" | "exit">({
-        message: "What next?",
-        choices: [
-          { name: `Render a PDF with this ${artifact}`, value: "render" },
-          { name: "Create another recipe", value: "create" },
-          { name: "Exit", value: "exit" },
-        ],
+  const session = createMarkdownPdfInteractiveCodexSession(runtime);
+  try {
+    while (true) {
+      const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
+        entry: "pdf-recipes",
+        fontHintEditor: session.fontHintEditor,
       });
-      if (next === "render") {
-        return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext, {
-          savedRecipe: outcome,
+      if (outcome.kind === "change-source") {
+        return { kind: "open-submenu", group: "md" };
+      }
+      if (outcome.kind === "saved-recipe") {
+        const artifact = MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[outcome.artifact].toLowerCase();
+        const next = await select<"render" | "create" | "exit">({
+          message: "What next?",
+          choices: [
+            { name: `Render a PDF with this ${artifact}`, value: "render" },
+            { name: "Create another recipe", value: "create" },
+            { name: "Exit", value: "exit" },
+          ],
         });
+        if (next === "render") {
+          return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext, {
+            savedRecipe: outcome,
+          });
+        }
+        if (next === "create") {
+          continue;
+        }
+        return { kind: "complete" };
       }
-      if (next === "create") {
-        continue;
+      if (outcome.kind === "generated-lifecycle") {
+        return { kind: "complete" };
       }
-      return { kind: "complete" };
+      return outcome;
     }
-    if (outcome.kind === "generated-lifecycle") {
-      return { kind: "complete" };
-    }
-    return outcome;
+  } finally {
+    session.cancel();
   }
 }

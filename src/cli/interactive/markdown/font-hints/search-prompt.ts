@@ -1,0 +1,52 @@
+import type search from "@inquirer/search";
+import { emitKeypressEvents } from "node:readline";
+
+import type { CliRuntime } from "../../../types";
+
+const FONT_HINT_SEARCH_ESCAPE_REASON = Symbol("font-hint-search-escape");
+
+function isEscapeNavigation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.name === "AbortPromptError" &&
+    error.cause === FONT_HINT_SEARCH_ESCAPE_REASON
+  );
+}
+
+export async function promptMarkdownPdfInteractiveFontHintSearch(
+  runtime: CliRuntime,
+  searchPrompt: typeof search,
+  config: Parameters<typeof search>[0],
+  sessionSignal: AbortSignal,
+): Promise<string | undefined> {
+  const promptController = new AbortController();
+  const cancelActivePrompt = () => promptController.abort(sessionSignal.reason);
+  const navigateBack = (_input: string, key: { name?: string }) => {
+    if (key.name === "escape") {
+      promptController.abort(FONT_HINT_SEARCH_ESCAPE_REASON);
+    }
+  };
+
+  emitKeypressEvents(runtime.stdin);
+  runtime.stdin.on("keypress", navigateBack);
+  sessionSignal.addEventListener("abort", cancelActivePrompt, { once: true });
+  try {
+    const selected = await searchPrompt(config, {
+      input: runtime.stdin,
+      output: runtime.stderr,
+      signal: promptController.signal,
+    });
+    if (typeof selected !== "string") {
+      throw new TypeError("The font preference prompt returned a non-string value.");
+    }
+    return selected;
+  } catch (error) {
+    if (isEscapeNavigation(error)) {
+      return undefined;
+    }
+    throw error;
+  } finally {
+    sessionSignal.removeEventListener("abort", cancelActivePrompt);
+    runtime.stdin.removeListener("keypress", navigateBack);
+  }
+}

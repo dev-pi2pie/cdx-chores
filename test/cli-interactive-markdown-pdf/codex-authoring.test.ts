@@ -190,9 +190,13 @@ describe("interactive Markdown PDF Codex authoring", () => {
         ...recipesCodexSelections("template-bundle"),
         "font-hints",
         "add",
+        "custom",
+        "accept",
         "add",
+        "custom",
+        "accept",
         "remove",
-        "Inter",
+        0,
         "done",
         "cover-image",
         "continue",
@@ -211,7 +215,122 @@ describe("interactive Markdown PDF Codex authoring", () => {
         fontHints: ["Source Serif 4"],
       }),
     ]);
+    expect(result.markdownPdfFontDiscoveryCalls).toEqual([]);
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+  });
+
+  test("builds a language-specific hint from bounded installed-family suggestions", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfFontFamilies: [
+        "Noto Color Emoji",
+        "Noto Mono",
+        "Noto Music",
+        "Noto Nastaliq",
+        "Noto Sans",
+        "Noto Sans Symbols",
+        "Noto Serif JP",
+        "noto serif jp",
+      ],
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "add",
+        "builder",
+        { kind: "language-body", language: "" },
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      searchQueue: [{ term: "Noto", value: "Noto Serif JP" }],
+      inputQueue: ["", "Japanese"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfFontDiscoveryCalls).toEqual([
+      { discovery: "fontconfig", hasSignal: true, timeoutMs: 1_000 },
+    ]);
+    expect(result.searchChoicesByMessage["Font preference"]?.[0]).toEqual({
+      name: "Noto",
+      value: "Noto",
+      description: "Use the typed text as a custom font preference.",
+    });
+    expect(result.searchChoicesByMessage["Font preference"]).toHaveLength(7);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual([
+      "Prefer Noto Serif JP for Japanese body text",
+    ]);
+    expect(result.stderr).toContain("--font-hint = Prefer Noto Serif JP for Japanese body text");
+    expect(result.stderr).not.toContain("/private/font-");
+  });
+
+  test("falls back to ordinary preference input without blocking the builder", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfFontFamilies: [],
+      selectQueue: [
+        ...recipesCodexSelections("template-bundle"),
+        "font-hints",
+        "add",
+        "builder",
+        { kind: "body" },
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Brand Sans"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfFontDiscoveryCalls).toHaveLength(1);
+    expect(result.promptCalls).toContainEqual({
+      kind: "input",
+      message: "Font preference",
+      defaultValue: "",
+    });
+    expect(result.stderr).toContain(
+      "Installed font suggestions are unavailable; continuing with custom input.",
+    );
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual([
+      "Prefer Brand Sans for body text",
+    ]);
+  });
+
+  test("shows and rejects an exact duplicate compiled hint", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "add",
+        "custom",
+        "accept",
+        "add",
+        "custom",
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: [
+        "",
+        "Prefer Inter for headings and titles",
+        "Prefer Inter for headings and titles",
+      ],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr).toContain(
+      "That font hint already exists: Prefer Inter for headings and titles",
+    );
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual([
+      "Prefer Inter for headings and titles",
+    ]);
+    expect(result.markdownPdfFontDiscoveryCalls).toEqual([]);
   });
 
   test("offers base-profile and cover-image clearing only when those values are set", () => {
@@ -305,6 +424,59 @@ describe("interactive Markdown PDF Codex authoring", () => {
     ]);
     expect(result.markdownPdfCodexBindCalls).toEqual([]);
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+  });
+
+  test("preserves the accepted candidate after a no-op font-hint review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "continue",
+        "change-setup",
+        "font-hints",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+    expect(
+      result.promptCalls.filter(
+        (call) =>
+          call.kind === "confirm" &&
+          call.message === "Send this intent and prepared document signals to Codex Assistant?",
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("invalidates the candidate only after an accepted font-hint change", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "continue",
+        "change-setup",
+        "font-hints",
+        "add",
+        "custom",
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Prefer Inter for headings and titles"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfCodexPrepareCalls[1]?.fontHints).toEqual([
+      "Prefer Inter for headings and titles",
+    ]);
   });
 
   test.each(["profile", "template-bundle", "project-bundle"] as const)(

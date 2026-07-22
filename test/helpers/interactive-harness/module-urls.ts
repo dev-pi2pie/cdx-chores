@@ -27,6 +27,9 @@ export const markdownPdfCodexServiceModuleUrl = pathToFileURL(
 export const markdownPdfLifecycleModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/markdown/lifecycle.ts"),
 ).href;
+export const fontDiscoveryModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/fonts/discovery.ts"),
+).href;
 export const interactiveIndexUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/index.ts"),
 ).href;

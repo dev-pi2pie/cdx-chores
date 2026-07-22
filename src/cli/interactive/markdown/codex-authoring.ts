@@ -19,6 +19,7 @@ import type {
   MarkdownPdfSavedRecipe,
   PreparedMarkdownPdfCodexCandidate,
 } from "./codex-types";
+import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 
 export type MarkdownPdfCodexAuthoringOutcome =
@@ -50,6 +51,18 @@ async function prepareWithConsent(
   return await prepareMarkdownPdfCodexCandidate(runtime, setup);
 }
 
+function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
+  return (
+    left.artifact === right.artifact &&
+    left.baseProfile === right.baseProfile &&
+    left.coverImage === right.coverImage &&
+    left.intent === right.intent &&
+    left.sample === right.sample &&
+    left.fontHints.length === right.fontHints.length &&
+    left.fontHints.every((hint, index) => hint === right.fontHints[index])
+  );
+}
+
 export async function runMarkdownPdfCodexAuthoring(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
@@ -57,15 +70,18 @@ export async function runMarkdownPdfCodexAuthoring(
     artifact: MarkdownPdfCodexArtifact;
     backToMode: boolean;
     entry: MarkdownPdfInteractiveEntry;
+    fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
     markdownInput?: string;
   },
 ): Promise<MarkdownPdfCodexAuthoringOutcome> {
   let setup: MarkdownPdfCodexSetup | undefined;
+  let acceptedCandidate: PreparedMarkdownPdfCodexCandidate | undefined;
   while (true) {
     const setupOutcome = await collectMarkdownPdfCodexSetup(runtime, pathPromptContext, {
       artifact: input.artifact,
       entry: input.entry,
+      fontHintEditor: input.fontHintEditor,
       initialSetup: setup,
       markdownInput: input.markdownInput,
     });
@@ -77,7 +93,10 @@ export async function runMarkdownPdfCodexAuthoring(
     }
     setup = setupOutcome.setup;
 
-    let prepared = await prepareWithConsent(runtime, setup);
+    let prepared =
+      acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)
+        ? acceptedCandidate
+        : await prepareWithConsent(runtime, setup);
     if (prepared === "cancel") {
       return { kind: "complete" };
     }
@@ -87,6 +106,7 @@ export async function runMarkdownPdfCodexAuthoring(
     if (prepared === "revise") {
       continue;
     }
+    acceptedCandidate = prepared;
 
     while (true) {
       renderMarkdownPdfCodexCandidateReview(runtime, prepared);
@@ -112,6 +132,7 @@ export async function runMarkdownPdfCodexAuthoring(
           break;
         }
         prepared = regenerated;
+        acceptedCandidate = regenerated;
         continue;
       }
       if (action === "save") {

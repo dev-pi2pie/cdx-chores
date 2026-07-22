@@ -24,6 +24,25 @@ interface TextPromptOptions {
   validate?: ((value: unknown) => boolean | string | Promise<boolean | string>) | undefined;
 }
 
+interface SearchPromptOptions extends TextPromptOptions {
+  source?: (
+    term: string | undefined,
+    context: { signal: AbortSignal },
+  ) => Promise<Array<string | PromptChoice>>;
+}
+
+function normalizedChoices(choices: Array<string | PromptChoice>) {
+  return choices.map((choice) =>
+    typeof choice === "string"
+      ? { name: choice, value: choice, description: undefined }
+      : {
+          name: String(choice.name ?? ""),
+          value: String(choice.value ?? ""),
+          description: choice.description === undefined ? undefined : String(choice.description),
+        },
+  );
+}
+
 async function resolveValidatedValue(
   context: HarnessRunnerContext,
   queue: unknown[],
@@ -52,6 +71,30 @@ async function resolveValidatedValue(
 }
 
 export function installPromptMocks(context: HarnessRunnerContext): void {
+  const searchPrompt = async (options: SearchPromptOptions) => {
+    const message = String(options.message ?? "");
+    context.result.promptCalls.push({
+      kind: "search",
+      message,
+      defaultValue: typeof options.default === "string" ? options.default : undefined,
+    });
+    const queued = context.shiftQueueValue(context.scenario.searchQueue ?? [], `search:${message}`);
+    const term = typeof queued === "string" ? queued : queued.term;
+    const value = typeof queued === "string" ? queued : queued.value;
+    const choices = options.source
+      ? await options.source(term, { signal: new AbortController().signal })
+      : [];
+    context.result.searchChoicesByMessage[message] = normalizedChoices(choices);
+    if (options.validate) {
+      const validation = await options.validate(value);
+      if (validation !== true) {
+        throw new Error(String(validation));
+      }
+    }
+    return value;
+  };
+
+  mock.module("@inquirer/search", () => ({ default: searchPrompt }));
   mock.module("@inquirer/prompts", () => ({
     select: async (options: SelectPromptOptions) => {
       const message = String(options.message ?? "");
@@ -112,5 +155,6 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
         options.validate,
       );
     },
+    search: searchPrompt,
   }));
 }

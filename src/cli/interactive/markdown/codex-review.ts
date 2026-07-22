@@ -11,6 +11,7 @@ import type {
   PreparedMarkdownPdfCodexCandidate,
 } from "./codex-types";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import { collectMarkdownPdfInteractiveFontReview } from "./font-review";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -98,10 +99,14 @@ export function renderMarkdownPdfCodexConsent(
     runtime.stderr,
     `Base profile: ${setup.baseProfile ? displayPath(runtime, setup.baseProfile) : "none"}`,
   );
-  printLine(
-    runtime.stderr,
-    `Font hints: ${setup.fontHints.length > 0 ? setup.fontHints.join(", ") : "none"}`,
-  );
+  printLine(runtime.stderr, "Font hints:");
+  if (setup.fontHints.length === 0) {
+    printLine(runtime.stderr, "- none");
+  } else {
+    for (const hint of setup.fontHints) {
+      printLine(runtime.stderr, `- ${hint}`);
+    }
+  }
   if (setup.artifact !== "profile") {
     printLine(
       runtime.stderr,
@@ -143,6 +148,34 @@ export function renderMarkdownPdfCodexCandidateReview(
     runtime.stderr,
     `Codex request: ${isUsableMarkdownPdfCodexCandidate(candidate) ? "completed" : "no usable candidate"}`,
   );
+  const fontReview = collectMarkdownPdfInteractiveFontReview(candidate);
+  if (fontReview.applied.length > 0) {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, "Applied font mappings:");
+    for (const mapping of fontReview.applied) {
+      printLine(
+        runtime.stderr,
+        `- ${mapping.layer} ${mapping.role}/${mapping.key} → ${mapping.family}`,
+      );
+    }
+  }
+  if (fontReview.blocked.length > 0) {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, "Blocked font mappings:");
+    for (const mapping of fontReview.blocked) {
+      printLine(
+        runtime.stderr,
+        `- ${mapping.layer} ${mapping.role}/${mapping.key} → ${mapping.family} (${mapping.reason})`,
+      );
+    }
+  }
+  if (fontReview.unresolved.length > 0) {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, "Unresolved directions:");
+    for (const direction of fontReview.unresolved) {
+      printLine(runtime.stderr, `- ${direction}`);
+    }
+  }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");
   for (const file of plannedFiles(candidate)) {

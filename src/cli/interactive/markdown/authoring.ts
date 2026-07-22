@@ -19,6 +19,7 @@ import type {
   MarkdownPdfGeneratedLifecycleSelection,
   MarkdownPdfSavedRecipe,
 } from "./codex-types";
+import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import {
   prepareMarkdownPdfDeterministicRecipe,
   type MarkdownPdfDeterministicArtifact,
@@ -220,6 +221,7 @@ export async function runMarkdownPdfAuthoring(
   pathPromptContext: InteractivePathPromptContext,
   input: {
     entry: MarkdownPdfInteractiveEntry;
+    fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
     onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
   },
@@ -241,6 +243,7 @@ export async function runMarkdownPdfAuthoring(
         artifact,
         backToMode: false,
         entry: input.entry,
+        fontHintEditor: input.fontHintEditor,
         markdownInput: input.markdownInput,
         onGeneratedLifecycle: input.onGeneratedLifecycle,
       });
@@ -264,6 +267,7 @@ export async function runMarkdownPdfAuthoring(
           artifact,
           backToMode: true,
           entry: input.entry,
+          fontHintEditor: input.fontHintEditor,
           markdownInput: input.markdownInput,
           onGeneratedLifecycle: input.onGeneratedLifecycle,
         });

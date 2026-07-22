@@ -32,6 +32,7 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
   return {
     promptCalls: [],
     selectChoicesByMessage: {},
+    searchChoicesByMessage: {},
     validationCalls: [],
     pathCalls: [],
     actionCalls: [],
@@ -51,6 +52,7 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     markdownPdfSessionCreateCalls: [],
     markdownPdfSessionRetainCalls: [],
     markdownPdfSessionCleanupCalls: [],
+    markdownPdfFontDiscoveryCalls: [],
   };
 }
 

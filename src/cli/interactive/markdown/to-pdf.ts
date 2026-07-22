@@ -10,6 +10,7 @@ import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../..
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import { runMarkdownPdfAuthoring } from "./authoring";
+import { createMarkdownPdfInteractiveCodexSession } from "./codex-session";
 import type { MarkdownPdfSavedRecipe } from "./codex-types";
 import { handleMarkdownPdfGeneratedLifecycle } from "./generated-lifecycle";
 
@@ -164,42 +165,48 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
   pathPromptContext: InteractivePathPromptContext,
   options: { savedRecipe?: MarkdownPdfSavedRecipe } = {},
 ): Promise<InteractiveNavigationOutcome> {
-  const input = options.savedRecipe
-    ? await promptMarkdownPdfHandoffInput(runtime, pathPromptContext, options.savedRecipe)
-    : await promptMarkdownPdfRenderInput(pathPromptContext);
-  let preselected = options.savedRecipe;
-  while (true) {
-    const source = preselected
-      ? await prepareSavedMarkdownPdfRenderSource(runtime, input, preselected)
-      : await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
-    preselected = undefined;
-    if (source.kind === "back") {
-      return { kind: "open-submenu", group: "md" };
-    }
-    if (source.kind === "cancel") {
-      return { kind: "complete" };
-    }
-    if (source.kind === "generated") {
-      const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
-        entry: "to-pdf",
-        markdownInput: input,
-        onGeneratedLifecycle: async (selection) =>
-          await handleMarkdownPdfGeneratedLifecycle(runtime, pathPromptContext, selection),
-      });
-      if (outcome.kind === "change-source") {
-        continue;
+  const session = createMarkdownPdfInteractiveCodexSession(runtime);
+  try {
+    const input = options.savedRecipe
+      ? await promptMarkdownPdfHandoffInput(runtime, pathPromptContext, options.savedRecipe)
+      : await promptMarkdownPdfRenderInput(pathPromptContext);
+    let preselected = options.savedRecipe;
+    while (true) {
+      const source = preselected
+        ? await prepareSavedMarkdownPdfRenderSource(runtime, input, preselected)
+        : await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
+      preselected = undefined;
+      if (source.kind === "back") {
+        return { kind: "open-submenu", group: "md" };
       }
-      if (outcome.kind === "generated-lifecycle") {
+      if (source.kind === "cancel") {
         return { kind: "complete" };
       }
-      if (outcome.kind === "saved-recipe") {
-        return { kind: "complete" };
+      if (source.kind === "generated") {
+        const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
+          entry: "to-pdf",
+          fontHintEditor: session.fontHintEditor,
+          markdownInput: input,
+          onGeneratedLifecycle: async (selection) =>
+            await handleMarkdownPdfGeneratedLifecycle(runtime, pathPromptContext, selection),
+        });
+        if (outcome.kind === "change-source") {
+          continue;
+        }
+        if (outcome.kind === "generated-lifecycle") {
+          return { kind: "complete" };
+        }
+        if (outcome.kind === "saved-recipe") {
+          return { kind: "complete" };
+        }
+        return outcome;
       }
-      return outcome;
-    }
 
-    if ((await handlePreparedMarkdownPdfRender(runtime, pathPromptContext, source)) === "done") {
-      return { kind: "complete" };
+      if ((await handlePreparedMarkdownPdfRender(runtime, pathPromptContext, source)) === "done") {
+        return { kind: "complete" };
+      }
     }
+  } finally {
+    session.cancel();
   }
 }
