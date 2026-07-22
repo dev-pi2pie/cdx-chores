@@ -16,10 +16,9 @@ export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
-): Promise<void> {
+): Promise<"back" | void> {
   if (action === "md:to-pdf") {
-    await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
-    return;
+    return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
   }
 
   if (action === "md:pdf-recipes") {

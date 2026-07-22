@@ -95,7 +95,12 @@ describe("interactive Markdown PDF render sources", () => {
       confirmQueue: [false, true],
     });
 
-    expect(result.markdownPdfBundleDiscoveryCalls).toHaveLength(2);
+    expect(result.markdownPdfBundleDiscoveryCalls).toEqual([
+      {
+        directory: expect.stringMatching(/fixtures\/report-bundle$/),
+        options: { mode: "preview" },
+      },
+    ]);
     expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
       bundle: "fixtures/report-bundle",
       template: "fixtures/custom.html",
@@ -163,7 +168,27 @@ describe("interactive Markdown PDF render sources", () => {
     ]);
   });
 
-  test("changing the recipe source prepares a new candidate", () => {
+  test("plans a custom output and preserves explicit overwrite intent", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "custom"],
+      requiredPathQueue: ["fixtures/report.md", "output/custom.pdf"],
+      confirmQueue: [true, true],
+    });
+
+    expect(result.markdownPdfPlanCalls).toEqual([
+      {
+        output: "output/custom.pdf",
+        outputPath: expect.stringMatching(/output\/custom\.pdf$/),
+        overwrite: true,
+        preparedId: "prepared-1",
+      },
+    ]);
+    expect(result.markdownPdfExecuteCalls[0]?.outputPath).toMatch(/output\/custom\.pdf$/);
+  });
+
+  test("changing the recipe source retains the Markdown input and prepares a new candidate", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
@@ -174,7 +199,7 @@ describe("interactive Markdown PDF render sources", () => {
         "existing-profile",
         "default",
       ],
-      requiredPathQueue: ["fixtures/first.md", "fixtures/second.md", "fixtures/profile.yml"],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
       confirmQueue: [false, true],
     });
 
@@ -182,7 +207,30 @@ describe("interactive Markdown PDF render sources", () => {
       "prepared-1",
       "prepared-2",
     ]);
+    expect(result.markdownPdfPrepareCalls.map((call) => call.input)).toEqual([
+      "fixtures/report.md",
+      "fixtures/report.md",
+    ]);
+    expect(result.pathCalls.filter((call) => call.message === "Input Markdown file")).toHaveLength(
+      1,
+    );
     expect(result.markdownPdfExecuteCalls[0]?.preparedId).toBe("prepared-2");
+  });
+
+  test("prints renderer warnings without suppressing the success summary", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfRenderWarnings: ["Fallback font used", "Cover image was resized"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "default"],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr).toContain("Markdown PDF render warnings:");
+    expect(result.stderr).toContain("- Fallback font used");
+    expect(result.stderr).toContain("- Cover image was resized");
+    expect(result.stdout).toContain("Wrote PDF:");
   });
 
   test("stops before output selection when authoritative bundle preparation fails", () => {

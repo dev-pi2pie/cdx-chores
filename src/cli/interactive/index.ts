@@ -29,61 +29,71 @@ export async function runInteractiveMode(
   const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
   const confirmImpl = impls.confirmImpl ?? confirm;
   const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
-  const action = await selectInteractiveActionImpl({
-    stdin: runtime.stdin,
-    stdout: runtime.stdout,
-  });
+  let initialGroup: "md" | undefined;
+  while (true) {
+    const action = await selectInteractiveActionImpl({
+      stdin: runtime.stdin,
+      stdout: runtime.stdout,
+      initialGroup,
+    });
+    initialGroup = undefined;
 
-  if (action === "cancel") {
-    runtime.stdout.write("\nCancelled.\n");
-    return;
+    if (action === "cancel") {
+      runtime.stdout.write("\nCancelled.\n");
+      return;
+    }
+
+    if (action === "doctor") {
+      const asJson = await confirmImpl(
+        { message: "Output as JSON?", default: false },
+        {
+          input: runtime.stdin,
+          output: runtime.stdout,
+        },
+      );
+      await actionDoctorImpl(runtime, { json: asJson });
+      return;
+    }
+
+    switch (action) {
+      case "data:preview":
+      case "data:convert":
+      case "data:extract":
+      case "data:stack":
+      case "data:query":
+      case "data:parquet-preview":
+      case "data:json-to-csv":
+      case "data:json-to-tsv":
+      case "data:csv-to-json":
+      case "data:csv-to-tsv":
+      case "data:tsv-to-csv":
+      case "data:tsv-to-json":
+        await handleDataInteractiveAction(runtime, pathPromptContext, action);
+        return;
+      case "md:to-pdf":
+      case "md:pdf-recipes":
+      case "md:to-docx":
+      case "md:frontmatter-to-json":
+        if (
+          (await handleMarkdownInteractiveAction(runtime, pathPromptContext, action)) === "back"
+        ) {
+          initialGroup = "md";
+          continue;
+        }
+        return;
+      case "rename:file":
+      case "rename:batch":
+      case "rename:cleanup":
+      case "rename:apply":
+        await handleRenameInteractiveAction(runtime, pathPromptContext, action);
+        return;
+      case "video:convert":
+      case "video:resize":
+      case "video:gif":
+        await handleVideoInteractiveAction(runtime, pathPromptContext, action);
+        return;
+    }
+
+    assertNeverInteractiveAction(action);
   }
-
-  if (action === "doctor") {
-    const asJson = await confirmImpl(
-      { message: "Output as JSON?", default: false },
-      {
-        input: runtime.stdin,
-        output: runtime.stdout,
-      },
-    );
-    await actionDoctorImpl(runtime, { json: asJson });
-    return;
-  }
-
-  switch (action) {
-    case "data:preview":
-    case "data:convert":
-    case "data:extract":
-    case "data:stack":
-    case "data:query":
-    case "data:parquet-preview":
-    case "data:json-to-csv":
-    case "data:json-to-tsv":
-    case "data:csv-to-json":
-    case "data:csv-to-tsv":
-    case "data:tsv-to-csv":
-    case "data:tsv-to-json":
-      await handleDataInteractiveAction(runtime, pathPromptContext, action);
-      return;
-    case "md:to-pdf":
-    case "md:pdf-recipes":
-    case "md:to-docx":
-    case "md:frontmatter-to-json":
-      await handleMarkdownInteractiveAction(runtime, pathPromptContext, action);
-      return;
-    case "rename:file":
-    case "rename:batch":
-    case "rename:cleanup":
-    case "rename:apply":
-      await handleRenameInteractiveAction(runtime, pathPromptContext, action);
-      return;
-    case "video:convert":
-    case "video:resize":
-    case "video:gif":
-      await handleVideoInteractiveAction(runtime, pathPromptContext, action);
-      return;
-  }
-
-  assertNeverInteractiveAction(action);
 }

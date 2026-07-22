@@ -72,20 +72,6 @@ function formatDiscoveredBundleRoles(candidates: MarkdownPdfRenderBundleCandidat
   return roles.length > 0 ? roles.join(", ") : "none";
 }
 
-async function discoverBundleRolesForPreview(
-  directory: string,
-  discoverBundle: typeof discoverMarkdownPdfRenderBundle,
-): Promise<MarkdownPdfRenderBundleCandidates> {
-  const overrideTolerantCandidates = await discoverBundle(directory, { profileResolved: true });
-  try {
-    return await discoverBundle(directory);
-  } catch {
-    // Preparation runs after explicit roles are known and remains authoritative for
-    // profile admission. This preview must not reject an override the renderer accepts.
-    return overrideTolerantCandidates;
-  }
-}
-
 async function promptExplicitRoles(message: string): Promise<MarkdownPdfInteractiveExplicitRole[]> {
   const roles = await checkbox<MarkdownPdfInteractiveExplicitRole>({
     message,
@@ -151,10 +137,7 @@ async function collectCustomInputs(
       kind: "directory",
       ...pathPromptContext,
     });
-    const candidates = await discoverBundleRolesForPreview(
-      resolveFromCwd(runtime, bundle),
-      discoverBundle,
-    );
+    const candidates = await discoverBundle(resolveFromCwd(runtime, bundle), { mode: "preview" });
     printLine(runtime.stderr, `Bundle provides: ${formatDiscoveredBundleRoles(candidates)}`);
   }
 
@@ -171,12 +154,9 @@ async function collectCustomInputs(
 async function collectMarkdownPdfRenderSource(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  input: string,
   discoverBundle: typeof discoverMarkdownPdfRenderBundle,
 ): Promise<CollectedMarkdownPdfRenderSource | { kind: "back" } | { kind: "cancel" }> {
-  const input = await promptRequiredPathWithConfig("Input Markdown file", {
-    kind: "file",
-    ...pathPromptContext,
-  });
   while (true) {
     const source = await select<MarkdownPdfInteractiveRenderSource | "back" | "cancel">({
       message: "Choose a recipe for this PDF",
@@ -233,15 +213,26 @@ async function collectMarkdownPdfRenderSource(
   }
 }
 
+export async function promptMarkdownPdfRenderInput(
+  pathPromptContext: InteractivePathPromptContext,
+): Promise<string> {
+  return await promptRequiredPathWithConfig("Input Markdown file", {
+    kind: "file",
+    ...pathPromptContext,
+  });
+}
+
 /** Collects one existing render source and performs its authoritative preparation exactly once. */
 export async function collectPreparedMarkdownPdfRenderSource(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  input: string,
   implementations: MarkdownPdfRenderSourceImplementations = {},
 ): Promise<MarkdownPdfInteractiveRenderSourceOutcome> {
   const collected = await collectMarkdownPdfRenderSource(
     runtime,
     pathPromptContext,
+    input,
     implementations.discoverBundle ?? discoverMarkdownPdfRenderBundle,
   );
   if ("kind" in collected) {

@@ -12,6 +12,7 @@ import type { InteractivePathPromptContext } from "../shared";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
+  promptMarkdownPdfRenderInput,
   type MarkdownPdfInteractivePreparedRenderSource,
 } from "./render-source";
 import { renderMarkdownPdfRecipeReview } from "./review";
@@ -84,46 +85,62 @@ async function promptDeclinedRenderAction(): Promise<"change-output" | "change-s
   });
 }
 
+type PreparedRenderOutcome = "change-source" | "done";
+
+async function handlePreparedMarkdownPdfRender(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  source: MarkdownPdfInteractivePreparedRenderSource,
+): Promise<PreparedRenderOutcome> {
+  while (true) {
+    renderMarkdownPdfRecipeReview(runtime, source);
+    const output = await promptMarkdownPdfOutput(runtime, pathPromptContext, source);
+    if (output.kind === "cancel") {
+      return "done";
+    }
+    if (output.kind === "change-source") {
+      return "change-source";
+    }
+
+    renderMarkdownPdfFinalReview(runtime, source, output.plan);
+    if (!(await confirm({ message: "Render this PDF?", default: true }))) {
+      const next = await promptDeclinedRenderAction();
+      if (next === "cancel") {
+        return "done";
+      }
+      if (next === "change-source") {
+        return "change-source";
+      }
+      continue;
+    }
+
+    const result = await executePlannedMarkdownPdfRender(runtime, output.plan);
+    if (result.warnings.length > 0) {
+      printLine(runtime.stderr, "Markdown PDF render warnings:");
+      for (const warning of result.warnings) {
+        printLine(runtime.stderr, `- ${warning}`);
+      }
+    }
+    printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, output.plan.outputPath)}`);
+    return "done";
+  }
+}
+
 export async function handleMarkdownPdfToPdfInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-): Promise<void> {
+): Promise<"back" | void> {
+  const input = await promptMarkdownPdfRenderInput(pathPromptContext);
   while (true) {
-    const source = await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext);
-    if (source.kind === "back" || source.kind === "cancel") {
+    const source = await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
+    if (source.kind === "back") {
+      return "back";
+    }
+    if (source.kind === "cancel") {
       return;
     }
 
-    while (true) {
-      renderMarkdownPdfRecipeReview(runtime, source);
-      const output = await promptMarkdownPdfOutput(runtime, pathPromptContext, source);
-      if (output.kind === "cancel") {
-        return;
-      }
-      if (output.kind === "change-source") {
-        break;
-      }
-
-      renderMarkdownPdfFinalReview(runtime, source, output.plan);
-      if (!(await confirm({ message: "Render this PDF?", default: true }))) {
-        const next = await promptDeclinedRenderAction();
-        if (next === "cancel") {
-          return;
-        }
-        if (next === "change-source") {
-          break;
-        }
-        continue;
-      }
-
-      const result = await executePlannedMarkdownPdfRender(runtime, output.plan);
-      if (result.warnings.length > 0) {
-        printLine(runtime.stderr, "Markdown PDF render warnings:");
-        for (const warning of result.warnings) {
-          printLine(runtime.stderr, `- ${warning}`);
-        }
-      }
-      printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, output.plan.outputPath)}`);
+    if ((await handlePreparedMarkdownPdfRender(runtime, pathPromptContext, source)) === "done") {
       return;
     }
   }

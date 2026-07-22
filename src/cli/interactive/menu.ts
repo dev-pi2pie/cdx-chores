@@ -47,6 +47,7 @@ type InteractiveSubmenuConfig = {
 };
 
 interface SelectInteractiveActionOptions {
+  initialGroup?: InteractiveSubmenuGroup;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
   selectMenuChoiceImpl?: typeof selectInteractiveMenuChoice;
@@ -111,15 +112,19 @@ export async function selectInteractiveAction(
   const stdin = options.stdin ?? process.stdin;
   const stdout = options.stdout ?? process.stdout;
   const selectMenuChoice = options.selectMenuChoiceImpl ?? selectInteractiveMenuChoice;
+  let initialGroup = options.initialGroup;
 
   while (true) {
-    const rootChoice = await selectMenuChoice<InteractiveRootChoice>({
-      message: "Choose a command",
-      choices: INTERACTIVE_ROOT_CHOICES,
-      exitValue: "cancel",
-      input: stdin,
-      output: stdout,
-    });
+    const rootChoice =
+      initialGroup ??
+      (await selectMenuChoice<InteractiveRootChoice>({
+        message: "Choose a command",
+        choices: INTERACTIVE_ROOT_CHOICES,
+        exitValue: "cancel",
+        input: stdin,
+        output: stdout,
+      }));
+    initialGroup = undefined;
 
     if (rootChoice === "cancel") {
       return "cancel";

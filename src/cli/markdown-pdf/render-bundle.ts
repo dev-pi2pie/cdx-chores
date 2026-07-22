@@ -49,6 +49,7 @@ export interface ResolveMarkdownPdfRenderBundleOptions {
 }
 
 export interface DiscoverMarkdownPdfRenderBundleOptions {
+  mode?: "render" | "preview";
   profileResolved?: boolean;
 }
 
@@ -186,6 +187,7 @@ export async function discoverMarkdownPdfRenderBundle(
   directory: string,
   options: DiscoverMarkdownPdfRenderBundleOptions = {},
 ): Promise<MarkdownPdfRenderBundleCandidates> {
+  const preview = options.mode === "preview";
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -239,7 +241,9 @@ export async function discoverMarkdownPdfRenderBundle(
   candidates.css.sort(compareCandidates);
 
   const inspectProfileCandidates =
-    !options.profileResolved || (candidates.template.length === 0 && candidates.css.length === 0);
+    preview ||
+    !options.profileResolved ||
+    (candidates.template.length === 0 && candidates.css.length === 0);
   if (inspectProfileCandidates) {
     profileCandidates.sort(compareCandidates);
     for (const candidate of profileCandidates) {
@@ -252,13 +256,13 @@ export async function discoverMarkdownPdfRenderBundle(
       }
       const classification = await classifyMarkdownPdfRenderBundleProfile(candidate.path);
       if (classification.kind === "unclassified") {
-        if (!options.profileResolved) {
+        if (preview || !options.profileResolved) {
           candidates.ignoredProfileFiles.push(candidate.basename);
         }
         continue;
       }
       if (classification.kind === "invalid-profile") {
-        if (!options.profileResolved) {
+        if (!preview && !options.profileResolved) {
           throw classification.error;
         }
         continue;
@@ -271,6 +275,7 @@ export async function discoverMarkdownPdfRenderBundle(
   candidates.ignoredProfileFiles.sort();
 
   if (
+    !preview &&
     candidates.profile.length === 0 &&
     candidates.template.length === 0 &&
     candidates.css.length === 0
