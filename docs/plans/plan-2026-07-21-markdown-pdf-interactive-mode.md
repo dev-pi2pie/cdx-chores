@@ -427,35 +427,35 @@ Expected job record:
 
 Tasks:
 
-- [ ] Expose `Codex Assistant` for Profile and Template bundle under `to-pdf`,
+- [x] Expose `Codex Assistant` for Profile and Template bundle under `to-pdf`,
       reusing the selected Markdown input and the same prepared-result services
       already used by `pdf-recipes`.
-- [ ] Preserve Project's direct transition to Codex Assistant without adding a
+- [x] Preserve Project's direct transition to Codex Assistant without adding a
       one-option preparation-mode menu or deterministic Project modes.
-- [ ] Replace `Describe the PDF direction` with optional `PDF intent` wording
+- [x] Replace `Describe the PDF direction` with optional `PDF intent` wording
       and the data-query-style single-line or multiline editor choice.
-- [ ] Present Codex setup in artifact-specific order: PDF intent, base Profile,
+- [x] Present Codex setup in artifact-specific order: PDF intent, base Profile,
       cover image when supported, font hints, then `Continue`.
-- [ ] Keep setup actions single-select, retain the baseline repeatable
+- [x] Keep setup actions single-select, retain the baseline repeatable
       add/remove font-hint editor with arbitrary `Font preference` text, and
       show short input guidance below the intent prompt.
-- [ ] Remove output-directory editing from pre-Codex setup. Resolve explicit or
+- [x] Remove output-directory editing from pre-Codex setup. Resolve explicit or
       generated-fallback artifact outputs only after recipe review and lifecycle
       selection, without sending them to Codex or regenerating the candidate.
-- [ ] Keep consent ordered with the setup summary and include only the Markdown
+- [x] Keep consent ordered with the setup summary and include only the Markdown
       sample and artifact-supported signals that will be sent.
-- [ ] Adapt the existing lower-level Codex progress presenter so Interactive
+- [x] Adapt the existing lower-level Codex progress presenter so Interactive
       mode shows exactly one concise artifact-specific waiting status rather
       than nested or duplicated animation.
-- [ ] For Project preparation, change that one status across the real Profile
+- [x] For Project preparation, change that one status across the real Profile
       and Template request stages; clear all waiting output before review,
       recovery, or error prompts and preserve direct-command progress behavior.
-- [ ] Add focused tests for the expanded matrix, prompt/editor ordering, empty
+- [x] Add focused tests for the expanded matrix, prompt/editor ordering, empty
       intent, consent payload, delayed output selection, prepared-candidate
       reuse, regeneration, and TTY/non-TTY waiting-status behavior.
-- [ ] Record a manual Interactive transcript covering Profile or Template Codex
+- [x] Record a manual Interactive transcript covering Profile or Template Codex
       preparation plus the two-stage Project waiting status.
-- [ ] Review the Phase 6.5 change range before proceeding to Phase 6.6.
+- [x] Review the Phase 6.5 change range before proceeding to Phase 6.6.
 
 Phase gate:
 
@@ -487,7 +487,7 @@ Tasks:
       preference/intended-use pairs and complete custom text, compiling each
       accepted draft to one ordered direct `--font-hint` equivalent.
 - [ ] Expand `Add font hint` into `Build a font hint` and `Write a complete
-      custom hint`, keeping arbitrary custom text available in every supported
+    custom hint`, keeping arbitrary custom text available in every supported
       environment.
 - [ ] Add an editable preference field whose raw custom typed value remains the
       first selectable choice, with its explanation in the choice description,
