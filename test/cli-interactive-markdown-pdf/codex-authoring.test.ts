@@ -193,10 +193,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
       selectQueue: [
         ...recipesCodexSelections("template-bundle"),
         "font-hints",
-        "add",
         "custom",
         "accept",
-        "add",
         "custom",
         "accept",
         "remove",
@@ -240,8 +238,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       selectQueue: [
         ...recipesCodexSelections("profile"),
         "font-hints",
-        "add",
-        "builder",
+        "guided",
         { kind: "language-body", language: "" },
         "accept",
         "done",
@@ -277,8 +274,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       selectQueue: [
         ...recipesCodexSelections("template-bundle"),
         "font-hints",
-        "add",
-        "builder",
+        "guided",
         { kind: "body" },
         "accept",
         "done",
@@ -303,37 +299,126 @@ describe("interactive Markdown PDF Codex authoring", () => {
     ]);
   });
 
-  test("retries unavailable suggestions from the editor before building another hint", () => {
+  test("shows direct add actions without the retry branch", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      markdownPdfFontFamilyRuns: [[], ["Inter"]],
+      markdownPdfFontFamilies: [],
       selectQueue: [
         ...recipesCodexSelections("profile"),
         "font-hints",
-        "add",
-        "builder",
+        "guided",
         { kind: "body" },
         "accept",
-        "add",
-        "retry",
-        "builder",
+        "guided",
         { kind: "general-body" },
         "accept",
         "done",
         "continue",
         "cancel",
       ],
-      inputQueue: ["", "Brand Sans"],
-      searchQueue: [{ term: "Int", value: "Inter" }],
+      inputQueue: ["", "Brand Sans", "Inter"],
       confirmQueue: [false, true],
     });
 
-    expect(result.markdownPdfFontDiscoveryCalls).toHaveLength(2);
+    expect(result.selectChoicesByMessage["Edit font hints"]?.map((choice) => choice.value)).toEqual(
+      ["guided", "custom", "edit", "remove", "move", "done"],
+    );
+    expect(result.markdownPdfFontDiscoveryCalls).toHaveLength(1);
     expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual([
       "Prefer Brand Sans for body text",
       "Prefer Inter",
     ]);
+    expect(result.stderr.match(/^1\. Prefer Brand Sans for body text$/gm)).toHaveLength(2);
+    expect(result.stderr.match(/^2\. Prefer Inter$/gm)).toHaveLength(1);
+    expect(result.promptCalls).not.toContainEqual({ kind: "select", message: "Add font hint" });
+  });
+
+  test("offers only direct additions and Done for an empty collection", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.selectChoicesByMessage["Edit font hints"]?.map((choice) => choice.value)).toEqual(
+      ["guided", "custom", "done"],
+    );
+  });
+
+  test("adds mutation actions only after the collection has an item", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "custom",
+        "accept",
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Prefer Inter"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.selectChoicesByMessage["Edit font hints"]?.map((choice) => choice.value)).toEqual(
+      ["guided", "custom", "edit", "remove", "done"],
+    );
+    expect(result.stderr.match(/^1\. Prefer Inter$/gm)).toHaveLength(1);
+  });
+
+  test("keeps the visible collection and payload ordered across every mutation", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "font-hints",
+        "custom",
+        "accept",
+        "custom",
+        "accept",
+        "move",
+        1,
+        "up",
+        "edit",
+        0,
+        "accept",
+        "remove",
+        1,
+        "done",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "First hint", "Second hint", "Second hint revised"],
+      confirmQueue: [false, true],
+    });
+
+    const snapshots = [
+      "Font hints:\n- none",
+      "Font hints:\n1. First hint",
+      "Font hints:\n1. First hint\n2. Second hint",
+      "Font hints:\n1. Second hint\n2. First hint",
+      "Font hints:\n1. Second hint revised\n2. First hint",
+      "Font hints:\n1. Second hint revised",
+    ];
+    let previousIndex = -1;
+    for (const snapshot of snapshots) {
+      const index = result.stderr.indexOf(snapshot, previousIndex + 1);
+      expect(index).toBeGreaterThan(previousIndex);
+      previousIndex = index;
+    }
+    expect(result.markdownPdfCodexPrepareCalls[0]?.fontHints).toEqual(["Second hint revised"]);
   });
 
   test("preserves mode transitions while editing a font hint", () => {
@@ -344,7 +429,6 @@ describe("interactive Markdown PDF Codex authoring", () => {
       selectQueue: [
         ...recipesCodexSelections("profile"),
         "font-hints",
-        "add",
         "custom",
         "accept",
         "edit",
@@ -372,10 +456,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
       selectQueue: [
         ...recipesCodexSelections("profile"),
         "font-hints",
-        "add",
         "custom",
         "accept",
-        "add",
         "custom",
         "accept",
         "done",
@@ -528,7 +610,6 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "change-setup",
         "font-hints",
-        "add",
         "custom",
         "accept",
         "done",

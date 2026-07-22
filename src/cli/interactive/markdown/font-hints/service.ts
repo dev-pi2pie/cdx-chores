@@ -13,10 +13,7 @@ import {
   promptMarkdownPdfInteractiveFontHintSearch,
 } from "./search-prompt";
 import { normalizeMarkdownPdfInteractiveFontHintText } from "./text";
-import type {
-  MarkdownPdfInteractiveFontHintSuggestionService,
-  MarkdownPdfInteractiveFontHintSuggestionState,
-} from "./types";
+import type { MarkdownPdfInteractiveFontHintSuggestionService } from "./types";
 
 const FONT_HINT_DISCOVERY_TIMEOUT_MS = 1_000;
 const FONT_HINT_DISCOVERY_STATUS_DELAY_MS = 150;
@@ -28,7 +25,7 @@ const FONT_HINT_DISCOVERY_TIMED_OUT = Symbol("font-hint-discovery-timed-out");
 
 type DiscoveryResolution =
   | { kind: "ready"; families: string[] }
-  | { kind: "unavailable"; retriable: boolean; showNotice: boolean };
+  | { kind: "unavailable"; showNotice: boolean };
 
 type ScheduleDeadline = (callback: () => void, timeoutMs: number) => () => void;
 
@@ -66,7 +63,7 @@ async function discoverInstalledFamilies(
   };
   try {
     if (signal.aborted) {
-      return { kind: "unavailable", retriable: false, showNotice: false };
+      return { kind: "unavailable", showNotice: false };
     }
     signal.addEventListener("abort", abortDiscovery, { once: true });
     const sessionAbort = new Promise<typeof FONT_HINT_DISCOVERY_ABORTED>((resolve) => {
@@ -89,24 +86,24 @@ async function discoverInstalledFamilies(
       deadline,
     ]);
     if (discovery === FONT_HINT_DISCOVERY_ABORTED || signal.aborted) {
-      return { kind: "unavailable", retriable: false, showNotice: false };
+      return { kind: "unavailable", showNotice: false };
     }
     if (discovery === FONT_HINT_DISCOVERY_TIMED_OUT) {
-      return { kind: "unavailable", retriable: true, showNotice: true };
+      return { kind: "unavailable", showNotice: true };
     }
     const families = collectInstalledFontFamilies(discovery.faces);
     if (now() - startedAt >= timeoutMs) {
-      return { kind: "unavailable", retriable: true, showNotice: true };
+      return { kind: "unavailable", showNotice: true };
     }
     if (families.length === 0) {
-      return { kind: "unavailable", retriable: true, showNotice: true };
+      return { kind: "unavailable", showNotice: true };
     }
     return { kind: "ready", families };
   } catch (error) {
     if (signal.aborted || isAbortError(error)) {
-      return { kind: "unavailable", retriable: false, showNotice: false };
+      return { kind: "unavailable", showNotice: false };
     }
-    return { kind: "unavailable", retriable: true, showNotice: true };
+    return { kind: "unavailable", showNotice: true };
   } finally {
     cancelDeadline?.();
     signal.removeEventListener("abort", abortDiscovery);
@@ -131,8 +128,8 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
   const scheduleDeadline = options.scheduleDeadline ?? scheduleDeadlineWithTimer;
   const searchPrompt = options.searchPrompt ?? search;
   const controller = new AbortController();
-  let state: MarkdownPdfInteractiveFontHintSuggestionState = { kind: "idle" };
   let discoveryPromise: Promise<DiscoveryResolution> | undefined;
+  let unavailableNoticeShown = false;
   let statusTimer: NodeJS.Timeout | undefined;
   let statusShown = false;
 
@@ -155,19 +152,8 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     statusShown = false;
   }
 
-  async function resolveDiscovery(forceRetry = false): Promise<DiscoveryResolution> {
-    if (!forceRetry && state.kind === "ready") {
-      return { kind: "ready", families: state.families };
-    }
-    if (!forceRetry && state.kind === "unavailable") {
-      return {
-        kind: "unavailable",
-        retriable: state.retriable,
-        showNotice: false,
-      };
-    }
-    if (!discoveryPromise || forceRetry) {
-      state = { kind: "loading" };
+  async function resolveDiscovery(): Promise<DiscoveryResolution> {
+    if (!discoveryPromise) {
       armStatus();
       discoveryPromise = discoverInstalledFamilies(
         runtime,
@@ -176,17 +162,9 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
         now,
         scheduleDeadline,
         discoveryTimeoutMs,
-      )
-        .then((resolution) => {
-          state =
-            resolution.kind === "ready"
-              ? { kind: "ready", families: resolution.families }
-              : { kind: "unavailable", retriable: resolution.retriable };
-          return resolution;
-        })
-        .finally(() => {
-          clearStatus();
-        });
+      ).finally(() => {
+        clearStatus();
+      });
     }
     return discoveryPromise;
   }
@@ -195,23 +173,14 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     cancel() {
       controller.abort();
     },
-    getState() {
-      return state;
-    },
-    async retryUnavailable() {
-      const resolution = await resolveDiscovery(true);
-      if (resolution.kind === "unavailable" && resolution.showNotice) {
-        printLine(runtime.stderr, FONT_HINT_UNAVAILABLE_NOTICE);
-      }
-      return resolution.kind === "ready";
-    },
     async promptPreference(current) {
       const resolution = await resolveDiscovery();
       if (controller.signal.aborted) {
         throw new DOMException("Font suggestion discovery was aborted.", "AbortError");
       }
       if (resolution.kind === "unavailable") {
-        if (resolution.showNotice) {
+        if (resolution.showNotice && !unavailableNoticeShown) {
+          unavailableNoticeShown = true;
           printLine(runtime.stderr, FONT_HINT_UNAVAILABLE_NOTICE);
         }
         const selected = await promptMarkdownPdfInteractiveFontHintInput(

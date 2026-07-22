@@ -1,5 +1,4 @@
 export {
-  buildMarkdownPdfInteractiveFontHintModeChoices,
   buildMarkdownPdfInteractiveFontHintNextStepChoices,
   findExactMarkdownPdfInteractiveFontHintDuplicate,
   moveMarkdownPdfInteractiveFontHint,
@@ -34,9 +33,7 @@ export type {
   MarkdownPdfInteractiveFontHintEditorAction,
   MarkdownPdfInteractiveFontHintEditorChoice,
   MarkdownPdfInteractiveFontHintEditorSession,
-  MarkdownPdfInteractiveFontHintMode,
   MarkdownPdfInteractiveFontHintIntendedUse,
   MarkdownPdfInteractiveFontHintPreferenceChoice,
   MarkdownPdfInteractiveFontHintSuggestionService,
-  MarkdownPdfInteractiveFontHintSuggestionState,
 } from "./font-hints/types";

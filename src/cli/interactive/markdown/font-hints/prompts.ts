@@ -7,7 +7,6 @@ import {
   formatMarkdownPdfInteractiveFontHintPreview,
 } from "./compile";
 import {
-  buildMarkdownPdfInteractiveFontHintModeChoices,
   buildMarkdownPdfInteractiveFontHintNextStepChoices,
   findExactMarkdownPdfInteractiveFontHintDuplicate,
   moveMarkdownPdfInteractiveFontHint,
@@ -158,36 +157,19 @@ async function promptDraftEditor(
   }
 }
 
-async function promptDraftMode(
-  runtime: CliRuntime,
-  artifact: MarkdownPdfInteractiveFontHintArtifact,
-  suggestions: MarkdownPdfInteractiveFontHintSuggestionService,
-): Promise<DraftOutcome> {
-  while (true) {
-    const suggestionState = suggestions.getState();
-    const retryAvailable = suggestionState.kind === "unavailable" && suggestionState.retriable;
-    const modeChoices = buildMarkdownPdfInteractiveFontHintModeChoices();
-    const mode = await select<"builder" | "custom" | "retry" | "back">({
-      message: "Add font hint",
-      choices: [
-        ...modeChoices.slice(0, -1),
-        ...(retryAvailable
-          ? [{ name: "Retry installed font suggestions", value: "retry" as const }]
-          : []),
-        modeChoices.at(-1)!,
-      ],
-    });
-    if (mode === "back") return "back";
-    if (mode === "retry") {
-      await suggestions.retryUnavailable();
-      continue;
-    }
-    return await promptDraftEditor(runtime, artifact, suggestions, mode);
-  }
-}
-
 function hintChoices(hints: readonly string[]) {
   return hints.map((hint, index) => ({ name: hint, value: index }));
+}
+
+function renderFontHintCollection(runtime: CliRuntime, hints: readonly string[]): void {
+  printLine(runtime.stderr, "Font hints:");
+  if (hints.length === 0) {
+    printLine(runtime.stderr, "- none");
+    return;
+  }
+  for (const [index, hint] of hints.entries()) {
+    printLine(runtime.stderr, `${index + 1}. ${hint}`);
+  }
 }
 
 export function createMarkdownPdfInteractiveFontHintEditorSession(
@@ -212,10 +194,12 @@ export function createMarkdownPdfInteractiveFontHintEditorSession(
       }
 
       while (true) {
-        const action = await select<"add" | "edit" | "remove" | "move" | "done">({
+        renderFontHintCollection(runtime, hints);
+        const action = await select<"guided" | "custom" | "edit" | "remove" | "move" | "done">({
           message: "Edit font hints",
           choices: [
-            { name: "Add font hint", value: "add" },
+            { name: "Add guided font hint", value: "guided" as const },
+            { name: "Add complete custom hint", value: "custom" as const },
             ...(hints.length > 0
               ? [
                   { name: "Edit font hint", value: "edit" as const },
@@ -264,16 +248,27 @@ export function createMarkdownPdfInteractiveFontHintEditorSession(
             ? await select<number>({ message: "Edit font hint", choices: hintChoices(hints) })
             : undefined;
         const currentDraft =
-          editIndex === undefined ? undefined : drafts.get(draftKey(hints[editIndex] ?? ""));
-        const next = currentDraft
-          ? await promptDraftEditor(
-              runtime,
-              artifact,
-              suggestions,
-              currentDraft.kind === "built" ? "builder" : "custom",
-              currentDraft,
-            )
-          : await promptDraftMode(runtime, artifact, suggestions);
+          editIndex === undefined
+            ? undefined
+            : (drafts.get(draftKey(hints[editIndex] ?? "")) ?? {
+                kind: "custom",
+                text: hints[editIndex] ?? "",
+              });
+        const next =
+          action === "edit" && currentDraft
+            ? await promptDraftEditor(
+                runtime,
+                artifact,
+                suggestions,
+                currentDraft.kind === "built" ? "builder" : "custom",
+                currentDraft,
+              )
+            : await promptDraftEditor(
+                runtime,
+                artifact,
+                suggestions,
+                action === "guided" ? "builder" : "custom",
+              );
         if (next === "back") continue;
 
         const otherHints = hints.filter((_hint, index) => index !== editIndex);

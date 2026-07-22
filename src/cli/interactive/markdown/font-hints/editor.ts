@@ -7,29 +7,7 @@ import type {
   MarkdownPdfInteractiveFontHintDraft,
   MarkdownPdfInteractiveFontHintEditorAction,
   MarkdownPdfInteractiveFontHintEditorChoice,
-  MarkdownPdfInteractiveFontHintMode,
 } from "./types";
-
-export function buildMarkdownPdfInteractiveFontHintModeChoices(): Array<
-  MarkdownPdfInteractiveFontHintEditorChoice<MarkdownPdfInteractiveFontHintMode | "back">
-> {
-  return [
-    {
-      name: "Build a font hint",
-      value: "builder",
-      description: "Pick a font preference, then choose the intended use.",
-    },
-    {
-      name: "Write a complete custom hint",
-      value: "custom",
-      description: "Type the final --font-hint text directly.",
-    },
-    {
-      name: "Back",
-      value: "back",
-    },
-  ];
-}
 
 export function buildMarkdownPdfInteractiveFontHintNextStepChoices(): Array<
   MarkdownPdfInteractiveFontHintEditorChoice<MarkdownPdfInteractiveFontHintEditorAction>

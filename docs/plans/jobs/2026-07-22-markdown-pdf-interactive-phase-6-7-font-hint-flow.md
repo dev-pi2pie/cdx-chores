@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Phase 6.7 repeatable font-hint flow"
 created-date: 2026-07-22
-status: draft
+modified-date: 2026-07-22
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -14,17 +15,28 @@ direct `fontHints: string[]` contract stays unchanged.
 
 ## Implementation Checklist
 
-- [ ] Replace the nested add-mode prompt with direct guided and complete-custom
+- [x] Replace the nested add-mode prompt with direct guided and complete-custom
       collection actions.
-- [ ] Re-render the ordered collection after every accepted change.
-- [ ] Keep sequential add, edit, remove, move, `Done`, and exact-duplicate
+- [x] Re-render the ordered collection after every accepted change.
+- [x] Keep sequential add, edit, remove, move, `Done`, and exact-duplicate
       behavior.
-- [ ] Remove the manual discovery-retry action while preserving one cached
+- [x] Remove the manual discovery-retry action while preserving one cached
       discovery attempt and ordinary preference fallback.
-- [ ] Preserve search keyboard behavior, cancellation, privacy, intended-use
+- [x] Preserve search keyboard behavior, cancellation, privacy, intended-use
       compilation, consent, and candidate invalidation.
-- [ ] Pass focused, repository, and public-safe manual verification.
+- [x] Pass focused, repository, and public-safe manual verification.
 - [ ] Review the exact implementation range and resolve actionable findings.
+
+## Verification Evidence
+
+- Focused authoring, suggestion, and discovery-cancellation coverage passed
+  with 62 tests.
+- The complete repository suite passed with 1,686 tests, alongside type, lint,
+  format, build, and diff checks.
+- A live terminal smoke verified direct guided and complete-custom additions,
+  typed custom preference priority, installed-family search navigation with the
+  arrow keys, repeated ordered collection display, and cancellation before
+  external transmission.
 
 ## Traceability
 

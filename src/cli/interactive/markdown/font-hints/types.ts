@@ -27,8 +27,6 @@ export type MarkdownPdfInteractiveFontHintDraft =
   | MarkdownPdfInteractiveFontHintBuiltDraft
   | MarkdownPdfInteractiveFontHintCustomDraft;
 
-export type MarkdownPdfInteractiveFontHintMode = "builder" | "custom";
-
 export type MarkdownPdfInteractiveFontHintEditorAction =
   | "accept"
   | "revise-preference"
@@ -50,17 +48,9 @@ export type MarkdownPdfInteractiveFontHintPreferenceChoice =
       description?: string;
     };
 
-export type MarkdownPdfInteractiveFontHintSuggestionState =
-  | { kind: "idle" }
-  | { kind: "loading" }
-  | { kind: "ready"; families: string[] }
-  | { kind: "unavailable"; retriable: boolean };
-
 export interface MarkdownPdfInteractiveFontHintSuggestionService {
   cancel(): void;
-  getState(): MarkdownPdfInteractiveFontHintSuggestionState;
   promptPreference(current?: string): Promise<string | undefined>;
-  retryUnavailable(): Promise<boolean>;
 }
 
 export interface MarkdownPdfInteractiveFontHintEditorSession {

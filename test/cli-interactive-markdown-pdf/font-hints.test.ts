@@ -229,31 +229,24 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(await service.promptPreference("Source Serif")).toBe("Source Serif 4");
     expect(discoveryCalls).toBe(1);
     expect(visibleChoices).not.toContain("/private/");
-    expect(service.getState()).toEqual({
-      kind: "ready",
-      families: ["Source Serif 4", "Source Serif Pro"],
-    });
   });
 
-  test("falls back once to ordinary input and supports explicit retry", async () => {
+  test("caches unavailable discovery while falling back to ordinary input each time", async () => {
     const { runtime, stderr } = createCapturedRuntime();
     let discoveryCalls = 0;
     const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
       discover: async () => {
         discoveryCalls += 1;
-        return discoveryCalls === 1 ? discoveryResult([]) : discoveryResult(["Inter"]);
+        return discoveryResult([]);
       },
-      inputPrompt: (async () => "Brand Sans") as typeof input,
-      searchPrompt: (async () => "Inter") as typeof search,
+      inputPrompt: (async (options) =>
+        options.default === "Brand Sans" ? "Inter" : "Brand Sans") as typeof input,
     });
 
     expect(await service.promptPreference()).toBe("Brand Sans");
-    expect(await service.promptPreference()).toBe("Brand Sans");
+    expect(await service.promptPreference("Brand Sans")).toBe("Inter");
     expect(discoveryCalls).toBe(1);
     expect(stderr.text.match(/Installed font suggestions are unavailable/g)).toHaveLength(1);
-    expect(await service.retryUnavailable()).toBe(true);
-    expect(discoveryCalls).toBe(2);
-    expect(await service.promptPreference()).toBe("Inter");
   });
 
   test("rejects discovery results that finish outside the total Interactive budget", async () => {
@@ -368,7 +361,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
 
     expect(await service.promptPreference()).toBeUndefined();
     const pending = service.promptPreference();
-    await Promise.resolve();
+    await promptTick();
     service.cancel();
     await expect(pending).rejects.toMatchObject({ name: "AbortPromptError" });
   });
