@@ -315,19 +315,19 @@ Expected job record:
 
 Tasks:
 
-- [ ] Add Profile and Template `starter` preparation.
-- [ ] Add Profile and Template `formal-guide` prompt collection over the
+- [x] Add Profile and Template `starter` preparation.
+- [x] Add Profile and Template `formal-guide` prompt collection over the
       normalized deterministic recipe surface.
-- [ ] Reuse the same prepared results in `to-pdf` and `pdf-recipes`.
-- [ ] Support revision at the smallest relevant prompt group.
-- [ ] Keep Project deterministic modes unavailable.
-- [ ] Save durable `pdf-recipes` artifacts only after final review.
-- [ ] Require the direct initialization output contract for durable Profile and
+- [x] Reuse the same prepared results in `to-pdf` and `pdf-recipes`.
+- [x] Support revision at the smallest relevant prompt group.
+- [x] Keep Project deterministic modes unavailable.
+- [x] Save durable `pdf-recipes` artifacts only after final review.
+- [x] Require the direct initialization output contract for durable Profile and
       Template saves; do not invent a deterministic output fallback.
-- [ ] Add temporary-render and save-and-render lifecycle choices for `to-pdf`
+- [x] Add temporary-render and save-and-render lifecycle choices for `to-pdf`
       without adding a save-only outcome; defer owned temporary-directory and
       recovery execution to Phase 6.
-- [ ] Add artifact-matrix, answer-revision, validation, and direct-parity tests.
+- [x] Add artifact-matrix, answer-revision, validation, and direct-parity tests.
 - [ ] Review the Phase 4 change range before proceeding.
 
 Phase gate:
