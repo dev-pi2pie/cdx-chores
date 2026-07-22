@@ -5,6 +5,21 @@ import { runInteractiveHarness } from "../cli-interactive-routing.helpers";
 const ENTRY_SELECTIONS = ["md", "md:to-pdf"];
 
 describe("interactive Markdown PDF render sources", () => {
+  test("describes generated authoring with the complete artifact matrix", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...ENTRY_SELECTIONS, "cancel"],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.selectChoicesByMessage["Choose a recipe for this PDF"]).toContainEqual({
+      name: "Create a recipe",
+      value: "generated",
+      description: "Prepare a Profile, Template bundle, or Project bundle",
+    });
+  });
+
   test("prepares, reviews, plans, and renders the built-in recipe once", () => {
     const result = runInteractiveHarness({
       mode: "run",

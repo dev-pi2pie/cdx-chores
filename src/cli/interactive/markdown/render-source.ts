@@ -189,7 +189,7 @@ async function collectMarkdownPdfRenderSource(
         {
           name: "Create a recipe",
           value: "generated",
-          description: "Prepare a deterministic Profile or Template bundle",
+          description: "Prepare a Profile, Template bundle, or Project bundle",
         },
         { name: "Back", value: "back", description: "Return to the Markdown menu" },
         { name: "Cancel", value: "cancel", description: "Exit without rendering" },
