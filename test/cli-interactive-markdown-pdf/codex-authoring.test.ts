@@ -358,6 +358,29 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
+  test.each(["review", "cancel"] as const)(
+    "treats the custom output path %s as a destination instead of navigation",
+    (output) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...recipesCodexSelections("template-bundle"),
+          "continue",
+          "save",
+          "none",
+          "custom",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: [output],
+        confirmQueue: [true, false, true],
+      });
+
+      expect(result.markdownPdfCodexBindCalls).toEqual([expect.objectContaining({ output })]);
+      expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    },
+  );
+
   test("uses an explicit Project setup output exactly for a durable save", () => {
     const result = runInteractiveHarness({
       mode: "run",

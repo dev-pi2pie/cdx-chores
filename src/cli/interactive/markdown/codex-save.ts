@@ -44,14 +44,7 @@ async function promptOutput(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   candidate: PreparedMarkdownPdfCodexCandidate,
-): Promise<string | "review" | "cancel"> {
-  const preparedSuggestion =
-    candidate.artifact === "profile"
-      ? candidate.prepared.suggestedOutputPath
-      : candidate.artifact === "template-bundle"
-        ? candidate.prepared.outputPlan.outputDirectory
-        : candidate.prepared.binding.outputPlan.outputDirectory;
-  const suggested = candidate.setup.outputPreference ?? preparedSuggestion;
+): Promise<{ kind: "output"; path: string } | { kind: "review" } | { kind: "cancel" }> {
   const choice = await select<"suggested" | "custom" | "review" | "cancel">({
     message: `${MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[candidate.artifact]} output destination`,
     choices: [
@@ -59,7 +52,7 @@ async function promptOutput(
         name: candidate.setup.outputPreference ? "Use setup output" : "Use generated output",
         value: "suggested",
         description: candidate.setup.outputPreference
-          ? displayPath(runtime, suggested)
+          ? displayPath(runtime, candidate.setup.outputPreference)
           : "Resolve a non-conflicting destination",
       },
       { name: "Custom output", value: "custom", description: "Choose another destination" },
@@ -69,19 +62,25 @@ async function promptOutput(
   });
   if (choice !== "custom") {
     if (choice === "review" || choice === "cancel") {
-      return choice;
+      return { kind: choice };
     }
-    return candidate.setup.outputPreference
-      ? candidate.setup.outputPreference
-      : await suggestedMarkdownPdfCodexOutputPath(candidate);
+    return {
+      kind: "output",
+      path: candidate.setup.outputPreference
+        ? candidate.setup.outputPreference
+        : await suggestedMarkdownPdfCodexOutputPath(candidate),
+    };
   }
-  return await promptRequiredPathWithConfig(
-    candidate.artifact === "profile" ? "Profile output file" : "Bundle output directory",
-    {
-      kind: candidate.artifact === "profile" ? "file" : "directory",
-      ...pathPromptContext,
-    },
-  );
+  return {
+    kind: "output",
+    path: await promptRequiredPathWithConfig(
+      candidate.artifact === "profile" ? "Profile output file" : "Bundle output directory",
+      {
+        kind: candidate.artifact === "profile" ? "file" : "directory",
+        ...pathPromptContext,
+      },
+    ),
+  };
 }
 
 function renderFinalReview(
@@ -116,15 +115,15 @@ export async function saveMarkdownPdfCodexCandidate(
     let next: SaveNextStep;
     try {
       const output = await promptOutput(runtime, pathPromptContext, candidate);
-      if (output === "review" || output === "cancel") {
-        return { kind: output };
+      if (output.kind !== "output") {
+        return output;
       }
       const overwrite = await confirm({
         message: "Overwrite recipe output if it exists?",
         default: false,
       });
       const bound = await bindMarkdownPdfCodexCandidate(runtime, candidate, {
-        output,
+        output: output.path,
         overwrite,
         report,
       });
