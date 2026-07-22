@@ -483,79 +483,79 @@ prepared `fontHints: string[]` contract.
 
 Tasks:
 
-- [ ] Add a narrow, non-persisted Interactive font-hint draft model for built
+- [x] Add a narrow, non-persisted Interactive font-hint draft model for built
       preference/intended-use pairs and complete custom text, compiling each
       accepted draft to one ordered direct `--font-hint` equivalent.
-- [ ] Expand `Add font hint` into `Build a font hint` and `Write a complete
-    custom hint`, keeping arbitrary custom text available in every supported
-      environment.
-- [ ] Add an editable preference field whose raw custom typed value remains the
+- [x] Expand `Add font hint` into two explicit choices: `Build a font hint` and
+      `Write a complete custom hint`. Keep arbitrary custom text available in
+      every supported environment.
+- [x] Add an editable preference field whose raw custom typed value remains the
       first selectable choice, with its explanation in the choice description,
       while at most six matching installed family names appear as suggestions.
-- [ ] Collapse a case-insensitive exact installed-family match, and preserve
+- [x] Collapse a case-insensitive exact installed-family match, and preserve
       the pinned `@inquirer/search` keyboard contract: non-wrapping Up/Down
       changes only the active sibling, Enter accepts it, Tab copies it into the
       query for continued editing, and new typing restores the custom first
       choice.
-- [ ] Keep Left and Right free of font-specific behavior, and verify paste,
+- [x] Keep Left and Right free of font-specific behavior, and verify paste,
       input-method-editor, Escape, and narrow-terminal usability without
       claiming path-style ghost-completion parity.
-- [ ] Reuse `discoverSystemFonts({ discovery: "fontconfig" })` through an
+- [x] Reuse `discoverSystemFonts({ discovery: "fontconfig" })` through an
       injected Interactive suggestion source. When `fc-list` is unavailable,
       continue without suggestions and do not invoke a native platform
       fallback.
-- [ ] Add optional `AbortSignal` and timeout controls to the shared discovery
+- [x] Add optional `AbortSignal` and timeout controls to the shared discovery
       and command-runner contracts while preserving existing direct-command
       defaults.
-- [ ] Start discovery lazily, run it at most once per Interactive session, cache
+- [x] Start discovery lazily, run it at most once per Interactive session, cache
       usable or unavailable results, deduplicate and deterministically sort
       family names, and filter only the cached inventory while typing.
-- [ ] Give Interactive discovery a `1,000 ms` hard deadline, show one concise
+- [x] Give Interactive discovery a `1,000 ms` hard deadline, show one concise
       waiting status only after approximately `150 ms`, and clear it before the
       preference prompt, fallback notice, or navigation.
-- [ ] Add artifact-aware intended uses for general body text, headings, code
+- [x] Add artifact-aware intended uses for general body text, headings, code
       text, code symbols, and Profile/Project page headers and footers.
-- [ ] Add `Language-specific body text` with one user-entered language name or
+- [x] Add `Language-specific body text` with one user-entered language name or
       tag per built hint, without a prescribed language list, content inference,
       or automatic hint insertion.
-- [ ] Exclude writing-system and arbitrary document-area choices from the
+- [x] Exclude writing-system and arbitrary document-area choices from the
       structured builder; retain unusual directions through the complete-custom
       hint path without implying a guaranteed role assignment.
-- [ ] Add adaptive font-hint preview, option/value direct-equivalent rendering,
+- [x] Add adaptive font-hint preview, option/value direct-equivalent rendering,
       preference and intended-use revision, removal, stable ordering, and visible
       exact-duplicate handling.
-- [ ] Allow multiple non-identical hints with the same intended use so primary
+- [x] Allow multiple non-identical hints with the same intended use so primary
       and fallback directions are not misclassified as collection conflicts.
-- [ ] Show accepted role/key/font mappings or unmatched font directions in the
+- [x] Show accepted role/key/font mappings or unmatched font directions in the
       post-Codex recipe review, separately from the pre-Codex intended use.
-- [ ] When discovery is unavailable, failed, empty, or timed out, show one
+- [x] When discovery is unavailable, failed, empty, or timed out, show one
       concise notice and continue the builder with an ordinary preference
       input; keep the complete custom path available.
-- [ ] Use a session-owned abort signal to stop discovery and its child process
+- [x] Use a session-owned abort signal to stop discovery and its child process
       on Back, Cancel, or Interactive exit without a fallback warning; use the
       search callback's signal only to discard obsolete filtering work.
-- [ ] Keep discovery read-only: do not install tools, mutate the environment,
+- [x] Keep discovery read-only: do not install tools, mutate the environment,
       expose local font paths, or claim glyph coverage or PDF compatibility.
-- [ ] Ensure consent, reports, and Codex requests include only accepted compiled
+- [x] Ensure consent, reports, and Codex requests include only accepted compiled
       hint strings, never the discovered inventory, adapter diagnostics, paths,
       discarded search terms, or suggestions.
-- [ ] Invalidate a prepared candidate only when accepted font-hint inputs
+- [x] Invalidate a prepared candidate only when accepted font-hint inputs
       change; require consent before explicit regeneration and keep output-path
       changes regeneration-free.
-- [ ] Add deterministic injected-inventory tests for custom-first search and
+- [x] Add deterministic injected-inventory tests for custom-first search and
       non-wrapping sibling navigation, Enter acceptance, Tab completion,
       typing-to-reset, exact-match collapsing, bounded filtering, ordering,
       deduplication, intended-use compilation, editing, post-Codex mapping,
       caching, retry, and every fontconfig discovery fallback outcome.
-- [ ] Add shared cancellation tests proving session abort reaches the command
+- [x] Add shared cancellation tests proving session abort reaches the command
       runner and child process while per-term cancellation remains local to
       obsolete search filtering.
-- [ ] Add privacy assertions and direct-helper regression tests proving the
+- [x] Add privacy assertions and direct-helper regression tests proving the
       public repeatable free-text contract remains compatible.
-- [ ] Record public-safe manual evidence for one suggestion-capable path and one
+- [x] Record public-safe manual evidence for one suggestion-capable path and one
       forced custom-input fallback without listing the host inventory or local
       development setup.
-- [ ] Review the Phase 6.6 change range before proceeding to Phase 7.
+- [x] Review the Phase 6.6 change range before proceeding to Phase 7.
 
 Phase gate:
 

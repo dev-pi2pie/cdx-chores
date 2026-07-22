@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Font Hint Suggestions"
 created-date: 2026-07-22
 modified-date: 2026-07-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -21,9 +21,9 @@ The direct helper contract remains authoritative:
 Interactive mode may help a user build each text value, but it must ultimately
 produce the same ordered `fontHints: string[]` payload.
 
-This research remains `in-progress` because the direction is selected while the
-Interactive search-prompt spike, latency behavior, implementation, and manual
-cross-capability evidence remain pending under Phase 6.6 of the parent plan.
+This research is `completed` because Phase 6.6 implemented the selected
+direction and recorded focused, repository, real-prompt, fallback, privacy,
+cancellation, and exact-range review evidence.
 
 ## Problem
 
@@ -62,12 +62,12 @@ start a separate Codex request.
 
 `src/fonts/discovery.ts` already exposes platform-aware, read-only discovery:
 
-| Platform | `auto` discovery behavior |
-| --- | --- |
-| macOS | prefer fontconfig, then use `system_profiler` |
-| Linux | use fontconfig through `fc-list` |
-| Windows | use native registry discovery through PowerShell |
-| unsupported or failed environment | return no usable inventory and warnings |
+| Platform                          | `auto` discovery behavior                        |
+| --------------------------------- | ------------------------------------------------ |
+| macOS                             | prefer fontconfig, then use `system_profiler`    |
+| Linux                             | use fontconfig through `fc-list`                 |
+| Windows                           | use native registry discovery through PowerShell |
+| unsupported or failed environment | return no usable inventory and warnings          |
 
 The direct `font` commands may continue to use this broader `auto` behavior.
 Phase 6.6 has a narrower latency contract: it should reuse the shared service
@@ -191,13 +191,13 @@ The preference picker reuses the path picker's typing and sibling-navigation
 muscle memory, but presents a visible flat result list instead of path-style
 ghost completion. Its keyboard contract is:
 
-| Input | Behavior |
-| --- | --- |
-| Type | Filter installed-family suggestions and restore the custom typed value as the active first choice |
+| Input     | Behavior                                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| Type      | Filter installed-family suggestions and restore the custom typed value as the active first choice              |
 | Up / Down | Move the active choice without changing the typed query; stop at the first or last result rather than wrapping |
-| Enter | Accept the active custom or installed value |
-| Tab | Copy the active value into the query and continue editing |
-| Escape | Cancel the prompt through the normal Interactive navigation path |
+| Enter     | Accept the active custom or installed value                                                                    |
+| Tab       | Copy the active value into the query and continue editing                                                      |
+| Escape    | Cancel the prompt through the normal Interactive navigation path                                               |
 
 Typing after arrow navigation refreshes the results and returns focus to the
 custom choice. Left and Right retain ordinary prompt behavior; they do not
@@ -267,15 +267,15 @@ Assignment: determined during Codex preparation
 
 Compilation remains deterministic:
 
-| Intended use | Compiled text |
-| --- | --- |
-| Keep this preference general | `Prefer <preference>` |
-| Body text | `Prefer <preference> for body text` |
-| Language-specific body text | `Prefer <preference> for <language> body text` |
-| Headings and titles | `Prefer <preference> for headings and titles` |
-| Code text | `Prefer <preference> for code text` |
-| Code symbols | `Prefer <preference> for code symbols` |
-| Page headers and footers | `Prefer <preference> for page headers and footers` |
+| Intended use                 | Compiled text                                      |
+| ---------------------------- | -------------------------------------------------- |
+| Keep this preference general | `Prefer <preference>`                              |
+| Body text                    | `Prefer <preference> for body text`                |
+| Language-specific body text  | `Prefer <preference> for <language> body text`     |
+| Headings and titles          | `Prefer <preference> for headings and titles`      |
+| Code text                    | `Prefer <preference> for code text`                |
+| Code symbols                 | `Prefer <preference> for code symbols`             |
+| Page headers and footers     | `Prefer <preference> for page headers and footers` |
 
 A general preview omits the `Intended use` line. A complete custom hint bypasses
 the builder compiler, keeps the user's trimmed text, and labels its input mode
@@ -517,8 +517,7 @@ they should not list the developer machine's inventory, paths, or setup steps.
 
 ## Required Verification Evidence
 
-The design questions are settled, but closure still requires implementation
-evidence that:
+The design questions are settled. Closure evidence confirms that:
 
 - the raw custom value remains the stable first selection across filtering and
   the documented non-wrapping Up/Down, Enter-to-accept, Tab-to-complete, and
@@ -532,8 +531,26 @@ evidence that:
   search-term changes cancel only obsolete filtering work
 
 These checks do not reopen the free-text, privacy, fallback, or direct-contract
-decisions above. The research remains `in-progress` until the linked Phase 6.6
-records this evidence.
+decisions above. The linked Phase 6.6 record now supplies the required evidence.
+
+## Implementation Evidence
+
+- The real pinned search prompt preserved custom-first filtering,
+  non-wrapping sibling navigation, Enter acceptance, Tab completion, and
+  committed Unicode input in a narrow terminal.
+- Controlled suggestion-capable and forced-fallback prompt runs completed
+  without exposing the host font inventory or development setup.
+- Shared cancellation reached the discovery runner and child process; an
+  overall Interactive deadline race aborted late discovery and returned to
+  ordinary input.
+- Injected inventories proved deterministic deduplication, stable ordering,
+  exact-match collapse, and the custom choice plus six installed suggestions.
+- Consent, Codex preparation, and review tests retained only accepted compiled
+  hint strings and validated mappings, without inventory or font-path leakage.
+- The full repository suite passed with 1,679 tests and no failures; build,
+  type, lint, formatting, and diff checks also passed.
+- The exact Phase 6.6 range `95817df..ca84d63` was reviewed after the fixes
+  landed, with no actionable findings remaining.
 
 ## Related Research
 
@@ -545,3 +562,4 @@ records this evidence.
 ## Related Plans
 
 - [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md)
+- [Phase 6.6 font hint suggestions](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md)
