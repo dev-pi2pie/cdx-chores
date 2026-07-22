@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
-modified-date: 2026-07-22
+modified-date: 2026-07-23
 status: active
 agent: codex
 ---
@@ -648,26 +648,65 @@ Expected job records:
 
 Tasks:
 
+Validation:
+
 - [ ] Run the focused Interactive Markdown PDF matrix.
 - [ ] Run direct Profile, Template, Project, bundle, and renderer regression
       suites.
 - [ ] Run repository lint, format, build, and full tests.
 - [ ] Perform manual Profile, Template, Project, temporary, durable, handoff,
-      and failure-recovery smoke checks under `examples/playground/`.
+      report, cleanup, and failure-recovery smoke checks under
+      `examples/playground/`.
+- [ ] Visually inspect representative rendered PDFs for readable layout,
+      mixed-language text, code, and asset handling.
+- [ ] Verify canonical temporary-session ownership, successful cleanup,
+      cleanup-failure retention, and retained-session recovery without
+      deleting user-owned or durable artifacts.
 - [ ] Record unavailable Pandoc, WeasyPrint, Codex, or filesystem capabilities
       as environment limitations rather than product failures.
-- [ ] Update current guides only for verified shipped behavior.
+
+Guides:
+
+- [ ] Create `docs/guides/markdown-pdf-interactive-usage.md` for the two entry
+      goals, preparation choices, review checkpoints, outputs, and recovery.
+- [ ] Explain the Interactive workflow with three short ASCII diagram blocks
+      for `to-pdf`, `pdf-recipes`, and temporary rendering.
+- [ ] Document prepare-once review and the temporary, durable, and handoff
+      lifecycle boundaries.
+- [ ] Explain cross-platform OS temporary-directory selection without
+      promising a fixed absolute path, including canonical ownership,
+      cleanup-after-success, retention-after-failure, and cleanup-failure
+      behavior.
+- [ ] Update `docs/guides/markdown-pdf-usage.md` and other current references
+      only for verified shipped behavior.
+- [ ] Review the new guide and closeout wording with a documentation reviewer
+      and resolve all actionable findings.
+
+Review and closure:
+
 - [ ] Link all phase job records and verification evidence.
-- [ ] Review the Phase 7 range and the complete implementation range.
+- [ ] Review the exact Phase 7 range from `785c49d` through its final
+      substantive commit.
+- [ ] Review the complete implementation range from the pre-implementation
+      baseline `f80bf87` through the final implementation tip.
+- [ ] Review the complete initiative range, including the original plan and
+      final closeout documentation.
+- [ ] Resolve every actionable finding and rerun each affected range review
+      and validation gate against the widened final tip.
+- [ ] Complete and link the Phase 7 validation-and-closeout job record.
 - [ ] Move the plan to `completed` only after all completion criteria pass.
 - [ ] Reassess the related research status using linked implementation evidence.
 
 Phase gate:
 
 - focused and repository gates pass or carry an explicit environment limitation
-- manual smoke evidence covers the accepted lifecycle boundaries
-- guide wording matches the shipped prompts and behavior
-- no review range has unresolved actionable findings
+- manual smoke and visual evidence cover the accepted lifecycle boundaries
+- the Interactive guide matches the shipped prompts, behavior, lifecycle
+  ownership, and cross-platform temporary-session contract
+- public evidence contains no machine-specific paths, local development setup,
+  or host font inventory
+- the Phase 7, complete-implementation, and complete-initiative review ranges
+  have no unresolved actionable findings
 
 Expected job record:
 
