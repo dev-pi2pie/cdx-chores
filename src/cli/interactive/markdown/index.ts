@@ -18,7 +18,7 @@ export async function handleMarkdownInteractiveAction(
   action: MarkdownInteractiveActionKey,
 ): Promise<void> {
   if (action === "md:to-pdf") {
-    await handleMarkdownPdfToPdfInteractiveAction();
+    await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
     return;
   }
 

@@ -19,6 +19,12 @@ export type MarkdownPdfInteractiveSource =
   | "custom-inputs"
   | "generated";
 
+export type MarkdownPdfInteractiveRenderSource = Exclude<MarkdownPdfInteractiveSource, "generated">;
+
+export type MarkdownPdfInteractiveCustomInputMode = "explicit" | "bundle-with-explicit";
+
+export type MarkdownPdfInteractiveExplicitRole = "profile" | "template" | "css";
+
 export type MarkdownPdfInteractiveArtifact = "profile" | "template-bundle" | "project-bundle";
 
 export type MarkdownPdfInteractivePreparation = "starter" | "formal-guide" | "codex-assistant";

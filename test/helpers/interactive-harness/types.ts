@@ -1,5 +1,10 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
+  markdownPdfMocks?: boolean;
+  markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
+  markdownPdfIgnoredBundleFiles?: string[];
+  markdownPdfPrepareErrorMessage?: string;
+  markdownPdfRenderWarnings?: string[];
   selectQueue?: unknown[];
   nowIsoString?: string;
   checkboxQueue?: unknown[];
@@ -74,6 +79,10 @@ export interface InteractiveHarnessResult {
   stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
   codexReportWrites: Array<{ path: string; options: Record<string, unknown> }>;
   removedPaths: string[];
+  markdownPdfPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfPlanCalls: Array<Record<string, unknown>>;
+  markdownPdfExecuteCalls: Array<Record<string, unknown>>;
+  markdownPdfBundleDiscoveryCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;

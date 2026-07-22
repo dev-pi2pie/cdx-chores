@@ -38,6 +38,10 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     stackPlanWrites: [],
     codexReportWrites: [],
     removedPaths: [],
+    markdownPdfPrepareCalls: [],
+    markdownPdfPlanCalls: [],
+    markdownPdfExecuteCalls: [],
+    markdownPdfBundleDiscoveryCalls: [],
   };
 }
 
