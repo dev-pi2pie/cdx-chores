@@ -128,8 +128,8 @@ export function parseFontconfigList(stdout: string): FontFace[] {
 
 export const fontconfigFontAdapter: FontDiscoveryAdapter = {
   name: "fontconfig",
-  async discover({ runner }) {
-    const result = await runner("fc-list", ["--format", FONTCONFIG_LIST_FORMAT]);
+  async discover({ runner, runOptions }) {
+    const result = await runner("fc-list", ["--format", FONTCONFIG_LIST_FORMAT], runOptions);
     if (!result.ok) {
       return {
         faces: [],

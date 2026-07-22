@@ -578,7 +578,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md`
+- [Phase 6.6 font hint suggestions](jobs/2026-07-22-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md)
 
 ### Phase 7: Validation, Guides, And Closeout
 
