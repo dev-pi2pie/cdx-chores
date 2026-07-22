@@ -378,29 +378,36 @@ Expected job record:
 
 Tasks:
 
-- [ ] Materialize temporary artifacts into a unique CLI-owned session
+- [x] Materialize temporary artifacts into a unique CLI-owned session
       directory using the existing OS-temporary-directory posture.
-- [ ] Remove only the exact owned session directory after successful render.
-- [ ] Retain and print the session directory after render failure or cleanup
-      failure.
-- [ ] Implement retry without regeneration, revise while retaining diagnostic
+- [x] Remove only the exact owned session directory after successful render.
+- [x] Retain and print the session directory after materialization,
+      renderer-preparation, render, or cleanup failure.
+- [x] Implement retry without regeneration, revise while retaining diagnostic
       artifacts, keep-and-exit, and confirmed delete-and-exit.
-- [ ] Keep durable artifacts and external inputs outside automatic cleanup.
-- [ ] Implement `pdf-recipes -> to-pdf` handoff with the saved artifact
+- [x] Retry durable materialization from the same bound candidate and retry
+      renderer preparation without rewriting a successful durable artifact.
+- [x] Keep durable artifacts and external inputs outside automatic cleanup.
+- [x] Commit completed PDFs through the shared symlink-aware safe-write
+      boundary.
+- [x] Implement `pdf-recipes -> to-pdf` handoff with the saved artifact
       preselected.
-- [ ] If preparation retained a Markdown sample, require an explicit handoff
+- [x] If preparation retained a Markdown sample, require an explicit handoff
       choice between `Use <sample>` and `Choose another Markdown file`; if no
       sample exists, require Markdown selection in `to-pdf`.
-- [ ] Carry only the explicitly selected Markdown path into `to-pdf` as its
+- [x] Carry only the explicitly selected Markdown path into `to-pdf` as its
       render input; never promote the preparation sample implicitly.
-- [ ] Add cleanup ownership, failure recovery, handoff, and collision tests.
-- [ ] Review the Phase 6 change range before proceeding.
+- [x] Add cleanup ownership, failure recovery, handoff, collision, and symlink
+      boundary tests.
+- [x] Review the Phase 6 change range before proceeding.
 
 Phase gate:
 
 - temporary and durable paths consume the same accepted prepared result
 - cleanup is ownership- and outcome-based
 - failure recovery never repeats Codex or silently deletes diagnostics
+- durable retries preserve the same bound candidate and do not rewrite a
+  successfully materialized recipe
 - `pdf-recipes` leads to rendering only through `to-pdf`, with the saved
   artifact preselected and an explicitly selected Markdown render input
 

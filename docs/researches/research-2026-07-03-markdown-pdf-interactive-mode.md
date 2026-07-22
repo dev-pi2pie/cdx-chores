@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode"
 created-date: 2026-07-03
-modified-date: 2026-07-21
+modified-date: 2026-07-22
 status: in-progress
 agent: codex
 ---
@@ -30,9 +30,9 @@ md to-pdf [--profile | --template | --css | --bundle]
 Interactive mode should orchestrate these capabilities without creating a
 second artifact model, assistant model, or renderer.
 
-This research remains `in-progress` because the interaction direction is
-chosen, while implementation and verification evidence needed for closure is
-not yet recorded in linked plan or job records.
+This research remains `in-progress` because Phases 1 through 6 now provide
+implementation evidence, while Phase 7 validation, guide alignment,
+complete-range review, and the final closure reassessment remain pending.
 
 ## Current Contracts And Boundaries
 
@@ -49,9 +49,11 @@ The required direct capabilities are shipped:
   their corresponding render roles.
 - `md to-pdf` remains the deterministic renderer after inputs are accepted.
 
-The current Interactive Markdown submenu exposes `to-docx` and
-`frontmatter-to-json`, but no Markdown PDF branches. The remaining problem is
-interaction orchestration rather than artifact or renderer design.
+The research started from an Interactive Markdown submenu that exposed
+`to-docx` and `frontmatter-to-json` but no Markdown PDF branches. The linked
+implementation now adds the two designed branches; final validation and guide
+alignment remain under Phase 7 rather than requiring a new artifact or renderer
+design.
 
 This research covers:
 
@@ -68,7 +70,8 @@ It does not introduce:
 - a raw YAML, HTML, or CSS terminal editor
 - a new profile, template, project, recipe, or report schema
 - automatic cleanup of user-owned or explicitly saved artifacts
-- changes to Pandoc, WeasyPrint, or the deterministic renderer
+- changes to Pandoc or WeasyPrint rendering semantics, or to deterministic
+  recipe generation
 - Project `starter` or `formal-guide` modes without a corresponding direct
   command contract
 - a committed release target
@@ -742,8 +745,10 @@ Cleanup is ownership- and outcome-based:
 | Existing profile, template, CSS, or bundle | never remove |
 | Explicitly saved generated artifact | never remove |
 | CLI-owned session bundle after successful render | remove |
+| CLI-owned session after materialization or renderer-preparation failure | retain and print its path |
 | CLI-owned session bundle after failed render | retain and print its path |
 | Successful render followed by cleanup failure | keep PDF, warn, and print bundle path |
+| Durable materialization or renderer-preparation failure | retain the durable recipe and print its path |
 | Cancellation before commit | nothing was written |
 
 Cleanup targets only the exact unique directory retained in current session
@@ -751,9 +756,11 @@ state. It must never derive a deletion target from a broad root, glob,
 unresolved environment variable, existing bundle path, or user-selected
 durable output.
 
-### Render Failure Recovery
+### Materialization And Render Failure Recovery
 
-A failed render retains the generated bundle for diagnosis and reuse:
+Temporary materialization, renderer-preparation, and render failures retain the
+generated bundle for diagnosis and reuse. Render retry reuses the same written
+artifact and prepared render plan:
 
 ```text
 Rendering failed before a PDF was completed.
@@ -774,6 +781,16 @@ Temporary project bundle retained:
 - `Delete bundle and exit` requires explicit confirmation and may remove only
   the exact CLI-owned session bundle.
 - there is no ambiguous `Cancel` after temporary files exist.
+
+Durable failures never make the saved recipe a cleanup target. A failed write
+may retry the same bound candidate. A renderer-preparation failure after a
+successful write may retry preparation without rewriting or regenerating the
+recipe. Both stages may return to the same accepted recipe review or exit while
+retaining and printing the durable destination.
+
+The renderer writes the PDF into CLI-owned temporary storage, then commits the
+completed file through the shared safe-write boundary. Final PDF symlinks and
+symlinked parent directories are rejected rather than followed.
 
 ## Representative Generated-Recipe Flow
 
@@ -938,6 +955,11 @@ Interactive tests should cover:
 - Temporary generated bundles are removed only after successful rendering.
 - Failed temporary renders retain the exact CLI-owned bundle and provide
   explicit retry, revision, retention, and deletion actions.
+- Durable write and renderer-preparation failures retain the saved recipe and
+  can retry without rebinding, rewriting a successful artifact, or regenerating
+  the accepted candidate.
+- Final PDF writes use a CLI-owned render file and a symlink-aware commit
+  boundary.
 - Existing and explicitly saved artifacts are never automatically removed.
 - Codex reports are written only after commit and follow lifecycle-filtered
   retention rules.
