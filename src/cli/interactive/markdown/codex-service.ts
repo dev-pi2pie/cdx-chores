@@ -1,3 +1,8 @@
+import { stat } from "node:fs/promises";
+import { join, parse } from "node:path";
+
+import { isNotFoundError } from "../../actions/markdown/common";
+import { CliError } from "../../errors";
 import type { MarkdownPdfCodexReportBinding } from "../../markdown-pdf";
 import {
   bindMarkdownPdfProfileCodexDestination,
@@ -17,6 +22,7 @@ import {
 } from "../../markdown-pdf/template-codex";
 import type { CliRuntime } from "../../types";
 import type {
+  MarkdownPdfCodexArtifact,
   MarkdownPdfCodexReportRetention,
   MarkdownPdfCodexSetup,
   PreparedMarkdownPdfCodexCandidate,
@@ -39,6 +45,45 @@ export type BoundMarkdownPdfCodexCandidate =
 
 function reportBinding(report: MarkdownPdfCodexReportRetention): MarkdownPdfCodexReportBinding {
   return report;
+}
+
+const GENERATED_OUTPUT_RETRY_LIMIT = 10;
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function generatedOutputAttempt(
+  candidate: PreparedMarkdownPdfCodexCandidate,
+  suggested: string,
+  attempt: number,
+): string {
+  if (attempt === 0) {
+    return suggested;
+  }
+  if (candidate.artifact !== "profile") {
+    return `${suggested}-${attempt}`;
+  }
+  const parsed = parse(suggested);
+  return join(parsed.dir, `${parsed.name}-${attempt}${parsed.ext}`);
+}
+
+function generatedOutputCollisionMessage(artifact: MarkdownPdfCodexArtifact): string {
+  if (artifact === "profile") {
+    return "Unable to generate a non-colliding Markdown PDF profile path.";
+  }
+  if (artifact === "template-bundle") {
+    return "Unable to generate a non-colliding Markdown PDF template directory.";
+  }
+  return "Unable to generate a non-colliding Markdown PDF project directory.";
 }
 
 export async function prepareMarkdownPdfCodexCandidate(
@@ -80,16 +125,25 @@ export async function prepareMarkdownPdfCodexCandidate(
   };
 }
 
-export function suggestedMarkdownPdfCodexOutputPath(
+export async function suggestedMarkdownPdfCodexOutputPath(
   candidate: PreparedMarkdownPdfCodexCandidate,
-): string {
-  if (candidate.artifact === "profile") {
-    return candidate.prepared.suggestedOutputPath;
+): Promise<string> {
+  const preparedSuggestion =
+    candidate.artifact === "profile"
+      ? candidate.prepared.suggestedOutputPath
+      : candidate.artifact === "template-bundle"
+        ? candidate.prepared.outputPlan.outputDirectory
+        : candidate.prepared.binding.outputPlan.outputDirectory;
+  for (let attempt = 0; attempt < GENERATED_OUTPUT_RETRY_LIMIT; attempt += 1) {
+    const output = generatedOutputAttempt(candidate, preparedSuggestion, attempt);
+    if (!(await pathExists(output))) {
+      return output;
+    }
   }
-  if (candidate.artifact === "template-bundle") {
-    return candidate.prepared.outputPlan.outputDirectory;
-  }
-  return candidate.prepared.binding.outputPlan.outputDirectory;
+  throw new CliError(generatedOutputCollisionMessage(candidate.artifact), {
+    code: "OUTPUT_EXISTS",
+    exitCode: 2,
+  });
 }
 
 export async function bindMarkdownPdfCodexCandidate(

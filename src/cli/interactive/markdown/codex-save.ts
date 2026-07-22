@@ -44,22 +44,36 @@ async function promptOutput(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   candidate: PreparedMarkdownPdfCodexCandidate,
-): Promise<string> {
-  const suggested =
-    candidate.setup.outputPreference ?? suggestedMarkdownPdfCodexOutputPath(candidate);
-  const choice = await select<"suggested" | "custom">({
+): Promise<string | "review" | "cancel"> {
+  const preparedSuggestion =
+    candidate.artifact === "profile"
+      ? candidate.prepared.suggestedOutputPath
+      : candidate.artifact === "template-bundle"
+        ? candidate.prepared.outputPlan.outputDirectory
+        : candidate.prepared.binding.outputPlan.outputDirectory;
+  const suggested = candidate.setup.outputPreference ?? preparedSuggestion;
+  const choice = await select<"suggested" | "custom" | "review" | "cancel">({
     message: `${MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[candidate.artifact]} output destination`,
     choices: [
       {
         name: candidate.setup.outputPreference ? "Use setup output" : "Use generated output",
         value: "suggested",
-        description: displayPath(runtime, suggested),
+        description: candidate.setup.outputPreference
+          ? displayPath(runtime, suggested)
+          : "Resolve a non-conflicting destination",
       },
       { name: "Custom output", value: "custom", description: "Choose another destination" },
+      { name: "Back to recipe review", value: "review" },
+      { name: "Cancel", value: "cancel", description: "Exit without writing" },
     ],
   });
-  if (choice === "suggested") {
-    return suggested;
+  if (choice !== "custom") {
+    if (choice === "review" || choice === "cancel") {
+      return choice;
+    }
+    return candidate.setup.outputPreference
+      ? candidate.setup.outputPreference
+      : await suggestedMarkdownPdfCodexOutputPath(candidate);
   }
   return await promptRequiredPathWithConfig(
     candidate.artifact === "profile" ? "Profile output file" : "Bundle output directory",
@@ -102,6 +116,9 @@ export async function saveMarkdownPdfCodexCandidate(
     let next: SaveNextStep;
     try {
       const output = await promptOutput(runtime, pathPromptContext, candidate);
+      if (output === "review" || output === "cancel") {
+        return { kind: output };
+      }
       const overwrite = await confirm({
         message: "Overwrite recipe output if it exists?",
         default: false,

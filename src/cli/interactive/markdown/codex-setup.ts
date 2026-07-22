@@ -16,8 +16,10 @@ type CodexSetupAction =
   | "continue"
   | "intent"
   | "base-profile"
+  | "clear-base-profile"
   | "font-hints"
   | "cover-image"
+  | "clear-cover-image"
   | "output"
   | "clear-output"
   | "back"
@@ -169,9 +171,17 @@ export async function collectMarkdownPdfCodexSetup(
         { name: "Continue", value: "continue" },
         { name: "Revise intent", value: "intent" },
         { name: "Set base profile", value: "base-profile" },
+        ...(setup.baseProfile
+          ? [{ name: "Clear base profile", value: "clear-base-profile" as const }]
+          : []),
         { name: "Edit font hints", value: "font-hints" },
         ...(context.artifact !== "profile"
-          ? [{ name: "Set cover image", value: "cover-image" as const }]
+          ? [
+              { name: "Set cover image", value: "cover-image" as const },
+              ...(setup.coverImage
+                ? [{ name: "Clear cover image", value: "clear-cover-image" as const }]
+                : []),
+            ]
           : []),
         ...(context.artifact === "project-bundle"
           ? [
@@ -205,6 +215,16 @@ export async function collectMarkdownPdfCodexSetup(
     }
     if (action === "font-hints") {
       setup = { ...setup, fontHints: await editFontHints(setup.fontHints) };
+      continue;
+    }
+    if (action === "clear-base-profile") {
+      const { baseProfile: _baseProfile, ...next } = setup;
+      setup = next;
+      continue;
+    }
+    if (action === "clear-cover-image") {
+      const { coverImage: _coverImage, ...next } = setup;
+      setup = next;
       continue;
     }
     if (action === "clear-output") {

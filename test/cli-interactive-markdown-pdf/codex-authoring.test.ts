@@ -41,6 +41,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(
       result.selectChoicesByMessage["Choose preparation mode"]?.map((choice) => choice.value),
     ).toEqual(["starter", "formal-guide", "codex-assistant", "back", "cancel"]);
+    expect(result.stderr).toContain("Project bundles are prepared with Codex Assistant.");
     expect(result.markdownPdfCodexPrepareCalls).toEqual([]);
   });
 
@@ -73,6 +74,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.promptCalls.some((call) => call.message === "Markdown preparation sample")).toBe(
       false,
     );
+    expect(result.stderr).toContain("Project bundles are prepared with Codex Assistant.");
     expect(result.markdownPdfCodexPrepareCalls).toEqual([]);
   });
 
@@ -147,6 +149,73 @@ describe("interactive Markdown PDF Codex authoring", () => {
         fontHints: ["Source Serif 4"],
       }),
     ]);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+  });
+
+  test("offers base-profile and cover-image clearing only when those values are set", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("template-bundle"),
+        "base-profile",
+        "cover-image",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/base.yml", "fixtures/cover.png"],
+    });
+
+    expect(
+      result.selectChoicesByMessage["Template bundle setup next step"]?.map(
+        (choice) => choice.value,
+      ),
+    ).toEqual(expect.arrayContaining(["clear-base-profile", "clear-cover-image"]));
+  });
+
+  test("clears selected base-profile and cover-image values before preparation", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("template-bundle"),
+        "base-profile",
+        "cover-image",
+        "clear-base-profile",
+        "clear-cover-image",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/base.yml", "fixtures/cover.png"],
+      confirmQueue: [true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.baseProfile).toBeUndefined();
+    expect(result.markdownPdfCodexPrepareCalls[0]?.coverImage).toBeUndefined();
+  });
+
+  test("declining consent, revising setup, and re-consenting prepares exactly once", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...recipesCodexSelections("profile"),
+        "continue",
+        "setup",
+        "intent",
+        "continue",
+        "cancel",
+      ],
+      inputQueue: ["", "Revised direction"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toEqual([
+      expect.objectContaining({ intent: "Revised direction" }),
+    ]);
+    expect(result.markdownPdfCodexBindCalls).toEqual([]);
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
   });
 
@@ -262,20 +331,103 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).toContain("Unable to save recipe: Output already exists");
   });
 
-  test("removes acceptance actions for a scenario-controlled unusable candidate", () => {
+  test.each(["review", "cancel"] as const)(
+    "offers immediate %s from output selection without destination binding",
+    (next) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...recipesCodexSelections("profile"),
+          "continue",
+          "save",
+          "none",
+          next,
+          ...(next === "review" ? ["cancel"] : []),
+        ],
+        inputQueue: [""],
+        confirmQueue: [true],
+      });
+
+      expect(
+        result.selectChoicesByMessage["Profile output destination"]?.map((choice) => choice.value),
+      ).toEqual(["suggested", "custom", "review", "cancel"]);
+      expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexBindCalls).toEqual([]);
+      expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+    },
+  );
+
+  test("uses an explicit Project setup output exactly for a durable save", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      markdownPdfCodexUnusableArtifacts: ["template-bundle"],
-      selectQueue: [...recipesCodexSelections("template-bundle"), "continue", "cancel"],
+      selectQueue: [
+        ...recipesCodexSelections("project-bundle"),
+        "output",
+        "continue",
+        "save",
+        "none",
+        "suggested",
+      ],
       inputQueue: [""],
-      confirmQueue: [true],
+      requiredPathQueue: ["recipes/exact-project"],
+      confirmQueue: [true, false, true],
     });
 
-    expect(result.stderr).toContain("Codex request: no usable candidate");
-    expect(
-      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
-    ).toEqual(["regenerate", "change-setup", "change-artifact", "cancel"]);
+    expect(result.markdownPdfCodexBindCalls).toEqual([
+      expect.objectContaining({ output: "recipes/exact-project" }),
+    ]);
+  });
+
+  test.each(["profile", "template-bundle", "project-bundle"] as const)(
+    "removes acceptance actions for an unusable %s candidate",
+    (artifact) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        markdownPdfCodexUnusableArtifacts: [artifact],
+        selectQueue: [...recipesCodexSelections(artifact), "continue", "cancel"],
+        inputQueue: [""],
+        confirmQueue: [true],
+      });
+
+      expect(result.stderr).toContain("Codex request: no usable candidate");
+      expect(
+        result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+      ).toEqual(["regenerate", "change-setup", "change-artifact", "cancel"]);
+      expect(result.markdownPdfCodexBindCalls).toEqual([]);
+      expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+    },
+  );
+
+  test("temporary Project rendering ignores an explicit durable output preference", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          "project-bundle",
+          "output",
+          "continue",
+          "temporary-render",
+          "none",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/report.md", "recipes/durable-project"],
+        confirmQueue: [true],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toBe(
+      "Interactive materialization for an accepted Markdown PDF recipe is not implemented yet.",
+    );
+    expect(result.markdownPdfCodexPrepareCalls).toEqual([
+      expect.objectContaining({ outputPreference: "recipes/durable-project" }),
+    ]);
     expect(result.markdownPdfCodexBindCalls).toEqual([]);
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
   });

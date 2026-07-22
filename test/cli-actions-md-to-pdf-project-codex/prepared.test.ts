@@ -1,10 +1,11 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
 import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
+import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/markdown/codex-service";
 import {
   prepareMdPdfProjectCodex,
   rebindMdPdfProjectCodexPreparedArtifact,
@@ -102,7 +103,7 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         coverImage: "cover.png",
         intent: "Create a custom cover layout.",
         output: "first-project",
-        keepCodexReport: false,
+        keepCodexReport: true,
         dryRun: true,
         identityUidFactory: () => "abc12345",
         profileCodexRunner,
@@ -183,6 +184,24 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         { code: "OUTPUT_EXISTS", exitCode: 2 },
       );
 
+      const preservedReport = await rebindMdPdfProjectCodexPreparedArtifact({
+        prepared,
+        runtime,
+        outputDirectory: "project-with-preserved-report",
+        dryRun: false,
+      });
+      await writePreparedMdPdfProjectCodexBundle(runtime, preservedReport);
+      expect(preservedReport.binding.outputPlan.report).toEqual({
+        bundlePath: "project.codex-report.json",
+        location: "in-bundle",
+        path: join(fixtureDir, "project-with-preserved-report", "project.codex-report.json"),
+      });
+      expect(
+        await pathExists(
+          join(fixtureDir, "project-with-preserved-report", "project.codex-report.json"),
+        ),
+      ).toBe(true);
+
       const withoutReport = await rebindMdPdfProjectCodexPreparedArtifact({
         prepared,
         runtime,
@@ -219,6 +238,52 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
       ).toBe(false);
       expect(profileCalls).toBe(1);
       expect(templateCalls).toBe(1);
+    });
+  });
+
+  test("resolves a late generated-output collision without changing the prepared Project", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-prepared-late-output", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-22T08:30:00.000Z"),
+      });
+      const prepared = await prepareMdPdfProjectCodex(runtime, {
+        input: "report.md",
+        baseProfile: "base.yml",
+        dryRun: true,
+        identityUidFactory: () => "ba5e0002",
+        profileCodexRunner: async () => adaptedProfileResponse(),
+        templateCodexRunner: async () => adaptedTemplateResponse(),
+      });
+      const stable = {
+        identity: prepared.identity,
+        profile: prepared.profilePhase.serializedProfile,
+        styleCss: prepared.templatePhase.synthesis.styleCss,
+        templateHtml: prepared.templatePhase.synthesis.templateHtml,
+      };
+      await mkdir(prepared.binding.outputPlan.outputDirectory);
+
+      const output = await suggestedMarkdownPdfCodexOutputPath({
+        artifact: "project-bundle",
+        prepared,
+        setup: { artifact: "project-bundle", fontHints: [] },
+      });
+      const rebound = await rebindMdPdfProjectCodexPreparedArtifact({
+        prepared,
+        runtime,
+        outputDirectory: output,
+        dryRun: false,
+      });
+
+      expect(output).toBe(`${prepared.binding.outputPlan.outputDirectory}-1`);
+      expect({
+        identity: rebound.identity,
+        profile: rebound.profilePhase.serializedProfile,
+        styleCss: rebound.templatePhase.synthesis.styleCss,
+        templateHtml: rebound.templatePhase.synthesis.templateHtml,
+      }).toEqual(stable);
     });
   });
 });

@@ -1,5 +1,6 @@
 import { select } from "@inquirer/prompts";
 
+import { printLine } from "../../actions/shared";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import {
@@ -217,6 +218,7 @@ export async function runMarkdownPdfAuthoring(
     }
 
     if (artifact === "project-bundle") {
+      printLine(runtime.stderr, "Project bundles are prepared with Codex Assistant.");
       const outcome = await runMarkdownPdfCodexAuthoring(runtime, pathPromptContext, {
         artifact,
         backToMode: false,
