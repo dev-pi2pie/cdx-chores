@@ -27,6 +27,7 @@ import type {
   MarkdownPdfCodexSetup,
   PreparedMarkdownPdfCodexCandidate,
 } from "./codex-types";
+import { createMarkdownPdfInteractiveCodexProgressPresenter } from "./codex-progress";
 
 export type BoundMarkdownPdfCodexCandidate =
   | {
@@ -97,6 +98,10 @@ export async function prepareMarkdownPdfCodexCandidate(
     baseProfile: setup.baseProfile,
     dryRun: true,
     keepCodexReport: false,
+    codexProgressPresenter: createMarkdownPdfInteractiveCodexProgressPresenter(
+      runtime,
+      setup.artifact,
+    ),
   };
   if (setup.artifact === "profile") {
     return {

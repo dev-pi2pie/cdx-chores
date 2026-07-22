@@ -8,6 +8,7 @@ import {
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
 } from "../src/adapters/codex/markdown-pdf-profile";
 import { actionMdPdfProfileCodex } from "../src/cli/actions";
+import type { CodexProgressPresenter } from "../src/cli/actions/codex-progress";
 import { readMarkdownPdfCodexReportArtifact } from "../src/cli/markdown-pdf/codex-report";
 import { readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../src/cli/markdown-pdf/profile";
@@ -490,6 +491,34 @@ describe("cli action modules: md pdf-profile codex", () => {
         "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... done\n",
       );
       expect(stdout.text).toContain("Decision: adapted");
+    });
+  });
+
+  test("uses an injected Codex progress presenter without direct progress output", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-injected", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      const events: string[] = [];
+      const codexProgressPresenter: CodexProgressPresenter = {
+        start: (label) => events.push(`start:${label}`),
+        update: (label) => events.push(`update:${label}`),
+        stop: (status) => events.push(`stop:${status}`),
+      };
+      const { runtime, stderr } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProfileCodex(runtime, {
+        codexProgressPresenter,
+        codexRunner: adaptedRunner("article"),
+        dryRun: true,
+        input: "report.md",
+        intent: "article profile",
+        output: "profile.yml",
+      });
+
+      expect(events).toEqual([
+        "start:Requesting Codex Markdown PDF profile recommendation",
+        "stop:done",
+      ]);
+      expect(stderr.text).not.toContain("Requesting Codex Markdown PDF profile recommendation");
     });
   });
 

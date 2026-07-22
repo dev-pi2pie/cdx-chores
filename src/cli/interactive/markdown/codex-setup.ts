@@ -233,17 +233,13 @@ export async function collectMarkdownPdfCodexSetup(
       continue;
     }
     const path = await promptRequiredPathWithConfig(
-      action === "base-profile"
-        ? "Base profile file"
-        : "Cover image file",
+      action === "base-profile" ? "Base profile file" : "Cover image file",
       {
         kind: "file",
         ...pathPromptContext,
       },
     );
     setup =
-      action === "base-profile"
-        ? { ...setup, baseProfile: path }
-        : { ...setup, coverImage: path };
+      action === "base-profile" ? { ...setup, baseProfile: path } : { ...setup, coverImage: path };
   }
 }

@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
+import type { CodexProgressPresenter } from "../../src/cli/actions/codex-progress";
 import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/markdown/codex-service";
 import {
   prepareMdPdfProjectCodex,
@@ -74,6 +75,71 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
+  test("uses one injected presenter across the Profile and Template Codex stages", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-progress-shared", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const events: string[] = [];
+      const codexProgressPresenter: CodexProgressPresenter = {
+        start: (label) => events.push(`start:${label}`),
+        update: (label) => events.push(`update:${label}`),
+        stop: (status) => events.push(`stop:${status}`),
+      };
+      const { runtime, stderr } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await prepareMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        codexProgressPresenter,
+        coverImage: "cover.png",
+        dryRun: true,
+        input: "report.md",
+        intent: "Create a custom cover layout.",
+        profileCodexRunner: async () => adaptedProfileResponse(),
+        templateCodexRunner: async () => adaptedTemplateResponse(),
+      });
+
+      expect(events).toEqual([
+        "start:Requesting Codex Markdown PDF project profile recommendation",
+        "update:Requesting Codex Markdown PDF project template recommendation",
+        "stop:done",
+      ]);
+      expect(stderr.text).not.toContain("Requesting Codex Markdown PDF project");
+    });
+  });
+
+  test("stops a shared injected presenter when Project profile preparation fails", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-progress-error", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      const events: string[] = [];
+      const codexProgressPresenter: CodexProgressPresenter = {
+        start: (label) => events.push(`start:${label}`),
+        update: (label) => events.push(`update:${label}`),
+        stop: (status) => events.push(`stop:${status}`),
+      };
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await expectCliError(
+        () =>
+          prepareMdPdfProjectCodex(runtime, {
+            codexProgressPresenter,
+            dryRun: true,
+            input: "report.md",
+            intent: "Create a custom layout.",
+            profileCodexRunner: async () => {
+              throw new Error("network unavailable");
+            },
+          }),
+        { code: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED", exitCode: 1 },
+      );
+
+      expect(events).toEqual([
+        "start:Requesting Codex Markdown PDF project profile recommendation",
+        "stop:error",
+      ]);
+    });
+  });
+
   test("prepares once, rebinds the destination, and writes snapshotted content", async () => {
     await withTempFixtureDir("md-pdf-project-codex-prepared-rebind", async (fixtureDir) => {
       const originalCover = minimalPng(1200, 800);

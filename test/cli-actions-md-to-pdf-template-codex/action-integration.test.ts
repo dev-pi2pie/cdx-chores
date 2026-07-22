@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
+import type { CodexProgressPresenter } from "../../src/cli/actions/codex-progress";
 import { prepareMdPdfTemplateCodex } from "../../src/cli/actions/markdown/pdf-template-codex";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
@@ -502,6 +503,38 @@ describe("cli action modules: md pdf-template codex integration", () => {
       );
       expect(stdout.text).toContain("Decision mode: adapted");
     });
+  });
+
+  test("uses an injected Codex progress presenter without direct progress output", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-injected",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        const events: string[] = [];
+        const codexProgressPresenter: CodexProgressPresenter = {
+          start: (label) => events.push(`start:${label}`),
+          update: (label) => events.push(`update:${label}`),
+          stop: (status) => events.push(`stop:${status}`),
+        };
+        const { runtime, stderr } = createActionTestRuntime();
+
+        await actionMdPdfTemplateCodex(runtime, {
+          codexProgressPresenter,
+          input: toRepoRelativePath(inputPath),
+          intent: "make headings quieter",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(codexTemplateResponse()),
+        });
+
+        expect(events).toEqual([
+          "start:Requesting Codex Markdown PDF template recommendation",
+          "stop:done",
+        ]);
+        expect(stderr.text).not.toContain("Requesting Codex Markdown PDF template recommendation");
+      },
+    );
   });
 
   test("summarizes conservative fallback Codex-assisted decisions", async () => {

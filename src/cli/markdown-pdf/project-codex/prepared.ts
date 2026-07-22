@@ -1,6 +1,10 @@
 import { extname, join } from "node:path";
 
 import { assertNonEmpty } from "../../actions/shared";
+import {
+  createCodexProgressSession,
+  type DirectCodexProgressStatus,
+} from "../../actions/codex-progress";
 import { CliError } from "../../errors";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
@@ -87,6 +91,22 @@ function initialWriteMode(input: {
   return input.state.dryRun || input.signals.modes.project === "codex-assisted"
     ? "report-only"
     : "bundle";
+}
+
+function projectProgressStatus(input: {
+  profilePhase: MdPdfProjectCodexProfilePhaseResult;
+  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
+}): DirectCodexProgressStatus {
+  if (input.templatePhase.phase.decisionMode === "no-usable-project") {
+    return "error";
+  }
+  if (
+    input.profilePhase.phase.decisionMode === "conservative-fallback" ||
+    input.templatePhase.phase.decisionMode === "conservative-fallback"
+  ) {
+    return "fallback";
+  }
+  return "done";
 }
 
 function stableIdentity(
@@ -282,54 +302,69 @@ export async function prepareMdPdfProjectCodex(
     signalMode: signals.modes.project,
     writeMode: initialWriteMode({ signals, state }),
   });
-  const profilePhase = await runMdPdfProjectCodexProfilePhase({
-    outputPlan,
-    profileCodexRunner: options.profileCodexRunner,
-    runtime,
-    signals,
-    state,
-  });
-  const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
-    outputPlan,
-    profilePhase,
-    runtime,
-    signals,
-    state,
-    templateCodexRunner: options.templateCodexRunner,
-  });
-  const templatePhase = acceptedTemplatePhase(completeTemplatePhase);
-  const binding = createBinding({
-    outputPlan,
-    profilePhase,
-    runtime,
-    signals,
-    state,
-    templatePhase,
-  });
-  if (!state.dryRun && binding.validation.decisionMode !== "no-usable-project") {
-    await validateMdPdfProjectCodexOutputWritability({
-      plan: outputPlan,
+  const progressSession = options.codexProgressPresenter
+    ? createCodexProgressSession(options.codexProgressPresenter)
+    : undefined;
+  let progressStatus: DirectCodexProgressStatus = "error";
+  try {
+    const profilePhase = await runMdPdfProjectCodexProfilePhase({
+      outputPlan,
+      profileCodexRunner: options.profileCodexRunner,
+      progressSession,
       runtime,
+      signals,
       state,
-      writeMode: "bundle",
     });
+    const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
+      outputPlan,
+      profilePhase,
+      progressSession,
+      runtime,
+      signals,
+      state,
+      templateCodexRunner: options.templateCodexRunner,
+    });
+    const completedProgressStatus = projectProgressStatus({
+      profilePhase,
+      templatePhase: completeTemplatePhase,
+    });
+    const templatePhase = acceptedTemplatePhase(completeTemplatePhase);
+    const binding = createBinding({
+      outputPlan,
+      profilePhase,
+      runtime,
+      signals,
+      state,
+      templatePhase,
+    });
+    if (!state.dryRun && binding.validation.decisionMode !== "no-usable-project") {
+      await validateMdPdfProjectCodexOutputWritability({
+        plan: outputPlan,
+        runtime,
+        state,
+        writeMode: "bundle",
+      });
+    }
+    const managedAssetContents =
+      binding.validation.decisionMode === "no-usable-project"
+        ? []
+        : await snapshotMdPdfProjectCodexManagedAssets({
+            outputPlan,
+            templatePhase: binding.templatePhase,
+          });
+    progressStatus = completedProgressStatus;
+    return {
+      identity: stableIdentity(outputPlan),
+      layout: preparedLayout(outputPlan),
+      managedAssetContents,
+      profilePhase,
+      signals,
+      templatePhase,
+      binding,
+    };
+  } finally {
+    progressSession?.stop(progressStatus);
   }
-  const managedAssetContents =
-    binding.validation.decisionMode === "no-usable-project"
-      ? []
-      : await snapshotMdPdfProjectCodexManagedAssets({
-          outputPlan,
-          templatePhase: binding.templatePhase,
-        });
-  return {
-    identity: stableIdentity(outputPlan),
-    layout: preparedLayout(outputPlan),
-    managedAssetContents,
-    profilePhase,
-    signals,
-    templatePhase,
-    binding,
-  };
 }
 
 export async function rebindMdPdfProjectCodexPreparedArtifact(input: {

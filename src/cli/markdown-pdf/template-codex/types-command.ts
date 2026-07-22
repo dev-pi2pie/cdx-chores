@@ -1,4 +1,5 @@
 import type { NormalizedMarkdownPdfOptions, NormalizeMarkdownPdfOptionsInput } from "../validation";
+import type { CodexProgressPresenter } from "../../actions/codex-progress";
 
 export type MarkdownPdfTemplateCodexBundleIdFactory = (now: Date, attempt: number) => string;
 
@@ -50,10 +51,12 @@ export interface MdPdfTemplateCodexOptions {
   tocPageBreak?: string;
   templateBundleIdFactory?: MarkdownPdfTemplateCodexBundleIdFactory;
   codexRunner?: MarkdownPdfTemplateCodexRunner;
+  codexProgressPresenter?: CodexProgressPresenter;
 }
 
 type MdPdfTemplateCodexNonCliOption =
   | "codexRunner"
+  | "codexProgressPresenter"
   | "margin"
   | "marginBottom"
   | "marginLeft"

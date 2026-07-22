@@ -1,6 +1,7 @@
 import { suggestMarkdownPdfTemplateWithCodex } from "../../../adapters/codex/markdown-pdf-template";
 import {
-  startDirectCodexProgress,
+  createCodexProgressSession,
+  createDirectCodexProgressPresenter,
   type DirectCodexProgressStatus,
 } from "../../actions/codex-progress";
 import type { CliRuntime } from "../../types";
@@ -32,10 +33,11 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
   signals: MdPdfTemplateCodexSignalCollection;
   state: NormalizedMdPdfTemplateCodexCommandState;
 }): ReturnType<typeof suggestMarkdownPdfTemplateWithCodex> {
-  const codexProgress = startDirectCodexProgress(
-    input.runtime.stderr,
-    "Requesting Codex Markdown PDF template recommendation",
+  const codexProgress = createCodexProgressSession(
+    input.options.codexProgressPresenter ??
+      createDirectCodexProgressPresenter(input.runtime.stderr),
   );
+  codexProgress.begin("Requesting Codex Markdown PDF template recommendation");
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
     const result = await suggestMarkdownPdfTemplateWithCodex({

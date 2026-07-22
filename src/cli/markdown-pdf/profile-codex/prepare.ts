@@ -262,6 +262,7 @@ export async function prepareMarkdownPdfProfileCodex(
     const decision = await runMarkdownPdfCodexProfileOrchestration({
       context: orchestrationContext,
       profileCodexRunner: options.codexRunner,
+      progressPresenter: options.codexProgressPresenter,
       progressLabel: "Requesting Codex Markdown PDF profile recommendation",
       runtime,
     });
