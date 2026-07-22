@@ -328,7 +328,7 @@ Tasks:
       without adding a save-only outcome; defer owned temporary-directory and
       recovery execution to Phase 6.
 - [x] Add artifact-matrix, answer-revision, validation, and direct-parity tests.
-- [ ] Review the Phase 4 change range before proceeding.
+- [x] Review the Phase 4 change range before proceeding.
 
 Phase gate:
 
