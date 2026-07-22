@@ -269,6 +269,24 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(stderr.text).toContain("Installed font suggestions are unavailable");
   });
 
+  test("returns at the overall deadline and aborts a late discovery", async () => {
+    const { runtime } = createCapturedRuntime();
+    let discoverySignal: AbortSignal | undefined;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async (options) => {
+        discoverySignal = options?.signal;
+        return await new Promise(() => {});
+      },
+      discoveryTimeoutMs: 20,
+      inputPrompt: (async () => "Brand Sans") as typeof input,
+    });
+    const startedAt = Date.now();
+
+    expect(await service.promptPreference()).toBe("Brand Sans");
+    expect(Date.now() - startedAt).toBeLessThan(500);
+    expect(discoverySignal?.aborted).toBe(true);
+  });
+
   test("shows and clears delayed TTY discovery status before search", async () => {
     const { runtime, stderr } = createCapturedRuntime();
     (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;

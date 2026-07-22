@@ -23,6 +23,8 @@ const FONT_HINT_DISCOVERY_STATUS_DELAY_MS = 150;
 const FONT_HINT_UNAVAILABLE_NOTICE =
   "Installed font suggestions are unavailable; continuing with custom input.";
 const FONT_HINT_SEARCH_PAGE_SIZE = 7;
+const FONT_HINT_DISCOVERY_ABORTED = Symbol("font-hint-discovery-aborted");
+const FONT_HINT_DISCOVERY_TIMED_OUT = Symbol("font-hint-discovery-timed-out");
 
 type DiscoveryResolution =
   | { kind: "ready"; families: string[] }
@@ -44,20 +46,48 @@ async function discoverInstalledFamilies(
   signal: AbortSignal,
   discover: typeof discoverSystemFonts,
   now: () => number,
+  timeoutMs: number,
 ): Promise<DiscoveryResolution> {
   const startedAt = now();
+  const discoveryController = new AbortController();
+  let timeout: NodeJS.Timeout | undefined;
+  let resolveSessionAbort: ((value: typeof FONT_HINT_DISCOVERY_ABORTED) => void) | undefined;
+  const abortDiscovery = () => {
+    discoveryController.abort(signal.reason);
+    resolveSessionAbort?.(FONT_HINT_DISCOVERY_ABORTED);
+  };
   try {
-    const discovery = await discover({
-      platform: runtime.platform,
-      discovery: "fontconfig",
-      signal,
-      timeoutMs: FONT_HINT_DISCOVERY_TIMEOUT_MS,
-    });
     if (signal.aborted) {
       return { kind: "unavailable", retriable: false, showNotice: false };
     }
+    signal.addEventListener("abort", abortDiscovery, { once: true });
+    const sessionAbort = new Promise<typeof FONT_HINT_DISCOVERY_ABORTED>((resolve) => {
+      resolveSessionAbort = resolve;
+    });
+    const deadline = new Promise<typeof FONT_HINT_DISCOVERY_TIMED_OUT>((resolve) => {
+      timeout = setTimeout(() => {
+        discoveryController.abort(new DOMException("Font discovery timed out.", "TimeoutError"));
+        resolve(FONT_HINT_DISCOVERY_TIMED_OUT);
+      }, timeoutMs);
+    });
+    const discovery = await Promise.race([
+      discover({
+        platform: runtime.platform,
+        discovery: "fontconfig",
+        signal: discoveryController.signal,
+        timeoutMs,
+      }),
+      sessionAbort,
+      deadline,
+    ]);
+    if (discovery === FONT_HINT_DISCOVERY_ABORTED || signal.aborted) {
+      return { kind: "unavailable", retriable: false, showNotice: false };
+    }
+    if (discovery === FONT_HINT_DISCOVERY_TIMED_OUT) {
+      return { kind: "unavailable", retriable: true, showNotice: true };
+    }
     const families = collectInstalledFontFamilies(discovery.faces);
-    if (now() - startedAt >= FONT_HINT_DISCOVERY_TIMEOUT_MS) {
+    if (now() - startedAt >= timeoutMs) {
       return { kind: "unavailable", retriable: true, showNotice: true };
     }
     if (families.length === 0) {
@@ -69,6 +99,11 @@ async function discoverInstalledFamilies(
       return { kind: "unavailable", retriable: false, showNotice: false };
     }
     return { kind: "unavailable", retriable: true, showNotice: true };
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    signal.removeEventListener("abort", abortDiscovery);
   }
 }
 
@@ -76,12 +111,14 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
   runtime: CliRuntime,
   options: {
     discover?: typeof discoverSystemFonts;
+    discoveryTimeoutMs?: number;
     inputPrompt?: typeof input;
     now?: () => number;
     searchPrompt?: typeof search;
   } = {},
 ): MarkdownPdfInteractiveFontHintSuggestionService {
   const discover = options.discover ?? discoverSystemFonts;
+  const discoveryTimeoutMs = options.discoveryTimeoutMs ?? FONT_HINT_DISCOVERY_TIMEOUT_MS;
   const inputPrompt = options.inputPrompt ?? input;
   const now = options.now ?? Date.now;
   const searchPrompt = options.searchPrompt ?? search;
@@ -124,7 +161,13 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     if (!discoveryPromise || forceRetry) {
       state = { kind: "loading" };
       armStatus();
-      discoveryPromise = discoverInstalledFamilies(runtime, controller.signal, discover, now)
+      discoveryPromise = discoverInstalledFamilies(
+        runtime,
+        controller.signal,
+        discover,
+        now,
+        discoveryTimeoutMs,
+      )
         .then((resolution) => {
           state =
             resolution.kind === "ready"
