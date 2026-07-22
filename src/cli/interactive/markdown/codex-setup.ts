@@ -37,8 +37,8 @@ function normalizedOptionalText(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-const PDF_INTENT_PROMPT =
-  "Describe the PDF intent:\n  Optional. Describe the audience, tone, layout, or visual direction.";
+const PDF_INTENT_PROMPT = "PDF intent (optional)";
+const PDF_INTENT_SINGLE_LINE_PROMPT = `${PDF_INTENT_PROMPT}\n `;
 
 async function promptPdfIntent(current?: string): Promise<string | undefined> {
   const useMultilineEditor = await confirm({
@@ -52,7 +52,7 @@ async function promptPdfIntent(current?: string): Promise<string | undefined> {
         postfix: ".md",
       })
     : await input({
-        message: PDF_INTENT_PROMPT,
+        message: PDF_INTENT_SINGLE_LINE_PROMPT,
         default: current ?? "",
       });
   return normalizedOptionalText(value);

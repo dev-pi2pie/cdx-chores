@@ -78,3 +78,7 @@ reuse, and regression coverage. No actionable findings remained.
 ## Related Research
 
 - [Markdown PDF Interactive Font Hint Suggestions](../../researches/research-2026-07-22-markdown-pdf-interactive-font-hint-suggestions.md)
+
+## Follow-up Jobs
+
+- [Phase 6.7 repeatable font-hint flow](2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)

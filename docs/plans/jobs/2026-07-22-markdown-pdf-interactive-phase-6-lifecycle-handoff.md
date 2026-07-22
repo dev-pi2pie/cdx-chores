@@ -112,3 +112,7 @@ followed.
 ## Related Research
 
 - [Markdown PDF Interactive Mode](../../researches/research-2026-07-03-markdown-pdf-interactive-mode.md)
+
+## Follow-up Jobs
+
+- [Phase 6.7 temporary-session portability](2026-07-22-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md)

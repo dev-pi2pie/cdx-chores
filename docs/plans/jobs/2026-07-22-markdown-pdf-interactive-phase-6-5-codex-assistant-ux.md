@@ -81,3 +81,7 @@ actionable findings remained.
 ## Related Research
 
 - [Markdown PDF Interactive Mode](../../researches/research-2026-07-03-markdown-pdf-interactive-mode.md)
+
+## Follow-up Jobs
+
+- [Intent prompt layout hotfix](2026-07-22-markdown-pdf-interactive-intent-prompt-layout-hotfix.md)

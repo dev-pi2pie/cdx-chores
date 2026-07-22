@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Font Hint Suggestions"
 created-date: 2026-07-22
 modified-date: 2026-07-22
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -21,9 +21,11 @@ The direct helper contract remains authoritative:
 Interactive mode may help a user build each text value, but it must ultimately
 produce the same ordered `fontHints: string[]` payload.
 
-This research is `completed` because Phase 6.6 implemented the selected
-direction and recorded focused, repository, real-prompt, fallback, privacy,
-cancellation, and exact-range review evidence.
+Phase 6.6 implemented and verified the first selected direction. This research
+returned to `in-progress` after field use showed that the collection is
+repeatable but the add path hides that fact behind an unnecessary mode menu.
+Phase 6.7 refines the collection flow without changing the direct repeatable
+`fontHints: string[]` contract or discarding the Phase 6.6 evidence.
 
 ## Problem
 
@@ -132,28 +134,39 @@ Font hints:
 - Prefer Source Serif 4 for body text
 - Prefer JetBrains Mono for code text
 
-? Edit font hints
-❯ Add font hint
+? Font hints
+❯ Add guided font hint
+  Add complete custom hint
   Edit font hint
   Remove font hint
+  Move font hint
   Done
 ```
 
-`Edit` and `Remove` appear only when at least one hint exists. Summaries render
-one hint per line rather than joining values with commas.
+`Edit` and `Remove` appear only when at least one hint exists, and `Move`
+appears only when at least two exist. Summaries render one hint per line rather
+than joining values with commas.
 
-### 2. Choose builder or complete custom input
+The collection menu is a sequential repeatable editor, not a multi-select
+prompt. After every accepted add, edit, removal, or move, it re-renders the
+ordered collection before presenting the same actions again. `Done` is the
+only successful exit from collection editing.
+
+### 2. Enter guided or complete custom input directly
 
 ```text
-? Add font hint
-❯ Build a font hint
-  Write a complete custom hint
-  Back
+? Font hints
+❯ Add guided font hint
+  Add complete custom hint
+  Done
 ```
 
-`Write a complete custom hint` accepts one non-empty string unchanged after
+`Add guided font hint` proceeds directly to the preference picker and intended
+use. `Add complete custom hint` accepts one non-empty string unchanged after
 trimming. It supports fallback stacks, nuanced directions, or instructions
-that do not fit the builder.
+that do not fit the builder. The flow does not insert a separate
+builder-versus-custom mode prompt after the user has already selected an add
+action.
 
 ### 3. Build preference and intended use separately
 
@@ -183,9 +196,10 @@ choice.
 
 The currently pinned `@inquirer/search` behavior supports this model: each
 source refresh falls back to the first selectable result, and a newer search
-term aborts the prior source callback. Phase 6.6 should still verify Enter,
-arrow navigation, Tab completion, paste, input-method-editor input, and narrow
-terminal output before treating the interaction as accessible evidence.
+term aborts the prior source callback. Phase 6.6 verified Enter, arrow
+navigation, Tab completion, paste, input-method-editor input, and narrow
+terminal output; Phase 6.7 must preserve those behaviors while flattening the
+surrounding collection flow.
 
 The preference picker reuses the path picker's typing and sibling-navigation
 muscle memory, but presents a visible flat result list instead of path-style
@@ -258,12 +272,16 @@ Direct option:
 Assignment: determined during Codex preparation
 
 ? Font hint next step
-❯ Add this font hint
+❯ Add font hint
   Revise font preference
   Revise intended use
-  Write a complete custom hint
+  Switch to complete custom hint
   Back
 ```
+
+Accepting the preview appends one compiled hint, re-renders the complete
+ordered collection, and returns to `Font hints`, where another guided or custom
+hint can be added immediately.
 
 Compilation remains deterministic:
 
@@ -364,8 +382,8 @@ Discovery rules:
 - expose family names only, never font-file paths
 - do not prompt to install fontconfig or another system tool
 - do not try a native platform fallback when `fc-list` is unavailable
-- allow an explicit retry after an unavailable result without retrying
-  automatically on every hint
+- do not add a manual retry action to the collection flow; cache an unavailable
+  result for the session and keep ordinary preference input authoritative
 
 The complete-custom path remains selectable before discovery begins. The built
 path may wait only within the one-second deadline before it falls back to the
@@ -475,8 +493,8 @@ Automated tests should use injected discovery results and cover:
 - complete custom hints
 - add, edit, remove, ordering, and exact duplicates
 - discovery called once and filtered in memory
-- available, missing, failed, empty, timed-out, cancelled, and retried
-  fontconfig discovery
+- available, missing, failed, empty, timed-out, and cancelled fontconfig
+  discovery, with no manual retry branch after fallback
 - shared signal propagation to the command runner and child-process
   cancellation on Back, Cancel, and Interactive exit
 - no native-platform fallback when `fc-list` is unavailable
@@ -490,7 +508,11 @@ they should not list the developer machine's inventory, paths, or setup steps.
 ## Settled Direction
 
 - Keep direct font hints repeatable, ordered, and free-text.
-- Add a structured builder plus a complete-custom escape path.
+- Present `Add guided font hint` and `Add complete custom hint` directly in the
+  collection menu instead of inserting another mode-selection prompt.
+- Re-render the ordered collection after every accepted change so repeatable
+  entry is visible before the user chooses `Done`.
+- Keep a structured builder plus a complete-custom escape path.
 - Separate font preference from optional intended use.
 - Keep language-specific body text user-authored and singular per built hint.
 - Exclude structured writing-system and arbitrary document-area uses from the
@@ -500,7 +522,8 @@ they should not list the developer machine's inventory, paths, or setup steps.
   `fc-list` is unavailable, provide no automatic suggestions and do not try a
   native platform fallback.
 - Give Interactive discovery a one-second hard deadline, delayed waiting
-  feedback, session caching, and one concise fallback notice.
+  feedback, session caching, and one concise fallback notice. Cache an
+  unavailable result without presenting a manual retry action.
 - Keep raw custom text as the first search choice, put its explanation in the
   choice description, cap installed matches at six, and collapse an exact
   duplicate-looking family result.
@@ -512,12 +535,12 @@ they should not list the developer machine's inventory, paths, or setup steps.
   accepted role/key assignment.
 - Compile each Interactive draft to one existing `--font-hint` equivalent.
 - Send only accepted compiled hints to Codex.
-- Implement this follow-up in a separate Phase 6.6 after the Phase 6.5 base UX
-  refinement.
+- Preserve the implemented Phase 6.6 suggestion and builder contract, then
+  implement the flatter repeatable collection flow in Phase 6.7.
 
 ## Required Verification Evidence
 
-The design questions are settled. Closure evidence confirms that:
+Phase 6.6 closure evidence confirms that:
 
 - the raw custom value remains the stable first selection across filtering and
   the documented non-wrapping Up/Down, Enter-to-accept, Tab-to-complete, and
@@ -530,10 +553,23 @@ The design questions are settled. Closure evidence confirms that:
 - the shared abort signal stops the underlying discovery process, while rapid
   search-term changes cancel only obsolete filtering work
 
-These checks do not reopen the free-text, privacy, fallback, or direct-contract
-decisions above. The linked Phase 6.6 record now supplies the required evidence.
+Phase 6.7 must additionally prove that:
 
-## Implementation Evidence
+- guided and complete-custom additions are direct collection actions without
+  an intermediate mode menu
+- the ordered collection is re-rendered after accepted additions, edits,
+  removals, and moves
+- multiple hints can be added sequentially before `Done`, preserving order and
+  exact-duplicate handling
+- unavailable discovery falls directly to ordinary preference input and does
+  not add a manual retry branch
+- existing search-keyboard, cancellation, privacy, compilation, and direct
+  helper compatibility evidence remains valid
+
+These refinements do not reopen the free-text, privacy, no-native-fallback, or
+direct-contract decisions above.
+
+## Phase 6.6 Baseline Evidence
 
 - The real pinned search prompt preserved custom-first filtering,
   non-wrapping sibling navigation, Enter acceptance, Tab completion, and
@@ -563,3 +599,4 @@ decisions above. The linked Phase 6.6 record now supplies the required evidence.
 
 - [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md)
 - [Phase 6.6 font hint suggestions](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md)
+- [Phase 6.7 repeatable font-hint flow](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)

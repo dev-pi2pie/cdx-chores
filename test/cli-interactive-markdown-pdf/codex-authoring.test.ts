@@ -108,6 +108,11 @@ describe("interactive Markdown PDF Codex authoring", () => {
       expect(
         result.promptCalls.some((call) => call.message === "Markdown preparation sample"),
       ).toBe(false);
+      expect(result.promptCalls).toContainEqual({
+        kind: "input",
+        message: "PDF intent (optional)\n ",
+        defaultValue: "",
+      });
     },
   );
 
@@ -172,8 +177,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
     expect(result.promptCalls).toContainEqual({
       kind: "editor",
-      message:
-        "Describe the PDF intent:\n  Optional. Describe the audience, tone, layout, or visual direction.",
+      message: "PDF intent (optional)",
       defaultValue: "",
       postfix: ".md",
     });

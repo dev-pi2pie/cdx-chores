@@ -32,7 +32,8 @@ The related research now settles:
 - role-by-role bundle and explicit-input precedence
 - Codex intent, font-hint, base-profile, cover-image, and consent behavior
 - a Phase 6.5 baseline repeatable font-hint editor followed by a separately
-  researched Phase 6.6 builder and installed-family suggestion layer
+  researched Phase 6.6 builder and installed-family suggestion layer, with a
+  Phase 6.7 field-use refinement that makes repeated entry explicit
 - durable and CLI-owned temporary artifact lifecycles
 - conditional Codex report retention
 - output defaults, cleanup, failure recovery, and `pdf-recipes -> to-pdf`
@@ -580,6 +581,69 @@ Expected job record:
 
 - [Phase 6.6 font hint suggestions](jobs/2026-07-22-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md)
 
+### Phase 6.7: Interactive Authoring Follow-up
+
+This phase contains two independently reviewable follow-ups discovered through
+live Interactive use. It does not reopen the completed Phase 6 or Phase 6.6
+commit ranges.
+
+#### Track A: Portable Temporary Recipe Sessions
+
+Tasks:
+
+- [ ] Keep generated temporary recipes under the operating system's temporary
+      directory rather than the current working directory.
+- [ ] Resolve each newly created owned session to its canonical path before it
+      becomes a materialization, retention, display, or cleanup boundary.
+- [ ] Prevent standard platform temporary-directory aliases from triggering
+      the user-output symlink-parent rejection path.
+- [ ] Print one actionable canonical retained-session path instead of a long
+      working-directory-relative traversal.
+- [ ] Preserve opaque session ownership, exact-directory cleanup, failure
+      retention, user-selected output symlink validation, and durable-artifact
+      exclusion from cleanup.
+- [ ] Cover macOS-style aliased temporary roots without assuming POSIX paths,
+      and retain Linux and Windows path compatibility.
+
+#### Track B: Repeatable Font-Hint Flow
+
+Tasks:
+
+- [ ] Replace the nested `Add font hint -> Build or custom` mode prompt with
+      direct `Add guided font hint` and `Add complete custom hint` collection
+      actions.
+- [ ] Keep font-hint entry sequential rather than multi-select because every
+      guided hint owns an independent preference and optional intended use.
+- [ ] Re-render the ordered collection after every accepted add, edit, remove,
+      or move so repeatability remains visible until `Done`.
+- [ ] Preserve guided compilation, complete custom text, editing, removal,
+      movement, exact-duplicate handling, and ordered `fontHints: string[]`
+      payloads.
+- [ ] Attempt installed-family discovery at most once per session. Cache an
+      unavailable result, fall back to ordinary preference input, and remove
+      the manual retry action without adding a native platform fallback.
+- [ ] Preserve the Phase 6.6 search keyboard, cancellation, privacy,
+      intended-use, consent, candidate-invalidation, and post-Codex assignment
+      contracts.
+
+Phase gate:
+
+- owned temporary sessions use canonical OS-selected paths and no longer fail
+  because a normal platform temporary root contains a symlink alias
+- successful rendering removes only the exact owned session; failure retains
+  and prints that exact canonical path
+- repeated guided and complete-custom additions are direct, visible collection
+  actions with no intermediate mode prompt
+- unavailable discovery falls through to ordinary preference input without a
+  retry branch or native inventory fallback
+- the two tracks have focused tests, public-safe manual evidence, separate
+  implementation checkpoints, and no unresolved review findings
+
+Expected job records:
+
+- [Phase 6.7 temporary-session portability](jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md)
+- [Phase 6.7 repeatable font-hint flow](jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)
+
 ### Phase 7: Validation, Guides, And Closeout
 
 Tasks:
@@ -720,6 +784,8 @@ Create one phase record when each implementation phase begins, replacing
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-lifecycle-handoff.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-7-font-hint-flow.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-7-validation-closeout.md`
 
 ## Completion Criteria
@@ -731,6 +797,8 @@ This plan is complete only when:
 - Codex setup, intent entry, and waiting feedback match the Phase 6.5 contract
 - font-hint building, suggestions, intended-use and assignment review, privacy,
   and fallback match the linked Phase 6.6 research contract
+- portable temporary-session behavior and repeatable font-hint collection match
+  the Phase 6.7 follow-up contract
 - direct CLI behavior remains compatible after service extraction
 - every generated candidate is prepared once and committed without implicit
   regeneration

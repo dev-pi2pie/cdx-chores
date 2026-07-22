@@ -30,11 +30,11 @@ md to-pdf [--profile | --template | --css | --bundle]
 Interactive mode should orchestrate these capabilities without creating a
 second artifact model, assistant model, or renderer.
 
-The implementation records for completed Phases 1 through 6 evidence only the
-core flow that those phases originally scoped. This research remains
-`in-progress` because the subsequently added Phase 6.5 Codex Assistant UX
-refinement, Phase 6.6 font-hint input refinement, Phase 7 validation, guide
-alignment, complete-range review, and final closure reassessment remain pending.
+The implementation records for completed Phases 1 through 6.6 evidence only
+the flow each phase originally scoped. This research remains `in-progress`
+because Phase 6.7 field-use refinements and Phase 7 validation, guide
+alignment, complete-range review, and final closure reassessment remain
+pending.
 
 ## Current Contracts And Boundaries
 
@@ -487,11 +487,11 @@ Additional signals remain artifact-specific:
 Every Interactive Codex preparation asks for a PDF intent, but accepts an empty
 answer to preserve the direct helpers' optional intent contract. Intent entry
 follows the data-query pattern: ask whether to use the multiline editor, then
-open either the editor or the single-line input. The prompt is `Describe the PDF
-intent:` and its short guidance appears on the following line rather than being
-embedded in a long question. An empty intent simply omits that signal; the
-helper may still use the Markdown sample, base profile, font hints, cover image,
-or its accepted fallback behavior.
+open either the editor or the single-line input. Both paths use the compact
+`PDF intent (optional)` label; single-line entry starts on the following
+indented line. An empty intent simply omits that signal; the helper may still
+use the Markdown sample, base profile, font hints, cover image, or its accepted
+fallback behavior.
 
 Codex setup uses progressive disclosure rather than another checkbox list. The
 summary and edit actions follow the same artifact-specific order: intent, base
@@ -765,11 +765,24 @@ during recipe review.
 
 ### Temporary Render Transaction
 
+Temporary recipe sessions remain under the operating system's temporary
+directory rather than the current working directory. Immediately after
+creating a unique directory, the CLI resolves it to its canonical path. That
+exact canonical directory becomes the opaque ownership, retention, display,
+and cleanup boundary.
+
+This stays portable across the platform-selected temporary roots on macOS,
+Linux, and Windows while preventing a normal system path alias from being
+misclassified as a user-controlled symlink parent. It also avoids requiring a
+writable working directory or leaving generated recipe files in a repository.
+User-selected durable outputs keep the existing symlink-aware validation.
+
 The temporary path behaves as a small transaction:
 
 ```text
 accepted prepared result
-  -> create a unique CLI-owned session bundle
+  -> create a unique CLI-owned OS-temporary session
+  -> resolve and retain its exact canonical path
   -> write the exact accepted artifacts
   -> render through the shared to-pdf service
   -> confirm successful PDF output
@@ -789,10 +802,12 @@ Cleanup is ownership- and outcome-based:
 | Durable materialization or renderer-preparation failure | retain the durable recipe and print its path |
 | Cancellation before commit | nothing was written |
 
-Cleanup targets only the exact unique directory retained in current session
-state. It must never derive a deletion target from a broad root, glob,
-unresolved environment variable, existing bundle path, or user-selected
-durable output.
+Cleanup targets only the exact canonical unique directory retained in current
+session state. It must never derive a deletion target from a broad root, glob,
+unresolved environment variable, existing bundle path, current working
+directory, or user-selected durable output. Failure output prints the same
+canonical session path directly so the retained diagnostic location is
+actionable without a long working-directory-relative traversal.
 
 ### Materialization And Render Failure Recovery
 
@@ -849,9 +864,8 @@ Font hints: none
 
 ✔ Project setup next step Set PDF intent
 ✔ Use multiline editor? No
-? Describe the PDF intent:
-  Optional. Describe the audience, tone, layout, or visual direction.
-✔ Annual report with restrained editorial styling
+? PDF intent (optional)
+  Annual report with restrained editorial styling
 ✔ Project setup next step Set cover image
 ✔ Cover image cover.jpg
 ✔ Project setup next step Edit font hints
@@ -967,12 +981,15 @@ Interactive tests should cover:
 - Phase 6.6 font-hint builder compilation, custom entry, custom-first
   fontconfig suggestions, intended-use review, post-Codex assignment review,
   shared cancellation, and no-native-fallback custom input
+- Phase 6.7 direct guided/custom collection actions, visible repeatable
+  accumulation, and no manual discovery-retry branch
 - one non-overlapping waiting status per Codex request, including cleanup before
   review, recovery, or error prompts
 - explicit and generated-fallback Project output directories
 - temporary rendering ignoring an explicitly selected durable output
 - lifecycle-filtered artifact, PDF, and report prompts
 - successful cleanup and cleanup-failure warnings
+- canonical OS-temporary session creation across platform path conventions
 - render-failure retention and explicit deletion confirmation
 - protection of existing and durable artifacts
 
@@ -999,11 +1016,16 @@ Interactive tests should cover:
   one-second discovery budget, and shared cancellation without changing the
   direct `fontHints: string[]` contract. Missing `fc-list` falls back to custom
   input without a native platform inventory.
+- Phase 6.7 makes guided and complete-custom additions direct collection
+  actions, re-renders the ordered collection after every accepted change, and
+  removes the manual discovery-retry branch while preserving sequential
+  repeatability and the direct `fontHints: string[]` payload.
 - Interactive mode shows one concise, artifact-specific waiting status for an
   active Codex request and clears it before the next prompt.
 - An omitted saved Project output uses the direct helper's collision-safe
   `md-pdf-project-<timestamp>-<uid>/` fallback; temporary rendering uses a
-  separate CLI-owned session directory.
+  separate CLI-owned OS-temporary session directory whose canonical path is
+  the exact ownership and cleanup boundary.
 - Built-in, existing, and custom sources never invoke Codex.
 - Custom inputs use a single-select composition mode followed by multi-select
   explicit roles; bundle-only rendering remains under `Existing bundle`.
@@ -1043,3 +1065,5 @@ Interactive tests should cover:
 ## Related Plans
 
 - [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md)
+- [Phase 6.7 temporary-session portability](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-temporary-session-portability.md)
+- [Phase 6.7 repeatable font-hint flow](../plans/jobs/2026-07-22-markdown-pdf-interactive-phase-6-7-font-hint-flow.md)
