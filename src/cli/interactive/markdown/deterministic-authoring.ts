@@ -137,6 +137,6 @@ export function markdownPdfDeterministicOutputFiles(
   bound: BoundMarkdownPdfDeterministicRecipe,
 ): string[] {
   return bound.artifact === "profile"
-    ? [bound.destination.displayOutputPath]
+    ? [bound.destination.outputPath]
     : [bound.destination.templatePath, bound.destination.stylePath];
 }

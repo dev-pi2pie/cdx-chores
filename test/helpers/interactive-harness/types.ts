@@ -4,7 +4,9 @@ export interface InteractiveHarnessScenario {
   markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
   markdownPdfIgnoredBundleFiles?: string[];
   markdownPdfPrepareErrorMessage?: string;
+  markdownPdfPrepareErrorMessages?: string[];
   markdownPdfDeterministicBindErrorMessage?: string;
+  markdownPdfDeterministicWriteErrorMessages?: string[];
   markdownPdfCodexBindErrorMessage?: string;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];

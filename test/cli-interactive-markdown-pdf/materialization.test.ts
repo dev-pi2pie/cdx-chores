@@ -40,6 +40,7 @@ function fakeCandidate(
 function createServices(input: {
   externalReport?: string;
   calls: { binds: ServiceCall[]; writes: unknown[] };
+  writeFailures?: string[];
 }): MarkdownPdfMaterializationServices {
   const bind = async (
     _runtime: CliRuntime,
@@ -66,6 +67,10 @@ function createServices(input: {
   const outputPath = (bound: unknown): string => (bound as { output: string }).output;
   const write = async (bound: unknown) => {
     input.calls.writes.push(bound);
+    const failure = input.writeFailures?.shift();
+    if (failure) {
+      throw new Error(failure);
+    }
   };
   return {
     bindCodex: bind,
@@ -132,6 +137,27 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
     await writeBoundMarkdownPdfGeneratedCandidate(bound);
     await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow("already written");
     expect(calls.writes).toHaveLength(1);
+    await cleanupOwnedMarkdownPdfSession(session);
+  });
+
+  test("allows a failed write to retry the same bound candidate", async () => {
+    const { runtime } = createActionTestRuntime();
+    const session = await createOwnedMarkdownPdfSession();
+    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+      runtime,
+      fakeCandidate("deterministic", "profile"),
+      { kind: "temporary", report: { kind: "none" }, session },
+      createServices({ calls, writeFailures: ["transient write failure"] }),
+    );
+
+    await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow(
+      "transient write failure",
+    );
+    await writeBoundMarkdownPdfGeneratedCandidate(bound);
+
+    expect(calls.binds).toHaveLength(1);
+    expect(calls.writes).toHaveLength(2);
     await cleanupOwnedMarkdownPdfSession(session);
   });
 

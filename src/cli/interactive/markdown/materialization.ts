@@ -7,6 +7,7 @@ import {
   boundMarkdownPdfCodexOutputFiles,
   boundMarkdownPdfCodexOutputPath,
   writeBoundMarkdownPdfCodexCandidate,
+  type BoundMarkdownPdfCodexCandidate,
 } from "./codex-service";
 import type {
   MarkdownPdfCodexReportRetention,
@@ -18,6 +19,7 @@ import {
   markdownPdfDeterministicDestinationPath,
   markdownPdfDeterministicOutputFiles,
   writeBoundMarkdownPdfDeterministicRecipe,
+  type BoundMarkdownPdfDeterministicRecipe,
   type PreparedMarkdownPdfDeterministicRecipe,
 } from "./deterministic-authoring";
 import { assertActiveOwnedMarkdownPdfSession, type OwnedMarkdownPdfSession } from "./lifecycle";
@@ -55,7 +57,10 @@ export type MarkdownPdfGeneratedMaterializationDestination =
       readonly report: MarkdownPdfCodexReportRetention;
     };
 
-export interface MarkdownPdfMaterializationServices {
+export interface MarkdownPdfMaterializationServices<
+  CodexBound extends object = object,
+  DeterministicBound extends object = object,
+> {
   readonly bindCodex: (
     runtime: CliRuntime,
     candidate: PreparedMarkdownPdfCodexCandidate,
@@ -64,18 +69,18 @@ export interface MarkdownPdfMaterializationServices {
       overwrite: boolean;
       report: MarkdownPdfCodexReportRetention;
     },
-  ) => Promise<unknown>;
+  ) => Promise<CodexBound>;
   readonly bindDeterministic: (
     runtime: CliRuntime,
     candidate: PreparedMarkdownPdfDeterministicRecipe,
     input: { output: string; overwrite?: boolean },
-  ) => Promise<unknown>;
-  readonly codexOutputFiles: (bound: unknown) => string[];
-  readonly codexOutputPath: (bound: unknown) => string;
-  readonly deterministicOutputFiles: (bound: unknown) => string[];
-  readonly deterministicOutputPath: (bound: unknown) => string;
-  readonly writeCodex: (runtime: CliRuntime, bound: unknown) => Promise<void>;
-  readonly writeDeterministic: (bound: unknown) => Promise<void>;
+  ) => Promise<DeterministicBound>;
+  readonly codexOutputFiles: (bound: CodexBound) => string[];
+  readonly codexOutputPath: (bound: CodexBound) => string;
+  readonly deterministicOutputFiles: (bound: DeterministicBound) => string[];
+  readonly deterministicOutputPath: (bound: DeterministicBound) => string;
+  readonly writeCodex: (runtime: CliRuntime, bound: CodexBound) => Promise<void>;
+  readonly writeDeterministic: (bound: DeterministicBound) => Promise<void>;
 }
 
 interface BoundMaterializationRecord {
@@ -88,37 +93,91 @@ const boundMaterializations = new WeakMap<
   BoundMaterializationRecord
 >();
 
-const defaultServices: MarkdownPdfMaterializationServices = {
+const defaultServices: MarkdownPdfMaterializationServices<
+  BoundMarkdownPdfCodexCandidate,
+  BoundMarkdownPdfDeterministicRecipe
+> = {
   bindCodex: async (runtime, candidate, input) =>
     await bindMarkdownPdfCodexCandidate(runtime, candidate, input),
   bindDeterministic: async (runtime, candidate, input) =>
     await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, input),
-  codexOutputFiles: (bound) =>
-    boundMarkdownPdfCodexOutputFiles(
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfCodexCandidate>>,
-    ),
-  codexOutputPath: (bound) =>
-    boundMarkdownPdfCodexOutputPath(
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfCodexCandidate>>,
-    ),
-  deterministicOutputFiles: (bound) =>
-    markdownPdfDeterministicOutputFiles(
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfDeterministicRecipeDestination>>,
-    ),
-  deterministicOutputPath: (bound) =>
-    markdownPdfDeterministicDestinationPath(
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfDeterministicRecipeDestination>>,
-    ),
-  writeCodex: async (runtime, bound) =>
-    await writeBoundMarkdownPdfCodexCandidate(
-      runtime,
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfCodexCandidate>>,
-    ),
-  writeDeterministic: async (bound) =>
-    await writeBoundMarkdownPdfDeterministicRecipe(
-      bound as Awaited<ReturnType<typeof bindMarkdownPdfDeterministicRecipeDestination>>,
-    ),
+  codexOutputFiles: boundMarkdownPdfCodexOutputFiles,
+  codexOutputPath: boundMarkdownPdfCodexOutputPath,
+  deterministicOutputFiles: markdownPdfDeterministicOutputFiles,
+  deterministicOutputPath: markdownPdfDeterministicDestinationPath,
+  writeCodex: writeBoundMarkdownPdfCodexCandidate,
+  writeDeterministic: writeBoundMarkdownPdfDeterministicRecipe,
 };
+
+interface MaterializationBinding {
+  readonly destination: string;
+  readonly outputFiles: readonly string[];
+  readonly write: () => Promise<void>;
+}
+
+interface MarkdownPdfCodexMaterializationAdapter<CodexBound extends object> {
+  readonly bindCodex: MarkdownPdfMaterializationServices<CodexBound>["bindCodex"];
+  readonly codexOutputFiles: MarkdownPdfMaterializationServices<CodexBound>["codexOutputFiles"];
+  readonly codexOutputPath: MarkdownPdfMaterializationServices<CodexBound>["codexOutputPath"];
+  readonly writeCodex: MarkdownPdfMaterializationServices<CodexBound>["writeCodex"];
+}
+
+interface MarkdownPdfDeterministicMaterializationAdapter<DeterministicBound extends object> {
+  readonly bindDeterministic: MarkdownPdfMaterializationServices<
+    object,
+    DeterministicBound
+  >["bindDeterministic"];
+  readonly deterministicOutputFiles: MarkdownPdfMaterializationServices<
+    object,
+    DeterministicBound
+  >["deterministicOutputFiles"];
+  readonly deterministicOutputPath: MarkdownPdfMaterializationServices<
+    object,
+    DeterministicBound
+  >["deterministicOutputPath"];
+  readonly writeDeterministic: MarkdownPdfMaterializationServices<
+    object,
+    DeterministicBound
+  >["writeDeterministic"];
+}
+
+async function bindCodexMaterialization<CodexBound extends object>(
+  runtime: CliRuntime,
+  candidate: PreparedMarkdownPdfCodexCandidate,
+  target: Extract<
+    MarkdownPdfGeneratedMaterializationDestination,
+    { kind: "durable" | "temporary" }
+  >,
+  services: MarkdownPdfCodexMaterializationAdapter<CodexBound>,
+  output: string,
+  overwrite: boolean,
+): Promise<MaterializationBinding> {
+  const bound = await services.bindCodex(runtime, candidate, {
+    output,
+    overwrite,
+    report: target.report,
+  });
+  return {
+    destination: services.codexOutputPath(bound),
+    outputFiles: Object.freeze([...services.codexOutputFiles(bound)]),
+    write: async () => await services.writeCodex(runtime, bound),
+  };
+}
+
+async function bindDeterministicMaterialization<DeterministicBound extends object>(
+  runtime: CliRuntime,
+  candidate: PreparedMarkdownPdfDeterministicRecipe,
+  services: MarkdownPdfDeterministicMaterializationAdapter<DeterministicBound>,
+  output: string,
+  overwrite: boolean,
+): Promise<MaterializationBinding> {
+  const bound = await services.bindDeterministic(runtime, candidate, { output, overwrite });
+  return {
+    destination: services.deterministicOutputPath(bound),
+    outputFiles: Object.freeze([...services.deterministicOutputFiles(bound)]),
+    write: async () => await services.writeDeterministic(bound),
+  };
+}
 
 function temporaryDestination(
   candidate: PreparedMarkdownPdfGeneratedCandidate,
@@ -182,11 +241,14 @@ function rendererSource(
     : { bundle: destination };
 }
 
-export async function bindPreparedMarkdownPdfGeneratedCandidate(
+async function bindPreparedMarkdownPdfGeneratedCandidateWithServices<
+  CodexBound extends object,
+  DeterministicBound extends object,
+>(
   runtime: CliRuntime,
   acceptedCandidate: PreparedMarkdownPdfGeneratedCandidate,
   target: MarkdownPdfGeneratedMaterializationDestination,
-  services: MarkdownPdfMaterializationServices = defaultServices,
+  services: MarkdownPdfMaterializationServices<CodexBound, DeterministicBound>,
 ): Promise<BoundMarkdownPdfGeneratedMaterialization> {
   if (target.kind === "temporary") {
     assertActiveOwnedMarkdownPdfSession(target.session);
@@ -202,34 +264,31 @@ export async function bindPreparedMarkdownPdfGeneratedCandidate(
       ? temporaryDestination(acceptedCandidate, target.session)
       : target.output;
   const overwrite = target.kind === "durable" ? target.overwrite : false;
-  let bound: unknown;
-  let destination: string;
-  let outputFiles: string[];
-  let write: () => Promise<void>;
+  let binding: MaterializationBinding;
 
   if (acceptedCandidate.kind === "deterministic") {
-    bound = await services.bindDeterministic(runtime, acceptedCandidate.candidate, {
+    binding = await bindDeterministicMaterialization(
+      runtime,
+      acceptedCandidate.candidate,
+      services,
       output,
       overwrite,
-    });
-    destination = services.deterministicOutputPath(bound);
-    outputFiles = services.deterministicOutputFiles(bound);
-    write = async () => await services.writeDeterministic(bound);
+    );
   } else {
-    bound = await services.bindCodex(runtime, acceptedCandidate.candidate, {
+    binding = await bindCodexMaterialization(
+      runtime,
+      acceptedCandidate.candidate,
+      target,
+      services,
       output,
       overwrite,
-      report: target.report,
-    });
-    destination = services.codexOutputPath(bound);
-    outputFiles = services.codexOutputFiles(bound);
-    write = async () => await services.writeCodex(runtime, bound);
+    );
   }
 
   if (target.kind === "temporary") {
     assertTemporaryPaths({
-      destination,
-      outputFiles,
+      destination: binding.destination,
+      outputFiles: binding.outputFiles,
       report: target.report,
       runtime,
       session: target.session,
@@ -238,17 +297,55 @@ export async function bindPreparedMarkdownPdfGeneratedCandidate(
 
   const common = {
     acceptedCandidate,
-    destination,
-    outputFiles: Object.freeze([...outputFiles]),
-    rendererSource: Object.freeze(rendererSource(acceptedCandidate, destination)),
+    destination: binding.destination,
+    outputFiles: binding.outputFiles,
+    rendererSource: Object.freeze(rendererSource(acceptedCandidate, binding.destination)),
   };
   const materialization: BoundMarkdownPdfGeneratedMaterialization = Object.freeze(
     target.kind === "temporary"
       ? { ...common, kind: "temporary" as const, session: target.session }
       : { ...common, kind: "durable" as const },
   );
-  boundMaterializations.set(materialization, { state: "pending", write });
+  boundMaterializations.set(materialization, { state: "pending", write: binding.write });
   return materialization;
+}
+
+export function bindPreparedMarkdownPdfGeneratedCandidate(
+  runtime: CliRuntime,
+  acceptedCandidate: PreparedMarkdownPdfGeneratedCandidate,
+  target: MarkdownPdfGeneratedMaterializationDestination,
+): Promise<BoundMarkdownPdfGeneratedMaterialization>;
+export function bindPreparedMarkdownPdfGeneratedCandidate<
+  CodexBound extends object,
+  DeterministicBound extends object,
+>(
+  runtime: CliRuntime,
+  acceptedCandidate: PreparedMarkdownPdfGeneratedCandidate,
+  target: MarkdownPdfGeneratedMaterializationDestination,
+  services: MarkdownPdfMaterializationServices<CodexBound, DeterministicBound>,
+): Promise<BoundMarkdownPdfGeneratedMaterialization>;
+export async function bindPreparedMarkdownPdfGeneratedCandidate<
+  CodexBound extends object,
+  DeterministicBound extends object,
+>(
+  runtime: CliRuntime,
+  acceptedCandidate: PreparedMarkdownPdfGeneratedCandidate,
+  target: MarkdownPdfGeneratedMaterializationDestination,
+  services?: MarkdownPdfMaterializationServices<CodexBound, DeterministicBound>,
+): Promise<BoundMarkdownPdfGeneratedMaterialization> {
+  return services
+    ? await bindPreparedMarkdownPdfGeneratedCandidateWithServices(
+        runtime,
+        acceptedCandidate,
+        target,
+        services,
+      )
+    : await bindPreparedMarkdownPdfGeneratedCandidateWithServices(
+        runtime,
+        acceptedCandidate,
+        target,
+        defaultServices,
+      );
 }
 
 export async function writeBoundMarkdownPdfGeneratedCandidate(

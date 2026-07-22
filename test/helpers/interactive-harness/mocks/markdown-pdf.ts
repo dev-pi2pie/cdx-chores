@@ -304,6 +304,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         artifact: bound.artifact,
         candidateId: candidate.candidateId,
       });
+      const writeError = context.scenario.markdownPdfDeterministicWriteErrorMessages?.shift();
+      if (writeError) {
+        throw new Error(writeError);
+      }
     },
     markdownPdfDeterministicOutputPath: (bound: Record<string, unknown>) => {
       const destination = bound.destination as Record<string, unknown>;
@@ -362,8 +366,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       preparedCount += 1;
       const preparedId = `prepared-${preparedCount}`;
       context.result.markdownPdfPrepareCalls.push({ ...input, preparedId });
-      if (context.scenario.markdownPdfPrepareErrorMessage) {
-        throw new Error(context.scenario.markdownPdfPrepareErrorMessage);
+      const prepareError =
+        context.scenario.markdownPdfPrepareErrorMessages?.shift() ??
+        context.scenario.markdownPdfPrepareErrorMessage;
+      if (prepareError) {
+        throw new Error(prepareError);
       }
       const inputPath = context.resolveHarnessPath(input.input);
       const bundleDirectory =

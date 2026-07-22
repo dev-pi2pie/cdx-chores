@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import {
   bindMarkdownPdfDeterministicRecipeDestination,
+  markdownPdfDeterministicOutputFiles,
   prepareMarkdownPdfDeterministicRecipe,
   writeBoundMarkdownPdfDeterministicRecipe,
 } from "../../src/cli/interactive/markdown/deterministic-authoring";
@@ -29,6 +30,9 @@ describe("interactive Markdown PDF deterministic service", () => {
         output: "profile.json",
       });
       expect(candidate.prepared.profile).toEqual(acceptedProfile);
+      expect(markdownPdfDeterministicOutputFiles(bound)).toEqual([
+        join(fixtureDir, "profile.json"),
+      ]);
 
       await writeBoundMarkdownPdfDeterministicRecipe(bound);
 

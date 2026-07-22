@@ -126,6 +126,162 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.markdownPdfSessionRetainCalls).toEqual(result.markdownPdfSessionCreateCalls);
   });
 
+  test("rejects a PDF output inside the owned temporary session", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "temporary-render",
+        "custom",
+        "delete",
+      ],
+      requiredPathQueue: ["fixtures/report.md", ".harness-md-pdf-session-1/output.pdf"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.markdownPdfSessionCleanupCalls).toEqual(result.markdownPdfSessionCreateCalls);
+    expect(result.stderr).toContain("PDF output must be outside the temporary recipe session");
+  });
+
+  test("rejects a PDF output that would overwrite a durable recipe file", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "save-and-render",
+        "custom",
+        "custom",
+        "review",
+        "cancel",
+      ],
+      requiredPathQueue: [
+        "fixtures/report.md",
+        "recipes/durable-profile.yml",
+        "recipes/durable-profile.yml",
+      ],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr).toContain("PDF output must be different from generated recipe");
+  });
+
+  test("rejects a PDF output that would overwrite an external Codex report", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "temporary-render",
+        "external",
+        "custom",
+        "review",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md", "reports/render.json", "reports/render.json"],
+      confirmQueue: [true, false],
+    });
+
+    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+    expect(result.markdownPdfSessionCreateCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stderr).toContain("PDF and report paths must differ");
+  });
+
+  test("retries durable renderer preparation without rewriting the recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "custom",
+        "default",
+        "retry",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
+  test("retries durable materialization from the same accepted candidate", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfDeterministicWriteErrorMessages: ["transient write failure"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "custom",
+        "default",
+        "retry",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(2);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
+  test("returns from durable renderer preparation failure to the same recipe review", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessage: "bundle admission failed",
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "custom",
+        "default",
+        "review",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.stderr.match(/Markdown PDF recipe review/g)).toHaveLength(2);
+  });
+
   test("retries durable rendering without cleanup or regeneration", () => {
     const result = runInteractiveHarness({
       mode: "run",
