@@ -341,7 +341,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-4-deterministic-authoring.md`
+- [Phase 4 deterministic authoring](jobs/2026-07-22-markdown-pdf-interactive-phase-4-deterministic-authoring.md)
 
 ### Phase 5: Codex-Assisted Recipe Authoring
 
