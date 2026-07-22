@@ -609,20 +609,20 @@ Tasks:
 
 Tasks:
 
-- [ ] Replace the nested `Add font hint -> Build or custom` mode prompt with
+- [x] Replace the nested `Add font hint -> Build or custom` mode prompt with
       direct `Add guided font hint` and `Add complete custom hint` collection
       actions.
-- [ ] Keep font-hint entry sequential rather than multi-select because every
+- [x] Keep font-hint entry sequential rather than multi-select because every
       guided hint owns an independent preference and optional intended use.
-- [ ] Re-render the ordered collection after every accepted add, edit, remove,
+- [x] Re-render the ordered collection after every accepted add, edit, remove,
       or move so repeatability remains visible until `Done`.
-- [ ] Preserve guided compilation, complete custom text, editing, removal,
+- [x] Preserve guided compilation, complete custom text, editing, removal,
       movement, exact-duplicate handling, and ordered `fontHints: string[]`
       payloads.
-- [ ] Attempt installed-family discovery at most once per session. Cache an
+- [x] Attempt installed-family discovery at most once per session. Cache an
       unavailable result, fall back to ordinary preference input, and remove
       the manual retry action without adding a native platform fallback.
-- [ ] Preserve the Phase 6.6 search keyboard, cancellation, privacy,
+- [x] Preserve the Phase 6.6 search keyboard, cancellation, privacy,
       intended-use, consent, candidate-invalidation, and post-Codex assignment
       contracts.
 

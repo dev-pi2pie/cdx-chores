@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Font Hint Suggestions"
 created-date: 2026-07-22
 modified-date: 2026-07-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -587,6 +587,21 @@ direct-contract decisions above.
   type, lint, formatting, and diff checks also passed.
 - The exact Phase 6.6 range `95817df..ca84d63` was reviewed after the fixes
   landed, with no actionable findings remaining.
+
+## Phase 6.7 Evidence
+
+- Guided and complete-custom additions are direct collection actions, and the
+  ordered collection remains visible after every accepted mutation.
+- Automated coverage proves sequential addition, editing, removal, movement,
+  exact-duplicate handling, one cached discovery attempt, ordinary fallback,
+  cancellation, privacy, consent, candidate invalidation, and ordered payloads.
+- A live terminal smoke verified custom-first search, installed-family arrow
+  navigation, repeated additions, collection display, and cancellation before
+  external transmission without recording the host inventory.
+- The complete repository suite passed with 1,686 tests; type, lint, formatting,
+  build, and diff checks also passed.
+- Functional, test, and maintainability review of the exact Phase 6.7 range
+  `65d5196..03f8615` found no remaining actionable findings.
 
 ## Related Research
 

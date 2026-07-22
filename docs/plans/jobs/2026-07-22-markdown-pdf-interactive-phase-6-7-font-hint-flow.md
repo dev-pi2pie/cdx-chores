@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Phase 6.7 repeatable font-hint flow"
 created-date: 2026-07-22
 modified-date: 2026-07-22
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -25,7 +25,7 @@ direct `fontHints: string[]` contract stays unchanged.
 - [x] Preserve search keyboard behavior, cancellation, privacy, intended-use
       compilation, consent, and candidate invalidation.
 - [x] Pass focused, repository, and public-safe manual verification.
-- [ ] Review the exact implementation range and resolve actionable findings.
+- [x] Review the exact implementation range and resolve actionable findings.
 
 ## Verification Evidence
 
@@ -37,6 +37,12 @@ direct `fontHints: string[]` contract stays unchanged.
   typed custom preference priority, installed-family search navigation with the
   arrow keys, repeated ordered collection display, and cancellation before
   external transmission.
+
+## Review Evidence
+
+- Functional, test, and maintainability reviewers inspected the exact
+  implementation range `65d5196..03f8615`.
+- The range has no remaining actionable findings.
 
 ## Traceability
 
