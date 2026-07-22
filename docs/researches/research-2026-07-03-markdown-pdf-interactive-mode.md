@@ -31,8 +31,10 @@ Interactive mode should orchestrate these capabilities without creating a
 second artifact model, assistant model, or renderer.
 
 This research remains `in-progress` because Phases 1 through 6 now provide
-implementation evidence, while Phase 7 validation, guide alignment,
-complete-range review, and the final closure reassessment remain pending.
+implementation evidence for the core flow, while the Phase 6.5 Codex Assistant
+UX refinement, Phase 6.6 font-hint input refinement, Phase 7 validation, guide
+alignment, complete-range review, and the final closure reassessment remain
+pending.
 
 ## Current Contracts And Boundaries
 
@@ -101,6 +103,8 @@ Across both Markdown PDF branches:
 - Codex use must never be implicit; Project selection enters its only supported
   Codex preparation path visibly
 - the accepted prepared result must not be regenerated during save or render
+- an active Codex request should show one concise Interactive waiting status,
+  cleared before review, recovery, or error prompts
 - `Back`, revision, and mode changes should return to the smallest relevant
   checkpoint
 
@@ -171,9 +175,10 @@ Create or author a recipe                |
         |                                |
         +-- Choose artifact              |
         +-- Choose preparation mode      |
-        |   starter / formal-guide /     |
-        |   Codex Assistant              |
-        |   (Project uses Codex directly)|
+        |   +-- starter / formal-guide   |
+        |   `-- Codex Assistant          |
+        |       setup -> consent -> wait |
+        |       (Project enters directly)|
         `-- Prepare once ----------------+
                                          |
                                          v
@@ -354,10 +359,9 @@ resolved role.
 ## Recipe Authoring
 
 `pdf-recipes` and `to-pdf -> Create a recipe` reuse the same preparation
-services, but intentionally do not expose the same authoring matrix.
-`pdf-recipes` maps the reusable helper families directly. `to-pdf` keeps its
-one-shot path smaller and reserves Codex Assistant for a coordinated Project
-bundle.
+services and helper matrix. Their difference is lifecycle ownership:
+`pdf-recipes` saves a reusable artifact, while `to-pdf` prepares an artifact in
+order to render the already-selected Markdown input.
 
 ### `pdf-recipes`: Direct Helper Map
 
@@ -415,20 +419,17 @@ corresponding direct helper:
   fallback when omitted
 - generated fallback paths are shown before the final save confirmation
 
-### `to-pdf`: Smaller One-Shot Authoring
+### `to-pdf`: Focused One-Shot Authoring
 
 ```text
-Profile         -> starter | formal-guide
-Template bundle -> starter | formal-guide
+Profile         -> starter | formal-guide | Codex Assistant
+Template bundle -> starter | formal-guide | Codex Assistant
 Project bundle  -> Codex Assistant
 ```
 
-`to-pdf` must not offer Profile or Template `Codex Assistant`. Selecting Codex
-Assistant in this entry path means one thing: prepare a coordinated Project
-bundle for the already-selected Markdown document through
-`md pdf-project codex`.
-
-Profile and Template remain available through `starter` and `formal-guide`.
+Profile and Template retain all three direct-helper-aligned preparation modes.
+Their Codex Assistant paths reuse the already-selected Markdown document and
+produce a renderable generated artifact without asking for the sample twice.
 Project bundle moves directly into Codex Assistant without a one-option mode
 prompt. Interactive mode must not synthesize Project `starter` or
 `formal-guide` by running profile and template initialization separately. A
@@ -470,7 +471,7 @@ The available helper and Markdown sample behavior depend on the entry path:
 
 | Entry path | Helper availability | Markdown sample behavior |
 | --- | --- | --- |
-| `to-pdf -> Codex Assistant` | Project only | reuse the selected Markdown input; do not ask twice |
+| `to-pdf -> Codex Assistant` | Profile, Template, or Project | reuse the selected Markdown input; do not ask twice |
 | `pdf-recipes -> Codex Assistant` | Profile, Template, or Project | ask for an optional Markdown sample |
 | `starter` or `formal-guide` | none | do not request a sample |
 | Built-in, existing, or Custom inputs | none | do not request a sample |
@@ -483,35 +484,44 @@ Additional signals remain artifact-specific:
 | Template bundle | optional base profile, repeatable font hints, and optional cover image |
 | Project bundle | optional base profile, repeatable font hints, and optional cover image |
 
-Every Interactive Codex preparation asks for intent, but accepts an empty
-answer to preserve the direct helpers' optional intent contract. An empty
-intent simply omits that signal; the helper may still use the Markdown sample,
-base profile, font hints, cover image, or its accepted fallback behavior.
+Every Interactive Codex preparation asks for a PDF intent, but accepts an empty
+answer to preserve the direct helpers' optional intent contract. Intent entry
+follows the data-query pattern: ask whether to use the multiline editor, then
+open either the editor or the single-line input. The prompt is `Describe the PDF
+intent:` and its short guidance appears on the following line rather than being
+embedded in a long question. An empty intent simply omits that signal; the
+helper may still use the Markdown sample, base profile, font hints, cover image,
+or its accepted fallback behavior.
 
-In `to-pdf`, Project setup uses progressive disclosure rather than another
-checkbox list:
+Codex setup uses progressive disclosure rather than another checkbox list. The
+summary and edit actions follow the same artifact-specific order: intent, base
+Profile, cover image when supported, then font hints. `Continue` comes after
+the signal-editing actions so the flow does not visually suggest that optional
+setup has already been skipped:
 
 ```text
-Project bundle setup
+Template bundle setup
 
 Intent: Annual report with restrained editorial styling
 Base profile: none
-Font hints: Inter, Noto Sans TC
 Cover image: none
+Font hints:
+- Source Serif 4
+- JetBrains Mono
 
-? Project setup next step
-❯ Continue
-  Revise intent
+? Template bundle setup next step
+❯ Revise PDF intent
   Set base profile
-  Edit font hints
   Set cover image
-  Set output directory
+  Edit font hints
+  Continue
   Back
   Cancel
 ```
 
-The setup menu is single-select because each choice edits one value. Font hints
-remain repeatable and `Edit font hints` opens one settled add/remove loop:
+Profile omits `Set cover image`; Project uses the same Template ordering. The
+setup menu is single-select because each choice edits one value. Phase 6.5 keeps
+font hints repeatable through a small baseline add/remove loop:
 
 ```text
 ? Edit font hints
@@ -521,26 +531,52 @@ remain repeatable and `Edit font hints` opens one settled add/remove loop:
 ```
 
 `Remove font hint` appears only when at least one hint exists. Returning from
-the loop shows the updated Project setup summary.
+the loop shows the updated artifact setup summary. This baseline continues to
+accept arbitrary text and must use `Font preference` rather than the narrower
+`Font family hint` label.
 
-`Set output directory` is optional local setup:
+The richer builder, fontconfig-only installed-family suggestions, supported
+intended uses, edit action, shared discovery cancellation, and custom-input
+fallback belong to Phase 6.6. The
+focused [Interactive Font Hint Suggestions](research-2026-07-22-markdown-pdf-interactive-font-hint-suggestions.md)
+research owns that contract; Phase 6.5 must not absorb its discovery and
+typeahead scope.
 
-- an explicit directory is preserved exactly and may appear in the local setup
-  summary
-- when unset, the setup summary stays quiet and the direct Project helper
-  fallback is resolved only if the user later chooses to save the bundle
-- choosing temporary render ignores the durable preference and uses a separate
-  unique CLI-owned session directory
-- the output directory remains local orchestration state and is never sent to
-  Codex
-- changing an explicit output never regenerates the Codex candidate
+Artifact output does not belong in Codex setup. It is collected only after the
+candidate is prepared, reviewed, and given a durable lifecycle. When omitted,
+the direct helper fallback remains quiet until final save or render review.
+Changing an output never regenerates the Codex candidate and no output path is
+sent to Codex.
 
-Codex use remains visible at three checkpoints:
+After consent, Interactive mode should show one waiting status for the active
+Codex request and clear it before the next prompt. The copy should use the
+Interactive artifact names:
+
+```text
+Preparing profile with Codex... /
+Preparing template bundle with Codex... |
+```
+
+Project preparation may change the same status across its real profile and
+template stages:
+
+```text
+Preparing project profile with Codex... /
+Preparing project template with Codex... |
+```
+
+The existing direct-helper progress must not be rendered underneath a second
+Interactive spinner. Direct commands keep their current progress contract;
+Interactive orchestration should suppress or adapt that lower-level presenter.
+Non-TTY execution must not emit animation control sequences.
+
+Codex use remains visible at four checkpoints:
 
 1. the mode description says Codex will draft and adapt the recipe
 2. the consent review identifies the sample, intent, and prepared signal
    categories before sending them
-3. the recipe review records `Preparation mode: Codex Assistant`, the reused
+3. the waiting status confirms that the accepted request is active
+4. the recipe review records `Preparation mode: Codex Assistant`, the reused
    helper contract, and whether the request completed
 
 The consent review should not imply that an entire source file is sent when the
@@ -553,8 +589,10 @@ Markdown sample: report.md
 Creating: Project bundle
 Intent: Annual report with restrained editorial styling
 Base profile: none
-Font hints: Inter, Noto Sans TC
 Cover image: cover.jpg
+Font hints:
+- Source Serif 4
+- JetBrains Mono
 Signals: document structure, content hints, and user intent
 
 ? Send this intent and prepared document signals to Codex Assistant? Yes
@@ -646,10 +684,10 @@ required Markdown input. Only that explicit choice becomes the render input.
 
 ## Outputs And Commit
 
-An explicit output collected during setup remains local session state and does
-not reserve or write a path. When no output was supplied, the default remains
-quiet until it becomes applicable. The effective output is resolved and
-confirmed only after recipe review and lifecycle selection:
+An explicit output selected after lifecycle choice remains local session state
+and does not reserve or write a path. When no output was supplied, the default
+remains quiet until it becomes applicable. The effective output is resolved
+and confirmed only after recipe review and lifecycle selection:
 
 ```text
 recipe review
@@ -802,20 +840,31 @@ symlinked parent directories are rejected rather than followed.
 
 Project bundles are prepared with Codex Assistant.
 
-✔ Describe the PDF direction Annual report with restrained editorial styling
+Project bundle setup
+
+Intent: none
+Base profile: none
+Cover image: none
+Font hints: none
+
+✔ Project setup next step Set PDF intent
+✔ Use multiline editor? No
+? Describe the PDF intent:
+  Optional. Describe the audience, tone, layout, or visual direction.
+✔ Annual report with restrained editorial styling
+✔ Project setup next step Set cover image
+✔ Cover image cover.jpg
 ✔ Project setup next step Edit font hints
 ✔ Edit font hints Add font hint
 ✔ Font hint Inter
 ✔ Edit font hints Done
-✔ Project setup next step Set cover image
-✔ Cover image cover.jpg
 
 Project bundle setup
 
 Intent: Annual report with restrained editorial styling
 Base profile: none
-Font hints: Inter
 Cover image: cover.jpg
+Font hints: Inter
 
 ✔ Project setup next step Continue
 
@@ -825,13 +874,14 @@ Markdown sample: report.md
 Creating: Project bundle
 Intent: Annual report with restrained editorial styling
 Base profile: none
-Font hints: Inter
 Cover image: cover.jpg
+Font hints: Inter
 Signals: document structure, content hints, and user intent
 
 ✔ Send this intent and prepared document signals to Codex Assistant? Yes
 
-Codex Thinking... Drafting Markdown PDF project recipe
+Preparing project profile with Codex... done
+Preparing project template with Codex... done
 
 Markdown PDF recipe review
 
@@ -906,13 +956,19 @@ Interactive tests should cover:
 
 - entry-specific source and mode routing
 - `pdf-recipes` parity with the direct Profile, Template, and Project helpers
-- `to-pdf` exclusion of Profile and Template Codex modes
-- Project's direct transition to Codex Assistant in `to-pdf`
+- `to-pdf` Codex preparation for Profile, Template, and Project
+- Project's direct transition to Codex Assistant without a one-option mode menu
 - custom-input mode routing, role validation, and precedence
 - contextual backtracking without candidate regeneration
-- intent prompting with both provided and empty answers
+- single-line and multiline PDF-intent entry with both provided and empty answers
+- artifact-specific setup ordering before consent
 - Markdown-sample reuse, repeatable font-hint editing, optional signals, and
   consent
+- Phase 6.6 font-hint builder compilation, custom entry, custom-first
+  fontconfig suggestions, intended-use review, post-Codex assignment review,
+  shared cancellation, and no-native-fallback custom input
+- one non-overlapping waiting status per Codex request, including cleanup before
+  review, recovery, or error prompts
 - explicit and generated-fallback Project output directories
 - temporary rendering ignoring an explicitly selected durable output
 - lifecycle-filtered artifact, PDF, and report prompts
@@ -929,13 +985,22 @@ Interactive tests should cover:
 - `pdf-recipes` maps directly to the reusable helper families: Profile and
   Template bundle support `starter`, `formal-guide`, and `Codex Assistant`;
   Project bundle supports `Codex Assistant` only.
-- `to-pdf` offers Profile and Template bundle through `starter` and
-  `formal-guide`, while its Codex Assistant path prepares only a Project bundle.
+- `to-pdf` offers Profile and Template bundle through `starter`, `formal-guide`,
+  and `Codex Assistant`; Project bundle supports `Codex Assistant` only.
 - Project bundle skips a one-option mode menu in both entry paths.
-- Interactive Codex preparation always asks for intent but accepts an empty
-  answer, matching the direct helper contract.
+- Interactive Codex preparation uses optional single-line or multiline PDF
+  intent entry, matching the direct helper's optional intent contract.
 - Base profile, repeatable font hints, and cover image are Codex signals when
   supported by the selected artifact; output paths remain local configuration.
+- Codex setup presents intent, base Profile, artifact-specific cover image, and
+  font hints before `Continue`; artifact outputs are collected later.
+- Phase 6.5 preserves a simple repeatable free-text font-hint editor; Phase 6.6
+  separately adds the structured builder, optional fontconfig suggestions, a
+  one-second discovery budget, and shared cancellation without changing the
+  direct `fontHints: string[]` contract. Missing `fc-list` falls back to custom
+  input without a native platform inventory.
+- Interactive mode shows one concise, artifact-specific waiting status for an
+  active Codex request and clears it before the next prompt.
 - An omitted saved Project output uses the direct helper's collision-safe
   `md-pdf-project-<timestamp>-<uid>/` fallback; temporary rendering uses a
   separate CLI-owned session directory.
@@ -969,6 +1034,7 @@ Interactive tests should cover:
 ## Related Research
 
 - [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
+- [Markdown PDF Interactive Font Hint Suggestions](research-2026-07-22-markdown-pdf-interactive-font-hint-suggestions.md)
 - [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF Render Bundle Directory](research-2026-07-10-markdown-pdf-render-bundle-directory.md)
 - [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md)

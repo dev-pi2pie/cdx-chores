@@ -24,12 +24,15 @@ Interactive recipe type or a second renderer.
 
 The related research now settles:
 
-- the two entry goals and their different preparation matrices
+- the two entry goals, their shared helper-aligned preparation matrix, and their
+  different lifecycle ownership
 - built-in, existing, custom, `starter`, `formal-guide`, and Codex-assisted
   paths
 - prepare-once review before writing or rendering
 - role-by-role bundle and explicit-input precedence
 - Codex intent, font-hint, base-profile, cover-image, and consent behavior
+- a Phase 6.5 baseline repeatable font-hint editor followed by a separately
+  researched Phase 6.6 builder and installed-family suggestion layer
 - durable and CLI-owned temporary artifact lifecycles
 - conditional Codex report retention
 - output defaults, cleanup, failure recovery, and `pdf-recipes -> to-pdf`
@@ -76,12 +79,13 @@ No implementation plan currently owns Interactive Markdown PDF mode.
 
 | Entry path                  | Profile                                      | Template bundle                              | Project bundle    |
 | --------------------------- | -------------------------------------------- | -------------------------------------------- | ----------------- |
-| `to-pdf -> Create a recipe` | `starter`, `formal-guide`                    | `starter`, `formal-guide`                    | `Codex Assistant` |
+| `to-pdf -> Create a recipe` | `starter`, `formal-guide`, `Codex Assistant` | `starter`, `formal-guide`, `Codex Assistant` | `Codex Assistant` |
 | `pdf-recipes`               | `starter`, `formal-guide`, `Codex Assistant` | `starter`, `formal-guide`, `Codex Assistant` | `Codex Assistant` |
 
-Project selection skips a one-option preparation-mode menu. Interactive mode
-must not synthesize Project `starter` or `formal-guide` from separate Profile
-and Template initialization.
+Both entries map authoring choices to the same direct helper families. Project
+selection skips a one-option preparation-mode menu. Interactive mode must not
+synthesize Project `starter` or `formal-guide` from separate Profile and
+Template initialization.
 
 ### Render and authoring ownership
 
@@ -206,7 +210,7 @@ unless the user changes an input that affects preparation.
 - built-in, existing Profile, existing bundle, and two-layer Custom inputs
 - deterministic Profile and Template `starter` and `formal-guide`
 - `pdf-recipes` Codex Profile, Template, and Project preparation
-- `to-pdf` Project-only Codex preparation
+- `to-pdf` Codex Profile, Template, and Project preparation
 - prepared-result review, revision, consent, provenance, and validation
 - conditional artifact, PDF, overwrite, and Codex-report outputs
 - temporary render and save-and-render lifecycles
@@ -283,7 +287,7 @@ Phase gate:
 
 Expected job record:
 
-- [Phase 2 routing and state](jobs/2026-07-21-markdown-pdf-interactive-phase-2-routing-state.md)
+- [Phase 2 routing and state](jobs/2026-07-22-markdown-pdf-interactive-phase-2-routing-state.md)
 
 ### Phase 3: Built-In, Existing, And Custom Render Paths
 
@@ -374,6 +378,10 @@ Expected job record:
 
 - [Phase 5 Codex authoring](jobs/2026-07-22-markdown-pdf-interactive-phase-5-codex-authoring.md)
 
+The checked Phase 5 items record the originally implemented entry matrix.
+Phase 6.5 owns the subsequently accepted UX and matrix refinement without
+rewriting that completed checkpoint.
+
 ### Phase 6: Materialization, Recovery, And Handoff
 
 Tasks:
@@ -415,6 +423,157 @@ Expected job record:
 
 - [Phase 6 lifecycle and handoff](jobs/2026-07-22-markdown-pdf-interactive-phase-6-lifecycle-handoff.md)
 
+### Phase 6.5: Codex Assistant UX Refinement
+
+Tasks:
+
+- [ ] Expose `Codex Assistant` for Profile and Template bundle under `to-pdf`,
+      reusing the selected Markdown input and the same prepared-result services
+      already used by `pdf-recipes`.
+- [ ] Preserve Project's direct transition to Codex Assistant without adding a
+      one-option preparation-mode menu or deterministic Project modes.
+- [ ] Replace `Describe the PDF direction` with optional `PDF intent` wording
+      and the data-query-style single-line or multiline editor choice.
+- [ ] Present Codex setup in artifact-specific order: PDF intent, base Profile,
+      cover image when supported, font hints, then `Continue`.
+- [ ] Keep setup actions single-select, retain the baseline repeatable
+      add/remove font-hint editor with arbitrary `Font preference` text, and
+      show short input guidance below the intent prompt.
+- [ ] Remove output-directory editing from pre-Codex setup. Resolve explicit or
+      generated-fallback artifact outputs only after recipe review and lifecycle
+      selection, without sending them to Codex or regenerating the candidate.
+- [ ] Keep consent ordered with the setup summary and include only the Markdown
+      sample and artifact-supported signals that will be sent.
+- [ ] Adapt the existing lower-level Codex progress presenter so Interactive
+      mode shows exactly one concise artifact-specific waiting status rather
+      than nested or duplicated animation.
+- [ ] For Project preparation, change that one status across the real Profile
+      and Template request stages; clear all waiting output before review,
+      recovery, or error prompts and preserve direct-command progress behavior.
+- [ ] Add focused tests for the expanded matrix, prompt/editor ordering, empty
+      intent, consent payload, delayed output selection, prepared-candidate
+      reuse, regeneration, and TTY/non-TTY waiting-status behavior.
+- [ ] Record a manual Interactive transcript covering Profile or Template Codex
+      preparation plus the two-stage Project waiting status.
+- [ ] Review the Phase 6.5 change range before proceeding to Phase 6.6.
+
+Phase gate:
+
+- `to-pdf` and `pdf-recipes` expose the settled helper-aligned authoring matrix
+- Codex setup uses the settled wording and signal order without early output
+  collection
+- each Codex request has one visible, correctly cleared Interactive waiting
+  status and no duplicate lower-level spinner
+- direct helper behavior remains compatible and accepted candidates are still
+  committed or rendered without implicit regeneration
+- repeatable free-text font hints remain usable without discovery or structured
+  intended-use selection
+- focused tests and manual transcript evidence cover the revised flow
+
+Expected job record:
+
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md`
+
+### Phase 6.6: Font Hint Input Suggestions
+
+This phase implements the settled direction in
+[Markdown PDF Interactive Font Hint Suggestions](../researches/research-2026-07-22-markdown-pdf-interactive-font-hint-suggestions.md).
+It enhances the Phase 6.5 editor without changing direct helper options or the
+prepared `fontHints: string[]` contract.
+
+Tasks:
+
+- [ ] Add a narrow, non-persisted Interactive font-hint draft model for built
+      preference/intended-use pairs and complete custom text, compiling each
+      accepted draft to one ordered direct `--font-hint` equivalent.
+- [ ] Expand `Add font hint` into `Build a font hint` and `Write a complete
+      custom hint`, keeping arbitrary custom text available in every supported
+      environment.
+- [ ] Add an editable preference field whose raw custom typed value remains the
+      first selectable choice, with its explanation in the choice description,
+      while at most six matching installed family names appear as suggestions.
+- [ ] Collapse a case-insensitive exact installed-family match, and preserve
+      Enter, arrow, Tab, paste, input-method-editor, and narrow-terminal
+      usability with the pinned `@inquirer/search` behavior.
+- [ ] Reuse `discoverSystemFonts({ discovery: "fontconfig" })` through an
+      injected Interactive suggestion source. When `fc-list` is unavailable,
+      continue without suggestions and do not invoke a native platform
+      fallback.
+- [ ] Add optional `AbortSignal` and timeout controls to the shared discovery
+      and command-runner contracts while preserving existing direct-command
+      defaults.
+- [ ] Start discovery lazily, run it at most once per Interactive session, cache
+      usable or unavailable results, deduplicate and deterministically sort
+      family names, and filter only the cached inventory while typing.
+- [ ] Give Interactive discovery a `1,000 ms` hard deadline, show one concise
+      waiting status only after approximately `150 ms`, and clear it before the
+      preference prompt, fallback notice, or navigation.
+- [ ] Add artifact-aware intended uses for general body text, headings, code
+      text, code symbols, and Profile/Project page headers and footers.
+- [ ] Add `Language-specific body text` with one user-entered language name or
+      tag per built hint, without a prescribed language list, content inference,
+      or automatic hint insertion.
+- [ ] Exclude writing-system and arbitrary document-area choices from the
+      structured builder; retain unusual directions through the complete-custom
+      hint path without implying a guaranteed role assignment.
+- [ ] Add adaptive font-hint preview, option/value direct-equivalent rendering,
+      preference and intended-use revision, removal, stable ordering, and visible
+      exact-duplicate handling.
+- [ ] Allow multiple non-identical hints with the same intended use so primary
+      and fallback directions are not misclassified as collection conflicts.
+- [ ] Show accepted role/key/font mappings or unmatched font directions in the
+      post-Codex recipe review, separately from the pre-Codex intended use.
+- [ ] When discovery is unavailable, failed, empty, or timed out, show one
+      concise notice and continue the builder with an ordinary preference
+      input; keep the complete custom path available.
+- [ ] Use a session-owned abort signal to stop discovery and its child process
+      on Back, Cancel, or Interactive exit without a fallback warning; use the
+      search callback's signal only to discard obsolete filtering work.
+- [ ] Keep discovery read-only: do not install tools, mutate the environment,
+      expose local font paths, or claim glyph coverage or PDF compatibility.
+- [ ] Ensure consent, reports, and Codex requests include only accepted compiled
+      hint strings, never the discovered inventory, adapter diagnostics, paths,
+      discarded search terms, or suggestions.
+- [ ] Invalidate a prepared candidate only when accepted font-hint inputs
+      change; require consent before explicit regeneration and keep output-path
+      changes regeneration-free.
+- [ ] Add deterministic injected-inventory tests for custom-first search and
+      completion, exact-match collapsing, bounded filtering, ordering,
+      deduplication, intended-use compilation, editing, post-Codex mapping,
+      caching, retry, and every fontconfig discovery fallback outcome.
+- [ ] Add shared cancellation tests proving session abort reaches the command
+      runner and child process while per-term cancellation remains local to
+      obsolete search filtering.
+- [ ] Add privacy assertions and direct-helper regression tests proving the
+      public repeatable free-text contract remains compatible.
+- [ ] Record public-safe manual evidence for one suggestion-capable path and one
+      forced custom-input fallback without listing the host inventory or local
+      development setup.
+- [ ] Review the Phase 6.6 change range before proceeding to Phase 7.
+
+Phase gate:
+
+- custom font hints remain first-class and do not depend on local discovery
+- optional fontconfig family suggestions are local, read-only, cached, limited
+  to six installed matches, and filtered without per-keystroke commands
+- missing `fc-list` takes the ordinary custom-input path without a native
+  platform fallback
+- shared cancellation stops active discovery, while direct `font` commands
+  preserve their existing discovery and timeout defaults
+- preference and optional intended use remain separate user decisions, with no
+  language or coverage inference and no pre-Codex assignment claim
+- every accepted draft becomes one reviewable ordered string in the existing
+  Codex request contract
+- recipe review distinguishes accepted role/key assignments from unmatched
+  advisory directions
+- discovery failures degrade to ordinary input without blocking the builder
+- focused tests, privacy assertions, manual evidence, and the Phase 6.6 range
+  review have no unresolved actionable findings
+
+Expected job record:
+
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md`
+
 ### Phase 7: Validation, Guides, And Closeout
 
 Tasks:
@@ -455,8 +614,13 @@ than expanding one large routing file. Cover:
 - built-in, existing, bundle, and Custom-input precedence
 - Profile and Template `starter` and `formal-guide`
 - Profile, Template, and Project Codex preparation under `pdf-recipes`
-- Project-only Codex preparation under `to-pdf`
-- empty and provided intent, repeatable font hints, consent, and reports
+- Profile, Template, and Project Codex preparation under `to-pdf`
+- single-line, multiline, empty, and provided intent; ordered optional signals;
+  consent; waiting status; and reports
+- built and complete-custom font hints, custom-first fontconfig suggestions,
+  artifact-aware intended uses, language-specific body hints, accepted or
+  unmatched assignment review, editing, caching, shared cancellation, and
+  no-native-fallback custom input
 - checkpoint backtracking and prepared-candidate reuse
 - destination rebinding without prepared identity or content changes
 - output defaults, overwrite, collision, and final reviews
@@ -491,11 +655,14 @@ When dependencies are available, verify:
 2. existing partial and complete bundle rendering
 3. Custom-input precedence with bundle provenance
 4. deterministic Profile and Template preparation
-5. Codex Profile, Template, and Project preparation and report retention
-6. Project temporary render cleanup after success
-7. retained session bundle and retry after a forced render failure
-8. durable save-and-render with the generated default directory
-9. `pdf-recipes -> to-pdf` handoff with and without a preparation sample
+5. Codex Profile, Template, and Project preparation from both entry paths,
+   including waiting-status transitions and report retention
+6. font-hint suggestions with an injected or available fontconfig inventory,
+   plus forced missing-`fc-list`, timeout, cancellation, and custom-input paths
+7. Project temporary render cleanup after success
+8. retained session bundle and retry after a forced render failure
+9. durable save-and-render with the generated default directory
+10. `pdf-recipes -> to-pdf` handoff with and without a preparation sample
 
 ## Risks And Mitigations
 
@@ -522,6 +689,18 @@ When dependencies are available, verify:
   Mitigation: direct actions remain public owners and receive focused parity
   tests before Interactive routing expands.
 
+- Risk: Interactive and direct-helper progress presenters render overlapping
+  animations or leave a stale line before the next prompt.
+  Mitigation: inject or suppress the lower-level presenter for Interactive use,
+  assert one active status, and clear it in success, fallback, and error paths.
+
+- Risk: font discovery delays or blocks hint entry, leaks local inventory, or
+  makes host fonts part of automated-test expectations.
+  Mitigation: use fontconfig only, enforce the one-second cancellable budget,
+  load once through an injected source, keep custom input available, expose
+  family names only after local filtering, and use controlled inventories in
+  tests.
+
 ## Expected Job Records
 
 Create one phase record when each implementation phase begins, replacing
@@ -533,6 +712,8 @@ Create one phase record when each implementation phase begins, replacing
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-4-deterministic-authoring.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-5-codex-authoring.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-lifecycle-handoff.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md`
+- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-6-font-hint-suggestions.md`
 - `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-7-validation-closeout.md`
 
 ## Completion Criteria
@@ -541,6 +722,9 @@ This plan is complete only when:
 
 - both Interactive Markdown PDF routes are implemented and documented
 - the entry-specific preparation matrix is enforced
+- Codex setup, intent entry, and waiting feedback match the Phase 6.5 contract
+- font-hint building, suggestions, intended-use and assignment review, privacy,
+  and fallback match the linked Phase 6.6 research contract
 - direct CLI behavior remains compatible after service extraction
 - every generated candidate is prepared once and committed without implicit
   regeneration
@@ -556,6 +740,7 @@ This plan is complete only when:
 ## Related Research
 
 - [Markdown PDF Interactive Mode](../researches/research-2026-07-03-markdown-pdf-interactive-mode.md)
+- [Markdown PDF Interactive Font Hint Suggestions](../researches/research-2026-07-22-markdown-pdf-interactive-font-hint-suggestions.md)
 - [Markdown PDF Project Codex Helper](../researches/research-2026-07-03-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF Render Bundle Directory](../researches/research-2026-07-10-markdown-pdf-render-bundle-directory.md)
 - [Markdown PDF Template Codex Helper](../researches/research-2026-06-18-markdown-pdf-template-codex-helper.md)
