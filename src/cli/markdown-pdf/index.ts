@@ -20,6 +20,7 @@ export type {
 } from "./render-bundle";
 export {
   discoverMarkdownPdfRenderBundle,
+  previewMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
 } from "./render-bundle";
 export {

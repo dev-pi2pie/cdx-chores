@@ -8,7 +8,7 @@ import {
 import { displayPath, printLine } from "../../actions/shared";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
-import type { InteractivePathPromptContext } from "../shared";
+import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 
 import {
   collectPreparedMarkdownPdfRenderSource,
@@ -129,19 +129,19 @@ async function handlePreparedMarkdownPdfRender(
 export async function handleMarkdownPdfToPdfInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-): Promise<"back" | void> {
+): Promise<InteractiveNavigationOutcome> {
   const input = await promptMarkdownPdfRenderInput(pathPromptContext);
   while (true) {
     const source = await collectPreparedMarkdownPdfRenderSource(runtime, pathPromptContext, input);
     if (source.kind === "back") {
-      return "back";
+      return { kind: "open-submenu", group: "md" };
     }
     if (source.kind === "cancel") {
-      return;
+      return { kind: "complete" };
     }
 
     if ((await handlePreparedMarkdownPdfRender(runtime, pathPromptContext, source)) === "done") {
-      return;
+      return { kind: "complete" };
     }
   }
 }

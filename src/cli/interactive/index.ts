@@ -74,11 +74,12 @@ export async function runInteractiveMode(
       case "md:pdf-recipes":
       case "md:to-docx":
       case "md:frontmatter-to-json":
-        if (
-          (await handleMarkdownInteractiveAction(runtime, pathPromptContext, action)) === "back"
-        ) {
-          initialGroup = "md";
-          continue;
+        {
+          const outcome = await handleMarkdownInteractiveAction(runtime, pathPromptContext, action);
+          if (outcome.kind === "open-submenu") {
+            initialGroup = outcome.group;
+            continue;
+          }
         }
         return;
       case "rename:file":

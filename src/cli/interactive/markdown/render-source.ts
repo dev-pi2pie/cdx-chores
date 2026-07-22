@@ -8,7 +8,7 @@ import {
 import { printLine } from "../../actions/shared";
 import { CliError } from "../../errors";
 import {
-  discoverMarkdownPdfRenderBundle,
+  previewMarkdownPdfRenderBundle,
   type MarkdownPdfRenderBundleCandidates,
 } from "../../markdown-pdf/render-bundle";
 import { resolveFromCwd } from "../../path-utils";
@@ -39,7 +39,7 @@ interface CollectedMarkdownPdfRenderSource {
 }
 
 interface MarkdownPdfRenderSourceImplementations {
-  discoverBundle?: typeof discoverMarkdownPdfRenderBundle;
+  previewBundle?: typeof previewMarkdownPdfRenderBundle;
   prepareRender?: typeof prepareMarkdownPdfRender;
 }
 
@@ -108,7 +108,7 @@ async function collectCustomInputs(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: string,
-  discoverBundle: typeof discoverMarkdownPdfRenderBundle,
+  previewBundle: typeof previewMarkdownPdfRenderBundle,
 ): Promise<CollectedMarkdownPdfRenderSource | { kind: "back" } | { kind: "cancel" }> {
   const mode = await select<MarkdownPdfInteractiveCustomInputMode | "back" | "cancel">({
     message: "Choose custom input mode",
@@ -137,7 +137,7 @@ async function collectCustomInputs(
       kind: "directory",
       ...pathPromptContext,
     });
-    const candidates = await discoverBundle(resolveFromCwd(runtime, bundle), { mode: "preview" });
+    const candidates = await previewBundle(resolveFromCwd(runtime, bundle));
     printLine(runtime.stderr, `Bundle provides: ${formatDiscoveredBundleRoles(candidates)}`);
   }
 
@@ -155,7 +155,7 @@ async function collectMarkdownPdfRenderSource(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: string,
-  discoverBundle: typeof discoverMarkdownPdfRenderBundle,
+  previewBundle: typeof previewMarkdownPdfRenderBundle,
 ): Promise<CollectedMarkdownPdfRenderSource | { kind: "back" } | { kind: "cancel" }> {
   while (true) {
     const source = await select<MarkdownPdfInteractiveRenderSource | "back" | "cancel">({
@@ -205,7 +205,7 @@ async function collectMarkdownPdfRenderSource(
       });
       return { source, input: { input, bundle } };
     }
-    const custom = await collectCustomInputs(runtime, pathPromptContext, input, discoverBundle);
+    const custom = await collectCustomInputs(runtime, pathPromptContext, input, previewBundle);
     if ("kind" in custom && custom.kind === "back") {
       continue;
     }
@@ -233,7 +233,7 @@ export async function collectPreparedMarkdownPdfRenderSource(
     runtime,
     pathPromptContext,
     input,
-    implementations.discoverBundle ?? discoverMarkdownPdfRenderBundle,
+    implementations.previewBundle ?? previewMarkdownPdfRenderBundle,
   );
   if ("kind" in collected) {
     return collected;

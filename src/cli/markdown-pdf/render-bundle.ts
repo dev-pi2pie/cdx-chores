@@ -49,8 +49,11 @@ export interface ResolveMarkdownPdfRenderBundleOptions {
 }
 
 export interface DiscoverMarkdownPdfRenderBundleOptions {
-  mode?: "render" | "preview";
   profileResolved?: boolean;
+}
+
+interface InspectMarkdownPdfRenderBundleOptions extends DiscoverMarkdownPdfRenderBundleOptions {
+  preview?: boolean;
 }
 
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
@@ -183,11 +186,11 @@ function candidateRole(extension: string): MarkdownPdfRenderBundleRole | undefin
   return undefined;
 }
 
-export async function discoverMarkdownPdfRenderBundle(
+async function inspectMarkdownPdfRenderBundle(
   directory: string,
-  options: DiscoverMarkdownPdfRenderBundleOptions = {},
+  options: InspectMarkdownPdfRenderBundleOptions = {},
 ): Promise<MarkdownPdfRenderBundleCandidates> {
-  const preview = options.mode === "preview";
+  const preview = options.preview === true;
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -297,6 +300,19 @@ export async function discoverMarkdownPdfRenderBundle(
   }
 
   return candidates;
+}
+
+export async function discoverMarkdownPdfRenderBundle(
+  directory: string,
+  options: DiscoverMarkdownPdfRenderBundleOptions = {},
+): Promise<MarkdownPdfRenderBundleCandidates> {
+  return await inspectMarkdownPdfRenderBundle(directory, options);
+}
+
+export async function previewMarkdownPdfRenderBundle(
+  directory: string,
+): Promise<MarkdownPdfRenderBundleCandidates> {
+  return await inspectMarkdownPdfRenderBundle(directory, { preview: true });
 }
 
 const ROLE_RESOLUTION_CONFIG = [

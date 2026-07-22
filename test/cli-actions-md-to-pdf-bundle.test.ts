@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { actionMdToPdf } from "../src/cli/actions";
 import {
   discoverMarkdownPdfRenderBundle,
+  previewMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
   type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
@@ -237,7 +238,7 @@ describe("Markdown PDF render bundle discovery", () => {
       await writeFile(join(fixtureDir, "notes.json"), '{"rows":[]}\n', "utf8");
       await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
 
-      const result = await discoverMarkdownPdfRenderBundle(fixtureDir, { mode: "preview" });
+      const result = await previewMarkdownPdfRenderBundle(fixtureDir);
 
       expect(candidateNames(result)).toEqual({
         profile: [],

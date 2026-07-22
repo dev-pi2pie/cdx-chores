@@ -98,7 +98,6 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.markdownPdfBundleDiscoveryCalls).toEqual([
       {
         directory: expect.stringMatching(/fixtures\/report-bundle$/),
-        options: { mode: "preview" },
       },
     ]);
     expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
@@ -231,6 +230,20 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.stderr).toContain("- Fallback font used");
     expect(result.stderr).toContain("- Cover image was resized");
     expect(result.stdout).toContain("Wrote PDF:");
+  });
+
+  test("cancels after declining final render confirmation without executing", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "default", "cancel"],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.stdout).not.toContain("Wrote PDF:");
   });
 
   test("stops before output selection when authoritative bundle preparation fails", () => {

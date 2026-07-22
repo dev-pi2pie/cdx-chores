@@ -8,7 +8,11 @@ import {
 } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { MarkdownInteractiveActionKey } from "../menu";
-import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "../shared";
+import {
+  assertNeverInteractiveAction,
+  type InteractiveNavigationOutcome,
+  type InteractivePathPromptContext,
+} from "../shared";
 import { handleMarkdownPdfRecipesInteractiveAction } from "./pdf-recipes";
 import { handleMarkdownPdfToPdfInteractiveAction } from "./to-pdf";
 
@@ -16,14 +20,14 @@ export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
-): Promise<"back" | void> {
+): Promise<InteractiveNavigationOutcome> {
   if (action === "md:to-pdf") {
     return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
   }
 
   if (action === "md:pdf-recipes") {
     await handleMarkdownPdfRecipesInteractiveAction();
-    return;
+    return { kind: "complete" };
   }
 
   if (action === "md:to-docx") {
@@ -45,7 +49,7 @@ export async function handleMarkdownInteractiveAction(
       output: outputPath,
       overwrite,
     });
-    return;
+    return { kind: "complete" };
   }
 
   if (action !== "md:frontmatter-to-json") {
@@ -102,4 +106,5 @@ export async function handleMarkdownInteractiveAction(
     pretty,
     dataOnly: outputShape === "data-only",
   });
+  return { kind: "complete" };
 }

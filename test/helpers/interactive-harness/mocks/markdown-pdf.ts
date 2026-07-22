@@ -26,11 +26,8 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   let preparedCount = 0;
 
   mock.module(markdownPdfRenderBundleModuleUrl, () => ({
-    discoverMarkdownPdfRenderBundle: async (
-      directory: string,
-      options?: Record<string, unknown>,
-    ) => {
-      context.result.markdownPdfBundleDiscoveryCalls.push({ directory, options });
+    previewMarkdownPdfRenderBundle: async (directory: string) => {
+      context.result.markdownPdfBundleDiscoveryCalls.push({ directory });
       const roles = context.scenario.markdownPdfBundleRoles ?? ["profile", "template", "css"];
       const candidates = (role: "profile" | "template" | "css") =>
         roles.includes(role)
