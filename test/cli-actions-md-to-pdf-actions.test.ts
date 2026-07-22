@@ -47,6 +47,57 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--base-url") + 1]).toBe(
         fixtureDir,
       );
+      expect(weasyprintRender?.args.at(-1)).not.toBe(outputPath);
+    });
+  });
+
+  test("rejects a dangling PDF output symlink at the final write boundary", async () => {
+    await withTempFixtureDir("md-to-pdf-output-dangling-symlink", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const targetPath = join(fixtureDir, "generated-profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await symlink(targetPath, outputPath);
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          overwrite: true,
+          runner,
+        }),
+      ).rejects.toMatchObject({ code: "OUTPUT_SYMLINK" });
+
+      await expect(readFile(targetPath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  test("rejects a PDF output through a symlinked parent directory", async () => {
+    await withTempFixtureDir("md-to-pdf-output-parent-symlink", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const realOutputDirectory = join(fixtureDir, "real-output");
+      const outputAliasDirectory = join(fixtureDir, "output-alias");
+      const outputPath = join(outputAliasDirectory, "report.pdf");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await mkdir(realOutputDirectory);
+      await symlink(realOutputDirectory, outputAliasDirectory);
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          overwrite: true,
+          runner,
+        }),
+      ).rejects.toMatchObject({ code: "OUTPUT_SYMLINK" });
+
+      await expect(readFile(join(realOutputDirectory, "report.pdf"))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     });
   });
 
