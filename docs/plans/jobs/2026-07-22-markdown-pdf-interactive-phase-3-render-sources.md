@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Mode Phase 3 render sources"
 created-date: 2026-07-22
-status: in-progress
+modified-date: 2026-07-22
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -27,7 +28,7 @@ Phase base: `f0e762d576f61efd23027274d1b23b759be8d599`.
 - [x] Preserve Back, Cancel, and destination-revision behavior.
 - [x] Add focused routing, provenance, conflict, and render-parity coverage.
 - [x] Pass focused and repository validation.
-- [ ] Review the exact Phase 3 commit range and resolve actionable findings.
+- [x] Review the exact Phase 3 commit range and resolve actionable findings.
 
 ## Changes
 
@@ -54,18 +55,23 @@ bun test
 git diff --check
 ```
 
-The focused routing slice passed with 22 tests and zero failures. The full
-suite passed with 1,540 tests and zero failures. A built CLI renderer smoke
+The final focused routing, bundle, and render-source slice passed with 81 tests
+and zero failures. The full suite passed with 1,545 tests and zero failures. A built CLI renderer smoke
 produced a non-empty PDF, and visual inspection of the rendered page confirmed
 legible CJK text, code content, spacing, and margins.
 
 Implementation checkpoint:
 
 - `6546b01` — prepared source collection, review, output planning, and render
+- `d382a01` — retained-input navigation and missing regression coverage
+- `31e5382` — dedicated preview discovery and structured menu navigation
 
 ## Review
 
-Pending a validated Phase 3 commit range.
+Reviewed the exact Phase 3 range
+`f0e762d576f61efd23027274d1b23b759be8d599..31e5382` after the final accepted
+fixes. Correctness, maintainability, test, and documentation reviews were all
+clean with no unresolved actionable findings.
 
 ## Artifact Safety
 

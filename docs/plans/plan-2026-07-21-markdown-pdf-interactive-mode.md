@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Mode implementation"
 created-date: 2026-07-21
-modified-date: 2026-07-21
+modified-date: 2026-07-22
 status: active
 agent: codex
 ---
@@ -298,7 +298,7 @@ Tasks:
 - [x] Collect the PDF output only after recipe review.
 - [x] Render the accepted prepared result with one final confirmation.
 - [x] Add source-routing, provenance, conflict, backtracking, and render tests.
-- [ ] Review the Phase 3 change range before proceeding.
+- [x] Review the Phase 3 change range before proceeding.
 
 Phase gate:
 
