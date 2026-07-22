@@ -10,9 +10,9 @@ import {
   rebindMdPdfProjectCodexPreparedArtifact,
   writePreparedMdPdfProjectCodexBundle,
 } from "../../src/cli/markdown-pdf/project-codex";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
+import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng, pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
 
 const BASE_PROFILE = [
   "profile:",
@@ -102,7 +102,7 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         coverImage: "cover.png",
         intent: "Create a custom cover layout.",
         output: "first-project",
-        keepCodexReport: true,
+        keepCodexReport: false,
         dryRun: true,
         identityUidFactory: () => "abc12345",
         profileCodexRunner,
@@ -122,6 +122,7 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         runtime,
         outputDirectory: "accepted-project",
         dryRun: false,
+        report: { kind: "with-artifact" },
       });
       await writeFile(join(fixtureDir, "cover.png"), changedCover);
       await writePreparedMdPdfProjectCodexBundle(runtime, rebound);
@@ -168,6 +169,56 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         createdAt: prepared.identity.createdAt,
       });
       expect(report.followUpRenderCommand.args).toContain("accepted-project");
+
+      await expectCliError(
+        () =>
+          rebindMdPdfProjectCodexPreparedArtifact({
+            prepared,
+            runtime,
+            outputDirectory: "accepted-project",
+            dryRun: false,
+            overwrite: false,
+            report: { kind: "none" },
+          }),
+        { code: "OUTPUT_EXISTS", exitCode: 2 },
+      );
+
+      const withoutReport = await rebindMdPdfProjectCodexPreparedArtifact({
+        prepared,
+        runtime,
+        outputDirectory: "project-without-report",
+        dryRun: false,
+        report: { kind: "none" },
+      });
+      await writePreparedMdPdfProjectCodexBundle(runtime, withoutReport);
+      expect(withoutReport.binding.outputPlan.report).toBeUndefined();
+      expect(withoutReport.binding.state.keepCodexReport).toBe(false);
+      expect(
+        await pathExists(join(fixtureDir, "project-without-report", "project.codex-report.json")),
+      ).toBe(false);
+
+      const withExternalReport = await rebindMdPdfProjectCodexPreparedArtifact({
+        prepared,
+        runtime,
+        outputDirectory: "project-with-external-report",
+        dryRun: false,
+        overwrite: true,
+        report: { kind: "external", path: "accepted-project-report.json" },
+      });
+      await writePreparedMdPdfProjectCodexBundle(runtime, withExternalReport);
+      expect(withExternalReport.binding.state.overwrite).toBe(true);
+      expect(withExternalReport.binding.outputPlan.report).toEqual({
+        location: "external",
+        path: join(fixtureDir, "accepted-project-report.json"),
+      });
+      expect(await pathExists(join(fixtureDir, "accepted-project-report.json"))).toBe(true);
+      expect(
+        await pathExists(
+          join(fixtureDir, "project-with-external-report", "project.codex-report.json"),
+        ),
+      ).toBe(false);
+      expect(profileCalls).toBe(1);
+      expect(templateCalls).toBe(1);
     });
   });
 });

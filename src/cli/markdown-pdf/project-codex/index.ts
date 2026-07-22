@@ -1,4 +1,5 @@
 export { normalizeMdPdfProjectCodexCommandState } from "./options";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 export { createMdPdfProjectCodexIdentity, createMdPdfProjectCodexIdentityValues } from "./identity";
 export {
   planMdPdfProjectCodexOutput,

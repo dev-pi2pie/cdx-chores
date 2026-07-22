@@ -7,6 +7,7 @@ import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import { assertNonEmpty, displayPath } from "../../actions/shared";
 import { assertWritableCodexPlannedFile } from "../codex-output-path-policy";
+import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 
 export interface MarkdownPdfProfileCodexDestinationOptions {
   codexReportOutput?: string;
@@ -14,6 +15,7 @@ export interface MarkdownPdfProfileCodexDestinationOptions {
   keepCodexReport?: boolean;
   output?: string;
   overwrite?: boolean;
+  report?: MarkdownPdfCodexReportBinding;
 }
 
 export interface MarkdownPdfProfileCodexDestinationSource {
@@ -106,11 +108,18 @@ export async function bindMarkdownPdfProfileCodexDestination(
     overrides.output !== undefined
       ? resolveFromCwd(runtime, assertNonEmpty(overrides.output, "Output path"))
       : source.suggestedOutputPath;
-  const reportOutputPath = options.codexReportOutput
-    ? resolveFromCwd(runtime, options.codexReportOutput)
-    : options.keepCodexReport
-      ? generatedReportPath(outputPath, source.profileId)
-      : undefined;
+  const reportBinding = overrides.report;
+  const reportOutputPath = reportBinding
+    ? reportBinding.kind === "none"
+      ? undefined
+      : reportBinding.kind === "external"
+        ? resolveFromCwd(runtime, assertNonEmpty(reportBinding.path, "Codex report path"))
+        : generatedReportPath(outputPath, source.profileId)
+    : options.codexReportOutput
+      ? resolveFromCwd(runtime, options.codexReportOutput)
+      : options.keepCodexReport
+        ? generatedReportPath(outputPath, source.profileId)
+        : undefined;
 
   inferMarkdownPdfProfileFormat(outputPath);
   if (reportOutputPath && extname(reportOutputPath).toLowerCase() !== ".json") {

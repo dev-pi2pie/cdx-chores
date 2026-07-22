@@ -1,8 +1,13 @@
-import { join, resolve } from "node:path";
+import { extname, join } from "node:path";
 
+import { assertNonEmpty } from "../../actions/shared";
+import { CliError } from "../../errors";
+import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 import { collectMdPdfProjectCodexSignals } from "./signals";
 import {
+  MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH,
   planMdPdfProjectCodexOutput,
   validateMdPdfProjectCodexOutputWritability,
   type MdPdfProjectCodexOutputWriteMode,
@@ -126,11 +131,10 @@ function bindBundleFile(outputDirectory: string, bundlePath: string) {
   return { bundlePath, path: join(outputDirectory, bundlePath) };
 }
 
-function bindReport(input: {
+function bindPreservedReport(input: {
   currentReport: MarkdownPdfProjectCodexPlannedReport | undefined;
   layout: MarkdownPdfProjectCodexPreparedLayout;
   outputDirectory: string;
-  reportOutputPath?: string;
 }): MarkdownPdfProjectCodexPlannedReport | undefined {
   if (!input.layout.report) {
     return undefined;
@@ -141,8 +145,48 @@ function bindReport(input: {
       location: "in-bundle",
     };
   }
-  const path = input.reportOutputPath ?? input.currentReport?.path;
+  const path = input.currentReport?.path;
   return path ? { location: "external", path } : undefined;
+}
+
+function resolveReboundReport(input: {
+  outputDirectory: string;
+  prepared: MarkdownPdfProjectCodexPreparedArtifact;
+  report: MarkdownPdfCodexReportBinding | undefined;
+  reportOutputPath?: string;
+  runtime: CliRuntime;
+}): MarkdownPdfProjectCodexPlannedReport | undefined {
+  if (!input.report && !input.reportOutputPath) {
+    return bindPreservedReport({
+      currentReport: input.prepared.binding.outputPlan.report,
+      layout: input.prepared.layout,
+      outputDirectory: input.outputDirectory,
+    });
+  }
+  const reportBinding: MarkdownPdfCodexReportBinding = input.report ?? {
+    kind: "external",
+    path: assertNonEmpty(input.reportOutputPath, "Codex report path"),
+  };
+  if (reportBinding.kind === "none") {
+    return undefined;
+  }
+  if (reportBinding.kind === "with-artifact") {
+    return {
+      ...bindBundleFile(input.outputDirectory, MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH),
+      location: "in-bundle",
+    };
+  }
+  const path = resolveFromCwd(
+    input.runtime,
+    assertNonEmpty(reportBinding.path, "Codex report path"),
+  );
+  if (extname(path).toLowerCase() !== ".json") {
+    throw new CliError("Markdown PDF project Codex report path must end with .json.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return { location: "external", path };
 }
 
 function bindOutputPlan(input: {
@@ -150,15 +194,8 @@ function bindOutputPlan(input: {
   identity: MarkdownPdfProjectCodexIdentity;
   layout: MarkdownPdfProjectCodexPreparedLayout;
   outputDirectory: string;
-  previousOutputPlan: MarkdownPdfProjectCodexOutputPlan;
-  reportOutputPath?: string;
+  report?: MarkdownPdfProjectCodexPlannedReport;
 }): MarkdownPdfProjectCodexOutputPlan {
-  const report = bindReport({
-    currentReport: input.previousOutputPlan.report,
-    layout: input.layout,
-    outputDirectory: input.outputDirectory,
-    reportOutputPath: input.reportOutputPath,
-  });
   return {
     identity: { ...input.identity, outputDirectory: input.outputDirectory },
     outputDirectory: input.outputDirectory,
@@ -166,7 +203,7 @@ function bindOutputPlan(input: {
     profile: bindBundleFile(input.outputDirectory, input.layout.profile.bundlePath),
     templateHtml: bindBundleFile(input.outputDirectory, input.layout.templateHtml.bundlePath),
     styleCss: bindBundleFile(input.outputDirectory, input.layout.styleCss.bundlePath),
-    ...(report ? { report } : {}),
+    ...(input.report ? { report: input.report } : {}),
     assets: input.layout.assets.map((asset) => ({
       ...asset,
       path: join(input.outputDirectory, asset.bundlePath),
@@ -301,24 +338,34 @@ export async function rebindMdPdfProjectCodexPreparedArtifact(input: {
   outputDirectory: string;
   reportOutputPath?: string;
   dryRun?: boolean;
+  overwrite?: boolean;
+  report?: MarkdownPdfCodexReportBinding;
 }): Promise<MarkdownPdfProjectCodexPreparedArtifact> {
-  const outputDirectory = resolve(input.runtime.cwd, input.outputDirectory);
-  const reportOutputPath = input.reportOutputPath
-    ? resolve(input.runtime.cwd, input.reportOutputPath)
-    : undefined;
+  const outputDirectory = resolveFromCwd(
+    input.runtime,
+    assertNonEmpty(input.outputDirectory, "Output directory"),
+  );
+  const report = resolveReboundReport({
+    outputDirectory,
+    prepared: input.prepared,
+    report: input.report,
+    reportOutputPath: input.reportOutputPath,
+    runtime: input.runtime,
+  });
   const state: NormalizedMdPdfProjectCodexCommandState = {
     ...input.prepared.binding.state,
-    dryRun: input.dryRun ?? input.prepared.binding.state.dryRun,
+    dryRun: input.dryRun ?? false,
     outputDirectory,
-    ...(reportOutputPath ? { codexReportOutputPath: reportOutputPath } : {}),
+    keepCodexReport: Boolean(report),
+    codexReportOutputPath: report?.location === "external" ? report.path : undefined,
+    overwrite: input.overwrite ?? input.prepared.binding.state.overwrite,
   };
   const outputPlan = bindOutputPlan({
     generatedOutputDirectory: false,
     identity: input.prepared.identity,
     layout: input.prepared.layout,
     outputDirectory,
-    previousOutputPlan: input.prepared.binding.outputPlan,
-    reportOutputPath,
+    report,
   });
   const binding = createBinding({
     generatedAt: input.prepared.binding.reportArtifact.generatedAt,

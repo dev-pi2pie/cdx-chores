@@ -1,4 +1,5 @@
 export { actionMdPdfProfileCodex } from "./run";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 export {
   bindMarkdownPdfProfileCodexDestination,
   type BoundMarkdownPdfProfileCodexDestination,

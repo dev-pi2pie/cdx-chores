@@ -61,6 +61,15 @@ describe("Markdown PDF prepared Profile Codex services", () => {
 
       const destination = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
         output: "accepted-profile.yml",
+        report: { kind: "with-artifact" },
+      });
+      const withoutReport = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
+        output: "profile-without-report.yml",
+        report: { kind: "none" },
+      });
+      const externalReport = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
+        output: "profile-with-external-report.yml",
+        report: { kind: "external", path: "accepted-profile-report.json" },
       });
 
       expect(runnerCalls).toBe(1);
@@ -72,6 +81,10 @@ describe("Markdown PDF prepared Profile Codex services", () => {
           fixtureDir,
           "accepted-profile-md-pdf-profile-20260722T063000Z-prepared-codex-report.json",
         ),
+      );
+      expect(withoutReport.reportOutputPath).toBeUndefined();
+      expect(externalReport.reportOutputPath).toBe(
+        join(fixtureDir, "accepted-profile-report.json"),
       );
       expect(await readdir(fixtureDir)).toEqual(["report.md"]);
 

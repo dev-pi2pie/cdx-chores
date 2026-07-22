@@ -1,7 +1,11 @@
-import { join } from "node:path";
+import { extname, join } from "node:path";
 
+import { assertNonEmpty } from "../../actions/shared";
+import { CliError } from "../../errors";
 import { writeTextFileSafe } from "../../file-io";
+import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 import {
   prepareMdPdfTemplateCodexManagedAssets,
   writePreparedMdPdfTemplateCodexManagedAssets,
@@ -12,7 +16,10 @@ import {
   serializeMdPdfTemplateCodexReportArtifact,
   type MdPdfTemplateCodexReportArtifact,
 } from "./report";
-import { validateMdPdfTemplateCodexOutputWritability } from "./output-plan";
+import {
+  MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_BUNDLE_PATH,
+  validateMdPdfTemplateCodexOutputWritability,
+} from "./output-plan";
 import { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
 import type {
   MarkdownPdfTemplateCodexOutputPlan,
@@ -67,6 +74,40 @@ function bindReport(
   };
 }
 
+function resolveReboundReport(input: {
+  outputDirectory: string;
+  prepared: PreparedMdPdfTemplateCodexArtifact;
+  report: MarkdownPdfCodexReportBinding | undefined;
+  runtime: CliRuntime;
+}): MarkdownPdfTemplateCodexPlannedReport | undefined {
+  if (!input.report) {
+    return bindReport(input.outputDirectory, input.prepared.outputPlan.report);
+  }
+  if (input.report.kind === "none") {
+    return undefined;
+  }
+  if (input.report.kind === "with-artifact") {
+    return {
+      ...bindBundleFile(input.outputDirectory, {
+        bundlePath: MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_BUNDLE_PATH,
+        path: join(input.outputDirectory, MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_BUNDLE_PATH),
+      }),
+      location: "in-bundle",
+    };
+  }
+  const path = resolveFromCwd(
+    input.runtime,
+    assertNonEmpty(input.report.path, "Codex report path"),
+  );
+  if (extname(path).toLowerCase() !== ".json") {
+    throw new CliError("Markdown PDF template Codex report path must end with .json.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
+  return { location: "external", path };
+}
+
 export async function createPreparedMdPdfTemplateCodexArtifact(input: {
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   runtime: CliRuntime;
@@ -114,6 +155,71 @@ export function bindPreparedMdPdfTemplateCodexOutput(
   return {
     ...prepared,
     outputPlan,
+  };
+}
+
+export async function rebindPreparedMdPdfTemplateCodexArtifact(input: {
+  outputDirectory: string;
+  overwrite?: boolean;
+  prepared: PreparedMdPdfTemplateCodexArtifact;
+  report?: MarkdownPdfCodexReportBinding;
+  runtime: CliRuntime;
+}): Promise<PreparedMdPdfTemplateCodexArtifact> {
+  const outputDirectory = resolveFromCwd(
+    input.runtime,
+    assertNonEmpty(input.outputDirectory, "Output directory"),
+  );
+  const report = resolveReboundReport({
+    outputDirectory,
+    prepared: input.prepared,
+    report: input.report,
+    runtime: input.runtime,
+  });
+  const outputPlan: MarkdownPdfTemplateCodexOutputPlan = {
+    bundleId: input.prepared.bundleId,
+    outputDirectory,
+    generatedOutputDirectory: false,
+    templateHtml: bindBundleFile(outputDirectory, input.prepared.outputPlan.templateHtml),
+    styleCss: bindBundleFile(outputDirectory, input.prepared.outputPlan.styleCss),
+    ...(report ? { report } : {}),
+    assets: input.prepared.outputPlan.assets.map((asset) =>
+      bindManagedAsset(outputDirectory, asset),
+    ),
+  };
+  const state: NormalizedMdPdfTemplateCodexCommandState = {
+    ...input.prepared.state,
+    outputPath: outputDirectory,
+    dryRun: false,
+    overwrite: input.overwrite ?? input.prepared.state.overwrite,
+    keepCodexReport: Boolean(report),
+    codexReportOutputPath: report?.location === "external" ? report.path : undefined,
+  };
+  validateMdPdfTemplateCodexSynthesis({
+    outputPlan,
+    synthesis: input.prepared.synthesis,
+  });
+  await validateMdPdfTemplateCodexOutputWritability({
+    plan: outputPlan,
+    runtime: input.runtime,
+    state,
+    writeMode:
+      input.prepared.synthesis.decisionMode === "no-usable-template" ? "report-only" : "bundle",
+  });
+  const reportArtifact = createMdPdfTemplateCodexReportArtifact({
+    outputPlan,
+    runtime: input.runtime,
+    signals: input.prepared.signals,
+    state,
+    synthesis: input.prepared.synthesis,
+  });
+  return {
+    ...input.prepared,
+    outputPlan,
+    state,
+    reportArtifact: {
+      ...reportArtifact,
+      generatedAt: input.prepared.reportArtifact.generatedAt,
+    },
   };
 }
 
