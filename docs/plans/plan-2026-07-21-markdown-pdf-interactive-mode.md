@@ -472,7 +472,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md`
+- [Phase 6.5 Codex Assistant UX](jobs/2026-07-22-markdown-pdf-interactive-phase-6-5-codex-assistant-ux.md)
 
 ### Phase 6.6: Font Hint Input Suggestions
 

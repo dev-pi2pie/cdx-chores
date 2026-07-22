@@ -117,7 +117,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           : "Project bundle setup next step";
     const choices = result.selectChoicesByMessage[setupMessage]?.map((choice) => choice.value);
     expect(choices?.includes("cover-image")).toBe(hasCoverChoice);
-    expect(choices?.includes("output")).toBe(artifact === "project-bundle");
+    expect(choices?.includes("output")).toBe(false);
   });
 
   test("adds and removes font hints and retains a Template cover choice", () => {
@@ -384,17 +384,16 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
-  test("uses an explicit Project setup output exactly for a durable save", () => {
+  test("uses an explicit Project save output exactly for a durable save", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
         ...recipesCodexSelections("project-bundle"),
-        "output",
         "continue",
         "save",
         "none",
-        "suggested",
+        "custom",
         "exit",
       ],
       inputQueue: [""],
@@ -436,22 +435,18 @@ describe("interactive Markdown PDF Codex authoring", () => {
         ...TO_PDF_ENTRY,
         "generated",
         "project-bundle",
-        "output",
         "continue",
         "temporary-render",
         "none",
         "default",
       ],
       inputQueue: [""],
-      requiredPathQueue: ["fixtures/report.md", "recipes/durable-project"],
+      requiredPathQueue: ["fixtures/report.md"],
       confirmQueue: [true, false, true],
     });
 
-    expect(result.markdownPdfCodexPrepareCalls).toEqual([
-      expect.objectContaining({ outputPreference: "recipes/durable-project" }),
-    ]);
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
     expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
-    expect(result.markdownPdfCodexBindCalls[0]?.output).not.toBe("recipes/durable-project");
     expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });

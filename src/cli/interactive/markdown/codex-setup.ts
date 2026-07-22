@@ -20,8 +20,6 @@ type CodexSetupAction =
   | "font-hints"
   | "cover-image"
   | "clear-cover-image"
-  | "output"
-  | "clear-output"
   | "back"
   | "cancel";
 
@@ -129,9 +127,6 @@ function renderSetup(runtime: CliRuntime, setup: MarkdownPdfCodexSetup): void {
       `Cover image: ${setup.coverImage ? displayPath(runtime, setup.coverImage) : "none"}`,
     );
   }
-  if (setup.artifact === "project-bundle" && setup.outputPreference) {
-    printLine(runtime.stderr, `Output directory: ${displayPath(runtime, setup.outputPreference)}`);
-  }
 }
 
 export async function collectMarkdownPdfCodexSetup(
@@ -183,14 +178,6 @@ export async function collectMarkdownPdfCodexSetup(
                 : []),
             ]
           : []),
-        ...(context.artifact === "project-bundle"
-          ? [
-              { name: "Set output directory", value: "output" as const },
-              ...(setup.outputPreference
-                ? [{ name: "Clear output directory", value: "clear-output" as const }]
-                : []),
-            ]
-          : []),
         { name: "Back", value: "back" },
         { name: "Cancel", value: "cancel" },
       ],
@@ -227,27 +214,18 @@ export async function collectMarkdownPdfCodexSetup(
       setup = next;
       continue;
     }
-    if (action === "clear-output") {
-      const { outputPreference: _outputPreference, ...next } = setup;
-      setup = next;
-      continue;
-    }
     const path = await promptRequiredPathWithConfig(
       action === "base-profile"
         ? "Base profile file"
-        : action === "cover-image"
-          ? "Cover image file"
-          : "Project bundle output directory",
+        : "Cover image file",
       {
-        kind: action === "output" ? "directory" : "file",
+        kind: "file",
         ...pathPromptContext,
       },
     );
     setup =
       action === "base-profile"
         ? { ...setup, baseProfile: path }
-        : action === "cover-image"
-          ? { ...setup, coverImage: path }
-          : { ...setup, outputPreference: path };
+        : { ...setup, coverImage: path };
   }
 }
