@@ -30,11 +30,11 @@ md to-pdf [--profile | --template | --css | --bundle]
 Interactive mode should orchestrate these capabilities without creating a
 second artifact model, assistant model, or renderer.
 
-This research remains `in-progress` because Phases 1 through 6 now provide
-implementation evidence for the core flow, while the Phase 6.5 Codex Assistant
-UX refinement, Phase 6.6 font-hint input refinement, Phase 7 validation, guide
-alignment, complete-range review, and the final closure reassessment remain
-pending.
+The implementation records for completed Phases 1 through 6 evidence only the
+core flow that those phases originally scoped. This research remains
+`in-progress` because the subsequently added Phase 6.5 Codex Assistant UX
+refinement, Phase 6.6 font-hint input refinement, Phase 7 validation, guide
+alignment, complete-range review, and final closure reassessment remain pending.
 
 ## Current Contracts And Boundaries
 

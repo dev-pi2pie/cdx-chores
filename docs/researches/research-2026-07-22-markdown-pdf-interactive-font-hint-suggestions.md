@@ -187,6 +187,24 @@ term aborts the prior source callback. Phase 6.6 should still verify Enter,
 arrow navigation, Tab completion, paste, input-method-editor input, and narrow
 terminal output before treating the interaction as accessible evidence.
 
+The preference picker reuses the path picker's typing and sibling-navigation
+muscle memory, but presents a visible flat result list instead of path-style
+ghost completion. Its keyboard contract is:
+
+| Input | Behavior |
+| --- | --- |
+| Type | Filter installed-family suggestions and restore the custom typed value as the active first choice |
+| Up / Down | Move the active choice without changing the typed query; stop at the first or last result rather than wrapping |
+| Enter | Accept the active custom or installed value |
+| Tab | Copy the active value into the query and continue editing |
+| Escape | Cancel the prompt through the normal Interactive navigation path |
+
+Typing after arrow navigation refreshes the results and returns focus to the
+custom choice. Left and Right retain ordinary prompt behavior; they do not
+accept a font suggestion or navigate a font-specific hierarchy. This differs
+intentionally from the path picker, where Tab or Right may accept inline ghost
+completion and Enter submits the currently typed path.
+
 The next prompt collects one optional, supported intended use:
 
 ```text
@@ -503,8 +521,9 @@ The design questions are settled, but closure still requires implementation
 evidence that:
 
 - the raw custom value remains the stable first selection across filtering and
-  the terminal interaction remains usable with Enter, arrows, Tab, paste, and
-  input-method-editor input
+  the documented non-wrapping Up/Down, Enter-to-accept, Tab-to-complete, and
+  typing-to-reset behavior remains usable with paste and input-method-editor
+  input
 - a large injected inventory is filtered in memory and never renders more than
   the custom choice plus six installed-family suggestions
 - the one-second fontconfig budget, delayed waiting status, caching, and

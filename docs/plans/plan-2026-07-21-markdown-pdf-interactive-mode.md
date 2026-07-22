@@ -493,8 +493,13 @@ Tasks:
       first selectable choice, with its explanation in the choice description,
       while at most six matching installed family names appear as suggestions.
 - [ ] Collapse a case-insensitive exact installed-family match, and preserve
-      Enter, arrow, Tab, paste, input-method-editor, and narrow-terminal
-      usability with the pinned `@inquirer/search` behavior.
+      the pinned `@inquirer/search` keyboard contract: non-wrapping Up/Down
+      changes only the active sibling, Enter accepts it, Tab copies it into the
+      query for continued editing, and new typing restores the custom first
+      choice.
+- [ ] Keep Left and Right free of font-specific behavior, and verify paste,
+      input-method-editor, Escape, and narrow-terminal usability without
+      claiming path-style ghost-completion parity.
 - [ ] Reuse `discoverSystemFonts({ discovery: "fontconfig" })` through an
       injected Interactive suggestion source. When `fc-list` is unavailable,
       continue without suggestions and do not invoke a native platform
@@ -538,7 +543,8 @@ Tasks:
       change; require consent before explicit regeneration and keep output-path
       changes regeneration-free.
 - [ ] Add deterministic injected-inventory tests for custom-first search and
-      completion, exact-match collapsing, bounded filtering, ordering,
+      non-wrapping sibling navigation, Enter acceptance, Tab completion,
+      typing-to-reset, exact-match collapsing, bounded filtering, ordering,
       deduplication, intended-use compilation, editing, post-Codex mapping,
       caching, retry, and every fontconfig discovery fallback outcome.
 - [ ] Add shared cancellation tests proving session abort reaches the command
