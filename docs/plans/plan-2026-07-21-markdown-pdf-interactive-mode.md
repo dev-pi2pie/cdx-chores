@@ -372,7 +372,7 @@ Phase gate:
 
 Expected job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-interactive-phase-5-codex-authoring.md`
+- [Phase 5 Codex authoring](jobs/2026-07-22-markdown-pdf-interactive-phase-5-codex-authoring.md)
 
 ### Phase 6: Materialization, Recovery, And Handoff
 
