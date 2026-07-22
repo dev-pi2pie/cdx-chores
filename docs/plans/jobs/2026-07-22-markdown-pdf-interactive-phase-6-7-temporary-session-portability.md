@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Phase 6.7 temporary-session portability"
 created-date: 2026-07-22
-status: in-progress
+modified-date: 2026-07-22
+status: completed
 agent: codex
 plan: ../plan-2026-07-21-markdown-pdf-interactive-mode.md
 ---
@@ -25,7 +26,7 @@ and compatible with existing symlink-aware output validation.
 - [x] Cover aliased and ordinary temporary roots without assuming one operating
       system's path syntax.
 - [x] Pass focused, repository, and public-safe manual render verification.
-- [ ] Review the exact implementation range and resolve actionable findings.
+- [x] Review the exact implementation range and resolve actionable findings.
 
 ## Verification Evidence
 
@@ -39,6 +40,13 @@ and compatible with existing symlink-aware output validation.
 - The Codex-dependent Project-bundle smoke could not reach materialization in
   the available verification environment; automated Project-bundle coverage
   exercises the same canonical owned-session boundary.
+
+## Review Evidence
+
+- Correctness, security, and test reviewers inspected the exact implementation
+  range `b84d209..4d8af10`.
+- The first review identified three test gaps. The widened-range review found
+  no remaining actionable findings after those gaps were covered.
 
 ## Traceability
 

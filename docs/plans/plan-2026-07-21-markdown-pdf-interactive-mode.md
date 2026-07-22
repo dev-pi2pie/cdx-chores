@@ -591,18 +591,18 @@ commit ranges.
 
 Tasks:
 
-- [ ] Keep generated temporary recipes under the operating system's temporary
+- [x] Keep generated temporary recipes under the operating system's temporary
       directory rather than the current working directory.
-- [ ] Resolve each newly created owned session to its canonical path before it
+- [x] Resolve each newly created owned session to its canonical path before it
       becomes a materialization, retention, display, or cleanup boundary.
-- [ ] Prevent standard platform temporary-directory aliases from triggering
+- [x] Prevent standard platform temporary-directory aliases from triggering
       the user-output symlink-parent rejection path.
-- [ ] Print one actionable canonical retained-session path instead of a long
+- [x] Print one actionable canonical retained-session path instead of a long
       working-directory-relative traversal.
-- [ ] Preserve opaque session ownership, exact-directory cleanup, failure
+- [x] Preserve opaque session ownership, exact-directory cleanup, failure
       retention, user-selected output symlink validation, and durable-artifact
       exclusion from cleanup.
-- [ ] Cover macOS-style aliased temporary roots without assuming POSIX paths,
+- [x] Cover macOS-style aliased temporary roots without assuming POSIX paths,
       and retain Linux and Windows path compatibility.
 
 #### Track B: Repeatable Font-Hint Flow
