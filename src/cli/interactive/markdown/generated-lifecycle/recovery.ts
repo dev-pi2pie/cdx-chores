@@ -25,6 +25,10 @@ export type GeneratedLifecycleOutcome = "complete" | "review";
 
 type DurableRecoveryStage = "materialization" | "renderer-preparation";
 
+export interface DurableMaterializationWriteState {
+  isWritten: boolean;
+}
+
 function printRenderWarnings(runtime: CliRuntime, warnings: readonly string[]): void {
   if (warnings.length === 0) {
     return;
@@ -162,15 +166,14 @@ export async function executeDurableMaterializationAndRender(
   selection: MarkdownPdfGeneratedLifecycleSelection,
   pdf: ResolvedMarkdownPdfRenderOutput,
   materialization: Extract<BoundMarkdownPdfGeneratedMaterialization, { kind: "durable" }>,
+  writeState: DurableMaterializationWriteState,
   codeHighlight?: boolean,
 ): Promise<GeneratedLifecycleOutcome> {
-  let isWritten = false;
-
   while (true) {
-    if (!isWritten) {
+    if (!writeState.isWritten) {
       try {
         await writeBoundMarkdownPdfGeneratedCandidate(materialization);
-        isWritten = true;
+        writeState.isWritten = true;
       } catch (error) {
         printLine(
           runtime.stderr,

@@ -13,7 +13,10 @@ import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from 
 import { runMarkdownPdfAuthoring } from "./authoring";
 import { createMarkdownPdfInteractiveCodexSession } from "./codex-session";
 import type { MarkdownPdfSavedRecipe } from "./codex-types";
-import { handleMarkdownPdfGeneratedLifecycle } from "./generated-lifecycle";
+import {
+  createMarkdownPdfGeneratedLifecycleSession,
+  handleMarkdownPdfGeneratedLifecycle,
+} from "./generated-lifecycle";
 import { isRecoverableGeneratedLifecycleBindError } from "./generated-lifecycle/guards";
 
 import {
@@ -273,6 +276,7 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
   options: { savedRecipe?: MarkdownPdfSavedRecipe } = {},
 ): Promise<InteractiveNavigationOutcome> {
   const session = createMarkdownPdfInteractiveCodexSession(runtime);
+  const generatedLifecycleSession = createMarkdownPdfGeneratedLifecycleSession();
   try {
     let input: string;
     let initialSource: MarkdownPdfInteractivePreparedRenderSource | undefined;
@@ -323,7 +327,12 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
           fontHintEditor: session.fontHintEditor,
           markdownInput: input,
           onGeneratedLifecycle: async (selection) =>
-            await handleMarkdownPdfGeneratedLifecycle(runtime, pathPromptContext, selection),
+            await handleMarkdownPdfGeneratedLifecycle(
+              runtime,
+              pathPromptContext,
+              selection,
+              generatedLifecycleSession,
+            ),
         });
         if (outcome.kind === "change-source") {
           continue;

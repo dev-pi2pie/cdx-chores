@@ -668,6 +668,38 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.stderr.match(/Markdown PDF recipe review/g)).toHaveLength(2);
   });
 
+  test("changes highlighting after durable preparation recovery without rewriting the recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "enable",
+        "custom",
+        "default",
+        "review",
+        "save-and-render",
+        "disable",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, true, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ codeHighlight: true }),
+      expect.objectContaining({ codeHighlight: false }),
+    ]);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
   test("retries durable rendering without cleanup or regeneration", () => {
     const result = runInteractiveHarness({
       mode: "run",

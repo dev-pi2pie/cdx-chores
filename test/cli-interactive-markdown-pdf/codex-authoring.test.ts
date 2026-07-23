@@ -1066,6 +1066,53 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).toContain("Render override:\n- Disable for this render");
   });
 
+  test("changes highlighting after Codex durable recovery without rewriting the recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "save-and-render",
+        "enable",
+        "with-artifact",
+        "suggested",
+        "default",
+        "review",
+        "save-and-render",
+        "disable",
+        "with-artifact",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true, false, false, true, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.candidateId)).toEqual([
+      "codex-project-bundle-1",
+    ]);
+    expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ codeHighlight: true }),
+      expect.objectContaining({ codeHighlight: false }),
+    ]);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.message === "Keep a Codex diagnostic report?"),
+    ).toHaveLength(2);
+    expect(result.promptCalls.filter((call) => call.message === "Choose preparation mode")).toEqual(
+      [],
+    );
+  });
+
   test.each([
     ["back", true],
     ["cancel", false],

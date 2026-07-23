@@ -35,6 +35,7 @@ import {
   executeRenderWithRecovery,
   printRetainedSession,
   recoverRetainedSession,
+  type DurableMaterializationWriteState,
   type GeneratedLifecycleOutcome,
 } from "./generated-lifecycle/recovery";
 import {
@@ -42,6 +43,58 @@ import {
   promptMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+
+interface DurableGeneratedLifecycleResume extends DurableMaterializationWriteState {
+  candidate: MarkdownPdfGeneratedLifecycleSelection["candidate"];
+  materialization: Extract<BoundMarkdownPdfGeneratedMaterialization, { kind: "durable" }>;
+  markdownInput: string;
+  pdf: ResolvedMarkdownPdfRenderOutput;
+  report: MarkdownPdfGeneratedLifecycleSelection["report"];
+}
+
+export interface MarkdownPdfGeneratedLifecycleSession {
+  durableResume?: DurableGeneratedLifecycleResume;
+}
+
+export function createMarkdownPdfGeneratedLifecycleSession(): MarkdownPdfGeneratedLifecycleSession {
+  return {};
+}
+
+function sameAcceptedCandidateIdentity(
+  left: MarkdownPdfGeneratedLifecycleSelection["candidate"],
+  right: MarkdownPdfGeneratedLifecycleSelection["candidate"],
+): boolean {
+  // Identity is intentional: regeneration must invalidate an otherwise equal candidate.
+  return left.kind === right.kind && left.candidate === right.candidate;
+}
+
+function sameReport(
+  left: MarkdownPdfGeneratedLifecycleSelection["report"],
+  right: MarkdownPdfGeneratedLifecycleSelection["report"],
+): boolean {
+  return (
+    left.kind === right.kind &&
+    (left.kind !== "external" || (right.kind === "external" && left.path === right.path))
+  );
+}
+
+function matchingDurableResume(
+  session: MarkdownPdfGeneratedLifecycleSession,
+  selection: MarkdownPdfGeneratedLifecycleSelection,
+): DurableGeneratedLifecycleResume | undefined {
+  const resume = session.durableResume;
+  if (
+    resume &&
+    selection.lifecycle === "save-and-render" &&
+    resume.markdownInput === selection.markdownInput &&
+    sameAcceptedCandidateIdentity(resume.candidate, selection.candidate) &&
+    sameReport(resume.report, selection.report)
+  ) {
+    return resume;
+  }
+  session.durableResume = undefined;
+  return undefined;
+}
 
 async function materializeTemporaryAndRender(
   runtime: CliRuntime,
@@ -77,30 +130,37 @@ export async function handleMarkdownPdfGeneratedLifecycle(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   selection: MarkdownPdfGeneratedLifecycleSelection,
+  session: MarkdownPdfGeneratedLifecycleSession = createMarkdownPdfGeneratedLifecycleSession(),
 ): Promise<MarkdownPdfGeneratedLifecycleHandlerOutcome> {
   let codeHighlight = selection.codeHighlight;
+  let resume = matchingDurableResume(session, selection);
 
   while (true) {
-    const artifactDestination =
-      selection.lifecycle === "save-and-render"
+    const artifactDestination = resume
+      ? undefined
+      : selection.lifecycle === "save-and-render"
         ? await promptArtifactDestination(runtime, pathPromptContext, selection)
         : undefined;
     if (artifactDestination?.kind === "review") {
       return { codeHighlight, kind: "review" };
     }
     if (artifactDestination?.kind === "cancel") {
+      session.durableResume = undefined;
       return { kind: "complete" };
     }
-    const pdf = await promptGeneratedPdfOutput(runtime, pathPromptContext, selection.markdownInput);
+    const pdf = resume
+      ? { kind: "output" as const, output: resume.pdf }
+      : await promptGeneratedPdfOutput(runtime, pathPromptContext, selection.markdownInput);
     if (pdf.kind === "review") {
       return { codeHighlight, kind: "review" };
     }
     if (pdf.kind === "cancel") {
+      session.durableResume = undefined;
       return { kind: "complete" };
     }
 
-    let durable: Extract<BoundMarkdownPdfGeneratedMaterialization, { kind: "durable" }> | undefined;
-    if (artifactDestination?.kind === "destination") {
+    let durable = resume?.materialization;
+    if (!durable && artifactDestination?.kind === "destination") {
       try {
         const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
           runtime,
@@ -140,11 +200,13 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           return { codeHighlight, kind: "review" };
         }
         if (next === "cancel") {
+          session.durableResume = undefined;
           return { kind: "complete" };
         }
         if (next === "change-code-highlighting") {
           const changed = await promptMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
           if (changed === "cancel") {
+            session.durableResume = undefined;
             return { kind: "complete" };
           }
           if (changed !== "back") {
@@ -152,25 +214,36 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           }
           continue;
         }
+        session.durableResume = undefined;
+        resume = undefined;
         break;
       }
 
       const compiledCodeHighlight = compileMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
       if (durable) {
         assertPdfOutputDoesNotCollide(runtime, pdf.output.outputPath, durable, selection.report);
-        return toGeneratedLifecycleHandlerOutcome(
-          await executeDurableMaterializationAndRender(
-            runtime,
-            selection,
-            pdf.output,
-            durable,
-            compiledCodeHighlight,
-          ),
-          codeHighlight,
+        const durableState: DurableGeneratedLifecycleResume = resume ?? {
+          candidate: selection.candidate,
+          materialization: durable,
+          markdownInput: selection.markdownInput,
+          pdf: pdf.output,
+          report: selection.report,
+          isWritten: false,
+        };
+        const outcome = await executeDurableMaterializationAndRender(
+          runtime,
+          selection,
+          pdf.output,
+          durable,
+          durableState,
+          compiledCodeHighlight,
         );
+        session.durableResume =
+          outcome === "review" && durableState.isWritten ? durableState : undefined;
+        return toGeneratedLifecycleHandlerOutcome(outcome, codeHighlight);
       }
 
-      const session = await createOwnedMarkdownPdfSession();
+      const temporarySession = await createOwnedMarkdownPdfSession();
       try {
         if (selection.report.kind === "with-artifact") {
           throw new CliError(
@@ -181,7 +254,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
         const temporary = await bindPreparedMarkdownPdfGeneratedCandidate(
           runtime,
           selection.candidate,
-          { kind: "temporary", report: selection.report, session },
+          { kind: "temporary", report: selection.report, session: temporarySession },
         );
         return toGeneratedLifecycleHandlerOutcome(
           await materializeTemporaryAndRender(
@@ -198,8 +271,8 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           runtime.stderr,
           `Unable to materialize the temporary recipe: ${error instanceof Error ? error.message : String(error)}`,
         );
-        printRetainedSession(runtime, session);
-        const recovered = await recoverRetainedSession(runtime, session, false);
+        printRetainedSession(runtime, temporarySession);
+        const recovered = await recoverRetainedSession(runtime, temporarySession, false);
         return recovered === "retry"
           ? { kind: "complete" }
           : toGeneratedLifecycleHandlerOutcome(recovered, codeHighlight);
