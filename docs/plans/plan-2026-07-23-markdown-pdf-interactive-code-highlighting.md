@@ -374,30 +374,30 @@ Tasks:
 
 - [x] Create the Phase 1 job record and mark this plan `active` when
       implementation begins.
-- [ ] Add typed Profile code answers and prompt contracts under
+- [x] Add typed Profile code answers and prompt contracts under
       `src/cli/interactive/markdown/formal-guide/`.
-- [ ] Use the existing Shiki light-theme allowlist and `github-light` default.
-- [ ] Collect Theme, line numbers, and transformer notation only when
+- [x] Use the existing Shiki light-theme allowlist and `github-light` default.
+- [x] Collect Theme, line numbers, and transformer notation only when
       highlighting is enabled.
-- [ ] Preserve a validated theme while forcing dependent booleans off during
+- [x] Preserve a validated theme while forcing dependent booleans off during
       disable and revision flows.
-- [ ] Make `formal-guide` collection artifact-aware without adding code fields
+- [x] Make `formal-guide` collection artifact-aware without adding code fields
       to Template candidates.
-- [ ] Add the narrow prepared Profile-init code input while preserving omitted
+- [x] Add the narrow prepared Profile-init code input while preserving omitted
       direct initialization output.
-- [ ] Compile and serialize all four fields for Profile `formal-guide`.
-- [ ] Add `Revise code highlighting` only to Profile `formal-guide` candidate
+- [x] Compile and serialize all four fields for Profile `formal-guide`.
+- [x] Add `Revise code highlighting` only to Profile `formal-guide` candidate
       review.
-- [ ] Show all four resolved Profile values in deterministic Profile, Profile
+- [x] Show all four resolved Profile values in deterministic Profile, Profile
       Codex Assistant, and Project Codex Assistant candidate reviews.
-- [ ] Keep Template candidate reviews free of reusable code-setting claims.
-- [ ] Add focused collection, conditional-prompt, revision, serialization,
+- [x] Keep Template candidate reviews free of reusable code-setting claims.
+- [x] Add focused collection, conditional-prompt, revision, serialization,
       candidate-review, and artifact-matrix tests.
-- [ ] Prove Project still enters Codex Assistant directly without a
+- [x] Prove Project still enters Codex Assistant directly without a
       preparation-mode prompt.
-- [ ] Prove direct `md pdf-profile init` output remains unchanged when the new
+- [x] Prove direct `md pdf-profile init` output remains unchanged when the new
       optional prepared input is omitted.
-- [ ] Review the exact Phase 1 change range and resolve actionable findings.
+- [x] Review the exact Phase 1 change range and resolve actionable findings.
 
 Phase gate:
 
