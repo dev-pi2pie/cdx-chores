@@ -22,6 +22,20 @@ const DEFAULT_OPTIONS = {
   tocPageBreak: "auto",
 };
 
+const DEFAULT_CODE = {
+  highlight: false,
+  theme: "github-light",
+  lineNumbers: false,
+  transformerNotation: false,
+};
+
+const GENERATED_CODE = {
+  highlight: true,
+  theme: "light-plus",
+  lineNumbers: true,
+  transformerNotation: false,
+};
+
 type CodexArtifact = "profile" | "template-bundle" | "project-bundle";
 
 const CODEX_ARTIFACT_FILE_NAMES: Record<CodexArtifact, string[]> = {
@@ -148,6 +162,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
             ? { kind: "no-usable-profile" }
             : {
                 decisionMode: "generated",
+                finalProfile: { code: GENERATED_CODE },
                 kind: "profile",
                 signalMode: setup.sample ? "document-informed" : "intent-only",
                 suggestedOutputPath: suggestedOutput,
@@ -183,7 +198,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                     templateHtml: { path: resolve(suggestedOutput, "template.html") },
                   },
                   reportArtifact: { unsupportedDirections: [] },
-                  validation: { decisionMode: unusable ? "no-usable-project" : "generated" },
+                  validation: {
+                    decisionMode: unusable ? "no-usable-project" : "generated",
+                    results: [{ name: "profile-normalization", status: "passed" }],
+                  },
                 },
                 layout: {
                   assets: [],
@@ -191,7 +209,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   styleCss: { bundlePath: "style.css" },
                   templateHtml: { bundlePath: "template.html" },
                 },
-                profilePhase: {},
+                profilePhase: { finalProfile: { code: GENERATED_CODE } },
                 signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
                 templatePhase: { synthesis: { fontDecisions: [] } },
               };
@@ -268,6 +286,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       const candidateId = `deterministic-${deterministicPreparedCount}`;
       context.result.markdownPdfDeterministicPrepareCalls.push({ ...input, candidateId });
       const options = (input.options ?? {}) as Record<string, unknown>;
+      const formalGuideAnswers = (input.formalGuideAnswers ?? {}) as Record<string, unknown>;
       const normalizedOptions = {
         ...DEFAULT_OPTIONS,
         ...options,
@@ -286,7 +305,13 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         candidateId,
         prepared:
           input.artifact === "profile"
-            ? { normalizedOptions, profile: { page: normalizedOptions } }
+            ? {
+                normalizedOptions,
+                profile: {
+                  code: formalGuideAnswers.code ?? DEFAULT_CODE,
+                  page: normalizedOptions,
+                },
+              }
             : {
                 normalizedOptions,
                 templateHtml: "<main>$body$</main>",

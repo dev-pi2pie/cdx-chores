@@ -3,7 +3,12 @@ import {
   validateMarkdownPdfCssLength,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../../markdown-pdf/validation";
-import type { MarkdownPdfFormalGuideAnswers, MarkdownPdfFormalGuideMarginAnswers } from "./types";
+import type { NormalizedMarkdownPdfCode } from "../../../markdown-pdf/profile";
+import type {
+  MarkdownPdfFormalGuideAnswers,
+  MarkdownPdfFormalGuideMarginAnswers,
+  MarkdownPdfProfileFormalGuideAnswers,
+} from "./types";
 
 function compileMargins(
   margins: Readonly<MarkdownPdfFormalGuideMarginAnswers>,
@@ -50,4 +55,15 @@ export function compileMarkdownPdfFormalGuideOptions(
 
   normalizeMarkdownPdfOptions(input);
   return input;
+}
+
+export function compileMarkdownPdfFormalGuideCode(
+  answers: Readonly<MarkdownPdfProfileFormalGuideAnswers>,
+): NormalizedMarkdownPdfCode {
+  return {
+    highlight: answers.code.highlight,
+    theme: answers.code.theme,
+    lineNumbers: answers.code.highlight ? answers.code.lineNumbers : false,
+    transformerNotation: answers.code.highlight ? answers.code.transformerNotation : false,
+  };
 }

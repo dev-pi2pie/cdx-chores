@@ -28,8 +28,10 @@ import {
 } from "./deterministic-authoring";
 import {
   collectMarkdownPdfFormalGuideAnswers,
+  collectMarkdownPdfProfileFormalGuideAnswers,
   compileMarkdownPdfFormalGuideOptions,
   createMarkdownPdfFormalGuidePrompts,
+  reviseMarkdownPdfFormalGuideCode,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
   reviseMarkdownPdfFormalGuideToc,
@@ -49,7 +51,11 @@ async function promptArtifact(
   return await select({
     message: "What would you like to create?",
     choices: [
-      { name: "Profile", value: "profile", description: "Reusable layout and PDF settings" },
+      {
+        name: "Profile",
+        value: "profile",
+        description: "Reusable layout and PDF settings",
+      },
       {
         name: "Template bundle",
         value: "template-bundle",
@@ -105,9 +111,17 @@ async function prepareCandidate(
   if (preparation === "starter") {
     return prepareMarkdownPdfDeterministicRecipe({ artifact, preparation });
   }
-  const formalGuideAnswers = await collectMarkdownPdfFormalGuideAnswers(
-    createMarkdownPdfFormalGuidePrompts(),
-  );
+  const prompts = createMarkdownPdfFormalGuidePrompts();
+  if (artifact === "profile") {
+    const formalGuideAnswers = await collectMarkdownPdfProfileFormalGuideAnswers(prompts);
+    return prepareMarkdownPdfDeterministicRecipe({
+      artifact,
+      preparation,
+      formalGuideAnswers,
+      options: compileMarkdownPdfFormalGuideOptions(formalGuideAnswers),
+    });
+  }
+  const formalGuideAnswers = await collectMarkdownPdfFormalGuideAnswers(prompts);
   return prepareMarkdownPdfDeterministicRecipe({
     artifact,
     preparation,
@@ -125,6 +139,31 @@ async function reviseCandidate(
     return candidate;
   }
   const prompts = createMarkdownPdfFormalGuidePrompts();
+  if (candidate.artifact === "profile") {
+    const revised =
+      group === "code"
+        ? await reviseMarkdownPdfFormalGuideCode(answers, prompts)
+        : group === "layout"
+          ? {
+              ...(await reviseMarkdownPdfFormalGuideLayout(answers, prompts)),
+              code: answers.code,
+            }
+          : group === "margins"
+            ? {
+                ...(await reviseMarkdownPdfFormalGuideMargins(answers, prompts)),
+                code: answers.code,
+              }
+            : {
+                ...(await reviseMarkdownPdfFormalGuideToc(answers, prompts)),
+                code: answers.code,
+              };
+    return prepareMarkdownPdfDeterministicRecipe({
+      artifact: "profile",
+      preparation: "formal-guide",
+      formalGuideAnswers: revised,
+      options: compileMarkdownPdfFormalGuideOptions(revised),
+    });
+  }
   const revised =
     group === "layout"
       ? await reviseMarkdownPdfFormalGuideLayout(answers, prompts)
@@ -132,7 +171,7 @@ async function reviseCandidate(
         ? await reviseMarkdownPdfFormalGuideMargins(answers, prompts)
         : await reviseMarkdownPdfFormalGuideToc(answers, prompts);
   return prepareMarkdownPdfDeterministicRecipe({
-    artifact: candidate.artifact,
+    artifact: "template-bundle",
     preparation: "formal-guide",
     formalGuideAnswers: revised,
     options: compileMarkdownPdfFormalGuideOptions(revised),
@@ -198,7 +237,13 @@ async function reviewCandidate(
     }
     candidate = await reviseCandidate(
       candidate,
-      action === "revise-layout" ? "layout" : action === "revise-margins" ? "margins" : "toc",
+      action === "revise-layout"
+        ? "layout"
+        : action === "revise-margins"
+          ? "margins"
+          : action === "revise-toc"
+            ? "toc"
+            : "code",
     );
   }
 }

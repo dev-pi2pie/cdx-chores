@@ -5,6 +5,10 @@ import type {
   PreparedMarkdownPdfDeterministicRecipe,
 } from "./deterministic-authoring";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import {
+  renderReusableMarkdownPdfCodeReview,
+  resolveReusableMarkdownPdfCode,
+} from "./code-highlighting-review";
 
 export type MarkdownPdfCandidateReviewAction =
   | "save"
@@ -13,6 +17,7 @@ export type MarkdownPdfCandidateReviewAction =
   | "revise-layout"
   | "revise-margins"
   | "revise-toc"
+  | "revise-code"
   | "change-mode"
   | "change-artifact"
   | "cancel";
@@ -52,6 +57,13 @@ export function renderDeterministicRecipeReview(
     runtime.stderr,
     `- ToC: ${options.toc ? `enabled (depth ${options.tocDepth}, page break ${options.tocPageBreak})` : "disabled"}`,
   );
+  if (candidate.artifact === "profile") {
+    printLine(runtime.stderr, "");
+    renderReusableMarkdownPdfCodeReview(
+      runtime,
+      resolveReusableMarkdownPdfCode(candidate.prepared.profile),
+    );
+  }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");
   if (candidate.artifact === "profile") {
@@ -90,7 +102,7 @@ export function markdownPdfCandidateReviewChoices(
             description: "Keep the generated artifact after rendering",
           },
         ];
-  const revisionChoices =
+  const commonRevisionChoices =
     candidate.preparation === "formal-guide"
       ? ([
           { name: "Revise layout", value: "revise-layout" },
@@ -98,9 +110,14 @@ export function markdownPdfCandidateReviewChoices(
           { name: "Revise table of contents", value: "revise-toc" },
         ] as const)
       : [];
+  const codeRevisionChoices =
+    candidate.preparation === "formal-guide" && candidate.artifact === "profile"
+      ? ([{ name: "Revise code highlighting", value: "revise-code" }] as const)
+      : [];
   return [
     ...acceptChoices,
-    ...revisionChoices,
+    ...commonRevisionChoices,
+    ...codeRevisionChoices,
     { name: "Change preparation mode", value: "change-mode" as const },
     { name: "Change artifact", value: "change-artifact" as const },
     { name: "Cancel", value: "cancel" as const },

@@ -671,6 +671,38 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
+  test.each([
+    ["profile", true],
+    ["template-bundle", false],
+    ["project-bundle", true],
+  ] as const)(
+    "shows reusable Profile code settings only for %s candidates",
+    (artifact, ownsProfile) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [...recipesCodexSelections(artifact), "continue", "cancel"],
+        inputQueue: [""],
+        confirmQueue: [false, true],
+      });
+
+      if (ownsProfile) {
+        expect(result.stderr).toContain("Reusable Profile settings:");
+        expect(result.stderr).toContain("- Highlighting: enabled");
+        expect(result.stderr).toContain("- Code highlighting theme: light-plus");
+        expect(result.stderr).toContain("- Line numbers: enabled");
+        expect(result.stderr).toContain("- Transformer notation: disabled");
+      } else {
+        expect(result.stderr).not.toContain("Reusable Profile settings:");
+      }
+      if (artifact === "project-bundle") {
+        expect(
+          result.promptCalls.filter((call) => call.message === "Choose preparation mode"),
+        ).toHaveLength(0);
+      }
+    },
+  );
+
   test("changes output and report binding without preparing the candidate again", () => {
     const result = runInteractiveHarness({
       mode: "run",

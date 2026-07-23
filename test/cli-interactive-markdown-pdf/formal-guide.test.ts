@@ -2,12 +2,16 @@ import { describe, expect, test } from "bun:test";
 
 import {
   collectMarkdownPdfFormalGuideAnswers,
+  collectMarkdownPdfProfileFormalGuideAnswers,
+  compileMarkdownPdfFormalGuideCode,
   compileMarkdownPdfFormalGuideOptions,
+  reviseMarkdownPdfFormalGuideCode,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
   reviseMarkdownPdfFormalGuideToc,
   type MarkdownPdfFormalGuideAnswers,
   type MarkdownPdfFormalGuidePrompts,
+  type MarkdownPdfProfileFormalGuideAnswers,
 } from "../../src/cli/interactive/markdown/formal-guide";
 
 const BASE_ANSWERS: MarkdownPdfFormalGuideAnswers = {
@@ -24,6 +28,10 @@ function createPrompts(
   overrides: Partial<MarkdownPdfFormalGuidePrompts> = {},
 ): MarkdownPdfFormalGuidePrompts {
   return {
+    codeHighlight: () => true,
+    codeTheme: () => "github-light",
+    codeLineNumbers: () => false,
+    codeTransformerNotation: () => false,
     layout: () => BASE_ANSWERS.layout,
     margins: () => BASE_ANSWERS.margins,
     tocEnabled: () => false,
@@ -33,6 +41,66 @@ function createPrompts(
 }
 
 describe("interactive Markdown PDF formal-guide answers", () => {
+  test("collects Profile code highlighting with default-on dependent prompts", async () => {
+    const calls: string[] = [];
+    const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
+      createPrompts({
+        codeHighlight: ({ current }) => {
+          expect(current).toBeUndefined();
+          calls.push("highlight");
+          return true;
+        },
+        codeTheme: ({ current }) => {
+          expect(current).toBe("github-light");
+          calls.push("theme");
+          return "light-plus";
+        },
+        codeLineNumbers: ({ current }) => {
+          expect(current).toBe(false);
+          calls.push("line-numbers");
+          return true;
+        },
+        codeTransformerNotation: ({ current }) => {
+          expect(current).toBe(false);
+          calls.push("transformer-notation");
+          return true;
+        },
+      }),
+    );
+
+    expect(answers.code).toEqual({
+      highlight: true,
+      theme: "light-plus",
+      lineNumbers: true,
+      transformerNotation: true,
+    });
+    expect(calls).toEqual(["highlight", "theme", "line-numbers", "transformer-notation"]);
+  });
+
+  test("skips dependent Profile code prompts when highlighting is disabled", async () => {
+    const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
+      createPrompts({
+        codeHighlight: () => false,
+        codeTheme: () => {
+          throw new Error("theme must not be prompted");
+        },
+        codeLineNumbers: () => {
+          throw new Error("line numbers must not be prompted");
+        },
+        codeTransformerNotation: () => {
+          throw new Error("transformer notation must not be prompted");
+        },
+      }),
+    );
+
+    expect(answers.code).toEqual({
+      highlight: false,
+      theme: "github-light",
+      lineNumbers: false,
+      transformerNotation: false,
+    });
+  });
+
   test("collects layout, margins, and disabled ToC without requesting ToC details", async () => {
     const calls: string[] = [];
     const prompts = createPrompts({
@@ -127,7 +195,7 @@ describe("interactive Markdown PDF formal-guide answers", () => {
   });
 
   test("revises only ToC and supplies existing enabled details", async () => {
-    const answers: MarkdownPdfFormalGuideAnswers = {
+    const answers: MarkdownPdfProfileFormalGuideAnswers = {
       ...BASE_ANSWERS,
       toc: { enabled: true, depth: 2, pageBreak: "before" },
     };
@@ -154,6 +222,80 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(revised.toc).toEqual({ enabled: true, depth: 4, pageBreak: "both" });
     expect(revised.layout).toBe(answers.layout);
     expect(revised.margins).toBe(answers.margins);
+  });
+
+  test("retains the theme and disables dependent settings when revising code off", async () => {
+    const answers: MarkdownPdfProfileFormalGuideAnswers = {
+      ...BASE_ANSWERS,
+      code: {
+        highlight: true,
+        theme: "vitesse-light",
+        lineNumbers: true,
+        transformerNotation: true,
+      },
+    };
+    const revised = await reviseMarkdownPdfFormalGuideCode(
+      answers,
+      createPrompts({
+        codeHighlight: ({ current }) => {
+          expect(current).toBe(true);
+          return false;
+        },
+        codeTheme: () => {
+          throw new Error("theme must not be prompted");
+        },
+        codeLineNumbers: () => {
+          throw new Error("line numbers must not be prompted");
+        },
+        codeTransformerNotation: () => {
+          throw new Error("transformer notation must not be prompted");
+        },
+      }),
+    );
+
+    expect(revised.code).toEqual({
+      highlight: false,
+      theme: "vitesse-light",
+      lineNumbers: false,
+      transformerNotation: false,
+    });
+  });
+
+  test("reuses the retained theme and defaults dependent settings off when revising code on", async () => {
+    const answers: MarkdownPdfFormalGuideAnswers = {
+      ...BASE_ANSWERS,
+      code: {
+        highlight: false,
+        theme: "catppuccin-latte",
+        lineNumbers: false,
+        transformerNotation: false,
+      },
+    };
+    const revised = await reviseMarkdownPdfFormalGuideCode(
+      answers,
+      createPrompts({
+        codeHighlight: () => true,
+        codeTheme: ({ current }) => {
+          expect(current).toBe("catppuccin-latte");
+          return current!;
+        },
+        codeLineNumbers: ({ current }) => {
+          expect(current).toBe(false);
+          return false;
+        },
+        codeTransformerNotation: ({ current }) => {
+          expect(current).toBe(false);
+          return false;
+        },
+      }),
+    );
+
+    expect(revised.code).toEqual({
+      highlight: true,
+      theme: "catppuccin-latte",
+      lineNumbers: false,
+      transformerNotation: false,
+    });
   });
 
   test("omits preset-derived orientation, margins, and disabled ToC details", () => {
@@ -184,6 +326,26 @@ describe("interactive Markdown PDF formal-guide answers", () => {
       tocDepth: 4,
       tocPageBreak: "before",
     });
+  });
+
+  test("compiles all reusable Profile code fields and omits them for Template answers", () => {
+    expect(
+      compileMarkdownPdfFormalGuideCode({
+        ...BASE_ANSWERS,
+        code: {
+          highlight: true,
+          theme: "min-light",
+          lineNumbers: true,
+          transformerNotation: true,
+        },
+      }),
+    ).toEqual({
+      highlight: true,
+      theme: "min-light",
+      lineNumbers: true,
+      transformerNotation: true,
+    });
+    expect(BASE_ANSWERS).not.toHaveProperty("code");
   });
 
   test("compiles and normalizes four custom margin edges", () => {

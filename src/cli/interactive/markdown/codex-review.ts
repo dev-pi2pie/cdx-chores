@@ -12,6 +12,10 @@ import type {
 } from "./codex-types";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 import { collectMarkdownPdfInteractiveFontReview } from "./font-review";
+import {
+  renderReusableMarkdownPdfCodeReview,
+  resolveReusableMarkdownPdfCode,
+} from "./code-highlighting-review";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -81,6 +85,23 @@ function plannedFiles(candidate: PreparedMarkdownPdfCodexCandidate): string[] {
     candidate.prepared.layout.styleCss.bundlePath,
     ...candidate.prepared.layout.assets.map((asset) => asset.bundlePath),
   ];
+}
+
+function reusableCodeProfile(
+  candidate: PreparedMarkdownPdfCodexCandidate,
+): Record<string, unknown> | undefined {
+  if (candidate.artifact === "profile") {
+    return candidate.prepared.kind === "profile" ? candidate.prepared.finalProfile : undefined;
+  }
+  if (candidate.artifact === "template-bundle") {
+    return undefined;
+  }
+  const profileNormalization = candidate.prepared.binding.validation.results.find(
+    (result) => result.name === "profile-normalization",
+  );
+  return profileNormalization?.status === "failed"
+    ? undefined
+    : candidate.prepared.profilePhase.finalProfile;
 }
 
 export function renderMarkdownPdfCodexConsent(
@@ -175,6 +196,11 @@ export function renderMarkdownPdfCodexCandidateReview(
     for (const direction of fontReview.unresolved) {
       printLine(runtime.stderr, `- ${direction}`);
     }
+  }
+  const profile = reusableCodeProfile(candidate);
+  if (profile) {
+    printLine(runtime.stderr, "");
+    renderReusableMarkdownPdfCodeReview(runtime, resolveReusableMarkdownPdfCode(profile));
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");

@@ -10,6 +10,7 @@ import {
   type MarkdownPdfOrientation,
   type MarkdownPdfTocPageBreak,
 } from "../../../markdown-pdf/validation";
+import { MARKDOWN_PDF_CODE_THEMES, type MarkdownPdfCodeTheme } from "../../../markdown-pdf/profile";
 import type { MarkdownPdfFormalGuideMarginAnswers, MarkdownPdfFormalGuidePrompts } from "./types";
 
 function validateMargin(value: string, label: string): true | string {
@@ -31,6 +32,38 @@ async function promptMargin(message: string, current = "18mm"): Promise<string> 
 
 export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePrompts {
   return {
+    async codeHighlight({ current }) {
+      return await confirm({
+        message: "Enable code highlighting in this Profile?",
+        default: current ?? true,
+      });
+    },
+
+    async codeTheme({ current }) {
+      return await select<MarkdownPdfCodeTheme>({
+        message: "Theme",
+        choices: MARKDOWN_PDF_CODE_THEMES.map((value) => ({
+          name: value,
+          value,
+        })),
+        default: current ?? "github-light",
+      });
+    },
+
+    async codeLineNumbers({ current }) {
+      return await confirm({
+        message: "Show line numbers in highlighted code blocks?",
+        default: current ?? false,
+      });
+    },
+
+    async codeTransformerNotation({ current }) {
+      return await confirm({
+        message: "Enable transformer notation in highlighted code blocks?",
+        default: current ?? false,
+      });
+    },
+
     async layout({ current }) {
       const preset = await select({
         message: "Document preset",
@@ -43,7 +76,10 @@ export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePro
       });
       const pageSize = await select({
         message: "Page size",
-        choices: MARKDOWN_PDF_PAGE_SIZES.map((value) => ({ name: value, value })),
+        choices: MARKDOWN_PDF_PAGE_SIZES.map((value) => ({
+          name: value,
+          value,
+        })),
         default: current?.pageSize,
       });
       const orientation = await select<"preset-default" | MarkdownPdfOrientation>({
@@ -106,18 +142,27 @@ export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePro
     },
 
     async tocEnabled({ current }) {
-      return await confirm({ message: "Include a table of contents?", default: current ?? false });
+      return await confirm({
+        message: "Include a table of contents?",
+        default: current ?? false,
+      });
     },
 
     async tocDetails({ current }) {
       const depth = await select<number>({
         message: "Table of contents depth",
-        choices: [1, 2, 3, 4, 5, 6].map((value) => ({ name: String(value), value })),
+        choices: [1, 2, 3, 4, 5, 6].map((value) => ({
+          name: String(value),
+          value,
+        })),
         default: current?.depth ?? 3,
       });
       const pageBreak = await select<MarkdownPdfTocPageBreak>({
         message: "Table of contents page break",
-        choices: MARKDOWN_PDF_TOC_PAGE_BREAKS.map((value) => ({ name: value, value })),
+        choices: MARKDOWN_PDF_TOC_PAGE_BREAKS.map((value) => ({
+          name: value,
+          value,
+        })),
         default: current?.pageBreak ?? "auto",
       });
       return { depth, pageBreak };

@@ -18,24 +18,29 @@ import {
 } from "../../markdown-pdf/template/init-service";
 import type { CliRuntime } from "../../types";
 
-import type { MarkdownPdfFormalGuideAnswers } from "./formal-guide";
+import {
+  compileMarkdownPdfFormalGuideCode,
+  type MarkdownPdfFormalGuideAnswers,
+  type MarkdownPdfProfileFormalGuideAnswers,
+} from "./formal-guide";
 
 export type MarkdownPdfDeterministicArtifact = "profile" | "template-bundle";
 export type MarkdownPdfDeterministicPreparation = "starter" | "formal-guide";
 
 interface PreparedMarkdownPdfDeterministicRecipeBase {
   artifact: MarkdownPdfDeterministicArtifact;
-  formalGuideAnswers?: MarkdownPdfFormalGuideAnswers;
   preparation: MarkdownPdfDeterministicPreparation;
 }
 
 export interface PreparedMarkdownPdfDeterministicProfile extends PreparedMarkdownPdfDeterministicRecipeBase {
   artifact: "profile";
+  formalGuideAnswers?: MarkdownPdfProfileFormalGuideAnswers;
   prepared: PreparedMarkdownPdfProfileInit;
 }
 
 export interface PreparedMarkdownPdfDeterministicTemplate extends PreparedMarkdownPdfDeterministicRecipeBase {
   artifact: "template-bundle";
+  formalGuideAnswers?: MarkdownPdfFormalGuideAnswers;
   prepared: PreparedMarkdownPdfTemplateInit;
 }
 
@@ -55,27 +60,41 @@ export type BoundMarkdownPdfDeterministicRecipe =
       destination: BoundMarkdownPdfTemplateInitDestination;
     };
 
-export function prepareMarkdownPdfDeterministicRecipe(input: {
-  artifact: MarkdownPdfDeterministicArtifact;
-  formalGuideAnswers?: MarkdownPdfFormalGuideAnswers;
-  options?: NormalizeMarkdownPdfOptionsInput;
-  preparation: MarkdownPdfDeterministicPreparation;
-}): PreparedMarkdownPdfDeterministicRecipe {
+type PrepareMarkdownPdfDeterministicRecipeInput =
+  | {
+      artifact: "profile";
+      formalGuideAnswers?: MarkdownPdfProfileFormalGuideAnswers;
+      options?: NormalizeMarkdownPdfOptionsInput;
+      preparation: MarkdownPdfDeterministicPreparation;
+    }
+  | {
+      artifact: "template-bundle";
+      formalGuideAnswers?: MarkdownPdfFormalGuideAnswers;
+      options?: NormalizeMarkdownPdfOptionsInput;
+      preparation: MarkdownPdfDeterministicPreparation;
+    };
+
+export function prepareMarkdownPdfDeterministicRecipe(
+  input: PrepareMarkdownPdfDeterministicRecipeInput,
+): PreparedMarkdownPdfDeterministicRecipe {
   const normalizedOptions = normalizeMarkdownPdfOptions(input.options);
-  const common = {
-    preparation: input.preparation,
-    ...(input.formalGuideAnswers ? { formalGuideAnswers: input.formalGuideAnswers } : {}),
-  };
   if (input.artifact === "profile") {
     return {
-      ...common,
       artifact: "profile",
-      prepared: prepareMarkdownPdfProfileInit(normalizedOptions),
+      preparation: input.preparation,
+      ...(input.formalGuideAnswers ? { formalGuideAnswers: input.formalGuideAnswers } : {}),
+      prepared: prepareMarkdownPdfProfileInit(
+        normalizedOptions,
+        input.formalGuideAnswers
+          ? { code: compileMarkdownPdfFormalGuideCode(input.formalGuideAnswers) }
+          : undefined,
+      ),
     };
   }
   return {
-    ...common,
     artifact: "template-bundle",
+    preparation: input.preparation,
+    ...(input.formalGuideAnswers ? { formalGuideAnswers: input.formalGuideAnswers } : {}),
     prepared: prepareMarkdownPdfTemplateInit(normalizedOptions),
   };
 }

@@ -4,8 +4,9 @@ import type {
   MarkdownPdfPreset,
   MarkdownPdfTocPageBreak,
 } from "../../../markdown-pdf/validation";
+import type { MarkdownPdfCodeTheme } from "../../../markdown-pdf/profile";
 
-export type MarkdownPdfFormalGuideGroup = "layout" | "margins" | "toc";
+export type MarkdownPdfFormalGuideGroup = "code" | "layout" | "margins" | "toc";
 
 export type MarkdownPdfFormalGuideOrientationAnswer =
   | { mode: "preset-default" }
@@ -38,10 +39,21 @@ export type MarkdownPdfFormalGuideTocAnswers =
   | { enabled: false }
   | ({ enabled: true } & MarkdownPdfFormalGuideTocDetails);
 
+export interface MarkdownPdfFormalGuideCodeAnswers {
+  highlight: boolean;
+  theme: MarkdownPdfCodeTheme;
+  lineNumbers: boolean;
+  transformerNotation: boolean;
+}
+
 export interface MarkdownPdfFormalGuideAnswers {
   layout: MarkdownPdfFormalGuideLayoutAnswers;
   margins: MarkdownPdfFormalGuideMarginAnswers;
   toc: MarkdownPdfFormalGuideTocAnswers;
+}
+
+export interface MarkdownPdfProfileFormalGuideAnswers extends MarkdownPdfFormalGuideAnswers {
+  code: MarkdownPdfFormalGuideCodeAnswers;
 }
 
 export interface MarkdownPdfFormalGuidePromptContext<TAnswers> {
@@ -58,6 +70,18 @@ export type MarkdownPdfFormalGuideTocDetailsPromptContext =
 export type MarkdownPdfFormalGuidePromptResult<T> = T | Promise<T>;
 
 export interface MarkdownPdfFormalGuidePrompts {
+  codeHighlight(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
+  codeTheme(
+    context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfCodeTheme>,
+  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfCodeTheme>;
+  codeLineNumbers(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
+  codeTransformerNotation(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
   layout(
     context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuideLayoutAnswers>,
   ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuideLayoutAnswers>;

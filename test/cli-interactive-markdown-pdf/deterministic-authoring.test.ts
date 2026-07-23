@@ -77,6 +77,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "uniform",
         4,
         "after",
+        "github-light",
         "revise-margins",
         "custom",
         "save",
@@ -84,7 +85,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       ],
       inputQueue: ["15mm", "10mm", "11mm", "12mm", "13mm"],
       requiredPathQueue: ["recipes/formal.json"],
-      confirmQueue: [true, false, true],
+      confirmQueue: [true, true, false, false, false, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -124,6 +125,10 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       "Include a table of contents?",
       "Table of contents depth",
       "Table of contents page break",
+      "Enable code highlighting in this Profile?",
+      "Theme",
+      "Show line numbers in highlighted code blocks?",
+      "Enable transformer notation in highlighted code blocks?",
       "Top margin",
       "Right margin",
       "Bottom margin",
@@ -142,6 +147,10 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       "Include a table of contents?",
       "Table of contents depth",
       "Table of contents page break",
+      "Enable code highlighting in this Profile?",
+      "Theme",
+      "Show line numbers in highlighted code blocks?",
+      "Enable transformer notation in highlighted code blocks?",
       "Page margins",
       "Top margin",
       "Right margin",
@@ -162,6 +171,88 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(
       result.selectChoicesByMessage["Table of contents page break"]?.map((choice) => choice.value),
     ).toEqual(["auto", "none", "before", "after", "both"]);
+    expect(result.selectChoicesByMessage["Theme"]?.map((choice) => choice.value)).toEqual([
+      "github-light",
+      "light-plus",
+      "min-light",
+      "vitesse-light",
+      "catppuccin-latte",
+    ]);
+  });
+
+  test("collects, reviews, and revises Profile-only code highlighting", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...RECIPES_ENTRY,
+        "profile",
+        "formal-guide",
+        "article",
+        "A4",
+        "preset-default",
+        "preset-default",
+        "light-plus",
+        "revise-code",
+        "cancel",
+      ],
+      confirmQueue: [false, true, true, true, false],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfDeterministicPrepareCalls[0]?.formalGuideAnswers).toMatchObject({
+      code: {
+        highlight: true,
+        theme: "light-plus",
+        lineNumbers: true,
+        transformerNotation: true,
+      },
+    });
+    expect(result.markdownPdfDeterministicPrepareCalls[1]?.formalGuideAnswers).toMatchObject({
+      code: {
+        highlight: false,
+        theme: "light-plus",
+        lineNumbers: false,
+        transformerNotation: false,
+      },
+    });
+    expect(result.stderr).toContain("Reusable Profile settings:");
+    expect(result.stderr).toContain("- Code highlighting theme: light-plus");
+    expect(result.stderr).toContain("- Code highlighting theme: light-plus (used when enabled)");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+    ).toContain("revise-code");
+  });
+
+  test("keeps Template formal-guide prompts and review free of reusable Profile settings", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...RECIPES_ENTRY,
+        "template-bundle",
+        "formal-guide",
+        "article",
+        "A4",
+        "preset-default",
+        "preset-default",
+        "cancel",
+      ],
+      confirmQueue: [false],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls[0]).not.toHaveProperty(
+      "formalGuideAnswers.code",
+    );
+    expect(
+      result.promptCalls.some(
+        (call) => call.message === "Enable code highlighting in this Profile?",
+      ),
+    ).toBe(false);
+    expect(result.stderr).not.toContain("Reusable Profile settings:");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+    ).not.toContain("revise-code");
   });
 
   test("changes durable output without preparing the candidate again", () => {

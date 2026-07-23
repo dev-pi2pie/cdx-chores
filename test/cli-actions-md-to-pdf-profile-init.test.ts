@@ -89,6 +89,35 @@ describe("cli action modules: md to-pdf profile init", () => {
     });
   });
 
+  test("accepts normalized code settings without changing omitted direct defaults", () => {
+    const normalizedOptions = normalizeMarkdownPdfOptions();
+    const directEquivalent = prepareMarkdownPdfProfileInit(normalizedOptions);
+    const customized = prepareMarkdownPdfProfileInit(normalizedOptions, {
+      code: {
+        highlight: true,
+        theme: "vitesse-light",
+        lineNumbers: true,
+        transformerNotation: true,
+      },
+    });
+
+    expect(directEquivalent.profile.code).toEqual({
+      highlight: false,
+      theme: "github-light",
+      lineNumbers: false,
+      transformerNotation: false,
+    });
+    expect(customized.profile).toEqual({
+      ...directEquivalent.profile,
+      code: {
+        highlight: true,
+        theme: "vitesse-light",
+        lineNumbers: true,
+        transformerNotation: true,
+      },
+    });
+  });
+
   test("prepares once and rebinds YAML and JSON destinations without writing", async () => {
     await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
       const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });
