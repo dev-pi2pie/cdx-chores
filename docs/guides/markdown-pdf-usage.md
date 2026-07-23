@@ -325,7 +325,7 @@ The HTML file is written only when `--html-output` is passed.
 
 ## Code Highlighting
 
-Direct Profile and render highlighting is off by default. Enable Shiki highlighting for a render with:
+Direct Profile initialization and direct rendering default to highlighting off. Enable Shiki highlighting for a render with:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --code-highlight

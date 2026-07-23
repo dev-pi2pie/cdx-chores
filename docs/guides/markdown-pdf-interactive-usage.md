@@ -177,15 +177,22 @@ review has no reusable code-settings block.
 
 ## Prepare Once, Then Commit
 
-Every generated path follows the same boundary:
+Every generated path shares the same preparation boundary:
 
 1. collect preparation answers
 2. prepare one candidate
 3. validate and review that candidate with no writes
+
+A render-capable `to-pdf` continuation then:
+
 4. choose the concrete save or render lifecycle
 5. for rendering, choose code highlighting for this PDF
 6. choose outputs and review the effective render
 7. materialize and render without implicit regeneration
+
+The `pdf-recipes` save-only path instead chooses a durable destination and
+writes the reviewed candidate. Its optional render handoff starts the shared
+`to-pdf` flow after that save.
 
 Changing Codex setup invalidates the previous candidate. Changing only a local
 destination or the one-render highlighting override does not request another
