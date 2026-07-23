@@ -415,36 +415,36 @@ Phase gate:
 Tasks:
 
 - [x] Create the Phase 2 job record.
-- [ ] Add the shared `Code highlighting for this PDF` prompt and choice-to-
+- [x] Add the shared `Code highlighting for this PDF` prompt and choice-to-
       optional-boolean compiler.
-- [ ] Split existing source selection from authoritative renderer preparation
+- [x] Split existing source selection from authoritative renderer preparation
       without duplicating bundle or explicit-role resolution.
-- [ ] Collect the override after built-in, existing Profile, existing bundle,
+- [x] Collect the override after built-in, existing Profile, existing bundle,
       or Custom source selection and before preparation.
-- [ ] Show inherit, enable, and disable unconditionally; do not pre-resolve a
+- [x] Show inherit, enable, and disable unconditionally; do not pre-resolve a
       bundle or Custom Profile merely to condition the prompt.
-- [ ] Apply the same order to a saved Profile or bundle entering through
+- [x] Apply the same order to a saved Profile or bundle entering through
       `pdf-recipes -> to-pdf` handoff.
-- [ ] Pass only the compiled `codeHighlight` value to
+- [x] Pass only the compiled `codeHighlight` value to
       `prepareMarkdownPdfRender`.
-- [ ] Render separate reusable Profile, render override, and effective code
+- [x] Render separate reusable Profile, render override, and effective code
       blocks in recipe and final render reviews.
-- [ ] Omit the reusable block when no Profile is resolved.
-- [ ] Add `Change code highlighting` navigation while retaining Markdown input,
+- [x] Omit the reusable block when no Profile is resolved.
+- [x] Add `Change code highlighting` navigation while retaining Markdown input,
       source selection, and resolved output state.
-- [ ] Implement Back and Cancel without an implicit write or render.
-- [ ] Return existing, built-in, and Custom Back actions to recipe-source
+- [x] Implement Back and Cancel without an implicit write or render.
+- [x] Return existing, built-in, and Custom Back actions to recipe-source
       selection, and handoff Back actions to Markdown-input selection.
-- [ ] Reset the override to inherit when those Back actions establish a new
+- [x] Reset the override to inherit when those Back actions establish a new
       source or Markdown-input context.
-- [ ] Add focused tests for inherit, enable, and disable across built-in,
+- [x] Add focused tests for inherit, enable, and disable across built-in,
       existing Profile, existing bundle, Custom, Template-only, and handoff
       paths.
-- [ ] Cover no-Profile `Use recipe setting` and Template-only
+- [x] Cover no-Profile `Use recipe setting` and Template-only
       `Enable for this render` explicitly.
-- [ ] Prove existing-bundle and Custom prompts expose all three choices before
+- [x] Prove existing-bundle and Custom prompts expose all three choices before
       authoritative Profile resolution.
-- [ ] Review the exact Phase 2 change range and resolve actionable findings.
+- [x] Review the exact Phase 2 change range and resolve actionable findings.
 
 Phase gate:
 
