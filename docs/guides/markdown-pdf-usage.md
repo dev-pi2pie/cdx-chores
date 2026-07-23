@@ -368,6 +368,9 @@ Unknown, dark, or non-allowlisted theme names fail validation instead of silentl
 Interactive mode reuses this direct and Profile contract rather than defining
 another code-highlighting schema.
 
+This table mirrors the interactive prompt choices; the interactive guide
+covers prompt placement, backtracking, and generated lifecycle behavior.
+
 Interactive Profile `formal-guide` includes a Code highlighting section.
 Highlighting defaults to enabled in that guided Profile flow, Theme defaults
 to `github-light`, and line numbers and transformer notation default to off.

@@ -116,7 +116,7 @@ groups can be revised independently without changing artifact type.
 For a Profile, `formal-guide` also adds a Code highlighting section:
 
 1. `Enable code highlighting in this Profile?` defaults to yes.
-2. When enabled, `Theme` chooses one of the supported light themes.
+2. When enabled, the code highlighting `Theme` chooses one of the supported light themes.
 3. Line numbers and transformer notation are optional and default to off.
 
 `Theme` is part of Code highlighting. When highlighting is disabled,

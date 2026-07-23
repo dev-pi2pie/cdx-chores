@@ -29,20 +29,20 @@ accepted evidence.
 
 ## Documentation Checklist
 
-- [ ] Update the Interactive usage guide to the shipped ownership, prompts,
+- [x] Update the Interactive usage guide to the shipped ownership, prompts,
       review, navigation, and lifecycle contract.
-- [ ] Add a concise Interactive mapping to the direct Markdown PDF usage guide.
-- [ ] Keep Template code-setting ownership and Project Codex-only preparation
+- [x] Add a concise Interactive mapping to the direct Markdown PDF usage guide.
+- [x] Keep Template code-setting ownership and Project Codex-only preparation
       explicit.
-- [ ] Keep guide status and modification metadata accurate.
+- [x] Keep guide status and modification metadata accurate.
 
 ## Validation Checklist
 
-- [ ] Run focused Interactive Markdown PDF coverage.
-- [ ] Run direct CLI omitted, enable, and disable regression coverage.
-- [ ] Run TypeScript, lint, format, build, full tests, and whitespace checks.
-- [ ] Complete the representative real-render PDF matrix.
-- [ ] Record only repository-relative and sanitized evidence.
+- [x] Run focused Interactive Markdown PDF coverage.
+- [x] Run direct CLI omitted, enable, and disable regression coverage.
+- [x] Run TypeScript, lint, format, build, full tests, and whitespace checks.
+- [x] Complete the representative real-render PDF matrix.
+- [x] Record only repository-relative and sanitized evidence.
 
 ## Review Checklist
 
@@ -54,8 +54,17 @@ accepted evidence.
 
 ## Evidence
 
-Implementation, validation, commit, and review evidence will be added only
-after the corresponding checkpoints pass.
+Documentation closeout work:
+
+- `docs/guides/markdown-pdf-interactive-usage.md` now says the code
+  highlighting `Theme` lives inside the Code highlighting section and remains
+  conditional on highlight enablement.
+- `docs/guides/markdown-pdf-usage.md` now adds a short pointer that the
+  interactive mapping table mirrors the shipped prompt flow and lifecycle.
+- `git diff --check` passed on the documentation-only diff.
+
+Previously recorded implementation and validation evidence from Phases 1–3
+remains authoritative for the shipped behavior and renderer matrix.
 
 ## Related Research
 
