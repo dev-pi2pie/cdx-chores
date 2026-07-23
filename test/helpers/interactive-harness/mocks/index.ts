@@ -4,6 +4,7 @@ import { installDataQueryMocks } from "./data-query";
 import { installFsPromiseMocks } from "./fs";
 import { installPathPromptMocks } from "./path-prompts";
 import { installPromptMocks } from "./prompts";
+import { installMarkdownPdfMocks } from "./markdown-pdf";
 
 function needsDataQueryMocks(context: HarnessRunnerContext): boolean {
   return Boolean(
@@ -33,6 +34,9 @@ export function installHarnessMocks(context: HarnessRunnerContext): void {
   installFsPromiseMocks(context);
   installActionMocks(context);
   installPathPromptMocks(context);
+  if (context.scenario.markdownPdfMocks) {
+    installMarkdownPdfMocks(context);
+  }
   if (needsDataQueryMocks(context)) {
     installDataQueryMocks(context);
   }

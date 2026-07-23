@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-07-10
+modified-date: 2026-07-22
 status: completed
 agent: codex
 ---
@@ -12,8 +12,9 @@ Document the direct `md pdf-template codex` helper for drafting reviewable
 Markdown PDF template bundles from bounded document signals, intent, font hints,
 base-profile signals, and local cover-image signals.
 
-This guide covers the direct template helper only. It does not cover the later
-hybrid one-shot helper or Interactive Markdown PDF mode.
+This guide covers the direct template helper only. For guided Template bundle
+preparation, temporary or durable rendering, and saved-recipe handoff, see
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -295,6 +296,7 @@ read an existing `template.html` or `style.css` as a refinement input.
 
 ## Related Docs
 
+- [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
 - [PDF Backend License Guidance](pdf-backend-license-guidance.md)

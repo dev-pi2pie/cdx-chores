@@ -1,4 +1,19 @@
 export { actionMdPdfProfileCodex } from "./run";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
+export {
+  bindMarkdownPdfProfileCodexDestination,
+  type BoundMarkdownPdfProfileCodexDestination,
+  type MarkdownPdfProfileCodexDestinationOptions,
+} from "./destination";
+export { commitPreparedMarkdownPdfProfileCodex } from "./commit";
+export {
+  prepareMarkdownPdfProfileCodex,
+  type MarkdownPdfProfileCodexReportPayload,
+  type PreparedMarkdownPdfProfileCodex,
+  type PreparedMarkdownPdfProfileCodexFailure,
+  type PreparedMarkdownPdfProfileCodexNoUsable,
+  type PreparedMarkdownPdfProfileCodexSuccess,
+} from "./prepare";
 export type { MdPdfProfileCodexCliOptions, MdPdfProfileCodexOptions } from "./types";
 export {
   classifyMarkdownPdfProfileCodexSignalMode,

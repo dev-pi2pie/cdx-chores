@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-10
+modified-date: 2026-07-23
 status: completed
 agent: codex
 ---
@@ -31,11 +31,15 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-## Current Release Boundary
+## Current Command Boundary
 
-Markdown PDF rendering, profile initialization, template initialization, and the
-direct Codex-assisted profile, template, and project helpers are direct CLI
-flows. Interactive Markdown PDF flows remain deferred to a later plan.
+Markdown PDF rendering, profile initialization, template initialization, and
+the Codex-assisted profile, template, and project helpers remain available as
+direct CLI flows. Interactive mode now orchestrates the same artifacts through
+`md -> to-pdf` for rendering and `md -> pdf-recipes` for durable authoring.
+
+See [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md) for the
+guided preparation, review, lifecycle, recovery, and handoff behavior.
 
 ## Codex Helper Choice
 
@@ -321,7 +325,7 @@ The HTML file is written only when `--html-output` is passed.
 
 ## Code Highlighting
 
-Code highlighting is off by default. Enable Shiki highlighting for a render with:
+Direct Profile initialization and direct rendering default to highlighting off. Enable Shiki highlighting for a render with:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --code-highlight
@@ -358,6 +362,42 @@ Supported Shiki light themes are:
 - `catppuccin-latte`
 
 Unknown, dark, or non-allowlisted theme names fail validation instead of silently falling back. `--code-highlight` can enable highlighting for a profile that leaves `code.highlight` false, while `--no-code-highlight` disables highlighting, line numbers, and transformer notation for that render.
+
+### Interactive Mapping
+
+Interactive mode reuses this direct and Profile contract rather than defining
+another code-highlighting schema.
+
+This table mirrors the interactive prompt choices; the interactive guide
+covers prompt placement, backtracking, and generated lifecycle behavior.
+
+Interactive Profile `formal-guide` includes a Code highlighting section.
+Highlighting defaults to enabled in that guided Profile flow, Theme defaults
+to `github-light`, and line numbers and transformer notation default to off.
+Theme is part of Code highlighting and is asked only when highlighting is
+enabled. Disabling the section skips its dependent prompts and forces line
+numbers and transformer notation off.
+
+That guided default does not change direct Profile initialization or
+Interactive Profile `starter`; both remain off by default.
+
+For each Interactive `to-pdf` render, `Code highlighting for this PDF` maps to
+the existing direct behavior:
+
+| Interactive choice | Direct equivalent | Behavior |
+| --- | --- | --- |
+| `Use recipe setting` | omit both flags | Use the resolved Profile; without one, remain off. |
+| `Enable for this render` | `--code-highlight` | Enable Shiki for this PDF without mutating the Profile. |
+| `Disable for this render` | `--no-code-highlight` | Disable highlighting and its dependent features for this PDF. |
+
+Theme, line numbers, and transformer notation remain Profile-owned. Template
+bundles own Shiki-compatible CSS only and expose no reusable code settings.
+A Project bundle can carry code settings through its contained Profile, while
+Project preparation remains Codex Assistant-only. Interactive reviews
+separate reusable Profile settings, the one-render override, and the effective
+render. See
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md) for prompt
+placement, navigation, and generated lifecycle behavior.
 
 Line numbers are profile-only:
 
@@ -506,7 +546,7 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 `md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
 
-`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, font stacks, and code highlighting. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
 
@@ -524,8 +564,9 @@ The Codex profile helper stays inside the profile boundary. Use custom templates
 | Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
 | Render with | `md to-pdf --profile ...` or a profile-only `--bundle` | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
 
-Template bundles can style highlighted code, but Shiki is enabled only by
-`md to-pdf --code-highlight` or an effective profile.
+Template bundles can style highlighted code, but Shiki is enabled only by an
+effective Profile or a render override such as `md to-pdf --code-highlight`
+or Interactive `Enable for this render`.
 
 For a Codex-assisted path that drafts reviewable template artifacts, use
 `md pdf-template codex`:

@@ -1,5 +1,21 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
+  markdownPdfMocks?: boolean;
+  markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
+  markdownPdfIgnoredBundleFiles?: string[];
+  markdownPdfPrepareErrorMessage?: string;
+  markdownPdfPrepareErrorMessages?: string[];
+  markdownPdfDeterministicBindErrorMessage?: string;
+  markdownPdfDeterministicWriteErrorMessages?: string[];
+  markdownPdfCodexBindErrorMessage?: string;
+  markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
+  markdownPdfRenderWarnings?: string[];
+  markdownPdfRenderErrorMessages?: string[];
+  markdownPdfOutputErrorMessages?: string[];
+  markdownPdfCleanupErrorMessage?: string;
+  markdownPdfFontFamilies?: string[];
+  markdownPdfFontFamilyRuns?: string[][];
+  markdownPdfFontDiscoveryErrorMessage?: string;
   selectQueue?: unknown[];
   nowIsoString?: string;
   checkboxQueue?: unknown[];
@@ -7,6 +23,7 @@ export interface InteractiveHarnessScenario {
   editorQueue?: string[];
   existingPaths?: string[];
   inputQueue?: string[];
+  searchQueue?: Array<string | { term?: string; value: string }>;
   requiredPathQueue?: string[];
   statExistsQueue?: boolean[];
   optionalPathQueue?: Array<string | undefined>;
@@ -53,12 +70,17 @@ export interface InteractiveHarnessScenario {
 
 export interface InteractiveHarnessResult {
   promptCalls: Array<{
-    kind: "select" | "checkbox" | "confirm" | "input" | "editor";
+    kind: "select" | "checkbox" | "confirm" | "input" | "editor" | "search";
     message: string;
     defaultValue?: string;
     postfix?: string;
   }>;
   selectChoicesByMessage: Record<
+    string,
+    Array<{ name: string; value: string; description?: string }>
+  >;
+  selectDefaultsByMessage: Record<string, string[]>;
+  searchChoicesByMessage: Record<
     string,
     Array<{ name: string; value: string; description?: string }>
   >;
@@ -74,6 +96,20 @@ export interface InteractiveHarnessResult {
   stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
   codexReportWrites: Array<{ path: string; options: Record<string, unknown> }>;
   removedPaths: string[];
+  markdownPdfPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfPlanCalls: Array<Record<string, unknown>>;
+  markdownPdfExecuteCalls: Array<Record<string, unknown>>;
+  markdownPdfBundleDiscoveryCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicBindCalls: Array<Record<string, unknown>>;
+  markdownPdfDeterministicWriteCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexPrepareCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexBindCalls: Array<Record<string, unknown>>;
+  markdownPdfCodexWriteCalls: Array<Record<string, unknown>>;
+  markdownPdfSessionCreateCalls: string[];
+  markdownPdfSessionRetainCalls: string[];
+  markdownPdfSessionCleanupCalls: string[];
+  markdownPdfFontDiscoveryCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;

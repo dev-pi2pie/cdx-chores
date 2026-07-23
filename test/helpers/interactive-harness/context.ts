@@ -32,12 +32,28 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
   return {
     promptCalls: [],
     selectChoicesByMessage: {},
+    selectDefaultsByMessage: {},
+    searchChoicesByMessage: {},
     validationCalls: [],
     pathCalls: [],
     actionCalls: [],
     stackPlanWrites: [],
     codexReportWrites: [],
     removedPaths: [],
+    markdownPdfPrepareCalls: [],
+    markdownPdfPlanCalls: [],
+    markdownPdfExecuteCalls: [],
+    markdownPdfBundleDiscoveryCalls: [],
+    markdownPdfDeterministicPrepareCalls: [],
+    markdownPdfDeterministicBindCalls: [],
+    markdownPdfDeterministicWriteCalls: [],
+    markdownPdfCodexPrepareCalls: [],
+    markdownPdfCodexBindCalls: [],
+    markdownPdfCodexWriteCalls: [],
+    markdownPdfSessionCreateCalls: [],
+    markdownPdfSessionRetainCalls: [],
+    markdownPdfSessionCleanupCalls: [],
+    markdownPdfFontDiscoveryCalls: [],
   };
 }
 

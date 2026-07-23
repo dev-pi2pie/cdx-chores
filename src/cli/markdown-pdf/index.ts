@@ -1,5 +1,6 @@
 export { createMarkdownPdfCss, createMarkdownPdfRecipe, createMarkdownPdfTemplate } from "./recipe";
 export type { CreateMarkdownPdfRecipeInput, MarkdownPdfRecipe } from "./recipe";
+export type { MarkdownPdfCodexReportBinding } from "./codex-report-binding";
 export { renderMarkdownPdf } from "./render";
 export type {
   MarkdownPdfCodeHighlighter,
@@ -20,6 +21,7 @@ export type {
 } from "./render-bundle";
 export {
   discoverMarkdownPdfRenderBundle,
+  previewMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
 } from "./render-bundle";
 export {

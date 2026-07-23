@@ -24,10 +24,17 @@ export interface FontDiscoveryCommandResult {
 export type FontDiscoveryCommandRunner = (
   command: string,
   args: string[],
+  options?: FontDiscoveryRunOptions,
 ) => Promise<FontDiscoveryCommandResult>;
+
+export interface FontDiscoveryRunOptions {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
 
 export interface FontDiscoveryAdapterInput {
   runner: FontDiscoveryCommandRunner;
+  runOptions?: FontDiscoveryRunOptions;
 }
 
 export interface FontDiscoveryAdapterResult {
@@ -60,6 +67,8 @@ export interface DiscoverFontsInput {
   runner?: FontDiscoveryCommandRunner;
   discovery?: FontDiscoveryMode;
   includeAttempts?: boolean;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 export interface DiscoverFontsResult {

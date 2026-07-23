@@ -10,7 +10,10 @@ import type {
   MarkdownPdfCodexSignalMode,
 } from "../../../adapters/codex/markdown-pdf-profile/types";
 import {
-  startDirectCodexProgress,
+  createCodexProgressSession,
+  createDirectCodexProgressPresenter,
+  type CodexProgressPresenter,
+  type CodexProgressSession,
   type DirectCodexProgressStatus,
 } from "../../actions/codex-progress";
 import type { CliRuntime } from "../../types";
@@ -115,10 +118,18 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
 async function suggestMarkdownPdfCodexProfileWithProgress(input: {
   context: MarkdownPdfCodexProfileOrchestrationContext;
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;
+  progressPresenter?: CodexProgressPresenter;
+  progressSession?: CodexProgressSession;
   progressLabel: string;
   runtime: CliRuntime;
 }): Promise<MarkdownPdfCodexProfileResult> {
-  const codexProgress = startDirectCodexProgress(input.runtime.stderr, input.progressLabel);
+  const ownsProgressSession = !input.progressSession;
+  const codexProgress =
+    input.progressSession ??
+    createCodexProgressSession(
+      input.progressPresenter ?? createDirectCodexProgressPresenter(input.runtime.stderr),
+    );
+  codexProgress.begin(input.progressLabel);
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
     const result = input.profileCodexRunner
@@ -134,7 +145,9 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
       : "error";
     return result;
   } finally {
-    codexProgress.stop(codexProgressStatus);
+    if (ownsProgressSession) {
+      codexProgress.stop(codexProgressStatus);
+    }
   }
 }
 
@@ -172,6 +185,8 @@ function requireSelectedMarkdownPdfCodexProfileCandidate(input: {
 export async function runMarkdownPdfCodexProfileOrchestration(input: {
   context: MarkdownPdfCodexProfileOrchestrationContext;
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;
+  progressPresenter?: CodexProgressPresenter;
+  progressSession?: CodexProgressSession;
   progressLabel: string;
   runtime: CliRuntime;
 }): Promise<MarkdownPdfCodexProfileOrchestrationResult> {

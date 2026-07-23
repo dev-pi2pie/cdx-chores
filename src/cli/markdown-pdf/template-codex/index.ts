@@ -1,4 +1,6 @@
 export { normalizeMdPdfTemplateCodexCommandState } from "./options";
+export { prepareMdPdfTemplateCodex } from "./prepare";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 export { collectMdPdfTemplateCodexSignals } from "./signals";
 export { createMdPdfTemplateCodexBundleId } from "./identity";
 export {
@@ -21,6 +23,14 @@ export {
 } from "./synthesize";
 export { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
 export { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
+export {
+  bindPreparedMdPdfTemplateCodexOutput,
+  createPreparedMdPdfTemplateCodexArtifact,
+  rebindPreparedMdPdfTemplateCodexArtifact,
+  writePreparedMdPdfTemplateCodexBundle,
+  writePreparedMdPdfTemplateCodexReport,
+  type PreparedMdPdfTemplateCodexArtifact,
+} from "./prepared";
 export {
   createMdPdfTemplateCodexReportArtifact,
   MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,

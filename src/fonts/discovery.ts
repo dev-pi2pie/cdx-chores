@@ -10,18 +10,28 @@ import type {
   FontDiscoveryAdapter,
   FontDiscoveryAttempt,
   FontDiscoveryCommandRunner,
+  FontDiscoveryRunOptions,
   FontDiscoveryMode,
 } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
-export const defaultFontDiscoveryRunner: FontDiscoveryCommandRunner = (command, args) =>
+function normalizedTimeoutMs(timeoutMs: number | undefined): number {
+  return timeoutMs ?? DEFAULT_TIMEOUT_MS;
+}
+
+export const defaultFontDiscoveryRunner: FontDiscoveryCommandRunner = (command, args, options) =>
   new Promise((resolve) => {
+    const timeoutMs = normalizedTimeoutMs(options?.timeoutMs);
     execFile(
       command,
       args,
-      { timeout: DEFAULT_TIMEOUT_MS, maxBuffer: DEFAULT_MAX_BUFFER_BYTES },
+      {
+        maxBuffer: DEFAULT_MAX_BUFFER_BYTES,
+        signal: options?.signal,
+        timeout: timeoutMs,
+      },
       (error, stdout, stderr) => {
         const detail = stderr || (error instanceof Error ? error.message : "");
         resolve({
@@ -81,9 +91,9 @@ function createDebugRunner(
   attempts: FontDiscoveryAttempt[],
   adapter: string,
 ): FontDiscoveryCommandRunner {
-  return async (command, args) => {
+  return async (command, args, options) => {
     const startedAt = Date.now();
-    const result = await runner(command, args);
+    const result = await runner(command, args, options);
     attempts.push({
       adapter,
       command,
@@ -106,9 +116,11 @@ async function discoverWithAdapter(
   adapter: FontDiscoveryAdapter,
   runner: FontDiscoveryCommandRunner,
   attempts: FontDiscoveryAttempt[],
+  runOptions?: FontDiscoveryRunOptions,
 ): Promise<DiscoverFontsResult> {
   const result = await adapter.discover({
     runner: createDebugRunner(runner, attempts, adapter.name),
+    runOptions,
   });
   return {
     faces: result.faces,
@@ -122,8 +134,9 @@ async function discoverFontconfig(
   mode: FontDiscoveryMode,
   runner: FontDiscoveryCommandRunner,
   attempts: FontDiscoveryAttempt[],
+  runOptions?: FontDiscoveryRunOptions,
 ): Promise<DiscoverFontsResult> {
-  const result = await discoverWithAdapter(fontconfigFontAdapter, runner, attempts);
+  const result = await discoverWithAdapter(fontconfigFontAdapter, runner, attempts, runOptions);
   return {
     ...result,
     discovery: mode,
@@ -135,8 +148,14 @@ async function discoverNative(
   mode: FontDiscoveryMode,
   runner: FontDiscoveryCommandRunner,
   attempts: FontDiscoveryAttempt[],
+  runOptions?: FontDiscoveryRunOptions,
 ): Promise<DiscoverFontsResult> {
-  const result = await discoverWithAdapter(nativeAdapterForPlatform(platform), runner, attempts);
+  const result = await discoverWithAdapter(
+    nativeAdapterForPlatform(platform),
+    runner,
+    attempts,
+    runOptions,
+  );
   return {
     ...result,
     discovery: mode,
@@ -146,8 +165,14 @@ async function discoverNative(
 async function discoverMacosAuto(
   runner: FontDiscoveryCommandRunner,
   attempts: FontDiscoveryAttempt[],
+  runOptions?: FontDiscoveryRunOptions,
 ): Promise<DiscoverFontsResult> {
-  const fontconfigResult = await discoverWithAdapter(fontconfigFontAdapter, runner, attempts);
+  const fontconfigResult = await discoverWithAdapter(
+    fontconfigFontAdapter,
+    runner,
+    attempts,
+    runOptions,
+  );
   if (fontconfigResult.faces.length > 0) {
     return {
       ...fontconfigResult,
@@ -157,7 +182,7 @@ async function discoverMacosAuto(
     };
   }
 
-  const nativeResult = await discoverWithAdapter(macosFontAdapter, runner, attempts);
+  const nativeResult = await discoverWithAdapter(macosFontAdapter, runner, attempts, runOptions);
   return {
     ...nativeResult,
     discovery: "auto",
@@ -173,9 +198,13 @@ export async function discoverSystemFonts(
   const runner = input.runner ?? defaultFontDiscoveryRunner;
   const attempts: FontDiscoveryAttempt[] = [];
   const includeAttempts = input.includeAttempts ?? false;
+  const runOptions = {
+    signal: input.signal,
+    timeoutMs: input.timeoutMs,
+  } satisfies FontDiscoveryRunOptions;
 
   if (mode === "fontconfig") {
-    const result = await discoverFontconfig(mode, runner, attempts);
+    const result = await discoverFontconfig(mode, runner, attempts, runOptions);
     return {
       ...result,
       attempts: attemptResult(includeAttempts, attempts),
@@ -183,7 +212,7 @@ export async function discoverSystemFonts(
   }
 
   if (mode === "native") {
-    const result = await discoverNative(platform, mode, runner, attempts);
+    const result = await discoverNative(platform, mode, runner, attempts, runOptions);
     return {
       ...result,
       attempts: attemptResult(includeAttempts, attempts),
@@ -192,8 +221,8 @@ export async function discoverSystemFonts(
 
   const result =
     platform === "darwin"
-      ? await discoverMacosAuto(runner, attempts)
-      : await discoverNative(platform, mode, runner, attempts);
+      ? await discoverMacosAuto(runner, attempts, runOptions)
+      : await discoverNative(platform, mode, runner, attempts, runOptions);
 
   return {
     ...result,

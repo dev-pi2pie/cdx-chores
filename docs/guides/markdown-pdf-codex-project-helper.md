@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-07-10
+modified-date: 2026-07-22
 status: completed
 agent: codex
 ---
@@ -12,8 +12,9 @@ Document the direct `md pdf-project codex` helper for drafting one coordinated
 Markdown PDF project folder from shared document signals, intent, font hints,
 base profiles, and local cover-image signals.
 
-This guide covers the direct project helper only. Interactive Markdown PDF flows
-remain a later workflow layer.
+This guide covers the direct project helper only. For guided Project bundle
+preparation, temporary or durable rendering, and saved-recipe handoff, see
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -205,6 +206,7 @@ bundle-relative paths plus source basenames and metadata.
 
 ## Related Docs
 
+- [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Project Codex Helper Research](../researches/research-2026-07-03-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF project Codex helper implementation plan](../plans/plan-2026-07-04-markdown-pdf-project-codex-helper.md)

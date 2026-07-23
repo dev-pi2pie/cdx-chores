@@ -4,7 +4,9 @@ import {
   type MarkdownPdfTemplateCodexRunner,
 } from "../../../adapters/codex/markdown-pdf-template";
 import {
-  startDirectCodexProgress,
+  createCodexProgressSession,
+  createDirectCodexProgressPresenter,
+  type CodexProgressSession,
   type DirectCodexProgressStatus,
 } from "../../actions/codex-progress";
 import type { CliRuntime } from "../../types";
@@ -135,14 +137,16 @@ function templatePhaseDecisionMode(
 async function suggestProjectTemplateWithCodexProgress(input: {
   intent?: string;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  progressSession?: CodexProgressSession;
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
 }): Promise<MarkdownPdfTemplateCodexResult> {
-  const codexProgress = startDirectCodexProgress(
-    input.runtime.stderr,
-    "Requesting Codex Markdown PDF project template recommendation",
-  );
+  const ownsProgressSession = !input.progressSession;
+  const codexProgress =
+    input.progressSession ??
+    createCodexProgressSession(createDirectCodexProgressPresenter(input.runtime.stderr));
+  codexProgress.begin("Requesting Codex Markdown PDF project template recommendation");
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
     const result = input.templateCodexRunner
@@ -167,12 +171,15 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           : "error";
     return result;
   } finally {
-    codexProgress.stop(codexProgressStatus);
+    if (ownsProgressSession) {
+      codexProgress.stop(codexProgressStatus);
+    }
   }
 }
 
 export async function runMdPdfProjectCodexTemplatePhase(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
+  progressSession?: CodexProgressSession;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
@@ -197,6 +204,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     ? await suggestProjectTemplateWithCodexProgress({
         intent,
         outputPlan,
+        progressSession: input.progressSession,
         runtime: input.runtime,
         signals,
         templateCodexRunner: input.templateCodexRunner,

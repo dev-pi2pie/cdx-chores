@@ -32,7 +32,7 @@ const PROJECT_CODEX_OUTPUT_RETRY_LIMIT = 10;
 const PROFILE_BUNDLE_PATH = "profile.yml";
 const TEMPLATE_HTML_BUNDLE_PATH = "template.html";
 const STYLE_CSS_BUNDLE_PATH = "style.css";
-const DEFAULT_REPORT_BUNDLE_PATH = "project.codex-report.json";
+export const MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH = "project.codex-report.json";
 
 export type MdPdfProjectCodexOutputWriteMode = "bundle" | "report-only";
 
@@ -83,7 +83,7 @@ function plannedReportFile(
     };
   }
   return {
-    ...plannedBundleFile(outputDirectory, DEFAULT_REPORT_BUNDLE_PATH),
+    ...plannedBundleFile(outputDirectory, MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH),
     location: "in-bundle",
   };
 }

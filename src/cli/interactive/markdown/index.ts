@@ -1,20 +1,34 @@
 import { confirm, select } from "@inquirer/prompts";
 
-import { actionMdFrontmatterToJson, actionMdToDocx } from "../actions";
+import { actionMdFrontmatterToJson, actionMdToDocx } from "../../actions";
 import {
   formatDefaultOutputPathHint,
   promptOptionalOutputPathChoice,
   promptRequiredPathWithConfig,
-} from "../prompts/path";
-import type { CliRuntime } from "../types";
-import type { MarkdownInteractiveActionKey } from "./menu";
-import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
+} from "../../prompts/path";
+import type { CliRuntime } from "../../types";
+import type { MarkdownInteractiveActionKey } from "../menu";
+import {
+  assertNeverInteractiveAction,
+  type InteractiveNavigationOutcome,
+  type InteractivePathPromptContext,
+} from "../shared";
+import { handleMarkdownPdfRecipesInteractiveAction } from "./pdf-recipes";
+import { handleMarkdownPdfToPdfInteractiveAction } from "./to-pdf";
 
 export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
-): Promise<void> {
+): Promise<InteractiveNavigationOutcome> {
+  if (action === "md:to-pdf") {
+    return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
+  }
+
+  if (action === "md:pdf-recipes") {
+    return await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext);
+  }
+
   if (action === "md:to-docx") {
     const inputPath = await promptRequiredPathWithConfig("Input Markdown file", {
       kind: "file",
@@ -34,7 +48,7 @@ export async function handleMarkdownInteractiveAction(
       output: outputPath,
       overwrite,
     });
-    return;
+    return { kind: "complete" };
   }
 
   if (action !== "md:frontmatter-to-json") {
@@ -91,4 +105,5 @@ export async function handleMarkdownInteractiveAction(
     pretty,
     dataOnly: outputShape === "data-only",
   });
+  return { kind: "complete" };
 }

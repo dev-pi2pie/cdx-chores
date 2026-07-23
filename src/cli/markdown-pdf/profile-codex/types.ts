@@ -1,4 +1,5 @@
 import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
+import type { CodexProgressPresenter } from "../../actions/codex-progress";
 
 export interface MdPdfProfileCodexOptions {
   input?: string;
@@ -12,10 +13,11 @@ export interface MdPdfProfileCodexOptions {
   codexReportOutput?: string;
   overwrite?: boolean;
   codexRunner?: MarkdownPdfCodexProfileRunner;
+  codexProgressPresenter?: CodexProgressPresenter;
   profileUidFactory?: (now: Date) => string;
 }
 
 export type MdPdfProfileCodexCliOptions = Omit<
   MdPdfProfileCodexOptions,
-  "codexRunner" | "profileUidFactory"
+  "codexProgressPresenter" | "codexRunner" | "profileUidFactory"
 >;

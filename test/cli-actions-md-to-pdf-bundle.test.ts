@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { actionMdToPdf } from "../src/cli/actions";
 import {
   discoverMarkdownPdfRenderBundle,
+  previewMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
   type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
@@ -230,6 +231,23 @@ describe("Markdown PDF render bundle discovery", () => {
       });
     },
   );
+
+  test("previews valid roles without rejecting invalid or empty profile candidates", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-preview", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "invalid-profile.yml"), "page: true\n", "utf8");
+      await writeFile(join(fixtureDir, "notes.json"), '{"rows":[]}\n', "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+
+      const result = await previewMarkdownPdfRenderBundle(fixtureDir);
+
+      expect(candidateNames(result)).toEqual({
+        profile: [],
+        template: ["template.html"],
+        css: [],
+      });
+      expect(result.ignoredProfileFiles).toEqual(["notes.json"]);
+    });
+  });
 
   test("keeps all recognized Markdown PDF report forms silent beside a profile", async () => {
     await withTempFixtureDir("md-pdf-render-bundle-all-reports", async (fixtureDir) => {
