@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Code Highlighting"
 created-date: 2026-07-23
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -214,6 +214,13 @@ Do not add Theme, line-number, or transformer-notation overrides to this
 render-time block. Those remain reusable Profile settings. The Interactive
 choice should compile immediately to the existing optional boolean rather than
 introducing a persisted preference or another recipe type.
+
+## Outcome
+
+The follow-up contract is now implemented and documented in the shipped
+interactive and direct usage guides. Profile `formal-guide` owns reusable code
+settings, `to-pdf` owns the one-render override, and direct CLI compatibility
+remains unchanged.
 
 ## Decision Flow
 

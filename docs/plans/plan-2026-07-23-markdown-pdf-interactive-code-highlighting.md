@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive code highlighting implementation"
 created-date: 2026-07-23
 modified-date: 2026-07-23
-status: active
+status: completed
 agent: codex
 ---
 
@@ -511,29 +511,29 @@ Status:
 Tasks:
 
 - [x] Create the Phase 4 job record.
-- [ ] Update
+- [x] Update
       `docs/guides/markdown-pdf-interactive-usage.md` with Profile-owned
       reusable settings, the one-render override, conditional prompts, review
       wording, and lifecycle placement.
-- [ ] Update the Code Highlighting section in
+- [x] Update the Code Highlighting section in
       `docs/guides/markdown-pdf-usage.md` with a concise Interactive mapping.
-- [ ] State explicitly that Template does not own code settings and Project
+- [x] State explicitly that Template does not own code settings and Project
       preparation remains Codex Assistant-only.
-- [ ] Retain and run direct CLI coverage for omitted,
+- [x] Retain and run direct CLI coverage for omitted,
       `--code-highlight`, and `--no-code-highlight` behavior.
-- [ ] Run focused Interactive and Markdown PDF renderer tests.
-- [ ] Run lint, format, build, full test, and diff checks.
-- [ ] Use `examples/playground/` for isolated real-render smoke artifacts.
-- [ ] Smoke Profile `formal-guide` default-on and disabled output.
-- [ ] Smoke existing Profile inherit, enable, and disable behavior.
-- [ ] Smoke Template-only enablement with the default light theme.
-- [ ] Smoke a Project bundle using its contained Profile without adding a
+- [x] Run focused Interactive and Markdown PDF renderer tests.
+- [x] Run lint, format, build, full test, and diff checks.
+- [x] Use `examples/playground/` for isolated real-render smoke artifacts.
+- [x] Smoke Profile `formal-guide` default-on and disabled output.
+- [x] Smoke existing Profile inherit, enable, and disable behavior.
+- [x] Smoke Template-only enablement with the default light theme.
+- [x] Smoke a Project bundle using its contained Profile without adding a
       Project preparation path.
-- [ ] Record only public-safe validation evidence; omit machine-specific
+- [x] Record only public-safe validation evidence; omit machine-specific
       environment setup and paths.
-- [ ] Review the exact Phase 4 and complete-plan change ranges and resolve
+- [x] Review the exact Phase 4 and complete-plan change ranges and resolve
       actionable findings.
-- [ ] Link completed job evidence, then reassess this plan and the related
+- [x] Link completed job evidence, then reassess this plan and the related
       research statuses.
 
 Phase gate:
@@ -545,6 +545,11 @@ Phase gate:
 - both guides match the shipped Interactive prompts and ownership model
 - public records contain no machine-specific setup details
 - no actionable implementation or documentation findings remain
+
+Status:
+
+- This plan is complete. Phase 4 documentation, validation, and review
+  evidence are recorded in `docs/plans/jobs/2026-07-23-markdown-pdf-interactive-code-highlighting-phase-4-validation.md`.
 
 ## Validation Plan
 
