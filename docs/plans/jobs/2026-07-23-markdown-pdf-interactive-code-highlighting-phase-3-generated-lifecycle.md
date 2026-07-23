@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Interactive code highlighting Phase 3 generated lifecycle"
 created-date: 2026-07-23
+modified-date: 2026-07-23
 status: completed
 agent: codex
 plan: ../plan-2026-07-23-markdown-pdf-interactive-code-highlighting.md
@@ -20,10 +21,10 @@ artifact identity, saved-recipe data, or any new Project preparation branch.
 ## Review Boundary
 
 - Phase base: `59a7c9f`.
-- Implementation review range: `59a7c9f..df40238`.
+- Final implementation review range: `59a7c9f..b82a127`.
 
-The implementation range ended at the final code, test, and review commit.
-This record holds the accepted evidence for the Phase 3 closeout.
+This documentation-only closeout follows the final reviewed implementation
+range.
 
 ## Implementation Checklist
 
@@ -52,14 +53,49 @@ This record holds the accepted evidence for the Phase 3 closeout.
 
 ## Evidence
 
-- Implementation commit: `df40238` (`feat(markdown-pdf): add interactive generated code-highlighting lifecycle`).
-- Phase 3 review range: `59a7c9f..df40238`.
-- Correctness review: clean; no actionable findings.
-- Maintainability review: no material concern surfaced for the reviewed scope.
-- Focused Phase 3 coverage: 95 passed, 0 failed, 390 assertions.
-- Full repository coverage: 1737 passed, 0 failed, 9166 expect() calls across 222 files.
-- Real render verification: two generated one-page A4 smokes, one Profile forced-enable and one Template forced-disable, both rasterized and visually checked; temporary artifacts removed.
-- Additional validation already completed on the same implementation state: TypeScript, lint, format, build, and diff checks.
+Implementation checkpoints:
+
+- `df40238` — generated lifecycle state, prompt flow, Profile ownership review,
+  renderer preparation, and initial focused coverage
+- `f956fbe` — deterministic lifecycle matrix, Codex lifecycle-retention, and
+  final-review Back/Cancel regressions from the first test-coverage review
+- `b82a127` — lifecycle-to-override ordering before Codex report output, plus
+  report-boundary and non-default recovery-retention regressions
+
+Passed:
+
+```bash
+bun test test/cli-interactive-markdown-pdf
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test
+git diff --check 59a7c9f..b82a127
+```
+
+The final focused Interactive Markdown PDF slice passed with 196 tests and
+zero failures. The full repository suite passed with 1,751 tests and zero
+failures across 222 files.
+
+Two generated-artifact one-page A4 render smokes exercised a Profile with
+forced highlighting and a Template with highlighting disabled. PDF metadata
+inspection and page rasterization passed. Visual inspection confirmed
+highlighted code with the default light theme for the Profile, plain code for
+the disabled Template, and readable surrounding text and table content.
+Temporary smoke artifacts were removed after inspection.
+
+The first test-coverage review identified missing deterministic lifecycle
+matrix, Codex lifecycle-retention, and final-review Back/Cancel branches.
+Those regressions landed in `f956fbe`. The widened correctness review then
+identified Codex report collection before the override Back/Cancel boundary;
+`b82a127` moved override collection ahead of report output and added focused
+regressions.
+
+Final correctness, maintainability, and test-coverage reviews found no
+remaining actionable issues in `59a7c9f..b82a127`. The final review confirmed
+that Project preparation remains Codex Assistant-only, Template owns no
+reusable code settings, and no saved schema or direct CLI behavior changed.
 
 ## Related Research
 

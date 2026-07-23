@@ -504,7 +504,7 @@ Phase gate:
 Status:
 
 - Phase 3 implementation, validation, and review evidence are complete for
-  `59a7c9f..df40238`.
+  `59a7c9f..b82a127`.
 
 ### Phase 4: Guides, Regression Gates, And Renderer Validation
 
