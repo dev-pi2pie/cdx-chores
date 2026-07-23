@@ -407,5 +407,6 @@ The product direction is settled enough to plan. Research remains
 
 ## Related Plans
 
+- [Markdown PDF Interactive code highlighting implementation](../plans/plan-2026-07-23-markdown-pdf-interactive-code-highlighting.md)
 - [Markdown PDF Shiki code highlighting implementation](../plans/plan-2026-05-17-markdown-pdf-shiki-code-highlighting-implementation.md) — historical completed plan
 - [Markdown PDF Interactive Mode implementation](../plans/plan-2026-07-21-markdown-pdf-interactive-mode.md) — historical completed plan
