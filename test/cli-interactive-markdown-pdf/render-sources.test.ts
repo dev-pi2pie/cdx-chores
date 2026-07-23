@@ -393,6 +393,34 @@ describe("interactive Markdown PDF render sources", () => {
     });
   }
 
+  test("keeps the prepared plan when final review reselects the current override", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "default",
+        "change-code-highlighting",
+        "inherit",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", preparedId: "prepared-1" },
+    ]);
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      {
+        outputPath: expect.stringMatching(/fixtures\/report\.pdf$/),
+        preparedId: "prepared-1",
+      },
+    ]);
+  });
+
   test("changes PDF output without preparing the recipe again", () => {
     const result = runInteractiveHarness({
       mode: "run",
