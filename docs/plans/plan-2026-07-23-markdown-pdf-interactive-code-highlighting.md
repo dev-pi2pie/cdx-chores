@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive code highlighting implementation"
 created-date: 2026-07-23
-status: draft
+modified-date: 2026-07-23
+status: active
 agent: codex
 ---
 
@@ -371,7 +372,7 @@ Only effective renderer preparation may repeat after the override changes.
 
 Tasks:
 
-- [ ] Create the Phase 1 job record and mark this plan `active` when
+- [x] Create the Phase 1 job record and mark this plan `active` when
       implementation begins.
 - [ ] Add typed Profile code answers and prompt contracts under
       `src/cli/interactive/markdown/formal-guide/`.
