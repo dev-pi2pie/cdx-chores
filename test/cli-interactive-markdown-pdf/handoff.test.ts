@@ -22,7 +22,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...projectSaveSelections("choose"), "sample", "default"],
+      selectQueue: [...projectSaveSelections("choose"), "sample", "inherit", "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/sample.md"],
       confirmQueue: [false, true, false, true, false, true],
@@ -37,14 +37,87 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     expect(
       result.promptCalls.filter((call) => call.message === "Choose a recipe for this PDF"),
     ).toEqual([]);
+    expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("codeHighlight");
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
+  for (const choice of ["enable", "disable"] as const) {
+    test(`applies the ${choice} override to a saved Project bundle`, () => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [...projectSaveSelections("choose"), "sample", choice, "cancel"],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/sample.md"],
+        confirmQueue: [false, true, false, true],
+      });
+
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        expect.objectContaining({
+          bundle: expect.stringContaining("codex-project-bundle-1"),
+          input: "fixtures/sample.md",
+          codeHighlight: choice === "enable",
+        }),
+      ]);
+      expect(
+        result.promptCalls.filter((call) => call.message === "Choose a recipe for this PDF"),
+      ).toEqual([]);
+      expect(result.markdownPdfPlanCalls).toEqual([]);
+    });
+  }
+
+  test("returns from the handoff override to Markdown input selection", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...projectSaveSelections("choose"),
+        "sample",
+        "back",
+        "sample",
+        "enable",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/sample.md"],
+      confirmQueue: [false, true, false, true],
+    });
+
+    expect(
+      result.promptCalls.filter((call) => call.message === "Markdown input for rendering"),
+    ).toHaveLength(2);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({
+        input: "fixtures/sample.md",
+        codeHighlight: true,
+      }),
+    ]);
+    expect(
+      result.promptCalls.filter((call) => call.message === "Choose a recipe for this PDF"),
+    ).toEqual([]);
+  });
+
+  test("cancels a saved-recipe handoff before authoritative preparation", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...projectSaveSelections("choose"), "sample", "cancel"],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/sample.md"],
+      confirmQueue: [false, true, false, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
   });
 
   test("keeps preparation sample and render input distinct when another file is chosen", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...projectSaveSelections("choose"), "choose", "default"],
+      selectQueue: [...projectSaveSelections("choose"), "choose", "inherit", "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/sample.md", "fixtures/render.md"],
       confirmQueue: [false, true, false, true, false, true],
@@ -58,7 +131,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...projectSaveSelections("none"), "default"],
+      selectQueue: [...projectSaveSelections("none"), "inherit", "default"],
       inputQueue: [""],
       requiredPathQueue: ["fixtures/render.md"],
       confirmQueue: [false, true, false, true, false, true],

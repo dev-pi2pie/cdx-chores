@@ -99,7 +99,7 @@ describe("interactive mode routing: top-level smoke", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: ["md", "md:to-pdf", "built-in", "default"],
+      selectQueue: ["md", "md:to-pdf", "built-in", "inherit", "default"],
       requiredPathQueue: ["fixtures/doc.md"],
       confirmQueue: [false, true],
     });

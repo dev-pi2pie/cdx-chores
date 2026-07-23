@@ -414,7 +414,7 @@ Phase gate:
 
 Tasks:
 
-- [ ] Create the Phase 2 job record.
+- [x] Create the Phase 2 job record.
 - [ ] Add the shared `Code highlighting for this PDF` prompt and choice-to-
       optional-boolean compiler.
 - [ ] Split existing source selection from authoritative renderer preparation

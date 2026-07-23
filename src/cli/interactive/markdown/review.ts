@@ -7,6 +7,12 @@ import type { CliRuntime } from "../../types";
 
 import type { MarkdownPdfInteractivePreparedRenderSource } from "./render-source";
 import type { MarkdownPdfInteractiveRenderSource } from "./types";
+import {
+  formatEffectiveMarkdownPdfCodeReview,
+  formatMarkdownPdfRenderOverrideReview,
+  formatReusableMarkdownPdfCodeReview,
+} from "./code-highlighting-review";
+import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
 
 const SOURCE_LABELS: Record<MarkdownPdfInteractiveRenderSource, string> = {
   "built-in": "built-in",
@@ -48,6 +54,7 @@ export function formatMarkdownPdfRecipeReview(
   runtime: CliRuntime,
   source: MarkdownPdfInteractiveRenderSource,
   prepared: PreparedMarkdownPdfRender,
+  codeHighlight: MarkdownPdfRenderCodeHighlightChoice,
 ): string[] {
   const lines = [
     "Markdown PDF recipe review",
@@ -79,8 +86,16 @@ export function formatMarkdownPdfRecipeReview(
     `- Page: ${prepared.options.pageSize} ${prepared.options.orientation}`,
     `- Margins: ${formatMargins(prepared.options)}`,
     `- ToC: ${prepared.options.toc ? `enabled (depth ${prepared.options.tocDepth}, page break ${prepared.options.tocPageBreak})` : "disabled"}`,
-    `- Code highlighting: ${prepared.code?.highlight ? `enabled (${prepared.code.theme})` : "disabled"}`,
     `- Default CSS: ${prepared.noDefaultCss ? "disabled" : "enabled"}`,
+  );
+  if (prepared.resolvedInputs.profile) {
+    lines.push("", ...formatReusableMarkdownPdfCodeReview(prepared.normalizedProfile.code));
+  }
+  lines.push(
+    "",
+    ...formatMarkdownPdfRenderOverrideReview(codeHighlight),
+    "",
+    ...formatEffectiveMarkdownPdfCodeReview(prepared.code),
   );
 
   if (prepared.ignoredBundleProfileFiles.length > 0) {
@@ -97,7 +112,12 @@ export function renderMarkdownPdfRecipeReview(
   runtime: CliRuntime,
   selection: MarkdownPdfInteractivePreparedRenderSource,
 ): void {
-  for (const line of formatMarkdownPdfRecipeReview(runtime, selection.source, selection.prepared)) {
+  for (const line of formatMarkdownPdfRecipeReview(
+    runtime,
+    selection.source,
+    selection.prepared,
+    selection.codeHighlight,
+  )) {
     printLine(runtime.stderr, line);
   }
 }

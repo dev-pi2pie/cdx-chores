@@ -23,21 +23,28 @@ import type {
   MarkdownPdfInteractiveSource,
 } from "./types";
 import type { MarkdownPdfSavedRecipe } from "./codex-types";
+import {
+  compileMarkdownPdfRenderCodeHighlightChoice,
+  type MarkdownPdfRenderCodeHighlightChoice,
+} from "./render-code-highlighting";
 
-export type MarkdownPdfInteractiveRenderSourceOutcome =
-  | MarkdownPdfInteractivePreparedRenderSource
+export type MarkdownPdfInteractiveRenderSourceSelectionOutcome =
+  | MarkdownPdfInteractiveSelectedRenderSource
   | { kind: "generated" }
   | { kind: "back" }
   | { kind: "cancel" };
 
 export interface MarkdownPdfInteractivePreparedRenderSource {
+  codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
   kind: "prepared";
   prepared: PreparedMarkdownPdfRender;
+  selected: MarkdownPdfInteractiveSelectedRenderSource;
   source: MarkdownPdfInteractiveRenderSource;
 }
 
-interface CollectedMarkdownPdfRenderSource {
+export interface MarkdownPdfInteractiveSelectedRenderSource {
   input: PrepareMarkdownPdfRenderInput;
+  kind: "selected";
   source: MarkdownPdfInteractiveRenderSource;
 }
 
@@ -111,8 +118,8 @@ async function collectCustomInputs(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: string,
-  previewBundle: typeof previewMarkdownPdfRenderBundle,
-): Promise<CollectedMarkdownPdfRenderSource | { kind: "back" } | { kind: "cancel" }> {
+  previewBundle: typeof previewMarkdownPdfRenderBundle = previewMarkdownPdfRenderBundle,
+): Promise<MarkdownPdfInteractiveSelectedRenderSource | { kind: "back" } | { kind: "cancel" }> {
   const mode = await select<MarkdownPdfInteractiveCustomInputMode | "back" | "cancel">({
     message: "Choose custom input mode",
     choices: [
@@ -149,19 +156,18 @@ async function collectCustomInputs(
   );
   const explicitPaths = await promptExplicitInputPaths(roles, pathPromptContext);
   return {
+    kind: "selected",
     source: "custom-inputs",
     input: { input, bundle, ...explicitPaths },
   };
 }
 
-async function collectMarkdownPdfRenderSource(
+export async function collectMarkdownPdfRenderSource(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: string,
-  previewBundle: typeof previewMarkdownPdfRenderBundle,
-): Promise<
-  CollectedMarkdownPdfRenderSource | { kind: "generated" } | { kind: "back" } | { kind: "cancel" }
-> {
+  previewBundle: typeof previewMarkdownPdfRenderBundle = previewMarkdownPdfRenderBundle,
+): Promise<MarkdownPdfInteractiveRenderSourceSelectionOutcome> {
   while (true) {
     const source = await select<MarkdownPdfInteractiveSource | "back" | "cancel">({
       message: "Choose a recipe for this PDF",
@@ -202,21 +208,21 @@ async function collectMarkdownPdfRenderSource(
       return { kind: "generated" };
     }
     if (source === "built-in") {
-      return { source, input: { input } };
+      return { kind: "selected", source, input: { input } };
     }
     if (source === "existing-profile") {
       const profile = await promptRequiredPathWithConfig("Profile file", {
         kind: "file",
         ...pathPromptContext,
       });
-      return { source, input: { input, profile } };
+      return { kind: "selected", source, input: { input, profile } };
     }
     if (source === "existing-bundle") {
       const bundle = await promptRequiredPathWithConfig("Bundle directory", {
         kind: "directory",
         ...pathPromptContext,
       });
-      return { source, input: { input, bundle } };
+      return { kind: "selected", source, input: { input, bundle } };
     }
     const custom = await collectCustomInputs(runtime, pathPromptContext, input, previewBundle);
     if ("kind" in custom && custom.kind === "back") {
@@ -235,40 +241,38 @@ export async function promptMarkdownPdfRenderInput(
   });
 }
 
-/** Collects one existing render source and performs its authoritative preparation exactly once. */
-export async function collectPreparedMarkdownPdfRenderSource(
+export async function prepareMarkdownPdfRenderSource(
   runtime: CliRuntime,
-  pathPromptContext: InteractivePathPromptContext,
-  input: string,
-  implementations: MarkdownPdfRenderSourceImplementations = {},
-): Promise<MarkdownPdfInteractiveRenderSourceOutcome> {
-  const collected = await collectMarkdownPdfRenderSource(
-    runtime,
-    pathPromptContext,
-    input,
-    implementations.previewBundle ?? previewMarkdownPdfRenderBundle,
-  );
-  if ("kind" in collected) {
-    return collected;
-  }
-  const prepared = await (implementations.prepareRender ?? prepareMarkdownPdfRender)(
-    runtime,
-    collected.input,
-  );
-  return { kind: "prepared", source: collected.source, prepared };
-}
-
-export async function prepareSavedMarkdownPdfRenderSource(
-  runtime: CliRuntime,
-  input: string,
-  saved: MarkdownPdfSavedRecipe,
+  selected: MarkdownPdfInteractiveSelectedRenderSource,
+  codeHighlight: MarkdownPdfRenderCodeHighlightChoice,
   implementations: Pick<MarkdownPdfRenderSourceImplementations, "prepareRender"> = {},
 ): Promise<MarkdownPdfInteractivePreparedRenderSource> {
+  const compiledCodeHighlight = compileMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
   const prepared = await (implementations.prepareRender ?? prepareMarkdownPdfRender)(runtime, {
-    input,
-    ...(saved.rendererSource === "existing-profile"
-      ? { profile: saved.outputPath }
-      : { bundle: saved.outputPath }),
+    ...selected.input,
+    ...(compiledCodeHighlight === undefined ? {} : { codeHighlight: compiledCodeHighlight }),
   });
-  return { kind: "prepared", prepared, source: saved.rendererSource };
+  return {
+    codeHighlight,
+    kind: "prepared",
+    prepared,
+    selected,
+    source: selected.source,
+  };
+}
+
+export function selectSavedMarkdownPdfRenderSource(
+  input: string,
+  saved: MarkdownPdfSavedRecipe,
+): MarkdownPdfInteractiveSelectedRenderSource {
+  return {
+    input: {
+      input,
+      ...(saved.rendererSource === "existing-profile"
+        ? { profile: saved.outputPath }
+        : { bundle: saved.outputPath }),
+    },
+    kind: "selected",
+    source: saved.rendererSource,
+  };
 }

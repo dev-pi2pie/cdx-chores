@@ -50,7 +50,7 @@ export interface PrepareMarkdownPdfRenderInput extends NormalizeMarkdownPdfOptio
 
 export interface PreparedMarkdownPdfRender {
   bundleDirectory?: string;
-  code?: EffectiveMarkdownPdfCodeOptions;
+  code: EffectiveMarkdownPdfCodeOptions;
   customCssPath?: string;
   customTemplatePath?: string;
   ignoredBundleProfileFiles: string[];

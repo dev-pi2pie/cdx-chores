@@ -36,6 +36,27 @@ const GENERATED_CODE = {
   transformerNotation: false,
 };
 
+function effectiveCodeOptions(
+  profile: typeof DEFAULT_CODE,
+  codeHighlight: unknown,
+): typeof DEFAULT_CODE {
+  if (codeHighlight === false) {
+    return {
+      ...profile,
+      highlight: false,
+      lineNumbers: false,
+      transformerNotation: false,
+    };
+  }
+  const highlight = codeHighlight === true ? true : profile.highlight;
+  return {
+    ...profile,
+    highlight,
+    lineNumbers: highlight ? profile.lineNumbers : false,
+    transformerNotation: highlight ? profile.transformerNotation : false,
+  };
+}
+
 type CodexArtifact = "profile" | "template-bundle" | "project-bundle";
 
 const CODEX_ARTIFACT_FILE_NAMES: Record<CodexArtifact, string[]> = {
@@ -461,25 +482,22 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         }
         return undefined;
       };
+      const resolvedProfile = rolePath("profile");
+      const reusableCode = resolvedProfile ? GENERATED_CODE : DEFAULT_CODE;
       return {
         __harnessPreparedId: preparedId,
         inputPath,
         bundleDirectory,
         ignoredBundleProfileFiles: context.scenario.markdownPdfIgnoredBundleFiles ?? [],
         resolvedInputs: {
-          profile: rolePath("profile"),
+          profile: resolvedProfile,
           template: rolePath("template"),
           css: rolePath("css"),
         },
         options: DEFAULT_OPTIONS,
-        code: {
-          highlight: false,
-          theme: "github-light",
-          lineNumbers: false,
-          transformerNotation: false,
-        },
+        code: effectiveCodeOptions(reusableCode, input.codeHighlight),
         noDefaultCss: false,
-        normalizedProfile: {},
+        normalizedProfile: { code: reusableCode },
         recipe: { templateHtml: "<main>$body$</main>", styleCss: "body {}" },
         titleSignals: { duplicateVisibleTitleRisk: false },
       };
