@@ -18,6 +18,52 @@ function temporaryProfileSelections(...recovery: string[]) {
 }
 
 describe("interactive Markdown PDF generated lifecycle", () => {
+  test.each([
+    ["temporary-render", "inherit", undefined],
+    ["temporary-render", "enable", true],
+    ["temporary-render", "disable", false],
+    ["save-and-render", "inherit", undefined],
+    ["save-and-render", "enable", true],
+    ["save-and-render", "disable", false],
+  ] as const)(
+    "passes %s with %s through deterministic renderer preparation",
+    (lifecycle, choice, compiled) => {
+      const durable = lifecycle === "save-and-render";
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          "profile",
+          "starter",
+          lifecycle,
+          choice,
+          ...(durable ? ["custom"] : []),
+          "default",
+        ],
+        requiredPathQueue: [
+          "fixtures/report.md",
+          ...(durable ? [`recipes/matrix-${choice}.yml`] : []),
+        ],
+        confirmQueue: durable ? [false, false, true] : [false, true],
+      });
+
+      expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+      expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+      expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+      expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+      if (compiled === undefined) {
+        expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("codeHighlight");
+      } else {
+        expect(result.markdownPdfPrepareCalls[0]).toEqual(
+          expect.objectContaining({ codeHighlight: compiled }),
+        );
+      }
+      expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    },
+  );
+
   test.each(["back", "cancel"] as const)(
     "handles initial code-highlighting %s before output selection or materialization",
     (action) => {
