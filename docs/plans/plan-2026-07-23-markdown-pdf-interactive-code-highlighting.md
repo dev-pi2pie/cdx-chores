@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive code highlighting implementation"
 created-date: 2026-07-23
 modified-date: 2026-07-23
-status: active
+status: completed
 agent: codex
 ---
 
@@ -531,9 +531,9 @@ Tasks:
       Project preparation path.
 - [x] Record only public-safe validation evidence; omit machine-specific
       environment setup and paths.
-- [ ] Review the exact Phase 4 and complete-plan change ranges and resolve
+- [x] Review the exact Phase 4 and complete-plan change ranges and resolve
       actionable findings.
-- [ ] Link completed job evidence, then reassess this plan and the related
+- [x] Link completed job evidence, then reassess this plan and the related
       research statuses.
 
 Phase gate:
@@ -548,10 +548,13 @@ Phase gate:
 
 Status:
 
-- Phase 4 guide updates, automated gates, real-render validation, and the
-  exact Phase 4 implementation review are complete.
-- The whole-plan range and final documentation closeout review remain
-  pending.
+- Phase 4 documentation, automated gates, real-render validation, and
+  exact-range reviews are complete.
+- The final whole-plan review range is `3de7463..d2143c5`. The actionable
+  durable-recovery finding was fixed and the widened range passed correctness,
+  test-coverage, maintainability, and documentation re-review.
+- Completion evidence is recorded in
+  `docs/plans/jobs/2026-07-23-markdown-pdf-interactive-code-highlighting-phase-4-validation.md`.
 
 ## Validation Plan
 

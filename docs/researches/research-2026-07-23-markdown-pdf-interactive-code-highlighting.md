@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Code Highlighting"
 created-date: 2026-07-23
-status: in-progress
+modified-date: 2026-07-23
+status: completed
 agent: codex
 ---
 
@@ -223,8 +224,9 @@ settings, `to-pdf` owns the one-render override, and direct CLI compatibility
 remains unchanged.
 
 Phase 4 automated and real-render evidence is recorded in the linked
-implementation plan and validation job. Whole-plan review and final plan
-closeout remain pending, so this research stays `in-progress`.
+implementation plan and validation job. The final whole-plan range passed
+correctness, test-coverage, maintainability, and documentation review after
+the durable-recovery finding was fixed.
 
 ## Decision Flow
 
@@ -406,8 +408,8 @@ The follow-up plan should cover:
 - Existing renderer precedence and optional boolean input are reused.
 - Historical Shiki and Interactive lifecycle documents remain closed.
 
-The product direction is settled enough to plan. Research remains
-`in-progress` until implementation and renderer validation evidence is linked.
+The product direction, implementation, renderer validation, and exact-range
+review evidence are complete and linked.
 
 ## Related Research
 
