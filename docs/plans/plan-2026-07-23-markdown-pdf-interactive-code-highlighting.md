@@ -510,7 +510,7 @@ Status:
 
 Tasks:
 
-- [ ] Create the Phase 4 job record.
+- [x] Create the Phase 4 job record.
 - [ ] Update
       `docs/guides/markdown-pdf-interactive-usage.md` with Profile-owned
       reusable settings, the one-render override, conditional prompts, review
