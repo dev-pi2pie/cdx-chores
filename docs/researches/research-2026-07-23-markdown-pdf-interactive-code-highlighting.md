@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Code Highlighting"
 created-date: 2026-07-23
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -215,12 +215,16 @@ render-time block. Those remain reusable Profile settings. The Interactive
 choice should compile immediately to the existing optional boolean rather than
 introducing a persisted preference or another recipe type.
 
-## Outcome
+## Implementation Evidence
 
 The follow-up contract is now implemented and documented in the shipped
 interactive and direct usage guides. Profile `formal-guide` owns reusable code
 settings, `to-pdf` owns the one-render override, and direct CLI compatibility
 remains unchanged.
+
+Phase 4 automated and real-render evidence is recorded in the linked
+implementation plan and validation job. Whole-plan review and final plan
+closeout remain pending, so this research stays `in-progress`.
 
 ## Decision Flow
 

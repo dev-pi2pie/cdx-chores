@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive code highlighting Phase 4 validation"
 created-date: 2026-07-23
-status: completed
+modified-date: 2026-07-23
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-23-markdown-pdf-interactive-code-highlighting.md
 ---
@@ -19,12 +20,13 @@ settings, new renderer flags, or a new saved schema.
 ## Review Boundary
 
 - Phase base: `d109ea9`.
-- Implementation review range: `d109ea9..da82e0a`.
+- Final Phase 4 implementation review range: `d109ea9..d9187fb`.
 - Whole-plan base: `3de7463`.
-- Whole-plan review range: `3de7463..da82e0a`.
+- Whole-plan review range: pending exact review of `3de7463..d9187fb`.
 
-The implementation ranges end at the final guide commit for this phase. The
-documentation-only closeout commit records the accepted evidence.
+The Phase 4 implementation range ends at the final guide review-fix commit.
+A later documentation-only closeout will record the accepted whole-plan
+review.
 
 ## Documentation Checklist
 
@@ -47,24 +49,54 @@ documentation-only closeout commit records the accepted evidence.
 
 - [x] Review the exact Phase 4 implementation range.
 - [x] Resolve actionable findings and review any widened Phase 4 range.
-- [x] Review the whole-plan implementation range.
-- [x] Resolve actionable findings and review any widened whole-plan range.
-- [x] Complete test-coverage and documentation closeout reviews.
+- [ ] Review the whole-plan implementation range.
+- [ ] Resolve actionable findings and review any widened whole-plan range.
+- [ ] Complete test-coverage and documentation closeout reviews.
 
 ## Evidence
 
-Documentation closeout work:
+Documentation checkpoints:
 
-- `docs/guides/markdown-pdf-interactive-usage.md` now says the code
-  highlighting `Theme` lives inside the Code highlighting section and remains
-  conditional on highlight enablement.
-- `docs/guides/markdown-pdf-usage.md` now adds a short pointer that the
-  interactive mapping table mirrors the shipped prompt flow and lifecycle.
-- `git diff --check` passed on the documentation-only diff.
-- No material plan/spec gaps remained in the reviewed Phase 4 scope.
+- `e397789` — Phase 4 validation job start
+- `8fa2df0` — current Interactive and direct usage-guide mapping
+- `da82e0a` — guide wording and Phase 4 evidence checkpoint
+- `d9187fb` — generated save-only boundary and direct-default review fixes
 
-Previously recorded implementation and validation evidence from Phases 1–3
-remains authoritative for the shipped behavior and renderer matrix.
+Passed:
+
+```bash
+bun test test/cli-interactive-markdown-pdf
+bun test test/cli-actions-md-to-pdf-code-highlight.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-profile.test.ts test/cli-actions-md-to-pdf-bundle.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test
+git diff --check d109ea9..d9187fb
+```
+
+The focused Interactive Markdown PDF suite passed with 196 tests and zero
+failures. The direct Markdown PDF compatibility slice passed with 153 tests
+and zero failures, including omitted, enable, and disable behavior. The full
+repository suite passed with 1,751 tests and zero failures across 222 files.
+
+Eight one-page A4 render smokes covered Profile `formal-guide` default-on and
+disabled artifacts, an existing Profile with inherit/enable/disable choices,
+Template-only enablement with the default light theme, a Project bundle using
+its contained Profile, and a saved Project bundle with a one-render override.
+PDF metadata inspection, HTML hook assertions, page rasterization, and visual
+inspection passed. The Project cases used the contained Profile theme and
+transformer settings without a Project preparation branch. Automated
+lifecycle coverage additionally retained generated temporary, durable, and
+saved-recipe handoff behavior without artifact regeneration or rewrite.
+Temporary smoke artifacts were removed after inspection.
+
+The first exact-range review found two guide wording issues: the generated
+sequence included save-only `pdf-recipes`, and the direct-default statement
+was broader than direct Profile initialization. `d9187fb` resolved both.
+Correctness and test-coverage re-reviews found no remaining implementation
+issue in `d109ea9..d9187fb`. Whole-plan and final documentation reviews remain
+pending.
 
 ## Related Research
 
