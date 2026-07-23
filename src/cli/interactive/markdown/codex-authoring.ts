@@ -21,7 +21,10 @@ import type {
 } from "./codex-types";
 import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import type { MarkdownPdfInteractiveEntry } from "./types";
-import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderCodeHighlightChoice,
+  type MarkdownPdfRenderCodeHighlightChoice,
+} from "./render-code-highlighting";
 
 export type MarkdownPdfCodexAuthoringOutcome =
   | { kind: "complete" }
@@ -156,9 +159,16 @@ export async function runMarkdownPdfCodexAuthoring(
         return saved.kind === "cancel" ? { kind: "complete" } : saved.saved;
       }
       const lifecycle = action;
-      const report = await promptMarkdownPdfCodexReportRetention(lifecycle, pathPromptContext);
-      const codeHighlight =
+      const currentCodeHighlight =
         renderContext?.candidate === prepared ? renderContext.codeHighlight : "inherit";
+      const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
+      if (codeHighlight === "back") {
+        continue;
+      }
+      if (codeHighlight === "cancel") {
+        return { kind: "complete" };
+      }
+      const report = await promptMarkdownPdfCodexReportRetention(lifecycle, pathPromptContext);
       const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "codex", candidate: prepared },
         codeHighlight,

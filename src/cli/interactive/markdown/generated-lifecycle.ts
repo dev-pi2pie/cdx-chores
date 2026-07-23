@@ -79,14 +79,6 @@ export async function handleMarkdownPdfGeneratedLifecycle(
   selection: MarkdownPdfGeneratedLifecycleSelection,
 ): Promise<MarkdownPdfGeneratedLifecycleHandlerOutcome> {
   let codeHighlight = selection.codeHighlight;
-  const initialChoice = await promptMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
-  if (initialChoice === "back") {
-    return { codeHighlight, kind: "review" };
-  }
-  if (initialChoice === "cancel") {
-    return { kind: "complete" };
-  }
-  codeHighlight = initialChoice;
 
   while (true) {
     const artifactDestination =

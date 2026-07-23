@@ -38,7 +38,10 @@ import {
   type MarkdownPdfFormalGuideGroup,
 } from "./formal-guide";
 import type { MarkdownPdfInteractiveEntry } from "./types";
-import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderCodeHighlightChoice,
+  type MarkdownPdfRenderCodeHighlightChoice,
+} from "./render-code-highlighting";
 
 export type MarkdownPdfAuthoringOutcome =
   | InteractiveNavigationOutcome
@@ -215,8 +218,15 @@ async function reviewCandidate(
       return action;
     }
     if (action === "temporary-render" || action === "save-and-render") {
-      const codeHighlight =
+      const currentCodeHighlight =
         renderContext?.candidate === candidate ? renderContext.codeHighlight : "inherit";
+      const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
+      if (codeHighlight === "back") {
+        continue;
+      }
+      if (codeHighlight === "cancel") {
+        return "complete";
+      }
       const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "deterministic", candidate },
         codeHighlight,

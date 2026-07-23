@@ -854,8 +854,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
           ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
           "continue",
           "temporary-render",
-          "none",
           "enable",
+          "none",
           "default",
         ],
         inputQueue: [""],
@@ -889,8 +889,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "project-bundle",
         "continue",
         "temporary-render",
-        "none",
         "inherit",
+        "none",
         "default",
       ],
       inputQueue: [""],
@@ -904,6 +904,37 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
 
+  test.each(["back", "cancel"] as const)(
+    "handles initial Project code-highlighting %s before report output collection",
+    (action) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          "project-bundle",
+          "continue",
+          "temporary-render",
+          action,
+          ...(action === "back" ? ["cancel"] : []),
+        ],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: [false, true],
+      });
+
+      expect(
+        result.promptCalls.some((call) => call.message === "Keep a Codex diagnostic report?"),
+      ).toBe(false);
+      expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexBindCalls).toEqual([]);
+      expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+      expect(result.markdownPdfPlanCalls).toEqual([]);
+      expect(result.markdownPdfExecuteCalls).toEqual([]);
+    },
+  );
+
   test("resets the retained override after Codex regeneration", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -914,13 +945,12 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "project-bundle",
         "continue",
         "temporary-render",
-        "none",
         "enable",
+        "none",
         "default",
         "review",
         "regenerate",
         "temporary-render",
-        "none",
         "cancel",
       ],
       inputQueue: [""],
@@ -956,11 +986,12 @@ describe("interactive Markdown PDF Codex authoring", () => {
           ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
           "continue",
           "temporary-render",
-          "none",
           "enable",
+          "none",
           "default",
           "review",
           "save-and-render",
+          "enable",
           "with-artifact",
           "cancel",
         ],
@@ -995,8 +1026,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "project-bundle",
         "continue",
         "save-and-render",
-        "with-artifact",
         "enable",
+        "with-artifact",
         "suggested",
         "default",
         "change-code-highlighting",
@@ -1050,8 +1081,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "project-bundle",
           "continue",
           "save-and-render",
-          "with-artifact",
           "enable",
+          "with-artifact",
           "suggested",
           "default",
           "change-code-highlighting",
@@ -1099,8 +1130,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "project-bundle",
           "continue",
           lifecycle,
-          report,
           "inherit",
+          report,
           ...(lifecycle === "save-and-render" ? ["suggested"] : []),
           "default",
         ],

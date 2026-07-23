@@ -281,6 +281,37 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.stderr.match(/Markdown PDF recipe review/g)).toHaveLength(2);
   });
 
+  test("retains an enabled override through recovery review for the same candidate", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfRenderErrorMessages: ["render failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "temporary-render",
+        "enable",
+        "default",
+        "review",
+        "temporary-render",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfSessionRetainCalls).toEqual(result.markdownPdfSessionCreateCalls);
+  });
+
   test("keeps a failed temporary session and exits", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -469,8 +500,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "project-bundle",
         "continue",
         "save-and-render",
-        "with-artifact",
         "inherit",
+        "with-artifact",
         "suggested",
         "custom",
         "review",
@@ -500,8 +531,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "project-bundle",
         "continue",
         "temporary-render",
-        "external",
         "inherit",
+        "external",
         "custom",
         "review",
         "cancel",
