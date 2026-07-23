@@ -462,35 +462,35 @@ Phase gate:
 Tasks:
 
 - [x] Create the Phase 3 job record.
-- [ ] Add one-render override state to the generated render lifecycle without
+- [x] Add one-render override state to the generated render lifecycle without
       adding it to artifact identity or saved-recipe data.
-- [ ] Collect the override after temporary-render or save-and-render acceptance
+- [x] Collect the override after temporary-render or save-and-render acceptance
       and before artifact/PDF output collection.
-- [ ] Preserve accepted deterministic or Codex candidates, lifecycle, output
+- [x] Preserve accepted deterministic or Codex candidates, lifecycle, output
       choices, and applicable Codex report retention while changing the
       override.
-- [ ] Pass the compiled optional boolean into renderer preparation after
+- [x] Pass the compiled optional boolean into renderer preparation after
       temporary or durable materialization.
-- [ ] Keep materialization, output-collision, cleanup, failure-retention, and
+- [x] Keep materialization, output-collision, cleanup, failure-retention, and
       recovery behavior unchanged.
-- [ ] Ensure Back from the override returns to the same candidate review.
-- [ ] Preserve the override when returning to the same accepted candidate,
+- [x] Ensure Back from the override returns to the same candidate review.
+- [x] Preserve the override when returning to the same accepted candidate,
       including when only its generated lifecycle changes.
-- [ ] Reset the override when Change artifact, Change preparation mode, or
+- [x] Reset the override when Change artifact, Change preparation mode, or
       Regenerate replaces the accepted candidate context.
-- [ ] Ensure final-review `Change code highlighting` returns to the same
+- [x] Ensure final-review `Change code highlighting` returns to the same
       override prompt without another artifact preparation or Codex request.
-- [ ] Ensure a successfully saved recipe is not rewritten when only the
+- [x] Ensure a successfully saved recipe is not rewritten when only the
       override changes.
-- [ ] Add deterministic temporary-render and save-and-render tests for all
+- [x] Add deterministic temporary-render and save-and-render tests for all
       three override values.
-- [ ] Add injected-runner Codex Profile, Template, and Project tests that count
+- [x] Add injected-runner Codex Profile, Template, and Project tests that count
       requests and materializations across override changes and backtracking.
-- [ ] Add candidate-identity tests proving override retention for the same
+- [x] Add candidate-identity tests proving override retention for the same
       candidate and reset for changed or regenerated candidates.
-- [ ] Add saved Project handoff coverage without introducing a Project
+- [x] Add saved Project handoff coverage without introducing a Project
       preparation branch.
-- [ ] Review the exact Phase 3 change range and resolve actionable findings.
+- [x] Review the exact Phase 3 change range and resolve actionable findings.
 
 Phase gate:
 
@@ -500,6 +500,11 @@ Phase gate:
 - override changes may repeat renderer preparation only
 - output, report, cleanup, and recovery state remain applicable and stable
 - Project is still created only through Codex Assistant
+
+Status:
+
+- Phase 3 implementation, validation, and review evidence are complete for
+  `59a7c9f..df40238`.
 
 ### Phase 4: Guides, Regression Gates, And Renderer Validation
 
