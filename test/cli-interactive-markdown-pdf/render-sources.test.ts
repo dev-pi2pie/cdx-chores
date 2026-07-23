@@ -311,6 +311,27 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.stderr).toContain("Render override:\n- Enable for this render");
   });
 
+  test("keeps the prepared source when recipe review reselects the current override", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "change-code-highlighting",
+        "inherit",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", preparedId: "prepared-1" },
+    ]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+  });
+
   test("changes code highlighting from final review without planning a new output", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -343,7 +364,34 @@ describe("interactive Markdown PDF render sources", () => {
     ]);
     expect(result.stderr).toContain("Render override:\n- Disable for this render");
     expect(result.stderr).toContain("Effective render:\n- Highlighting: disabled");
+    expect(result.stderr).toContain("Reusable Profile settings:");
+    expect(result.stderr).toContain("- Code highlighting theme: light-plus");
   });
+
+  for (const action of ["back", "cancel"] as const) {
+    test(`handles ${action} from a final-review highlighting change without repreparing or replanning`, () => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...ENTRY_SELECTIONS,
+          "built-in",
+          "inherit",
+          "default",
+          "change-code-highlighting",
+          action,
+        ],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: action === "back" ? [false, false, true] : [false, false],
+      });
+
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        { input: "fixtures/report.md", preparedId: "prepared-1" },
+      ]);
+      expect(result.markdownPdfPlanCalls).toHaveLength(1);
+      expect(result.markdownPdfExecuteCalls).toHaveLength(action === "back" ? 1 : 0);
+    });
+  }
 
   test("changes PDF output without preparing the recipe again", () => {
     const result = runInteractiveHarness({
