@@ -195,7 +195,7 @@ describe("interactive Markdown PDF formal-guide answers", () => {
   });
 
   test("revises only ToC and supplies existing enabled details", async () => {
-    const answers: MarkdownPdfProfileFormalGuideAnswers = {
+    const answers: MarkdownPdfFormalGuideAnswers = {
       ...BASE_ANSWERS,
       toc: { enabled: true, depth: 2, pageBreak: "before" },
     };
@@ -262,7 +262,7 @@ describe("interactive Markdown PDF formal-guide answers", () => {
   });
 
   test("reuses the retained theme and defaults dependent settings off when revising code on", async () => {
-    const answers: MarkdownPdfFormalGuideAnswers = {
+    const answers: MarkdownPdfProfileFormalGuideAnswers = {
       ...BASE_ANSWERS,
       code: {
         highlight: false,

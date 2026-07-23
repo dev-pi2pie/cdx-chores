@@ -134,35 +134,46 @@ async function reviseCandidate(
   candidate: PreparedMarkdownPdfDeterministicRecipe,
   group: MarkdownPdfFormalGuideGroup,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
-  const answers = candidate.formalGuideAnswers;
-  if (!answers) {
-    return candidate;
-  }
   const prompts = createMarkdownPdfFormalGuidePrompts();
   if (candidate.artifact === "profile") {
-    const revised =
-      group === "code"
-        ? await reviseMarkdownPdfFormalGuideCode(answers, prompts)
-        : group === "layout"
-          ? {
-              ...(await reviseMarkdownPdfFormalGuideLayout(answers, prompts)),
-              code: answers.code,
-            }
-          : group === "margins"
-            ? {
-                ...(await reviseMarkdownPdfFormalGuideMargins(answers, prompts)),
-                code: answers.code,
-              }
-            : {
-                ...(await reviseMarkdownPdfFormalGuideToc(answers, prompts)),
-                code: answers.code,
-              };
+    const answers = candidate.formalGuideAnswers;
+    if (!answers) {
+      return candidate;
+    }
+    let revised;
+    switch (group) {
+      case "code":
+        revised = await reviseMarkdownPdfFormalGuideCode(answers, prompts);
+        break;
+      case "layout":
+        revised = {
+          ...(await reviseMarkdownPdfFormalGuideLayout(answers, prompts)),
+          code: answers.code,
+        };
+        break;
+      case "margins":
+        revised = {
+          ...(await reviseMarkdownPdfFormalGuideMargins(answers, prompts)),
+          code: answers.code,
+        };
+        break;
+      case "toc":
+        revised = {
+          ...(await reviseMarkdownPdfFormalGuideToc(answers, prompts)),
+          code: answers.code,
+        };
+        break;
+    }
     return prepareMarkdownPdfDeterministicRecipe({
       artifact: "profile",
       preparation: "formal-guide",
       formalGuideAnswers: revised,
       options: compileMarkdownPdfFormalGuideOptions(revised),
     });
+  }
+  const answers = candidate.formalGuideAnswers;
+  if (!answers || group === "code") {
+    return candidate;
   }
   const revised =
     group === "layout"
