@@ -14,8 +14,9 @@ import type { MarkdownPdfInteractiveEntry } from "./types";
 import { collectMarkdownPdfInteractiveFontReview } from "./font-review";
 import {
   renderReusableMarkdownPdfCodeReview,
-  resolveReusableMarkdownPdfCode,
+  tryResolveReusableMarkdownPdfCode,
 } from "./code-highlighting-review";
+import type { NormalizedMarkdownPdfCode } from "../../markdown-pdf/profile";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -87,21 +88,18 @@ function plannedFiles(candidate: PreparedMarkdownPdfCodexCandidate): string[] {
   ];
 }
 
-function reusableCodeProfile(
+function reusableCode(
   candidate: PreparedMarkdownPdfCodexCandidate,
-): Record<string, unknown> | undefined {
+): NormalizedMarkdownPdfCode | undefined {
   if (candidate.artifact === "profile") {
-    return candidate.prepared.kind === "profile" ? candidate.prepared.finalProfile : undefined;
+    return candidate.prepared.kind === "profile"
+      ? tryResolveReusableMarkdownPdfCode(candidate.prepared.finalProfile)
+      : undefined;
   }
   if (candidate.artifact === "template-bundle") {
     return undefined;
   }
-  const profileNormalization = candidate.prepared.binding.validation.results.find(
-    (result) => result.name === "profile-normalization",
-  );
-  return profileNormalization?.status === "failed"
-    ? undefined
-    : candidate.prepared.profilePhase.finalProfile;
+  return tryResolveReusableMarkdownPdfCode(candidate.prepared.profilePhase.finalProfile);
 }
 
 export function renderMarkdownPdfCodexConsent(
@@ -197,10 +195,10 @@ export function renderMarkdownPdfCodexCandidateReview(
       printLine(runtime.stderr, `- ${direction}`);
     }
   }
-  const profile = reusableCodeProfile(candidate);
-  if (profile) {
+  const code = reusableCode(candidate);
+  if (code) {
     printLine(runtime.stderr, "");
-    renderReusableMarkdownPdfCodeReview(runtime, resolveReusableMarkdownPdfCode(profile));
+    renderReusableMarkdownPdfCodeReview(runtime, code);
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");

@@ -10,7 +10,11 @@ import {
   type MarkdownPdfOrientation,
   type MarkdownPdfTocPageBreak,
 } from "../../../markdown-pdf/validation";
-import { MARKDOWN_PDF_CODE_THEMES, type MarkdownPdfCodeTheme } from "../../../markdown-pdf/profile";
+import {
+  DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+  MARKDOWN_PDF_CODE_THEMES,
+  type MarkdownPdfCodeTheme,
+} from "../../../markdown-pdf/profile";
 import type { MarkdownPdfFormalGuideMarginAnswers, MarkdownPdfFormalGuidePrompts } from "./types";
 
 function validateMargin(value: string, label: string): true | string {
@@ -46,7 +50,7 @@ export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePro
           name: value,
           value,
         })),
-        default: current ?? "github-light",
+        default: current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.theme,
       });
     },
 

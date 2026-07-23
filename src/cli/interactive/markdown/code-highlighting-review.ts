@@ -11,6 +11,16 @@ export function resolveReusableMarkdownPdfCode(
   return normalizeMarkdownPdfProfile({ profile }).profile.code;
 }
 
+export function tryResolveReusableMarkdownPdfCode(
+  profile: Record<string, unknown>,
+): NormalizedMarkdownPdfCode | undefined {
+  try {
+    return resolveReusableMarkdownPdfCode(profile);
+  } catch {
+    return undefined;
+  }
+}
+
 export function renderReusableMarkdownPdfCodeReview(
   runtime: CliRuntime,
   code: Readonly<NormalizedMarkdownPdfCode>,

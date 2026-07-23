@@ -146,22 +146,13 @@ async function reviseCandidate(
         revised = await reviseMarkdownPdfFormalGuideCode(answers, prompts);
         break;
       case "layout":
-        revised = {
-          ...(await reviseMarkdownPdfFormalGuideLayout(answers, prompts)),
-          code: answers.code,
-        };
+        revised = await reviseMarkdownPdfFormalGuideLayout(answers, prompts);
         break;
       case "margins":
-        revised = {
-          ...(await reviseMarkdownPdfFormalGuideMargins(answers, prompts)),
-          code: answers.code,
-        };
+        revised = await reviseMarkdownPdfFormalGuideMargins(answers, prompts);
         break;
       case "toc":
-        revised = {
-          ...(await reviseMarkdownPdfFormalGuideToc(answers, prompts)),
-          code: answers.code,
-        };
+        revised = await reviseMarkdownPdfFormalGuideToc(answers, prompts);
         break;
     }
     return prepareMarkdownPdfDeterministicRecipe({

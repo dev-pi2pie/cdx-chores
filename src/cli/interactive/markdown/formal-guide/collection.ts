@@ -1,3 +1,4 @@
+import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../../../markdown-pdf/profile";
 import type {
   MarkdownPdfFormalGuideAnswers,
   MarkdownPdfFormalGuideCodeAnswers,
@@ -9,7 +10,7 @@ import type {
   MarkdownPdfFormalGuideTocDetails,
 } from "./types";
 
-const DEFAULT_CODE_THEME = "github-light";
+const DEFAULT_CODE_THEME = DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.theme;
 
 async function collectCode(
   prompts: MarkdownPdfFormalGuidePrompts,
@@ -114,30 +115,27 @@ export async function reviseMarkdownPdfFormalGuideCode(
   };
 }
 
-export async function reviseMarkdownPdfFormalGuideLayout(
-  answers: Readonly<MarkdownPdfFormalGuideAnswers>,
-  prompts: MarkdownPdfFormalGuidePrompts,
-): Promise<MarkdownPdfFormalGuideAnswers> {
+export async function reviseMarkdownPdfFormalGuideLayout<
+  TAnswers extends MarkdownPdfFormalGuideAnswers,
+>(answers: Readonly<TAnswers>, prompts: MarkdownPdfFormalGuidePrompts): Promise<TAnswers> {
   return {
     ...answers,
     layout: await collectLayout(prompts, answers.layout),
   };
 }
 
-export async function reviseMarkdownPdfFormalGuideMargins(
-  answers: Readonly<MarkdownPdfFormalGuideAnswers>,
-  prompts: MarkdownPdfFormalGuidePrompts,
-): Promise<MarkdownPdfFormalGuideAnswers> {
+export async function reviseMarkdownPdfFormalGuideMargins<
+  TAnswers extends MarkdownPdfFormalGuideAnswers,
+>(answers: Readonly<TAnswers>, prompts: MarkdownPdfFormalGuidePrompts): Promise<TAnswers> {
   return {
     ...answers,
     margins: await collectMargins(prompts, answers.layout, answers.margins),
   };
 }
 
-export async function reviseMarkdownPdfFormalGuideToc(
-  answers: Readonly<MarkdownPdfFormalGuideAnswers>,
-  prompts: MarkdownPdfFormalGuidePrompts,
-): Promise<MarkdownPdfFormalGuideAnswers> {
+export async function reviseMarkdownPdfFormalGuideToc<
+  TAnswers extends MarkdownPdfFormalGuideAnswers,
+>(answers: Readonly<TAnswers>, prompts: MarkdownPdfFormalGuidePrompts): Promise<TAnswers> {
   return {
     ...answers,
     toc: await collectToc(prompts, answers.toc),
