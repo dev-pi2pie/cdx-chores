@@ -2,6 +2,7 @@ import type { PreparedMarkdownPdfProfileCodex } from "../../markdown-pdf/profile
 import type { MarkdownPdfProjectCodexPreparedArtifact } from "../../markdown-pdf/project-codex";
 import type { PreparedMdPdfTemplateCodexArtifact } from "../../markdown-pdf/template-codex";
 import type { PreparedMarkdownPdfDeterministicRecipe } from "./deterministic-authoring";
+import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
 
 export type MarkdownPdfCodexArtifact = "profile" | "template-bundle" | "project-bundle";
 
@@ -44,15 +45,23 @@ export type PreparedMarkdownPdfGeneratedCandidate =
 
 export interface MarkdownPdfGeneratedLifecycleSelection {
   candidate: PreparedMarkdownPdfGeneratedCandidate;
+  codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
   kind: "generated-lifecycle";
   lifecycle: MarkdownPdfGeneratedLifecycle;
   markdownInput: string;
   report: MarkdownPdfCodexReportRetention;
 }
 
+export type MarkdownPdfGeneratedLifecycleHandlerOutcome =
+  | { kind: "complete" }
+  | {
+      codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+      kind: "review";
+    };
+
 export type MarkdownPdfGeneratedLifecycleHandler = (
   selection: MarkdownPdfGeneratedLifecycleSelection,
-) => Promise<"complete" | "review">;
+) => Promise<MarkdownPdfGeneratedLifecycleHandlerOutcome>;
 
 export interface MarkdownPdfSavedRecipe {
   artifact: MarkdownPdfCodexArtifact;

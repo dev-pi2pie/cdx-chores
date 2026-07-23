@@ -368,7 +368,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(result.markdownPdfDeterministicPrepareCalls).toEqual([]);
   });
 
-  test("materializes and renders a temporary deterministic Profile once", () => {
+  test("materializes and renders a temporary deterministic Profile with an enabled override", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
@@ -378,6 +378,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "profile",
         "starter",
         "temporary-render",
+        "enable",
         "default",
       ],
       requiredPathQueue: ["fixtures/report.md"],
@@ -389,12 +390,17 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([
       { artifact: "profile", candidateId: "deterministic-1" },
     ]);
-    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ codeHighlight: true }),
+    ]);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stderr).toContain("Render override:\n- Enable for this render");
+    expect(result.stderr).toContain("Effective render:");
+    expect(result.stderr).toContain("- Highlighting: enabled");
     expect(result.stdout).toContain("Wrote PDF:");
   });
 
-  test("saves and renders a durable deterministic Template once", () => {
+  test("saves and renders a durable deterministic Template with a disabled override", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
@@ -404,6 +410,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "template-bundle",
         "starter",
         "save-and-render",
+        "disable",
         "custom",
         "default",
       ],
@@ -416,8 +423,13 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       expect.objectContaining({ output: "recipes/durable-template", overwrite: false }),
     ]);
     expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
-    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ codeHighlight: false }),
+    ]);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.stderr).not.toContain("Reusable Profile settings:");
+    expect(result.stderr).toContain("Render override:\n- Disable for this render");
+    expect(result.stderr).toContain("- Highlighting: disabled");
     expect(result.stderr).toContain("Recipe cleanup: never");
   });
 

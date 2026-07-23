@@ -12,13 +12,21 @@ import { suggestedMarkdownPdfCodexOutputPath } from "../codex-service";
 import type { MarkdownPdfGeneratedLifecycleSelection } from "../codex-types";
 import type { BoundMarkdownPdfGeneratedMaterialization } from "../materialization";
 import { artifactLabel, isRecoverableGeneratedLifecycleBindError } from "./guards";
+import {
+  formatEffectiveMarkdownPdfCodeReview,
+  formatMarkdownPdfRenderOverrideReview,
+  formatReusableMarkdownPdfCodeReview,
+  resolveGeneratedEffectiveMarkdownPdfCode,
+  resolveGeneratedReusableMarkdownPdfCode,
+} from "../code-highlighting-review";
+import type { MarkdownPdfRenderCodeHighlightChoice } from "../render-code-highlighting";
 
 export type ArtifactDestinationOutcome =
   | { kind: "destination"; output: string; overwrite: boolean }
   | { kind: "review" }
   | { kind: "cancel" };
 
-export type FinalRenderNextStep = "outputs" | "review" | "cancel";
+export type FinalRenderNextStep = "outputs" | "change-code-highlighting" | "review" | "cancel";
 
 export type PdfOutputOutcome =
   | { kind: "output"; output: ResolvedMarkdownPdfRenderOutput }
@@ -135,6 +143,7 @@ export async function promptGeneratedFinalRenderNextStep(): Promise<FinalRenderN
     message: "Final render next step",
     choices: [
       { name: "Change outputs", value: "outputs" },
+      { name: "Change code highlighting", value: "change-code-highlighting" },
       { name: "Back to recipe review", value: "review" },
       { name: "Cancel", value: "cancel" },
     ],
@@ -146,6 +155,7 @@ export function renderGeneratedFinalReview(
   selection: MarkdownPdfGeneratedLifecycleSelection,
   pdf: ResolvedMarkdownPdfRenderOutput,
   materialization?: BoundMarkdownPdfGeneratedMaterialization,
+  codeHighlight: MarkdownPdfRenderCodeHighlightChoice = selection.codeHighlight,
 ): void {
   printLine(runtime.stderr, "Final render review");
   printLine(runtime.stderr, "");
@@ -164,4 +174,21 @@ export function renderGeneratedFinalReview(
     `Recipe cleanup: ${selection.lifecycle === "temporary-render" ? "after successful render" : "never"}`,
   );
   printLine(runtime.stderr, `PDF overwrite: ${pdf.overwrite ? "enabled" : "disabled"}`);
+  const reusable = resolveGeneratedReusableMarkdownPdfCode(selection.candidate);
+  if (reusable) {
+    printLine(runtime.stderr, "");
+    for (const line of formatReusableMarkdownPdfCodeReview(reusable)) {
+      printLine(runtime.stderr, line);
+    }
+  }
+  printLine(runtime.stderr, "");
+  for (const line of formatMarkdownPdfRenderOverrideReview(codeHighlight)) {
+    printLine(runtime.stderr, line);
+  }
+  printLine(runtime.stderr, "");
+  for (const line of formatEffectiveMarkdownPdfCodeReview(
+    resolveGeneratedEffectiveMarkdownPdfCode(selection.candidate, codeHighlight),
+  )) {
+    printLine(runtime.stderr, line);
+  }
 }

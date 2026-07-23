@@ -79,6 +79,7 @@ export interface InteractiveHarnessResult {
     string,
     Array<{ name: string; value: string; description?: string }>
   >;
+  selectDefaultsByMessage: Record<string, string[]>;
   searchChoicesByMessage: Record<
     string,
     Array<{ name: string; value: string; description?: string }>

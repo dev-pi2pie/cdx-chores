@@ -38,6 +38,7 @@ import {
   type MarkdownPdfFormalGuideGroup,
 } from "./formal-guide";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
 
 export type MarkdownPdfAuthoringOutcome =
   | InteractiveNavigationOutcome
@@ -195,6 +196,12 @@ async function reviewCandidate(
   | MarkdownPdfSavedRecipe
 > {
   let candidate = initialCandidate;
+  let renderContext:
+    | {
+        candidate: PreparedMarkdownPdfDeterministicRecipe;
+        codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+      }
+    | undefined;
   while (true) {
     renderDeterministicRecipeReview(runtime, candidate, markdownInput);
     const action = await select<MarkdownPdfCandidateReviewAction>({
@@ -208,8 +215,11 @@ async function reviewCandidate(
       return action;
     }
     if (action === "temporary-render" || action === "save-and-render") {
+      const codeHighlight =
+        renderContext?.candidate === candidate ? renderContext.codeHighlight : "inherit";
       const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "deterministic", candidate },
+        codeHighlight,
         kind: "generated-lifecycle",
         lifecycle: action,
         markdownInput: markdownInput!,
@@ -218,9 +228,11 @@ async function reviewCandidate(
       if (!onGeneratedLifecycle) {
         return selection;
       }
-      if ((await onGeneratedLifecycle(selection)) === "complete") {
+      const outcome = await onGeneratedLifecycle(selection);
+      if (outcome.kind === "complete") {
         return "complete";
       }
+      renderContext = { candidate, codeHighlight: outcome.codeHighlight };
       continue;
     }
     if (action === "save") {

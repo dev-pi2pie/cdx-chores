@@ -32,6 +32,7 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
   return {
     promptCalls: [],
     selectChoicesByMessage: {},
+    selectDefaultsByMessage: {},
     searchChoicesByMessage: {},
     validationCalls: [],
     pathCalls: [],

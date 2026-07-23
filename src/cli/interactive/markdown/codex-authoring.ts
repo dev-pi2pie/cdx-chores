@@ -21,6 +21,7 @@ import type {
 } from "./codex-types";
 import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
 
 export type MarkdownPdfCodexAuthoringOutcome =
   | { kind: "complete" }
@@ -77,6 +78,12 @@ export async function runMarkdownPdfCodexAuthoring(
 ): Promise<MarkdownPdfCodexAuthoringOutcome> {
   let setup: MarkdownPdfCodexSetup | undefined;
   let acceptedCandidate: PreparedMarkdownPdfCodexCandidate | undefined;
+  let renderContext:
+    | {
+        candidate: PreparedMarkdownPdfCodexCandidate;
+        codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+      }
+    | undefined;
   while (true) {
     const setupOutcome = await collectMarkdownPdfCodexSetup(runtime, pathPromptContext, {
       artifact: input.artifact,
@@ -150,8 +157,11 @@ export async function runMarkdownPdfCodexAuthoring(
       }
       const lifecycle = action;
       const report = await promptMarkdownPdfCodexReportRetention(lifecycle, pathPromptContext);
+      const codeHighlight =
+        renderContext?.candidate === prepared ? renderContext.codeHighlight : "inherit";
       const selection: MarkdownPdfGeneratedLifecycleSelection = {
         candidate: { kind: "codex", candidate: prepared },
+        codeHighlight,
         kind: "generated-lifecycle",
         lifecycle,
         markdownInput: input.markdownInput!,
@@ -160,9 +170,11 @@ export async function runMarkdownPdfCodexAuthoring(
       if (!input.onGeneratedLifecycle) {
         return selection;
       }
-      if ((await input.onGeneratedLifecycle(selection)) === "complete") {
+      const outcome = await input.onGeneratedLifecycle(selection);
+      if (outcome.kind === "complete") {
         return { kind: "complete" };
       }
+      renderContext = { candidate: prepared, codeHighlight: outcome.codeHighlight };
     }
   }
 }

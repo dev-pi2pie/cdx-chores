@@ -145,6 +145,38 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     });
   });
 
+  test("changes a saved Project handoff override without rewriting or replanning", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...projectSaveSelections("choose"),
+        "sample",
+        "inherit",
+        "default",
+        "change-code-highlighting",
+        "enable",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/sample.md"],
+      confirmQueue: [false, true, false, true, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("codeHighlight");
+    expect(result.markdownPdfPrepareCalls[1]).toEqual(
+      expect.objectContaining({ codeHighlight: true }),
+    );
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      expect.objectContaining({ preparedId: "prepared-2" }),
+    ]);
+    expect(result.promptCalls.filter((call) => call.message === "Choose preparation mode")).toEqual(
+      [],
+    );
+  });
+
   test("can create another recipe after a durable save", () => {
     const result = runInteractiveHarness({
       mode: "run",

@@ -14,7 +14,7 @@ import type { MarkdownPdfInteractiveEntry } from "./types";
 import { collectMarkdownPdfInteractiveFontReview } from "./font-review";
 import {
   renderReusableMarkdownPdfCodeReview,
-  tryResolveReusableMarkdownPdfCode,
+  resolveGeneratedReusableMarkdownPdfCode,
 } from "./code-highlighting-review";
 import type { NormalizedMarkdownPdfCode } from "../../markdown-pdf/profile";
 
@@ -91,15 +91,7 @@ function plannedFiles(candidate: PreparedMarkdownPdfCodexCandidate): string[] {
 function reusableCode(
   candidate: PreparedMarkdownPdfCodexCandidate,
 ): NormalizedMarkdownPdfCode | undefined {
-  if (candidate.artifact === "profile") {
-    return candidate.prepared.kind === "profile"
-      ? tryResolveReusableMarkdownPdfCode(candidate.prepared.finalProfile)
-      : undefined;
-  }
-  if (candidate.artifact === "template-bundle") {
-    return undefined;
-  }
-  return tryResolveReusableMarkdownPdfCode(candidate.prepared.profilePhase.finalProfile);
+  return resolveGeneratedReusableMarkdownPdfCode({ kind: "codex", candidate });
 }
 
 export function renderMarkdownPdfCodexConsent(

@@ -11,6 +11,7 @@ interface PromptChoice {
 interface SelectPromptOptions {
   message?: unknown;
   choices?: PromptChoice[];
+  default?: unknown;
 }
 
 interface BooleanPromptOptions {
@@ -108,6 +109,9 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
         kind: "select",
         message,
       });
+      if (typeof options.default === "string") {
+        (context.result.selectDefaultsByMessage[message] ??= []).push(options.default);
+      }
       context.result.selectChoicesByMessage[message] = choices;
 
       return context.shiftQueueValue(context.scenario.selectQueue ?? [], `select:${message}`);

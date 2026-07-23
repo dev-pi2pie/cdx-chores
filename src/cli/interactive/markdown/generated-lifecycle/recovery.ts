@@ -162,6 +162,7 @@ export async function executeDurableMaterializationAndRender(
   selection: MarkdownPdfGeneratedLifecycleSelection,
   pdf: ResolvedMarkdownPdfRenderOutput,
   materialization: Extract<BoundMarkdownPdfGeneratedMaterialization, { kind: "durable" }>,
+  codeHighlight?: boolean,
 ): Promise<GeneratedLifecycleOutcome> {
   let isWritten = false;
 
@@ -194,6 +195,7 @@ export async function executeDurableMaterializationAndRender(
       const prepared = await prepareMarkdownPdfRender(runtime, {
         input: selection.markdownInput,
         ...materialization.rendererSource,
+        ...(codeHighlight === undefined ? {} : { codeHighlight }),
       });
       return await executeRenderWithRecovery(
         runtime,

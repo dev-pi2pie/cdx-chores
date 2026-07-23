@@ -1,10 +1,14 @@
 import { printLine } from "../../actions/shared";
 import {
+  DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   normalizeMarkdownPdfProfile,
+  resolveMarkdownPdfCodeOptions,
   type NormalizedMarkdownPdfCode,
 } from "../../markdown-pdf/profile";
 import type { CliRuntime } from "../../types";
+import type { PreparedMarkdownPdfGeneratedCandidate } from "./codex-types";
 import {
+  compileMarkdownPdfRenderCodeHighlightChoice,
   markdownPdfRenderCodeHighlightChoiceLabel,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
@@ -33,6 +37,38 @@ export function tryResolveReusableMarkdownPdfCode(
   } catch {
     return undefined;
   }
+}
+
+export function resolveGeneratedReusableMarkdownPdfCode(
+  generated: PreparedMarkdownPdfGeneratedCandidate,
+): NormalizedMarkdownPdfCode | undefined {
+  if (generated.kind === "deterministic") {
+    return generated.candidate.artifact === "profile"
+      ? resolveReusableMarkdownPdfCode(generated.candidate.prepared.profile)
+      : undefined;
+  }
+  const candidate = generated.candidate;
+  if (candidate.artifact === "profile") {
+    return candidate.prepared.kind === "profile"
+      ? tryResolveReusableMarkdownPdfCode(candidate.prepared.finalProfile)
+      : undefined;
+  }
+  if (candidate.artifact === "template-bundle") {
+    return undefined;
+  }
+  return tryResolveReusableMarkdownPdfCode(candidate.prepared.profilePhase.finalProfile);
+}
+
+export function resolveGeneratedEffectiveMarkdownPdfCode(
+  generated: PreparedMarkdownPdfGeneratedCandidate,
+  choice: MarkdownPdfRenderCodeHighlightChoice,
+): NormalizedMarkdownPdfCode {
+  return resolveMarkdownPdfCodeOptions({
+    profile:
+      resolveGeneratedReusableMarkdownPdfCode(generated) ??
+      DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code,
+    cliHighlight: compileMarkdownPdfRenderCodeHighlightChoice(choice),
+  });
 }
 
 export function formatReusableMarkdownPdfCodeReview(

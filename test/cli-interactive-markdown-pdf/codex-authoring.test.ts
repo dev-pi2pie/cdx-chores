@@ -841,6 +841,44 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
+  test.each(["profile", "template-bundle", "project-bundle"] as const)(
+    "renders one generated %s with an enabled override and correct Profile ownership",
+    (artifact) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          artifact,
+          ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
+          "continue",
+          "temporary-render",
+          "none",
+          "enable",
+          "default",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: [false, true, false, true],
+      });
+
+      expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        expect.objectContaining({ codeHighlight: true }),
+      ]);
+      expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+      expect(result.stderr.includes("Reusable Profile settings:")).toBe(
+        artifact !== "template-bundle",
+      );
+      expect(
+        result.promptCalls.filter((call) => call.message === "Choose preparation mode"),
+      ).toHaveLength(artifact === "project-bundle" ? 0 : 1);
+    },
+  );
+
   test("temporary Project rendering resolves output only after lifecycle choice", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -852,6 +890,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "temporary-render",
         "none",
+        "inherit",
         "default",
       ],
       inputQueue: [""],
@@ -863,6 +902,95 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
     expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
+  test("resets the retained override after Codex regeneration", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "temporary-render",
+        "none",
+        "enable",
+        "default",
+        "review",
+        "regenerate",
+        "temporary-render",
+        "none",
+        "cancel",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.candidateId)).toEqual([
+      "codex-project-bundle-1",
+      "codex-project-bundle-2",
+    ]);
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "inherit",
+    ]);
+    expect(result.promptCalls.filter((call) => call.message === "Choose preparation mode")).toEqual(
+      [],
+    );
+    expect(result.markdownPdfCodexBindCalls).toEqual([]);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+  });
+
+  test("changes generated final-review highlighting without regenerating or rebinding outputs", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "save-and-render",
+        "with-artifact",
+        "enable",
+        "suggested",
+        "default",
+        "change-code-highlighting",
+        "disable",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true, false, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexBindCalls).toEqual([
+      expect.objectContaining({
+        candidateId: "codex-project-bundle-1",
+        report: { kind: "with-artifact" },
+      }),
+    ]);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([
+      expect.objectContaining({
+        candidateId: "codex-project-bundle-1",
+        report: { kind: "with-artifact" },
+      }),
+    ]);
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ codeHighlight: false }),
+    ]);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+    expect(result.promptCalls.filter((call) => call.message === "Choose preparation mode")).toEqual(
+      [],
+    );
+    expect(result.stderr).toContain("Render override:\n- Disable for this render");
   });
 
   test.each([
@@ -885,6 +1013,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "continue",
           lifecycle,
           report,
+          "inherit",
           ...(lifecycle === "save-and-render" ? ["suggested"] : []),
           "default",
         ],

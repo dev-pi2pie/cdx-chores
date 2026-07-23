@@ -461,7 +461,7 @@ Phase gate:
 
 Tasks:
 
-- [ ] Create the Phase 3 job record.
+- [x] Create the Phase 3 job record.
 - [ ] Add one-render override state to the generated render lifecycle without
       adding it to artifact identity or saved-recipe data.
 - [ ] Collect the override after temporary-render or save-and-render acceptance
