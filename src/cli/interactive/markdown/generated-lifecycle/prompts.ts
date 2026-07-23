@@ -138,11 +138,16 @@ export async function promptGeneratedPdfOutput(
   }
 }
 
-export async function promptGeneratedFinalRenderNextStep(): Promise<FinalRenderNextStep> {
+export async function promptGeneratedFinalRenderNextStep(
+  options: { durableRecipeWritten?: boolean } = {},
+): Promise<FinalRenderNextStep> {
   return await select<FinalRenderNextStep>({
     message: "Final render next step",
     choices: [
-      { name: "Change outputs", value: "outputs" },
+      {
+        name: options.durableRecipeWritten ? "Change PDF output" : "Change outputs",
+        value: "outputs",
+      },
       { name: "Change code highlighting", value: "change-code-highlighting" },
       { name: "Back to recipe review", value: "review" },
       { name: "Cancel", value: "cancel" },

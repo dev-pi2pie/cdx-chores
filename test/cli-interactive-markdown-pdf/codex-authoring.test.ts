@@ -1113,6 +1113,50 @@ describe("interactive Markdown PDF Codex authoring", () => {
     );
   });
 
+  test("changes PDF output after Codex durable recovery without rewriting the recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "project-bundle",
+        "continue",
+        "save-and-render",
+        "enable",
+        "with-artifact",
+        "suggested",
+        "default",
+        "review",
+        "save-and-render",
+        "enable",
+        "with-artifact",
+        "outputs",
+        "custom",
+      ],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/report.md", "output/recovered-codex.pdf"],
+      confirmQueue: [false, true, false, false, true, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(2);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      expect.objectContaining({
+        outputPath: expect.stringMatching(/output\/recovered-codex\.pdf$/),
+      }),
+    ]);
+    expect(
+      result.selectChoicesByMessage["Final render next step"]?.find(
+        (choice) => choice.value === "outputs",
+      )?.name,
+    ).toBe("Change PDF output");
+  });
+
   test.each([
     ["back", true],
     ["cancel", false],

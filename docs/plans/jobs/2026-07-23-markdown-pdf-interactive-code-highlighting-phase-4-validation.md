@@ -112,6 +112,39 @@ an unchanged PDF output after a highlighting change was classified as
 non-actionable: the flow intentionally uses the renderer service's binding
 helper to preserve the reviewed output without repeating output planning.
 
+## Post-Closeout Recovery Regression
+
+A later `dev`-against-`canary` review found one stage-awareness gap after a
+successful durable write. If renderer preparation returned to recipe review,
+the next final review's `Change outputs` action cleared the written
+materialization and forced the recipe destination through binding and writing
+again even when only the PDF destination needed to change.
+
+The correction keeps the matching written materialization, presents `Change PDF
+output`, revalidates replacement PDF paths against the durable recipe and
+report, and updates only the retained PDF output before final review.
+Deterministic and Codex Project regressions prove one preparation, bind, and
+write across the recovery path. An additional deterministic regression proves
+that a colliding replacement is rejected and re-prompted without rewriting the
+recipe.
+
+Passed:
+
+```bash
+bun test test/cli-interactive-markdown-pdf/lifecycle.test.ts test/cli-interactive-markdown-pdf/codex-authoring.test.ts
+bun test test/cli-interactive-markdown-pdf
+./node_modules/.bin/tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+bun test
+```
+
+The focused recovery files passed with 91 tests and 410 assertions, the full
+Interactive Markdown PDF suite passed with 201 tests and 796 assertions, and
+the full repository suite passed with 1,756 tests and 9,290 assertions across
+222 files.
+
 ## Related Research
 
 - [Markdown PDF Interactive Code Highlighting](../../researches/research-2026-07-23-markdown-pdf-interactive-code-highlighting.md)

@@ -29,6 +29,7 @@ import {
   promptGeneratedFinalRenderNextStep,
   promptGeneratedPdfOutput,
   renderGeneratedFinalReview,
+  type PdfOutputOutcome,
 } from "./generated-lifecycle/prompts";
 import {
   executeDurableMaterializationAndRender,
@@ -126,6 +127,34 @@ function toGeneratedLifecycleHandlerOutcome(
   return outcome === "review" ? { codeHighlight, kind: "review" } : { kind: "complete" };
 }
 
+async function promptGeneratedPdfOutputForMaterialization(
+  runtime: CliRuntime,
+  pathPromptContext: InteractivePathPromptContext,
+  selection: MarkdownPdfGeneratedLifecycleSelection,
+  materialization: BoundMarkdownPdfGeneratedMaterialization,
+): Promise<PdfOutputOutcome> {
+  while (true) {
+    const pdf = await promptGeneratedPdfOutput(runtime, pathPromptContext, selection.markdownInput);
+    if (pdf.kind !== "output") {
+      return pdf;
+    }
+    try {
+      await assertPdfOutputDoesNotAliasMaterializedOutput(
+        runtime,
+        pdf.output.outputPath,
+        materialization,
+        selection.report,
+      );
+      return pdf;
+    } catch (error) {
+      if (!isRecoverableGeneratedLifecycleBindError(error)) {
+        throw error;
+      }
+      printLine(runtime.stderr, `Unable to prepare PDF output: ${error.message}`);
+    }
+  }
+}
+
 export async function handleMarkdownPdfGeneratedLifecycle(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
@@ -158,6 +187,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
       session.durableResume = undefined;
       return { kind: "complete" };
     }
+    let pdfOutput = pdf.output;
 
     let durable = resume?.materialization;
     if (!durable && artifactDestination?.kind === "destination") {
@@ -176,7 +206,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           throw new TypeError("Expected durable Markdown PDF materialization.");
         }
         durable = bound;
-        assertPdfOutputDoesNotCollide(runtime, pdf.output.outputPath, durable, selection.report);
+        assertPdfOutputDoesNotCollide(runtime, pdfOutput.outputPath, durable, selection.report);
       } catch (error) {
         if (!isRecoverableGeneratedLifecycleBindError(error)) {
           throw error;
@@ -186,16 +216,18 @@ export async function handleMarkdownPdfGeneratedLifecycle(
       }
     } else if (
       selection.report.kind === "external" &&
-      resolve(runtime.cwd, selection.report.path) === resolve(pdf.output.outputPath)
+      resolve(runtime.cwd, selection.report.path) === resolve(pdfOutput.outputPath)
     ) {
       printLine(runtime.stderr, "Unable to prepare output: PDF and report paths must differ.");
       continue;
     }
 
     while (true) {
-      renderGeneratedFinalReview(runtime, selection, pdf.output, durable, codeHighlight);
+      renderGeneratedFinalReview(runtime, selection, pdfOutput, durable, codeHighlight);
       if (!(await confirm({ message: "Render this PDF?", default: true }))) {
-        const next = await promptGeneratedFinalRenderNextStep();
+        const next = await promptGeneratedFinalRenderNextStep({
+          durableRecipeWritten: resume?.isWritten === true,
+        });
         if (next === "review") {
           return { codeHighlight, kind: "review" };
         }
@@ -214,6 +246,24 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           }
           continue;
         }
+        if (resume?.isWritten && durable) {
+          const changedPdf = await promptGeneratedPdfOutputForMaterialization(
+            runtime,
+            pathPromptContext,
+            selection,
+            durable,
+          );
+          if (changedPdf.kind === "review") {
+            return { codeHighlight, kind: "review" };
+          }
+          if (changedPdf.kind === "cancel") {
+            session.durableResume = undefined;
+            return { kind: "complete" };
+          }
+          pdfOutput = changedPdf.output;
+          resume.pdf = changedPdf.output;
+          continue;
+        }
         session.durableResume = undefined;
         resume = undefined;
         break;
@@ -221,19 +271,19 @@ export async function handleMarkdownPdfGeneratedLifecycle(
 
       const compiledCodeHighlight = compileMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
       if (durable) {
-        assertPdfOutputDoesNotCollide(runtime, pdf.output.outputPath, durable, selection.report);
+        assertPdfOutputDoesNotCollide(runtime, pdfOutput.outputPath, durable, selection.report);
         const durableState: DurableGeneratedLifecycleResume = resume ?? {
           candidate: selection.candidate,
           materialization: durable,
           markdownInput: selection.markdownInput,
-          pdf: pdf.output,
+          pdf: pdfOutput,
           report: selection.report,
           isWritten: false,
         };
         const outcome = await executeDurableMaterializationAndRender(
           runtime,
           selection,
-          pdf.output,
+          pdfOutput,
           durable,
           durableState,
           compiledCodeHighlight,
@@ -260,7 +310,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           await materializeTemporaryAndRender(
             runtime,
             selection,
-            pdf.output,
+            pdfOutput,
             temporary,
             compiledCodeHighlight,
           ),

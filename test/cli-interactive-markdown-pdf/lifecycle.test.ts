@@ -700,6 +700,90 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
 
+  test("changes PDF output after durable preparation recovery without rewriting the recipe", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "inherit",
+        "custom",
+        "default",
+        "review",
+        "save-and-render",
+        "inherit",
+        "outputs",
+        "custom",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template", "output/recovered.pdf"],
+      confirmQueue: [false, false, true, false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(2);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      expect.objectContaining({
+        outputPath: expect.stringMatching(/output\/recovered\.pdf$/),
+      }),
+    ]);
+    expect(
+      result.selectChoicesByMessage["Final render next step"]?.find(
+        (choice) => choice.value === "outputs",
+      )?.name,
+    ).toBe("Change PDF output");
+  });
+
+  test("re-prompts a colliding PDF output after durable preparation recovery", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfPrepareErrorMessages: ["bundle admission failed"],
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "inherit",
+        "custom",
+        "default",
+        "review",
+        "save-and-render",
+        "inherit",
+        "outputs",
+        "custom",
+        "custom",
+      ],
+      requiredPathQueue: [
+        "fixtures/report.md",
+        "recipes/durable-template",
+        "recipes/durable-template/template.html",
+        "output/recovered.pdf",
+      ],
+      confirmQueue: [false, false, true, false, false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(3);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      expect.objectContaining({
+        outputPath: expect.stringMatching(/output\/recovered\.pdf$/),
+      }),
+    ]);
+    expect(result.stderr).toContain(
+      "Unable to prepare PDF output: PDF output must be different from generated recipe",
+    );
+  });
+
   test("retries durable rendering without cleanup or regeneration", () => {
     const result = runInteractiveHarness({
       mode: "run",
