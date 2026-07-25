@@ -1,15 +1,16 @@
 ---
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
+modified-date: 2026-07-25
 status: draft
 agent: codex
 ---
 
 ## Goal
 
-Determine whether a Markdown PDF font preference is discoverable, preserved,
-and effective from user input through generated Profile and Template artifacts
-to the rendered PDF.
+Define how a Markdown PDF font preference enters the helper lifecycle and
+remains effective through a partial Template bundle or a coordinated Project
+bundle to the rendered PDF.
 
 This research joins two related findings without treating Interactive mode as
 the only command path:
@@ -17,42 +18,117 @@ the only command path:
 - [Issue #60: Preserve profile fonts in generated Markdown PDF template CSS][issue-60]
 - [Issue #61: Enhance Interactive Markdown PDF font-family search][issue-61]
 
-The shared lifecycle is:
+Issue #61 owns local preference discovery and search. Issue #60 owns
+preservation after a font has reached the effective compatibility Profile used
+by Template synthesis.
+
+## Research At A Glance
+
+Issue #61 gets a font preference into the authoring lifecycle. Issue #60 keeps
+that preference effective through shared Template synthesis and rendering.
 
 ```text
-installed-font inventory
-  -> Interactive search and selection
-  -> repeatable fontHints[]
-  -> Profile Codex font patches
-  -> final profile.yml
-  -> Template synthesis
-  -> generated style.css
-  -> md to-pdf stylesheet cascade
-  -> rendered PDF
+[Issue #61 - discovery and selection]
+
+local fontconfig inventory
+          |
+          v
+family + aliases + full names
+          |
+          v
+deterministic local ranking
+          |
+          v
+    selected family
+          |
+          v
+      fontHints[]
+          |
+          +-----------------+------------------+
+          |                                    |
+          v                                    v
+Direct Template path                    Project path
+--base-profile                          Profile phase
++ fontHints[]                           + fontHints[]
+          |                                    |
+          |                                    v
+          |                            final profile.yml
+          |                                    |
+          | compatibility Profile              | compatibility Profile
+          | = normalized base                  | = normalized final
+          +-----------------+------------------+
+                            |
+                            v
+               shared Template synthesis
+                            |
+                            v
+[Issue #60 - Profile font preservation]
+
+current: Template preset font-family may be emitted
+         for a Profile-owned CSS font slot
+
+target:  omit competing generated font-family
+                                      |
+                          +-----------+-----------+
+                          |                       |
+                          v                       v
+                  Template bundle          Project bundle
+                  partial, no Profile       complete, with Profile
+                          |                       |
+                          +-----------+-----------+
+                                      |
+                                      v
+                         md to-pdf CSS cascade
+                                      |
+                                      v
+                                 rendered PDF
 ```
 
-Issue #61 concerns how font intent enters this lifecycle. Issue #60 concerns
-whether accepted intent remains effective at the artifact and render boundary.
+| Issue | Lifecycle boundary                      | Current conclusion                                            | Remaining proof                                                    |
+| ----- | --------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                              | reproduce and render partial Template and complete Project bundles |
+| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically    | record cold/warm responsiveness and settle the bounded wait         |
 
-## Research Questions
+The two issues share data but not implementation ownership. They should produce
+separate plans and may proceed independently.
 
-1. Does direct `md pdf-profile codex` treat `--base-profile` as the
-   authoritative starting Profile for the new output Profile?
-2. Does direct `md pdf-template codex` preserve fonts from `--base-profile` in
-   its generated `style.css` and rendered output?
-3. Does direct `md pdf-project codex` pass the final Profile font decisions into
-   Template synthesis without replacing them with Template defaults?
-4. Does Interactive authoring explain the starting-Profile to final-artifact
-   lifecycle for Profile, Template, and Project preparation?
-5. Which stylesheet wins when `md to-pdf` renders a Profile with generated
-   Template CSS, and how should generated Project policy differ from deliberate
-   user CSS overrides?
-6. What font inventory does the Interactive picker search, which aliases are
-   retained, and which installed fonts can the renderer actually use?
-7. What matching and ranking behavior would provide useful fuzzy search while
-   preserving predictable custom input?
+## Shared Artifact Model
 
-## Scope
+Template and Project both produce directories that `md to-pdf --bundle` can
+inspect, but they are not the same artifact:
+
+```text
+Template bundle                  Project bundle
+partial render bundle            complete coordinated bundle
+
+template.html                    profile.yml
+style.css                        template.html
+assets/...                       style.css
+                                assets/...
+
+no Profile artifact              includes the final Project Profile
+```
+
+“Partial” does not mean invalid. A Template bundle can render with renderer
+defaults or with a Profile supplied separately; it simply does not contain the
+Profile role itself.
+
+The Project bundle contains a Template artifact set, but Project is not another
+styling owner. Optional diagnostic reports may be written beside either
+artifact set, but they are not render inputs.
+
+| Concern                 | Ownership                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Profile                 | reusable render policy, including font roles                                                             |
+| Template                | reviewable HTML/CSS presentation and managed assets                                                      |
+| Project                 | orchestration, compatibility validation, and atomic assembly of the final Profile and Template artifacts |
+| Render bundle directory | packaging and bounded input discovery; not a policy owner                                                |
+| `md to-pdf`             | deterministic artifact resolution and PDF rendering                                                      |
+
+Project reuses shared Profile and Template services instead of replacing their
+ownership contracts.
+
+## Scope And Fixed Contracts
 
 This research covers:
 
@@ -62,14 +138,14 @@ This research covers:
 - direct `md pdf-project codex` usage with Profile and font inputs
 - Interactive Markdown PDF Profile, Template, and Project authoring through
   Codex Assistant
+- the partial Template-bundle and complete Project-bundle output contracts
+- the shared Template synthesis service used by both bundle-producing helpers
 - generated `profile.yml`, `template.html`, and `style.css`
 - `md to-pdf` Profile, Template, and CSS resolution and stylesheet ordering
-- direct and Interactive terminology for starting, compatibility, and final
-  Profiles
-- Interactive installed-font discovery, alias retention, matching, ranking,
-  result limits, caching, and timeout behavior
-- renderer availability checks for fonts reported by different discovery
-  sources
+- direct and Interactive terminology for base candidates, compatibility
+  Profiles, selected sources, and final Profiles
+- Interactive fontconfig discovery, alias retention, matching, ranking, result
+  limits, caching, cancellation, and timeout behavior
 
 This research does not:
 
@@ -77,322 +153,139 @@ This research does not:
 - infer language coverage or choose fonts automatically
 - redesign Profile font roles or valid role/key combinations
 - make implementation changes
-- assume that every font reported by a platform-native inventory is usable by
-  WeasyPrint
+- assume that every font reported by fontconfig is usable by WeasyPrint
 
-## Existing Contracts
+### Fixed Contracts
 
-The completed font-patch research assigns reusable font policy to the Profile:
+- `md to-pdf` consumes accepted artifacts deterministically and loads
+  Profile-derived CSS before custom or bundle `style.css`.
+- Interactive compiles input assistance into the same ordered
+  `fontHints: string[]` used by direct helpers.
+- Interactive installed-font suggestions use the local fontconfig inventory.
+  Native operating-system discovery is outside Issue #61.
+- Direct Template retains the bounded explicit `template_level` override.
+- Project rejects an explicit Template decision that overrides a Profile-owned
+  font.
+- User-authored CSS remains a deliberate lower-level override through the
+  normal cascade.
 
-| Profile role | Accepted keys |
-| --- | --- |
-| `body` | `default` and validated language tags |
-| `heading` | `default` |
-| `code` | `default` and `symbols` |
-| `pageChrome` | `default` |
+The accepted Profile role/key boundary also remains unchanged:
 
-The completed Template and Project research establishes the broader ownership
-split:
+| Profile role | Accepted keys                         |
+| ------------ | ------------------------------------- |
+| `body`       | `default` and validated language tags |
+| `heading`    | `default`                             |
+| `code`       | `default` and `symbols`               |
+| `pageChrome` | `default`                             |
 
-```text
-Profile owns reusable render policy, including fonts.
-Template owns reviewable HTML/CSS, layout, and managed assets.
-Project coordinates the final Profile and Template artifacts.
-md to-pdf renders accepted artifacts deterministically.
-```
+Installed-font suggestions remain input assistance. They do not prove glyph
+coverage, renderer availability, or the final accepted Profile role.
 
-Template CSS is intentionally applied after Profile-derived default CSS so it
-can own Template styling. That ordering should not cause Template preset
-defaults to replace Profile-owned font choices accidentally.
+## Issue #60: Profile Font Preservation Across Template And Project Bundles
 
-The completed Interactive font-hint research keeps the direct helper contract
-authoritative:
+### Affected Authoring Paths
 
-```text
---font-hint <text>  # repeatable
-```
-
-Interactive mode builds the same ordered `fontHints: string[]` payload. Its
-installed-font picker is input assistance, not proof of glyph coverage,
-renderer availability, or the final accepted Profile role.
-
-This research does not reopen those ownership decisions. It investigates
-whether the implementation preserves them and how the picker can expose its
-font source more effectively.
-
-## Settled Font-Preservation Decision
-
-The Profile remains the authoritative original font configuration.
-
-A Template generated with `--base-profile` must preserve the Profile's
-effective font configuration. Template defaults must not replace it.
-
-Project owns coordination between the final Profile and Template artifacts.
-When Project invokes Template generation, it must ensure the generated CSS
-preserves the final Profile's effective fonts. Direct Template generation
-follows the same preservation rule when `--base-profile` is supplied.
-
-`md to-pdf` remains a deterministic consumer of those accepted artifacts. It
-does not own reconciliation between conflicting Profile and Template generation
-decisions.
-
-For helper-generated artifacts, font priority is:
+The two affected bundle paths create their compatibility Profile differently,
+then converge on shared Template synthesis:
 
 ```text
-Profile-owned font
-  -> Template font decision for an unowned role/key
-  -> Template preset default
+Direct Template                         Project
+--base-profile                          optional base candidate
+       |                                      |
+       |                                      v
+       |                              Project Profile phase
+       |                                      |
+       |                                      v
+       |                              final profile.yml
+       |                                      |
+       +------------------+-------------------+
+                          |
+                          v
+             effective compatibility Profile
+             direct:  normalized --base-profile
+             project: normalized final profile.yml
+                          |
+                          v
+                shared Template synthesis
 ```
 
-Template font decisions may fill role/key pairs that the Profile does not own.
-They must not replace Profile-owned role/key pairs. The current direct-Template
-`template_level` escape hatch is not part of this settled generated-artifact
-contract.
+Direct Template generates no Profile. Its `--base-profile` is compatibility
+input only and is not copied into the partial bundle. A preservation render
+must supply that same Profile separately. Project writes its final Profile into
+the complete bundle before passing it to the Template phase.
 
-This research does not add a requirement for the generated Template to preserve
-the same typography when rendered without its base Profile. The exact technical
-mechanism remains part of the solution comparison, but it must satisfy the same
-observable contract:
+| Path                                     | Issue #60 posture                                                                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Direct Profile                           | not affected directly; it may produce a later compatibility Profile                                   |
+| Direct Template with `--base-profile`    | affected when generated CSS emits a family for a Profile-owned slot                                   |
+| Direct Template without `--base-profile` | no Profile-preservation conflict; Template defaults may own the slot                                  |
+| Project                                  | affected because the final Project Profile is always the compatibility Profile for its Template phase |
+| Interactive Template and Project         | inherit the corresponding direct-helper behavior through shared services                              |
+| User-authored or edited CSS              | deliberate cascade override, not the generation defect                                                |
+| Render with `--no-default-css`           | outside the preservation guarantee because Profile-derived CSS is intentionally disabled              |
+
+### Source-Supported Conflict
+
+Evidence status: source-supported hypothesis; direct reproduction and rendered
+output evidence are still pending.
+
+Source review establishes the likely causal chain:
+
+1. Direct Template normalizes its supplied `--base-profile`, while Project
+   forwards its final normalized Profile into the same Template synthesis
+   service.
+2. That Profile becomes the effective compatibility Profile for the respective
+   synthesis path.
+3. Ordinary Template font decisions are blocked when the compatibility Profile
+   owns the same role/key.
+4. Fixed Template preset tokens are still emitted even when that decision is
+   blocked.
+5. `md to-pdf` loads Profile-derived CSS before generated `style.css`.
+6. Project validation checks reported font decisions, not competing preset
+   declarations in the generated CSS.
+
+The resulting conflict is:
 
 ```text
-Profile font configuration
-  -> Template generation
-  -> unchanged effective fonts in the rendered PDF
+Direct Template                         Project
+--base-profile                          final profile.yml
+       |                                      |
+       +------------------+-------------------+
+                          |
+                          v
+             effective compatibility Profile
+                          |
+              +-----------+-----------+
+              |                       |
+              v                       v
+      render-time Profile CSS    shared Template synthesis
+      body {                     ordinary override is blocked
+        font-family:             because the Profile owns
+          Profile Font;          body.default
+      }                                |
+                                       v
+                                  preset CSS still emits
+                                  body {
+                                    font-family: Preset Font;
+                                  }
+              |                       |
+              +-----------+-----------+
+                          |
+                          v
+                  WeasyPrint CSS order
+                  1. Profile-derived CSS
+                  2. generated style.css
+                          |
+                          v
+                  Preset Font wins accidentally
 ```
 
-## Settled Base-Profile Lifecycle
-
-`--base-profile` is a read-only lifecycle input, not an additional final render
-artifact.
-
-The settled three-helper contract is:
-
-| Helper | Meaning of `--base-profile` | Generated Profile output |
-| --- | --- | --- |
-| `md pdf-profile codex` | authoritative starting Profile to refine | one new output Profile |
-| `md pdf-template codex` | compatibility Profile whose render policy must be preserved | none |
-| `md pdf-project codex` | authoritative starting Profile for the Project Profile phase | final Project `profile.yml` |
-
-When Project receives a base Profile, its lifecycle is:
-
-```text
-external base Profile
-  -> Project Profile phase
-  -> final project/profile.yml
-  -> Project Template phase
-  -> template.html and style.css compatible with final project/profile.yml
-```
-
-The external base file is not a second Project render input. Project writes the
-final `profile.yml` so the bundle remains self-contained and replayable. A
-base-only run may produce a near-copy with new identity and lineage metadata;
-that snapshot is intentional rather than an external-file dependency.
-
-When `--base-profile` is supplied to Profile or Project generation, it should
-not be treated as merely one optional candidate that Codex may silently replace
-with a built-in candidate. It is the starting Profile. When no base Profile is
-supplied, built-in candidate selection remains available.
-
-## Current Render Priority
-
-The current renderer resolves recipe settings and files before applying the CSS
-cascade:
-
-```text
-explicit recipe CLI settings
-  -> Profile-derived recipe settings
-  -> renderer defaults
-
-explicit --profile/--template/--css for each role
-  -> bundle-discovered file for that role
-```
-
-For stylesheets, `md to-pdf` generates default CSS from the effective Profile,
-then passes custom or bundle `style.css` to WeasyPrint afterward:
-
-```text
-Profile-derived generated CSS
-  -> custom or bundle style.css
-  -> normal CSS cascade
-```
-
-For equal-specificity declarations, the later `style.css` wins. Selector
-specificity, inheritance, and `!important` still apply normally.
-
-This mechanical order should remain available for deliberate user-authored or
-edited CSS. Generated Template and Project artifacts have a stronger policy:
-their `style.css` must not contain accidental preset declarations that replace
-Profile-owned fonts.
-
-## Settled Interactive Base-Profile Shape
-
-Interactive mode reuses the direct helper services and should not invent a
-separate base-Profile contract. It should use artifact-specific language:
-
-| Artifact | Setup label |
-| --- | --- |
-| Profile | `Starting profile` |
-| Template bundle | `Compatibility profile` |
-| Project bundle | `Starting profile for the generated Project` |
-
-For Project preparation, the setup and review should make the transition
-visible:
-
-```text
-Starting profile: ./base.yml
-Generated project profile: profile.yml
-Template compatibility source: generated profile.yml
-```
-
-After preparation, the review should report the actual Profile lineage and make
-clear that `profile.yml` is the final replayable artifact. Without a selected
-base Profile, it should identify built-in candidate selection as the starting
-source.
-
-## Command Paths Under Review
-
-### Direct Profile CLI
-
-Representative path:
-
-```bash
-cdx-chores md pdf-profile codex ./sample.md \
-  --base-profile ./profile.yml \
-  --font-hint "Prefer Example Serif for body text" \
-  --output ./refined-profile.yml
-```
-
-This path should prove that the supplied Profile is the starting Profile and
-the output is a new derivative rather than an unrelated candidate result.
-
-### Direct Template CLI
-
-Representative path:
-
-```bash
-cdx-chores md pdf-template codex ./sample.md \
-  --base-profile ./profile.yml \
-  --font-hint "Prefer Example Serif for body text" \
-  --output ./template-bundle
-
-cdx-chores md to-pdf \
-  --input ./sample.md \
-  --profile ./profile.yml \
-  --template ./template-bundle/template.html \
-  --css ./template-bundle/style.css \
-  --output ./sample.pdf
-```
-
-This path isolates the Template helper. It should establish whether the
-behavior is already present before Project or Interactive orchestration. The
-example deliberately repeats an owned body-font preference: the resulting
-Template must preserve the Profile-owned value rather than reinterpret the hint
-as a Template override.
-
-### Direct Project CLI
-
-Representative path:
-
-```bash
-cdx-chores md pdf-project codex ./sample.md \
-  --base-profile ./profile.yml \
-  --font-hint "Prefer Example Serif for body text" \
-  --output ./project-bundle
-
-cdx-chores md to-pdf \
-  --input ./sample.md \
-  --bundle ./project-bundle \
-  --output ./sample.pdf
-```
-
-This path should verify that the final Project Profile enters the Template
-phase, and that the generated Template does not fall back to conflicting preset
-fonts.
-
-### Interactive Project Authoring
-
-Representative path:
-
-```text
-Interactive Markdown PDF
-  -> Project bundle
-  -> starting-Profile setup
-  -> font-hint setup
-  -> Codex Assistant
-  -> prepared review
-       -> final project/profile.yml
-       -> Template compatibility source: final project/profile.yml
-  -> save Project bundle
-  -> render
-```
-
-This path should be compared with the direct Project CLI at the normalized
-command-state and prepared-artifact boundaries. Interactive mode should not
-have a separate font ownership contract.
-
-### Deterministic Render
-
-All rendered Template and Project authoring paths eventually depend on:
-
-```text
-Profile-derived default CSS
-  -> generated or supplied Template style.css
-  -> WeasyPrint
-```
-
-The investigation must therefore inspect the generated files and the computed
-render result. Correct `profile.yml` alone is insufficient evidence.
-
-## Initial Finding A: Profile Fonts Can Be Replaced by Template Defaults
-
-The initial source review shows:
-
-1. Project orchestration completes the Profile phase before the Template phase.
-2. The Template phase normalizes the final project Profile and collects its
-   font signals.
-3. Template font decisions matching Profile-owned role/key pairs are blocked
-   when they come from ordinary font hints.
-4. Direct Template synthesis currently includes a `template_level` escape hatch
-   for overriding a Profile-owned font, while Project compatibility validation
-   rejects the same override.
-5. Template theme tokens still start with fixed body, heading, and monospace
-   stacks.
-6. Blocked Profile-owned decisions do not populate those tokens.
-7. Generated `style.css` declares the resulting Template font variables and
-   applies them to `body`, headings, and `code`.
-8. `md to-pdf` passes Profile-derived default CSS to WeasyPrint before the
-   custom or bundle `style.css`.
-9. Project validation detects reported Template font decisions that override
-   Profile-owned fonts, but fixed Template preset declarations are not reported
-   as font decisions and can bypass that check.
-
-This creates a likely ownership mismatch:
-
-```text
-Profile font is accepted
-  -> Template correctly refuses to override it as a decision
-  -> Template CSS still emits its preset/default family
-  -> later Template CSS can win the cascade
-```
-
-The direct Template helper and the Project helper share the same Template
-synthesis. The issue should therefore be reproduced first through direct
-`md pdf-template codex`, then through direct Project CLI and Interactive Project
-authoring. Interactive mode may expose the problem, but it is not yet the
-suspected owner.
-
-Direct Template font-hint behavior is role/key-aware:
-
-- without a base Profile, an accepted hint may populate a supported Template
-  font role/key
-- with a base Profile, a hint may populate only a role/key that the Profile
-  does not own
-- when the Profile already owns the role/key, the generated Template CSS must
-  preserve that Profile font rather than fall back to a Template preset
-
-Template font decisions currently cover body, heading, and code. Page-chrome
-fonts remain Profile-only and should be checked separately to distinguish
-affected and unaffected roles.
+The direct Template helper and Project share the faulty synthesis boundary even
+though their output bundles differ. Reproduction should start with direct
+`md pdf-template codex --base-profile`, then prove that the Project Template
+phase and both Interactive wrappers inherit the same behavior. Direct Template
+render evidence must supply the same compatibility Profile explicitly; Project
+render evidence obtains its final Profile from the complete bundle.
 
 ### Version Boundary
 
@@ -403,115 +296,166 @@ latest released canary, `v0.1.6-canary.3`.
 The exact first affected commit or canary for each direct path should be
 recorded only after tag-based reproduction confirms it.
 
-## Candidate Solutions for Finding A
+### Selected Fix: Ownership-Aware Font CSS Emission
 
-### Option A: Seed Template Font Tokens from the Final Profile
+Generated Template CSS should omit `font-family` declarations for CSS font
+slots owned by the effective compatibility Profile. That Profile is the
+normalized `--base-profile` for direct Template and the normalized final
+Project Profile for Project. The ownership mask must come from the full
+normalized Profile, not the bounded font summary exposed to Codex.
 
-Resolve Profile-owned body, heading, and code stacks from the full normalized
-Profile and use them as the starting Template theme tokens.
+```text
+effective compatibility Profile
+  direct Template: normalized --base-profile
+  Project:         normalized final profile.yml
+             |
+             v
+derive CSS font-slot ownership
+             |
+             v
+Template CSS synthesis
+             |
+             +-- explicit direct-Template template_level decision?
+             |        |
+             |        `-- yes -> emit the deliberate override family
+             |
+             +-- Profile owns this CSS font slot?
+             |        |
+             |        `-- yes -> omit Template font-family
+             |
+             `-- no -> emit accepted Template decision
+                      or Template preset family
+```
 
-Advantages:
+The rendered result keeps non-font Template styling without fighting the
+Profile:
 
-- preserves the existing stylesheet order
-- makes `style.css` visibly reflect the effective Profile fonts
-- keeps a generated Template bundle more understandable when reviewed
-- supports direct Template and Project paths through one shared synthesis fix
+```text
+Profile-derived CSS             generated style.css
+body {                          body {
+  font-family: Profile Font;      font-size: 10.5pt;
+}                                 line-height: 1.5;
+                                  /* no font-family */
+                                }
+             \                   /
+              \                 /
+               v               v
+              normal CSS cascade
+                       |
+                       v
+             Profile Font remains effective
+```
 
-Risks:
+This direction does not reverse stylesheet order, add `!important`, or copy
+Profile font stacks into a second policy implementation. If the focused
+synthesis spike shows that omission cannot preserve a supported CSS slot, keep
+the research open and reconsider the direction rather than silently duplicating
+Profile serialization.
 
-- Profile-to-CSS serialization could be duplicated and drift
-- language and symbol fallback ordering must remain consistent with renderer
-  behavior
-- an implementation must use the full normalized Profile, not only a bounded
-  or truncated Codex prompt summary
+### CSS Font Ownership Slots
 
-This is the leading near-term candidate if the generated Template tokens can be
-derived directly from the authoritative normalized Profile without introducing
-a second font policy.
+Profile role/keys do not always map one-to-one to CSS declarations:
 
-### Option B: Omit Profile-Owned Font Families from Template CSS
+| CSS slot      | Profile ownership source         | Generated Template behavior                               |
+| ------------- | -------------------------------- | --------------------------------------------------------- |
+| Body default  | `body.default`                   | omit the Template body family                             |
+| Body language | matching `body.<language-tag>`   | do not emit a competing family for that language selector |
+| Headings      | `heading.default`                | omit the Template heading family                          |
+| Code stack    | `code.default` or `code.symbols` | treat the combined code declaration as Profile-owned      |
+| Page chrome   | `pageChrome.default`             | Profile-only; Template emits no competing family          |
 
-When a role is Profile-owned, generate Template CSS without a competing
-`font-family` declaration for that role.
+The combined code slot is deliberately conservative because `code.default` and
+`code.symbols` become one rendered fallback stack. A Template default cannot
+replace only one key without affecting the other.
 
-Advantages:
+### Direct Template, Project, And Render Rules
 
-- expresses ownership cleanly through the cascade
-- avoids duplicating Profile font stacks
+| Path                                                                  | Artifact result                   | Profile-owned slot behavior                                                     |
+| --------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
+| Direct Template with compatibility Profile, ordinary hint or preset   | partial Template bundle           | omit the generated Template family                                              |
+| Direct Template with compatibility Profile, explicit `template_level` | partial Template bundle           | emit the deliberate bounded override                                            |
+| Direct Template without compatibility Profile                         | partial Template bundle           | emit the accepted Template decision or preset family                            |
+| Project Template phase                                                | complete Project bundle           | omit ordinary/preset families and reject explicit Profile-owned overrides       |
+| User-edited CSS                                                       | edited partial or complete bundle | may override through the existing normal cascade                                |
+| `--no-default-css` render                                             | either bundle shape               | intentionally removes Profile CSS, so Profile-font preservation is not expected |
 
-Risks:
+A generated Template is not required to preserve the same typography when
+rendered without its compatibility Profile.
 
-- existing `font` shorthands may need to be split into size, line-height, and
-  family declarations
-- Template components that consume Template font variables need an inheritance
-  contract
+### Investigation And Validation Path
 
-This option is valid only if rendering with the base Profile preserves the same
-effective fonts. Standalone typography without that Profile is not a requirement
-introduced by this research.
+```text
+1. Reproduce direct Template conflict with --base-profile
+             |
+             v
+2. Map Profile role/keys to CSS ownership slots
+             |
+             v
+3. Spike conditional font-family emission
+             |
+             +-- supported selectors and typography remain correct?
+             |        |
+             |        +-- yes -> confirm the selected direction
+             |        |
+             |        `-- no  -> keep research open and reconsider
+             |
+             v
+4. Apply the shared Template synthesis fix
+             |
+             v
+5. Validate partial Template and complete Project bundles
+             |
+             v
+6. Inspect generated CSS and both rendered PDF paths
+```
 
-### Option C: Add Shared Profile Font CSS Variables
+Use visibly distinct Profile and preset families for `body.default`, one
+`body.<language-tag>`, `heading.default`, `code.default`, `code.symbols`, and
+`pageChrome.default`. Cover direct Template with and without a compatibility
+Profile, ordinary hints, explicit direct overrides, Project rejection,
+deterministic fallback, default CSS, and the `--no-default-css` negative
+boundary. Validation must inspect generated selectors and the rendered result
+for both bundle shapes, not only font-decision metadata or `profile.yml`.
 
-Have Profile-derived CSS define canonical font variables and have generated
-Template CSS consume those variables with safe fallbacks.
+### Non-Blocking Base-Profile Presentation Follow-Up
 
-Advantages:
+The helper contract is already distinct:
 
-- creates one CSS source of truth
-- keeps Template styling composable without copying Profile stacks
-- provides a durable contract for future Template families
+| Helper                  | `--base-profile` role                                | Generated Profile           |
+| ----------------------- | ---------------------------------------------------- | --------------------------- |
+| `md pdf-profile codex`  | validated candidate available for refinement         | one new output Profile      |
+| `md pdf-template codex` | compatibility Profile whose policy must be preserved | none                        |
+| `md pdf-project codex`  | validated candidate for the Project Profile phase    | final Project `profile.yml` |
 
-Risks:
+Codex-assisted Profile and Project runs may select the supplied candidate or a
+built-in candidate. Project then passes its final selected Profile into Template
+synthesis and writes that Profile into the bundle.
 
-- requires coordinated renderer, Profile CSS, Template synthesis, and
-  compatibility changes
-- is broader than the immediate preservation fix
+Interactive should expose that transition with artifact-specific language:
 
-This is a possible longer-term direction rather than the default scoped fix.
+```text
+Base profile candidate: ./base.yml
+Selected profile source: ./base.yml or <built-in candidate>
+Generated project profile: profile.yml
+Template compatibility source: generated profile.yml
+```
 
-### Non-Solutions
+This is presentation work only. It must not block Issue #60 reproduction,
+synthesis changes, or rendered evidence, and it must not change candidate
+selection semantics.
 
-- Reversing stylesheet order would weaken intentional Template and custom CSS
-  overrides.
-- Adding `!important` would make explicit user overrides harder and obscure the
-  ownership contract.
-- Fixing only Interactive option forwarding would leave direct Template and
-  Project CLI behavior inconsistent.
+## Issue #61: Installed-Font Discovery And Search
 
-## Finding A.1: Base-Profile Lifecycle Is Unclear
+### Shipped Behavior
 
-The initial source review shows that:
-
-- Profile and Project generation load `--base-profile` into the Profile
-  candidate set and always write a new final Profile artifact
-- with additional signals, Codex may currently select a built-in candidate
-  instead of the supplied base Profile
-- Template generation uses `--base-profile` only as compatibility and synthesis
-  context and writes no Profile artifact
-- Project writes its final Profile into the bundle as `profile.yml`; the
-  external base file is not used by the final `--bundle` render
-- Interactive mode forwards `baseProfile` correctly to the shared helper
-  service, but uses the generic labels `Set base profile`, `Base profile file`,
-  and `Base profile` for all three artifacts
-- Interactive Project review lists the planned `profile.yml`, `template.html`,
-  and `style.css` files without showing the starting-Profile to final-Profile
-  transition
-
-This is partly a shared helper-contract issue and partly an Interactive
-presentation issue. It is not an Interactive-only option-forwarding bug.
-
-The settled enhancement keeps Project self-contained, makes a supplied base
-Profile authoritative for Profile and Project refinement, and makes the
-starting, compatibility, and final Profile roles visible in Interactive setup
-and review.
-
-## Initial Finding B: Interactive Search Uses a Narrow Inventory and Matcher
+Evidence status: current behavior is source-confirmed; alias retention, ranking,
+and the relaxed timeout contract remain proposed and unvalidated.
 
 The current Interactive picker deliberately:
 
 - requests fontconfig discovery only
 - gives discovery a one-second hard deadline
-- does not fall back to the platform-native source
+- does not fall back to native discovery
 - caches the session result
 - keeps custom typed input available when discovery fails
 
@@ -528,229 +472,297 @@ This is deterministic and bounded, but it is not fuzzy matching. Queries with
 missing spaces, initials, separated tokens, or alternate family aliases may not
 find an otherwise relevant installed family.
 
-The reported "not all system fonts" behavior may have more than one cause:
+The fontconfig inventory source is intentional. The current gaps are:
 
-1. the intentional fontconfig-only discovery boundary
-2. the one-second deadline
-3. discarded fontconfig family aliases
-4. family-level deduplication
-5. search terms that fail the contiguous-substring matcher
-6. a difference between platform-visible fonts and renderer-visible fonts
+1. the one-second discovery boundary
+2. discarded fontconfig family aliases
+3. family-level deduplication before alias/full-name grouping
+4. search terms that fail the contiguous-substring matcher
 
-These causes should be measured separately. A larger inventory is not
-automatically better if it offers fonts that WeasyPrint cannot resolve.
+These causes should be measured separately. Installed-font suggestions are
+local input assistance; they do not claim renderer availability or glyph
+coverage.
 
 ### Version Boundary
 
 The installed-family picker first shipped in released `v0.1.6-canary.3`.
 
-## Candidate Solutions for Finding B
-
-### Option A: Alias-Aware Deterministic Fuzzy Ranking
-
-Build a searchable record for each canonical family that retains useful family
-aliases and full names, then rank matches locally:
+### Selected Discovery And Search Pipeline
 
 ```text
-exact
-  -> prefix
-  -> token prefix
-  -> contiguous substring
-  -> ordered subsequence
+local fontconfig inventory
+                |
+                v
+family + aliases + full names
+                |
+                v
+deterministic local ranking
+                |
+       +--------+---------+
+       |                  |
+       v                  v
+installed family    explicit custom input
+       |             preserves typed text
+       +--------+---------+
+                |
+                v
+            fontHints[]
+                |
+                v
+          Profile decision
 ```
 
-The selected value should remain a canonical family name even when an alias
-matched.
+Interactive installed-font suggestions are local and fontconfig-bound. They
+must not use a network catalogue.
 
-Advantages:
+The completed Interactive font-hint research deliberately chose fontconfig-only
+discovery, a one-second hard deadline, and no native fallback. Issue #61 keeps
+fontconfig as the intentional inventory source. It reopens alias retention,
+search quality, and the overly strict discovery boundary.
 
-- improves expected fuzzy-search behavior without changing discovery latency
-- remains deterministic and easy to fixture-test
-- needs no new runtime dependency for an inventory of this size
-- preserves custom input and the current result cap
+Interactive should continue to call shared discovery with
+`discovery: "fontconfig"`. It should not switch to `auto` or `native`, and it
+does not add a discovery-source prompt. Direct `font list`, `font inspect`, and
+`font check` retain their explicit `auto`, `native`, and `fontconfig` choices for
+diagnostics and advanced use.
 
-Risks:
+Fontconfig discovery must remain read-only, session-cached, cancellable, and
+bounded so the preference flow cannot wait indefinitely. Custom input remains
+available when discovery is slow, unavailable, or empty. The evidence must
+establish a concrete responsiveness budget; “bounded” alone is not an
+implementation oracle.
 
-- normalization and scoring rules need explicit tests
-- localized or duplicate aliases need stable canonicalization
-- loose subsequence matches can become noisy without ranking thresholds
+### Shared Search Record And Alias Direction
 
-This is the leading first enhancement candidate.
+The existing `font inspect --family <name>` contract distinguishes the user's
+query from the discovered family:
 
-### Option B: Use a Fuzzy-Search Dependency
+- the query is normalized and matched against a face's family or full name
+- matching faces retain their discovered `family` value
+- text output groups faces by that discovered family
+- JSON output reports the query separately from each matching face's family
+- `font check` resolves an unambiguous query to an actual discovered face and
+  rejects ambiguous loose family matches
 
-Index the same canonical and alias data through a dedicated fuzzy-search
-library.
+The fontconfig adapter currently keeps only the first comma-separated family
+value and discards the remaining aliases. Issue #61 should retain those aliases
+in the shared font-discovery and matching model rather than create
+Interactive-only alias behavior. The searchable record has this contract:
 
-Advantages:
+| Field         | Meaning                                                       | Selection behavior   |
+| ------------- | ------------------------------------------------------------- | -------------------- |
+| `family`      | adapter-reported family suitable for a font-family preference | selected value       |
+| `aliases[]`   | alternate family labels for the same family                   | search metadata only |
+| `fullNames[]` | face/full names such as styled typefaces                      | search metadata only |
 
-- provides mature scoring behavior
-- reduces bespoke matching code
+Aliases and full names are lookup metadata. When one of them matches, the
+installed suggestion value remains the adapter-reported `family`. This keeps
+Interactive selection aligned with `font inspect` without claiming that the
+label is globally canonical.
 
-Risks:
+For each fontconfig face, the first reported family remains the primary
+`family`, remaining reported families become `aliases[]`, and all reported full
+names become `fullNames[]` lookup metadata. Interactive groups faces by
+normalized primary family and merges their aliases and full names into one
+search record.
 
-- adds a runtime dependency and dependency-review surface
-- still requires alias modeling and canonical result selection
-- library defaults may be less predictable than the small desired ranking
-  contract
+An alias should not replace the adapter-reported family merely because it is
+assumed to be renderer-valid. Discovery and `font inspect` do not prove
+renderer availability; that remains separate render or coverage evidence.
 
-This option should be considered only if the desired scorer grows beyond a
-small testable implementation.
+### Deterministic Ranking
 
-### Option C: Enrich the Inventory with Native Discovery
+The proposed search direction is a small local scorer over the shared search
+record:
 
-Merge or background-load the platform-native inventory after the fast
-fontconfig result.
+```text
+normalized query
+      |
+      v
+exact family / alias / full-name match
+      |
+      v
+prefix match
+      |
+      v
+token-prefix match
+      |
+      v
+contiguous substring match
+      |
+      v
+ordered-subsequence match
+      |
+      v
+stable score, stable tie-break, six installed results
+```
 
-Advantages:
+This is the selected research direction for Issue #61. A fuzzy-search
+dependency would not solve the adapter or family-identity problem and is not
+justified by the current ranking contract. Reconsider a dependency only if the
+accepted implementation contract grows beyond a small, fixture-tested scorer.
 
-- may expose platform fonts absent from fontconfig
-- can more closely match operating-system font tools
+Alias and full-name matches return the adapter-reported family. Explicit custom
+input preserves the typed value, remains first, and is never displaced by an
+installed suggestion. The implementation plan must define score thresholds and
+stable tie-breaking from fixtures rather than leave library defaults or
+iteration order to decide the result.
 
-Risks:
+### Responsiveness Reopen Gate
 
-- native discovery may exceed the Interactive latency budget
-- native-only results may not be available to the renderer
-- merging aliases and duplicate faces becomes more complex
-- background updates must not reorder or invalidate an active prompt
+Before superseding the shipped search and one-second timeout behavior, use a
+repository-local evidence spike following the existing [`scripts/spikes/` timing
+pattern][evidence-spike-source]. The investigation should add
+`scripts/spikes/markdown-pdf-font-discovery-evidence-spike.ts` with validated
+`--runs <count>` and `--timeout-ms <ms>` options. The default run count should
+be 30.
 
-Native enrichment should not become the default until representative
-native-only fonts are proven usable through the actual render stack.
+The spike should:
 
-## Required Evidence
+- execute at least 30 fontconfig discovery calls serially through
+  `discoverSystemFonts({ discovery: "fontconfig", includeAttempts: true })`
+- record the first run separately from later warm runs
+- use a monotonic clock to measure the full discovery call
+- retain the fontconfig adapter attempt duration separately
+- use a generous measurement ceiling rather than the proposed Interactive
+  blocking budget
+- record successful, failed, and timed-out attempts
+- emit structured JSON to standard output so local evidence can be redirected
+  under `examples/playground/.tmp-tests/`
+- omit font names, font paths, raw command errors, and other host-specific
+  inventory details
 
-### Font-Preservation Matrix
+Report the first-run duration plus successful-call p50, p95, and maximum values
+for both total discovery time and fontconfig adapter time. Also report the
+attempt counts, platform, architecture, runtime, and aggregate face-count range.
+Use a documented nearest-rank percentile calculation. Keep failed and timed-out
+attempts in the outcome counts rather than silently removing them; calculate
+latency percentiles over successful calls only.
 
-Use a controlled Profile with visibly distinct families for:
+The current discovery attempt status collapses command timeouts into ordinary
+failures. The spike or shared discovery result must expose timeout explicitly;
+do not infer it only from elapsed duration.
 
-- `body.default`
-- at least one `body.<language-tag>`
-- `heading.default`
-- `code.default`
-- `code.symbols`
-- `pageChrome.default`
+These measurements are environment evidence, not a cross-machine performance
+guarantee. Validate three seconds as the initial hard-deadline candidate, then
+settle the numeric maximum for user-visible blocking from cold- and warm-run
+evidence. The measurements inform that budget; they do not determine it
+automatically.
 
-Record the following for each path:
+The one-second boundary currently appears in the subprocess timeout, an outer
+deadline race, and a post-completion elapsed-time check. The implementation
+should keep one effective hard safety budget, enforced by subprocess
+cancellation and an outer deadline. When discovery completes successfully
+before the deadline wins, accept the result; do not discard it afterward solely
+because elapsed time crossed the nominal boundary.
 
-| Path | Profile artifact | Template input | Generated CSS | Render result |
-| --- | --- | --- | --- | --- |
-| Direct Profile CLI | new derivative Profile | not applicable | Profile-derived CSS at render time | render the new Profile |
-| Direct Template CLI | supplied compatibility Profile | full base-Profile signals | inspect font variables and selectors | inspect effective PDF fonts |
-| Direct Project CLI | generated final Project Profile | final Profile signals | inspect project `style.css` | render with `--bundle` |
-| Interactive Project | prepared final Project Profile | final prepared Profile | inspect saved `style.css` | render saved Project bundle |
+After the timeout contract is implemented, validation must separately prove:
 
-Also cover:
+- the first font prompt respects the selected blocking budget
+- later font prompts reuse one session-cached result without another
+  fontconfig discovery call
+- timeout, cancellation, empty-result, and command-failure paths keep custom
+  input reachable
+- an unavailable notice is not repeated within the same session
 
-- a Profile font without a Template font hint
-- the same font supplied through `--font-hint`
-- a Template font hint for a role/key not owned by the Profile
-- a Template font hint for a role/key already owned by the Profile
-- a Template preset default that conflicts with a Profile-owned font
-- deterministic fallback without a Codex response
-- render with default CSS enabled
-- the documented advanced `--no-default-css` boundary, if applicable
-- Project compatibility validation against effective generated CSS, not only
-  reported font-decision metadata
+A fontconfig-reported font does not need separate WeasyPrint proof before it
+appears as an installed suggestion. The picker labels local discovery, not glyph
+coverage or guaranteed PDF rendering. Those remain separate validation
+boundaries.
 
-### Base-Profile Lifecycle Matrix
+### Fontconfig Availability Boundary
 
-Verify:
+Fontconfig availability differs by environment. Interactive does not fall back
+to native adapters in Issue #61. When fontconfig is unavailable, empty, or
+exceeds the bounded wait, the existing custom-input path remains the supported
+fallback.
 
-- `md pdf-profile codex --base-profile` uses the supplied Profile as the
-  starting Profile and writes a new derivative
-- `md pdf-template codex --base-profile` writes no Profile and preserves the
-  supplied compatibility Profile
-- `md pdf-project codex --base-profile` writes a final self-contained
-  `profile.yml` and passes that final Profile into Template synthesis
-- a base-only Project run records new identity and lineage without retaining an
-  external render dependency
-- built-in Profile candidate selection remains available only when no base
-  Profile is supplied
-- Interactive setup uses artifact-specific Profile labels
-- Interactive Project review shows the starting Profile, generated
-  `profile.yml`, and Template compatibility source
-- direct CLI help and guide wording use the same lifecycle vocabulary
+### Investigation And Validation Path
 
-### Search and Inventory Matrix
+```text
+fontconfig fixtures
+  family + aliases + full names
+            |
+            v
+ranking fixtures
+  match quality + stable tie-breaks
+            |
+            v
+live fontconfig inventory
+  selectable primary families
+            |
+            v
+repository evidence spike
+  first run + total/adapter p50/p95/max
+  success + failure + timeout counts
+            |
+            v
+numeric blocking budget
+            |
+            v
+             Issue #61 implementation plan
+```
 
-Use injected fixtures to verify:
+Injected fixtures must verify:
 
 - exact, prefix, token-prefix, substring, and ordered-subsequence queries
 - case and whitespace normalization
-- alias matches returning a canonical family
-- stable ranking and tie-breaking
-- exact-duplicate collapse
-- custom typed value remaining first
-- the six-installed-result cap
-- cancellation, timeout, caching, and unavailable-discovery fallback
+- alias and full-name matches returning the adapter-reported family
+- fontconfig population of `family`, `aliases[]`, and `fullNames[]`
+- grouping faces by normalized primary family and merging lookup metadata
+- stable ranking, explicit tie-breaking, and exact-duplicate collapse
+- custom typed input first and no more than six installed results
+- one read-only discovery attempt per Interactive session
+- cancellation, caching, measured timeout behavior, and empty or failed
+  discovery fallback
+- no network catalogue or Interactive discovery-source prompt
 
-Use live checks to compare:
+Live checks on the current development operating system must verify that
+Interactive uses the same source as `font list --discovery fontconfig` and
+produces primary-family values that can become `fontHints[]`. Custom input must
+remain usable when discovery is slow, unavailable, or empty. Public evidence
+records capabilities, timings, and aggregate outcomes without publishing host
+font paths or a developer-specific inventory.
 
-- fontconfig-visible families
-- platform-native-visible families
-- families visible through both sources
-- representative source-only families
-- whether representative source-only fonts render successfully
+## Plan Handoff
 
-Public evidence should record capabilities and aggregate outcomes without
-publishing host font paths or a developer-specific inventory.
+| Issue | Selected direction                                                                                                                                                  | Evidence required before planning                                                                                                               | Non-blocking follow-up                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | direct partial-bundle and Project complete-bundle reproduction, ownership-slot synthesis spike, generated CSS inspection, and rendered evidence | Interactive base-candidate and lineage wording               |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                    | shared search-record fixtures, ranking thresholds, cold/warm fontconfig evidence, and an explicit blocking budget                               | presentation refinements that do not change selection values |
 
-## Settled Enhancement Shape
+Create separate implementation plans for Issues #60 and #61 after their
+respective blocking evidence is recorded and the direction is accepted. Either
+issue may proceed without waiting for the other.
 
-### Issue #60
+## Research Exit Criteria
 
-Resolve font preservation and base-Profile lifecycle together at their existing
-ownership boundaries:
+Keep this document `draft` while its findings are source-reviewed hypotheses
+and proposed directions. Move it to `in-progress` when reproduction or
+measurement work is actively underway and its evidence is being recorded.
 
-1. Profile generation treats a supplied base Profile as the authoritative
-   starting Profile and writes a new derivative.
-2. Template generation applies font hints only to Profile-unowned role/key
-   pairs and preserves owned fonts in generated CSS.
-3. Project writes a self-contained final `profile.yml`, passes that final
-   Profile into Template synthesis, and validates the effective generated CSS.
-4. Interactive mode reuses those shared services while showing artifact-specific
-   starting, compatibility, and final Profile labels.
-5. Helper-generated artifacts do not expose a special Template-level escape
-   hatch for replacing Profile-owned fonts; reusable changes belong in the
-   Profile.
-6. `md to-pdf` keeps its current deterministic stylesheet order so deliberate
-   user CSS remains a lower-level override.
+The research can become `completed` when:
 
-Option A and Option B remain implementation candidates for making generated
-Template CSS preserve Profile fonts. The chosen plan should prefer the narrower
-mechanism that satisfies direct Template, direct Project, Interactive Project,
-and rendered-output evidence without creating a second font policy.
+- Issue #60 has failing direct Template and Project reproductions with distinct
+  compatibility-Profile and Template preset families
+- the affected body, language, heading, code, symbol, and page-chrome boundaries
+  are classified
+- ownership-aware omission is proven for Profile-owned slots without suppressing
+  valid direct-Template `template_level` decisions
+- generated CSS and rendered partial Template and complete Project bundles
+  prove the selected preservation mechanism
+- Issue #61 fontconfig fixtures prove primary-family, alias, and full-name
+  retention plus deterministic ranking and tie-breaking
+- alias and full-name matches return the primary adapter-reported family
+- the fontconfig evidence spike records public-safe first-run, total, and
+  adapter latency evidence plus failure and timeout counts
+- the evidence produces an explicit blocking budget and an implementation
+  validation contract for near-boundary success, timeout, cancellation,
+  fallback, and caching
+- public evidence avoids host font paths and developer-specific inventories
 
-### Issue #61
-
-Retain useful fontconfig aliases and add deterministic local ranking in this
-order:
-
-```text
-exact
-  -> prefix
-  -> token prefix
-  -> contiguous substring
-  -> ordered subsequence
-```
-
-Keep custom input first, keep the current installed-result cap, and preserve the
-one-second Interactive discovery boundary. Native inventory enrichment remains
-evidence-gated until representative native-only fonts are proven usable by the
-renderer.
-
-If the research becomes actionable, create separate implementation plans for
-Issues #60 and #61 so either change can be validated and released
-independently.
-
-## Open Questions
-
-1. Should alias search always return the canonical first family, or may a
-   renderer-valid alias be preserved as the selected value?
-2. Which native-only fonts, if any, can WeasyPrint resolve on each supported
-   platform?
-3. If native enrichment is useful, should it be an explicit source choice or a
-   background enhancement after the first prompt is ready?
+If implementation is accepted, create and link separate plans for Issues #60
+and #61. Plan placeholders are not completion evidence.
 
 ## Related Research
 
@@ -758,6 +770,8 @@ independently.
 - [Markdown PDF Template Codex Helper][template-helper-research]
 - [Markdown PDF Project Codex Helper][project-helper-research]
 - [Markdown PDF Interactive Font Hint Suggestions][interactive-font-research]
+  — completed fontconfig baseline whose search and timeout boundaries this draft
+  proposes to refine after responsiveness evidence is accepted
 - [Font Command Discovery Options][font-discovery-research]
 - [Markdown PDF Render Bundle Directory][render-bundle-research]
 
@@ -773,7 +787,11 @@ independently.
 - [Interactive helper-service reuse][interactive-service-source]
 - [Interactive installed-family filtering][interactive-filter-source]
 - [Interactive fontconfig discovery boundary][interactive-discovery-source]
+- [Shared platform-aware font discovery][font-discovery-source]
+- [Shared font family matching][font-matching-source]
+- [`font inspect` action and output][font-inspect-source]
 - [Fontconfig family parsing][fontconfig-source]
+- [Existing evidence-spike timing pattern][evidence-spike-source]
 
 [issue-60]: https://github.com/dev-pi2pie/cdx-chores/issues/60
 [issue-61]: https://github.com/dev-pi2pie/cdx-chores/issues/61
@@ -791,4 +809,8 @@ independently.
 [interactive-service-source]: ../../src/cli/interactive/markdown/codex-service.ts
 [interactive-filter-source]: ../../src/cli/interactive/markdown/font-hints/suggestions.ts
 [interactive-discovery-source]: ../../src/cli/interactive/markdown/font-hints/service.ts
+[font-discovery-source]: ../../src/fonts/discovery.ts
+[font-matching-source]: ../../src/fonts/matching.ts
+[font-inspect-source]: ../../src/cli/actions/font.ts
 [fontconfig-source]: ../../src/fonts/adapters/fontconfig.ts
+[evidence-spike-source]: ../../scripts/spikes/docx-pdf-title-evidence-spike.ts
