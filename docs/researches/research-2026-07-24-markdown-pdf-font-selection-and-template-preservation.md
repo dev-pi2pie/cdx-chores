@@ -1,8 +1,8 @@
 ---
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
-modified-date: 2026-07-25
-status: draft
+modified-date: 2026-07-26
+status: in-progress
 agent: codex
 ---
 
@@ -84,10 +84,10 @@ target:  omit competing generated font-family
                                  rendered PDF
 ```
 
-| Issue | Lifecycle boundary                      | Current conclusion                                            | Remaining proof                                                    |
-| ----- | --------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
-| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                              | reproduce and render partial Template and complete Project bundles |
-| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically    | record cold/warm responsiveness and settle the bounded wait         |
+| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
+| ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles |
+| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically | record cold/warm responsiveness and settle the bounded wait        |
 
 The two issues share data but not implementation ownership. They should produce
 separate plans and may proceed independently.
@@ -726,20 +726,20 @@ font paths or a developer-specific inventory.
 
 ## Plan Handoff
 
-| Issue | Selected direction                                                                                                                                                  | Evidence required before planning                                                                                                               | Non-blocking follow-up                                       |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | direct partial-bundle and Project complete-bundle reproduction, ownership-slot synthesis spike, generated CSS inspection, and rendered evidence | Interactive base-candidate and lineage wording               |
-| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                    | shared search-record fixtures, ranking thresholds, cold/warm fontconfig evidence, and an explicit blocking budget                               | presentation refinements that do not change selection values |
+| Issue | Selected direction                                                                                                                                                  | First implementation gate                                                                                                                      | Non-blocking follow-up                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | reproduce direct partial-bundle and Project complete-bundle conflicts, classify ownership slots, and confirm the source-supported causal model | Interactive base-candidate and lineage wording               |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | record cold/warm fontconfig evidence, select an explicit blocking budget, and define the Continue/Constrain/Stop decision                      | presentation refinements that do not change selection values |
 
-Create separate implementation plans for Issues #60 and #61 after their
-respective blocking evidence is recorded and the direction is accepted. Either
-issue may proceed without waiting for the other.
+The separate draft implementation plans own these evidence gates. The preferred
+execution order is Issue #61 followed by Issue #60, but neither implementation
+depends on the other.
 
 ## Research Exit Criteria
 
-Keep this document `draft` while its findings are source-reviewed hypotheses
-and proposed directions. Move it to `in-progress` when reproduction or
-measurement work is actively underway and its evidence is being recorded.
+Keep this document `in-progress` while the direction is selected but the
+reproduction, measurement, and rendered evidence needed for closure is not yet
+recorded.
 
 The research can become `completed` when:
 
@@ -761,8 +761,13 @@ The research can become `completed` when:
   fallback, and caching
 - public evidence avoids host font paths and developer-specific inventories
 
-If implementation is accepted, create and link separate plans for Issues #60
-and #61. Plan placeholders are not completion evidence.
+The linked plans are execution contracts, not completion evidence. Keep this
+research `in-progress` until their required evidence is recorded.
+
+## Related Plans
+
+- [Interactive Markdown PDF installed-font search implementation](../plans/plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md)
+- [Markdown PDF Profile font preservation implementation](../plans/plan-2026-07-26-markdown-pdf-profile-font-preservation.md)
 
 ## Related Research
 
