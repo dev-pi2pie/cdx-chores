@@ -187,33 +187,33 @@ stable primary-family value.
 
 Tasks:
 
-- [ ] Add
+- [x] Add
       `scripts/spikes/markdown-pdf-font-discovery-evidence-spike.ts`.
-- [ ] Validate `--runs <count>` and `--timeout-ms <ms>` inputs and default to 30
+- [x] Validate `--runs <count>` and `--timeout-ms <ms>` inputs and default to 30
       serial runs.
-- [ ] Call
+- [x] Call
       `discoverSystemFonts({ discovery: "fontconfig", includeAttempts: true })`
       through the shared implementation.
-- [ ] Record the first run separately from subsequent runs.
-- [ ] Report total and adapter p50, p95, and maximum latency using documented
+- [x] Record the first run separately from subsequent runs.
+- [x] Report total and adapter p50, p95, and maximum latency using documented
       nearest-rank percentiles.
-- [ ] Report success, failure, and timeout counts without host font names, font
+- [x] Report success, failure, and timeout counts without host font names, font
       paths, or raw command errors.
-- [ ] Expose timeout distinctly in spike or shared attempt evidence instead of
+- [x] Expose timeout distinctly in spike or shared attempt evidence instead of
       inferring it only from duration.
-- [ ] Keep the spike stdout-only and limit its cleanup ownership to timers,
+- [x] Keep the spike stdout-only and limit its cleanup ownership to timers,
       listeners, controllers, and child processes that it starts.
-- [ ] Redirect optional reports into one uniquely named, phase-owned directory
+- [x] Redirect optional reports into one uniquely named, phase-owned directory
       under `examples/playground/.tmp-tests/`.
 - [ ] Retain local reports through the Phase 1 range review; after successful
       closeout remove only that exact directory, or retain it with a private
       repository-relative handoff note when the phase is blocked or fails.
-- [ ] Measure the current one-second boundary and evaluate the three-second
+- [x] Measure the current one-second boundary and evaluate the three-second
       automatic-wait threshold under a generous measurement ceiling.
-- [ ] Check available runs against the ten-second total hard safety ceiling and
+- [x] Check available runs against the ten-second total hard safety ceiling and
       document it as a policy bound rather than a cross-machine performance
       guarantee.
-- [ ] Record unavailable older-hardware coverage as an environment limitation.
+- [x] Record unavailable older-hardware coverage as an environment limitation.
 - [ ] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
