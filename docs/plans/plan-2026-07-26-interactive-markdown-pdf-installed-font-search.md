@@ -201,7 +201,13 @@ Tasks:
       paths, or raw command errors.
 - [ ] Expose timeout distinctly in spike or shared attempt evidence instead of
       inferring it only from duration.
-- [ ] Write optional local output only under `examples/playground/.tmp-tests/`.
+- [ ] Keep the spike stdout-only and limit its cleanup ownership to timers,
+      listeners, controllers, and child processes that it starts.
+- [ ] Redirect optional reports into one uniquely named, phase-owned directory
+      under `examples/playground/.tmp-tests/`.
+- [ ] Retain local reports through the Phase 1 range review; after successful
+      closeout remove only that exact directory, or retain it with a private
+      repository-relative handoff note when the phase is blocked or fails.
 - [ ] Measure the current one-second boundary and evaluate the three-second
       automatic-wait threshold under a generous measurement ceiling.
 - [ ] Check available runs against the ten-second total hard safety ceiling and
@@ -371,6 +377,24 @@ bun test
 git diff --check
 ```
 
+### Local evidence lifecycle
+
+The spike emits structured JSON to standard output and does not accept
+report-file write or cleanup options. Redirected reports are caller-owned local
+evidence, not durable command artifacts.
+
+Keep all Phase 1 reports in one uniquely named directory under
+`examples/playground/.tmp-tests/`. Retain that directory until its aggregate
+evidence and exact-range review are complete. On successful closeout, inspect
+and remove only the confirmed phase-owned directory. On failure, blocking, or
+handoff, retain it for diagnosis and communicate its repository-relative path
+privately rather than publishing it in repository documents.
+
+Tests that need filesystem fixtures should reuse `withTempFixtureDir(...)` so
+their uniquely created directories are removed in `finally`. Tests that only
+exercise parsing, aggregation, or serialization should keep their evidence in
+memory.
+
 ### Manual smoke
 
 Use `examples/playground/` for isolated local evidence:
@@ -413,6 +437,11 @@ documents.
 - Risk: evidence leaks host font data.
   Mitigation: emit aggregate timing and face-count ranges only.
 
+- Risk: evidence cleanup removes unrelated playground artifacts.
+  Mitigation: use one uniquely named phase-owned directory, retain it through
+  review, and remove only that exact confirmed directory after successful
+  closeout.
+
 ## Expected Job Records
 
 Create job records when their work begins:
@@ -441,6 +470,8 @@ This plan is complete only when:
 - selected installed values enter `fontHints[]` as primary families
 - focused and repository checks pass
 - public-safe live evidence or an environment limitation is recorded
+- phase-owned local evidence is removed after successful Phase 1 closeout or
+  retained with a private repository-relative handoff note when blocked
 - guidance and research links reflect the shipped contract
 - both job records and review dispositions are linked
 - the complete-plan review has no unresolved actionable findings
