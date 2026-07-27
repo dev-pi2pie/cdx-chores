@@ -34,6 +34,31 @@ describe("font CLI list", () => {
     expectNoStderr();
   });
 
+  test("keeps lookup metadata out of the font list JSON face schema", async () => {
+    const { runtime, stdout } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    await actionFontList(runtime, {
+      json: true,
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/fonts/NotoSansCJK-Regular.otf\t\n",
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(stdout.text) as {
+      fonts: Array<Record<string, unknown>>;
+    };
+    expect(Object.keys(payload.fonts[0] ?? {}).sort()).toEqual(
+      ["family", "format", "fullName", "path", "source", "style"].sort(),
+    );
+    expect(payload.fonts[0]).not.toHaveProperty("aliases");
+    expect(payload.fonts[0]).not.toHaveProperty("fullNames");
+  });
+
   test("prints debug JSON with discovery attempts", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     runtime.platform = "darwin";

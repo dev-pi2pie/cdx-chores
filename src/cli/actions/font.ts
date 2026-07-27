@@ -39,6 +39,17 @@ interface FontInspectFaceOutput {
   path?: string;
 }
 
+interface FontListFaceOutput {
+  family: string;
+  fullName: string;
+  style: FontFace["style"];
+  weight?: number;
+  path?: string;
+  format?: FontFace["format"];
+  faceIndex?: number;
+  source: FontFace["source"];
+}
+
 function normalizeLimit(value: number | undefined): number | undefined {
   if (value === undefined) {
     return undefined;
@@ -106,6 +117,19 @@ function serializeInspectFace(face: FontFace): FontInspectFaceOutput {
   };
 }
 
+function serializeListFace(face: FontFace): FontListFaceOutput {
+  return {
+    family: face.family,
+    fullName: face.fullName,
+    style: face.style,
+    ...(face.weight !== undefined ? { weight: face.weight } : {}),
+    ...(face.path !== undefined ? { path: face.path } : {}),
+    ...(face.format !== undefined ? { format: face.format } : {}),
+    ...(face.faceIndex !== undefined ? { faceIndex: face.faceIndex } : {}),
+    source: face.source,
+  };
+}
+
 export async function actionFontList(
   runtime: CliRuntime,
   options: FontListOptions = {},
@@ -135,7 +159,7 @@ export async function actionFontList(
             ? { debug: { attempts: discovery.attempts } }
             : {}),
           count: faces.length,
-          fonts: faces,
+          fonts: faces.map(serializeListFace),
         },
         null,
         2,

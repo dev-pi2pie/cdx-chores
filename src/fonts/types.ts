@@ -6,13 +6,21 @@ export type FontStyle = "normal" | "italic" | "oblique";
 
 export interface FontFace {
   family: string;
+  aliases?: string[];
   fullName: string;
+  fullNames?: string[];
   style: FontStyle;
   weight?: number;
   path?: string;
   format?: FontFormat;
   faceIndex?: number;
   source: FontSource;
+}
+
+export interface SearchableFontFamily {
+  family: string;
+  aliases: string[];
+  fullNames: string[];
 }
 
 export interface FontDiscoveryCommandResult {

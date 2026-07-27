@@ -26,6 +26,64 @@ describe("font CLI inspect matching", () => {
     expectNoStderr();
   });
 
+  test("matches font inspect aliases and additional full names without changing family identity", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
+      colorEnabled: false,
+    });
+    runtime.platform = "linux";
+
+    await actionFontInspect(runtime, {
+      family: "Noto Sans JP",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+
+    expect(stdout.text).toContain("Family group: Noto Sans CJK JP");
+    expect(stdout.text).toContain("- Noto Sans CJK JP Regular");
+    expectNoStderr();
+
+    const fullNameRuntime = createActionTestRuntime({ colorEnabled: false });
+    fullNameRuntime.runtime.platform = "linux";
+    await actionFontInspect(fullNameRuntime.runtime, {
+      family: "Noto Sans JP Regular",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+    expect(fullNameRuntime.stdout.text).toContain("Family group: Noto Sans CJK JP");
+    fullNameRuntime.expectNoStderr();
+
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Noto Sans JP",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      matches: Array<Record<string, unknown>>;
+    };
+    expect(payload.matches[0]).toMatchObject({
+      family: "Noto Sans CJK JP",
+      fullName: "Noto Sans CJK JP Regular,Noto Sans JP Regular",
+    });
+    expect(payload.matches[0]).not.toHaveProperty("aliases");
+    expect(payload.matches[0]).not.toHaveProperty("fullNames");
+    jsonRuntime.expectNoStderr();
+  });
+
   test("orders font inspect family groups deterministically", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime({ colorEnabled: false });
     runtime.platform = "linux";

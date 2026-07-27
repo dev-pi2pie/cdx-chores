@@ -1,5 +1,6 @@
 export { checkFontCoverage, NERD_FONT_SAMPLE_TEXT, sampleTextForLanguage } from "./coverage";
 export { discoverSystemFonts, defaultFontDiscoveryRunner } from "./discovery";
+export { collectSearchableFontFamilies } from "./search-records";
 export { FONT_DISCOVERY_MODES } from "./types";
 export { fontconfigFontAdapter, parseFontconfigList } from "./adapters/fontconfig";
 export { linuxFontAdapter } from "./adapters/linux";
@@ -26,4 +27,5 @@ export type {
   FontFormat,
   FontSource,
   FontStyle,
+  SearchableFontFamily,
 } from "./types";

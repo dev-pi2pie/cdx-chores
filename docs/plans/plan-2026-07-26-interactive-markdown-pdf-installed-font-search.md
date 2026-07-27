@@ -236,20 +236,20 @@ unavailable and is not treated as required cross-machine proof. See the
 
 Tasks:
 
-- [ ] Extend the shared font discovery model additively so fontconfig aliases
+- [x] Extend the shared font discovery model additively so fontconfig aliases
       and all reported full names are retained.
-- [ ] Keep the first reported family as the primary adapter family.
-- [ ] Define a searchable-family record that groups faces by normalized primary
+- [x] Keep the first reported family as the primary adapter family.
+- [x] Define a searchable-family record that groups faces by normalized primary
       family and merges aliases and full names deterministically.
-- [ ] Keep aliases and full names as lookup metadata rather than selectable
+- [x] Keep aliases and full names as lookup metadata rather than selectable
       values.
-- [ ] Reuse shared query normalization and make any matching-rank extension
+- [x] Reuse shared query normalization and make any matching-rank extension
       explicit.
-- [ ] Preserve existing `font inspect` output identity and `font check`
+- [x] Preserve existing `font inspect` output identity and `font check`
       unambiguous-selection behavior.
-- [ ] Add parser fixtures for multiple families, multiple full names, empty
+- [x] Add parser fixtures for multiple families, multiple full names, empty
       metadata, duplicate aliases, case variants, and stable grouping.
-- [ ] Add regression tests for exact family, exact full name, family substring,
+- [x] Add regression tests for exact family, exact full name, family substring,
       full-name substring, and ambiguous loose-family selection.
 - [ ] Review the Phase 2 commit range and resolve all actionable findings.
 
@@ -452,8 +452,8 @@ documents.
 Current and expected job records:
 
 - [Phase 1 font discovery evidence](jobs/2026-07-27-interactive-markdown-pdf-font-discovery-evidence.md)
-- `docs/plans/jobs/YYYY-MM-DD-interactive-markdown-pdf-font-search-implementation.md`
-  — create when accepted work from Phases 2–5 begins.
+- [Installed-font search implementation](jobs/2026-07-27-interactive-markdown-pdf-font-search-implementation.md)
+  — owns accepted work from Phases 2–5.
 
 The evidence job owns Phase 1, the policy check, and any environment limitation.
 The implementation job owns accepted work from Phases 2–5.

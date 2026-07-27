@@ -5,7 +5,7 @@ interface MatchedFontFace {
   matchRank: number;
 }
 
-const FIRST_LOOSE_MATCH_RANK = 2;
+const FIRST_AMBIGUOUS_MATCH_RANK = 1;
 
 export type FontCheckFaceSelectionReason = "no-matching-family" | "ambiguous-family";
 
@@ -26,18 +26,19 @@ export function fontFamilyMatchRank(
   }
   const needle = normalizeFontQuery(family);
   const faceFamily = normalizeFontQuery(face.family);
-  const fullName = normalizeFontQuery(face.fullName);
+  const aliases = (face.aliases ?? []).map(normalizeFontQuery);
+  const fullNames = [face.fullName, ...(face.fullNames ?? [])].map(normalizeFontQuery);
 
   if (faceFamily === needle) {
     return 0;
   }
-  if (fullName === needle) {
+  if (aliases.includes(needle) || fullNames.includes(needle)) {
     return 1;
   }
-  if (faceFamily.includes(needle)) {
+  if (faceFamily.includes(needle) || aliases.some((name) => name.includes(needle))) {
     return 2;
   }
-  if (fullName.includes(needle)) {
+  if (fullNames.some((name) => name.includes(needle))) {
     return 3;
   }
   return undefined;
@@ -159,8 +160,8 @@ function bestMatchRank(matches: MatchedFontFace[]): number {
   return Math.min(...matches.map((match) => match.matchRank));
 }
 
-function hasAmbiguousLooseFamilyMatch(matches: MatchedFontFace[], matchRank: number): boolean {
-  if (matchRank < FIRST_LOOSE_MATCH_RANK) {
+function hasAmbiguousFamilyMatch(matches: MatchedFontFace[], matchRank: number): boolean {
+  if (matchRank < FIRST_AMBIGUOUS_MATCH_RANK) {
     return false;
   }
   const bestMatches = matches.filter((match) => match.matchRank === matchRank);
@@ -175,7 +176,7 @@ export function selectFontFaceForCheck(faces: FontFace[], family: string): FontC
   }
 
   const matchRank = bestMatchRank(matched);
-  if (hasAmbiguousLooseFamilyMatch(matched, matchRank)) {
+  if (hasAmbiguousFamilyMatch(matched, matchRank)) {
     return { status: "inconclusive", reason: "ambiguous-family" };
   }
 
