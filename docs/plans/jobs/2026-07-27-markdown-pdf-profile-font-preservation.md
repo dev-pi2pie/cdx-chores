@@ -35,7 +35,7 @@ ownership-aware synthesis fix.
 
 ## Phase 1: Reproduction And Ownership Gate
 
-Status: in progress.
+Status: completed.
 
 ### Evidence
 
@@ -101,7 +101,16 @@ claim ownership.
 
 ### Review
 
-Pending.
+- Reviewed exact range:
+  `b3ce965d82b7c5f24d2835ac871f71ec89f8efcd..d231ab5`.
+- The initial review found three actionable coverage/documentation gaps:
+  the direct characterization bypassed the real base-profile action path,
+  language and page-chrome cascade assertions were too narrow, and the
+  no-Profile control did not cover heading and code output.
+- The review-fix checkpoint added the direct action reproduction, widened those
+  assertions, and recorded the exact PDF comparison.
+- Correctness, test, and documentation reviewers re-ran against the widened
+  range and reported no remaining actionable findings.
 
 ### Gate
 
@@ -112,7 +121,8 @@ CSS blocks.
 
 ## Checkpoint Commits
 
-Pending.
+- `f98215e` — characterize the shared direct Template and Project conflict.
+- `d231ab5` — resolve Phase 1 review gaps and widen regression coverage.
 
 ## Related Documents
 

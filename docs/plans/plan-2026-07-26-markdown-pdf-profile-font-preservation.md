@@ -228,7 +228,7 @@ Tasks:
 - [x] Verify direct Template without a compatibility Profile remains unaffected.
 - [x] Record the released-tag boundary when reproducible without expanding the
       fix scope.
-- [ ] Review the Phase 1 commit range and resolve all actionable findings.
+- [x] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
 
