@@ -146,13 +146,19 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       await writeFile(
         profilePath,
         [
+          "pdf:",
+          "  content-langs:",
+          "    - ja",
           "fonts:",
           "  body:",
           "    default: Profile Body",
+          "    ja: Profile Japanese",
           "  heading:",
           "    default: Profile Heading",
           "  code:",
           "    default: Profile Code",
+          "  pageChrome:",
+          "    default: Profile Chrome",
           "",
         ].join("\n"),
         "utf8",
@@ -184,11 +190,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       });
 
       expect(renderedStyles).toHaveLength(2);
-      expect(renderedStyles[0]).toContain('font-family: "Profile Body", serif;');
+      expect(renderedStyles[0]).toContain(
+        'font-family: "Profile Body", "Profile Japanese", serif;',
+      );
+      expect(renderedStyles[0]).toContain(":lang(ja)");
+      expect(renderedStyles[0]).toContain(
+        'font-family: "Profile Japanese", "Profile Body", serif;',
+      );
       expect(renderedStyles[0]).toContain('font-family: "Profile Heading", sans-serif;');
       expect(renderedStyles[0]).toContain('font-family: "Profile Code", monospace;');
+      expect(renderedStyles[0]).toContain('@page {\n  font-family: "Profile Chrome", sans-serif;');
       expect(renderedStyles[1]).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
       expect(renderedStyles[1]).toContain("font: 10.5pt/1.5 var(--template-body-font);");
+      expect(renderedStyles[1]).not.toContain("Profile Japanese");
+      expect(renderedStyles[1]).not.toContain("Profile Chrome");
       expectNoStderr();
     });
   });

@@ -413,6 +413,90 @@ describe("cli action modules: md pdf-template codex integration", () => {
     });
   });
 
+  test("reproduces preset family output through the direct base-profile action path", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-base-profile-font-conflict",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(
+          profilePath,
+          [
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "  heading:",
+            "    default: Profile Heading",
+            "  code:",
+            "    default: Profile Code",
+            "  pageChrome:",
+            "    default: Profile Chrome",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          fontHint: ["Suggested Heading"],
+          output: toRepoRelativePath(outputPath),
+          keepCodexReport: true,
+          codexRunner: stubCodexRunner(
+            codexTemplateResponse({
+              fontDecisions: [
+                {
+                  family: "Suggested Heading",
+                  key: "default",
+                  role: "heading",
+                  source: "font-hint",
+                  template_level: false,
+                },
+              ],
+            }),
+          ),
+        });
+
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(styleCss).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
+        expect(styleCss).toContain('--template-heading-font: "Noto Sans", "Arial", sans-serif;');
+        expect(styleCss).toContain(
+          '--template-monospace-font: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;',
+        );
+        expect(styleCss).toContain("font: 10.5pt/1.5 var(--template-body-font);");
+        expect(styleCss).not.toContain("Profile Heading");
+        expect(styleCss).not.toContain("Profile Chrome");
+
+        const report = JSON.parse(
+          await readFile(join(outputPath, "template.codex-report.json"), "utf8"),
+        ) as {
+          baseProfile: { available: boolean };
+          decision: {
+            fontDecisions: Array<{
+              family: string;
+              key: string;
+              profileOwned: boolean;
+              reason?: string;
+              role: string;
+              status: string;
+            }>;
+          };
+        };
+        expect(report.baseProfile.available).toBe(true);
+        expect(report.decision.fontDecisions).toEqual([
+          expect.objectContaining({
+            family: "Suggested Heading",
+            key: "default",
+            profileOwned: true,
+            reason: "profile-font-owned",
+            role: "heading",
+            status: "blocked",
+          }),
+        ]);
+      },
+    );
+  });
+
   test("routes cover image plus font hints through Codex-assisted synthesis", async () => {
     await withTempFixtureDir(
       "md-pdf-template-codex-action-cover-font-decision",

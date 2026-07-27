@@ -87,13 +87,14 @@ claim ownership.
 
 ### Verification
 
-- Focused plan suite: 222 passed, 0 failed.
-- Repository suite: 1,801 passed, 0 failed.
+- Focused plan suite: 223 passed, 0 failed.
+- Repository suite: 1,802 passed, 0 failed.
 - Lint and formatting checks: passed.
 - TypeScript check: passed.
 - Build: passed.
 - Generated direct Template and Project artifacts: inspected.
 - Profile-only, direct Template, and Project PDFs: rendered successfully.
+- Direct Template and Project PDFs: byte-for-byte comparison passed.
 - Rasterized pages: visually inspected.
 - PDF metadata and embedded font resources: inspected.
 - Diff whitespace check: passed.

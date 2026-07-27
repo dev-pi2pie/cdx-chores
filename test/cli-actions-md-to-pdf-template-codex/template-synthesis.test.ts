@@ -429,6 +429,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(cssDeclarationsForSelector(withoutProfile.styleCss, "body")).toMatchObject({
       font: "10.5pt/1.5 var(--template-body-font)",
     });
+    expect(
+      cssDeclarationsForSelector(withoutProfile.styleCss, "h1, h2, h3, h4, h5, h6"),
+    ).toMatchObject(cssDeclarationsForSelector(withProfile.styleCss, "h1, h2, h3, h4, h5, h6"));
+    expect(cssDeclarationsForSelector(withoutProfile.styleCss, "code")).toMatchObject(
+      cssDeclarationsForSelector(withProfile.styleCss, "code"),
+    );
+    expect(withoutProfile.styleCss).not.toContain("Profile Chrome");
   });
 
   test("reproduces a bounded CSS block appending a later family override", () => {
