@@ -151,6 +151,11 @@ describe("Markdown PDF font discovery evidence spike", () => {
 
     expect(maxInFlight).toBe(1);
     expect(report.schemaVersion).toBe(2);
+    expect(report.environment).toMatchObject({
+      platform: process.platform,
+      arch: process.arch,
+    });
+    expect(report.percentileMethod).toBe("nearest-rank");
     expect(report.parameters).toEqual({
       discovery: "fontconfig",
       runs: 4,
@@ -161,6 +166,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
       outcome: "success",
       totalDurationMs: 10,
       adapterDurationMs: 8,
+      faceCount: 1,
       emptyResult: false,
     });
     expect(report.successfulSubsequentRuns).toEqual({
@@ -198,6 +204,11 @@ describe("Markdown PDF font discovery evidence spike", () => {
         p95: 900,
         max: 900,
       },
+      faceCountRange: {
+        sampleCount: 2,
+        min: 0,
+        max: 1,
+      },
     });
     expect(report.thresholds).toEqual([
       { thresholdMs: 1_000, runsAtOrAbove: 1 },
@@ -210,5 +221,73 @@ describe("Markdown PDF font discovery evidence spike", () => {
     expect(serialized).not.toContain("/private/");
     expect(serialized).not.toContain("fc-list");
     expect(serialized).not.toContain("raw command error");
+  });
+
+  test("keeps unsuccessful first runs out of schema v2 success summaries", async () => {
+    const clock = [0, 5, 5, 15];
+    let clockIndex = 0;
+    let callIndex = 0;
+
+    const report = await collectFontDiscoveryEvidence(
+      { runs: 2, timeoutMs: 1_000 },
+      {
+        discover: async () => {
+          callIndex += 1;
+          if (callIndex === 1) {
+            throw new Error("private first-run failure");
+          }
+          return discoveryResult("timeout", 10);
+        },
+        now: () => clock[clockIndex++] ?? 15,
+      },
+    );
+
+    expect(report.firstRun).toEqual({
+      outcome: "failed",
+      totalDurationMs: 5,
+      emptyResult: false,
+    });
+    expect(report.successfulSubsequentRuns).toEqual({
+      runCount: 0,
+      totalDurationMs: {
+        sampleCount: 0,
+        p50: null,
+        p95: null,
+        max: null,
+      },
+      adapterDurationMs: {
+        sampleCount: 0,
+        p50: null,
+        p95: null,
+        max: null,
+      },
+    });
+    expect(report.successfulRuns).toEqual({
+      runCount: 0,
+      totalDurationMs: {
+        sampleCount: 0,
+        p50: null,
+        p95: null,
+        max: null,
+      },
+      adapterDurationMs: {
+        sampleCount: 0,
+        p50: null,
+        p95: null,
+        max: null,
+      },
+      faceCountRange: {
+        sampleCount: 0,
+        min: null,
+        max: null,
+      },
+    });
+    expect(report.outcomes).toEqual({
+      success: 0,
+      failed: 1,
+      timeout: 1,
+      emptyResult: 0,
+    });
+    expect(JSON.stringify(report)).not.toContain("private first-run failure");
   });
 });

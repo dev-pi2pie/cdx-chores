@@ -23,10 +23,17 @@ export interface DurationSummary {
   max: number | null;
 }
 
+export interface CountRange {
+  sampleCount: number;
+  min: number | null;
+  max: number | null;
+}
+
 interface RunEvidence {
   outcome: DiscoveryOutcome;
   totalDurationMs: number;
   adapterDurationMs?: number;
+  faceCount?: number;
   emptyResult: boolean;
 }
 
@@ -63,6 +70,7 @@ export interface FontDiscoveryEvidenceReport {
     runCount: number;
     totalDurationMs: DurationSummary;
     adapterDurationMs: DurationSummary;
+    faceCountRange: CountRange;
   };
   outcomes: {
     success: number;
@@ -153,6 +161,21 @@ export function summarizeDurations(values: number[]): DurationSummary {
   };
 }
 
+function summarizeCounts(values: number[]): CountRange {
+  if (values.length === 0) {
+    return {
+      sampleCount: 0,
+      min: null,
+      max: null,
+    };
+  }
+  return {
+    sampleCount: values.length,
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+}
+
 function outcomeFromResult(result: DiscoverFontsResult): DiscoveryOutcome {
   const status = result.attempts?.[0]?.status;
   if (status === "success" || status === "timeout") {
@@ -194,6 +217,7 @@ async function measureRun(
       outcome,
       totalDurationMs: roundMilliseconds(now() - startedAt),
       ...(attempt ? { adapterDurationMs: attempt.durationMs } : {}),
+      ...(outcome === "success" ? { faceCount: result.faces.length } : {}),
       emptyResult: outcome === "success" && result.faces.length === 0,
     };
   } catch {
@@ -232,6 +256,9 @@ export async function collectFontDiscoveryEvidence(
   const successfulAdapterDurations = successfulRuns.flatMap((run) =>
     run.adapterDurationMs === undefined ? [] : [run.adapterDurationMs],
   );
+  const successfulFaceCounts = successfulRuns.flatMap((run) =>
+    run.faceCount === undefined ? [] : [run.faceCount],
+  );
 
   return {
     schemaVersion: 2,
@@ -263,6 +290,7 @@ export async function collectFontDiscoveryEvidence(
       runCount: successfulRuns.length,
       totalDurationMs: summarizeDurations(successfulTotalDurations),
       adapterDurationMs: summarizeDurations(successfulAdapterDurations),
+      faceCountRange: summarizeCounts(successfulFaceCounts),
     },
     outcomes: {
       success: runs.filter((run) => run.outcome === "success").length,

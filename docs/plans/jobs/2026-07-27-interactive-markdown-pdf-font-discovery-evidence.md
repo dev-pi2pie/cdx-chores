@@ -209,6 +209,7 @@ The accepted correction:
 - keeps failed and timed-out attempts in outcome and threshold counts
 - names the successful-run report groups explicitly and bumps the local report
   schema version
+- records a public-safe aggregate face-count range across successful calls
 - covers mixed success, failure, and timeout outcomes in one regression fixture
 
 The original recorded timing values do not change because all calls in those
