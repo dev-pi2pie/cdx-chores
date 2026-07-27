@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { input } from "@inquirer/prompts";
+import type { input, select } from "@inquirer/prompts";
 import search from "@inquirer/search";
 import { PassThrough } from "node:stream";
 
@@ -50,6 +50,44 @@ async function promptTick(): Promise<void> {
   for (let index = 0; index < 3; index += 1) {
     await new Promise((resolve) => setImmediate(resolve));
   }
+}
+
+function createDeferred<T>(): {
+  promise: Promise<T>;
+  reject(error: unknown): void;
+  resolve(value: T): void;
+} {
+  let rejectPromise: (error: unknown) => void = () => {};
+  let resolvePromise: (value: T) => void = () => {};
+  const promise = new Promise<T>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return { promise, reject: rejectPromise, resolve: resolvePromise };
+}
+
+function createDeadlineScheduler() {
+  const scheduled: Array<{ active: boolean; callback: () => void; timeoutMs: number }> = [];
+  return {
+    scheduled,
+    schedule(callback: () => void, timeoutMs: number): () => void {
+      const task = { active: true, callback, timeoutMs };
+      scheduled.push(task);
+      return () => {
+        task.active = false;
+      };
+    },
+    run(timeoutMs: number): void {
+      const task = scheduled.find(
+        (candidate) => candidate.active && candidate.timeoutMs === timeoutMs,
+      );
+      if (!task) {
+        throw new Error(`No active ${timeoutMs} ms deadline is scheduled.`);
+      }
+      task.active = false;
+      task.callback();
+    },
+  };
 }
 
 describe("Markdown PDF Interactive font hint model", () => {
@@ -264,7 +302,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
         discoveryCalls += 1;
         expect(options?.discovery).toBe("fontconfig");
         expect(options?.platform).toBe(runtime.platform);
-        expect(options?.timeoutMs).toBe(1_000);
+        expect(options?.timeoutMs).toBe(10_000);
         return {
           ...discoveryResult(["Source Serif 4", "Source Serif Pro"]),
           faces: [
@@ -349,57 +387,300 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(stderr.text.match(/Installed font suggestions are unavailable/g)).toHaveLength(1);
   });
 
-  test("rejects discovery results that finish outside the total Interactive budget", async () => {
+  test("caches command failure and shows its unavailable notice at most once", async () => {
     const { runtime, stderr } = createCapturedRuntime();
-    const timestamps = [0, 1_000];
+    let discoveryCalls = 0;
     const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
-      discover: async () => discoveryResult(["Inter"]),
+      discover: async () => {
+        discoveryCalls += 1;
+        throw new Error("fontconfig failed");
+      },
       inputPrompt: (async () => "Brand Sans") as typeof input,
-      now: () => timestamps.shift() ?? 1_000,
     });
 
     expect(await service.promptPreference()).toBe("Brand Sans");
-    expect(stderr.text).toContain("Installed font suggestions are unavailable");
+    expect(await service.promptPreference()).toBe("Brand Sans");
+    expect(discoveryCalls).toBe(1);
+    expect(stderr.text.match(/Installed font suggestions are unavailable/g)).toHaveLength(1);
   });
 
-  test("returns at the overall deadline and aborts a late discovery", async () => {
-    const { runtime } = createCapturedRuntime();
+  test("offers custom input once at the soft threshold and caches that choice silently", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    const scheduler = createDeadlineScheduler();
+    let discoveryCalls = 0;
     let discoverySignal: AbortSignal | undefined;
+    let slowPathCalls = 0;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async (options) => {
+        discoveryCalls += 1;
+        discoverySignal = options?.signal;
+        return await new Promise((resolve, reject) => {
+          options?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true },
+          );
+        });
+      },
+      inputPrompt: (async () => "Brand Sans") as typeof input,
+      scheduleDeadline: scheduler.schedule,
+      selectPrompt: (async (options, context) => {
+        slowPathCalls += 1;
+        const slowPathOptions = options as unknown as {
+          choices: readonly { value: string }[];
+          default?: string;
+        };
+        expect(slowPathOptions.default).toBe("custom");
+        expect(slowPathOptions.choices.map((choice) => choice.value)).toEqual(["custom", "wait"]);
+        expect(context?.signal).toBeInstanceOf(AbortSignal);
+        return "custom";
+      }) as typeof select,
+    });
+
+    const first = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    expect(await first).toBe("Brand Sans");
+    expect(await service.promptPreference("Brand Sans")).toBe("Brand Sans");
+    expect(discoveryCalls).toBe(1);
+    expect(slowPathCalls).toBe(1);
+    expect(discoverySignal?.aborted).toBe(true);
+    expect(stderr.text).not.toContain("Installed font suggestions are unavailable");
+  });
+
+  test("reuses the same promise and original hard deadline after continued waiting", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+    const scheduler = createDeadlineScheduler();
+    const discovery = createDeferred<ReturnType<typeof discoveryResult>>();
+    let discoveryCalls = 0;
+    let slowPathCalls = 0;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => {
+        discoveryCalls += 1;
+        return await discovery.promise;
+      },
+      scheduleDeadline: scheduler.schedule,
+      searchPrompt: (async () => "Inter") as typeof search,
+      selectPrompt: (async () => {
+        slowPathCalls += 1;
+        return "wait";
+      }) as typeof select,
+    });
+
+    const pending = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    await promptTick();
+    expect(stderr.text).toContain("Waiting for installed font families...");
+    expect(scheduler.scheduled.filter((task) => task.timeoutMs === 10_000)).toHaveLength(1);
+    discovery.resolve(discoveryResult(["Inter"]));
+
+    expect(await pending).toBe("Inter");
+    expect(discoveryCalls).toBe(1);
+    expect(stderr.text).toContain("\u001b[1A\u001b[2K\u001b[G");
+    const outputAfterFirstPrompt = stderr.text;
+    expect(await service.promptPreference()).toBe("Inter");
+    expect(discoveryCalls).toBe(1);
+    expect(slowPathCalls).toBe(1);
+    expect(stderr.text).toBe(outputAfterFirstPrompt);
+  });
+
+  test("keeps explicit custom input authoritative when discovery completes during the choice", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    const scheduler = createDeadlineScheduler();
+    const discovery = createDeferred<ReturnType<typeof discoveryResult>>();
+    const slowPathChoice = createDeferred<"custom" | "wait">();
+    let searchCalls = 0;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => await discovery.promise,
+      inputPrompt: (async () => "Brand Sans") as typeof input,
+      scheduleDeadline: scheduler.schedule,
+      searchPrompt: (async () => {
+        searchCalls += 1;
+        return "Inter";
+      }) as typeof search,
+      selectPrompt: (async () => await slowPathChoice.promise) as typeof select,
+    });
+
+    const pending = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    await promptTick();
+    discovery.resolve(discoveryResult(["Inter"]));
+    await promptTick();
+    slowPathChoice.resolve("custom");
+
+    expect(await pending).toBe("Brand Sans");
+    expect(searchCalls).toBe(0);
+    expect(stderr.text).not.toContain("Installed font suggestions are unavailable");
+  });
+
+  test("uses the completed discovery when continued waiting is chosen from the visible choice", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+    const scheduler = createDeadlineScheduler();
+    const discovery = createDeferred<ReturnType<typeof discoveryResult>>();
+    const slowPathChoice = createDeferred<"custom" | "wait">();
+    let discoveryCalls = 0;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => {
+        discoveryCalls += 1;
+        return await discovery.promise;
+      },
+      scheduleDeadline: scheduler.schedule,
+      searchPrompt: (async () => "Inter") as typeof search,
+      selectPrompt: (async () => await slowPathChoice.promise) as typeof select,
+    });
+
+    const pending = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    await promptTick();
+    discovery.resolve(discoveryResult(["Inter"]));
+    await promptTick();
+    slowPathChoice.resolve("wait");
+
+    expect(await pending).toBe("Inter");
+    expect(discoveryCalls).toBe(1);
+    expect(stderr.text).not.toContain("Waiting for installed font families...");
+  });
+
+  test("shows the slow-path choice at most once after back navigation", async () => {
+    const { runtime } = createCapturedRuntime();
+    const scheduler = createDeadlineScheduler();
+    const discovery = createDeferred<ReturnType<typeof discoveryResult>>();
+    let slowPathCalls = 0;
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => await discovery.promise,
+      scheduleDeadline: scheduler.schedule,
+      searchPrompt: (async () => "Inter") as typeof search,
+      selectPrompt: (async () => {
+        slowPathCalls += 1;
+        return undefined;
+      }) as typeof select,
+    });
+
+    const first = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    expect(await first).toBeUndefined();
+
+    const second = service.promptPreference();
+    await promptTick();
+    discovery.resolve(discoveryResult(["Inter"]));
+    expect(await second).toBe("Inter");
+    expect(slowPathCalls).toBe(1);
+  });
+
+  test("cancels discovery and the visible slow-path prompt without an unavailable notice", async () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    const scheduler = createDeadlineScheduler();
+    let discoverySignal: AbortSignal | undefined;
+    let inputCalls = 0;
     const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
       discover: async (options) => {
         discoverySignal = options?.signal;
-        return await new Promise(() => {});
+        return await new Promise((resolve, reject) => {
+          options?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true },
+          );
+        });
       },
-      discoveryTimeoutMs: 20,
-      inputPrompt: (async () => "Brand Sans") as typeof input,
-      scheduleDeadline: (callback) => {
-        queueMicrotask(callback);
-        return () => {};
-      },
+      inputPrompt: (async () => {
+        inputCalls += 1;
+        return "Brand Sans";
+      }) as typeof input,
+      scheduleDeadline: scheduler.schedule,
+      selectPrompt: ((_options, context) =>
+        new Promise<string>((_resolve, reject) => {
+          context?.signal?.addEventListener(
+            "abort",
+            () => {
+              const error = new Error("Prompt was aborted");
+              error.name = "AbortPromptError";
+              reject(error);
+            },
+            { once: true },
+          );
+        })) as typeof select,
     });
-    const startedAt = Date.now();
 
-    expect(await service.promptPreference()).toBe("Brand Sans");
-    expect(Date.now() - startedAt).toBeLessThan(500);
+    const pending = service.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    await promptTick();
+    service.cancel();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortPromptError" });
     expect(discoverySignal?.aborted).toBe(true);
+    expect(inputCalls).toBe(0);
+    expect(stderr.text).not.toContain("unavailable");
   });
 
-  test("shows and clears delayed TTY discovery status before search", async () => {
-    const { runtime, stderr } = createCapturedRuntime();
-    (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
-    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
-      discover: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 175));
-        return discoveryResult(["Inter"]);
-      },
-      searchPrompt: (async () => {
-        expect(stderr.text).toContain("Discovering installed font families...");
-        expect(stderr.text).toContain("\u001b[1A\u001b[2K\u001b[G");
-        return "Inter";
-      }) as typeof search,
-    });
+  test("accepts success before the hard boundary and aborts discovery at the hard deadline", async () => {
+    const scheduler = createDeadlineScheduler();
 
-    expect(await service.promptPreference()).toBe("Inter");
+    const successfulRuntime = createCapturedRuntime();
+    const successfulDiscovery = createDeferred<ReturnType<typeof discoveryResult>>();
+    const successfulService = createMarkdownPdfInteractiveFontHintSuggestionService(
+      successfulRuntime.runtime,
+      {
+        discover: async () => await successfulDiscovery.promise,
+        scheduleDeadline: scheduler.schedule,
+        searchPrompt: (async () => "Inter") as typeof search,
+        selectPrompt: (async () => "wait") as typeof select,
+      },
+    );
+    const successful = successfulService.promptPreference();
+    await Promise.resolve();
+    scheduler.run(3_000);
+    await promptTick();
+    successfulDiscovery.resolve(discoveryResult(["Inter"]));
+    expect(await successful).toBe("Inter");
+
+    const timedOutRuntime = createCapturedRuntime();
+    const timeoutScheduler = createDeadlineScheduler();
+    let timedOutDiscoveryCalls = 0;
+    let timedOutSignal: AbortSignal | undefined;
+    const timedOutChoice = createDeferred<"custom" | "wait">();
+    const timedOutService = createMarkdownPdfInteractiveFontHintSuggestionService(
+      timedOutRuntime.runtime,
+      {
+        discover: async (options) => {
+          timedOutDiscoveryCalls += 1;
+          timedOutSignal = options?.signal;
+          return await new Promise((resolve, reject) => {
+            options?.signal?.addEventListener(
+              "abort",
+              () => reject(new DOMException("aborted", "AbortError")),
+              { once: true },
+            );
+          });
+        },
+        inputPrompt: (async () => "Brand Sans") as typeof input,
+        scheduleDeadline: timeoutScheduler.schedule,
+        selectPrompt: (async () => await timedOutChoice.promise) as typeof select,
+      },
+    );
+    const timedOut = timedOutService.promptPreference();
+    await Promise.resolve();
+    timeoutScheduler.run(3_000);
+    await promptTick();
+    timeoutScheduler.run(10_000);
+    await promptTick();
+    timedOutChoice.resolve("wait");
+
+    expect(await timedOut).toBe("Brand Sans");
+    expect(await timedOutService.promptPreference()).toBe("Brand Sans");
+    expect(timedOutDiscoveryCalls).toBe(1);
+    expect(timeoutScheduler.scheduled.filter((task) => task.timeoutMs === 3_000)).toHaveLength(1);
+    expect(timedOutSignal?.aborted).toBe(true);
+    expect(
+      timedOutRuntime.stderr.text.match(/Installed font suggestions are unavailable/g),
+    ).toHaveLength(1);
   });
 
   test("aborts active discovery silently without falling through to input", async () => {

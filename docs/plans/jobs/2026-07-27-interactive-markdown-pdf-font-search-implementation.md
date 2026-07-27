@@ -198,7 +198,55 @@ Checkpoint commits:
 
 ## Phase 4: Interactive Discovery Lifecycle
 
-Status: ready to begin from the Phase 3 closeout boundary.
+Starting commit:
+`beb57dd`
+
+Status: implementation complete; exact-range review pending.
+
+Implemented:
+
+- Replaced the one-second timeout with a three-second soft wait and one
+  ten-second hard deadline measured from the original discovery start.
+- Kept one child controller and one discovery promise for the full Interactive
+  session. Continued waiting reuses that attempt and never resets the hard
+  deadline.
+- Added one Escape-aware slow-path choice with custom input first and selected
+  by default.
+- Made explicit custom selection authoritative even if discovery completes
+  while the choice is visible; that path cancels discovery, caches custom
+  fallback, and suppresses the unavailable notice.
+- Kept the waiting choice authoritative when discovery completes during the
+  visible choice and reused the completed result without rediscovery.
+- Scoped concise TTY waiting status to continued waiting and removed the
+  pre-threshold delayed status.
+- Removed post-completion elapsed rejection so a result that wins the hard
+  deadline is accepted.
+- Cached settled ready and unavailable results so later font prompts do not
+  reschedule soft waits, rediscover fonts, or flicker waiting status.
+- Preserved cancellation/back navigation and kept timeout, empty results, and
+  command failure on ordinary custom input with at most one notice.
+- Kept timeout durations internal to the service; no CLI flag was added.
+
+Verification:
+
+- `bun test test/fonts-*.test.ts test/cli-interactive-markdown-pdf/font-hints.test.ts test/cli-interactive-markdown-pdf/codex-authoring.test.ts test/cli-interactive-markdown-pdf/render-sources.test.ts test/cli-interactive-markdown-pdf/lifecycle.test.ts`
+  - Passed: 251 tests and 1,108 assertions across 25 files.
+- `bunx tsc --noEmit`
+  - Passed.
+- `bun run lint`
+  - Passed.
+- `bun run format:check`
+  - Passed.
+- `bun run build`
+  - Passed.
+- `git diff --check`
+  - Passed.
+- `bun test`
+  - Passed: 1,795 tests and 9,426 assertions across 226 files.
+
+Review status:
+
+- Exact-range review will begin after the validated implementation checkpoint.
 
 ## Phase 5: Validation, Guidance, And Closeout
 

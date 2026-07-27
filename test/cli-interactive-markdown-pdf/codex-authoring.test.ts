@@ -251,7 +251,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     });
 
     expect(result.markdownPdfFontDiscoveryCalls).toEqual([
-      { discovery: "fontconfig", hasSignal: true, timeoutMs: 1_000 },
+      { discovery: "fontconfig", hasSignal: true, timeoutMs: 10_000 },
     ]);
     expect(result.searchChoicesByMessage["Font preference"]?.[0]).toEqual({
       name: "Noto",

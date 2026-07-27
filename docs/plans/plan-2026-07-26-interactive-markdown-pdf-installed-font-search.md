@@ -288,32 +288,32 @@ Phase gate:
 
 Tasks:
 
-- [ ] Integrate searchable-family records and ranked choices into the existing
+- [x] Integrate searchable-family records and ranked choices into the existing
       font-hint suggestion service.
-- [ ] Preserve one discovery promise per Interactive session.
-- [ ] Race discovery against a three-second automatic-wait threshold without
+- [x] Preserve one discovery promise per Interactive session.
+- [x] Race discovery against a three-second automatic-wait threshold without
       treating that threshold as a timeout.
-- [ ] If the soft threshold wins, show `Continue with custom input` and
+- [x] If the soft threshold wins, show `Continue with custom input` and
       `Keep waiting for installed fonts` once.
-- [ ] Make custom input the default slow-path choice; cancel discovery and cache
+- [x] Make custom input the default slow-path choice; cancel discovery and cache
       the unavailable outcome when selected.
-- [ ] Reuse the same discovery promise when continued waiting is selected.
-- [ ] Show and clear concise waiting status while continued waiting is active.
-- [ ] Enforce one ten-second total hard safety ceiling from the original
+- [x] Reuse the same discovery promise when continued waiting is selected.
+- [x] Show and clear concise waiting status while continued waiting is active.
+- [x] Enforce one ten-second total hard safety ceiling from the original
       discovery start without resetting it after the slow-path choice.
-- [ ] Ensure the hard deadline cancels the discovery subprocess.
-- [ ] Remove the post-completion elapsed-time rejection and accept a successful
+- [x] Ensure the hard deadline cancels the discovery subprocess.
+- [x] Remove the post-completion elapsed-time rejection and accept a successful
       result that wins before the hard deadline.
-- [ ] Keep the visible slow-path choice authoritative if discovery completes
+- [x] Keep the visible slow-path choice authoritative if discovery completes
       while the user is deciding.
-- [ ] Preserve session cancellation and avoid showing an unavailable notice
+- [x] Preserve session cancellation and avoid showing an unavailable notice
       after user cancellation.
-- [ ] Keep timeout, empty result, and command failure on the custom-input path.
-- [ ] Do not show an unavailable notice after explicit custom selection; show it
+- [x] Keep timeout, empty result, and command failure on the custom-input path.
+- [x] Do not show an unavailable notice after explicit custom selection; show it
       at most once for other fallback outcomes.
-- [ ] Verify later font prompts reuse the cached result without another
+- [x] Verify later font prompts reuse the cached result without another
       fontconfig call.
-- [ ] Preserve the current `fontHints[]` ordering and direct-helper behavior.
+- [x] Preserve the current `fontHints[]` ordering and direct-helper behavior.
 - [ ] Review the Phase 4 commit range and resolve all actionable findings.
 
 Phase gate:
