@@ -137,6 +137,31 @@ describe("font CLI list", () => {
     expectNoStderr();
   });
 
+  test("prints timeout distinctly in text debug output", async () => {
+    const { runtime, stdout, stderr } = createActionTestRuntime({
+      colorEnabled: false,
+    });
+    runtime.platform = "linux";
+
+    await actionFontList(runtime, {
+      debug: true,
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: false,
+        stdout: "",
+        stderr: "private timeout detail",
+        failureKind: "timeout",
+      }),
+    });
+
+    expect(stdout.text).toMatch(
+      /- fontconfig: timeout in \d+ms \(fontconfig discovery timed out\.\)/,
+    );
+    expect(stdout.text).not.toContain("private timeout detail");
+    expect(stderr.text).toBe("Warning: fontconfig discovery failed.\n");
+    expect(stderr.text).not.toContain("private timeout detail");
+  });
+
   test("uses full names and removes duplicate display entries", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     runtime.platform = "linux";

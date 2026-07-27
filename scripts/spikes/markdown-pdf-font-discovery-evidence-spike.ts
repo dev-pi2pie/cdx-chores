@@ -5,6 +5,7 @@ import { discoverSystemFonts } from "../../src/fonts";
 import type { DiscoverFontsInput, DiscoverFontsResult } from "../../src/fonts";
 
 const DEFAULT_RUNS = 30;
+const MAX_TIMEOUT_MS = 2_147_483_647;
 const POLICY_THRESHOLDS_MS = [1_000, 3_000, 10_000] as const;
 
 type DiscoveryOutcome = "success" | "failed" | "timeout";
@@ -40,7 +41,16 @@ export interface FontDiscoveryEvidenceReport {
   environment: {
     platform: NodeJS.Platform;
     arch: string;
-    nodeVersion: string;
+    runtime:
+      | {
+          name: "node";
+          version: string;
+        }
+      | {
+          name: "bun";
+          version: string;
+          nodeCompatibilityVersion: string;
+        };
   };
   percentileMethod: "nearest-rank";
   firstRun: RunEvidence;
@@ -67,13 +77,20 @@ export interface FontDiscoveryEvidenceReport {
 
 export class EvidenceSpikeInputError extends Error {}
 
-function parsePositiveSafeInteger(flag: string, value: string | undefined): number {
+function parsePositiveSafeInteger(
+  flag: string,
+  value: string | undefined,
+  maximum = Number.MAX_SAFE_INTEGER,
+): number {
   if (value === undefined || value.startsWith("--")) {
     throw new EvidenceSpikeInputError(`${flag} requires a value.`);
   }
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new EvidenceSpikeInputError(`${flag} must be a positive safe integer.`);
+  }
+  if (parsed > maximum) {
+    throw new EvidenceSpikeInputError(`${flag} must be no greater than ${maximum}.`);
   }
   return parsed;
 }
@@ -94,7 +111,11 @@ export function parseEvidenceSpikeArgs(args: string[]): EvidenceSpikeOptions {
     seen.add(flag);
 
     const value = args[index + 1];
-    const parsed = parsePositiveSafeInteger(flag, value);
+    const parsed = parsePositiveSafeInteger(
+      flag,
+      value,
+      flag === "--timeout-ms" ? MAX_TIMEOUT_MS : Number.MAX_SAFE_INTEGER,
+    );
     if (flag === "--runs") {
       runs = parsed;
     } else {
@@ -137,6 +158,21 @@ function outcomeFromResult(result: DiscoverFontsResult): DiscoveryOutcome {
     return status;
   }
   return "failed";
+}
+
+function runtimeEnvironment(): FontDiscoveryEvidenceReport["environment"]["runtime"] {
+  const bunVersion = Reflect.get(process.versions, "bun");
+  if (typeof bunVersion === "string") {
+    return {
+      name: "bun",
+      version: bunVersion,
+      nodeCompatibilityVersion: process.versions.node,
+    };
+  }
+  return {
+    name: "node",
+    version: process.versions.node,
+  };
 }
 
 async function measureRun(
@@ -204,7 +240,7 @@ export async function collectFontDiscoveryEvidence(
     environment: {
       platform: process.platform,
       arch: process.arch,
-      nodeVersion: process.versions.node,
+      runtime: runtimeEnvironment(),
     },
     percentileMethod: "nearest-rank",
     firstRun,

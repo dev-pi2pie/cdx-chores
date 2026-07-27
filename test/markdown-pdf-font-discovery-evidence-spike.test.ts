@@ -20,9 +20,10 @@ function sensitiveFace(): FontFace {
 function discoveryResult(
   status: "success" | "failed" | "timeout",
   durationMs: number,
+  emptyResult = false,
 ): DiscoverFontsResult {
   return {
-    faces: status === "success" ? [sensitiveFace()] : [],
+    faces: status === "success" && !emptyResult ? [sensitiveFace()] : [],
     warnings: status === "success" ? [] : ["/private/raw command error"],
     adapter: "fontconfig",
     discovery: "fontconfig",
@@ -53,6 +54,10 @@ describe("Markdown PDF font discovery evidence spike", () => {
       runs: 3,
       timeoutMs: 1_000,
     });
+    expect(parseEvidenceSpikeArgs(["--timeout-ms", "2147483647"])).toEqual({
+      runs: 30,
+      timeoutMs: 2_147_483_647,
+    });
     expect(() => parseEvidenceSpikeArgs([])).toThrow("--timeout-ms is required.");
   });
 
@@ -64,6 +69,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
       ["--runs", "9007199254740992", "--timeout-ms", "1000"],
       ["--runs", "--timeout-ms", "1000"],
       ["--timeout-ms", "0"],
+      ["--timeout-ms", "2147483648"],
       ["--timeout-ms", "1000", "--timeout-ms", "3000"],
       ["--unknown", "1", "--timeout-ms", "1000"],
     ];
@@ -86,6 +92,24 @@ describe("Markdown PDF font discovery evidence spike", () => {
       p95: 40,
       max: 40,
     });
+    expect(summarizeDurations([7])).toEqual({
+      sampleCount: 1,
+      p50: 7,
+      p95: 7,
+      max: 7,
+    });
+    expect(summarizeDurations([2, 1])).toEqual({
+      sampleCount: 2,
+      p50: 1,
+      p95: 2,
+      max: 2,
+    });
+    expect(summarizeDurations([3, 1, 2])).toEqual({
+      sampleCount: 3,
+      p50: 2,
+      p95: 3,
+      max: 3,
+    });
   });
 
   test("collects serial public-safe first and subsequent-run evidence", async () => {
@@ -93,15 +117,16 @@ describe("Markdown PDF font discovery evidence spike", () => {
       discoveryResult("success", 8),
       discoveryResult("timeout", 20),
       discoveryResult("failed", 28),
+      discoveryResult("success", 900, true),
     ];
-    const clock = [0, 10, 10, 30, 30, 60];
+    const clock = [0, 10, 10, 30, 30, 60, 60, 1_060];
     let callIndex = 0;
     let clockIndex = 0;
     let inFlight = 0;
     let maxInFlight = 0;
 
     const report = await collectFontDiscoveryEvidence(
-      { runs: 3, timeoutMs: 1_000 },
+      { runs: 4, timeoutMs: 1_000 },
       {
         discover: async (input) => {
           expect(input).toEqual({
@@ -127,7 +152,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
     expect(maxInFlight).toBe(1);
     expect(report.parameters).toEqual({
       discovery: "fontconfig",
-      runs: 3,
+      runs: 4,
       timeoutMs: 1_000,
       serial: true,
     });
@@ -138,26 +163,45 @@ describe("Markdown PDF font discovery evidence spike", () => {
       emptyResult: false,
     });
     expect(report.subsequentRuns).toEqual({
-      runCount: 2,
+      runCount: 3,
       totalDurationMs: {
-        sampleCount: 2,
-        p50: 20,
-        p95: 30,
-        max: 30,
+        sampleCount: 3,
+        p50: 30,
+        p95: 1_000,
+        max: 1_000,
       },
       adapterDurationMs: {
-        sampleCount: 2,
-        p50: 20,
-        p95: 28,
-        max: 28,
+        sampleCount: 3,
+        p50: 28,
+        p95: 900,
+        max: 900,
       },
     });
     expect(report.outcomes).toEqual({
-      success: 1,
+      success: 2,
       failed: 1,
       timeout: 1,
-      emptyResult: 0,
+      emptyResult: 1,
     });
+    expect(report.allRuns).toEqual({
+      totalDurationMs: {
+        sampleCount: 4,
+        p50: 20,
+        p95: 1_000,
+        max: 1_000,
+      },
+      adapterDurationMs: {
+        sampleCount: 4,
+        p50: 20,
+        p95: 900,
+        max: 900,
+      },
+    });
+    expect(report.thresholds).toEqual([
+      { thresholdMs: 1_000, runsAtOrAbove: 1 },
+      { thresholdMs: 3_000, runsAtOrAbove: 0 },
+      { thresholdMs: 10_000, runsAtOrAbove: 0 },
+    ]);
 
     const serialized = JSON.stringify(report);
     expect(serialized).not.toContain("Private Family");
