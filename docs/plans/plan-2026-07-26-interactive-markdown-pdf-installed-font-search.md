@@ -314,7 +314,8 @@ Tasks:
 - [x] Verify later font prompts reuse the cached result without another
       fontconfig call.
 - [x] Preserve the current `fontHints[]` ordering and direct-helper behavior.
-- [ ] Review the Phase 4 commit range and resolve all actionable findings.
+- [x] Review the exact Phase 4 range `beb57dd..3ce9cde` and resolve all
+      actionable findings.
 
 Phase gate:
 

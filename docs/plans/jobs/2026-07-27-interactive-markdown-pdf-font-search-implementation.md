@@ -201,7 +201,10 @@ Checkpoint commits:
 Starting commit:
 `beb57dd`
 
-Status: implementation complete; exact-range review pending.
+Implementation ending commit:
+`3ce9cde`
+
+Status: completed.
 
 Initial implementation commit:
 `b936dd0`
@@ -263,10 +266,28 @@ Review status:
   back navigation cancels the soft timer while the original hard deadline
   remains active until the continuing discovery settles.
 - Documentation review requested an ending boundary and exact reviewed range.
-  The initial boundary is recorded above; the final widened boundary will be
-  recorded after re-review.
-- Widened exact-range review is pending.
+  Both are recorded in this section and the plan checklist.
+- Widened correctness, test, and documentation reviews approved
+  `beb57dd..3ce9cde` with no actionable findings.
+- Widened maintainability review confirmed that the explicit lifecycle state and
+  centralized soft-threshold helper resolved its initial findings. Its remaining
+  preference to avoid exact timer bookkeeping assertions was not accepted:
+  those assertions are localized in the service test, were required by test
+  review to prove cleanup, and directly verify that the three-second soft wait
+  never resets the ten-second absolute deadline.
+
+Phase gate: passed. The first prompt offers its conditional slow path after
+three seconds, continued waiting stays within the original ten-second ceiling,
+all visible-choice races are deterministic, and custom input remains reachable
+for every unavailable outcome.
+
+Checkpoint commits:
+
+- `b936dd0` — two-stage lifecycle implementation, deterministic race coverage,
+  integration expectation, plan checklist evidence, and this job.
+- `3ce9cde` — accepted lifecycle-state, real-Escape, timer-cleanup, and
+  traceability fixes from initial review.
 
 ## Phase 5: Validation, Guidance, And Closeout
 
-Status: pending Phase 4 closeout.
+Status: ready to begin from the Phase 4 closeout boundary.
