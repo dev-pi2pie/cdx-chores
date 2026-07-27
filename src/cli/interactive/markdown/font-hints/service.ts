@@ -24,7 +24,6 @@ const FONT_HINT_SEARCH_PAGE_SIZE = 7;
 const FONT_HINT_DISCOVERY_ABORTED = Symbol("font-hint-discovery-aborted");
 const FONT_HINT_DISCOVERY_SOFT_WAIT_REACHED = Symbol("font-hint-discovery-soft-wait-reached");
 const FONT_HINT_DISCOVERY_TIMED_OUT = Symbol("font-hint-discovery-timed-out");
-const FONT_HINT_DISCOVERY_NAVIGATE_BACK = Symbol("font-hint-discovery-navigate-back");
 
 type DiscoveryResolution =
   | { kind: "ready"; records: SearchableFontFamily[] }
@@ -36,6 +35,12 @@ interface ActiveDiscovery {
   abort(reason?: unknown): void;
   promise: Promise<DiscoveryResolution>;
 }
+
+type DiscoveryLifecycleState =
+  | { kind: "idle" }
+  | { kind: "pending"; discovery: ActiveDiscovery; slowPathOffered: boolean }
+  | { kind: "settled"; resolution: DiscoveryResolution }
+  | { kind: "custom"; resolution: DiscoveryResolution };
 
 const scheduleDeadlineWithTimer: ScheduleDeadline = (callback, timeoutMs) => {
   const timeout = setTimeout(callback, timeoutMs);
@@ -144,10 +149,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
   const searchPrompt = options.searchPrompt ?? search;
   const selectPrompt = options.selectPrompt ?? select;
   const controller = new AbortController();
-  let activeDiscovery: ActiveDiscovery | undefined;
-  let settledResolution: DiscoveryResolution | undefined;
-  let resolutionOverride: DiscoveryResolution | undefined;
-  let slowPathOffered = false;
+  let discoveryState: DiscoveryLifecycleState = { kind: "idle" };
   let unavailableNoticeShown = false;
   let statusShown = false;
 
@@ -164,20 +166,30 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     statusShown = false;
   }
 
-  function ensureDiscovery(): ActiveDiscovery {
-    if (!activeDiscovery) {
-      activeDiscovery = startInstalledFamilyDiscovery(
+  function ensureDiscovery(): Extract<DiscoveryLifecycleState, { kind: "pending" }> {
+    if (discoveryState.kind === "idle") {
+      const discovery = startInstalledFamilyDiscovery(
         runtime,
         controller.signal,
         discover,
         scheduleDeadline,
         discoveryHardTimeoutMs,
       );
-      void activeDiscovery.promise.then((resolution) => {
-        settledResolution = resolution;
+      discoveryState = { kind: "pending", discovery, slowPathOffered: false };
+      void discovery.promise.then((resolution) => {
+        if (discoveryState.kind === "pending" && discoveryState.discovery === discovery) {
+          discoveryState = { kind: "settled", resolution };
+        }
       });
     }
-    return activeDiscovery;
+    if (discoveryState.kind !== "pending") {
+      throw new TypeError("Font discovery was expected to be pending.");
+    }
+    return discoveryState;
+  }
+
+  function currentSettledResolution(): DiscoveryResolution | undefined {
+    return discoveryState.kind === "settled" ? discoveryState.resolution : undefined;
   }
 
   async function waitWithStatus(discovery: ActiveDiscovery): Promise<DiscoveryResolution> {
@@ -196,18 +208,13 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     }
   }
 
-  async function resolveDiscovery(): Promise<
-    DiscoveryResolution | typeof FONT_HINT_DISCOVERY_NAVIGATE_BACK
-  > {
-    if (resolutionOverride) {
-      return resolutionOverride;
+  async function resolveDiscovery(): Promise<DiscoveryResolution | undefined> {
+    if (discoveryState.kind === "custom" || discoveryState.kind === "settled") {
+      return discoveryState.resolution;
     }
-    if (settledResolution) {
-      return settledResolution;
-    }
-    const discovery = ensureDiscovery();
-    if (slowPathOffered) {
-      return await waitWithStatus(discovery);
+    const pending = ensureDiscovery();
+    if (pending.slowPathOffered) {
+      return await waitWithStatus(pending.discovery);
     }
 
     let cancelSoftWait: (() => void) | undefined;
@@ -217,13 +224,15 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
         discoverySoftWaitMs,
       );
     });
-    const initialOutcome = await Promise.race([discovery.promise, softWait]);
+    const initialOutcome = await Promise.race([pending.discovery.promise, softWait]);
     cancelSoftWait?.();
     if (initialOutcome !== FONT_HINT_DISCOVERY_SOFT_WAIT_REACHED) {
       return initialOutcome;
     }
 
-    slowPathOffered = true;
+    if (discoveryState.kind === "pending") {
+      discoveryState.slowPathOffered = true;
+    }
     const choice = await promptMarkdownPdfInteractiveFontHintSlowPath(
       runtime,
       selectPrompt,
@@ -246,17 +255,19 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
       controller.signal,
     );
     if (choice === undefined) {
-      return FONT_HINT_DISCOVERY_NAVIGATE_BACK;
+      return undefined;
     }
     if (choice === "custom") {
-      resolutionOverride = { kind: "unavailable", showNotice: false };
-      discovery.abort(new DOMException("Custom font input selected.", "AbortError"));
-      return resolutionOverride;
+      const resolution: DiscoveryResolution = { kind: "unavailable", showNotice: false };
+      discoveryState = { kind: "custom", resolution };
+      pending.discovery.abort(new DOMException("Custom font input selected.", "AbortError"));
+      return resolution;
     }
-    if (settledResolution) {
-      return settledResolution;
+    const resolution = currentSettledResolution();
+    if (resolution) {
+      return resolution;
     }
-    return await waitWithStatus(discovery);
+    return await waitWithStatus(pending.discovery);
   }
 
   return {
@@ -265,7 +276,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
     },
     async promptPreference(current) {
       const resolution = await resolveDiscovery();
-      if (resolution === FONT_HINT_DISCOVERY_NAVIGATE_BACK) {
+      if (resolution === undefined) {
         return undefined;
       }
       if (controller.signal.aborted) {

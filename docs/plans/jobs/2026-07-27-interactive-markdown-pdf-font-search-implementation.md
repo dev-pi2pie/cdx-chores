@@ -203,6 +203,9 @@ Starting commit:
 
 Status: implementation complete; exact-range review pending.
 
+Initial implementation commit:
+`b936dd0`
+
 Implemented:
 
 - Replaced the one-second timeout with a three-second soft wait and one
@@ -230,7 +233,8 @@ Implemented:
 Verification:
 
 - `bun test test/fonts-*.test.ts test/cli-interactive-markdown-pdf/font-hints.test.ts test/cli-interactive-markdown-pdf/codex-authoring.test.ts test/cli-interactive-markdown-pdf/render-sources.test.ts test/cli-interactive-markdown-pdf/lifecycle.test.ts`
-  - Passed: 251 tests and 1,108 assertions across 25 files.
+  - Initial candidate passed: 251 tests and 1,108 assertions across 25 files.
+  - Post-review fixes passed: 252 tests and 1,123 assertions across 25 files.
 - `bunx tsc --noEmit`
   - Passed.
 - `bun run lint`
@@ -242,11 +246,26 @@ Verification:
 - `git diff --check`
   - Passed.
 - `bun test`
-  - Passed: 1,795 tests and 9,426 assertions across 226 files.
+  - Initial candidate passed: 1,795 tests and 9,426 assertions across 226 files.
+  - Post-review fixes passed: 1,796 tests and 9,440 assertions across 226
+    files.
 
 Review status:
 
-- Exact-range review will begin after the validated implementation checkpoint.
+- The initial exact review covered `beb57dd..b936dd0`.
+- Correctness review approved the initial range.
+- Maintainability review requested one explicit lifecycle-state object and less
+  repeated scheduler/microtask setup in tests. Both findings were accepted:
+  discovery now moves through one discriminated state, and soft-threshold
+  advancement is centralized in a test helper.
+- Test review requested a real Escape-keypress regression and explicit deadline
+  cleanup assertions. Both were added, including the intentional behavior that
+  back navigation cancels the soft timer while the original hard deadline
+  remains active until the continuing discovery settles.
+- Documentation review requested an ending boundary and exact reviewed range.
+  The initial boundary is recorded above; the final widened boundary will be
+  recorded after re-review.
+- Widened exact-range review is pending.
 
 ## Phase 5: Validation, Guidance, And Closeout
 

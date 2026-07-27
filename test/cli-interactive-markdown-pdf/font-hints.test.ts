@@ -70,6 +70,9 @@ function createDeadlineScheduler() {
   const scheduled: Array<{ active: boolean; callback: () => void; timeoutMs: number }> = [];
   return {
     scheduled,
+    active(timeoutMs: number): number {
+      return scheduled.filter((task) => task.active && task.timeoutMs === timeoutMs).length;
+    },
     schedule(callback: () => void, timeoutMs: number): () => void {
       const task = { active: true, callback, timeoutMs };
       scheduled.push(task);
@@ -88,6 +91,14 @@ function createDeadlineScheduler() {
       task.callback();
     },
   };
+}
+
+async function reachSoftThreshold(
+  scheduler: ReturnType<typeof createDeadlineScheduler>,
+): Promise<void> {
+  await Promise.resolve();
+  scheduler.run(3_000);
+  await promptTick();
 }
 
 describe("Markdown PDF Interactive font hint model", () => {
@@ -369,6 +380,20 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(await service.promptPreference()).toBe("Noto Sans CJK JP");
   });
 
+  test("cancels soft and hard deadlines after discovery resolves before the soft threshold", async () => {
+    const { runtime } = createCapturedRuntime();
+    const scheduler = createDeadlineScheduler();
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => discoveryResult(["Inter"]),
+      scheduleDeadline: scheduler.schedule,
+      searchPrompt: (async () => "Inter") as typeof search,
+    });
+
+    expect(await service.promptPreference()).toBe("Inter");
+    expect(scheduler.active(3_000)).toBe(0);
+    expect(scheduler.active(10_000)).toBe(0);
+  });
+
   test("caches unavailable discovery while falling back to ordinary input each time", async () => {
     const { runtime, stderr } = createCapturedRuntime();
     let discoveryCalls = 0;
@@ -438,13 +463,15 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     });
 
     const first = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
+    await reachSoftThreshold(scheduler);
     expect(await first).toBe("Brand Sans");
+    await promptTick();
     expect(await service.promptPreference("Brand Sans")).toBe("Brand Sans");
     expect(discoveryCalls).toBe(1);
     expect(slowPathCalls).toBe(1);
     expect(discoverySignal?.aborted).toBe(true);
+    expect(scheduler.active(3_000)).toBe(0);
+    expect(scheduler.active(10_000)).toBe(0);
     expect(stderr.text).not.toContain("Installed font suggestions are unavailable");
   });
 
@@ -469,9 +496,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     });
 
     const pending = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(scheduler);
     expect(stderr.text).toContain("Waiting for installed font families...");
     expect(scheduler.scheduled.filter((task) => task.timeoutMs === 10_000)).toHaveLength(1);
     discovery.resolve(discoveryResult(["Inter"]));
@@ -484,6 +509,8 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(discoveryCalls).toBe(1);
     expect(slowPathCalls).toBe(1);
     expect(stderr.text).toBe(outputAfterFirstPrompt);
+    expect(scheduler.active(3_000)).toBe(0);
+    expect(scheduler.active(10_000)).toBe(0);
   });
 
   test("keeps explicit custom input authoritative when discovery completes during the choice", async () => {
@@ -504,15 +531,15 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     });
 
     const pending = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(scheduler);
     discovery.resolve(discoveryResult(["Inter"]));
     await promptTick();
     slowPathChoice.resolve("custom");
 
     expect(await pending).toBe("Brand Sans");
     expect(searchCalls).toBe(0);
+    expect(scheduler.active(3_000)).toBe(0);
+    expect(scheduler.active(10_000)).toBe(0);
     expect(stderr.text).not.toContain("Installed font suggestions are unavailable");
   });
 
@@ -534,9 +561,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     });
 
     const pending = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(scheduler);
     discovery.resolve(discoveryResult(["Inter"]));
     await promptTick();
     slowPathChoice.resolve("wait");
@@ -548,6 +573,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
 
   test("shows the slow-path choice at most once after back navigation", async () => {
     const { runtime } = createCapturedRuntime();
+    runtime.stdin = new PassThrough() as unknown as NodeJS.ReadStream;
     const scheduler = createDeadlineScheduler();
     const discovery = createDeferred<ReturnType<typeof discoveryResult>>();
     let slowPathCalls = 0;
@@ -555,22 +581,35 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
       discover: async () => await discovery.promise,
       scheduleDeadline: scheduler.schedule,
       searchPrompt: (async () => "Inter") as typeof search,
-      selectPrompt: (async () => {
+      selectPrompt: ((_options, context) => {
         slowPathCalls += 1;
-        return undefined;
+        return new Promise<string>((_resolve, reject) => {
+          context?.signal?.addEventListener(
+            "abort",
+            () => {
+              const error = new Error("Prompt was aborted", { cause: context.signal?.reason });
+              error.name = "AbortPromptError";
+              reject(error);
+            },
+            { once: true },
+          );
+          runtime.stdin.emit("keypress", "", { name: "escape" });
+        });
       }) as typeof select,
     });
 
     const first = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
+    await reachSoftThreshold(scheduler);
     expect(await first).toBeUndefined();
+    expect(scheduler.active(3_000)).toBe(0);
+    expect(scheduler.active(10_000)).toBe(1);
 
     const second = service.promptPreference();
     await promptTick();
     discovery.resolve(discoveryResult(["Inter"]));
     expect(await second).toBe("Inter");
     expect(slowPathCalls).toBe(1);
+    expect(scheduler.active(10_000)).toBe(0);
   });
 
   test("cancels discovery and the visible slow-path prompt without an unavailable notice", async () => {
@@ -609,9 +648,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     });
 
     const pending = service.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(scheduler);
     service.cancel();
 
     await expect(pending).rejects.toMatchObject({ name: "AbortPromptError" });
@@ -635,9 +672,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
       },
     );
     const successful = successfulService.promptPreference();
-    await Promise.resolve();
-    scheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(scheduler);
     successfulDiscovery.resolve(discoveryResult(["Inter"]));
     expect(await successful).toBe("Inter");
 
@@ -666,9 +701,7 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
       },
     );
     const timedOut = timedOutService.promptPreference();
-    await Promise.resolve();
-    timeoutScheduler.run(3_000);
-    await promptTick();
+    await reachSoftThreshold(timeoutScheduler);
     timeoutScheduler.run(10_000);
     await promptTick();
     timedOutChoice.resolve("wait");
@@ -677,6 +710,8 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(await timedOutService.promptPreference()).toBe("Brand Sans");
     expect(timedOutDiscoveryCalls).toBe(1);
     expect(timeoutScheduler.scheduled.filter((task) => task.timeoutMs === 3_000)).toHaveLength(1);
+    expect(timeoutScheduler.active(3_000)).toBe(0);
+    expect(timeoutScheduler.active(10_000)).toBe(0);
     expect(timedOutSignal?.aborted).toBe(true);
     expect(
       timedOutRuntime.stderr.text.match(/Installed font suggestions are unavailable/g),
