@@ -165,14 +165,14 @@ describe("Markdown PDF font discovery evidence spike", () => {
     expect(report.subsequentRuns).toEqual({
       runCount: 3,
       totalDurationMs: {
-        sampleCount: 3,
-        p50: 30,
+        sampleCount: 1,
+        p50: 1_000,
         p95: 1_000,
         max: 1_000,
       },
       adapterDurationMs: {
-        sampleCount: 3,
-        p50: 28,
+        sampleCount: 1,
+        p50: 900,
         p95: 900,
         max: 900,
       },
@@ -185,14 +185,14 @@ describe("Markdown PDF font discovery evidence spike", () => {
     });
     expect(report.allRuns).toEqual({
       totalDurationMs: {
-        sampleCount: 4,
-        p50: 20,
+        sampleCount: 2,
+        p50: 10,
         p95: 1_000,
         max: 1_000,
       },
       adapterDurationMs: {
-        sampleCount: 4,
-        p50: 20,
+        sampleCount: 2,
+        p50: 8,
         p95: 900,
         max: 900,
       },

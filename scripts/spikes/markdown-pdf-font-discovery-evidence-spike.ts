@@ -224,8 +224,11 @@ export async function collectFontDiscoveryEvidence(
     throw new Error("Evidence collection requires at least one run.");
   }
   const subsequentRuns = runs.slice(1);
+  const successfulRuns = runs.filter((run) => run.outcome === "success");
+  const successfulSubsequentRuns = subsequentRuns.filter((run) => run.outcome === "success");
   const totalDurations = runs.map((run) => run.totalDurationMs);
-  const adapterDurations = runs.flatMap((run) =>
+  const successfulTotalDurations = successfulRuns.map((run) => run.totalDurationMs);
+  const successfulAdapterDurations = successfulRuns.flatMap((run) =>
     run.adapterDurationMs === undefined ? [] : [run.adapterDurationMs],
   );
 
@@ -246,16 +249,18 @@ export async function collectFontDiscoveryEvidence(
     firstRun,
     subsequentRuns: {
       runCount: subsequentRuns.length,
-      totalDurationMs: summarizeDurations(subsequentRuns.map((run) => run.totalDurationMs)),
+      totalDurationMs: summarizeDurations(
+        successfulSubsequentRuns.map((run) => run.totalDurationMs),
+      ),
       adapterDurationMs: summarizeDurations(
-        subsequentRuns.flatMap((run) =>
+        successfulSubsequentRuns.flatMap((run) =>
           run.adapterDurationMs === undefined ? [] : [run.adapterDurationMs],
         ),
       ),
     },
     allRuns: {
-      totalDurationMs: summarizeDurations(totalDurations),
-      adapterDurationMs: summarizeDurations(adapterDurations),
+      totalDurationMs: summarizeDurations(successfulTotalDurations),
+      adapterDurationMs: summarizeDurations(successfulAdapterDurations),
     },
     outcomes: {
       success: runs.filter((run) => run.outcome === "success").length,
