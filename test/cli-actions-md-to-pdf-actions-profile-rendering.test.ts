@@ -201,7 +201,9 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedStyles[0]).toContain('font-family: "Profile Code", monospace;');
       expect(renderedStyles[0]).toContain('@page {\n  font-family: "Profile Chrome", sans-serif;');
       expect(renderedStyles[1]).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
-      expect(renderedStyles[1]).toContain("font: 10.5pt/1.5 var(--template-body-font);");
+      expect(renderedStyles[1]).toContain("font-size: 10.5pt;");
+      expect(renderedStyles[1]).toContain("line-height: 1.5;");
+      expect(renderedStyles[1]).toContain("font-family: var(--template-body-font);");
       expect(renderedStyles[1]).not.toContain("Profile Japanese");
       expect(renderedStyles[1]).not.toContain("Profile Chrome");
       expectNoStderr();

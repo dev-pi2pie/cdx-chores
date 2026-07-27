@@ -1,16 +1,17 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
-  synthesizeMdPdfTemplateCodex,
-  synthesizeMdPdfTemplateCodexFromDecision,
-  type MarkdownPdfTemplateCodexDecision,
-  type MdPdfTemplateCodexSignalCollection,
-} from "../../src/cli/markdown-pdf/template-codex";
-import {
   createMarkdownPdfFontCss,
   normalizeMarkdownPdfProfile,
 } from "../../src/cli/markdown-pdf/profile";
+import type { MarkdownPdfTemplateCodexDecision } from "../../src/cli/markdown-pdf/template-codex/codex-decision";
+import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "../../src/cli/markdown-pdf/template-codex/families";
+import { deriveMdPdfTemplateCodexFontOwnership } from "../../src/cli/markdown-pdf/template-codex/font-ownership";
+import {
+  synthesizeMdPdfTemplateCodex,
+  synthesizeMdPdfTemplateCodexFromDecision,
+} from "../../src/cli/markdown-pdf/template-codex/synthesize";
+import type { MdPdfTemplateCodexSignalCollection } from "../../src/cli/markdown-pdf/template-codex/types";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
 function readCssDeclarationBlock(
@@ -353,7 +354,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(hide.templateHtml).not.toContain('<header class="document-title">');
   });
 
-  test("reproduces preset families competing with a direct compatibility Profile", () => {
+  test("omits competing document families for Profile-owned CSS slots", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {
         pdf: { "content-langs": ["ja"] },
@@ -384,6 +385,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       overflowFamilyCount: 0,
     };
     const withProfile = synthesizeMdPdfTemplateCodex({
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
       outputPlan: createSynthesisOutputPlan(),
       signals: createSynthesisSignals({
         baseProfilePreset: "article",
@@ -410,16 +412,18 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "--template-monospace-font": '"Noto Sans Mono", "SFMono-Regular", "Consolas", monospace',
     });
     expect(cssDeclarationsForSelector(withProfile.styleCss, "body")).toMatchObject({
-      font: "10.5pt/1.5 var(--template-body-font)",
+      "font-size": "10.5pt",
+      "line-height": "1.5",
     });
+    expect(cssDeclarationsForSelector(withProfile.styleCss, "body")).not.toHaveProperty(
+      "font-family",
+    );
     expect(
       cssDeclarationsForSelector(withProfile.styleCss, "h1, h2, h3, h4, h5, h6"),
-    ).toMatchObject({
-      "font-family": "var(--template-heading-font)",
-    });
-    expect(cssDeclarationsForSelector(withProfile.styleCss, "code")).toMatchObject({
-      "font-family": "var(--template-monospace-font)",
-    });
+    ).not.toHaveProperty("font-family");
+    expect(cssDeclarationsForSelector(withProfile.styleCss, "code")).not.toHaveProperty(
+      "font-family",
+    );
     expect(withProfile.styleCss).not.toContain("Profile Chrome");
     expect(withProfile.styleCss).toContain("@page {\n  size:");
 
@@ -427,40 +431,19 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       cssDeclarationsForSelector(withProfile.styleCss, ":root"),
     );
     expect(cssDeclarationsForSelector(withoutProfile.styleCss, "body")).toMatchObject({
-      font: "10.5pt/1.5 var(--template-body-font)",
+      "font-family": "var(--template-body-font)",
+      "font-size": "10.5pt",
+      "line-height": "1.5",
     });
     expect(
       cssDeclarationsForSelector(withoutProfile.styleCss, "h1, h2, h3, h4, h5, h6"),
-    ).toMatchObject(cssDeclarationsForSelector(withProfile.styleCss, "h1, h2, h3, h4, h5, h6"));
-    expect(cssDeclarationsForSelector(withoutProfile.styleCss, "code")).toMatchObject(
-      cssDeclarationsForSelector(withProfile.styleCss, "code"),
-    );
+    ).toMatchObject({
+      "font-family": "var(--template-heading-font)",
+    });
+    expect(cssDeclarationsForSelector(withoutProfile.styleCss, "code")).toMatchObject({
+      "font-family": "var(--template-monospace-font)",
+    });
     expect(withoutProfile.styleCss).not.toContain("Profile Chrome");
-  });
-
-  test("reproduces a bounded CSS block appending a later family override", () => {
-    const signals = createSynthesisSignals({
-      baseProfilePreset: "article",
-      profileFonts: {
-        families: [{ family: "Profile Body", key: "default", role: "body" }],
-        overflowFamilyCount: 0,
-      },
-    });
-    const result = synthesizeMdPdfTemplateCodexFromDecision({
-      decision: createTemplateDecision({
-        cssBlocks: [{ css: 'body { font-family: "Late Override"; }', slot: "typography" }],
-        signals,
-      }),
-      outputPlan: createSynthesisOutputPlan(),
-      signals,
-    });
-
-    const generatedBodyIndex = result.styleCss.indexOf("body {");
-    const boundedBlockIndex = result.styleCss.indexOf("/* Codex bounded CSS blocks */");
-    const overrideIndex = result.styleCss.indexOf('font-family: "Late Override"');
-    expect(generatedBodyIndex).toBeGreaterThanOrEqual(0);
-    expect(boundedBlockIndex).toBeGreaterThan(generatedBodyIndex);
-    expect(overrideIndex).toBeGreaterThan(boundedBlockIndex);
   });
 
   test("materializes bounded font hint decisions into template CSS variables", () => {
@@ -752,7 +735,109 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     ]);
   });
 
+  test("uses the full ownership mask instead of coarse bounded-summary overflow", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { ja: "Profile Japanese" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["body default"],
+      profileFonts: {
+        families: [],
+        overflowFamilyCount: 3,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Source Serif 4",
+            key: "default",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, "body")).toMatchObject({
+      "font-family": "var(--template-body-font)",
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "default",
+        profileOwned: false,
+        reason: "applied",
+        role: "body",
+        status: "applied",
+      }),
+    ]);
+  });
+
+  test("blocks exact full-Profile keys omitted from the bounded prompt summary", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { ja: "Profile Japanese" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["Japanese body"],
+      pdfContentLangs: ["ja"],
+      profileFonts: {
+        families: [],
+        overflowFamilyCount: 1,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(result.styleCss).not.toContain(bodyLanguageSelector("ja"));
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "ja",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        role: "body",
+        status: "blocked",
+      }),
+    ]);
+  });
+
   test("allows explicit template-level font decisions to override base-profile fonts", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          heading: { default: "Aptos" },
+        },
+      },
+    }).profile;
     const signals = createSynthesisSignals({
       baseProfilePreset: "article",
       profileFonts: {
@@ -774,6 +859,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
           },
         ],
       }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
       outputPlan,
       signals,
     });
@@ -781,8 +867,138 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
       "--template-heading-font": '"Editorial Sans", sans-serif',
     });
+    expect(cssDeclarationsForSelector(result.styleCss, "h1, h2, h3, h4, h5, h6")).toMatchObject({
+      "font-family": "var(--template-heading-font)",
+    });
     expect(result.fontDecisions).toEqual([
       expect.objectContaining({
+        overridesProfileFont: true,
+        profileOwned: true,
+        reason: "template-level-override",
+        status: "applied",
+      }),
+    ]);
+  });
+
+  test("canonicalizes explicit language overrides before restoring their selector", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { "zh-hant": "Profile Serif TC" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["Traditional Chinese body"],
+      pdfContentLangs: ["zh-Hant"],
+      profileFonts: {
+        families: [{ family: "Profile Serif TC", key: "zh-hant", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Editorial Serif TC",
+            key: "zh-Hant",
+            role: "body",
+            source: "template-style",
+            templateLevel: true,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(
+      cssDeclarationsForSelector(result.styleCss, bodyLanguageSelector("zh-Hant")),
+    ).toMatchObject({
+      "font-family": '"Editorial Serif TC", "Noto Serif", "Georgia", serif',
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "zh-Hant",
+        overridesProfileFont: true,
+        profileOwned: true,
+        reason: "template-level-override",
+        status: "applied",
+      }),
+    ]);
+  });
+
+  test("treats either Profile code key as ownership of the combined code family", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          code: { symbols: "Profile Symbols" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["code face"],
+      profileFonts: {
+        families: [{ family: "Profile Symbols", key: "symbols", role: "code" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const decision = createTemplateDecision({
+      signals,
+      fontDecisions: [
+        {
+          family: "Source Code Pro",
+          key: "default",
+          role: "code",
+          source: "font-hint",
+          templateLevel: false,
+        },
+      ],
+    });
+    const ownership = deriveMdPdfTemplateCodexFontOwnership(normalizedProfile);
+    const blocked = synthesizeMdPdfTemplateCodexFromDecision({
+      decision,
+      fontOwnership: ownership,
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+    const explicit = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: {
+        ...decision,
+        fontDecisions: [
+          {
+            family: "Editorial Symbols",
+            key: "symbols",
+            role: "code",
+            source: "template-style",
+            templateLevel: true,
+          },
+        ],
+      },
+      fontOwnership: ownership,
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(blocked.styleCss, "code")).not.toHaveProperty("font-family");
+    expect(blocked.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "default",
+        profileOwned: true,
+        reason: "profile-font-owned",
+        status: "blocked",
+      }),
+    ]);
+    expect(cssDeclarationsForSelector(explicit.styleCss, "code")).toMatchObject({
+      "font-family": "var(--template-monospace-font)",
+    });
+    expect(explicit.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "symbols",
         overridesProfileFont: true,
         profileOwned: true,
         reason: "template-level-override",
@@ -871,6 +1087,15 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
   });
 
   test("synthesizes title-image-subtitle cover composition with bounded alignment slots", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { default: "Profile Body" },
+          heading: { default: "Profile Heading" },
+        },
+      },
+    }).profile;
+    const fontOwnership = deriveMdPdfTemplateCodexFontOwnership(normalizedProfile);
     const outputPlan = createSynthesisOutputPlan({ includeCoverAsset: true });
     const signals = createSynthesisSignals({
       coverImage: {
@@ -881,8 +1106,9 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       },
       signalMode: "codex-assisted",
     });
-    const base = synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+    const base = synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
     const result = synthesizeMdPdfTemplateCodexFromDecision({
+      fontOwnership,
       outputPlan,
       signals,
       decision: {
@@ -961,6 +1187,10 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       display: "block",
       "margin-top": "2mm",
     });
+    expect(cssDeclarationsForSelector(result.styleCss, "body")).not.toHaveProperty("font-family");
+    expect(
+      cssDeclarationsForSelector(result.styleCss, "h1, h2, h3, h4, h5, h6"),
+    ).not.toHaveProperty("font-family");
   });
 
   test("maps cover media sizing to landscape inch page dimensions", () => {

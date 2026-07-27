@@ -234,6 +234,44 @@ describe("Markdown PDF template Codex adapter", () => {
     });
   });
 
+  test("keeps internal full-Profile font ownership out of bounded prompt facts", () => {
+    const signals = {
+      ...createSynthesisSignals({
+        fontHints: ["Editorial"],
+        profileFonts: {
+          families: [{ family: "Bounded Profile Body", key: "default", role: "body" }],
+          overflowFamilyCount: 2,
+        },
+        signalMode: "codex-assisted",
+      }),
+      fontOwnership: {
+        ownedKeys: [{ key: "ja", role: "body" }],
+      },
+      normalizedProfile: {
+        fonts: {
+          body: { ja: "Private Full Profile Sentinel" },
+        },
+      },
+    };
+    const prompt = buildMarkdownPdfTemplateCodexPrompt(requestBase({ signals }));
+    const facts = promptFacts(prompt) as {
+      fontFacts: Record<string, unknown>;
+    };
+
+    expect(facts.fontFacts).toEqual({
+      hints: ["Editorial"],
+      profileFonts: {
+        families: [{ family: "Bounded Profile Body", key: "default", role: "body" }],
+        overflowFamilyCount: 2,
+      },
+    });
+    expect(Object.keys(facts.fontFacts).sort()).toEqual(["hints", "profileFonts"]);
+    expect(prompt).not.toContain("fontOwnership");
+    expect(prompt).not.toContain("ownedKeys");
+    expect(prompt).not.toContain("normalizedProfile");
+    expect(prompt).not.toContain("Private Full Profile Sentinel");
+  });
+
   test("uses schema-valid recipe source facts for document-derived wide-table prompts", () => {
     const prompt = buildMarkdownPdfTemplateCodexPrompt(
       requestBase({
@@ -1126,33 +1164,68 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("outside the spacing slot");
   });
 
-  test("characterizes family-bearing declarations currently admitted by bounded CSS blocks", () => {
+  test("rejects generated CSS declarations that can override font families", () => {
+    const familyOverrides = [
+      {
+        css: 'body { font-family: "Late Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
+        slot: "cover" as const,
+      },
+      {
+        css: ':root { --template-body-font: "Late Variable"; }',
+        slot: "colors" as const,
+      },
+      {
+        css: 'body { FoNt-FaMiLy: "Case Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { f/**/ont-fa/**/mily: "Comment Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { \\66 ont-family: "Escaped Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: ':root { --TeMpLaTe-CoDe-FoNt: "Case Variable"; }',
+        slot: "colors" as const,
+      },
+    ];
+
+    for (const block of familyOverrides) {
+      expect(() => validateMarkdownPdfTemplateCodexCssBlock(block)).toThrow(
+        "must not declare font, font-family, or Template font custom properties",
+      );
+    }
+  });
+
+  test("allows non-family typography declarations and Template font variable reads", () => {
     expect(
       validateMarkdownPdfTemplateCodexCssBlock({
-        css: 'body { font-family: "Late Override"; }',
+        css: [
+          "body {",
+          "  font-size: 11pt;",
+          "  font-weight: 400;",
+          "  font-style: normal;",
+          "  outline: var(--template-body-font);",
+          "}",
+        ].join("\n"),
         slot: "typography",
       }),
     ).toEqual({
-      css: 'body { font-family: "Late Override"; }',
+      css: [
+        "body {",
+        "  font-size: 11pt;",
+        "  font-weight: 400;",
+        "  font-style: normal;",
+        "  outline: var(--template-body-font);",
+        "}",
+      ].join("\n"),
       slot: "typography",
-    });
-    expect(
-      validateMarkdownPdfTemplateCodexCssBlock({
-        css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
-        slot: "cover",
-      }),
-    ).toEqual({
-      css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
-      slot: "cover",
-    });
-    expect(
-      validateMarkdownPdfTemplateCodexCssBlock({
-        css: ':root { --template-body-font: "Late Variable"; }',
-        slot: "colors",
-      }),
-    ).toEqual({
-      css: ':root { --template-body-font: "Late Variable"; }',
-      slot: "colors",
     });
   });
 

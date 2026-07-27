@@ -10,6 +10,10 @@ import type {
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
 import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
+import {
+  mdPdfTemplateCodexOwnsFontKey,
+  type MarkdownPdfTemplateCodexFontOwnership,
+} from "./font-ownership";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 
@@ -88,7 +92,13 @@ function presetDefaults(signals: MdPdfTemplateCodexSignalCollection): TemplateCo
 function profileOwnsTemplateFontRole(
   signals: MdPdfTemplateCodexSignalCollection,
   decision: MarkdownPdfTemplateCodexTemplateFontDecision,
+  fontOwnership?: MarkdownPdfTemplateCodexFontOwnership,
 ): boolean {
+  if (fontOwnership) {
+    return decision.role === "code"
+      ? fontOwnership.slots.codeStack
+      : mdPdfTemplateCodexOwnsFontKey(fontOwnership, decision.role, decision.key);
+  }
   if (!signals.baseProfile.available) {
     return false;
   }
@@ -236,11 +246,13 @@ function applyFontDecisionsToTokens(input: {
 
 export function materializeMdPdfTemplateCodexFontDecisions(input: {
   decisions: readonly MarkdownPdfTemplateCodexTemplateFontDecision[];
+  fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexMaterializedFontDecision[] {
   return input.decisions.map((decision) => {
-    const profileOwned = profileOwnsTemplateFontRole(input.signals, decision);
-    const overflowBlocked = !profileOwned && mayHaveTruncatedProfileFontOwnership(input.signals);
+    const profileOwned = profileOwnsTemplateFontRole(input.signals, decision, input.fontOwnership);
+    const overflowBlocked =
+      !input.fontOwnership && !profileOwned && mayHaveTruncatedProfileFontOwnership(input.signals);
     const blockedByProfile = profileOwned || overflowBlocked;
     const overridesProfileFont = blockedByProfile && decision.templateLevel;
     const applied = !blockedByProfile || decision.templateLevel;

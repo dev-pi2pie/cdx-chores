@@ -18,6 +18,15 @@ export {
 } from "./slots";
 export { resolveMdPdfTemplateCodexTitlePolicy } from "./title-policy";
 export {
+  deriveMdPdfTemplateCodexFontOwnership,
+  EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
+  mdPdfTemplateCodexOwnsFontKey,
+} from "./font-ownership";
+export type {
+  MarkdownPdfTemplateCodexFontOwnership,
+  MarkdownPdfTemplateCodexOwnedFontKey,
+} from "./font-ownership";
+export {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "./synthesize";

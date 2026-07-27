@@ -58,15 +58,15 @@ Status: completed.
 
 ### Ownership Inventory
 
-| CSS slot | Current generated surface | Phase 1 classification |
-| --- | --- | --- |
-| Body default | preset variable plus `body` `font` shorthand | conflicting Template output overrides Profile |
-| Body language | no Template language selector today | matching Profile selector remains effective; retain an explicit ownership slot |
-| Headings | preset variable plus `h1` through `h6` family | conflicting Template output overrides Profile |
-| Code stack | one preset variable consumed by `code` | either Profile code key must own the combined declaration |
-| Page chrome | no generated Template declaration | Profile-derived `@page` CSS remains sole owner |
-| Cover title | heading variable in a cover shorthand | Template-owned presentation |
-| Cover subtitle and byline | body variable in cover shorthands | Template-owned presentation |
+| CSS slot                  | Current generated surface                     | Phase 1 classification                                                         |
+| ------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| Body default              | preset variable plus `body` `font` shorthand  | conflicting Template output overrides Profile                                  |
+| Body language             | no Template language selector today           | matching Profile selector remains effective; retain an explicit ownership slot |
+| Headings                  | preset variable plus `h1` through `h6` family | conflicting Template output overrides Profile                                  |
+| Code stack                | one preset variable consumed by `code`        | either Profile code key must own the combined declaration                      |
+| Page chrome               | no generated Template declaration             | Profile-derived `@page` CSS remains sole owner                                 |
+| Cover title               | heading variable in a cover shorthand         | Template-owned presentation                                                    |
+| Cover subtitle and byline | body variable in cover shorthands             | Template-owned presentation                                                    |
 
 Bounded Codex CSS blocks are appended after synthesized CSS and currently accept
 `font`, `font-family`, and Template font custom-property declarations. They are
@@ -119,10 +119,50 @@ inventory accounts for every current generated family surface, including the
 Template-owned cover rules, the Profile-only page-chrome boundary, and bounded
 CSS blocks.
 
+## Phase 2: Ownership-Aware Template Synthesis
+
+Status: in progress.
+
+### Scope
+
+Phase 2 owns the internal full-Profile font-ownership model, shared
+ownership-aware CSS emission, body shorthand separation, generated CSS-block
+family validation, and prompt/report isolation. Direct Template and Project
+production wiring remains Phase 3.
+
+### Starting Boundary
+
+- Starting commit:
+  `fee223ce1d8b70da8fd9a34cd551915f42f91640`
+- The worktree was clean before Phase 2 began.
+- Phase 1 passed its **Continue** gate and exact-range review.
+
+### Evidence
+
+Pending.
+
+### Verification
+
+Pending.
+
+### Review
+
+Pending.
+
+### Gate
+
+Pending.
+
 ## Checkpoint Commits
+
+### Phase 1
 
 - `f98215e` — characterize the shared direct Template and Project conflict.
 - `d231ab5` — resolve Phase 1 review gaps and widen regression coverage.
+
+### Phase 2
+
+Pending.
 
 ## Related Documents
 

@@ -60,6 +60,10 @@ export type {
   MarkdownPdfTemplateCodexTypographySlot,
 } from "./types-synthesis";
 export type {
+  MarkdownPdfTemplateCodexFontOwnership,
+  MarkdownPdfTemplateCodexOwnedFontKey,
+} from "./font-ownership";
+export type {
   MarkdownPdfTemplateCodexMetadataTitlePolicy,
   MarkdownPdfTemplateCodexTitlePolicyDecision,
 } from "./title-policy";

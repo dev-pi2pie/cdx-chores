@@ -463,7 +463,9 @@ describe("cli action modules: md pdf-template codex integration", () => {
         expect(styleCss).toContain(
           '--template-monospace-font: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;',
         );
-        expect(styleCss).toContain("font: 10.5pt/1.5 var(--template-body-font);");
+        expect(styleCss).toContain("font-size: 10.5pt;");
+        expect(styleCss).toContain("line-height: 1.5;");
+        expect(styleCss).toContain("font-family: var(--template-body-font);");
         expect(styleCss).not.toContain("Profile Heading");
         expect(styleCss).not.toContain("Profile Chrome");
 

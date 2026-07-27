@@ -58,6 +58,132 @@ function includesRequiredHookRemoval(css: string): boolean {
   );
 }
 
+function stripCssComments(css: string): string {
+  let result = "";
+  let quote: '"' | "'" | undefined;
+
+  for (let index = 0; index < css.length; index += 1) {
+    const char = css[index];
+    const next = css[index + 1];
+
+    if (quote) {
+      result += char;
+      if (char === "\\") {
+        result += next ?? "";
+        index += 1;
+      } else if (char === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      result += char;
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      const commentEnd = css.indexOf("*/", index + 2);
+      if (commentEnd === -1) {
+        return result;
+      }
+      index = commentEnd + 1;
+      continue;
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
+function declarationProperties(css: string): string[] {
+  const properties: string[] = [];
+  let blockDepth = 0;
+  let candidate = "";
+  let readingProperty = false;
+  let quote: '"' | "'" | undefined;
+  let parenthesisDepth = 0;
+
+  for (let index = 0; index < css.length; index += 1) {
+    const char = css[index];
+
+    if (quote) {
+      if (char === "\\") {
+        index += 1;
+      } else if (char === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (char === "{") {
+      blockDepth += 1;
+      candidate = "";
+      readingProperty = blockDepth === 1;
+      continue;
+    }
+    if (char === "}") {
+      blockDepth -= 1;
+      candidate = "";
+      readingProperty = false;
+      parenthesisDepth = 0;
+      continue;
+    }
+    if (blockDepth !== 1) {
+      continue;
+    }
+
+    if (readingProperty) {
+      if (char === ":") {
+        properties.push(candidate.trim());
+        candidate = "";
+        readingProperty = false;
+      } else if (char === ";") {
+        candidate = "";
+      } else {
+        candidate += char;
+      }
+      continue;
+    }
+
+    if (char === "(") {
+      parenthesisDepth += 1;
+    } else if (char === ")") {
+      parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+    } else if (char === ";" && parenthesisDepth === 0) {
+      candidate = "";
+      readingProperty = true;
+    }
+  }
+
+  return properties;
+}
+
+function decodeCssIdentifier(identifier: string): string {
+  return identifier.replace(/\\([0-9a-f]{1,6}[ \t\r\n\f]?|.)/giu, (_match, escaped: string) => {
+    const hex = escaped.match(/^[0-9a-f]{1,6}/iu)?.[0];
+    return hex ? String.fromCodePoint(Number.parseInt(hex, 16)) : escaped;
+  });
+}
+
+function includesFontFamilyDeclaration(css: string): boolean {
+  return declarationProperties(stripCssComments(css)).some((property) => {
+    const normalized = decodeCssIdentifier(property).toLowerCase();
+    return (
+      normalized === "font" ||
+      normalized === "font-family" ||
+      /^--template-[a-z0-9_-]+-font$/u.test(normalized)
+    );
+  });
+}
+
 function hasBalancedBraces(css: string): boolean {
   let depth = 0;
   for (const char of css) {
@@ -133,6 +259,11 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
   if (includesRequiredHookRemoval(css)) {
     throw new Error(
       `Markdown PDF template Codex response ${context}.css must preserve required template selectors.`,
+    );
+  }
+  if (includesFontFamilyDeclaration(css)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context}.css must not declare font, font-family, or Template font custom properties.`,
     );
   }
   const selectors = topLevelSelectors(css);

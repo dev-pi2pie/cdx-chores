@@ -280,9 +280,9 @@ describe("cli action modules: md pdf-project codex template phase", () => {
       expect(templatePhase.synthesis.styleCss).toContain(
         '--template-monospace-font: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;',
       );
-      expect(templatePhase.synthesis.styleCss).toContain(
-        "font: 10.5pt/1.5 var(--template-body-font);",
-      );
+      expect(templatePhase.synthesis.styleCss).toContain("font-size: 10.5pt;");
+      expect(templatePhase.synthesis.styleCss).toContain("line-height: 1.5;");
+      expect(templatePhase.synthesis.styleCss).toContain("font-family: var(--template-body-font);");
       expect(templatePhase.synthesis.styleCss).not.toContain("Profile Chrome");
       await expectNoPlannedProjectArtifacts(outputPlan);
     });

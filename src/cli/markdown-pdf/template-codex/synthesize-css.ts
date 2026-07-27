@@ -2,7 +2,13 @@ import { createMarkdownPdfCodeCss } from "../code-style";
 import { resolveEffectiveMarkdownPdfTocPageBreak } from "../recipe";
 import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
+import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
+import {
+  mdPdfTemplateCodexOwnsFontKey,
+  type MarkdownPdfTemplateCodexFontOwnership,
+} from "./font-ownership";
 import type {
+  MarkdownPdfTemplateCodexMaterializedFontDecision,
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexResolvedSlots,
   MarkdownPdfTemplateCodexTemplateFamily,
@@ -34,11 +40,50 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} {
 `;
 }
 
-function bodyLanguageFontCss(theme: MarkdownPdfTemplateCodexThemeTokens): string {
-  if (theme.bodyLanguageFonts.length === 0) {
+function hasTemplateLevelFontOverride(input: {
+  decisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+  key: string;
+  role: MarkdownPdfTemplateCodexMaterializedFontDecision["role"];
+}): boolean {
+  return input.decisions.some(
+    (decision) =>
+      decision.status === "applied" &&
+      decision.templateLevel &&
+      decision.role === input.role &&
+      canonicalizeMdPdfTemplateFontKey(decision.role, decision.key) ===
+        canonicalizeMdPdfTemplateFontKey(input.role, input.key),
+  );
+}
+
+function shouldEmitOwnedFontSlot(input: {
+  decisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+  key: string;
+  ownership: MarkdownPdfTemplateCodexFontOwnership;
+  role: MarkdownPdfTemplateCodexMaterializedFontDecision["role"];
+}): boolean {
+  return (
+    !mdPdfTemplateCodexOwnsFontKey(input.ownership, input.role, input.key) ||
+    hasTemplateLevelFontOverride(input)
+  );
+}
+
+function bodyLanguageFontCss(input: {
+  decisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+  ownership: MarkdownPdfTemplateCodexFontOwnership;
+  theme: MarkdownPdfTemplateCodexThemeTokens;
+}): string {
+  const bodyLanguageFonts = input.theme.bodyLanguageFonts.filter((entry) =>
+    shouldEmitOwnedFontSlot({
+      decisions: input.decisions,
+      key: entry.lang,
+      ownership: input.ownership,
+      role: "body",
+    }),
+  );
+  if (bodyLanguageFonts.length === 0) {
     return "";
   }
-  return `${theme.bodyLanguageFonts
+  return `${bodyLanguageFonts
     .map(
       (entry) => `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${entry.lang}),
 :where(p, li, td, th, blockquote, figcaption, dd, dt) > :where(span):lang(${entry.lang}) {
@@ -228,6 +273,8 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.coverMediaSelector} {
 
 export function synthesizeMdPdfTemplateCodexCss(input: {
   family: MarkdownPdfTemplateCodexTemplateFamily;
+  fontDecisions: readonly MarkdownPdfTemplateCodexMaterializedFontDecision[];
+  fontOwnership: MarkdownPdfTemplateCodexFontOwnership;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
@@ -236,6 +283,24 @@ export function synthesizeMdPdfTemplateCodexCss(input: {
   const { top, right, bottom, left } = input.signals.recipe.effectiveOptions.margins;
   const slots = input.slots;
   const theme = input.themeTokens;
+  const emitBodyFont = shouldEmitOwnedFontSlot({
+    decisions: input.fontDecisions,
+    key: "default",
+    ownership: input.fontOwnership,
+    role: "body",
+  });
+  const emitHeadingFont = shouldEmitOwnedFontSlot({
+    decisions: input.fontDecisions,
+    key: "default",
+    ownership: input.fontOwnership,
+    role: "heading",
+  });
+  const emitCodeFont =
+    !input.fontOwnership.slots.codeStack ||
+    input.fontDecisions.some(
+      (decision) =>
+        decision.status === "applied" && decision.templateLevel && decision.role === "code",
+    );
 
   return `${identityComment(input)}
 @page {
@@ -258,12 +323,18 @@ export function synthesizeMdPdfTemplateCodexCss(input: {
 body {
   background: var(--template-background);
   color: var(--template-text);
-  font: ${theme.bodySize}/${theme.lineHeight} var(--template-body-font);
+  font-size: ${theme.bodySize};
+  line-height: ${theme.lineHeight};
+  ${emitBodyFont ? "font-family: var(--template-body-font);" : ""}
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-${bodyLanguageFontCss(theme)}
+${bodyLanguageFontCss({
+  decisions: input.fontDecisions,
+  ownership: input.fontOwnership,
+  theme,
+})}
 .document-title {
   margin-bottom: 1.4rem;
 }
@@ -275,7 +346,7 @@ ${bodyLanguageFontCss(theme)}
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--template-heading-font);
+  ${emitHeadingFont ? "font-family: var(--template-heading-font);" : ""}
   line-height: 1.25;
   margin: 1.25rem 0 ${theme.blockGap};
 }
@@ -323,7 +394,7 @@ pre {
 }
 
 code {
-  font-family: var(--template-monospace-font);
+  ${emitCodeFont ? "font-family: var(--template-monospace-font);" : ""}
 }
 
 ${createMarkdownPdfCodeCss()}
