@@ -4,6 +4,8 @@ import { normalizeMarkdownPdfProfile, validateMarkdownPdfProfileShape } from "..
 import {
   deriveMdPdfTemplateCodexFontOwnership,
   mdPdfTemplateCodexOwnsFontSlot,
+  synthesizeMdPdfTemplateCodex,
+  synthesizeMdPdfTemplateCodexFromDecision,
   validateMdPdfTemplateCodexSynthesis,
 } from "../template-codex";
 import { assertProjectCodexBundlePathInsideOutput } from "./path-collisions";
@@ -128,6 +130,7 @@ function assertProjectCompatibility(input: {
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
 }): void {
   const { profile } = input.normalizedProfile;
+  const fontOwnership = deriveMdPdfTemplateCodexFontOwnership(profile);
 
   if (profile.cover.enabled && !input.templatePhase.synthesis.slots.cover.enabled) {
     throw new CliError(
@@ -159,7 +162,28 @@ function assertProjectCompatibility(input: {
     });
   }
 
-  const fontOwnership = deriveMdPdfTemplateCodexFontOwnership(profile);
+  const expectedSynthesis = input.templatePhase.codexResult
+    ? synthesizeMdPdfTemplateCodexFromDecision({
+        decision: input.templatePhase.codexResult.decision,
+        fontOwnership,
+        outputPlan: input.templatePhase.outputPlan,
+        signals: input.templatePhase.signals,
+      })
+    : synthesizeMdPdfTemplateCodex({
+        fontOwnership,
+        outputPlan: input.templatePhase.outputPlan,
+        signals: input.templatePhase.signals,
+      });
+  if (input.templatePhase.synthesis.styleCss !== expectedSynthesis.styleCss) {
+    throw new CliError(
+      "Project stylesheet must match ownership-aware synthesis from the final profile.",
+      {
+        code: "MARKDOWN_PDF_PROJECT_VALIDATION_FAILED",
+        exitCode: 2,
+      },
+    );
+  }
+
   const overriddenProfileFonts = input.templatePhase.synthesis.fontDecisions.filter(
     (decision) =>
       mdPdfTemplateCodexOwnsFontSlot(fontOwnership, decision.role, decision.key) &&

@@ -230,6 +230,9 @@ Public signal and report schemas remain unchanged.
   not serialized into prompt, signal, or report artifacts.
 - Project validation recomputes the effective ownership boundary from the final
   normalized Profile and rejects hidden family overrides in bounded CSS blocks.
+- Project validation also compares the synthesized stylesheet against the final
+  normalized Profile, so forged CSS cannot bypass ownership checks when font
+  decisions are absent.
 
 ### Verification
 
@@ -243,7 +246,8 @@ Public signal and report schemas remain unchanged.
 ### Review
 
 - Exact range reviewed: `e3b4d1aa226e2394b906b7066d0352f0de862ca6..ec402825425b6d7e3a6ee841f95a88eb5e24caf7`.
-- Review outcome: no remaining actionable findings in the reviewed Phase 3 scope.
+- Review outcome: no remaining actionable findings in the reviewed Phase 3
+  scope after the stylesheet ownership hardening.
 
 ### Gate
 

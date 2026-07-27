@@ -602,6 +602,55 @@ describe("cli action modules: md pdf-project codex validation", () => {
     });
   });
 
+  test("rejects stylesheet ownership conflicts without relying on font decisions", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-font-css-conflict",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, {
+            baseProfile: "base.yml",
+          });
+        expect(templatePhase.synthesis.fontDecisions).toEqual([]);
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            fontDecisions: [],
+            styleCss: `${templatePhase.synthesis.styleCss}\nbody { font-family: Forged Family; }\n`,
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expectNoUsableValidationFailure(validation, {
+          name: "profile-template-compatibility",
+          messageIncludes: "ownership-aware synthesis from the final profile",
+        });
+      },
+    );
+  });
+
   test("rejects templates that drop profile-owned ToC hooks", async () => {
     await withTempFixtureDir("md-pdf-project-codex-validation-toc-hooks", async (fixtureDir) => {
       await writeFile(
@@ -824,12 +873,35 @@ describe("cli action modules: md pdf-project codex validation", () => {
   test("validates cover image projects without disclosing the source asset path", async () => {
     await withTempFixtureDir("md-pdf-project-codex-validation-cover-image", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+          "  source: deterministic",
+          "  createdAt: 2026-01-01T00:00:00Z",
+          "fonts:",
+          "  body:",
+          "    default: Profile Body",
+          "  heading:",
+          "    default: Profile Heading",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
 
-      const { outputPlan, validation } = await runValidationFixture(fixtureDir, {
+      const { outputPlan, templatePhase, validation } = await runValidationFixture(fixtureDir, {
+        baseProfile: "base.yml",
         coverImage: "cover.png",
       });
 
       expect(validation.decisionMode).toBe("deterministic");
+      expect(templatePhase.synthesis.styleCss).toContain(
+        "font: 700 22pt/1.15 var(--template-heading-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        "font: 12pt/1.35 var(--template-body-font);",
+      );
       expect(validation.renderCommand?.display).not.toContain(fixtureDir);
       expect(validation.renderCommand?.display).not.toContain("cover.png");
       await expectNoPlannedProjectArtifacts(outputPlan);
