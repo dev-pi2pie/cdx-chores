@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF font discovery evidence"
 created-date: 2026-07-27
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
@@ -41,9 +41,8 @@ Phase 4.
 
 ## Evidence Status
 
-Implementation and Node.js live measurements are complete. Post-review full
-validation, widened commit-range review, and phase-owned report cleanup are
-pending.
+Implementation, Node.js live measurements, post-review full validation, widened
+commit-range review, and phase-owned report cleanup are complete.
 
 Older or slower hardware is unavailable in the current environment. Phase 1
 will record that limitation instead of treating local timing as cross-machine
@@ -72,6 +71,7 @@ proof.
 - `9b62847` — initial live evidence and provisional policy interpretation.
 - `11d06d7` — accepted review fixes for runtime identity, timeout-input bounds,
   and missing aggregate/debug regression coverage.
+- `e9ded09` — corrected Node.js evidence and initial review dispositions.
 
 ## Evidence Method
 
@@ -87,9 +87,9 @@ needed a larger diagnostic ceiling.
 
 Reports were redirected to the ignored, phase-owned
 `examples/playground/.tmp-tests/markdown-pdf-font-discovery-phase1-Ia0xRz/`
-directory. They remain local through commit-range review. If the phase becomes
-blocked or fails, this exact directory will be retained for private handoff;
-successful closeout removes only this directory.
+directory and retained through commit-range review. The agreed blocked or
+failed path would have retained this exact directory for private handoff.
+Successful closeout removed only this directory.
 
 An initial Bun-run evidence set was retained locally but superseded after review
 found that its Node compatibility version had been mislabeled as the executing
@@ -135,8 +135,9 @@ threshold and ten-second total hard safety ceiling:
 - local results do not prove behavior on older, slower, differently configured,
   or heavily loaded machines
 
-The provisional Phase 1 gate is **Proceed with limitation**. It remains
-provisional until the exact commit-range review is complete.
+The final Phase 1 gate is **Proceed with limitation**. Available evidence and
+timeout classification are usable, while unavailable older-hardware coverage
+remains an explicit environment limitation.
 
 ## Verification
 
@@ -154,8 +155,10 @@ provisional until the exact commit-range review is complete.
   - Passed after targeted formatting.
 - `bun run build`
   - Passed.
-- `bun test`
+- Initial `bun test`
   - Passed: 1,762 tests and 9,321 assertions across 223 files.
+- Post-review `bun test`
+  - Passed: 1,763 tests and 9,333 assertions across 223 files.
 - `git diff --check`
   - Passed.
 
@@ -184,7 +187,16 @@ Rejected findings:
   per-run record already feeds each derived summary, and explicit fontconfig
   discovery intentionally has one adapter attempt.
 
-Widened review beginning at
-`071bdafab69c22a9de4944aa8bf127f3632c08f2` remains pending after the evidence
-record update. Phase 1 remains open until that review and post-fix full
-validation pass and the retained local directory is removed.
+The widened implementation and evidence review covered
+`071bdafab69c22a9de4944aa8bf127f3632c08f2..e9ded09`.
+Correctness, test, and maintainability re-review found no remaining actionable
+issues. Documentation re-review found one stale pending-validation statement;
+this closeout reconciles it with the completed post-review validation.
+
+## Artifact Cleanup
+
+After the widened review passed, only
+`examples/playground/.tmp-tests/markdown-pdf-font-discovery-phase1-Ia0xRz/`
+was removed. It contained the phase-owned timing reports, superseded Bun
+diagnostics, Node-target spike bundle, and local full-test logs. No other
+`.tmp-tests` content was targeted or removed.

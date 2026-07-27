@@ -205,7 +205,7 @@ Tasks:
       listeners, controllers, and child processes that it starts.
 - [x] Redirect optional reports into one uniquely named, phase-owned directory
       under `examples/playground/.tmp-tests/`.
-- [ ] Retain local reports through the Phase 1 range review; after successful
+- [x] Retain local reports through the Phase 1 range review; after successful
       closeout remove only that exact directory, or retain it with a private
       repository-relative handoff note when the phase is blocked or fails.
 - [x] Measure the current one-second boundary and evaluate the three-second
@@ -214,7 +214,7 @@ Tasks:
       document it as a policy bound rather than a cross-machine performance
       guarantee.
 - [x] Record unavailable older-hardware coverage as an environment limitation.
-- [ ] Review the Phase 1 commit range and resolve all actionable findings.
+- [x] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
 
