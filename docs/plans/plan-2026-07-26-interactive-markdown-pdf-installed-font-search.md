@@ -105,8 +105,8 @@ preservation.
   hard safety ceiling measured from the original start.
 - Choosing custom input cancels discovery and caches the unavailable outcome for
   the session.
-- Successful completion before the hard deadline wins must be accepted without
-  a later elapsed-time rejection.
+- A successful discovery result that wins before hard-deadline cancellation
+  must be accepted without a later elapsed-time rejection.
 - Repository evidence checks this policy for regressions but does not claim
   cross-machine coverage; unavailable older-hardware evidence is recorded as an
   environment limitation.
@@ -226,6 +226,11 @@ Phase gate:
 - **Revisit responsiveness only** — available fontconfig cannot complete under
   the generous measurement ceiling or timeout outcomes cannot be classified
   correctly; pause Phase 4 lifecycle work while Phases 2 and 3 continue.
+
+Recorded Phase 1 outcome: **Proceed with limitation**. Available Node.js
+evidence supports the selected policy, while older-hardware coverage remains
+unavailable and is not treated as required cross-machine proof. See the
+[Phase 1 evidence job](jobs/2026-07-27-interactive-markdown-pdf-font-discovery-evidence.md).
 
 ### Phase 2: Shared Font Search Records
 
@@ -421,7 +426,7 @@ documents.
 - Risk: a scorer produces surprising or unstable ordering.
   Mitigation: define all rank tiers, thresholds, and tie-breakers in fixtures.
 
-- Risk: a relaxed hard ceiling makes Interactive feel blocked.
+- Risk: the ten-second hard safety ceiling makes Interactive feel blocked.
   Mitigation: stop automatic waiting after three seconds and make custom input
   the default conditional choice.
 
@@ -431,8 +436,8 @@ documents.
   wins.
 
 - Risk: the slow-path choice adds routine prompt friction.
-  Mitigation: show it only when discovery exceeds three seconds and at most once
-  per session.
+  Mitigation: show it only if discovery is still pending when the three-second
+  threshold is reached, and at most once per session.
 
 - Risk: evidence leaks host font data.
   Mitigation: emit aggregate timing and face-count ranges only.
@@ -444,10 +449,11 @@ documents.
 
 ## Expected Job Records
 
-Create job records when their work begins:
+Current and expected job records:
 
-- `docs/plans/jobs/YYYY-MM-DD-interactive-markdown-pdf-font-search-evidence.md`
+- [Phase 1 font discovery evidence](jobs/2026-07-27-interactive-markdown-pdf-font-discovery-evidence.md)
 - `docs/plans/jobs/YYYY-MM-DD-interactive-markdown-pdf-font-search-implementation.md`
+  — create when accepted work from Phases 2–5 begins.
 
 The evidence job owns Phase 1, the policy check, and any environment limitation.
 The implementation job owns accepted work from Phases 2–5.
