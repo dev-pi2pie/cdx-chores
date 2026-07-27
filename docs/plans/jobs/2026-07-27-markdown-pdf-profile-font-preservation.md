@@ -219,11 +219,13 @@ Public signal and report schemas remain unchanged.
 
 ### Evidence
 
-- Phase 3 landed in four checkpoints after the Phase 2 range:
+- Phase 3 landed in five checkpoints after the Phase 2 range:
   - `899adf4` — wire ownership into direct Template generation.
   - `d9b8650` — enforce project font ownership.
   - `f6c92db` — cover interactive ownership inheritance.
   - `ec40282` — defer template adapter loading in the project phase.
+  - `53a1811` — validate the emitted Project stylesheet against final-Profile
+    ownership.
 - Direct Template and Project now derive one shared ownership-aware synthesis
   path from the real normalized Profile.
 - Public signal and report schemas stay bounded; the internal ownership mask is
@@ -236,8 +238,8 @@ Public signal and report schemas remain unchanged.
 
 ### Verification
 
-- Focused Phase 3 suites: 435 passed, 0 failed across 37 files.
-- Full repository suite: 1,823 passed, 0 failed across 228 files.
+- Focused Phase 3 suites: 436 passed, 0 failed across 37 files.
+- Full repository suite: 1,824 passed, 0 failed across 228 files.
 - `bun run lint` passed.
 - `bun run format:check` passed.
 - `bun run build` passed.
@@ -245,9 +247,13 @@ Public signal and report schemas remain unchanged.
 
 ### Review
 
-- Exact range reviewed: `e3b4d1aa226e2394b906b7066d0352f0de862ca6..ec402825425b6d7e3a6ee841f95a88eb5e24caf7`.
-- Review outcome: no remaining actionable findings in the reviewed Phase 3
-  scope after the stylesheet ownership hardening.
+- Exact range reviewed:
+  `e3b4d1aa226e2394b906b7066d0352f0de862ca6..53a1811cf3f6e4898265da97dd124290535876de`.
+- The initial correctness review found that Project validation trusted
+  decision metadata without independently checking the emitted stylesheet.
+- The widened correctness, security, maintainability, and test reviews reported
+  no remaining actionable findings after stylesheet re-synthesis validation
+  and its mutation regression landed.
 
 ### Gate
 
@@ -275,6 +281,8 @@ Passed.
 - `d9b8650` — enforce project font ownership.
 - `f6c92db` — cover interactive ownership inheritance.
 - `ec40282` — defer template adapter loading in the project phase.
+- `53a1811` — reject Project stylesheets that differ from ownership-aware
+  synthesis.
 
 ## Related Documents
 
