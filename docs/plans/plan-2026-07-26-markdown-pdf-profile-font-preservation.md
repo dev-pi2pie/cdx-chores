@@ -244,35 +244,35 @@ Phase gate:
 
 Tasks:
 
-- [ ] Derive a CSS font-slot ownership mask from the full normalized
+- [x] Derive a CSS font-slot ownership mask from the full normalized
       compatibility Profile.
-- [ ] Define ownership as exact canonical role/keys with non-empty families and
+- [x] Define ownership as exact canonical role/keys with non-empty families and
       activate it only for a real compatibility Profile.
-- [ ] Keep the mask separate from the bounded Profile font summary sent to
+- [x] Keep the mask separate from the bounded Profile font summary sent to
       Codex and from persisted prompt/report summaries.
-- [ ] Add a focused prompt-shape assertion that Codex receives only the existing
+- [x] Add a focused prompt-shape assertion that Codex receives only the existing
       bounded `profileFonts` facts and receives neither the internal ownership
       mask nor the full normalized Profile.
-- [ ] Thread the mask through shared Template theme/CSS synthesis without
+- [x] Thread the mask through shared Template theme/CSS synthesis without
       creating a second Profile serializer.
-- [ ] Replace the body `font` shorthand with declarations that preserve
+- [x] Replace the body `font` shorthand with declarations that preserve
       `font-size` and `line-height` when `font-family` is omitted.
-- [ ] Omit body, language, heading, and combined-code families only when their
+- [x] Omit body, language, heading, and combined-code families only when their
       slots are Profile-owned.
-- [ ] Preserve preset or accepted Template families for unowned slots.
-- [ ] Preserve explicit direct-Template `template_level` family emission.
-- [ ] Keep cover title, subtitle, and byline typography Template-owned while
+- [x] Preserve preset or accepted Template families for unowned slots.
+- [x] Preserve explicit direct-Template `template_level` family emission.
+- [x] Keep cover title, subtitle, and byline typography Template-owned while
       preventing cover token use from restoring families on Profile-owned
       document selectors.
-- [ ] Reject `font`, `font-family`, and `--template-*-font` declarations in
+- [x] Reject `font`, `font-family`, and `--template-*-font` declarations in
       bounded Codex CSS blocks so `font_decisions` remains the only generated
       family channel.
-- [ ] Preserve the current page-chrome Profile-only boundary.
-- [ ] Add a focused assertion that `pageChrome.default` changes Profile-derived
+- [x] Preserve the current page-chrome Profile-only boundary.
+- [x] Add a focused assertion that `pageChrome.default` changes Profile-derived
       `@page` CSS without introducing a generated Template family.
-- [ ] Keep stylesheet order and non-font Template styling unchanged.
-- [ ] Add focused ownership-mask, theme-token, and generated-CSS tests.
-- [ ] Review the Phase 2 commit range and resolve all actionable findings.
+- [x] Keep stylesheet order and non-font Template styling unchanged.
+- [x] Add focused ownership-mask, theme-token, and generated-CSS tests.
+- [x] Review the Phase 2 commit range and resolve all actionable findings.
 
 Phase gate:
 

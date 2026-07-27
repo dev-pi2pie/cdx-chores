@@ -121,7 +121,7 @@ CSS blocks.
 
 ## Phase 2: Ownership-Aware Template Synthesis
 
-Status: in progress.
+Status: completed.
 
 ### Scope
 
@@ -139,19 +139,62 @@ production wiring remains Phase 3.
 
 ### Evidence
 
-Pending.
+- The internal ownership mask is derived only from a real normalized
+  compatibility Profile. It records canonical, non-empty role keys plus their
+  document CSS slots without entering bounded signals, synthesis results, or
+  report types.
+- Shared synthesis now accepts the mask as an internal input. Profile-owned
+  body, language, heading, and combined-code declarations are omitted, while
+  unowned slots and explicit `template_level` decisions retain Template family
+  output.
+- Body typography now emits size and line height separately, so suppressing its
+  family does not remove non-font styling.
+- Template font tokens remain available to cover title, subtitle, and byline
+  rules without restoring families on Profile-owned document selectors.
+- Either `code.default` or `code.symbols` owns the combined code stack.
+  Explicit overrides restore every shared code-family selector after inherited
+  code styling.
+- Generated CSS blocks reject direct and indirect family resets, nested rules,
+  and escaped or comment-split validation bypasses. Non-family typography
+  declarations and reads of Template font variables remain valid.
+- Prompt-shape coverage confirms Codex receives only the bounded
+  `profileFonts` summary. The full Profile and internal ownership mask remain
+  outside the prompt and persisted artifact contracts.
+- Profile-derived `@page` font CSS remains the only page-chrome family surface;
+  Template CSS still emits page layout without a page-chrome family.
 
 ### Verification
 
-Pending.
+- Phase 2 ownership, synthesis, and adapter tests: 68 passed, 0 failed.
+- Repository suite: 1,814 passed, 0 failed.
+- TypeScript check: passed.
+- Lint and formatting checks: passed.
+- Build: passed.
+- Diff whitespace check: passed.
+- No renderer smoke was required for this internal synthesis phase; production
+  authoring-path and rendered-output verification remains in later phases.
 
 ### Review
 
-Pending.
+- Reviewed exact range:
+  `fee223ce1d8b70da8fd9a34cd551915f42f91640..f73b0fb9b2ab4a0a02c51f598f2e88d1ca699f20`.
+- The initial correctness, security, maintainability, and test reviews found
+  actionable gaps in combined-code override coverage, CSS lexical and nesting
+  defenses, ownership-query consistency, and mixed language/code test
+  coverage.
+- Widened review passes identified and resolved CSS-wide resets, escaped path
+  references, declarations after nested rules, and quoted/comment brace
+  handling.
+- Final correctness, security, maintainability, and test reviews reported no
+  remaining actionable findings.
 
 ### Gate
 
-Pending.
+**Passed.** Internal synthesis omits every Profile-owned document family,
+bounded CSS cannot introduce an unreported family override, prompt/report
+contracts remain bounded, explicit overrides remain deliberate, and non-font
+Template styling remains intact. Phase 3 may wire the shared behavior into
+direct Template and Project production paths.
 
 ## Checkpoint Commits
 
@@ -162,7 +205,12 @@ Pending.
 
 ### Phase 2
 
-Pending.
+- `4ad465c` — add the ownership-aware synthesis model and focused coverage.
+- `8ab785d` — resolve combined-code, ownership-query, and validator review
+  findings.
+- `8fd1731` — reject CSS-wide family resets and escaped path bypasses.
+- `21ebebe` — reject nested generated CSS rules.
+- `f73b0fb` — make brace inspection safe for quoted and commented content.
 
 ## Related Documents
 
