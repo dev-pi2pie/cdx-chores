@@ -4,7 +4,12 @@ import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
+import { synthesizeMdPdfTemplateCodex } from "../src/cli/markdown-pdf/template-codex";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
+import {
+  createSynthesisOutputPlan,
+  createSynthesisSignals,
+} from "./cli-actions-md-to-pdf-template-codex/synthesis-fixtures";
 import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -123,6 +128,67 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         'font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;',
       );
       expect(stdout.text).toContain("Wrote PDF:");
+      expectNoStderr();
+    });
+  });
+
+  test("passes Profile CSS before competing generated Template CSS", async () => {
+    await withTempFixtureDir("md-to-pdf-profile-template-cascade", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const templateCssPath = join(fixtureDir, "style.css");
+      const renderedStyles: string[] = [];
+      const synthesis = synthesizeMdPdfTemplateCodex({
+        outputPlan: createSynthesisOutputPlan(),
+        signals: createSynthesisSignals({ preset: "article" }),
+      });
+      await writeFile(inputPath, "# Report\n\nBody.\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "fonts:",
+          "  body:",
+          "    default: Profile Body",
+          "  heading:",
+          "    default: Profile Heading",
+          "  code:",
+          "    default: Profile Code",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(templateCssPath, synthesis.styleCss, "utf8");
+
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((arg, index) => (arg === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        css: toRepoRelativePath(templateCssPath),
+        runner: capturingRunner,
+      });
+
+      expect(renderedStyles).toHaveLength(2);
+      expect(renderedStyles[0]).toContain('font-family: "Profile Body", serif;');
+      expect(renderedStyles[0]).toContain('font-family: "Profile Heading", sans-serif;');
+      expect(renderedStyles[0]).toContain('font-family: "Profile Code", monospace;');
+      expect(renderedStyles[1]).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
+      expect(renderedStyles[1]).toContain("font: 10.5pt/1.5 var(--template-body-font);");
       expectNoStderr();
     });
   });

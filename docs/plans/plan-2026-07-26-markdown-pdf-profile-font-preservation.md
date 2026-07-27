@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-27
-status: draft
+status: active
 agent: codex
 ---
 
@@ -68,7 +68,7 @@ Missing evidence and implementation:
 This is the preferred second plan derived from the shared research:
 
 1. Interactive installed-font search — completed
-2. Markdown PDF Profile font preservation — current draft
+2. Markdown PDF Profile font preservation — active
 
 There is no code dependency on the first plan. This plan must preserve any
 effective compatibility Profile regardless of whether its font preference came
@@ -207,26 +207,26 @@ direct deliberate family overrides continue to use `template_level`
 
 Tasks:
 
-- [ ] Add a direct Template reproduction using `--base-profile` with visibly
+- [x] Add a direct Template reproduction using `--base-profile` with visibly
       distinct Profile and preset families.
-- [ ] Render the partial Template bundle with the same compatibility Profile
+- [x] Render the partial Template bundle with the same compatibility Profile
       supplied separately.
-- [ ] Add a Project reproduction whose final `profile.yml` and generated
+- [x] Add a Project reproduction whose final `profile.yml` and generated
       `style.css` use visibly distinct families.
-- [ ] Confirm generated Template CSS wins only because it appears after
+- [x] Confirm generated Template CSS wins only because it appears after
       Profile-derived CSS in the existing cascade.
-- [ ] Classify body default, one language-tag body role, heading default, code
+- [x] Classify body default, one language-tag body role, heading default, code
       default, code symbols, and page chrome.
-- [ ] Confirm cover title, subtitle, and byline typography is Template-owned and
+- [x] Confirm cover title, subtitle, and byline typography is Template-owned and
       identify every generated selector that consumes body or heading font
       tokens.
-- [ ] Confirm bounded Codex CSS blocks can currently emit family-bearing
+- [x] Confirm bounded Codex CSS blocks can currently emit family-bearing
       declarations after synthesized CSS and record that path in the ownership
       model.
-- [ ] Confirm generated Template CSS emits no page-chrome font declaration and
+- [x] Confirm generated Template CSS emits no page-chrome font declaration and
       Profile-derived `@page` CSS remains the sole page-chrome font owner.
-- [ ] Verify direct Template without a compatibility Profile remains unaffected.
-- [ ] Record the released-tag boundary when reproducible without expanding the
+- [x] Verify direct Template without a compatibility Profile remains unaffected.
+- [x] Record the released-tag boundary when reproducible without expanding the
       fix scope.
 - [ ] Review the Phase 1 commit range and resolve all actionable findings.
 

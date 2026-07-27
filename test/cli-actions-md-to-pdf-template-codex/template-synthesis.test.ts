@@ -7,6 +7,10 @@ import {
   type MarkdownPdfTemplateCodexDecision,
   type MdPdfTemplateCodexSignalCollection,
 } from "../../src/cli/markdown-pdf/template-codex";
+import {
+  createMarkdownPdfFontCss,
+  normalizeMarkdownPdfProfile,
+} from "../../src/cli/markdown-pdf/profile";
 import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
 
 function readCssDeclarationBlock(
@@ -164,6 +168,7 @@ function bodyLanguageSelector(lang: string): string {
 }
 
 function createTemplateDecision(input: {
+  cssBlocks?: MarkdownPdfTemplateCodexDecision["cssBlocks"];
   fontDecisions?: MarkdownPdfTemplateCodexDecision["fontDecisions"];
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexDecision {
@@ -177,7 +182,7 @@ function createTemplateDecision(input: {
     templateFamily: "document-layered",
     recipePreset: "article",
     slots: deterministic.slots,
-    cssBlocks: [],
+    cssBlocks: input.cssBlocks ?? [],
     fontDecisions: input.fontDecisions ?? [],
     managedAssets: [],
     warnings: [],
@@ -346,6 +351,109 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       visibleMetadataTitle: false,
     });
     expect(hide.templateHtml).not.toContain('<header class="document-title">');
+  });
+
+  test("reproduces preset families competing with a direct compatibility Profile", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        pdf: { "content-langs": ["ja"] },
+        fonts: {
+          body: {
+            default: "Profile Body",
+            ja: "Profile Japanese",
+          },
+          heading: { default: "Profile Heading" },
+          code: {
+            default: "Profile Code",
+            symbols: "Profile Symbols",
+          },
+          pageChrome: { default: "Profile Chrome" },
+        },
+      },
+    }).profile;
+    const profileCss = createMarkdownPdfFontCss(normalizedProfile);
+    const profileFonts: MdPdfTemplateCodexSignalCollection["fonts"]["profileFonts"] = {
+      families: [
+        { family: "Profile Body", key: "default", role: "body" },
+        { family: "Profile Japanese", key: "ja", role: "body" },
+        { family: "Profile Heading", key: "default", role: "heading" },
+        { family: "Profile Code", key: "default", role: "code" },
+        { family: "Profile Symbols", key: "symbols", role: "code" },
+        { family: "Profile Chrome", key: "default", role: "pageChrome" },
+      ],
+      overflowFamilyCount: 0,
+    };
+    const withProfile = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({
+        baseProfilePreset: "article",
+        pdfContentLangs: ["ja"],
+        profileFonts,
+      }),
+    });
+    const withoutProfile = synthesizeMdPdfTemplateCodex({
+      outputPlan: createSynthesisOutputPlan(),
+      signals: createSynthesisSignals({ preset: "article" }),
+    });
+
+    expect(profileCss).toContain(
+      'body {\n  font-family: "Profile Body", "Profile Japanese", serif;',
+    );
+    expect(profileCss).toContain(":lang(ja)");
+    expect(profileCss).toContain('font-family: "Profile Heading", sans-serif;');
+    expect(profileCss).toContain('font-family: "Profile Code", "Profile Symbols", monospace;');
+    expect(profileCss).toContain('@page {\n  font-family: "Profile Chrome", sans-serif;');
+
+    expect(cssDeclarationsForSelector(withProfile.styleCss, ":root")).toMatchObject({
+      "--template-body-font": '"Noto Serif", "Georgia", serif',
+      "--template-heading-font": '"Noto Sans", "Arial", sans-serif',
+      "--template-monospace-font": '"Noto Sans Mono", "SFMono-Regular", "Consolas", monospace',
+    });
+    expect(cssDeclarationsForSelector(withProfile.styleCss, "body")).toMatchObject({
+      font: "10.5pt/1.5 var(--template-body-font)",
+    });
+    expect(
+      cssDeclarationsForSelector(withProfile.styleCss, "h1, h2, h3, h4, h5, h6"),
+    ).toMatchObject({
+      "font-family": "var(--template-heading-font)",
+    });
+    expect(cssDeclarationsForSelector(withProfile.styleCss, "code")).toMatchObject({
+      "font-family": "var(--template-monospace-font)",
+    });
+    expect(withProfile.styleCss).not.toContain("Profile Chrome");
+    expect(withProfile.styleCss).toContain("@page {\n  size:");
+
+    expect(cssDeclarationsForSelector(withoutProfile.styleCss, ":root")).toMatchObject(
+      cssDeclarationsForSelector(withProfile.styleCss, ":root"),
+    );
+    expect(cssDeclarationsForSelector(withoutProfile.styleCss, "body")).toMatchObject({
+      font: "10.5pt/1.5 var(--template-body-font)",
+    });
+  });
+
+  test("reproduces a bounded CSS block appending a later family override", () => {
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      profileFonts: {
+        families: [{ family: "Profile Body", key: "default", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        cssBlocks: [{ css: 'body { font-family: "Late Override"; }', slot: "typography" }],
+        signals,
+      }),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    const generatedBodyIndex = result.styleCss.indexOf("body {");
+    const boundedBlockIndex = result.styleCss.indexOf("/* Codex bounded CSS blocks */");
+    const overrideIndex = result.styleCss.indexOf('font-family: "Late Override"');
+    expect(generatedBodyIndex).toBeGreaterThanOrEqual(0);
+    expect(boundedBlockIndex).toBeGreaterThan(generatedBodyIndex);
+    expect(overrideIndex).toBeGreaterThan(boundedBlockIndex);
   });
 
   test("materializes bounded font hint decisions into template CSS variables", () => {
@@ -833,6 +941,14 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       "max-width": "72%",
       "object-position": "center bottom",
     });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__title")).toMatchObject({
+      font: "700 22pt/1.15 var(--template-heading-font)",
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__subtitle")).toMatchObject(
+      {
+        font: "12pt/1.35 var(--template-body-font)",
+      },
+    );
     expect(cssDeclarationsForSelector(result.styleCss, ".pdf-cover-media__byline")).toMatchObject({
       font: "10.5pt/1.35 var(--template-body-font)",
       display: "block",

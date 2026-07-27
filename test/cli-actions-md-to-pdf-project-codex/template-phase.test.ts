@@ -171,18 +171,43 @@ describe("cli action modules: md pdf-project codex template phase", () => {
     await withTempFixtureDir("md-pdf-project-codex-template-base-only", async (fixtureDir) => {
       await writeFile(
         join(fixtureDir, "base.yml"),
-        "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\nfonts:\n  body:\n    default: Source Serif 4\n",
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+          "  source: deterministic",
+          "  createdAt: 2026-01-01T00:00:00Z",
+          "page:",
+          "  size: Letter",
+          "pdf:",
+          "  content-langs:",
+          "    - ja",
+          "fonts:",
+          "  body:",
+          "    default: Profile Body",
+          "    ja: Profile Japanese",
+          "  heading:",
+          "    default: Profile Heading",
+          "  code:",
+          "    default: Profile Code",
+          "    symbols: Profile Symbols",
+          "  pageChrome:",
+          "    default: Profile Chrome",
+          "",
+        ].join("\n"),
         "utf8",
       );
       let templateRunnerCallCount = 0;
 
-      const { outputPlan, templatePhase } = await runTemplatePhaseFixture(fixtureDir, {
-        baseProfile: "base.yml",
-        templateCodexRunner: async () => {
-          templateRunnerCallCount += 1;
-          throw new Error("deterministic template phase must not invoke Codex");
+      const { outputPlan, profilePhase, templatePhase } = await runTemplatePhaseFixture(
+        fixtureDir,
+        {
+          baseProfile: "base.yml",
+          templateCodexRunner: async () => {
+            templateRunnerCallCount += 1;
+            throw new Error("deterministic template phase must not invoke Codex");
+          },
         },
-      });
+      );
 
       expect(templateRunnerCallCount).toBe(0);
       expect(templatePhase.phase).toMatchObject({
@@ -200,13 +225,65 @@ describe("cli action modules: md pdf-project codex template phase", () => {
       expect(templatePhase.signals.fonts.profileFonts.families).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            family: "Source Serif 4",
+            family: "Profile Body",
             key: "default",
             role: "body",
           }),
+          expect.objectContaining({
+            family: "Profile Japanese",
+            key: "ja",
+            role: "body",
+          }),
+          expect.objectContaining({
+            family: "Profile Heading",
+            key: "default",
+            role: "heading",
+          }),
+          expect.objectContaining({
+            family: "Profile Code",
+            key: "default",
+            role: "code",
+          }),
+          expect.objectContaining({
+            family: "Profile Symbols",
+            key: "symbols",
+            role: "code",
+          }),
+          expect.objectContaining({
+            family: "Profile Chrome",
+            key: "default",
+            role: "pageChrome",
+          }),
         ]),
       );
+      expect(profilePhase.finalProfile).toMatchObject({
+        fonts: {
+          body: {
+            default: "Profile Body",
+            ja: "Profile Japanese",
+          },
+          heading: { default: "Profile Heading" },
+          code: {
+            default: "Profile Code",
+            symbols: "Profile Symbols",
+          },
+          pageChrome: { default: "Profile Chrome" },
+        },
+      });
       expect(templatePhase.synthesis.templateFamily).toBe("document-layered");
+      expect(templatePhase.synthesis.styleCss).toContain(
+        '--template-body-font: "Noto Serif", "Georgia", serif;',
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        '--template-heading-font: "Noto Sans", "Arial", sans-serif;',
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        '--template-monospace-font: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;',
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        "font: 10.5pt/1.5 var(--template-body-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).not.toContain("Profile Chrome");
       await expectNoPlannedProjectArtifacts(outputPlan);
     });
   });

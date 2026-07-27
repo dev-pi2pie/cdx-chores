@@ -1126,6 +1126,36 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("outside the spacing slot");
   });
 
+  test("characterizes family-bearing declarations currently admitted by bounded CSS blocks", () => {
+    expect(
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: 'body { font-family: "Late Override"; }',
+        slot: "typography",
+      }),
+    ).toEqual({
+      css: 'body { font-family: "Late Override"; }',
+      slot: "typography",
+    });
+    expect(
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
+        slot: "cover",
+      }),
+    ).toEqual({
+      css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
+      slot: "cover",
+    });
+    expect(
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: ':root { --template-body-font: "Late Variable"; }',
+        slot: "colors",
+      }),
+    ).toEqual({
+      css: ':root { --template-body-font: "Late Variable"; }',
+      slot: "colors",
+    });
+  });
+
   test("direct application validates enum domains before synthesis", () => {
     const request = requestBase({ coverImage: true });
     const decision = parseMarkdownPdfTemplateCodexDecision(
