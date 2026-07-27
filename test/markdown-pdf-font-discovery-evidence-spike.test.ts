@@ -150,6 +150,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
     );
 
     expect(maxInFlight).toBe(1);
+    expect(report.schemaVersion).toBe(2);
     expect(report.parameters).toEqual({
       discovery: "fontconfig",
       runs: 4,
@@ -162,8 +163,8 @@ describe("Markdown PDF font discovery evidence spike", () => {
       adapterDurationMs: 8,
       emptyResult: false,
     });
-    expect(report.subsequentRuns).toEqual({
-      runCount: 3,
+    expect(report.successfulSubsequentRuns).toEqual({
+      runCount: 1,
       totalDurationMs: {
         sampleCount: 1,
         p50: 1_000,
@@ -183,7 +184,8 @@ describe("Markdown PDF font discovery evidence spike", () => {
       timeout: 1,
       emptyResult: 1,
     });
-    expect(report.allRuns).toEqual({
+    expect(report.successfulRuns).toEqual({
+      runCount: 2,
       totalDurationMs: {
         sampleCount: 2,
         p50: 10,

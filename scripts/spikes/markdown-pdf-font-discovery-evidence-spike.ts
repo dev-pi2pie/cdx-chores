@@ -31,7 +31,7 @@ interface RunEvidence {
 }
 
 export interface FontDiscoveryEvidenceReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   parameters: {
     discovery: "fontconfig";
     runs: number;
@@ -54,12 +54,13 @@ export interface FontDiscoveryEvidenceReport {
   };
   percentileMethod: "nearest-rank";
   firstRun: RunEvidence;
-  subsequentRuns: {
+  successfulSubsequentRuns: {
     runCount: number;
     totalDurationMs: DurationSummary;
     adapterDurationMs: DurationSummary;
   };
-  allRuns: {
+  successfulRuns: {
+    runCount: number;
     totalDurationMs: DurationSummary;
     adapterDurationMs: DurationSummary;
   };
@@ -233,7 +234,7 @@ export async function collectFontDiscoveryEvidence(
   );
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     parameters: {
       discovery: "fontconfig",
       runs: options.runs,
@@ -247,8 +248,8 @@ export async function collectFontDiscoveryEvidence(
     },
     percentileMethod: "nearest-rank",
     firstRun,
-    subsequentRuns: {
-      runCount: subsequentRuns.length,
+    successfulSubsequentRuns: {
+      runCount: successfulSubsequentRuns.length,
       totalDurationMs: summarizeDurations(
         successfulSubsequentRuns.map((run) => run.totalDurationMs),
       ),
@@ -258,7 +259,8 @@ export async function collectFontDiscoveryEvidence(
         ),
       ),
     },
-    allRuns: {
+    successfulRuns: {
+      runCount: successfulRuns.length,
       totalDurationMs: summarizeDurations(successfulTotalDurations),
       adapterDurationMs: summarizeDurations(successfulAdapterDurations),
     },

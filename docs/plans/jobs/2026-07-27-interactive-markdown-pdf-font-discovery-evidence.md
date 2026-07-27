@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF font discovery evidence"
 created-date: 2026-07-27
-status: completed
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
@@ -192,6 +192,30 @@ The widened implementation and evidence review covered
 Correctness, test, and maintainability re-review found no remaining actionable
 issues. Documentation re-review found one stale pending-validation statement;
 this closeout reconciles it with the completed post-review validation.
+
+## Later Complete-Plan Correction
+
+Status: in progress; correction validation is complete and final widened review
+is pending.
+
+The Phase 5 complete-plan review later found that the spike's latency summaries
+included failed and timed-out attempts, contrary to this research contract:
+outcome and threshold counts cover every attempt, while latency percentiles
+cover successful calls only.
+
+The accepted correction:
+
+- filters total and adapter latency summaries to successful calls
+- keeps failed and timed-out attempts in outcome and threshold counts
+- names the successful-run report groups explicitly and bumps the local report
+  schema version
+- covers mixed success, failure, and timeout outcomes in one regression fixture
+
+The original recorded timing values do not change because all calls in those
+live evidence series succeeded. Targeted validation, the full repository suite,
+typecheck, lint, formatting, build, and diff checks pass after the correction.
+The correction commit and final widened review disposition will be recorded
+after that review completes.
 
 ## Artifact Cleanup
 

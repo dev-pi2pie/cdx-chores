@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-27
-status: completed
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
@@ -293,7 +293,9 @@ Checkpoint commits:
 Starting commit:
 `adb0a09db6313f9e21298436ccb350892608542e`
 
-Status: completed.
+Status: in progress; the first corrective review passed implementation
+correctness but requested explicit success-only report naming and durable
+Phase 1 follow-up traceability.
 
 Validation:
 
@@ -356,9 +358,11 @@ Review status:
   `071bdafab69c22a9de4944aa8bf127f3632c08f2..07de7cc` and additionally found
   that the evidence spike included failed and timed-out calls in latency
   percentiles despite the successful-call-only research contract.
-- Final widened exact review covered
-  `adb0a09db6313f9e21298436ccb350892608542e..3058a67` and found no
-  actionable issues.
-- Final widened complete-plan review covered
-  `071bdafab69c22a9de4944aa8bf127f3632c08f2..3058a67` and found no
-  actionable issues.
+- First widened exact review covered
+  `adb0a09db6313f9e21298436ccb350892608542e..3058a67`. It approved the
+  implementation correction and requested aligned job status and explicit
+  successful-run report naming.
+- First widened complete-plan review covered
+  `071bdafab69c22a9de4944aa8bf127f3632c08f2..3058a67`. It additionally
+  requested a follow-up correction record in the Phase 1 evidence job.
+- These findings are accepted. Final widened review is pending.
