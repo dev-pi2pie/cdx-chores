@@ -333,17 +333,17 @@ Phase gate:
 
 Tasks:
 
-- [ ] Run the focused shared-font and Interactive suites.
-- [ ] Run repository lint, format, type, build, test, and diff checks.
-- [ ] Perform a live fontconfig smoke on the development operating system.
-- [ ] Confirm live installed selections produce primary-family `fontHints[]`.
-- [ ] Confirm no network request or discovery-source prompt exists.
-- [ ] Record aggregate public-safe evidence and any environment limitation.
-- [ ] Update current Interactive Markdown PDF guidance for alias-aware search,
+- [x] Run the focused shared-font and Interactive suites.
+- [x] Run repository lint, format, type, build, test, and diff checks.
+- [x] Perform a live fontconfig smoke on the development operating system.
+- [x] Confirm live installed selections produce primary-family `fontHints[]`.
+- [x] Confirm no network request or discovery-source prompt exists.
+- [x] Record aggregate public-safe evidence and any environment limitation.
+- [x] Update current Interactive Markdown PDF guidance for alias-aware search,
       custom-first selection, and the two-stage responsiveness contract.
-- [ ] Update the related research with evidence, plan/job links, and accurate
+- [x] Update the related research with evidence, plan/job links, and accurate
       remaining status.
-- [ ] If the Profile-font preservation plan has completed, add one end-to-end
+- [x] If the Profile-font preservation plan has completed, add one end-to-end
       Interactive selection-to-render smoke; otherwise record it as a sibling
       plan closeout check without blocking this plan.
 - [ ] Review the Phase 5 and complete-plan commit ranges and resolve all

@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-07-23
+modified-date: 2026-07-27
 status: completed
 agent: codex
 ---
@@ -161,12 +161,31 @@ headings and titles, code text, code symbols, and artifact-supported page
 headers and footers. The editor previews the compiled direct equivalent before
 adding it. Accepted hints can be edited, removed, or reordered.
 
-When `fc-list` discovery is available within its bounded lookup time, the font
-preference prompt offers installed family suggestions plus custom text. If
-discovery is unavailable or times out, the same prompt falls back to ordinary
-custom input without a native platform inventory fallback. The local inventory
-is never sent to Codex; only accepted hint text is included after the user
-reviews the setup and confirms the request.
+Interactive searches a local fontconfig inventory only. It groups each primary
+family with its reported aliases and full names, ranks exact, prefix,
+token-prefix, substring, and ordered-subsequence matches deterministically, and
+returns at most six installed suggestions. An alias or styled full-name match
+still selects the primary family reported by fontconfig. Custom text remains
+the first choice and preserves what the user entered.
+
+Interactive waits automatically for up to three seconds. If discovery is still
+running, it offers one choice between continuing with custom input and waiting
+for installed fonts. Continued waiting reuses the same discovery attempt under
+one ten-second total safety ceiling measured from the original start. The
+result is cached for the Interactive session. Missing, empty, failed, cancelled,
+or timed-out discovery falls back to ordinary custom input.
+
+There is no network catalogue, native platform fallback, or discovery-source
+prompt in this flow. Fonts visible only through Font Book or a third-party font
+manager—including some Adobe Fonts configurations—may therefore be absent when
+fontconfig cannot report them. The local inventory is never sent to Codex; only
+accepted hint text is included after the user reviews the setup and confirms
+the request.
+
+Installed suggestions and manually entered preferences do not prove glyph
+coverage, WeasyPrint availability, or final font-role assignment. A custom
+preference can name a font outside the fontconfig inventory, but the renderer
+must still be able to resolve it.
 
 The candidate review reports applied, blocked, and unresolved font directions
 where the direct helper returns that information.

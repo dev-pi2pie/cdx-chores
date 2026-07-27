@@ -84,10 +84,10 @@ target:  omit competing generated font-family
                                  rendered PDF
 ```
 
-| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                             |
-| ----- | --------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
-| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles          |
-| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically | record first/subsequent-run evidence and validate the responsiveness policy |
+| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
+| ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles |
+| #61   | local discovery and selection           | implemented and validated through its dedicated plan        | none within the installed-font search scope                        |
 
 The two issues share data but not implementation ownership. They should produce
 separate plans and may proceed independently.
@@ -446,42 +446,31 @@ selection semantics.
 
 ## Issue #61: Installed-Font Discovery And Search
 
-### Shipped Behavior
+### Implemented Behavior
 
-Evidence status: current behavior is source-confirmed; alias retention, ranking,
-and the two-stage responsiveness contract remain proposed and unvalidated.
+Evidence status: Issue #61 implementation, live smoke, repository validation,
+and exact plan/job traceability are recorded by the dedicated installed-font
+search plan.
 
-The current Interactive picker deliberately:
+The Interactive picker:
 
-- requests fontconfig discovery only
-- gives discovery a one-second hard deadline
-- does not fall back to native discovery
-- caches the session result
-- keeps custom typed input available when discovery fails
+- requests fontconfig discovery only and does not fall back to native discovery
+- retains aliases and all reported full names as lookup-only metadata
+- groups lookup metadata under stable primary-family identity
+- ranks exact, prefix, token-prefix, substring, and ordered-subsequence matches
+  deterministically
+- returns at most six installed-family matches while keeping custom typed input
+  first
+- waits automatically for up to three seconds, then offers one conditional
+  custom-or-wait choice under a ten-second total hard ceiling
+- caches one discovery outcome for the Interactive session
+- keeps custom input reachable after missing, empty, failed, cancelled, or
+  timed-out discovery
 
-The current fontconfig adapter keeps the first comma-separated family value
-from each row. The Interactive picker then:
-
-- deduplicates those family names case-insensitively
-- sorts them alphabetically
-- performs a case-insensitive contiguous substring match
-- returns at most six installed-family matches
-- preserves the typed custom value as the first choice
-
-This is deterministic and bounded, but it is not fuzzy matching. Queries with
-missing spaces, initials, separated tokens, or alternate family aliases may not
-find an otherwise relevant installed family.
-
-The fontconfig inventory source is intentional. The current gaps are:
-
-1. the one-second discovery boundary
-2. discarded fontconfig family aliases
-3. family-level deduplication before alias/full-name grouping
-4. search terms that fail the contiguous-substring matcher
-
-These causes should be measured separately. Installed-font suggestions are
-local input assistance; they do not claim renderer availability or glyph
-coverage.
+Alias and styled full-name matches return the primary adapter-reported family,
+which enters the existing ordered `fontHints[]` contract. Installed-font
+suggestions remain local input assistance; they do not claim renderer
+availability or glyph coverage.
 
 ### Version Boundary
 
@@ -517,14 +506,13 @@ must not use a network catalogue.
 
 The completed Interactive font-hint research deliberately chose fontconfig-only
 discovery, a one-second hard deadline, and no native fallback. Issue #61 keeps
-fontconfig as the intentional inventory source. It reopens alias retention,
-search quality, and the overly strict discovery boundary.
+fontconfig as the intentional inventory source while replacing the original
+deadline and search limitations.
 
-Interactive should continue to call shared discovery with
-`discovery: "fontconfig"`. It should not switch to `auto` or `native`, and it
-does not add a discovery-source prompt. Direct `font list`, `font inspect`, and
-`font check` retain their explicit `auto`, `native`, and `fontconfig` choices for
-diagnostics and advanced use.
+Interactive calls shared discovery with `discovery: "fontconfig"`. It does not
+switch to `auto` or `native`, and it does not add a discovery-source prompt.
+Direct `font list`, `font inspect`, and `font check` retain their explicit
+`auto`, `native`, and `fontconfig` choices for diagnostics and advanced use.
 
 Fontconfig discovery must remain read-only, session-cached, cancellable, and
 bounded so the preference flow cannot wait indefinitely. Custom input remains
@@ -544,10 +532,10 @@ query from the discovered family:
 - `font check` resolves an unambiguous query to an actual discovered face and
   rejects ambiguous loose family matches
 
-The fontconfig adapter currently keeps only the first comma-separated family
-value and discards the remaining aliases. Issue #61 should retain those aliases
-in the shared font-discovery and matching model rather than create
-Interactive-only alias behavior. The searchable record has this contract:
+The fontconfig adapter keeps the first comma-separated family value as primary
+and retains the remaining aliases in the shared font-discovery and matching
+model rather than creating Interactive-only alias behavior. The searchable
+record has this contract:
 
 | Field         | Meaning                                                       | Selection behavior   |
 | ------------- | ------------------------------------------------------------- | -------------------- |
@@ -572,8 +560,7 @@ renderer availability; that remains separate render or coverage evidence.
 
 ### Deterministic Ranking
 
-The proposed search direction is a small local scorer over the shared search
-record:
+The implemented search uses a small local scorer over the shared search record:
 
 ```text
 normalized query
@@ -604,20 +591,17 @@ accepted implementation contract grows beyond a small, fixture-tested scorer.
 
 Alias and full-name matches return the adapter-reported family. Explicit custom
 input preserves the typed value, remains first, and is never displaced by an
-installed suggestion. The implementation plan must define score thresholds and
-stable tie-breaking from fixtures rather than leave library defaults or
-iteration order to decide the result.
+installed suggestion. Score thresholds and stable tie-breaking are defined by
+fixtures rather than library defaults or iteration order.
 
 ### Responsiveness Policy And Evidence
 
-Before superseding the shipped search and one-second timeout behavior, use a
-repository-local evidence spike following the existing [`scripts/spikes/` timing
-pattern][evidence-spike-source]. The investigation should add
-`scripts/spikes/markdown-pdf-font-discovery-evidence-spike.ts` with validated
-`--runs <count>` and `--timeout-ms <ms>` options. The default run count should
-be 30.
+A repository-local evidence spike follows the existing [`scripts/spikes/`
+timing pattern][evidence-spike-source].
+`scripts/spikes/markdown-pdf-font-discovery-evidence-spike.ts` accepts validated
+`--runs <count>` and `--timeout-ms <ms>` options and defaults to 30 serial runs.
 
-The spike should:
+The spike:
 
 - execute at least 30 fontconfig discovery calls serially through
   `discoverSystemFonts({ discovery: "fontconfig", includeAttempts: true })`
@@ -639,9 +623,8 @@ Use a documented nearest-rank percentile calculation. Keep failed and timed-out
 attempts in the outcome counts rather than silently removing them; calculate
 latency percentiles over successful calls only.
 
-The current discovery attempt status collapses command timeouts into ordinary
-failures. The spike or shared discovery result must expose timeout explicitly;
-do not infer it only from elapsed duration.
+Shared discovery attempts expose command timeout distinctly from ordinary
+failure, so the spike does not infer timeout from elapsed duration.
 
 These measurements are environment evidence, not a cross-machine performance
 guarantee. They can reveal regressions or reject an obviously unsuitable
@@ -662,20 +645,19 @@ and opens the ordinary preference input. Choosing to wait reuses the same
 in-flight discovery promise and only the time remaining under the ten-second
 ceiling. It must not restart discovery or reset the hard deadline.
 
-The one-second boundary currently appears in the subprocess timeout, an outer
-deadline race, and a post-completion elapsed-time check. The replacement should
-use one absolute ten-second safety deadline for subprocess cancellation while
-the three-second threshold controls only the conditional slow-path choice.
-When successful discovery wins the race before the hard deadline, accept the
-result; do not discard it afterward solely because elapsed time crossed either
-nominal boundary. Once the slow-path choice is visible, the user's selection
-remains authoritative even if discovery finishes while that prompt is open.
+The implementation replaces the former one-second subprocess timeout, outer
+deadline race, and post-completion elapsed rejection with one absolute
+ten-second safety deadline for subprocess cancellation. The three-second
+threshold controls only the conditional slow-path choice. A successful result
+that wins before the hard deadline is accepted. Once the slow-path choice is
+visible, the user's selection remains authoritative even if discovery finishes
+while that prompt is open.
 
 Do not add a public timeout option, persisted timing heuristic, or hardware
 classification for this issue. The conditional slow path provides explicit
 flexibility without hidden host-dependent behavior.
 
-After the timeout contract is implemented, validation must separately prove:
+Deterministic validation separately proves:
 
 - discovery that succeeds before three seconds opens the installed-font search
 - the three-second threshold offers the slow-path choice at most once
@@ -696,6 +678,29 @@ appears as an installed suggestion. The picker labels local discovery, not glyph
 coverage or guaranteed PDF rendering. Those remain separate validation
 boundaries.
 
+### Recorded Issue #61 Evidence
+
+The implementation plan and its two job records contain the durable commands,
+phase boundaries, and exact-range review dispositions. The closeout evidence
+adds:
+
+- a broad focused slice passing 256 tests and 1,156 assertions across 26 files
+- a complete repository suite passing 1,796 tests and 9,440 assertions across
+  226 files
+- passing type, lint, formatting, build, and diff checks
+- a three-run live macOS arm64 fontconfig smoke with no failures, timeouts, or
+  empty results
+- a first total discovery time of 243.065 ms and subsequent total p50 and
+  p95/maximum values of 175.923 ms and 211.734 ms
+- a privacy-safe live selection smoke confirming that alias and styled
+  full-name lookup both select primary families that compile into one
+  `fontHints[]` entry
+
+These timings support the selected policy on the available environment but do
+not prove performance on older hardware. The three-second point is deliberately
+a user choice rather than a failure, and the ten-second bound remains the total
+safety ceiling.
+
 ### Fontconfig Availability Boundary
 
 Fontconfig availability differs by environment. Interactive does not fall back
@@ -703,6 +708,13 @@ to native adapters in Issue #61. When fontconfig is unavailable, empty, or
 reaches the hard safety ceiling, the existing custom-input path remains the
 supported fallback. A user may also choose that fallback at the three-second
 soft threshold.
+
+This boundary also applies on macOS when Font Book or a third-party font manager
+can see a font that fontconfig cannot report, including some Adobe Fonts
+configurations. Native or provider-specific discovery would increase the
+discovery scope and responsiveness budget and is not part of Issue #61. Manual
+custom entry remains available, but it does not guarantee that the renderer can
+resolve the named font.
 
 ### Investigation And Validation Path
 
@@ -755,20 +767,19 @@ coverage without publishing host font paths or a developer-specific inventory.
 
 ## Plan Handoff
 
-| Issue | Selected direction                                                                                                                                                  | First implementation checkpoint                                                                                                                                                          | Non-blocking follow-up                                     |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | reproduce direct partial-bundle and Project complete-bundle conflicts, classify ownership slots, and confirm the source-supported causal model                                           | Interactive base-candidate and lineage wording             |
-| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | record first/subsequent-run evidence, validate the three-second soft threshold and ten-second hard ceiling, and record unavailable hardware coverage rather than requiring proof from it | presentation refinements outside the conditional slow path |
+| Issue | Selected direction                                                                                                                                                  | Implementation status                            | Non-blocking follow-up                                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | draft plan; reproduction and rendering remain    | Interactive base-candidate and lineage wording             |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed | presentation refinements outside the conditional slow path |
 
-The separate draft implementation plans own these checkpoints. The preferred
-execution order is Issue #61 followed by Issue #60, but neither implementation
-depends on the other.
+The separate implementation plans own these checkpoints. Issue #61 is complete;
+Issue #60 remains independently actionable.
 
 ## Research Exit Criteria
 
-Keep this document `in-progress` while the direction is selected but the
-reproduction, measurement, and rendered evidence needed for closure is not yet
-recorded.
+Keep this document `in-progress` because Issue #60 reproduction and rendered
+evidence remain open. Issue #61 has satisfied its installed-font discovery and
+selection exit criteria.
 
 The research can become `completed` when:
 
@@ -780,24 +791,24 @@ The research can become `completed` when:
   valid direct-Template `template_level` decisions
 - generated CSS and rendered partial Template and complete Project bundles
   prove the selected preservation mechanism
-- Issue #61 fontconfig fixtures prove primary-family, alias, and full-name
-  retention plus deterministic ranking and tie-breaking
-- alias and full-name matches return the primary adapter-reported family
-- the fontconfig evidence spike records public-safe first-run, total, and
-  adapter latency evidence plus failure and timeout counts
-- the evidence and recorded product policy support a three-second automatic-wait
-  threshold and one ten-second total hard ceiling
-- the implementation validates slow-path custom input, bounded continuation,
-  near-boundary success, timeout, cancellation, fallback, and caching
-- public evidence avoids host font paths and developer-specific inventories
+The Issue #61 criteria above are complete: fixtures cover primary-family,
+alias, and full-name retention, ranking and tie-breaking, primary-family
+selection, the two-stage lifecycle, timeout, cancellation, fallback, and cache
+reuse. The evidence spike and live closeout record public-safe timing and
+outcome aggregates without host inventories.
 
-The linked plans are execution contracts, not completion evidence. Keep this
-research `in-progress` until their required evidence is recorded.
+The linked plans and jobs contain the implementation evidence. Keep this
+research `in-progress` until the remaining Issue #60 criteria are recorded.
 
 ## Related Plans
 
 - [Interactive Markdown PDF installed-font search implementation](../plans/plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md)
 - [Markdown PDF Profile font preservation implementation](../plans/plan-2026-07-26-markdown-pdf-profile-font-preservation.md)
+
+## Related Jobs
+
+- [Interactive Markdown PDF font-discovery evidence](../plans/jobs/2026-07-27-interactive-markdown-pdf-font-discovery-evidence.md)
+- [Interactive Markdown PDF font-search implementation](../plans/jobs/2026-07-27-interactive-markdown-pdf-font-search-implementation.md)
 
 ## Related Research
 
@@ -805,8 +816,8 @@ research `in-progress` until their required evidence is recorded.
 - [Markdown PDF Template Codex Helper][template-helper-research]
 - [Markdown PDF Project Codex Helper][project-helper-research]
 - [Markdown PDF Interactive Font Hint Suggestions][interactive-font-research]
-  — completed fontconfig baseline whose search and timeout boundaries this draft
-  proposes to refine after responsiveness evidence is accepted
+  — completed fontconfig baseline whose search and timeout boundaries Issue #61
+  has now refined
 - [Font Command Discovery Options][font-discovery-research]
 - [Markdown PDF Render Bundle Directory][render-bundle-research]
 

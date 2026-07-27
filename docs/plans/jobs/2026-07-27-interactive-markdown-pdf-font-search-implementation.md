@@ -290,4 +290,67 @@ Checkpoint commits:
 
 ## Phase 5: Validation, Guidance, And Closeout
 
-Status: ready to begin from the Phase 4 closeout boundary.
+Starting commit:
+`adb0a09db6313f9e21298436ccb350892608542e`
+
+Status: in progress; validation and documentation are complete, with exact
+range review pending.
+
+Validation:
+
+- The broad font and Interactive Markdown PDF slice passed with 256 tests and
+  1,156 assertions across 26 files.
+- A narrower discovery, command-compatibility, selection, ranking, spike, and
+  Interactive font-hint slice passed with 70 tests and 265 assertions across
+  9 files.
+- `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+  `bun run build`, and `git diff --check` passed.
+- The complete repository suite passed with 1,796 tests and 9,440 assertions
+  across 226 files.
+
+Live evidence:
+
+- A three-run fontconfig evidence smoke completed successfully on the
+  development macOS arm64 environment with no failures, timeouts, or empty
+  results.
+- The first total discovery call completed in 243.065 ms; subsequent successful
+  calls recorded a 175.923 ms p50 and 211.734 ms p95/maximum. The first adapter
+  attempt completed in 233 ms. All observed calls remained below the
+  three-second soft threshold and the ten-second hard ceiling.
+- A privacy-safe live selection smoke confirmed that an available alias and an
+  available styled full name both return their primary fontconfig family, and
+  that the selected value compiles into one ordered `fontHints[]` entry.
+- Static inspection confirmed explicit fontconfig discovery, custom-first
+  choices, one conditional slow-discovery choice, and no network request,
+  native fallback, or discovery-source prompt.
+- No font names, aliases, full names, paths, or raw host errors were recorded.
+
+Environment limitation:
+
+- The timings describe one current development environment, not older-hardware
+  coverage or a cross-machine guarantee.
+- Interactive intentionally does not search native macOS or third-party font
+  manager inventories. Fonts visible in Font Book but unavailable to
+  fontconfig, including some Adobe Fonts configurations, may not appear as
+  installed suggestions. Custom entry remains available, without promising
+  glyph coverage or renderer resolution.
+- The sibling Profile-font preservation plan remains a draft, so the
+  selection-to-render smoke is recorded as that plan's non-blocking closeout
+  check rather than a gate for this discovery-and-selection plan.
+
+Documentation:
+
+- Updated the Interactive usage guide with alias/full-name lookup, deterministic
+  ranking, custom-first selection, the three-second/ten-second lifecycle,
+  session caching, privacy, non-guarantees, and the fontconfig availability
+  boundary.
+- Updated the shared research with Issue #61 implementation evidence and kept
+  its overall status `in-progress` because Issue #60 remains open.
+- Updated the implementation plan checklist from matching validation evidence.
+
+Review status:
+
+- Pending exact review of
+  `adb0a09db6313f9e21298436ccb350892608542e..<phase-5-candidate>`.
+- Pending complete-plan review of
+  `071bdafab69c22a9de4944aa8bf127f3632c08f2..<phase-5-candidate>`.
