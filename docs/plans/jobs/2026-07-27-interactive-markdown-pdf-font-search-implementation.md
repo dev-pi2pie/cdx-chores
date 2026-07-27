@@ -293,8 +293,7 @@ Checkpoint commits:
 Starting commit:
 `adb0a09db6313f9e21298436ccb350892608542e`
 
-Status: in progress; initial exact review found an evidence aggregation defect
-and premature closeout wording. Fix validation and widened review are pending.
+Status: completed.
 
 Validation:
 
@@ -357,5 +356,9 @@ Review status:
   `071bdafab69c22a9de4944aa8bf127f3632c08f2..07de7cc` and additionally found
   that the evidence spike included failed and timed-out calls in latency
   percentiles despite the successful-call-only research contract.
-- All three findings are accepted. Fix validation and widened exact reviews are
-  pending.
+- Final widened exact review covered
+  `adb0a09db6313f9e21298436ccb350892608542e..3058a67` and found no
+  actionable issues.
+- Final widened complete-plan review covered
+  `071bdafab69c22a9de4944aa8bf127f3632c08f2..3058a67` and found no
+  actionable issues.

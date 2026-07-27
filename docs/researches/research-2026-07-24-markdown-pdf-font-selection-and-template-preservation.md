@@ -770,10 +770,10 @@ coverage without publishing host font paths or a developer-specific inventory.
 | Issue | Selected direction                                                                                                                                                  | Implementation status                            | Non-blocking follow-up                                     |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
 | #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | draft plan; reproduction and rendering remain    | Interactive base-candidate and lineage wording             |
-| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented and validated; final review pending   | presentation refinements outside the conditional slow path |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed | presentation refinements outside the conditional slow path |
 
-The separate implementation plans own these checkpoints. Issue #61 has reached
-final review; Issue #60 remains independently actionable.
+The separate implementation plans own these checkpoints. Issue #61 is complete
+and reviewed; Issue #60 remains independently actionable.
 
 ## Research Exit Criteria
 
