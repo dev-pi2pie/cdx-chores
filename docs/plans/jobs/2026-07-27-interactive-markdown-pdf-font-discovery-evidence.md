@@ -41,8 +41,9 @@ Phase 4.
 
 ## Evidence Status
 
-Implementation, live measurements, and full validation are complete.
-Commit-range review and phase-owned report cleanup are pending.
+Implementation and Node.js live measurements are complete. Post-review full
+validation, widened commit-range review, and phase-owned report cleanup are
+pending.
 
 Older or slower hardware is unavailable in the current environment. Phase 1
 will record that limitation instead of treating local timing as cross-machine
@@ -68,38 +69,55 @@ proof.
 - `2050e26` — shared timeout classification, regression coverage, plan
   activation, and this job record.
 - `1c6713f` — evidence spike and deterministic spike tests.
+- `9b62847` — initial live evidence and provisional policy interpretation.
+- `11d06d7` — accepted review fixes for runtime identity, timeout-input bounds,
+  and missing aggregate/debug regression coverage.
 
 ## Evidence Method
 
-The spike ran `discoverSystemFonts` with explicit fontconfig discovery,
-attempt evidence enabled, and one timeout value per series. Each series used 30
-serial runs. Total duration used a monotonic clock; adapter duration came from
-the shared discovery attempt.
+The spike was bundled locally for the Node.js target, then executed with a
+supported Node.js runtime. It ran `discoverSystemFonts` with explicit fontconfig
+discovery, attempt evidence enabled, and one timeout value per series. Each
+series used 30 serial runs. Total duration used a monotonic clock; adapter
+duration came from the shared discovery attempt.
 
 The three series used 1,000 ms, 3,000 ms, and 10,000 ms subprocess ceilings.
 The 10,000 ms series provided the generous measurement ceiling. No series
 needed a larger diagnostic ceiling.
 
-Reports were redirected to one ignored, phase-owned directory under
-`examples/playground/.tmp-tests/`. They remain local through commit-range
-review. A privacy scan found no font family, full-name, font-path, raw command,
-stderr, or developer-specific absolute-path fields.
+Reports were redirected to the ignored, phase-owned
+`examples/playground/.tmp-tests/markdown-pdf-font-discovery-phase1-Ia0xRz/`
+directory. They remain local through commit-range review. If the phase becomes
+blocked or fails, this exact directory will be retained for private handoff;
+successful closeout removes only this directory.
+
+An initial Bun-run evidence set was retained locally but superseded after review
+found that its Node compatibility version had been mislabeled as the executing
+runtime. The table below contains only the replacement Node.js evidence.
+
+A privacy scan found no font family, full-name, font-path, raw command, stderr,
+or developer-specific absolute-path fields.
 
 ## Local Timing Evidence
 
-Environment: macOS on arm64 with Node.js 24.3.0.
+Environment: macOS on arm64 with Node.js 26.5.0. The package supports Node.js
+22.23.0 and later.
 
 All durations are milliseconds. Percentiles use the documented nearest-rank
 method.
 
 | Timeout ceiling | First total | First adapter | Subsequent total p50 / p95 / max | Subsequent adapter p50 / p95 / max | Outcomes                        |
 | --------------- | ----------: | ------------: | -------------------------------: | ---------------------------------: | ------------------------------- |
-| 1,000           |     204.929 |           201 |      177.440 / 186.023 / 213.402 |                    175 / 184 / 210 | 30 success, 0 failed, 0 timeout |
-| 3,000           |     190.219 |           187 |      179.620 / 190.292 / 207.111 |                    177 / 188 / 205 | 30 success, 0 failed, 0 timeout |
-| 10,000          |     189.684 |           186 |      180.368 / 187.793 / 191.515 |                    178 / 185 / 189 | 30 success, 0 failed, 0 timeout |
+| 1,000           |     187.155 |           183 |      176.753 / 186.165 / 186.331 |                    174 / 183 / 183 | 30 success, 0 failed, 0 timeout |
+| 3,000           |     193.507 |           189 |      177.541 / 183.695 / 188.074 |                    175 / 180 / 185 | 30 success, 0 failed, 0 timeout |
+| 10,000          |     183.926 |           180 |      176.348 / 189.574 / 216.436 |                    174 / 187 / 214 | 30 success, 0 failed, 0 timeout |
 
 No measured run reached one second, three seconds, or ten seconds. The largest
-observed total duration was 213.402 ms.
+observed total duration was 216.436 ms.
+
+A separate one-run Node.js classification check used a 1 ms timeout. It
+reported one timeout, zero failures, and zero successes, confirming that the
+shared Node.js runner exposes timeout separately from generic failure.
 
 The recorded first run is the first run within each spike process. It is not
 proof of a cold operating-system or fontconfig cache because an earlier
@@ -126,6 +144,8 @@ provisional until the exact commit-range review is complete.
   - Passed: 31 tests and 151 assertions.
 - `bun test test/markdown-pdf-font-discovery-evidence-spike.test.ts test/fonts-discovery-cancellation.test.ts`
   - Passed: 10 tests and 37 assertions.
+- `bun test test/markdown-pdf-font-discovery-evidence-spike.test.ts test/fonts-discovery-cancellation.test.ts test/fonts-cli-list.test.ts`
+  - Passed after review fixes: 18 tests and 96 assertions.
 - `bunx tsc --noEmit`
   - Passed.
 - `bun run lint`
@@ -141,7 +161,30 @@ provisional until the exact commit-range review is complete.
 
 ## Review Status
 
-The exact range beginning at
-`071bdafab69c22a9de4944aa8bf127f3632c08f2` has not yet been reviewed. Phase 1
-remains open until all actionable findings are resolved, the range is
-re-reviewed as needed, and the retained local reports are cleaned up.
+The initial review covered
+`071bdafab69c22a9de4944aa8bf127f3632c08f2..9b62847`.
+
+Accepted findings:
+
+- Correct the runtime identity and replace Bun-executed timing evidence with
+  supported Node.js runtime evidence.
+- Reject `--timeout-ms` values above the Node.js timer maximum of
+  2,147,483,647 ms.
+- Cover timeout text debug output, empty successful discoveries, all-run and
+  threshold aggregates, and small-sample nearest-rank boundaries.
+- Record the exact phase-owned report directory and the exact reviewed range.
+
+Rejected findings:
+
+- Replacing the additive timeout discriminator and derived attempt status with
+  a broader canonical outcome refactor would expand the shared public contract
+  beyond the one new Phase 1 outcome.
+- Splitting the evidence spike into more production modules would add structure
+  without changing its single-purpose, phase-owned lifecycle. Its normalized
+  per-run record already feeds each derived summary, and explicit fontconfig
+  discovery intentionally has one adapter attempt.
+
+Widened review beginning at
+`071bdafab69c22a9de4944aa8bf127f3632c08f2` remains pending after the evidence
+record update. Phase 1 remains open until that review and post-fix full
+validation pass and the retained local directory is removed.
