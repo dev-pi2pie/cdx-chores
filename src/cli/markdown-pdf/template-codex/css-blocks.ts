@@ -160,40 +160,30 @@ function includesFontOwnershipOverride(css: string): boolean {
   return false;
 }
 
-function hasBalancedBraces(css: string): boolean {
+function inspectCssBraceStructure(css: string): {
+  balanced: boolean;
+  nested: boolean;
+} {
   let depth = 0;
-  for (const char of css) {
+  let nested = false;
+  for (const char of normalizeCssForInspection(css, true)) {
     if (char === "{") {
       depth += 1;
+      nested ||= depth > 1;
     } else if (char === "}") {
       depth -= 1;
       if (depth < 0) {
-        return false;
+        return { balanced: false, nested };
       }
     }
   }
-  return depth === 0;
-}
-
-function hasNestedRuleBlocks(css: string): boolean {
-  let depth = 0;
-  for (const char of css) {
-    if (char === "{") {
-      depth += 1;
-      if (depth > 1) {
-        return true;
-      }
-    } else if (char === "}") {
-      depth -= 1;
-    }
-  }
-  return false;
+  return { balanced: depth === 0, nested };
 }
 
 function topLevelSelectors(css: string): string[] {
   const selectors: string[] = [];
   const matcher = /([^{}]+)\{/gu;
-  for (const match of css.matchAll(matcher)) {
+  for (const match of normalizeCssForInspection(css, true).matchAll(matcher)) {
     const selector = match[1]?.trim();
     if (selector) {
       selectors.push(selector);
@@ -226,7 +216,8 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
       `Markdown PDF template Codex response ${context}.css must be at most ${MAX_CSS_BLOCK_CHARS} characters.`,
     );
   }
-  if (!hasBalancedBraces(css)) {
+  const braceStructure = inspectCssBraceStructure(css);
+  if (!braceStructure.balanced) {
     throw new Error(`Markdown PDF template Codex response ${context}.css has unbalanced braces.`);
   }
   if (/@import\b/iu.test(css)) {
@@ -237,7 +228,7 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
       `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
     );
   }
-  if (hasNestedRuleBlocks(css)) {
+  if (braceStructure.nested) {
     throw new Error(
       `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
     );

@@ -1251,6 +1251,23 @@ describe("Markdown PDF template Codex adapter", () => {
     }
   });
 
+  test("ignores braces inside strings and comments when checking rule depth", () => {
+    const flatBlocks = [
+      {
+        css: '.pdf-cover-media__caption { content: "{}"; }',
+        slot: "cover" as const,
+      },
+      {
+        css: "body { /* { } */ color: red; }",
+        slot: "colors" as const,
+      },
+    ];
+
+    for (const block of flatBlocks) {
+      expect(validateMarkdownPdfTemplateCodexCssBlock(block)).toEqual(block);
+    }
+  });
+
   test("allows non-family typography declarations and Template font variable reads", () => {
     expect(
       validateMarkdownPdfTemplateCodexCssBlock({
