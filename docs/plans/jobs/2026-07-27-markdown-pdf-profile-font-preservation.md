@@ -165,7 +165,9 @@ production wiring remains Phase 3.
 
 ### Verification
 
-- Phase 2 ownership, synthesis, and adapter tests: 83 passed, 0 failed.
+- Focused Phase 2 ownership, synthesis, and adapter tests: 68 passed, 0
+  failed.
+- All six Phase 2-modified test files: 103 passed, 0 failed.
 - Repository suite: 1,814 passed, 0 failed.
 - TypeScript check: passed.
 - Lint and formatting checks: passed.
