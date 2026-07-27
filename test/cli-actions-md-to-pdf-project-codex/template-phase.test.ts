@@ -50,7 +50,15 @@ function adaptedProfileRunner(candidateId = "wide-table", unmatchedDirections: s
 
 function templateResponse(input: {
   coverEnabled?: boolean;
+  cssBlocks?: Array<{ css: string; slot: string }>;
   decisionMode?: string;
+  fontDecisions?: Array<{
+    family: string;
+    key: string;
+    role: string;
+    source: string;
+    template_level: boolean;
+  }>;
   recipePreset?: string;
   recipeSource?: string;
   templateFamily?: string;
@@ -87,8 +95,8 @@ function templateResponse(input: {
       typography: { scale: "standard" },
       colors: { palette: "neutral" },
     },
-    css_blocks: [],
-    font_decisions: [],
+    css_blocks: input.cssBlocks ?? [],
+    font_decisions: input.fontDecisions ?? [],
     managed_assets: coverEnabled
       ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }]
       : [],
@@ -282,10 +290,200 @@ describe("cli action modules: md pdf-project codex template phase", () => {
       );
       expect(templatePhase.synthesis.styleCss).toContain("font-size: 10.5pt;");
       expect(templatePhase.synthesis.styleCss).toContain("line-height: 1.5;");
-      expect(templatePhase.synthesis.styleCss).toContain("font-family: var(--template-body-font);");
+      expect(templatePhase.synthesis.styleCss).not.toContain(
+        "font-family: var(--template-body-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).not.toContain(
+        "font-family: var(--template-heading-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).not.toContain(
+        "code {\n  font-family: var(--template-monospace-font);",
+      );
       expect(templatePhase.synthesis.styleCss).not.toContain("Profile Chrome");
+      expect(JSON.stringify(templatePhase)).not.toContain("fontOwnership");
+      expect(JSON.stringify(templatePhase)).not.toContain("ownedKeys");
       await expectNoPlannedProjectArtifacts(outputPlan);
     });
+  });
+
+  test("blocks ordinary template font decisions using the final project profile", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-template-font-ownership", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+          "  source: deterministic",
+          "  createdAt: 2026-01-01T00:00:00Z",
+          "fonts:",
+          "  heading:",
+          "    default: Profile Heading",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { outputPlan, templatePhase } = await runTemplatePhaseFixture(fixtureDir, {
+        baseProfile: "base.yml",
+        intent: "apply custom CSS",
+        profileCodexRunner: adaptedProfileRunner("base-profile"),
+        templateCodexRunner: async () =>
+          templateResponse({
+            fontDecisions: [
+              {
+                family: "Suggested Body",
+                key: "default",
+                role: "body",
+                source: "template-style",
+                template_level: false,
+              },
+            ],
+            recipeSource: "renderer-default",
+          }),
+      });
+
+      expect(templatePhase.synthesis.fontDecisions).toEqual([
+        expect.objectContaining({
+          family: "Suggested Body",
+          key: "default",
+          overridesProfileFont: false,
+          profileOwned: true,
+          role: "body",
+          status: "blocked",
+        }),
+      ]);
+      expect(templatePhase.synthesis.styleCss).not.toContain("Suggested Body");
+      expect(templatePhase.synthesis.styleCss).not.toContain(
+        "font-family: var(--template-body-font);",
+      );
+      await expectNoPlannedProjectArtifacts(outputPlan);
+    });
+  });
+
+  test("uses full canonical ownership for overflow body languages and the combined code stack", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-template-full-font-ownership",
+      async (fixtureDir) => {
+        const precedingLanguageFonts = [
+          "aa",
+          "ab",
+          "af",
+          "ak",
+          "am",
+          "ar",
+          "as",
+          "az",
+          "ba",
+          "be",
+          "bg",
+          "bn",
+          "bo",
+          "br",
+          "bs",
+          "ca",
+          "cs",
+          "cy",
+          "da",
+          "de",
+        ].map((language, index) => `    ${language}: Profile Language ${index}`);
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "fonts:",
+            "  body:",
+            ...precedingLanguageFonts,
+            "    zh-Hant: Profile Traditional Chinese",
+            "  code:",
+            "    symbols: Profile Symbols",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { outputPlan, templatePhase } = await runTemplatePhaseFixture(fixtureDir, {
+          baseProfile: "base.yml",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner("base-profile"),
+          templateCodexRunner: async () =>
+            templateResponse({
+              fontDecisions: [
+                {
+                  family: "Suggested Traditional Chinese",
+                  key: "ZH-hant",
+                  role: "body",
+                  source: "template-style",
+                  template_level: false,
+                },
+                {
+                  family: "Suggested Code",
+                  key: "default",
+                  role: "code",
+                  source: "template-style",
+                  template_level: false,
+                },
+              ],
+              recipeSource: "renderer-default",
+            }),
+        });
+
+        expect(templatePhase.signals.fonts.profileFonts.overflowFamilyCount).toBeGreaterThan(0);
+        expect(templatePhase.synthesis.fontDecisions).toEqual([
+          expect.objectContaining({
+            key: "zh-Hant",
+            profileOwned: true,
+            reason: "profile-font-owned",
+            role: "body",
+            status: "blocked",
+          }),
+          expect.objectContaining({
+            key: "default",
+            profileOwned: true,
+            reason: "profile-font-owned",
+            role: "code",
+            status: "blocked",
+          }),
+        ]);
+        expect(templatePhase.synthesis.styleCss).not.toContain("Suggested Traditional Chinese");
+        expect(templatePhase.synthesis.styleCss).not.toContain("Suggested Code");
+        await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
+  });
+
+  test("rejects hidden font-family declarations from project CSS blocks", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-template-hidden-font-family",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+
+        const { templatePhase } = await runTemplatePhaseFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [
+                {
+                  css: "body { f\\6f nt-family: Hidden Family; }",
+                  slot: "typography",
+                },
+              ],
+              recipeSource: "renderer-default",
+            }),
+        });
+
+        expect(templatePhase.phase).toMatchObject({
+          decisionMode: "no-usable-project",
+          phase: "template",
+        });
+        expect(templatePhase.synthesis.styleCss).toBe("");
+        expect(templatePhase.synthesis.templateHtml).toBe("");
+      },
+    );
   });
 
   test("materializes cover-image-only deterministic template results with project managed assets", async () => {
@@ -318,7 +516,20 @@ describe("cli action modules: md pdf-project codex template phase", () => {
     await withTempFixtureDir("md-pdf-project-codex-template-combined", async (fixtureDir) => {
       await writeFile(
         join(fixtureDir, "base.yml"),
-        "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\n",
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+          "  source: deterministic",
+          "  createdAt: 2026-01-01T00:00:00Z",
+          "page:",
+          "  size: Letter",
+          "fonts:",
+          "  body:",
+          "    default: Profile Body",
+          "  heading:",
+          "    default: Profile Heading",
+          "",
+        ].join("\n"),
         "utf8",
       );
       await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
@@ -340,6 +551,15 @@ describe("cli action modules: md pdf-project codex template phase", () => {
         signalMode: "deterministic",
       });
       expect(templatePhase.synthesis.templateFamily).toBe("cover-media-layered");
+      expect(templatePhase.synthesis.styleCss).not.toContain(
+        "font-family: var(--template-heading-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        "font: 700 22pt/1.15 var(--template-heading-font);",
+      );
+      expect(templatePhase.synthesis.styleCss).toContain(
+        "font: 12pt/1.35 var(--template-body-font);",
+      );
       await expectNoPlannedProjectArtifacts(outputPlan);
     });
   });

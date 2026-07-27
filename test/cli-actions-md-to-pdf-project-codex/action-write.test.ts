@@ -83,7 +83,15 @@ function duplicateTitleProfileRunner(): MarkdownPdfCodexProfileRunner {
   };
 }
 
-function adaptedTemplateResponse(): string {
+function adaptedTemplateResponse(
+  fontDecisions: Array<{
+    family: string;
+    key: string;
+    role: string;
+    source: string;
+    template_level: boolean;
+  }> = [],
+): string {
   return JSON.stringify({
     decision_mode: "adapted",
     template_family: "document-layered",
@@ -110,7 +118,7 @@ function adaptedTemplateResponse(): string {
       colors: { palette: "neutral" },
     },
     css_blocks: [],
-    font_decisions: [],
+    font_decisions: fontDecisions,
     managed_assets: [],
     warnings: [],
     unsupported_directions: [],
@@ -563,6 +571,77 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         }),
       ]);
     });
+  });
+
+  test("reports successful profile-template validation without internal font ownership data", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-action-font-ownership-report",
+      async (fixtureDir) => {
+        const outputPath = join(fixtureDir, "project-output");
+        const reportPath = join(outputPath, "project.codex-report.json");
+        const profileFontSentinel = "FULL_PROFILE_FONT_SENTINEL";
+        const templateDecisionSentinel = "TEMPLATE_FONT_DECISION_SENTINEL";
+
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "fonts:",
+            "  body:",
+            `    default: ${profileFontSentinel}`,
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-07-04T08:00:00.000Z"),
+        });
+
+        await actionMdPdfProjectCodex(runtime, {
+          baseProfile: "base.yml",
+          intent: "apply custom CSS",
+          output: "project-output",
+          keepCodexReport: true,
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: stubTemplateRunner(
+            adaptedTemplateResponse([
+              {
+                family: templateDecisionSentinel,
+                key: "default",
+                role: "body",
+                source: "template-style",
+                template_level: false,
+              },
+            ]),
+          ),
+          identityUidFactory: () => "abc12345",
+        });
+
+        const reportText = await readFile(reportPath, "utf8");
+        const report = JSON.parse(reportText) as MarkdownPdfProjectCodexReportArtifact;
+        expect(report.validationResults).toContainEqual({
+          name: "profile-template-compatibility",
+          status: "passed",
+        });
+        expect(report).not.toHaveProperty("fontOwnership");
+        expect(report).not.toHaveProperty("ownedKeys");
+        expect(report).not.toHaveProperty("normalizedProfile");
+        expect(report.phases.profile).not.toHaveProperty("finalProfile");
+        expect(report.phases.template).not.toHaveProperty("fontDecisions");
+        expect(reportText).not.toContain('"fontOwnership"');
+        expect(reportText).not.toContain('"ownedKeys"');
+        expect(reportText).not.toContain('"normalizedProfile"');
+        expect(reportText).not.toContain('"finalProfile"');
+        expect(reportText).not.toContain('"fontDecisions"');
+        expect(reportText).not.toContain(profileFontSentinel);
+        expect(reportText).not.toContain(templateDecisionSentinel);
+      },
+    );
   });
 
   test("writes document-informed projects that suppress duplicate metadata titles", async () => {

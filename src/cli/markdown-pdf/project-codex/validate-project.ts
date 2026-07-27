@@ -1,7 +1,11 @@
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { normalizeMarkdownPdfProfile, validateMarkdownPdfProfileShape } from "../profile";
-import { validateMdPdfTemplateCodexSynthesis } from "../template-codex";
+import {
+  deriveMdPdfTemplateCodexFontOwnership,
+  mdPdfTemplateCodexOwnsFontSlot,
+  validateMdPdfTemplateCodexSynthesis,
+} from "../template-codex";
 import { assertProjectCodexBundlePathInsideOutput } from "./path-collisions";
 import { createMdPdfProjectCodexRenderCommand } from "./render-command";
 import type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
@@ -155,8 +159,11 @@ function assertProjectCompatibility(input: {
     });
   }
 
+  const fontOwnership = deriveMdPdfTemplateCodexFontOwnership(profile);
   const overriddenProfileFonts = input.templatePhase.synthesis.fontDecisions.filter(
-    (decision) => decision.profileOwned && decision.overridesProfileFont,
+    (decision) =>
+      mdPdfTemplateCodexOwnsFontSlot(fontOwnership, decision.role, decision.key) &&
+      (decision.templateLevel || decision.status !== "blocked"),
   );
   if (overriddenProfileFonts.length > 0) {
     throw new CliError("Project stylesheet must not override profile-owned font decisions.", {
