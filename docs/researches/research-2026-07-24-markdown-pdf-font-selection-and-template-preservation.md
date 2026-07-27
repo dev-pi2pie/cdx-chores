@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
-modified-date: 2026-07-26
+modified-date: 2026-07-27
 status: in-progress
 agent: codex
 ---
@@ -84,10 +84,10 @@ target:  omit competing generated font-family
                                  rendered PDF
 ```
 
-| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
-| ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles |
-| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically | record cold/warm responsiveness and settle the bounded wait        |
+| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                             |
+| ----- | --------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles          |
+| #61   | local discovery and selection           | keep fontconfig, retain aliases, and rank deterministically | record first/subsequent-run evidence and validate the responsiveness policy |
 
 The two issues share data but not implementation ownership. They should produce
 separate plans and may proceed independently.
@@ -449,7 +449,7 @@ selection semantics.
 ### Shipped Behavior
 
 Evidence status: current behavior is source-confirmed; alias retention, ranking,
-and the relaxed timeout contract remain proposed and unvalidated.
+and the two-stage responsiveness contract remain proposed and unvalidated.
 
 The current Interactive picker deliberately:
 
@@ -528,9 +528,9 @@ diagnostics and advanced use.
 
 Fontconfig discovery must remain read-only, session-cached, cancellable, and
 bounded so the preference flow cannot wait indefinitely. Custom input remains
-available when discovery is slow, unavailable, or empty. The evidence must
-establish a concrete responsiveness budget; “bounded” alone is not an
-implementation oracle.
+available when discovery is slow, unavailable, or empty. The responsiveness
+policy must define both when automatic waiting stops and when the underlying
+process is cancelled; “bounded” alone is not an implementation oracle.
 
 ### Shared Search Record And Alias Direction
 
@@ -608,7 +608,7 @@ installed suggestion. The implementation plan must define score thresholds and
 stable tie-breaking from fixtures rather than leave library defaults or
 iteration order to decide the result.
 
-### Responsiveness Reopen Gate
+### Responsiveness Policy And Evidence
 
 Before superseding the shipped search and one-second timeout behavior, use a
 repository-local evidence spike following the existing [`scripts/spikes/` timing
@@ -621,11 +621,11 @@ The spike should:
 
 - execute at least 30 fontconfig discovery calls serially through
   `discoverSystemFonts({ discovery: "fontconfig", includeAttempts: true })`
-- record the first run separately from later warm runs
+- record the first run separately from subsequent runs
 - use a monotonic clock to measure the full discovery call
 - retain the fontconfig adapter attempt duration separately
-- use a generous measurement ceiling rather than the proposed Interactive
-  blocking budget
+- use a generous measurement ceiling rather than the Interactive soft threshold
+  or hard safety ceiling
 - record successful, failed, and timed-out attempts
 - emit structured JSON to standard output so local evidence can be redirected
   under `examples/playground/.tmp-tests/`
@@ -644,26 +644,52 @@ failures. The spike or shared discovery result must expose timeout explicitly;
 do not infer it only from elapsed duration.
 
 These measurements are environment evidence, not a cross-machine performance
-guarantee. Validate three seconds as the initial hard-deadline candidate, then
-settle the numeric maximum for user-visible blocking from cold- and warm-run
-evidence. The measurements inform that budget; they do not determine it
-automatically.
+guarantee. They can reveal regressions or reject an obviously unsuitable
+threshold, but they cannot prove adequacy for older hardware. Record unavailable
+hardware coverage as an environment limitation instead of treating one
+development machine as representative.
+
+The selected product policy uses two bounds:
+
+- after three seconds of automatic waiting, offer `Continue with custom input`
+  or `Keep waiting for installed fonts`
+- keep one ten-second total hard safety ceiling from the original discovery
+  start
+
+The three-second threshold is a user-decision point, not a timeout. Choosing
+custom input cancels discovery, caches the unavailable outcome for the session,
+and opens the ordinary preference input. Choosing to wait reuses the same
+in-flight discovery promise and only the time remaining under the ten-second
+ceiling. It must not restart discovery or reset the hard deadline.
 
 The one-second boundary currently appears in the subprocess timeout, an outer
-deadline race, and a post-completion elapsed-time check. The implementation
-should keep one effective hard safety budget, enforced by subprocess
-cancellation and an outer deadline. When discovery completes successfully
-before the deadline wins, accept the result; do not discard it afterward solely
-because elapsed time crossed the nominal boundary.
+deadline race, and a post-completion elapsed-time check. The replacement should
+use one absolute ten-second safety deadline for subprocess cancellation while
+the three-second threshold controls only the conditional slow-path choice.
+When successful discovery wins the race before the hard deadline, accept the
+result; do not discard it afterward solely because elapsed time crossed either
+nominal boundary. Once the slow-path choice is visible, the user's selection
+remains authoritative even if discovery finishes while that prompt is open.
+
+Do not add a public timeout option, persisted timing heuristic, or hardware
+classification for this issue. The conditional slow path provides explicit
+flexibility without hidden host-dependent behavior.
 
 After the timeout contract is implemented, validation must separately prove:
 
-- the first font prompt respects the selected blocking budget
+- discovery that succeeds before three seconds opens the installed-font search
+- the three-second threshold offers the slow-path choice at most once
+- choosing custom input cancels discovery and caches the unavailable outcome
+- choosing to wait reuses the same attempt without extending the ten-second
+  total ceiling
+- success before the hard ceiling is accepted and hard timeout falls back
 - later font prompts reuse one session-cached result without another
   fontconfig discovery call
 - timeout, cancellation, empty-result, and command-failure paths keep custom
   input reachable
-- an unavailable notice is not repeated within the same session
+- the slow-path prompt is not repeated within the same session
+- explicit custom selection does not also print an unavailable notice, and an
+  unavailable notice from another fallback outcome is shown at most once
 
 A fontconfig-reported font does not need separate WeasyPrint proof before it
 appears as an installed suggestion. The picker labels local discovery, not glyph
@@ -674,8 +700,9 @@ boundaries.
 
 Fontconfig availability differs by environment. Interactive does not fall back
 to native adapters in Issue #61. When fontconfig is unavailable, empty, or
-exceeds the bounded wait, the existing custom-input path remains the supported
-fallback.
+reaches the hard safety ceiling, the existing custom-input path remains the
+supported fallback. A user may also choose that fallback at the three-second
+soft threshold.
 
 ### Investigation And Validation Path
 
@@ -697,7 +724,8 @@ repository evidence spike
   success + failure + timeout counts
             |
             v
-numeric blocking budget
+responsiveness policy
+  3s automatic wait + 10s total ceiling
             |
             v
              Issue #61 implementation plan
@@ -713,25 +741,26 @@ Injected fixtures must verify:
 - stable ranking, explicit tie-breaking, and exact-duplicate collapse
 - custom typed input first and no more than six installed results
 - one read-only discovery attempt per Interactive session
-- cancellation, caching, measured timeout behavior, and empty or failed
-  discovery fallback
+- the three-second slow-path choice and ten-second total safety ceiling
+- cancellation, caching, timeout behavior, and empty or failed discovery
+  fallback
 - no network catalogue or Interactive discovery-source prompt
 
 Live checks on the current development operating system must verify that
 Interactive uses the same source as `font list --discovery fontconfig` and
 produces primary-family values that can become `fontHints[]`. Custom input must
 remain usable when discovery is slow, unavailable, or empty. Public evidence
-records capabilities, timings, and aggregate outcomes without publishing host
-font paths or a developer-specific inventory.
+records capabilities, timings, aggregate outcomes, and unavailable hardware
+coverage without publishing host font paths or a developer-specific inventory.
 
 ## Plan Handoff
 
-| Issue | Selected direction                                                                                                                                                  | First implementation gate                                                                                                                      | Non-blocking follow-up                                       |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | reproduce direct partial-bundle and Project complete-bundle conflicts, classify ownership slots, and confirm the source-supported causal model | Interactive base-candidate and lineage wording               |
-| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | record cold/warm fontconfig evidence, select an explicit blocking budget, and define the Continue/Constrain/Stop decision                      | presentation refinements that do not change selection values |
+| Issue | Selected direction                                                                                                                                                  | First implementation checkpoint                                                                                                                                                          | Non-blocking follow-up                                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | reproduce direct partial-bundle and Project complete-bundle conflicts, classify ownership slots, and confirm the source-supported causal model                                           | Interactive base-candidate and lineage wording             |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | record first/subsequent-run evidence, validate the three-second soft threshold and ten-second hard ceiling, and record unavailable hardware coverage rather than requiring proof from it | presentation refinements outside the conditional slow path |
 
-The separate draft implementation plans own these evidence gates. The preferred
+The separate draft implementation plans own these checkpoints. The preferred
 execution order is Issue #61 followed by Issue #60, but neither implementation
 depends on the other.
 
@@ -756,9 +785,10 @@ The research can become `completed` when:
 - alias and full-name matches return the primary adapter-reported family
 - the fontconfig evidence spike records public-safe first-run, total, and
   adapter latency evidence plus failure and timeout counts
-- the evidence produces an explicit blocking budget and an implementation
-  validation contract for near-boundary success, timeout, cancellation,
-  fallback, and caching
+- the evidence and recorded product policy support a three-second automatic-wait
+  threshold and one ten-second total hard ceiling
+- the implementation validates slow-path custom input, bounded continuation,
+  near-boundary success, timeout, cancellation, fallback, and caching
 - public evidence avoids host font paths and developer-specific inventories
 
 The linked plans are execution contracts, not completion evidence. Keep this

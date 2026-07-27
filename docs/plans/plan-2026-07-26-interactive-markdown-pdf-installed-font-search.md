@@ -1,6 +1,7 @@
 ---
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-26
+modified-date: 2026-07-27
 status: draft
 agent: codex
 ---
@@ -12,9 +13,10 @@ the existing local, custom-first, cancellable authoring contract.
 
 The implementation should retain fontconfig family aliases and full names as
 shared lookup metadata, rank local matches deterministically, and replace the
-current implicit timeout assumptions with an evidence-backed blocking budget.
-The selected value must remain the primary adapter-reported family and continue
-to enter the existing ordered `fontHints: string[]` contract.
+current implicit timeout assumptions with an explicit soft wait threshold and
+hard safety ceiling. The selected value must remain the primary
+adapter-reported family and continue to enter the existing ordered
+`fontHints: string[]` contract.
 
 ## Why This Plan
 
@@ -53,8 +55,9 @@ Missing pieces:
 - retained fontconfig aliases and all reported full names
 - a shared searchable-family record with stable primary-family identity
 - fixture-defined ranking and tie-breaking
-- cold- and warm-run responsiveness evidence
-- an explicit blocking budget and one effective deadline contract
+- first- and subsequent-run responsiveness evidence
+- an explicit automatic-wait threshold and total hard safety ceiling
+- one conditional slow-discovery choice that reuses the same attempt
 - timeout classification in discovery evidence
 - focused regression coverage across shared font commands and Interactive
 
@@ -95,10 +98,18 @@ preservation.
 ### Responsiveness and privacy
 
 - Discovery is read-only, cancellable, session-cached, and bounded.
-- A repository evidence spike selects the blocking budget; three seconds is an
-  initial candidate, not a predetermined result.
-- Successful completion before the deadline wins must be accepted without a
-  later elapsed-time rejection.
+- Interactive waits automatically for up to three seconds.
+- If discovery is still running, offer `Continue with custom input` or
+  `Keep waiting for installed fonts` once.
+- Continued waiting reuses the same discovery attempt under one ten-second total
+  hard safety ceiling measured from the original start.
+- Choosing custom input cancels discovery and caches the unavailable outcome for
+  the session.
+- Successful completion before the hard deadline wins must be accepted without
+  a later elapsed-time rejection.
+- Repository evidence checks this policy for regressions but does not claim
+  cross-machine coverage; unavailable older-hardware evidence is recorded as an
+  environment limitation.
 - Public evidence may record aggregate timing, platform, architecture, runtime,
   and face-count ranges, but not font names, paths, or raw host errors.
 
@@ -117,7 +128,8 @@ claims to prompts, reports, or guides.
 - compatibility of `font inspect` and `font check`
 - deterministic Interactive ranking
 - discovery timing and timeout evidence
-- one effective Interactive discovery deadline
+- a three-second automatic-wait threshold and ten-second total hard ceiling
+- the conditional slow-discovery choice
 - cancellation, caching, fallback, and unavailable-notice behavior
 - focused tests, live fontconfig smoke, and current guidance
 
@@ -132,6 +144,8 @@ claims to prompts, reports, or guides.
 - changes to the ordered `fontHints: string[]` contract
 - Profile/Template CSS preservation from Issue #60
 - unrelated Interactive presentation redesign
+- a public font-discovery timeout flag or configuration source
+- persisted timing heuristics or hardware classification
 
 ## Implementation Approach
 
@@ -163,12 +177,13 @@ stable primary-family value.
   commit and resolve all actionable findings before continuing.
 - Record commands, results, review disposition, and environment limitations in
   repository-relative, public-safe language.
-- If an evidence gate constrains or stops work, update this plan and its job
-  record before implementing later phases.
+- If evidence requires revisiting the responsiveness lifecycle, update this plan
+  and its job record before Phase 4. Shared search work may continue
+  independently.
 
 ## Implementation Phases
 
-### Phase 1: Responsiveness Evidence And Budget Gate
+### Phase 1: Responsiveness Evidence And Policy Checkpoint
 
 Tasks:
 
@@ -179,7 +194,7 @@ Tasks:
 - [ ] Call
       `discoverSystemFonts({ discovery: "fontconfig", includeAttempts: true })`
       through the shared implementation.
-- [ ] Record the first run separately from warm runs.
+- [ ] Record the first run separately from subsequent runs.
 - [ ] Report total and adapter p50, p95, and maximum latency using documented
       nearest-rank percentiles.
 - [ ] Report success, failure, and timeout counts without host font names, font
@@ -187,19 +202,24 @@ Tasks:
 - [ ] Expose timeout distinctly in spike or shared attempt evidence instead of
       inferring it only from duration.
 - [ ] Write optional local output only under `examples/playground/.tmp-tests/`.
-- [ ] Validate the current one-second boundary and the three-second candidate.
-- [ ] Select and document one numeric user-visible blocking budget.
+- [ ] Measure the current one-second boundary and evaluate the three-second
+      automatic-wait threshold under a generous measurement ceiling.
+- [ ] Check available runs against the ten-second total hard safety ceiling and
+      document it as a policy bound rather than a cross-machine performance
+      guarantee.
+- [ ] Record unavailable older-hardware coverage as an environment limitation.
 - [ ] Review the Phase 1 commit range and resolve all actionable findings.
 
 Phase gate:
 
-- **Continue** — evidence supports an explicit replacement budget and the plan
-  proceeds with search and timeout work.
-- **Constrain** — evidence does not support a timeout change; preserve the
-  one-second behavior and continue with alias/ranking improvements only.
-- **Stop** — fontconfig responsiveness cannot be measured reliably or the
-  evidence invalidates the assumed discovery boundary; return the timeout
-  direction to research before later lifecycle work.
+- **Proceed** — evidence and timeout classification are usable; continue with
+  the selected responsiveness policy.
+- **Proceed with limitation** — available hardware is not representative;
+  record the limitation and continue because local measurements are not treated
+  as cross-machine proof.
+- **Revisit responsiveness only** — available fontconfig cannot complete under
+  the generous measurement ceiling or timeout outcomes cannot be classified
+  correctly; pause Phase 4 lifecycle work while Phases 2 and 3 continue.
 
 ### Phase 2: Shared Font Search Records
 
@@ -260,14 +280,26 @@ Tasks:
 - [ ] Integrate searchable-family records and ranked choices into the existing
       font-hint suggestion service.
 - [ ] Preserve one discovery promise per Interactive session.
-- [ ] Apply the Phase 1 decision to the subprocess timeout and outer deadline.
-- [ ] Remove the post-completion elapsed-time rejection while retaining one
-      effective hard safety budget.
-- [ ] Ensure the winning deadline cancels the discovery subprocess.
+- [ ] Race discovery against a three-second automatic-wait threshold without
+      treating that threshold as a timeout.
+- [ ] If the soft threshold wins, show `Continue with custom input` and
+      `Keep waiting for installed fonts` once.
+- [ ] Make custom input the default slow-path choice; cancel discovery and cache
+      the unavailable outcome when selected.
+- [ ] Reuse the same discovery promise when continued waiting is selected.
+- [ ] Show and clear concise waiting status while continued waiting is active.
+- [ ] Enforce one ten-second total hard safety ceiling from the original
+      discovery start without resetting it after the slow-path choice.
+- [ ] Ensure the hard deadline cancels the discovery subprocess.
+- [ ] Remove the post-completion elapsed-time rejection and accept a successful
+      result that wins before the hard deadline.
+- [ ] Keep the visible slow-path choice authoritative if discovery completes
+      while the user is deciding.
 - [ ] Preserve session cancellation and avoid showing an unavailable notice
       after user cancellation.
 - [ ] Keep timeout, empty result, and command failure on the custom-input path.
-- [ ] Show the unavailable notice at most once per session.
+- [ ] Do not show an unavailable notice after explicit custom selection; show it
+      at most once for other fallback outcomes.
 - [ ] Verify later font prompts reuse the cached result without another
       fontconfig call.
 - [ ] Preserve the current `fontHints[]` ordering and direct-helper behavior.
@@ -275,9 +307,14 @@ Tasks:
 
 Phase gate:
 
-- The first font prompt obeys the selected blocking budget.
-- Near-boundary success, timeout, cancellation, failure, empty result, and cache
-  reuse have distinct deterministic tests.
+- The first font prompt waits automatically for no more than three seconds
+  before offering the conditional slow path.
+- Continued waiting never extends the ten-second total process ceiling.
+- Soft-threshold races, both slow-path choices, near-hard-boundary success,
+  timeout, cancellation, failure, empty result, and cache reuse have distinct
+  deterministic tests.
+- Completion while the slow-path prompt is open honors the user's eventual
+  choice without restarting discovery.
 - Custom input remains reachable in every unavailable path.
 
 ### Phase 5: Validation, Guidance, And Closeout
@@ -291,7 +328,7 @@ Tasks:
 - [ ] Confirm no network request or discovery-source prompt exists.
 - [ ] Record aggregate public-safe evidence and any environment limitation.
 - [ ] Update current Interactive Markdown PDF guidance for alias-aware search,
-      custom-first selection, and the accepted blocking budget.
+      custom-first selection, and the two-stage responsiveness contract.
 - [ ] Update the related research with evidence, plan/job links, and accurate
       remaining status.
 - [ ] If the Profile-font preservation plan has completed, add one end-to-end
@@ -343,8 +380,10 @@ Use `examples/playground/` for isolated local evidence:
 3. Search by a styled full name and select the returned primary family.
 4. Search with missing spaces or separated tokens.
 5. Enter a custom value that is not installed.
-6. Force missing fontconfig, timeout, cancellation, and empty results.
-7. Revisit the font prompt and confirm the session cache prevents another call.
+6. Force the three-second slow path and choose custom input.
+7. Force the slow path, continue waiting, and complete before the hard ceiling.
+8. Force missing fontconfig, hard timeout, cancellation, and empty results.
+9. Revisit the font prompt and confirm the session cache prevents another call.
 
 Do not record the local font inventory or machine-specific paths in repository
 documents.
@@ -358,13 +397,18 @@ documents.
 - Risk: a scorer produces surprising or unstable ordering.
   Mitigation: define all rank tiers, thresholds, and tie-breakers in fixtures.
 
-- Risk: a relaxed timeout makes Interactive feel blocked.
-  Mitigation: select the budget from Phase 1 evidence and preserve the custom
-  fallback for every unavailable outcome.
+- Risk: a relaxed hard ceiling makes Interactive feel blocked.
+  Mitigation: stop automatic waiting after three seconds and make custom input
+  the default conditional choice.
 
-- Risk: multiple timeout mechanisms disagree near the boundary.
-  Mitigation: enforce one effective budget through subprocess cancellation and
-  an outer deadline; accept successful completion when it wins.
+- Risk: the soft threshold and hard deadline disagree near a boundary.
+  Mitigation: measure both from one discovery start, never reset the hard
+  deadline, reuse the same promise, and accept successful completion when it
+  wins.
+
+- Risk: the slow-path choice adds routine prompt friction.
+  Mitigation: show it only when discovery exceeds three seconds and at most once
+  per session.
 
 - Risk: evidence leaks host font data.
   Mitigation: emit aggregate timing and face-count ranges only.
@@ -376,8 +420,8 @@ Create job records when their work begins:
 - `docs/plans/jobs/YYYY-MM-DD-interactive-markdown-pdf-font-search-evidence.md`
 - `docs/plans/jobs/YYYY-MM-DD-interactive-markdown-pdf-font-search-implementation.md`
 
-The evidence job owns Phase 1 and its Continue/Constrain/Stop decision. The
-implementation job owns accepted work from Phases 2–5.
+The evidence job owns Phase 1, the policy check, and any environment limitation.
+The implementation job owns accepted work from Phases 2–5.
 
 ## Completion Criteria
 
@@ -388,8 +432,11 @@ This plan is complete only when:
 - `font inspect` and `font check` compatibility is proven
 - deterministic ranking and tie-breaking are fixture-defined
 - custom input remains first and installed results remain bounded
-- the timeout direction follows recorded evidence
-- discovery has one effective, cancellable, session-cached budget
+- the responsiveness policy is checked against recorded environment evidence
+- discovery uses a three-second automatic-wait threshold and one ten-second
+  total hard safety ceiling
+- both conditional slow-path choices reuse or cancel the same discovery attempt
+  as specified
 - timeout, cancellation, failure, empty result, and cache reuse are covered
 - selected installed values enter `fontHints[]` as primary families
 - focused and repository checks pass
