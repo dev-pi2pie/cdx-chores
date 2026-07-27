@@ -82,4 +82,76 @@ describe("shared font family matching", () => {
       ]),
     ).toHaveLength(1);
   });
+
+  test("merges complementary lookup metadata before matching duplicate physical faces", () => {
+    const duplicate = {
+      ...subject,
+      aliases: ["Second Alias"],
+      fullNames: ["Second Alias Regular"],
+    };
+    const faces = [subject, duplicate];
+
+    expect(uniqueFontFaces(faces)).toEqual([
+      {
+        ...subject,
+        aliases: ["Alternate UI", "Second Alias"],
+        fullNames: ["Primary Sans Regular", "Alternate UI Regular", "Second Alias Regular"],
+      },
+    ]);
+    expect(selectFontFaceForCheck(faces, "Second Alias")).toMatchObject({
+      status: "selected",
+      face: { family: "Primary Sans" },
+    });
+  });
+
+  test("keeps exact full-name collisions across primary families inconclusive", () => {
+    expect(
+      selectFontFaceForCheck(
+        [
+          face({
+            family: "First Sans",
+            fullName: "Shared Sans Regular",
+          }),
+          face({
+            family: "Second Sans",
+            fullName: "Shared Sans Regular",
+          }),
+        ],
+        "Shared Sans Regular",
+      ),
+    ).toEqual({ status: "inconclusive", reason: "ambiguous-family" });
+  });
+
+  test("selects one deterministic rank-one face within a primary family", () => {
+    expect(
+      selectFontFaceForCheck(
+        [
+          {
+            ...face({
+              family: "Primary Sans",
+              aliases: ["Shared Sans"],
+              fullName: "Primary Sans Italic",
+            }),
+            path: "/fonts/PrimarySans-Italic.otf",
+            style: "italic",
+          },
+          {
+            ...face({
+              family: "Primary Sans",
+              aliases: ["Shared Sans"],
+              fullName: "Primary Sans Regular",
+            }),
+            path: "/fonts/PrimarySans-Regular.otf",
+          },
+        ],
+        "Shared Sans",
+      ),
+    ).toMatchObject({
+      status: "selected",
+      face: {
+        family: "Primary Sans",
+        fullName: "Primary Sans Regular",
+      },
+    });
+  });
 });
