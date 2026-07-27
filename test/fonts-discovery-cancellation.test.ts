@@ -58,6 +58,8 @@ describe("font discovery cancellation and timeout controls", () => {
     const result = await pending;
 
     expect(result.ok).toBe(false);
+    expect(result.failureKind).toBeUndefined();
+    expect("failureKind" in result).toBe(false);
     expect(Date.now() - startedAt).toBeLessThan(1_000);
   });
 
@@ -70,6 +72,48 @@ describe("font discovery cancellation and timeout controls", () => {
     );
 
     expect(result.ok).toBe(false);
+    expect(result.failureKind).toBe("timeout");
     expect(Date.now() - startedAt).toBeLessThan(1_000);
+  });
+
+  test("reports timeout distinctly in shared discovery attempts", async () => {
+    const result = await discoverSystemFonts({
+      discovery: "fontconfig",
+      includeAttempts: true,
+      runner: async () => ({
+        ok: false,
+        stdout: "",
+        stderr: "private command detail",
+        failureKind: "timeout",
+      }),
+    });
+
+    expect(result.attempts).toEqual([
+      {
+        adapter: "fontconfig",
+        command: "fc-list",
+        status: "timeout",
+        durationMs: expect.any(Number),
+        message: "fontconfig discovery timed out.",
+      },
+    ]);
+    expect(JSON.stringify(result.attempts)).not.toContain("private command detail");
+  });
+
+  test("keeps injected failures without a classification backward-compatible", async () => {
+    const result = await discoverSystemFonts({
+      discovery: "fontconfig",
+      includeAttempts: true,
+      runner: async () => ({
+        ok: false,
+        stdout: "",
+        stderr: "unavailable",
+      }),
+    });
+
+    expect(result.attempts?.[0]).toMatchObject({
+      status: "failed",
+      message: "fc-list was not available or failed.",
+    });
   });
 });

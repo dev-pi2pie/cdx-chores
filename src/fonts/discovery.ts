@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { performance } from "node:perf_hooks";
 
 import { fontconfigFontAdapter } from "./adapters/fontconfig";
 import { linuxFontAdapter } from "./adapters/linux";
@@ -10,6 +11,7 @@ import type {
   FontDiscoveryAdapter,
   FontDiscoveryAttempt,
   FontDiscoveryCommandRunner,
+  FontDiscoveryFailureKind,
   FontDiscoveryRunOptions,
   FontDiscoveryMode,
 } from "./types";
@@ -19,6 +21,19 @@ const DEFAULT_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
 function normalizedTimeoutMs(timeoutMs: number | undefined): number {
   return timeoutMs ?? DEFAULT_TIMEOUT_MS;
+}
+
+function classifyRunnerFailure(
+  error: Error | null,
+  signal: AbortSignal | undefined,
+): FontDiscoveryFailureKind | undefined {
+  if (!error || signal?.aborted || error.name === "AbortError") {
+    return undefined;
+  }
+  if ("killed" in error && error.killed === true) {
+    return "timeout";
+  }
+  return undefined;
 }
 
 export const defaultFontDiscoveryRunner: FontDiscoveryCommandRunner = (command, args, options) =>
@@ -34,10 +49,12 @@ export const defaultFontDiscoveryRunner: FontDiscoveryCommandRunner = (command, 
       },
       (error, stdout, stderr) => {
         const detail = stderr || (error instanceof Error ? error.message : "");
+        const failureKind = classifyRunnerFailure(error, options?.signal);
         resolve({
           ok: !error,
           stdout,
           stderr: detail,
+          ...(failureKind ? { failureKind } : {}),
         });
       },
     );
@@ -86,20 +103,41 @@ function successMessage(command: string): string {
   return `${command} succeeded.`;
 }
 
+function classifiedFailureMessage(
+  command: string,
+  failureKind: "failed" | FontDiscoveryFailureKind,
+): string {
+  if (failureKind === "failed") {
+    return sanitizeCommandFailure(command);
+  }
+  if (command === "fc-list") {
+    return "fontconfig discovery timed out.";
+  }
+  if (command === "system_profiler") {
+    return "macOS native font discovery timed out.";
+  }
+  if (command === "powershell.exe") {
+    return "Windows registry font discovery timed out.";
+  }
+  return `${command} timed out.`;
+}
+
 function createDebugRunner(
   runner: FontDiscoveryCommandRunner,
   attempts: FontDiscoveryAttempt[],
   adapter: string,
 ): FontDiscoveryCommandRunner {
   return async (command, args, options) => {
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const result = await runner(command, args, options);
+    const status = result.ok ? "success" : (result.failureKind ?? "failed");
     attempts.push({
       adapter,
       command,
-      status: result.ok ? "success" : "failed",
-      durationMs: Math.max(0, Date.now() - startedAt),
-      message: result.ok ? successMessage(command) : sanitizeCommandFailure(command),
+      status,
+      durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
+      message:
+        status === "success" ? successMessage(command) : classifiedFailureMessage(command, status),
     });
     return result;
   };

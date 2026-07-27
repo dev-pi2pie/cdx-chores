@@ -18,6 +18,7 @@ export type {
   FontDiscoveryAdapterResult,
   FontDiscoveryCommandResult,
   FontDiscoveryCommandRunner,
+  FontDiscoveryFailureKind,
   FontDiscoveryRunOptions,
   FontDiscoveryMode,
   FontDiscoverySelectionReason,

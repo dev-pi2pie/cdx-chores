@@ -2,7 +2,7 @@
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-27
-status: draft
+status: active
 agent: codex
 ---
 
