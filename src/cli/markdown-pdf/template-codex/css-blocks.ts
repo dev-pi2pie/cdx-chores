@@ -37,12 +37,14 @@ const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly stri
 };
 
 function includesRemoteOrLocalPathReference(css: string): boolean {
-  return (
-    /https?:\/\//iu.test(css) ||
-    /\bfile:\/\//iu.test(css) ||
-    /\burl\s*\(/iu.test(css) ||
-    /\burl\s*\(\s*['"]?(?:\/|[A-Za-z]:\\|~\/|\.\.\/)/iu.test(css) ||
-    /['"](?:\/Users\/|\/home\/|\/var\/|\/tmp\/|[A-Za-z]:\\)/u.test(css)
+  const inspectedCss = [css, normalizeCssForInspection(css, false)];
+  return inspectedCss.some(
+    (value) =>
+      /https?:\/\//iu.test(value) ||
+      /\bfile:\/\//iu.test(value) ||
+      /\burl\s*\(/iu.test(value) ||
+      /\burl\s*\(\s*['"]?(?:\/|[A-Za-z]:\\|~\/|\.\.\/)/iu.test(value) ||
+      /['"](?:\/Users\/|\/home\/|\/var\/|\/tmp\/|[A-Za-z]:\\)/iu.test(value),
   );
 }
 
@@ -58,11 +60,34 @@ function includesRequiredHookRemoval(css: string): boolean {
   );
 }
 
-function stripCssComments(css: string): string {
-  return css.replace(/\/\*[\s\S]*?\*\//gu, "");
+function decodeCssEscape(css: string, index: number): { nextIndex: number; value: string } {
+  const next = css[index + 1];
+  if (next === "\n" || next === "\f") {
+    return { nextIndex: index + 1, value: "" };
+  }
+  if (next === "\r") {
+    return {
+      nextIndex: css[index + 2] === "\n" ? index + 2 : index + 1,
+      value: "",
+    };
+  }
+  const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
+  if (hex) {
+    const codePoint = Number.parseInt(hex, 16);
+    let nextIndex = index + hex.length;
+    const trailingWhitespace = css[nextIndex + 1];
+    if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
+      nextIndex += trailingWhitespace === "\r" && css[nextIndex + 2] === "\n" ? 2 : 1;
+    }
+    return {
+      nextIndex,
+      value: codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD",
+    };
+  }
+  return next ? { nextIndex: index + 1, value: next } : { nextIndex: index, value: "\\" };
 }
 
-function normalizeCssForDeclarationInspection(css: string): string {
+function normalizeCssForInspection(css: string, maskStrings: boolean): string {
   let result = "";
   let quote: '"' | "'" | undefined;
 
@@ -75,17 +100,21 @@ function normalizeCssForDeclarationInspection(css: string): string {
 
     if (quote) {
       if (char === "\\") {
-        index += 1;
-      } else if (char === quote) {
+        const escape = decodeCssEscape(css, index);
+        result += maskStrings ? " " : escape.value.toLowerCase();
+        index = escape.nextIndex;
+        continue;
+      }
+      if (char === quote) {
         quote = undefined;
       }
-      result += " ";
+      result += maskStrings ? " " : char.toLowerCase();
       continue;
     }
 
     if (char === '"' || char === "'") {
       quote = char;
-      result += " ";
+      result += maskStrings ? " " : char;
       continue;
     }
 
@@ -99,31 +128,10 @@ function normalizeCssForDeclarationInspection(css: string): string {
     }
 
     if (char === "\\") {
-      if (next === "\n" || next === "\f") {
-        index += 1;
-        continue;
-      }
-      if (next === "\r") {
-        index += css[index + 2] === "\n" ? 2 : 1;
-        continue;
-      }
-      const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
-      if (hex) {
-        const codePoint = Number.parseInt(hex, 16);
-        result +=
-          codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD";
-        index += hex.length;
-        const trailingWhitespace = css[index + 1];
-        if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
-          index += trailingWhitespace === "\r" && css[index + 2] === "\n" ? 2 : 1;
-        }
-        continue;
-      }
-      if (next) {
-        result += next.toLowerCase();
-        index += 1;
-        continue;
-      }
+      const escape = decodeCssEscape(css, index);
+      result += escape.value.toLowerCase();
+      index = escape.nextIndex;
+      continue;
     }
 
     result += char.toLowerCase();
@@ -132,8 +140,8 @@ function normalizeCssForDeclarationInspection(css: string): string {
   return result;
 }
 
-function includesFontFamilyDeclaration(css: string): boolean {
-  const normalized = normalizeCssForDeclarationInspection(stripCssComments(css));
+function includesFontOwnershipOverride(css: string): boolean {
+  const normalized = normalizeCssForInspection(css, true);
   const declarationMatcher = /(?:^|[;{])\s*([^:{}]+?)\s*:/gu;
   for (const match of normalized.matchAll(declarationMatcher)) {
     const property = match[1]?.trim();
@@ -141,6 +149,7 @@ function includesFontFamilyDeclaration(css: string): boolean {
       continue;
     }
     if (
+      property === "all" ||
       property === "font" ||
       property === "font-family" ||
       /^--template-[a-z0-9_-]+-font$/u.test(property)
@@ -228,9 +237,9 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
       `Markdown PDF template Codex response ${context}.css must preserve required template selectors.`,
     );
   }
-  if (includesFontFamilyDeclaration(css)) {
+  if (includesFontOwnershipOverride(css)) {
     throw new Error(
-      `Markdown PDF template Codex response ${context}.css must not declare font, font-family, or Template font custom properties.`,
+      `Markdown PDF template Codex response ${context}.css must not declare all, font, font-family, or Template font custom properties.`,
     );
   }
   const selectors = topLevelSelectors(css);

@@ -1122,6 +1122,18 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("remote URLs or absolute local paths");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
+        css: '.pdf-cover-media { background-image: u\\72l("h\\74tps://example.com/a.png"); }',
+        slot: "cover",
+      }),
+    ).toThrow("remote URLs or absolute local paths");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: '.pdf-cover-media { background-image: u/**/rl("\\2fUsers/me/a.png"); }',
+        slot: "cover",
+      }),
+    ).toThrow("remote URLs or absolute local paths");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
         css: "@import url(https://example.com/a.css);",
         slot: "colors",
       }),
@@ -1214,11 +1226,19 @@ describe("Markdown PDF template Codex adapter", () => {
         css: 'body { p { --template-body-font: "Nested Variable"; } }',
         slot: "typography" as const,
       },
+      {
+        css: "body { all: initial; }",
+        slot: "typography" as const,
+      },
+      {
+        css: "p { all: unset; }",
+        slot: "typography" as const,
+      },
     ];
 
     for (const block of familyOverrides) {
       expect(() => validateMarkdownPdfTemplateCodexCssBlock(block)).toThrow(
-        "must not declare font, font-family, or Template font custom properties",
+        "must not declare all, font, font-family, or Template font custom properties",
       );
     }
   });
