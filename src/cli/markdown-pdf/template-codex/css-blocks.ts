@@ -59,27 +59,33 @@ function includesRequiredHookRemoval(css: string): boolean {
 }
 
 function stripCssComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//gu, "");
+}
+
+function normalizeCssForDeclarationInspection(css: string): string {
   let result = "";
   let quote: '"' | "'" | undefined;
 
   for (let index = 0; index < css.length; index += 1) {
     const char = css[index];
     const next = css[index + 1];
+    if (!char) {
+      break;
+    }
 
     if (quote) {
-      result += char;
       if (char === "\\") {
-        result += next ?? "";
         index += 1;
       } else if (char === quote) {
         quote = undefined;
       }
+      result += " ";
       continue;
     }
 
     if (char === '"' || char === "'") {
       quote = char;
-      result += char;
+      result += " ";
       continue;
     }
 
@@ -92,96 +98,57 @@ function stripCssComments(css: string): string {
       continue;
     }
 
-    result += char;
+    if (char === "\\") {
+      if (next === "\n" || next === "\f") {
+        index += 1;
+        continue;
+      }
+      if (next === "\r") {
+        index += css[index + 2] === "\n" ? 2 : 1;
+        continue;
+      }
+      const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
+      if (hex) {
+        const codePoint = Number.parseInt(hex, 16);
+        result +=
+          codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD";
+        index += hex.length;
+        const trailingWhitespace = css[index + 1];
+        if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
+          index += trailingWhitespace === "\r" && css[index + 2] === "\n" ? 2 : 1;
+        }
+        continue;
+      }
+      if (next) {
+        result += next.toLowerCase();
+        index += 1;
+        continue;
+      }
+    }
+
+    result += char.toLowerCase();
   }
 
   return result;
 }
 
-function declarationProperties(css: string): string[] {
-  const properties: string[] = [];
-  let blockDepth = 0;
-  let candidate = "";
-  let readingProperty = false;
-  let quote: '"' | "'" | undefined;
-  let parenthesisDepth = 0;
-
-  for (let index = 0; index < css.length; index += 1) {
-    const char = css[index];
-
-    if (quote) {
-      if (char === "\\") {
-        index += 1;
-      } else if (char === quote) {
-        quote = undefined;
-      }
+function includesFontFamilyDeclaration(css: string): boolean {
+  const normalized = normalizeCssForDeclarationInspection(stripCssComments(css));
+  const declarationMatcher = /(?:^|[;{])\s*([^:{}]+?)\s*:/gu;
+  for (const match of normalized.matchAll(declarationMatcher)) {
+    const property = match[1]?.trim();
+    if (!property) {
       continue;
     }
-
-    if (char === '"' || char === "'") {
-      quote = char;
-      continue;
-    }
-
-    if (char === "{") {
-      blockDepth += 1;
-      candidate = "";
-      readingProperty = blockDepth === 1;
-      continue;
-    }
-    if (char === "}") {
-      blockDepth -= 1;
-      candidate = "";
-      readingProperty = false;
-      parenthesisDepth = 0;
-      continue;
-    }
-    if (blockDepth !== 1) {
-      continue;
-    }
-
-    if (readingProperty) {
-      if (char === ":") {
-        properties.push(candidate.trim());
-        candidate = "";
-        readingProperty = false;
-      } else if (char === ";") {
-        candidate = "";
-      } else {
-        candidate += char;
-      }
-      continue;
-    }
-
-    if (char === "(") {
-      parenthesisDepth += 1;
-    } else if (char === ")") {
-      parenthesisDepth = Math.max(0, parenthesisDepth - 1);
-    } else if (char === ";" && parenthesisDepth === 0) {
-      candidate = "";
-      readingProperty = true;
+    if (
+      property === "font" ||
+      property === "font-family" ||
+      /^--template-[a-z0-9_-]+-font$/u.test(property)
+    ) {
+      return true;
     }
   }
-
-  return properties;
-}
-
-function decodeCssIdentifier(identifier: string): string {
-  return identifier.replace(/\\([0-9a-f]{1,6}[ \t\r\n\f]?|.)/giu, (_match, escaped: string) => {
-    const hex = escaped.match(/^[0-9a-f]{1,6}/iu)?.[0];
-    return hex ? String.fromCodePoint(Number.parseInt(hex, 16)) : escaped;
-  });
-}
-
-function includesFontFamilyDeclaration(css: string): boolean {
-  return declarationProperties(stripCssComments(css)).some((property) => {
-    const normalized = decodeCssIdentifier(property).toLowerCase();
-    return (
-      normalized === "font" ||
-      normalized === "font-family" ||
-      /^--template-[a-z0-9_-]+-font$/u.test(normalized)
-    );
-  });
+  return false;
 }
 
 function hasBalancedBraces(css: string): boolean {

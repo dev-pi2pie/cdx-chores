@@ -21,6 +21,7 @@ export {
   deriveMdPdfTemplateCodexFontOwnership,
   EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
   mdPdfTemplateCodexOwnsFontKey,
+  mdPdfTemplateCodexOwnsFontSlot,
 } from "./font-ownership";
 export type {
   MarkdownPdfTemplateCodexFontOwnership,

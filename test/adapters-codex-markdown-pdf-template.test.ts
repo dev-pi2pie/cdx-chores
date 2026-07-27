@@ -1194,6 +1194,26 @@ describe("Markdown PDF template Codex adapter", () => {
         css: ':root { --TeMpLaTe-CoDe-FoNt: "Case Variable"; }',
         slot: "colors" as const,
       },
+      {
+        css: 'body { font-\\\nfamily: "Line Continuation Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: ':root { --template-body-\\\nfont: "Line Continuation Variable"; }',
+        slot: "colors" as const,
+      },
+      {
+        css: 'body { p { font-family: "Nested Override"; } }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { h1 { font: 12pt "Nested Shorthand"; } }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { p { --template-body-font: "Nested Variable"; } }',
+        slot: "typography" as const,
+      },
     ];
 
     for (const block of familyOverrides) {

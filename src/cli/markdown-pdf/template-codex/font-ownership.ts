@@ -79,3 +79,26 @@ export function mdPdfTemplateCodexOwnsFontKey(
   const canonicalKey = canonicalizeProfileFontKey(role, key);
   return ownership.ownedKeys.some((entry) => entry.role === role && entry.key === canonicalKey);
 }
+
+export function mdPdfTemplateCodexOwnsFontSlot(
+  ownership: MarkdownPdfTemplateCodexFontOwnership,
+  role: MarkdownPdfFontRole,
+  key: string,
+): boolean {
+  const canonicalKey = canonicalizeProfileFontKey(role, key);
+  if (role === "body") {
+    return canonicalKey === "default"
+      ? ownership.slots.bodyDefault
+      : ownership.slots.bodyLanguages.includes(canonicalKey);
+  }
+  if (role === "heading" && canonicalKey === "default") {
+    return ownership.slots.headingDefault;
+  }
+  if (role === "code" && (canonicalKey === "default" || canonicalKey === "symbols")) {
+    return ownership.slots.codeStack;
+  }
+  if (role === "pageChrome" && canonicalKey === "default") {
+    return ownership.slots.pageChromeDefault;
+  }
+  return mdPdfTemplateCodexOwnsFontKey(ownership, role, canonicalKey);
+}

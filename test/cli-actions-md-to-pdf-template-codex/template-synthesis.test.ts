@@ -4,6 +4,10 @@ import {
   createMarkdownPdfFontCss,
   normalizeMarkdownPdfProfile,
 } from "../../src/cli/markdown-pdf/profile";
+import {
+  MARKDOWN_PDF_CODE_CLASSES,
+  MARKDOWN_PDF_CODE_FONT_SELECTORS,
+} from "../../src/cli/markdown-pdf/code-style";
 import type { MarkdownPdfTemplateCodexDecision } from "../../src/cli/markdown-pdf/template-codex/codex-decision";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "../../src/cli/markdown-pdf/template-codex/families";
 import { deriveMdPdfTemplateCodexFontOwnership } from "../../src/cli/markdown-pdf/template-codex/font-ownership";
@@ -166,6 +170,12 @@ function expectTocPageBreakCss(
 function bodyLanguageSelector(lang: string): string {
   return `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${lang}),
 :where(p, li, td, th, blockquote, figcaption, dd, dt) > :where(span):lang(${lang})`;
+}
+
+function explicitCodeFontSelector(): string {
+  return `${MARKDOWN_PDF_CODE_FONT_SELECTORS},
+pre.${MARKDOWN_PDF_CODE_CLASSES.plainBlock} code,
+pre.${MARKDOWN_PDF_CODE_CLASSES.highlightedBlock} code`;
 }
 
 function createTemplateDecision(input: {
@@ -421,9 +431,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(
       cssDeclarationsForSelector(withProfile.styleCss, "h1, h2, h3, h4, h5, h6"),
     ).not.toHaveProperty("font-family");
-    expect(cssDeclarationsForSelector(withProfile.styleCss, "code")).not.toHaveProperty(
-      "font-family",
-    );
+    expect(withProfile.styleCss).not.toContain("font-family: var(--template-monospace-font);");
     expect(withProfile.styleCss).not.toContain("Profile Chrome");
     expect(withProfile.styleCss).toContain("@page {\n  size:");
 
@@ -830,6 +838,68 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     ]);
   });
 
+  test("emits only unowned language families under one exact ownership mask", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { ja: "Profile Japanese" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["Japanese and Traditional Chinese body"],
+      pdfContentLangs: ["ja", "zh-Hant"],
+      profileFonts: {
+        families: [{ family: "Profile Japanese", key: "ja", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Noto Serif JP",
+            key: "ja",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+          {
+            family: "Noto Serif TC",
+            key: "zh-Hant",
+            role: "body",
+            source: "font-hint",
+            templateLevel: false,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(result.styleCss).not.toContain(bodyLanguageSelector("ja"));
+    expect(
+      cssDeclarationsForSelector(result.styleCss, bodyLanguageSelector("zh-Hant")),
+    ).toMatchObject({
+      "font-family": '"Noto Serif TC", "Noto Serif", "Georgia", serif',
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "ja",
+        profileOwned: true,
+        status: "blocked",
+      }),
+      expect.objectContaining({
+        key: "zh-Hant",
+        profileOwned: false,
+        status: "applied",
+      }),
+    ]);
+  });
+
   test("allows explicit template-level font decisions to override base-profile fonts", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {
@@ -984,7 +1054,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       signals,
     });
 
-    expect(cssDeclarationsForSelector(blocked.styleCss, "code")).not.toHaveProperty("font-family");
+    expect(blocked.styleCss).not.toContain("font-family: var(--template-monospace-font);");
     expect(blocked.fontDecisions).toEqual([
       expect.objectContaining({
         key: "default",
@@ -993,12 +1063,66 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
         status: "blocked",
       }),
     ]);
-    expect(cssDeclarationsForSelector(explicit.styleCss, "code")).toMatchObject({
-      "font-family": "var(--template-monospace-font)",
-    });
+    expect(cssDeclarationsForSelector(explicit.styleCss, explicitCodeFontSelector())).toMatchObject(
+      {
+        "font-family": "var(--template-monospace-font)",
+      },
+    );
     expect(explicit.fontDecisions).toEqual([
       expect.objectContaining({
         key: "symbols",
+        overridesProfileFont: true,
+        profileOwned: true,
+        reason: "template-level-override",
+        status: "applied",
+      }),
+    ]);
+  });
+
+  test("lets code.default reopen every combined code-family surface", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          code: { default: "Profile Code" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      fontHints: ["explicit code face"],
+      profileFonts: {
+        families: [{ family: "Profile Code", key: "default", role: "code" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Editorial Code",
+            key: "default",
+            role: "code",
+            source: "template-style",
+            templateLevel: true,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+    const selector = explicitCodeFontSelector();
+
+    expect(cssDeclarationsForSelector(result.styleCss, selector)).toEqual({
+      "font-family": "var(--template-monospace-font)",
+    });
+    for (const codeSelector of ["pre", "code", ".cdx-code-line", ".cdx-code-line-content"]) {
+      expect(selector).toContain(codeSelector);
+    }
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "default",
         overridesProfileFont: true,
         profileOwned: true,
         reason: "template-level-override",

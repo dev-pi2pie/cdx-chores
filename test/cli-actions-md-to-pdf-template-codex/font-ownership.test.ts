@@ -5,6 +5,7 @@ import {
   deriveMdPdfTemplateCodexFontOwnership,
   EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
   mdPdfTemplateCodexOwnsFontKey,
+  mdPdfTemplateCodexOwnsFontSlot,
 } from "../../src/cli/markdown-pdf/template-codex/font-ownership";
 
 describe("cli action modules: md pdf-template codex font ownership", () => {
@@ -51,6 +52,8 @@ describe("cli action modules: md pdf-template codex font ownership", () => {
     });
     expect(mdPdfTemplateCodexOwnsFontKey(ownership, "body", "zh-hant")).toBe(true);
     expect(mdPdfTemplateCodexOwnsFontKey(ownership, "code", "default")).toBe(false);
+    expect(mdPdfTemplateCodexOwnsFontSlot(ownership, "code", "default")).toBe(true);
+    expect(mdPdfTemplateCodexOwnsFontSlot(ownership, "code", "symbols")).toBe(true);
   });
 
   test("treats either configured code key as ownership of the combined code stack", () => {
@@ -63,6 +66,20 @@ describe("cli action modules: md pdf-template codex font ownership", () => {
 
     expect(deriveMdPdfTemplateCodexFontOwnership(defaultOnly).slots.codeStack).toBe(true);
     expect(deriveMdPdfTemplateCodexFontOwnership(symbolsOnly).slots.codeStack).toBe(true);
+    expect(
+      mdPdfTemplateCodexOwnsFontSlot(
+        deriveMdPdfTemplateCodexFontOwnership(defaultOnly),
+        "code",
+        "symbols",
+      ),
+    ).toBe(true);
+    expect(
+      mdPdfTemplateCodexOwnsFontSlot(
+        deriveMdPdfTemplateCodexFontOwnership(symbolsOnly),
+        "code",
+        "default",
+      ),
+    ).toBe(true);
   });
 
   test("ignores empty configured families and requires a real compatibility Profile", () => {

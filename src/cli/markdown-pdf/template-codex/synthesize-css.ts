@@ -1,10 +1,14 @@
-import { createMarkdownPdfCodeCss } from "../code-style";
+import {
+  createMarkdownPdfCodeCss,
+  MARKDOWN_PDF_CODE_CLASSES,
+  MARKDOWN_PDF_CODE_FONT_SELECTORS,
+} from "../code-style";
 import { resolveEffectiveMarkdownPdfTocPageBreak } from "../recipe";
 import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
 import {
-  mdPdfTemplateCodexOwnsFontKey,
+  mdPdfTemplateCodexOwnsFontSlot,
   type MarkdownPdfTemplateCodexFontOwnership,
 } from "./font-ownership";
 import type {
@@ -62,9 +66,18 @@ function shouldEmitOwnedFontSlot(input: {
   role: MarkdownPdfTemplateCodexMaterializedFontDecision["role"];
 }): boolean {
   return (
-    !mdPdfTemplateCodexOwnsFontKey(input.ownership, input.role, input.key) ||
+    !mdPdfTemplateCodexOwnsFontSlot(input.ownership, input.role, input.key) ||
     hasTemplateLevelFontOverride(input)
   );
+}
+
+function explicitCodeFontOverrideCss(): string {
+  return `${MARKDOWN_PDF_CODE_FONT_SELECTORS},
+pre.${MARKDOWN_PDF_CODE_CLASSES.plainBlock} code,
+pre.${MARKDOWN_PDF_CODE_CLASSES.highlightedBlock} code {
+  font-family: var(--template-monospace-font);
+}
+`;
 }
 
 function bodyLanguageFontCss(input: {
@@ -295,12 +308,13 @@ export function synthesizeMdPdfTemplateCodexCss(input: {
     ownership: input.fontOwnership,
     role: "heading",
   });
+  const explicitCodeFontOverride = input.fontDecisions.some(
+    (decision) =>
+      decision.status === "applied" && decision.templateLevel && decision.role === "code",
+  );
   const emitCodeFont =
-    !input.fontOwnership.slots.codeStack ||
-    input.fontDecisions.some(
-      (decision) =>
-        decision.status === "applied" && decision.templateLevel && decision.role === "code",
-    );
+    !mdPdfTemplateCodexOwnsFontSlot(input.fontOwnership, "code", "default") ||
+    explicitCodeFontOverride;
 
   return `${identityComment(input)}
 @page {
@@ -393,11 +407,16 @@ pre {
   white-space: pre-wrap;
 }
 
-code {
-  ${emitCodeFont ? "font-family: var(--template-monospace-font);" : ""}
+${
+  emitCodeFont && !explicitCodeFontOverride
+    ? `code {
+  font-family: var(--template-monospace-font);
+}`
+    : ""
 }
 
 ${createMarkdownPdfCodeCss()}
+${explicitCodeFontOverride ? explicitCodeFontOverrideCss() : ""}
 
 blockquote {
   border-left: 3pt solid #d0d7de;

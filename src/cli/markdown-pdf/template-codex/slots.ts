@@ -11,7 +11,7 @@ import type {
 } from "./types";
 import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
 import {
-  mdPdfTemplateCodexOwnsFontKey,
+  mdPdfTemplateCodexOwnsFontSlot,
   type MarkdownPdfTemplateCodexFontOwnership,
 } from "./font-ownership";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES } from "./families";
@@ -95,9 +95,7 @@ function profileOwnsTemplateFontRole(
   fontOwnership?: MarkdownPdfTemplateCodexFontOwnership,
 ): boolean {
   if (fontOwnership) {
-    return decision.role === "code"
-      ? fontOwnership.slots.codeStack
-      : mdPdfTemplateCodexOwnsFontKey(fontOwnership, decision.role, decision.key);
+    return mdPdfTemplateCodexOwnsFontSlot(fontOwnership, decision.role, decision.key);
   }
   if (!signals.baseProfile.available) {
     return false;
