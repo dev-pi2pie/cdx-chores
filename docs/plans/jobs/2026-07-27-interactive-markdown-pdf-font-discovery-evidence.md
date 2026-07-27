@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF font discovery evidence"
 created-date: 2026-07-27
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
@@ -195,8 +195,7 @@ this closeout reconciles it with the completed post-review validation.
 
 ## Later Complete-Plan Correction
 
-Status: in progress; correction validation is complete and final widened review
-is pending.
+Status: completed.
 
 The Phase 5 complete-plan review later found that the spike's latency summaries
 included failed and timed-out attempts, contrary to this research contract:
@@ -214,9 +213,29 @@ The accepted correction:
 
 The original recorded timing values do not change because all calls in those
 live evidence series succeeded. Targeted validation, the full repository suite,
-typecheck, lint, formatting, build, and diff checks pass after the correction.
-The correction commit and final widened review disposition will be recorded
-after that review completes.
+typecheck, lint, formatting, build, and diff checks pass after the correction:
+
+- the correction-focused slice passed 20 tests and 107 assertions across 3
+  files
+- the complete repository suite passed 1,797 tests and 9,448 assertions across
+  226 files
+- `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+  `bun run build`, and `git diff --check` passed
+
+Correction commits:
+
+- `3058a67` — filter latency summaries to successful calls and reopen premature
+  closeout status
+- `aed6e75` — make successful-run report groups explicit, use schema version 2,
+  and add this durable follow-up record
+- `64deca8` — add the public-safe aggregate face-count range and unsuccessful
+  first-run regression coverage
+
+Final widened correctness, test, and maintainability review approved
+`071bdafab69c22a9de4944aa8bf127f3632c08f2..64deca8` with no remaining
+actionable implementation or evidence findings. Documentation review requested
+only the final status and exact-range bookkeeping recorded here and in the
+implementation plan and Phase 5 job.
 
 ## Artifact Cleanup
 

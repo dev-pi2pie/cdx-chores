@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-27
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
@@ -293,9 +293,7 @@ Checkpoint commits:
 Starting commit:
 `adb0a09db6313f9e21298436ccb350892608542e`
 
-Status: in progress; the first corrective review passed implementation
-correctness but requested explicit success-only report naming and durable
-Phase 1 follow-up traceability.
+Status: completed.
 
 Validation:
 
@@ -306,8 +304,11 @@ Validation:
   9 files.
 - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
   `bun run build`, and `git diff --check` passed.
-- The complete repository suite passed with 1,796 tests and 9,440 assertions
-  across 226 files.
+- The complete repository suite initially passed with 1,796 tests and 9,440
+  assertions across 226 files.
+- After final evidence corrections, the correction-focused slice passed 20
+  tests and 107 assertions across 3 files, and the complete repository suite
+  passed with 1,797 tests and 9,448 assertions across 226 files.
 
 Live evidence:
 
@@ -365,4 +366,25 @@ Review status:
 - First widened complete-plan review covered
   `071bdafab69c22a9de4944aa8bf127f3632c08f2..3058a67`. It additionally
   requested a follow-up correction record in the Phase 1 evidence job.
-- These findings are accepted. Final widened review is pending.
+- All review findings were accepted except one pre-existing `font check`
+  path-tie-breaker coverage suggestion from code last changed before this plan;
+  it has no demonstrated regression and remains outside this plan's closeout
+  scope.
+- Final widened correctness, test, and maintainability review approved
+  `adb0a09db6313f9e21298436ccb350892608542e..64deca8` and
+  `071bdafab69c22a9de4944aa8bf127f3632c08f2..64deca8` with no remaining
+  actionable implementation, evidence, or maintainability findings.
+- Documentation review requested only final status and exact-range bookkeeping;
+  this closeout records it.
+
+Phase gate: passed. Focused and repository validation, public-safe live
+evidence, current guidance, research traceability, and both exact-range reviews
+are complete with no unresolved actionable finding.
+
+Checkpoint commits:
+
+- `07de7cc` — Phase 5 evidence, guidance, research, and initial closeout record.
+- `3058a67` — successful-only latency aggregation and provisional status
+  correction.
+- `aed6e75` — explicit successful-run schema and durable Phase 1 follow-up.
+- `64deca8` — aggregate face-count evidence and unsuccessful-first-run coverage.
