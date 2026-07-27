@@ -200,7 +200,7 @@ direct Template and Project production paths.
 
 ## Phase 3: Direct Template, Project, And Interactive Integration
 
-Status: in progress.
+Status: completed.
 
 ### Scope
 
@@ -219,19 +219,35 @@ Public signal and report schemas remain unchanged.
 
 ### Evidence
 
-Pending.
+- Phase 3 landed in four checkpoints after the Phase 2 range:
+  - `899adf4` — wire ownership into direct Template generation.
+  - `d9b8650` — enforce project font ownership.
+  - `f6c92db` — cover interactive ownership inheritance.
+  - `ec40282` — defer template adapter loading in the project phase.
+- Direct Template and Project now derive one shared ownership-aware synthesis
+  path from the real normalized Profile.
+- Public signal and report schemas stay bounded; the internal ownership mask is
+  not serialized into prompt, signal, or report artifacts.
+- Project validation recomputes the effective ownership boundary from the final
+  normalized Profile and rejects hidden family overrides in bounded CSS blocks.
 
 ### Verification
 
-Pending.
+- Focused Phase 3 suites: 435 passed, 0 failed across 37 files.
+- Full repository suite: 1,823 passed, 0 failed across 228 files.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bun run build` passed.
+- `git diff --check` passed.
 
 ### Review
 
-Pending.
+- Exact range reviewed: `e3b4d1aa226e2394b906b7066d0352f0de862ca6..ec402825425b6d7e3a6ee841f95a88eb5e24caf7`.
+- Review outcome: no remaining actionable findings in the reviewed Phase 3 scope.
 
 ### Gate
 
-Pending.
+Passed.
 
 ## Checkpoint Commits
 
@@ -251,7 +267,10 @@ Pending.
 
 ### Phase 3
 
-Pending.
+- `899adf4` — wire ownership into direct Template generation.
+- `d9b8650` — enforce project font ownership.
+- `f6c92db` — cover interactive ownership inheritance.
+- `ec40282` — defer template adapter loading in the project phase.
 
 ## Related Documents
 

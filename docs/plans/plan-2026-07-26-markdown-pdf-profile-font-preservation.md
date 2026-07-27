@@ -289,27 +289,27 @@ Phase gate:
 
 Tasks:
 
-- [ ] Apply the shared synthesis behavior to direct Template generation.
-- [ ] Apply the same behavior to the Project Template phase through its final
+- [x] Apply the shared synthesis behavior to direct Template generation.
+- [x] Apply the same behavior to the Project Template phase through its final
       normalized Profile.
-- [ ] Preserve Project rejection of explicit Profile-owned Template overrides.
-- [ ] Verify Project reports and validation use the same effective ownership
+- [x] Preserve Project rejection of explicit Profile-owned Template overrides.
+- [x] Verify Project reports and validation use the same effective ownership
       boundary as generated CSS.
-- [ ] Assert direct Template and Project report artifacts preserve their bounded
+- [x] Assert direct Template and Project report artifacts preserve their bounded
       public shapes without serializing the internal ownership mask or full
       normalized Profile.
-- [ ] Verify Project cannot accept a family override hidden in a bounded CSS
+- [x] Verify Project cannot accept a family override hidden in a bounded CSS
       block.
-- [ ] Verify direct Template reports distinguish blocked, applied, and explicit
+- [x] Verify direct Template reports distinguish blocked, applied, and explicit
       override decisions without claiming a generated Profile.
-- [ ] Verify Interactive Template and Project authoring inherit the shared
+- [x] Verify Interactive Template and Project authoring inherit the shared
       behavior without Interactive-only branches.
-- [ ] Cover no-base-profile, ordinary hint, explicit direct override, Project
+- [x] Cover no-base-profile, ordinary hint, explicit direct override, Project
       rejection, deterministic fallback, and overflow-ownership cases.
-- [ ] Cover the combined `code.default`/`code.symbols` declaration.
-- [ ] Cover canonical language keys, empty configured families, Template fallback
+- [x] Cover the combined `code.default`/`code.symbols` declaration.
+- [x] Cover canonical language keys, empty configured families, Template fallback
       candidates without `--base-profile`, and Template-owned cover typography.
-- [ ] Review the Phase 3 commit range and resolve all actionable findings.
+- [x] Review the Phase 3 commit range and resolve all actionable findings.
 
 Phase gate:
 
