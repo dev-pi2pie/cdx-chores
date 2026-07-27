@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-27
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-interactive-markdown-pdf-installed-font-search.md
 ---
