@@ -410,10 +410,12 @@ describe("cli action modules: md pdf-template codex integration", () => {
           status: "applied",
         }),
       ]);
+      expect(JSON.stringify(report)).not.toContain("fontOwnership");
+      expect(JSON.stringify(report)).not.toContain("ownedKeys");
     });
   });
 
-  test("reproduces preset family output through the direct base-profile action path", async () => {
+  test("preserves real base-profile font ownership through the direct action path", async () => {
     await withTempFixtureDir(
       "md-pdf-template-codex-action-base-profile-font-conflict",
       async (fixtureDir) => {
@@ -422,6 +424,8 @@ describe("cli action modules: md pdf-template codex integration", () => {
         await writeFile(
           profilePath,
           [
+            "metadata:",
+            "  internalMarker: FULL_PROFILE_PRIVATE_MARKER",
             "fonts:",
             "  body:",
             "    default: Profile Body",
@@ -465,7 +469,9 @@ describe("cli action modules: md pdf-template codex integration", () => {
         );
         expect(styleCss).toContain("font-size: 10.5pt;");
         expect(styleCss).toContain("line-height: 1.5;");
-        expect(styleCss).toContain("font-family: var(--template-body-font);");
+        expect(styleCss).not.toMatch(/body \{[^}]*font-family:/s);
+        expect(styleCss).not.toMatch(/h1, h2, h3, h4, h5, h6 \{[^}]*font-family:/s);
+        expect(styleCss).not.toMatch(/(?:^|\n)code \{[^}]*font-family:/s);
         expect(styleCss).not.toContain("Profile Heading");
         expect(styleCss).not.toContain("Profile Chrome");
 
@@ -493,6 +499,126 @@ describe("cli action modules: md pdf-template codex integration", () => {
             reason: "profile-font-owned",
             role: "heading",
             status: "blocked",
+          }),
+        ]);
+        const serializedReport = JSON.stringify(report);
+        expect(serializedReport).not.toContain("fontOwnership");
+        expect(serializedReport).not.toContain("ownedKeys");
+        expect(serializedReport).not.toContain("FULL_PROFILE_PRIVATE_MARKER");
+      },
+    );
+  });
+
+  test("uses ownership only for real base Profiles in deterministic synthesis", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-deterministic-font-ownership",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const profileOutputPath = join(fixtureDir, "profile-template-output");
+        const fallbackOutputPath = join(fixtureDir, "fallback-template-output");
+        await writeFile(
+          profilePath,
+          [
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "  heading:",
+            "    default: Profile Heading",
+            "  code:",
+            "    symbols: Profile Symbols",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          output: toRepoRelativePath(profileOutputPath),
+        });
+        await actionMdPdfTemplateCodex(runtime, {
+          output: toRepoRelativePath(fallbackOutputPath),
+          preset: "report",
+        });
+
+        const profileCss = await readFile(join(profileOutputPath, "style.css"), "utf8");
+        expect(profileCss).not.toMatch(/body \{[^}]*font-family:/s);
+        expect(profileCss).not.toMatch(/h1, h2, h3, h4, h5, h6 \{[^}]*font-family:/s);
+        expect(profileCss).not.toMatch(/(?:^|\n)code \{[^}]*font-family:/s);
+
+        const fallbackCss = await readFile(join(fallbackOutputPath, "style.css"), "utf8");
+        expect(fallbackCss).toMatch(/body \{[^}]*font-family: var\(--template-body-font\);/s);
+        expect(fallbackCss).toMatch(
+          /h1, h2, h3, h4, h5, h6 \{[^}]*font-family: var\(--template-heading-font\);/s,
+        );
+        expect(fallbackCss).toMatch(
+          /(?:^|\n)code \{[^}]*font-family: var\(--template-monospace-font\);/s,
+        );
+      },
+    );
+  });
+
+  test("applies and reports an explicit direct Template font override", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-base-profile-font-override",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(
+          profilePath,
+          ["fonts:", "  heading:", "    default: Profile Heading", ""].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          intent: "Use a distinct Template heading face",
+          output: toRepoRelativePath(outputPath),
+          keepCodexReport: true,
+          codexRunner: stubCodexRunner(
+            codexTemplateResponse({
+              fontDecisions: [
+                {
+                  family: "Template Heading",
+                  key: "default",
+                  role: "heading",
+                  source: "template-style",
+                  template_level: true,
+                },
+              ],
+            }),
+          ),
+        });
+
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(styleCss).toContain('--template-heading-font: "Template Heading", sans-serif;');
+        expect(styleCss).toMatch(
+          /h1, h2, h3, h4, h5, h6 \{[^}]*font-family: var\(--template-heading-font\);/s,
+        );
+
+        const report = JSON.parse(
+          await readFile(join(outputPath, "template.codex-report.json"), "utf8"),
+        ) as {
+          decision: {
+            fontDecisions: Array<{
+              family: string;
+              overridesProfileFont: boolean;
+              profileOwned: boolean;
+              reason: string;
+              status: string;
+              templateLevel: boolean;
+            }>;
+          };
+        };
+        expect(report.decision.fontDecisions).toEqual([
+          expect.objectContaining({
+            family: "Template Heading",
+            overridesProfileFont: true,
+            profileOwned: true,
+            reason: "template-level-override",
+            status: "applied",
+            templateLevel: true,
           }),
         ]);
       },

@@ -14,6 +14,10 @@ import {
   hasExplicitKeepMetadataTitleIntent,
 } from "../profile/title-intent";
 import { collectTemplateCodexCoverImageSignals } from "./cover-assets";
+import {
+  deriveMdPdfTemplateCodexFontOwnership,
+  type MarkdownPdfTemplateCodexFontOwnership,
+} from "./font-ownership";
 import { collectMdPdfTemplateCodexRecipeSignals } from "./recipe-signals";
 import { classifyMdPdfTemplateCodexSignalMode } from "./signal-mode";
 import type { CliRuntime } from "../../types";
@@ -22,10 +26,15 @@ import type {
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";
 
-export async function collectMdPdfTemplateCodexSignals(
+interface MdPdfTemplateCodexSignalContext {
+  fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
+  signals: MdPdfTemplateCodexSignalCollection;
+}
+
+export async function collectMdPdfTemplateCodexSignalContext(
   runtime: CliRuntime,
   state: NormalizedMdPdfTemplateCodexCommandState,
-): Promise<MdPdfTemplateCodexSignalCollection> {
+): Promise<MdPdfTemplateCodexSignalContext> {
   const markdown = state.inputPath ? await readTextFileRequired(state.inputPath) : undefined;
   const baseProfileCandidate = state.baseProfilePath
     ? await loadMarkdownPdfBaseProfileCandidate({
@@ -38,17 +47,19 @@ export async function collectMdPdfTemplateCodexSignals(
     throw new Error("No Markdown PDF profile candidates are available.");
   }
 
-  const selectedProfile = baseProfileCandidate ?? fallbackProfileCandidate!;
-  const normalizedSelectedProfile = normalizeMarkdownPdfProfile({
-    profile: selectedProfile.fullProfile,
-  });
+  const normalizedBaseProfile = baseProfileCandidate
+    ? normalizeMarkdownPdfProfile({ profile: baseProfileCandidate.fullProfile })
+    : undefined;
+  const normalizedSelectedProfile =
+    normalizedBaseProfile ??
+    normalizeMarkdownPdfProfile({
+      profile: fallbackProfileCandidate!.fullProfile,
+    });
   const documentSignals = markdown
     ? collectMarkdownPdfDocumentSignals(markdown)
     : createAbsentMarkdownPdfDocumentSignals();
   const recipe = collectMdPdfTemplateCodexRecipeSignals({
-    baseProfileRecipeOptions: baseProfileCandidate
-      ? normalizeMarkdownPdfProfile({ profile: baseProfileCandidate.fullProfile }).recipeOptions
-      : undefined,
+    baseProfileRecipeOptions: normalizedBaseProfile?.recipeOptions,
     documentSignals,
     explicitRecipe: state.explicitRecipe,
   });
@@ -64,28 +75,42 @@ export async function collectMdPdfTemplateCodexSignals(
   });
 
   return {
-    signalMode,
-    documentSignals,
-    baseProfile: {
-      available: Boolean(baseProfileCandidate),
-      summary: baseProfileCandidate?.summary,
+    ...(normalizedBaseProfile
+      ? {
+          fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedBaseProfile.profile),
+        }
+      : {}),
+    signals: {
+      signalMode,
+      documentSignals,
+      baseProfile: {
+        available: Boolean(baseProfileCandidate),
+        summary: baseProfileCandidate?.summary,
+      },
+      recipe,
+      title: {
+        ...(baseProfileCandidate
+          ? {
+              baseProfileMetadataTitle: normalizedSelectedProfile.profile.titleBlock.metadataTitle,
+            }
+          : {}),
+        explicitKeepMetadataTitleIntent: hasExplicitKeepMetadataTitleIntent(state.intent ?? ""),
+        explicitHideMetadataTitleIntent: hasExplicitHideMetadataTitleIntent(state.intent ?? ""),
+      },
+      fonts: {
+        hints: state.fontHints,
+        profileFonts: collectMarkdownPdfFontSignals({
+          profile: normalizedSelectedProfile.profile,
+        }),
+      },
+      coverImage,
     },
-    recipe,
-    title: {
-      ...(baseProfileCandidate
-        ? {
-            baseProfileMetadataTitle: normalizedSelectedProfile.profile.titleBlock.metadataTitle,
-          }
-        : {}),
-      explicitKeepMetadataTitleIntent: hasExplicitKeepMetadataTitleIntent(state.intent ?? ""),
-      explicitHideMetadataTitleIntent: hasExplicitHideMetadataTitleIntent(state.intent ?? ""),
-    },
-    fonts: {
-      hints: state.fontHints,
-      profileFonts: collectMarkdownPdfFontSignals({
-        profile: normalizedSelectedProfile.profile,
-      }),
-    },
-    coverImage,
   };
+}
+
+export async function collectMdPdfTemplateCodexSignals(
+  runtime: CliRuntime,
+  state: NormalizedMdPdfTemplateCodexCommandState,
+): Promise<MdPdfTemplateCodexSignalCollection> {
+  return (await collectMdPdfTemplateCodexSignalContext(runtime, state)).signals;
 }

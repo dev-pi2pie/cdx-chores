@@ -1,4 +1,4 @@
-import { suggestMarkdownPdfTemplateWithCodex } from "../../../adapters/codex/markdown-pdf-template";
+import type { MarkdownPdfTemplateCodexResult } from "../../../adapters/codex/markdown-pdf-template/types";
 import {
   createCodexProgressSession,
   createDirectCodexProgressPresenter,
@@ -6,7 +6,7 @@ import {
 } from "../../actions/codex-progress";
 import type { CliRuntime } from "../../types";
 import { assertUsableMdPdfTemplateCodexSignalMode } from "./signal-mode";
-import { collectMdPdfTemplateCodexSignals } from "./signals";
+import { collectMdPdfTemplateCodexSignalContext } from "./signals";
 import { normalizeMdPdfTemplateCodexCommandState } from "./options";
 import {
   planMdPdfTemplateCodexOutput,
@@ -32,7 +32,7 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
   state: NormalizedMdPdfTemplateCodexCommandState;
-}): ReturnType<typeof suggestMarkdownPdfTemplateWithCodex> {
+}): Promise<MarkdownPdfTemplateCodexResult> {
   const codexProgress = createCodexProgressSession(
     input.options.codexProgressPresenter ??
       createDirectCodexProgressPresenter(input.runtime.stderr),
@@ -40,6 +40,8 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
   codexProgress.begin("Requesting Codex Markdown PDF template recommendation");
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
+    const { suggestMarkdownPdfTemplateWithCodex } =
+      await import("../../../adapters/codex/markdown-pdf-template");
     const result = await suggestMarkdownPdfTemplateWithCodex({
       intent: input.state.intent,
       outputPlan: input.outputPlan,
@@ -64,7 +66,7 @@ export async function prepareMdPdfTemplateCodex(
   options: MdPdfTemplateCodexOptions,
 ): Promise<PreparedMdPdfTemplateCodexArtifact> {
   const state = await normalizeMdPdfTemplateCodexCommandState(runtime, options);
-  const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+  const { fontOwnership, signals } = await collectMdPdfTemplateCodexSignalContext(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
   const outputPlan = await planMdPdfTemplateCodexOutput({
     runtime,
@@ -84,10 +86,11 @@ export async function prepareMdPdfTemplateCodex(
               state,
             })
           ).decision,
+          fontOwnership,
           outputPlan,
           signals,
         })
-      : synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+      : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
   if (!state.dryRun && synthesis.decisionMode !== "no-usable-template") {
     await validateMdPdfTemplateCodexOutputWritability({
       plan: outputPlan,

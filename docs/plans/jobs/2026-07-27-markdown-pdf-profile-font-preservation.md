@@ -198,6 +198,41 @@ contracts remain bounded, explicit overrides remain deliberate, and non-font
 Template styling remains intact. Phase 3 may wire the shared behavior into
 direct Template and Project production paths.
 
+## Phase 3: Direct Template, Project, And Interactive Integration
+
+Status: in progress.
+
+### Scope
+
+Phase 3 wires the internal ownership mask into direct Template preparation and
+the Project Template phase, makes Project compatibility validation derive the
+same ownership boundary from the final normalized Profile, and verifies that
+Interactive authoring inherits both paths without a separate ownership branch.
+Public signal and report schemas remain unchanged.
+
+### Starting Boundary
+
+- Starting commit:
+  `e3b4d1aa226e2394b906b7066d0352f0de862ca6`
+- The worktree was clean before Phase 3 began.
+- Phase 2 passed its gate and exact-range review.
+
+### Evidence
+
+Pending.
+
+### Verification
+
+Pending.
+
+### Review
+
+Pending.
+
+### Gate
+
+Pending.
+
 ## Checkpoint Commits
 
 ### Phase 1
@@ -213,6 +248,10 @@ direct Template and Project production paths.
 - `8fd1731` — reject CSS-wide family resets and escaped path bypasses.
 - `21ebebe` — reject nested generated CSS rules.
 - `f73b0fb` — make brace inspection safe for quoted and commented content.
+
+### Phase 3
+
+Pending.
 
 ## Related Documents
 
