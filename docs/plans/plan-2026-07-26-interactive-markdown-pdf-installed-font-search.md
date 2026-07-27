@@ -2,7 +2,7 @@
 title: "Interactive Markdown PDF installed-font search implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-27
-status: active
+status: completed
 agent: codex
 ---
 
@@ -346,7 +346,7 @@ Tasks:
 - [x] If the Profile-font preservation plan has completed, add one end-to-end
       Interactive selection-to-render smoke; otherwise record it as a sibling
       plan closeout check without blocking this plan.
-- [ ] Review the Phase 5 and complete-plan commit ranges and resolve all
+- [x] Review the Phase 5 and complete-plan commit ranges and resolve all
       actionable findings.
 
 Phase gate:

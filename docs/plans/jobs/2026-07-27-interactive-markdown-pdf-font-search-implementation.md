@@ -293,8 +293,7 @@ Checkpoint commits:
 Starting commit:
 `adb0a09db6313f9e21298436ccb350892608542e`
 
-Status: in progress; validation and documentation are complete, with exact
-range review pending.
+Status: completed.
 
 Validation:
 
@@ -350,7 +349,9 @@ Documentation:
 
 Review status:
 
-- Pending exact review of
-  `adb0a09db6313f9e21298436ccb350892608542e..<phase-5-candidate>`.
-- Pending complete-plan review of
-  `071bdafab69c22a9de4944aa8bf127f3632c08f2..<phase-5-candidate>`.
+- Exact Phase 5 review covered
+  `adb0a09db6313f9e21298436ccb350892608542e..07de7cc` and found no
+  actionable issues.
+- Exact complete-plan review covered
+  `071bdafab69c22a9de4944aa8bf127f3632c08f2..07de7cc` and found no
+  actionable issues.
