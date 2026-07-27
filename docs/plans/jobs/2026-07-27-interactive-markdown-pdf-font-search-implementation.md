@@ -94,6 +94,8 @@ Review status:
   lookup metadata while keeping physical identity unchanged.
 - Test review requested exact full-name collision and deterministic same-family
   rank-one selection fixtures. Both were added.
+- Final widened test review requested a full-name-substring collision fixture
+  across primary families. It was added before final re-review.
 - Maintainability review requested named matching ranks and broader
   normalization centralization. Named ranks were accepted. Broader
   centralization was rejected because adapter parsing preserves source order

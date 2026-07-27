@@ -122,6 +122,24 @@ describe("shared font family matching", () => {
     ).toEqual({ status: "inconclusive", reason: "ambiguous-family" });
   });
 
+  test("keeps full-name substring collisions across primary families inconclusive", () => {
+    expect(
+      selectFontFaceForCheck(
+        [
+          face({
+            family: "First Sans",
+            fullName: "First Shared Sans Regular",
+          }),
+          face({
+            family: "Second Sans",
+            fullName: "Second Shared Sans Regular",
+          }),
+        ],
+        "Shared Sans Regular",
+      ),
+    ).toEqual({ status: "inconclusive", reason: "ambiguous-family" });
+  });
+
   test("selects one deterministic rank-one face within a primary family", () => {
     expect(
       selectFontFaceForCheck(
