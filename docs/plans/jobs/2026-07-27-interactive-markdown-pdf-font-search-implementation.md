@@ -128,7 +128,10 @@ Checkpoint commits:
 Starting commit:
 `4dee496`
 
-Status: implementation complete; exact-range review pending.
+Implementation ending commit:
+`ec0d92e`
+
+Status: completed.
 
 Implemented:
 
@@ -165,15 +168,37 @@ Verification:
 - `git diff --check`
   - Passed.
 - `bun test`
-  - Passed: 1,789 tests and 9,390 assertions across 226 files.
+  - Initial candidate passed: 1,789 tests and 9,390 assertions across 226
+    files.
+  - Post-review fixes passed: 1,790 tests and 9,392 assertions across 226
+    files.
 
 Review status:
 
-- Exact-range review will begin after the validated implementation checkpoint.
+- The initial exact review covered `4dee496..3e814d5`.
+- Correctness and documentation review approved the initial range.
+- Maintainability review requested that the low-level merge helper remain
+  internal, the six-result limit use one shared constant, and the family-only
+  collector remain independent from rich search-record semantics. All three
+  findings were accepted and resolved.
+- Test review requested a deterministic empty-query first-page fixture. It was
+  added with duplicate-family, input-order, and page-limit coverage.
+- Final widened correctness, test, maintainability, and documentation reviews
+  approved `4dee496..ec0d92e` with no actionable findings.
+
+Phase gate: passed. Fixture order determines every result and tie, alias and
+full-name matches return only primary families, and the choice contract remains
+custom-first with at most six installed suggestions.
+
+Checkpoint commits:
+
+- `3e814d5` — deterministic ranking, Interactive search-record integration,
+  tests, and implementation evidence.
+- `ec0d92e` — accepted Phase 3 boundary and empty-query review fixes.
 
 ## Phase 4: Interactive Discovery Lifecycle
 
-Status: pending Phase 3 closeout.
+Status: ready to begin from the Phase 3 closeout boundary.
 
 ## Phase 5: Validation, Guidance, And Closeout
 

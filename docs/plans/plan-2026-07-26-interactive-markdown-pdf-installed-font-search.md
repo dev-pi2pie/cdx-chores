@@ -276,7 +276,7 @@ Tasks:
       names, ambiguous matches, and no-match input.
 - [x] Avoid a fuzzy-search dependency unless the accepted fixture contract
       cannot be expressed by the bounded scorer.
-- [ ] Review the Phase 3 commit range and resolve all actionable findings.
+- [x] Review the Phase 3 commit range and resolve all actionable findings.
 
 Phase gate:
 
