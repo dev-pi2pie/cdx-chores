@@ -77,6 +77,21 @@ describe("installed font search ranking", () => {
     );
   });
 
+  test("returns a stable deduplicated first page before the user types", () => {
+    const records = [
+      record("Gamma Sans"),
+      record("beta sans"),
+      record("Alpha Sans"),
+      record("Beta Sans", ["Beta UI"]),
+    ];
+
+    expect(rankSearchableFontFamilies(records, "", 2)).toEqual(["Alpha Sans", "Beta Sans"]);
+    expect(rankSearchableFontFamilies([...records].reverse(), "", 2)).toEqual([
+      "Alpha Sans",
+      "Beta Sans",
+    ]);
+  });
+
   test("uses stable score details and primary-family spelling to break ambiguous matches", () => {
     expect(
       rankSearchableFontFamilies(
