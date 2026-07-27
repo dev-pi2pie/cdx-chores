@@ -1,8 +1,7 @@
-import {
-  suggestMarkdownPdfTemplateWithCodex,
-  type MarkdownPdfTemplateCodexResult,
-  type MarkdownPdfTemplateCodexRunner,
-} from "../../../adapters/codex/markdown-pdf-template";
+import type {
+  MarkdownPdfTemplateCodexResult,
+  MarkdownPdfTemplateCodexRunner,
+} from "../../../adapters/codex/markdown-pdf-template/types";
 import {
   createCodexProgressSession,
   createDirectCodexProgressPresenter,
@@ -148,6 +147,8 @@ async function suggestProjectTemplateWithCodexProgress(input: {
   codexProgress.begin("Requesting Codex Markdown PDF project template recommendation");
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
+    const { suggestMarkdownPdfTemplateWithCodex } =
+      await import("../../../adapters/codex/markdown-pdf-template");
     const result = input.templateCodexRunner
       ? await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
