@@ -250,6 +250,9 @@ Tasks:
       activate it only for a real compatibility Profile.
 - [ ] Keep the mask separate from the bounded Profile font summary sent to
       Codex and from persisted prompt/report summaries.
+- [ ] Add a focused prompt-shape assertion that Codex receives only the existing
+      bounded `profileFonts` facts and receives neither the internal ownership
+      mask nor the full normalized Profile.
 - [ ] Thread the mask through shared Template theme/CSS synthesis without
       creating a second Profile serializer.
 - [ ] Replace the body `font` shorthand with declarations that preserve
@@ -274,6 +277,8 @@ Tasks:
 Phase gate:
 
 - Generated CSS contains no competing family for every Profile-owned slot.
+- Codex-facing prompt facts remain bounded and exclude the internal ownership
+  mask and full normalized Profile.
 - Bounded CSS blocks cannot bypass the ownership mask or reported
   `font_decisions`.
 - Unowned and explicit direct-override slots retain their intended families.
@@ -290,6 +295,9 @@ Tasks:
 - [ ] Preserve Project rejection of explicit Profile-owned Template overrides.
 - [ ] Verify Project reports and validation use the same effective ownership
       boundary as generated CSS.
+- [ ] Assert direct Template and Project report artifacts preserve their bounded
+      public shapes without serializing the internal ownership mask or full
+      normalized Profile.
 - [ ] Verify Project cannot accept a family override hidden in a bounded CSS
       block.
 - [ ] Verify direct Template reports distinguish blocked, applied, and explicit
@@ -307,6 +315,8 @@ Phase gate:
 
 - Direct Template and Project share one ownership-aware synthesis path.
 - Existing helper and Interactive contracts remain compatible.
+- Direct Template and Project reports remain bounded and exclude internal
+  ownership data.
 - Project validation cannot approve CSS that contradicts its reported font
   ownership.
 
@@ -355,6 +365,7 @@ bun test \
   test/cli-actions-md-to-pdf-template-codex/slots.test.ts \
   test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts \
   test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts \
+  test/cli-actions-md-to-pdf-project-codex/action-write.test.ts \
   test/cli-actions-md-to-pdf-project-codex/template-phase.test.ts \
   test/cli-actions-md-to-pdf-project-codex/validation.test.ts \
   test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts \
@@ -411,6 +422,11 @@ URLs in repository documents.
   Mitigation: derive a boolean CSS-slot mask from the normalized Profile and
   leave font-stack serialization with the Profile renderer.
 
+- Risk: the internal mask or full normalized Profile leaks into a Codex prompt
+  or persisted report.
+  Mitigation: assert the exact bounded prompt and report shapes for direct
+  Template and Project paths.
+
 - Risk: a fallback candidate used without `--base-profile` is mistaken for an
   effective compatibility Profile.
   Mitigation: gate the ownership mask on compatibility-Profile availability and
@@ -452,6 +468,8 @@ This plan is complete only when:
 
 - direct Template and Project reproductions confirm the affected boundary
 - the full normalized Profile determines CSS-slot ownership
+- Codex prompts and persisted reports remain bounded and exclude the internal
+  ownership mask and full normalized Profile
 - generated Template CSS omits competing Profile-owned font declarations
 - bounded CSS blocks cannot introduce an unreported generated family override
 - non-font Template styling remains stable
