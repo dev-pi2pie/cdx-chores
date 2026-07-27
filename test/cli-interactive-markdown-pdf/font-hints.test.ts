@@ -170,6 +170,69 @@ describe("Markdown PDF Interactive font hint model", () => {
     });
   });
 
+  test("keeps custom input first while alias and full-name matches return primary families", () => {
+    const records = [
+      {
+        family: "Noto Sans CJK JP",
+        aliases: ["Noto Sans JP"],
+        fullNames: ["Noto Sans JP Regular"],
+      },
+    ];
+
+    expect(
+      buildMarkdownPdfInteractiveFontHintPreferenceChoices({
+        records,
+        term: "Noto Sans JP",
+      }),
+    ).toEqual([
+      {
+        name: "Noto Sans JP",
+        value: "Noto Sans JP",
+        description: "Use the typed text as a custom font preference.",
+      },
+      "Noto Sans CJK JP",
+    ]);
+    expect(
+      buildMarkdownPdfInteractiveFontHintPreferenceChoices({
+        records,
+        term: "Noto Sans JP Regular",
+      }),
+    ).toEqual([
+      {
+        name: "Noto Sans JP Regular",
+        value: "Noto Sans JP Regular",
+        description: "Use the typed text as a custom font preference.",
+      },
+      "Noto Sans CJK JP",
+    ]);
+  });
+
+  test("limits installed matches to six independently of the custom choice", () => {
+    const choices = buildMarkdownPdfInteractiveFontHintPreferenceChoices({
+      records: Array.from({ length: 8 }, (_, index) => ({
+        family: `Example Sans ${index + 1}`,
+        aliases: [],
+        fullNames: [],
+      })),
+      term: "Example",
+    });
+
+    expect(choices).toHaveLength(7);
+    expect(choices[0]).toEqual({
+      name: "Example",
+      value: "Example",
+      description: "Use the typed text as a custom font preference.",
+    });
+    expect(choices.slice(1)).toEqual([
+      "Example Sans 1",
+      "Example Sans 2",
+      "Example Sans 3",
+      "Example Sans 4",
+      "Example Sans 5",
+      "Example Sans 6",
+    ]);
+  });
+
   test("detects only exact duplicates and preserves explicit collection ordering", () => {
     expect(
       findExactMarkdownPdfInteractiveFontHintDuplicate(
@@ -230,6 +293,42 @@ describe("Markdown PDF Interactive font hint suggestion service", () => {
     expect(await service.promptPreference("Source Serif")).toBe("Source Serif 4");
     expect(discoveryCalls).toBe(1);
     expect(visibleChoices).not.toContain("/private/");
+  });
+
+  test("searches retained alias metadata and returns only the primary family", async () => {
+    const { runtime } = createCapturedRuntime();
+    const service = createMarkdownPdfInteractiveFontHintSuggestionService(runtime, {
+      discover: async () => ({
+        adapter: "fontconfig",
+        discovery: "fontconfig",
+        faces: [
+          {
+            ...face("Noto Sans CJK JP"),
+            aliases: ["Noto Sans JP"],
+            fullName: "Noto Sans CJK JP Regular,Noto Sans JP Regular",
+            fullNames: ["Noto Sans CJK JP Regular", "Noto Sans JP Regular"],
+          },
+        ],
+        warnings: [],
+      }),
+      searchPrompt: (async (options: Parameters<typeof search>[0]) => {
+        expect(
+          await options.source?.("Noto Sans JP Regular", {
+            signal: new AbortController().signal,
+          }),
+        ).toEqual([
+          {
+            name: "Noto Sans JP Regular",
+            value: "Noto Sans JP Regular",
+            description: "Use the typed text as a custom font preference.",
+          },
+          "Noto Sans CJK JP",
+        ]);
+        return "Noto Sans CJK JP";
+      }) as typeof search,
+    });
+
+    expect(await service.promptPreference()).toBe("Noto Sans CJK JP");
   });
 
   test("caches unavailable discovery while falling back to ordinary input each time", async () => {

@@ -2,12 +2,11 @@ import { input } from "@inquirer/prompts";
 import search from "@inquirer/search";
 
 import { discoverSystemFonts } from "../../../../fonts/discovery";
+import { collectSearchableFontFamilies } from "../../../../fonts/search-records";
+import type { SearchableFontFamily } from "../../../../fonts/types";
 import { printLine } from "../../../actions/shared";
 import type { CliRuntime } from "../../../types";
-import {
-  buildMarkdownPdfInteractiveFontHintPreferenceChoices,
-  collectInstalledFontFamilies,
-} from "./suggestions";
+import { buildMarkdownPdfInteractiveFontHintPreferenceChoices } from "./suggestions";
 import {
   promptMarkdownPdfInteractiveFontHintInput,
   promptMarkdownPdfInteractiveFontHintSearch,
@@ -24,7 +23,7 @@ const FONT_HINT_DISCOVERY_ABORTED = Symbol("font-hint-discovery-aborted");
 const FONT_HINT_DISCOVERY_TIMED_OUT = Symbol("font-hint-discovery-timed-out");
 
 type DiscoveryResolution =
-  | { kind: "ready"; families: string[] }
+  | { kind: "ready"; records: SearchableFontFamily[] }
   | { kind: "unavailable"; showNotice: boolean };
 
 type ScheduleDeadline = (callback: () => void, timeoutMs: number) => () => void;
@@ -91,14 +90,14 @@ async function discoverInstalledFamilies(
     if (discovery === FONT_HINT_DISCOVERY_TIMED_OUT) {
       return { kind: "unavailable", showNotice: true };
     }
-    const families = collectInstalledFontFamilies(discovery.faces);
+    const records = collectSearchableFontFamilies(discovery.faces);
     if (now() - startedAt >= timeoutMs) {
       return { kind: "unavailable", showNotice: true };
     }
-    if (families.length === 0) {
+    if (records.length === 0) {
       return { kind: "unavailable", showNotice: true };
     }
-    return { kind: "ready", families };
+    return { kind: "ready", records };
   } catch (error) {
     if (signal.aborted || isAbortError(error)) {
       return { kind: "unavailable", showNotice: false };
@@ -215,7 +214,7 @@ export function createMarkdownPdfInteractiveFontHintSuggestionService(
             return buildMarkdownPdfInteractiveFontHintPreferenceChoices({
               term,
               current: defaultPreference,
-              families: resolution.families,
+              records: resolution.records,
             });
           },
           validate: (value) =>

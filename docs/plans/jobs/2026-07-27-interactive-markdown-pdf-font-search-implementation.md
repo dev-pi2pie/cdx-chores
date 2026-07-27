@@ -105,8 +105,10 @@ Review status:
   section records it above.
 - The widened implementation range is
   `88bdb9607a8638751aef7ce911ad83a9f52b30fb..e992d5104ceec483fcade1e2cc5f92ce56d72702`.
-- Final widened review including this documentation closeout remains the last
-  Phase 2 boundary check.
+- Final widened review covered
+  `88bdb9607a8638751aef7ce911ad83a9f52b30fb..4dee496` and approved the
+  implementation, regression coverage, maintainability, and documentation
+  record with no actionable findings.
 
 Phase gate: passed. Fontconfig lookup metadata is retained without changing the
 primary selected family, shared diagnostics remain deterministic and
@@ -118,10 +120,56 @@ Checkpoint commits:
   compatibility, tests, plan checklist evidence, and this job.
 - `e992d51` — accepted matching and regression fixes from the initial exact
   review.
+- `79d134b` — Phase 2 plan and job closeout.
+- `4dee496` — final ambiguous full-name-substring regression coverage.
 
 ## Phase 3: Deterministic Installed-Font Ranking
 
-Status: pending Phase 2 closeout.
+Starting commit:
+`4dee496`
+
+Status: implementation complete; exact-range review pending.
+
+Implemented:
+
+- Added a dependency-free scorer over searchable-family records with explicit
+  exact, prefix, token-prefix, substring, and ordered-subsequence tiers.
+- Kept family, alias, and full-name field priority deterministic while always
+  returning the primary family.
+- Added bounded compact-query, initialism, and ordered-subsequence behavior for
+  missing-space and abbreviated input without enabling arbitrary two-character
+  subsequences.
+- Merged duplicate primary-family records before ranking and made result order
+  independent of discovery input order.
+- Kept custom input first, removed only an exact normalized primary-family
+  duplicate, and limited installed choices to six independently.
+- Integrated retained search records into the existing suggestion-service cache
+  without changing the Phase 4 timeout lifecycle.
+- Avoided importing the broad font barrel from the Interactive suggestion
+  module so isolated harness mocks do not acquire a discovery-module coupling.
+
+Verification:
+
+- `bun test test/fonts-*.test.ts test/cli-interactive-markdown-pdf/font-hints.test.ts`
+  - Passed: 125 tests and 552 assertions across 22 files.
+- `bun test test/cli-interactive-markdown-pdf/render-sources.test.ts test/cli-interactive-markdown-pdf/lifecycle.test.ts`
+  - Passed: 64 tests across 2 files after narrowing the suggestion imports.
+- `bunx tsc --noEmit`
+  - Passed.
+- `bun run lint`
+  - Passed.
+- `bun run format:check`
+  - Passed.
+- `bun run build`
+  - Passed.
+- `git diff --check`
+  - Passed.
+- `bun test`
+  - Passed: 1,789 tests and 9,390 assertions across 226 files.
+
+Review status:
+
+- Exact-range review will begin after the validated implementation checkpoint.
 
 ## Phase 4: Interactive Discovery Lifecycle
 

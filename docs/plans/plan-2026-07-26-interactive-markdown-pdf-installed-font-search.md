@@ -263,18 +263,18 @@ Phase gate:
 
 Tasks:
 
-- [ ] Implement a small local scorer over searchable-family records.
-- [ ] Rank exact, prefix, token-prefix, substring, and ordered-subsequence
+- [x] Implement a small local scorer over searchable-family records.
+- [x] Rank exact, prefix, token-prefix, substring, and ordered-subsequence
       matches in the settled order.
-- [ ] Define explicit score thresholds and stable tie-breaking from fixtures.
-- [ ] Normalize case and whitespace without changing the selected display value.
-- [ ] Collapse exact duplicate primary families deterministically.
-- [ ] Return the primary family for alias and full-name matches.
-- [ ] Keep typed custom input first and preserve its exact normalized text.
-- [ ] Limit installed results to six independently of the custom choice.
-- [ ] Cover missing spaces, initials, separated tokens, aliases, styled full
+- [x] Define explicit score thresholds and stable tie-breaking from fixtures.
+- [x] Normalize case and whitespace without changing the selected display value.
+- [x] Collapse exact duplicate primary families deterministically.
+- [x] Return the primary family for alias and full-name matches.
+- [x] Keep typed custom input first and preserve its exact normalized text.
+- [x] Limit installed results to six independently of the custom choice.
+- [x] Cover missing spaces, initials, separated tokens, aliases, styled full
       names, ambiguous matches, and no-match input.
-- [ ] Avoid a fuzzy-search dependency unless the accepted fixture contract
+- [x] Avoid a fuzzy-search dependency unless the accepted fixture contract
       cannot be expressed by the bounded scorer.
 - [ ] Review the Phase 3 commit range and resolve all actionable findings.
 

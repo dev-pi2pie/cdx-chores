@@ -28,13 +28,13 @@ interface SearchableFontFamilyGroup {
   fullNames: Map<string, string>;
 }
 
-export function collectSearchableFontFamilies(
-  faces: readonly Pick<FontFace, "family" | "aliases" | "fullName" | "fullNames">[],
+export function mergeSearchableFontFamilies(
+  records: readonly SearchableFontFamily[],
 ): SearchableFontFamily[] {
   const groups = new Map<string, SearchableFontFamilyGroup>();
 
-  for (const face of faces) {
-    const normalizedFamily = normalizeFontQuery(face.family);
+  for (const record of records) {
+    const normalizedFamily = normalizeFontQuery(record.family);
     if (!normalizedFamily) {
       continue;
     }
@@ -43,15 +43,11 @@ export function collectSearchableFontFamilies(
       aliases: new Map<string, string>(),
       fullNames: new Map<string, string>(),
     };
-    addFontName(group.families, face.family);
-    for (const alias of face.aliases ?? []) {
+    addFontName(group.families, record.family);
+    for (const alias of record.aliases) {
       addFontName(group.aliases, alias);
     }
-    const reportedFullNames = face.fullNames ?? [];
-    if (reportedFullNames.length === 0) {
-      addFontName(group.fullNames, face.fullName);
-    }
-    for (const fullName of reportedFullNames) {
+    for (const fullName of record.fullNames) {
       addFontName(group.fullNames, fullName);
     }
     groups.set(normalizedFamily, group);
@@ -71,4 +67,24 @@ export function collectSearchableFontFamilies(
       };
     })
     .sort((left, right) => compareFontNames(left.family, right.family));
+}
+
+export function collectSearchableFontFamilies(
+  faces: readonly Pick<FontFace, "family" | "aliases" | "fullName" | "fullNames">[],
+): SearchableFontFamily[] {
+  return mergeSearchableFontFamilies(
+    faces.map((face) => {
+      const reportedFullNames = face.fullNames ?? [];
+      return {
+        family: face.family,
+        aliases: [...(face.aliases ?? [])],
+        fullNames:
+          reportedFullNames.length > 0
+            ? [...reportedFullNames]
+            : face.fullName.trim()
+              ? [face.fullName]
+              : [],
+      };
+    }),
+  );
 }
