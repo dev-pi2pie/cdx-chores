@@ -142,7 +142,7 @@ function normalizeCssForInspection(css: string, maskStrings: boolean): string {
 
 function includesFontOwnershipOverride(css: string): boolean {
   const normalized = normalizeCssForInspection(css, true);
-  const declarationMatcher = /(?:^|[;{])\s*([^:{}]+?)\s*:/gu;
+  const declarationMatcher = /(?:^|[;{}])\s*([^:{}]+?)\s*:/gu;
   for (const match of normalized.matchAll(declarationMatcher)) {
     const property = match[1]?.trim();
     if (!property) {
@@ -173,6 +173,21 @@ function hasBalancedBraces(css: string): boolean {
     }
   }
   return depth === 0;
+}
+
+function hasNestedRuleBlocks(css: string): boolean {
+  let depth = 0;
+  for (const char of css) {
+    if (char === "{") {
+      depth += 1;
+      if (depth > 1) {
+        return true;
+      }
+    } else if (char === "}") {
+      depth -= 1;
+    }
+  }
+  return false;
 }
 
 function topLevelSelectors(css: string): string[] {
@@ -218,6 +233,11 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
     throw new Error(`Markdown PDF template Codex response ${context}.css must not use @import.`);
   }
   if (/@/u.test(css)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
+    );
+  }
+  if (hasNestedRuleBlocks(css)) {
     throw new Error(
       `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
     );

@@ -1215,18 +1215,6 @@ describe("Markdown PDF template Codex adapter", () => {
         slot: "colors" as const,
       },
       {
-        css: 'body { p { font-family: "Nested Override"; } }',
-        slot: "typography" as const,
-      },
-      {
-        css: 'body { h1 { font: 12pt "Nested Shorthand"; } }',
-        slot: "typography" as const,
-      },
-      {
-        css: 'body { p { --template-body-font: "Nested Variable"; } }',
-        slot: "typography" as const,
-      },
-      {
         css: "body { all: initial; }",
         slot: "typography" as const,
       },
@@ -1240,6 +1228,26 @@ describe("Markdown PDF template Codex adapter", () => {
       expect(() => validateMarkdownPdfTemplateCodexCssBlock(block)).toThrow(
         "must not declare all, font, font-family, or Template font custom properties",
       );
+    }
+  });
+
+  test("rejects nested generated CSS rules instead of inspecting partial branches", () => {
+    const nestedBlocks = [
+      'body { p { font-family: "Nested Override"; } }',
+      'body { h1 { font: 12pt "Nested Shorthand"; } }',
+      'body { p { --template-body-font: "Nested Variable"; } }',
+      'body { p { color: red; } font-family: "Post-nesting Override"; }',
+      "body { p { color: red; } all: initial; }",
+      'body { p { color: red; } --template-body-font: "Post-nesting Variable"; }',
+    ];
+
+    for (const css of nestedBlocks) {
+      expect(() =>
+        validateMarkdownPdfTemplateCodexCssBlock({
+          css,
+          slot: "typography",
+        }),
+      ).toThrow("must use plain selector blocks only");
     }
   });
 
