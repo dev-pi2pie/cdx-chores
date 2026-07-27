@@ -41,7 +41,10 @@ owned by the separate font-discovery evidence job.
 Starting commit:
 `88bdb9607a8638751aef7ce911ad83a9f52b30fb`
 
-Status: in progress.
+Implementation ending commit:
+`e992d5104ceec483fcade1e2cc5f92ce56d72702`
+
+Status: completed.
 
 Implemented:
 
@@ -75,13 +78,44 @@ Verification:
 - `bun run build`
   - Passed.
 - `bun test`
-  - Passed: 1,775 tests and 9,363 assertions across 225 files.
+  - Initial Phase 2 candidate passed: 1,775 tests and 9,363 assertions across
+    225 files.
+  - Post-review fixes passed: 1,778 tests and 9,367 assertions across 225
+    files.
 - `git diff --check`
   - Passed.
 
 Review status:
 
-- Exact Phase 2 commit-range review remains pending.
+- The initial exact review covered
+  `88bdb9607a8638751aef7ce911ad83a9f52b30fb..48c5a9f`.
+- Correctness review found that physical-face deduplication could discard
+  complementary aliases or full names before matching. The accepted fix merges
+  lookup metadata while keeping physical identity unchanged.
+- Test review requested exact full-name collision and deterministic same-family
+  rank-one selection fixtures. Both were added.
+- Maintainability review requested named matching ranks and broader
+  normalization centralization. Named ranks were accepted. Broader
+  centralization was rejected because adapter parsing preserves source order
+  while grouped search records intentionally choose deterministic display
+  spelling.
+- Documentation review requested an explicit implementation end boundary. This
+  section records it above.
+- The widened implementation range is
+  `88bdb9607a8638751aef7ce911ad83a9f52b30fb..e992d5104ceec483fcade1e2cc5f92ce56d72702`.
+- Final widened review including this documentation closeout remains the last
+  Phase 2 boundary check.
+
+Phase gate: passed. Fontconfig lookup metadata is retained without changing the
+primary selected family, shared diagnostics remain deterministic and
+compatible, and Interactive ranking remains outside adapter parsing.
+
+Checkpoint commits:
+
+- `48c5a9f` — additive lookup metadata, searchable-family records, diagnostic
+  compatibility, tests, plan checklist evidence, and this job.
+- `e992d51` — accepted matching and regression fixes from the initial exact
+  review.
 
 ## Phase 3: Deterministic Installed-Font Ranking
 

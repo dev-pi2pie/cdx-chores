@@ -251,7 +251,7 @@ Tasks:
       metadata, duplicate aliases, case variants, and stable grouping.
 - [x] Add regression tests for exact family, exact full name, family substring,
       full-name substring, and ambiguous loose-family selection.
-- [ ] Review the Phase 2 commit range and resolve all actionable findings.
+- [x] Review the Phase 2 commit range and resolve all actionable findings.
 
 Phase gate:
 
