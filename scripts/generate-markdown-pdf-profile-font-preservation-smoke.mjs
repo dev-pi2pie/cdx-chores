@@ -1,6 +1,7 @@
-import { lstat, mkdir, realpath, rm, stat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = fileURLToPath(new URL(".", import.meta.url));
@@ -18,6 +19,8 @@ const testScratchRoot = join(repoRoot, "examples", "playground", ".tmp-tests");
 const testScratchPrefix = "markdown-pdf-profile-font-preservation-";
 const requiredCommands = ["bun", "pandoc", "weasyprint"];
 const templateHeadingFamilyPlaceholder = "<operator-supplied-installed-family>";
+const ownershipMarkerName = ".cdx-chores-profile-font-preservation-smoke";
+const ownershipMarkerContent = "cdx-chores markdown-pdf profile-font-preservation smoke v1\n";
 
 function printUsage() {
   console.log(
@@ -29,7 +32,7 @@ function printUsage() {
       "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs run --input <path> --profile <path> --smoke-dir <path> [--allow-codex-assisted --template-heading-family <installed-family>]",
       "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs clean --smoke-dir <path>",
       "",
-      "The smoke directory must be an allowed generated-output descendant.",
+      "The smoke directory must be a direct, harness-owned generated-output child.",
       "Input and Profile files must remain outside the generated-output directory.",
       "Codex-assisted scenarios require explicit opt-in.",
       "Interactive installed-font selection is a documented manual scenario in the plan.",
@@ -147,25 +150,34 @@ function isAllowedTestScratch(candidate) {
 }
 
 function assertSafeSmokeDir(smokeDir) {
-  if (isDescendant(smokeRoot, smokeDir) || isAllowedTestScratch(smokeDir)) {
+  if (allowedMutationRoot(smokeDir)) {
     return;
   }
-  throw new Error("Refusing to use a smoke directory outside allowed generated-output roots.");
+  throw new Error("Refusing to use a smoke directory outside allowed direct-output children.");
 }
 
 function allowedMutationRoot(smokeDir) {
-  if (isDescendant(smokeRoot, smokeDir)) {
+  if (dirname(smokeDir) === smokeRoot) {
     return smokeRoot;
   }
   const relativePath = relative(testScratchRoot, smokeDir);
-  return join(testScratchRoot, relativePath.split(/[\\/]+/)[0]);
+  const scratchName = relativePath.split(/[\\/]+/)[0];
+  if (
+    isAllowedTestScratch(smokeDir) &&
+    scratchName &&
+    dirname(smokeDir) === join(testScratchRoot, scratchName)
+  ) {
+    return join(testScratchRoot, scratchName);
+  }
+  return undefined;
 }
 
 async function assertNoSymlinkedMutationComponents(smokeDir) {
   const allowedRoot = allowedMutationRoot(smokeDir);
-  const relativePath = relative(allowedRoot, smokeDir);
-  const paths = [allowedRoot];
-  let current = allowedRoot;
+  const trustedRoot = allowedRoot === smokeRoot ? repoRoot : testScratchRoot;
+  const relativePath = relative(trustedRoot, smokeDir);
+  const paths = [trustedRoot];
+  let current = trustedRoot;
   for (const segment of relativePath.split(/[\\/]+/).filter(Boolean)) {
     current = join(current, segment);
     paths.push(current);
@@ -188,6 +200,45 @@ async function assertNoSymlinkedMutationComponents(smokeDir) {
 async function assertSafeSmokeMutationTarget(smokeDir) {
   assertSafeSmokeDir(smokeDir);
   await assertNoSymlinkedMutationComponents(smokeDir);
+}
+
+async function detachAndRemoveOwnedSmokeDir(smokeDir) {
+  await assertSafeSmokeMutationTarget(smokeDir);
+  try {
+    const smokeStat = await lstat(smokeDir);
+    if (!smokeStat.isDirectory() || smokeStat.isSymbolicLink()) {
+      throw new Error("Refusing to remove a smoke target that is not a real directory.");
+    }
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+
+  const detachedPath = join(dirname(smokeDir), `.${basename(smokeDir)}.cleanup-${randomUUID()}`);
+  await rename(smokeDir, detachedPath);
+
+  let owned = false;
+  try {
+    const detachedStat = await lstat(detachedPath);
+    owned =
+      detachedStat.isDirectory() &&
+      !detachedStat.isSymbolicLink() &&
+      (await readFile(join(detachedPath, ownershipMarkerName), "utf8")) === ownershipMarkerContent;
+  } catch {
+    owned = false;
+  }
+  if (!owned) {
+    try {
+      await rename(detachedPath, smokeDir);
+    } catch {
+      // Preserve the detached target rather than deleting an unowned path.
+    }
+    throw new Error("Refusing to remove a smoke directory without its ownership marker.");
+  }
+
+  await rm(detachedPath, { recursive: true, force: true });
 }
 
 function assertResourceOutsideSmoke(resourcePath, smokeDir, label) {
@@ -491,8 +542,9 @@ async function runSmoke(
   }
 
   const plan = createPlan(inputPath, profilePath, smokeDir, templateHeadingFamily);
-  await rm(smokeDir, { recursive: true, force: true });
+  await detachAndRemoveOwnedSmokeDir(smokeDir);
   await mkdir(join(smokeDir, "outputs"), { recursive: true });
+  await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent, "utf8");
   await writeFile(
     join(smokeDir, "user-override.css"),
     [
@@ -537,14 +589,19 @@ async function main() {
 
   assertSafeSmokeDir(options.smokeDir);
   if (options.command === "clean") {
-    await assertSafeSmokeMutationTarget(options.smokeDir);
-    await rm(options.smokeDir, { recursive: true, force: true });
+    await detachAndRemoveOwnedSmokeDir(options.smokeDir);
     console.log(JSON.stringify({ category: "CLEANED" }));
     return;
   }
   if (options.command === "plan") {
     assertResourceOutsideSmoke(options.inputPath, options.smokeDir, "Markdown input");
     assertResourceOutsideSmoke(options.profilePath, options.smokeDir, "a Profile");
+    await assertCanonicalResourceOutsideSmoke(
+      options.inputPath,
+      options.smokeDir,
+      "Markdown input",
+    );
+    await assertCanonicalResourceOutsideSmoke(options.profilePath, options.smokeDir, "a Profile");
     console.log(
       JSON.stringify(
         createPlan(

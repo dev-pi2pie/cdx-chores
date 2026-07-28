@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 const scriptPath = "scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs";
+const ownershipMarkerName = ".cdx-chores-profile-font-preservation-smoke";
+const ownershipMarkerContent = "cdx-chores markdown-pdf profile-font-preservation smoke v1\n";
 
 function runHarness(args: string[], env?: NodeJS.ProcessEnv) {
   const proc = Bun.spawnSync({
@@ -246,6 +248,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       const siblingPath = join(smokeDir, "..", "keep.txt");
       await mkdir(join(smokeDir, "outputs"), { recursive: true });
       await writeFile(join(smokeDir, "outputs", "remove.pdf"), "not a pdf", "utf8");
+      await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent, "utf8");
       await writeFile(siblingPath, "keep", "utf8");
 
       const result = runHarness(["clean", "--smoke-dir", smokeDir]);
@@ -255,6 +258,20 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       expect(JSON.parse(result.stdout)).toEqual({ category: "CLEANED" });
       await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
       expect(await readFile(siblingPath, "utf8")).toBe("keep");
+    });
+  });
+
+  test("clean preserves an unowned direct child", async () => {
+    await withSmokeFixture(async ({ smokeDir }) => {
+      const keepPath = join(smokeDir, "keep.txt");
+      await mkdir(smokeDir, { recursive: true });
+      await writeFile(keepPath, "keep", "utf8");
+
+      const result = runHarness(["clean", "--smoke-dir", smokeDir]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("without its ownership marker");
+      expect(await readFile(keepPath, "utf8")).toBe("keep");
     });
   });
 
@@ -268,6 +285,22 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         PATH: stubBinDir,
         SMOKE_COMMAND_LOG: commandLogPath,
       };
+      const planResult = runHarness([
+        "plan",
+        "--input",
+        inputPath,
+        "--profile",
+        profilePath,
+        "--smoke-dir",
+        smokeDir,
+        "--template-heading-family",
+        "Operator Heading",
+      ]);
+      const plan = JSON.parse(planResult.stdout) as {
+        commands: Array<{ argv: string[]; requiresCodexAssisted?: boolean }>;
+      };
+      const loggedCommand = ({ argv }: { argv: string[] }) =>
+        `${argv[0]}\t${argv.slice(1).join(" ")}`;
       const localResult = runHarness(
         ["run", "--input", inputPath, "--profile", profilePath, "--smoke-dir", smokeDir],
         env,
@@ -281,7 +314,11 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         skippedScenarios: ["template-level-override", "interactive"],
       });
       const localCommands = await readExecutedSmokeCommands(commandLogPath);
-      expect(localCommands).toHaveLength(7);
+      expect(localCommands).toEqual(
+        plan.commands
+          .filter(({ requiresCodexAssisted }) => requiresCodexAssisted !== true)
+          .map(loggedCommand),
+      );
       expect(await readFile(join(smokeDir, "user-override.css"), "utf8")).toContain(
         '@import url("./partial-template/style.css");',
       );
@@ -311,8 +348,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         skippedScenarios: ["interactive"],
       });
       const assistedCommands = await readExecutedSmokeCommands(commandLogPath);
-      expect(assistedCommands).toHaveLength(9);
-      expect(assistedCommands.some((line) => line.includes("Operator Heading"))).toBe(true);
+      expect(assistedCommands).toEqual(plan.commands.map(loggedCommand));
     });
   });
 
@@ -331,21 +367,27 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
     });
   });
 
-  test("clean refuses a smoke target reached through a symbolic-link ancestor", async () => {
-    await withSmokeFixture(async ({ smokeDir }) => {
+  test("clean and run refuse a symbolic-link smoke target", async () => {
+    await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
       const fixtureRoot = join(smokeDir, "..");
       const victimDir = join(fixtureRoot, "victim");
-      const victimOutput = join(victimDir, "output");
       const aliasDir = join(fixtureRoot, "alias");
-      const keepPath = join(victimOutput, "keep.txt");
-      await mkdir(victimOutput, { recursive: true });
+      const keepPath = join(victimDir, "keep.txt");
+      await mkdir(victimDir, { recursive: true });
       await writeFile(keepPath, "keep", "utf8");
       await symlink(victimDir, aliasDir);
 
-      const result = runHarness(["clean", "--smoke-dir", join(aliasDir, "output")]);
+      const cleanResult = runHarness(["clean", "--smoke-dir", aliasDir]);
+      expect(cleanResult.exitCode).toBe(1);
+      expect(cleanResult.stderr).toContain("symbolic-link path component");
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain("symbolic-link path component");
+      const runResult = runHarness(
+        ["run", "--input", inputPath, "--profile", profilePath, "--smoke-dir", aliasDir],
+        { PATH: "" },
+      );
+      expect(runResult.exitCode).toBe(1);
+      expect(runResult.stderr).toContain("symbolic-link path component");
+      expect(runResult.stderr).not.toContain("UNAVAILABLE");
       expect(await readFile(keepPath, "utf8")).toBe("keep");
     });
   });
@@ -498,6 +540,18 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       await writeFile(keepPath, "keep", "utf8");
       await symlink(smokeDir, aliasDir);
 
+      const planResult = runHarness([
+        "plan",
+        "--input",
+        join(aliasDir, "input.md"),
+        "--profile",
+        profilePath,
+        "--smoke-dir",
+        smokeDir,
+      ]);
+      expect(planResult.exitCode).toBe(1);
+      expect(planResult.stderr).toContain("Markdown input located inside the smoke directory");
+
       const result = runHarness(
         [
           "run",
@@ -529,6 +583,18 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       await writeFile(profilePath, "fonts: {}\n", "utf8");
       await writeFile(keepPath, "keep", "utf8");
       await symlink(smokeDir, aliasDir);
+
+      const planResult = runHarness([
+        "plan",
+        "--input",
+        inputPath,
+        "--profile",
+        join(aliasDir, "operator-profile.yml"),
+        "--smoke-dir",
+        smokeDir,
+      ]);
+      expect(planResult.exitCode).toBe(1);
+      expect(planResult.stderr).toContain("Profile located inside the smoke directory");
 
       const result = runHarness(
         [
