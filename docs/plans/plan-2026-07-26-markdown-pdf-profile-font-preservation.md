@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-28
-status: active
+status: completed
 agent: codex
 ---
 
@@ -429,7 +429,7 @@ Reopened phase gate acceptance conditions:
 
 ### Phase 5: Documentation And Closeout
 
-Status: reopened follow-up validation complete; exact-range review pending.
+Status: completed; reopened follow-up gate passed.
 
 Tasks:
 
@@ -467,9 +467,9 @@ Reopened follow-up tasks:
       implementation correction, or returns the work to discussion.
 - [x] Re-run documentation, focused, repository, and public-safety checks
       appropriate to the final follow-up diff.
-- [ ] Review the reopened Phase 5 and widened complete-plan ranges and resolve
+- [x] Review the reopened Phase 5 and widened complete-plan ranges and resolve
       all actionable findings.
-- [ ] Mark the plan, research, and job completed again only after the reopened
+- [x] Mark the plan, research, and job completed again only after the reopened
       Phase 4 and Phase 5 gates pass.
 
 Reopened phase gate acceptance conditions:

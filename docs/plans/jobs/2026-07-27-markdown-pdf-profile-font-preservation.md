@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-27
 modified-date: 2026-07-28
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-markdown-pdf-profile-font-preservation.md
 ---
@@ -445,7 +445,7 @@ Follow-up review:
 
 ## Phase 5: Documentation And Closeout
 
-Status: Phase 5 follow-up validation complete; exact-range review pending.
+Status: completed; reopened Phase 5 gate passed.
 
 ### Scope
 
@@ -559,10 +559,11 @@ Reopened documentation result:
 Reopened verification:
 
 - Phase 4 live-render evidence remains authoritative because the Phase 5
-  follow-up changes documentation only.
-- Focused ownership and smoke suite: 262 passed, 0 failed with 2,243
+  follow-up changes documentation and regression coverage without changing
+  runtime behavior.
+- Focused ownership and smoke suite: 262 passed, 0 failed with 2,246
   assertions across 12 files.
-- Full repository suite: 1,847 passed, 0 failed with 9,963 assertions across
+- Full repository suite: 1,847 passed, 0 failed with 9,966 assertions across
   229 files.
 - `bun run lint` passed.
 - `bun run format:check` passed.
@@ -573,6 +574,26 @@ Reopened verification:
 - Public-safety scanning found no added local workspace path, font file path,
   machine-specific dependency setup, or localhost reference.
 - `git diff --check` passed.
+
+Reopened review:
+
+- The initial reopened Phase 5 range
+  `0536fe4..fc72c01` and widened complete-plan range
+  `b3ce965d82b7c5f24d2835ac871f71ec89f8efcd..fc72c01` received correctness,
+  documentation, security, maintainability, and test review.
+- The test review found that the smoke plan tests did not pin every no-hint
+  inspection array or the complete hinted scenario and command order.
+  `a73cd98` resolved those gaps with independent exact expectations.
+- The widened reopened Phase 5 range `0536fe4..a73cd98` and complete-plan range
+  `b3ce965d82b7c5f24d2835ac871f71ec89f8efcd..a73cd98` received the same five
+  review perspectives.
+- Correctness review found one stale endpoint-validation statement and
+  assertion count in this job. This closeout update corrects both.
+- Documentation, security, maintainability, and test reviewers reported no
+  remaining actionable findings. The final lifecycle-only closeout checkpoint
+  is subject to a post-commit exact-range re-review before handoff.
+- The reopened Phase 5 gate passed. PR creation, release-note authoring,
+  Issue #60 communication, pushing, and merging remain separate later work.
 
 ## Checkpoint Commits
 
@@ -616,6 +637,8 @@ Reopened verification:
 
 - `cf86ca9` — align guidance and lifecycle docs with the ownership contract.
 - `d6c20d8` — close whole-range test and documentation review gaps.
+- `fc72c01` — align reopened closeout guidance with ordinary-hint evidence.
+- `a73cd98` — pin the full font-hint smoke-plan output.
 
 ## Related Documents
 

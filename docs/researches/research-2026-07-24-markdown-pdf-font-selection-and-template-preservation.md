@@ -2,7 +2,7 @@
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
 modified-date: 2026-07-28
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -800,8 +800,8 @@ reuse. The evidence spike and live closeout record public-safe timing and
 outcome aggregates without host inventories.
 
 The linked plans and jobs contain the implementation, render evidence, and
-review boundaries. No implementation or live-proof gap remains; this research
-can close when the reopened Phase 5 documentation and whole-plan reviews pass.
+review boundaries. No implementation, live-proof, documentation, or
+whole-plan review gap remains.
 
 ## Related Plans
 
