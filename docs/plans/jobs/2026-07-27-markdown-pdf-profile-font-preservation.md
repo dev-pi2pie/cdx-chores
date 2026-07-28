@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-27
+modified-date: 2026-07-28
 status: in-progress
 agent: codex
 plan: ../plan-2026-07-26-markdown-pdf-profile-font-preservation.md
@@ -259,6 +260,105 @@ Public signal and report schemas remain unchanged.
 
 Passed.
 
+## Phase 4: Dedicated Render Smoke Validation
+
+Status: completed.
+
+### Scope
+
+Phase 4 adds a repeatable Issue #60 smoke harness and validates the fixed
+ownership contract through real Profile-only, partial Template, complete
+Project, deliberate override, cascade-boundary, and Interactive renders. Local
+render artifacts and machine-specific setup remain outside repository records.
+
+### Starting Boundary
+
+- Starting commit:
+  `a50a723ef57d24054b964b306ae75cc6fa63326a`.
+- The worktree was clean before Phase 4 began.
+- Phase 3 passed its gate and exact-range review.
+
+### Harness Evidence
+
+- The tracked harness plans and runs a stable scenario matrix around
+  operator-supplied local Markdown and compatibility Profile inputs. Neither
+  input is assumed to be tracked.
+- Cleanup is restricted to a marked, direct generated-output child. The
+  harness atomically detaches an owned target before recursive removal and
+  validates canonical containment before writing a new target.
+- Missing inputs, input aliases inside the cleanup target, symlinked targets,
+  unrelated paths, and absent or mismatched ownership markers fail closed.
+- Ordinary Template and Project generation is deterministic. The
+  Codex-assisted explicit-override scenario requires a separate opt-in, and
+  Interactive remains an intentional live manual scenario.
+- Missing renderer commands return a stable unavailable classification instead
+  of converting an incomplete smoke into success.
+
+### Live Render Evidence
+
+- The Profile-only control, partial Template bundle with an explicit Profile,
+  and complete Project bundle through discovery all rendered as valid
+  three-page A4 PDF 1.7 documents.
+- Generated partial-Template and complete-Project stylesheets differed only in
+  artifact identity. Both omitted competing body, language, heading, code, and
+  page-chrome family declarations while preserving non-font document styling
+  and Template-owned cover font tokens.
+- Embedded PDF resources resolved the operator-supplied Profile families for
+  labeled body, language, heading, code, and page-chrome slots. Raster review
+  found no missing glyphs, clipping, overlap, or unreadable content.
+- The partial Template and complete Project body pages were pixel-identical,
+  confirming the explicit and discovery render shapes reached the same
+  preserved path.
+- Cover title, subtitle, and author byline retained Template-owned typography.
+  A Codex-assisted direct Template case applied and reported one explicit
+  `template_level` heading override from an operator-supplied installed family
+  without changing the remaining Profile-owned slots.
+- `--no-default-css` produced the expected negative-boundary result, and
+  user-authored CSS remained able to load the generated Template styling first
+  and then override it through normal cascade order.
+- Interactive selected an installed suggestion from the local font inventory,
+  applied it to the generated Project Profile body slot, omitted the competing
+  Template body declaration, and rendered a valid two-page A4 PDF. Embedded
+  resources and raster review confirmed that the selected family reached the
+  output while multilingual text and code remained readable.
+- No smoke finding required a product-contract change or a new plan task.
+
+### Verification
+
+- Smoke harness suite: 18 passed, 0 failed.
+- Focused plan suite: 190 passed, 0 failed across 12 files.
+- Full repository suite: 1,842 passed, 0 failed across 229 files.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bunx tsc --noEmit` passed.
+- `bun run build` passed.
+- `git diff --check` passed.
+- Generated CSS, reports, PDF metadata, embedded font resources, and rasterized
+  pages were inspected.
+
+### Review
+
+- Exact range reviewed:
+  `a50a723ef57d24054b964b306ae75cc6fa63326a..a000c63f95d08c3a3f4bb05a9c287e0f6069026c`.
+- Review fixes made the Markdown input explicit and local, aligned successful
+  execution with the emitted plan, covered failed-command short-circuiting,
+  and removed every tracked-fixture assumption.
+- Cleanup review fixes limited mutation to an owned direct child, added exact
+  marker checks, atomically detached owned targets before removal, validated
+  the full symlink component chain, and rechecked canonical containment before
+  the first generated write.
+- Fresh-checkout coverage proves the ignored output root can be created safely,
+  and successful runs can be cleaned immediately without manual setup.
+- Shared implementation-derived test expectations and reuse of the older,
+  weaker fixture cleanup policy were not adopted because independent contract
+  assertions and this stricter ownership boundary are intentional.
+- Final widened correctness, security, maintainability, and test reviews
+  reported no unresolved actionable findings.
+
+### Gate
+
+Passed.
+
 ## Checkpoint Commits
 
 ### Phase 1
@@ -283,6 +383,14 @@ Passed.
 - `ec40282` — defer template adapter loading in the project phase.
 - `53a1811` — reject Project stylesheets that differ from ownership-aware
   synthesis.
+
+### Phase 4
+
+- `47def3c` — add the explicit-input Profile font-preservation smoke harness.
+- `fe92701` — harden canonical resources and ownership-gated cleanup.
+- `c4f4f74` — cover failed commands and ownership recovery.
+- `52cd8ed` — create and verify a missing ignored smoke root safely.
+- `a000c63` — enforce canonical output containment before generated writes.
 
 ## Related Documents
 

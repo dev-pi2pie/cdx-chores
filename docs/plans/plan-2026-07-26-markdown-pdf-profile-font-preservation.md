@@ -324,30 +324,31 @@ Phase gate:
 
 Tasks:
 
-- [ ] Add a repeatable Issue #60 smoke harness with stable Markdown input,
-      operator-supplied compatibility Profile input, and gitignored outputs.
-- [ ] Inspect generated `style.css` for partial Template and complete Project
+- [x] Add a repeatable Issue #60 smoke harness with operator-supplied local
+      Markdown and compatibility Profile inputs, with local smoke artifacts
+      kept gitignored.
+- [x] Inspect generated `style.css` for partial Template and complete Project
       bundles.
-- [ ] Render a Profile-only control.
-- [ ] Render a partial Template bundle with its compatibility Profile supplied
+- [x] Render a Profile-only control.
+- [x] Render a partial Template bundle with its compatibility Profile supplied
       explicitly.
-- [ ] Render a complete Project bundle using bundle discovery.
-- [ ] Verify Profile fonts remain effective for body, language, heading, and
+- [x] Render a complete Project bundle using bundle discovery.
+- [x] Verify Profile fonts remain effective for body, language, heading, and
       code slots and that page chrome remains Profile-only.
-- [ ] Inspect embedded or resolved PDF families for labeled document slots and
+- [x] Inspect embedded or resolved PDF families for labeled document slots and
       rasterize representative pages for visual review.
-- [ ] Verify cover title, subtitle, and byline retain Template-owned typography.
-- [ ] Verify an explicit direct `template_level` decision remains a deliberate
+- [x] Verify cover title, subtitle, and byline retain Template-owned typography.
+- [x] Verify an explicit direct `template_level` decision remains a deliberate
       bounded override.
-- [ ] Verify `--no-default-css` remains an intentional negative boundary.
-- [ ] Verify user-authored CSS can still override through the normal cascade.
-- [ ] Add one end-to-end Interactive installed-font selection-to-render smoke.
-- [ ] Run focused and repository-wide checks.
-- [ ] Record public-safe live-render evidence for the control, both bundle
+- [x] Verify `--no-default-css` remains an intentional negative boundary.
+- [x] Verify user-authored CSS can still override through the normal cascade.
+- [x] Add one end-to-end Interactive installed-font selection-to-render smoke.
+- [x] Run focused and repository-wide checks.
+- [x] Record public-safe live-render evidence for the control, both bundle
       shapes, and deliberate boundary cases. If the renderer or required fonts
       are unavailable, record only the capability limitation and keep the plan
       `blocked`.
-- [ ] Review the Phase 4 commit range and resolve all actionable findings.
+- [x] Review the Phase 4 commit range and resolve all actionable findings.
 
 Phase gate:
 
