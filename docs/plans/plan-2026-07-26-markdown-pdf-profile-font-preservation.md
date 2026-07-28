@@ -416,17 +416,17 @@ Reopened follow-up tasks:
       change.
 - [ ] Review the reopened Phase 4 range and resolve all actionable findings.
 
-Reopened phase gate:
+Reopened phase gate acceptance conditions:
 
-- Ordinary direct Template hints are proven to emit and render Template-owned
-  families when no Profile owns the slots.
-- The same ordinary hints cannot override Profile-owned slots through later
+- Ordinary direct Template hints must be proven to emit and render
+  Template-owned families when no Profile owns the slots.
+- The same ordinary hints must not override Profile-owned slots through later
   generated CSS.
-- Project generation persists reusable font ownership in `profile.yml` and
-  keeps generated document CSS non-competing.
-- Explicit Template-level and user-authored CSS overrides remain deliberate
+- Project generation must persist reusable font ownership in `profile.yml` and
+  keep generated document CSS non-competing.
+- Explicit Template-level and user-authored CSS overrides must remain deliberate
   later-cascade paths.
-- The reopened Phase 4 range has no unresolved actionable finding.
+- The reopened Phase 4 range must have no unresolved actionable finding.
 
 ### Phase 5: Documentation And Closeout
 
@@ -473,12 +473,12 @@ Reopened follow-up tasks:
 - [ ] Mark the plan, research, and job completed again only after the reopened
       Phase 4 and Phase 5 gates pass.
 
-Reopened phase gate:
+Reopened phase gate acceptance conditions:
 
-- Public guidance and lifecycle evidence describe both sides of the cascade
-  contract: Profile-owned omission and unowned ordinary-hint emission.
-- The retained smoke evidence and repository records remain public-safe.
-- The reopened Phase 5 and widened complete-plan ranges have no unresolved
+- Public guidance and lifecycle evidence must describe both sides of the
+  cascade contract: Profile-owned omission and unowned ordinary-hint emission.
+- The retained smoke evidence and repository records must remain public-safe.
+- The reopened Phase 5 and widened complete-plan ranges must have no unresolved
   actionable finding.
 
 ## Validation Plan

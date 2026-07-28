@@ -780,12 +780,19 @@ actions remain outside this research lifecycle.
 
 ## Research Exit Criteria
 
-Issue #60 now has failing pre-fix direct Template and Project reproductions,
-classified body, language, heading, code, symbol, and page-chrome boundaries,
-and ownership-aware omission coverage that preserves valid direct-Template
-`template_level` decisions. Generated CSS and rendered partial Template,
-complete Project, negative-boundary, deliberate-override, and Interactive
-scenarios prove the selected mechanism.
+Current Issue #60 evidence includes failing pre-fix direct Template and Project
+reproductions, classified body, language, heading, code, symbol, and page-chrome
+boundaries, and ownership-aware omission coverage that preserves valid
+direct-Template `template_level` decisions. The original generated CSS and
+rendered partial Template, complete Project, negative-boundary,
+deliberate-override, and Interactive scenarios prove the Profile-owned
+preservation side of the selected mechanism.
+
+Remaining Issue #60 proof is live ordinary-hint evidence showing that an
+unowned direct Template emits and renders its hinted families from `style.css`,
+the same hints remain non-competing under an owning Profile, and coordinated
+Project hints persist through `profile.yml`. The comparison must retain the
+explicit Template-level and user-authored CSS later-cascade boundaries.
 
 The Issue #61 criteria above are complete: fixtures cover primary-family,
 alias, and full-name retention, ranking and tie-breaking, primary-family
