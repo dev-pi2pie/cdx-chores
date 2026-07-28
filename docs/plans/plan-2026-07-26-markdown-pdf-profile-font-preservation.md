@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-26
-modified-date: 2026-07-27
+modified-date: 2026-07-28
 status: active
 agent: codex
 ---
@@ -320,40 +320,71 @@ Phase gate:
 - Project validation cannot approve CSS that contradicts its reported font
   ownership.
 
-### Phase 4: Render Validation, Documentation, And Closeout
+### Phase 4: Dedicated Render Smoke Validation
 
 Tasks:
 
+- [ ] Add a repeatable Issue #60 smoke harness with stable Markdown input,
+      operator-supplied compatibility Profile input, and gitignored outputs.
 - [ ] Inspect generated `style.css` for partial Template and complete Project
       bundles.
+- [ ] Render a Profile-only control.
 - [ ] Render a partial Template bundle with its compatibility Profile supplied
       explicitly.
 - [ ] Render a complete Project bundle using bundle discovery.
 - [ ] Verify Profile fonts remain effective for body, language, heading, and
       code slots and that page chrome remains Profile-only.
+- [ ] Inspect embedded or resolved PDF families for labeled document slots and
+      rasterize representative pages for visual review.
+- [ ] Verify cover title, subtitle, and byline retain Template-owned typography.
+- [ ] Verify an explicit direct `template_level` decision remains a deliberate
+      bounded override.
 - [ ] Verify `--no-default-css` remains an intentional negative boundary.
 - [ ] Verify user-authored CSS can still override through the normal cascade.
+- [ ] Add one end-to-end Interactive installed-font selection-to-render smoke.
 - [ ] Run focused and repository-wide checks.
-- [ ] Record live-render evidence for both bundle shapes. If the renderer or
-      required fonts are unavailable, record the limitation and keep the plan
-      `blocked` until the smoke runs in a capable environment.
+- [ ] Record public-safe live-render evidence for the control, both bundle
+      shapes, and deliberate boundary cases. If the renderer or required fonts
+      are unavailable, record only the capability limitation and keep the plan
+      `blocked`.
+- [ ] Review the Phase 4 commit range and resolve all actionable findings.
+
+Phase gate:
+
+- The Profile-only control, partial Template bundle, and complete Project bundle
+  resolve the expected Profile families for every Profile-owned document slot.
+- Page chrome remains Profile-only and cover typography remains Template-owned.
+- Interactive reaches the same preserved render path.
+- Negative and deliberate override boundaries remain intact.
+- The exact Phase 4 range has no unresolved actionable finding.
+
+### Phase 5: Documentation And Closeout
+
+Tasks:
+
 - [ ] Update current guidance and release records for the fixed ownership
       contract.
 - [ ] Update the related research with evidence, plan/job links, and accurate
       completion status.
-- [ ] Add one end-to-end Interactive installed-font selection-to-render smoke.
-- [ ] Review the Phase 4 and complete-plan commit ranges and resolve all
+- [ ] Finalize the implementation job with Phase 4 smoke evidence, Phase 5
+      documentation evidence, and exact review ranges.
+- [ ] Keep public records free of local workspace paths, font file paths,
+      machine-specific dependency setup, and localhost URLs.
+- [ ] Run documentation formatting, link, and diff checks.
+- [ ] Review the Phase 5 and complete-plan commit ranges and resolve all
       actionable findings.
+- [ ] Mark the plan, research, and job completed only after every completion
+      criterion is evidenced.
 
 Phase gate:
 
-- Both bundle shapes preserve compatibility-Profile fonts in generated CSS and
-  rendered output.
-- The Interactive installed-font selection reaches the same preserved render
-  path.
-- Negative and deliberate override boundaries remain intact.
-- Documentation and recorded evidence match shipped behavior.
-- No actionable review finding remains unresolved.
+- Guidance, release records, research, plan, and job evidence match the shipped
+  ownership contract and Phase 4 render results.
+- Public records contain no local-only environment or workspace details.
+- The exact Phase 5 and complete-plan ranges have no unresolved actionable
+  finding.
+- All completion criteria are satisfied before lifecycle documents become
+  `completed`.
 
 ## Validation Plan
 
@@ -374,8 +405,8 @@ bun test \
   test/cli-interactive-markdown-pdf/font-hints.test.ts
 ```
 
-Add a dedicated preservation test file if the cross-path matrix would make an
-existing file too broad.
+Add focused tests for the dedicated smoke harness and its safe output boundary.
+Keep live renderer execution outside the mandatory automated suite.
 
 ### Repository gates
 
@@ -388,30 +419,30 @@ bun test
 git diff --check
 ```
 
-### Manual smoke
+### Dedicated render smoke
 
-Use `examples/playground/md-pdf/` for isolated render artifacts:
+Write local render artifacts only to a gitignored workspace:
 
-1. Generate a partial Template bundle with a compatibility Profile.
-2. Inspect the generated CSS and render with that Profile supplied separately.
-3. Generate and render a complete Project bundle.
-4. Compare body, language, heading, and code results using visibly distinct
+1. Render a Profile-only control.
+2. Generate a partial Template bundle with a compatibility Profile.
+3. Inspect the generated CSS and render with that Profile supplied separately.
+4. Generate and render a complete Project bundle.
+5. Compare body, language, heading, and code results using visibly distinct
    Profile and preset families.
-5. Inspect page chrome and confirm its family comes only from Profile-derived
+6. Inspect page chrome and confirm its family comes only from Profile-derived
    `@page` CSS.
-6. Confirm cover title, subtitle, and byline retain their Template-owned
+7. Confirm cover title, subtitle, and byline retain their Template-owned
    typography.
-7. Record resolved or embedded family names when the available PDF inspection
-   tooling exposes them; otherwise retain a raster comparison showing the
-   distinct Profile and preset results.
-8. Repeat one direct Template case with an explicit `template_level` override.
-9. Repeat one case with `--no-default-css`.
-10. Verify a user CSS override still wins through the normal cascade.
-11. Select an installed family through Interactive and verify it reaches the
+8. Inspect embedded or resolved families for labeled text and rasterize
+   representative pages.
+9. Repeat one direct Template case with an explicit `template_level` override.
+10. Repeat one case with `--no-default-css`.
+11. Verify a user CSS override still wins through the normal cascade.
+12. Select an installed family through Interactive and verify it reaches the
     preserved render path.
 
-Do not record local font paths, machine-specific dependency setup, or localhost
-URLs in repository documents.
+Do not record the local smoke workspace, font file paths, machine-specific
+dependency setup, or localhost URLs in repository documents.
 
 ## Risks And Mitigations
 
@@ -455,9 +486,9 @@ URLs in repository documents.
 
 ## Expected Job Records
 
-Create one implementation job record when Phase 1 begins:
+Continue the existing implementation job record:
 
-- `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-profile-font-preservation.md`
+- [Markdown PDF Profile font preservation implementation](jobs/2026-07-27-markdown-pdf-profile-font-preservation.md)
 
 The job should record each phase boundary, validation evidence, review range,
 and final disposition.
@@ -481,6 +512,8 @@ This plan is complete only when:
 - `--no-default-css` and user CSS remain deliberate boundaries
 - inherited Interactive behavior requires no parallel fix
 - an Interactive installed-font selection reaches the preserved render path
+- the dedicated smoke harness produces public-safe evidence without committing
+  local render artifacts
 - focused and repository checks pass
 - live-render evidence exists for both bundle shapes
 - guidance, release records, research, and job links are current
