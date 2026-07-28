@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-28
-status: active
+status: completed
 agent: codex
 ---
 
@@ -68,7 +68,7 @@ Missing evidence and implementation:
 This is the preferred second plan derived from the shared research:
 
 1. Interactive installed-font search — completed
-2. Markdown PDF Profile font preservation — active
+2. Markdown PDF Profile font preservation — completed
 
 There is no code dependency on the first plan. This plan must preserve any
 effective compatibility Profile regardless of whether its font preference came
@@ -393,18 +393,18 @@ Phase gate:
 
 Tasks:
 
-- [ ] Update current guidance for the fixed ownership contract and record that
+- [x] Update current guidance for the fixed ownership contract and record that
       stable release notes remain part of the later release workflow.
-- [ ] Update the related research with evidence, plan/job links, and accurate
+- [x] Update the related research with evidence, plan/job links, and accurate
       completion status.
-- [ ] Finalize the implementation job with Phase 4 smoke evidence, Phase 5
+- [x] Finalize the implementation job with Phase 4 smoke evidence, Phase 5
       documentation evidence, and exact review ranges.
-- [ ] Keep public records free of local workspace paths, font file paths,
+- [x] Keep public records free of local workspace paths, font file paths,
       machine-specific dependency setup, and localhost URLs.
-- [ ] Run documentation formatting, link, and diff checks.
-- [ ] Review the Phase 5 and complete-plan commit ranges and resolve all
+- [x] Run documentation formatting, link, and diff checks.
+- [x] Review the Phase 5 and complete-plan commit ranges and resolve all
       actionable findings.
-- [ ] Mark the plan, research, and job completed only after every completion
+- [x] Mark the plan, research, and job completed only after every completion
       criterion is evidenced.
 
 Phase gate:

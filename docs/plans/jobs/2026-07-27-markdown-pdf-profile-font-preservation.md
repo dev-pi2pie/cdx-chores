@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-27
 modified-date: 2026-07-28
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-07-26-markdown-pdf-profile-font-preservation.md
 ---
@@ -361,7 +361,7 @@ Passed.
 
 ## Phase 5: Documentation And Closeout
 
-Status: in-progress.
+Status: completed.
 
 ### Scope
 
@@ -392,23 +392,51 @@ Issue #60 communication, pushing, and merging remain separate later work.
 - General usage guidance keeps deliberate user CSS and `--no-default-css`
   outside the preservation guarantee.
 - The related research records the reproduced version boundary, selected fix,
-  implementation evidence, and remaining documentation-review gate.
+  implementation evidence, and final review disposition.
 - Stable release notes remain governed by the later stable release workflow;
   Phase 5 does not create a future stable-tag record or perform PR/Issue work.
 
 ### Verification
 
-Pending the Phase 5 documentation, focused, and repository gates.
+- Focused ownership and smoke suite: 260 passed, 0 failed across 12 files.
+- Full repository suite: 1,845 passed, 0 failed across 229 files.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bunx tsc --noEmit` passed.
+- `bun run build` passed.
+- Markdown relative-link checks passed for the six changed lifecycle and
+  guidance documents.
+- Public-safety scanning found no added local workspace path, font file path,
+  machine-specific dependency setup, or localhost reference.
+- `git diff --check` passed.
+- Phase 4 live-render evidence remained authoritative because Phase 5 changed
+  documentation and regression coverage without changing runtime behavior.
 
 ### Review
 
-Pending fresh review of the Phase 5 range and the complete implementation range
-starting after
-`b3ce965d82b7c5f24d2835ac871f71ec89f8efcd`.
+- Phase 5 substantive range reviewed:
+  `3e2d087ff310813f5a63a5b1ec94d54078754433..d6c20d82c4ba3eb5425af0e8230bda3d87f6b73c`.
+- Complete implementation range reviewed:
+  `b3ce965d82b7c5f24d2835ac871f71ec89f8efcd..d6c20d82c4ba3eb5425af0e8230bda3d87f6b73c`.
+- The initial correctness and documentation reviews found stale research
+  summary wording, one stale release-record completion criterion, and four
+  stale `modified-date` values.
+- The initial test review found missing coverage for Codex-assisted Project
+  stylesheet re-synthesis, an explicit `body.default` Template-level override,
+  and smoke `run` refusal for unowned or corrupt-marker targets.
+- Those accepted findings were corrected in `d6c20d8`; the widened correctness,
+  test, documentation, security, and maintainability reviews reported no
+  remaining actionable findings.
+- The maintainability review's initial suggestions to remove independent
+  Project re-synthesis validation or consolidate the bounded CSS and smoke
+  safety helpers were not adopted. Independent re-synthesis closes a proven
+  metadata-trust gap, while the parser and filesystem checks preserve narrow
+  defense-in-depth boundaries. The widened re-review confirmed that these
+  choices do not block closeout.
 
 ### Gate
 
-Pending.
+Passed.
 
 ## Checkpoint Commits
 
@@ -442,6 +470,11 @@ Pending.
 - `c4f4f74` — cover failed commands and ownership recovery.
 - `52cd8ed` — create and verify a missing ignored smoke root safely.
 - `a000c63` — enforce canonical output containment before generated writes.
+
+### Phase 5
+
+- `cf86ca9` — align guidance and lifecycle docs with the ownership contract.
+- `d6c20d8` — close whole-range test and documentation review gaps.
 
 ## Related Documents
 

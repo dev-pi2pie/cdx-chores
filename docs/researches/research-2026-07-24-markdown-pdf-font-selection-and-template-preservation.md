@@ -2,7 +2,7 @@
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
 modified-date: 2026-07-28
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -790,9 +790,9 @@ selection, the two-stage lifecycle, timeout, cancellation, fallback, and cache
 reuse. The evidence spike and live closeout record public-safe timing and
 outcome aggregates without host inventories.
 
-The linked plans and jobs contain the implementation and render evidence. This
-research can become `completed` when the final Phase 5 documentation and
-complete-plan reviews report no unresolved actionable findings.
+The linked plans and jobs contain the implementation and render evidence. The
+final Phase 5 documentation and complete-plan reviews reported no unresolved
+actionable findings, so this research is `completed`.
 
 ## Related Plans
 
