@@ -361,6 +361,9 @@ Passed.
 
 ### Reopened Follow-up
 
+Status: live evidence and repository verification complete; exact-range review
+pending.
+
 The original Phase 4 matrix proved Profile-owned omission, Project parity,
 explicit Template-level override behavior, user CSS precedence, and Interactive
 inheritance. It did not directly render an ordinary no-Profile `--font-hint`
@@ -376,21 +379,53 @@ Reopening boundary:
 - Original Phase 4 artifacts and review results remain valid historical
   evidence.
 
-Pending evidence:
+Follow-up execution boundary:
 
-- Direct Template ordinary hints without a compatibility Profile must produce
-  applied report decisions, emitted document families, and matching rendered
-  PDF families.
-- The same hints with an owning Profile must be blocked from competing
-  document selectors while the Profile families remain effective.
-- Project generation must persist reusable hinted document families in
-  `profile.yml`, omit competing generated document families from `style.css`,
-  and render the Project Profile families.
-- The comparison must retain the explicit Template-level and user CSS
-  later-cascade boundaries.
-- Generated bundles, reports, HTML, and PDFs remain in the ignored smoke
-  workspace; local font resources and environment setup remain outside
-  repository records.
+- Starting commit:
+  `08d682575ea0bab33514e5fc8b65d02347d09fb5`.
+- `8936e56` added repeatable ordinary-hint scenarios for direct Template,
+  Profile-owned Template, and Project generation.
+- `41f1992` corrected those scenarios to require the existing explicit
+  Codex-assisted opt-in before the live run.
+
+Follow-up evidence:
+
+- Direct Template generation without a compatibility Profile applied five
+  ordinary body, heading, language, code, and symbol hint decisions. Generated
+  CSS emitted the corresponding document families, and labeled PDF resources
+  resolved those families.
+- Repeating the same hints with a Profile that owned every exact role/key
+  blocked all five ordinary decisions. Generated CSS omitted competing body,
+  language, heading, and combined-code document families, while PDF resources
+  resolved the Profile body, language, heading, code, and page-chrome families.
+- Project generation persisted the five reusable families in `profile.yml`.
+  Its generated Template stylesheet omitted competing document families, all
+  seven Project compatibility checks passed, and the rendered PDF resolved the
+  Project Profile families.
+- The explicit direct Template-level decision remained an applied,
+  Profile-overriding heading decision. User-authored CSS still replaced body,
+  heading, and code families through the later stylesheet position without
+  changing Profile page chrome.
+- The unchanged renderer order remains Profile-derived CSS first and the
+  generated or user stylesheet second. Preservation comes from generated
+  document-family omission for owned slots, not from reversed priority.
+- The completed run executed all 15 planned commands. Generated bundles,
+  reports, HTML, PDFs, a machine-readable observation summary, and rasterized
+  representative pages remain in the ignored smoke workspace.
+- Raster review found readable multilingual and symbol glyphs with no clipping,
+  overlap, or missing content. Local font resources and environment setup
+  remain outside repository records.
+
+Follow-up verification:
+
+- Focused ownership and smoke suite: 262 passed, 0 failed across 12 files.
+- Full repository suite: 1,847 passed, 0 failed across 229 files.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bunx tsc --noEmit` passed.
+- `bun run build` passed.
+- `git diff --check` passed.
+- Exact reopened Phase 4 range review remains pending.
 
 ## Phase 5: Documentation And Closeout
 
@@ -511,6 +546,8 @@ complete-plan ranges before any lifecycle document returns to `completed`.
 - `c4f4f74` — cover failed commands and ownership recovery.
 - `52cd8ed` — create and verify a missing ignored smoke root safely.
 - `a000c63` — enforce canonical output containment before generated writes.
+- `8936e56` — add the ordinary-hint ownership smoke scenarios.
+- `41f1992` — require explicit Codex assistance for the hinted scenarios.
 
 ### Phase 5
 

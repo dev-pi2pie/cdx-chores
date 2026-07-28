@@ -352,8 +352,7 @@ Phase gate:
 
 ### Phase 4: Dedicated Render Smoke Validation
 
-Status: reopened for ordinary font-hint materialization and cascade-boundary
-evidence.
+Status: reopened follow-up evidence complete; exact-range review pending.
 
 Tasks:
 
@@ -394,25 +393,25 @@ Original phase gate:
 
 Reopened follow-up tasks:
 
-- [ ] Generate a direct Template without a compatibility Profile using explicit
+- [x] Generate a direct Template without a compatibility Profile using explicit
       ordinary body, heading, language, code, and symbol `--font-hint` values.
-- [ ] Confirm its report records applied `font-hint` decisions and its
+- [x] Confirm its report records applied `font-hint` decisions and its
       `style.css` emits the corresponding families for unowned document slots.
-- [ ] Render the hinted Template and inspect resolved PDF families to prove the
+- [x] Render the hinted Template and inspect resolved PDF families to prove the
       generated stylesheet is effective.
-- [ ] Generate the same hinted Template with an owning compatibility Profile
+- [x] Generate the same hinted Template with an owning compatibility Profile
       and confirm ordinary decisions are blocked, competing document families
       are omitted, and the earlier Profile CSS remains effective.
-- [ ] Generate a Project from the same hints and confirm reusable document
+- [x] Generate a Project from the same hints and confirm reusable document
       families are persisted in `profile.yml`, competing generated document
       families are omitted from `style.css`, and the rendered PDF resolves the
       Project Profile families.
-- [ ] Compare the ordinary hint, Profile-owned suppression, Project ownership,
+- [x] Compare the ordinary hint, Profile-owned suppression, Project ownership,
       explicit `template_level`, and user-authored CSS scenarios against the
       unchanged Profile-first, stylesheet-second cascade order.
-- [ ] Retain the generated bundles, reports, HTML, and PDFs in the ignored smoke
+- [x] Retain the generated bundles, reports, HTML, and PDFs in the ignored smoke
       workspace without recording local font resources or environment setup.
-- [ ] Run focused and repository-wide checks after any harness or coverage
+- [x] Run focused and repository-wide checks after any harness or coverage
       change.
 - [ ] Review the reopened Phase 4 range and resolve all actionable findings.
 
