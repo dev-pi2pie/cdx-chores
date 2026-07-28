@@ -2,7 +2,7 @@
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
 modified-date: 2026-07-28
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -86,7 +86,7 @@ fixed:  omit competing generated font-family
 
 | Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
 | ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| #60   | shared Template synthesis and rendering | ownership-aware CSS emission implemented and rendered      | none within the implementation research scope                       |
+| #60   | shared Template synthesis and rendering | ownership-aware CSS emission implemented; live boundary evidence reopened | prove ordinary hints emit through Template CSS when unowned and move into the Project Profile when coordinated |
 | #61   | local discovery and selection           | implemented and validated through its dedicated plan        | none within the installed-font search scope                        |
 
 The two issues share data but not implementation ownership. They should produce
@@ -768,12 +768,15 @@ coverage without publishing host font paths or a developer-specific inventory.
 
 | Issue | Selected direction                                                                                                                                                  | Implementation status                            | Non-blocking follow-up                                     |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | implemented, rendered, documented, and reviewed  | PR and release communication outside this research         |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve ordinary unowned hints, bounded direct-Template overrides, and existing stylesheet order | implementation retained; live evidence reopened | ordinary Template-hint emission and Project ownership smoke |
 | #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed | presentation refinements outside the conditional slow path |
 
-The separate implementation plans own these checkpoints. Both implementation
-directions are complete and reviewed; PR, release, and issue-closing actions
-remain outside this research lifecycle.
+The separate implementation plans own these checkpoints. Issue #61 remains
+complete and reviewed. Issue #60 is reopened because its live smoke proved
+Profile-owned omission and deliberate overrides but did not directly prove that
+ordinary unowned hints still emit effective Template CSS or that coordinated
+Project hints persist through `profile.yml`. PR, release, and issue-closing
+actions remain outside this research lifecycle.
 
 ## Research Exit Criteria
 
@@ -790,9 +793,11 @@ selection, the two-stage lifecycle, timeout, cancellation, fallback, and cache
 reuse. The evidence spike and live closeout record public-safe timing and
 outcome aggregates without host inventories.
 
-The linked plans and jobs contain the implementation and render evidence. The
-final Phase 5 documentation and complete-plan reviews reported no unresolved
-actionable findings, so this research is `completed`.
+The linked plans and jobs contain the original implementation and render
+evidence. Keep this research `in-progress` until the reopened smoke compares
+ordinary unowned Template hints, Profile-owned suppression, coordinated Project
+ownership, explicit Template-level overrides, and user-authored CSS under the
+unchanged cascade order.
 
 ## Related Plans
 

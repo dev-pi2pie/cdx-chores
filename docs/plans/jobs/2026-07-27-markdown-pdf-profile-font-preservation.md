@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-27
 modified-date: 2026-07-28
-status: completed
+status: in-progress
 agent: codex
 plan: ../plan-2026-07-26-markdown-pdf-profile-font-preservation.md
 ---
@@ -262,7 +262,7 @@ Passed.
 
 ## Phase 4: Dedicated Render Smoke Validation
 
-Status: completed.
+Status: reopened.
 
 ### Scope
 
@@ -355,13 +355,46 @@ render artifacts and machine-specific setup remain outside repository records.
 - Final widened correctness, security, maintainability, and test reviews
   reported no unresolved actionable findings.
 
-### Gate
+### Original Gate
 
 Passed.
 
+### Reopened Follow-up
+
+The original Phase 4 matrix proved Profile-owned omission, Project parity,
+explicit Template-level override behavior, user CSS precedence, and Interactive
+inheritance. It did not directly render an ordinary no-Profile `--font-hint`
+through generated Template `style.css`. That missing side of the cascade
+contract means Phase 4 is reopened rather than treating automated synthesis and
+action coverage as complete live evidence.
+
+Reopening boundary:
+
+- Starting commit:
+  `10773d98ed69ba26cda948cca2174906df5aea6f`.
+- The worktree was clean before the follow-up began.
+- Original Phase 4 artifacts and review results remain valid historical
+  evidence.
+
+Pending evidence:
+
+- Direct Template ordinary hints without a compatibility Profile must produce
+  applied report decisions, emitted document families, and matching rendered
+  PDF families.
+- The same hints with an owning Profile must be blocked from competing
+  document selectors while the Profile families remain effective.
+- Project generation must persist reusable hinted document families in
+  `profile.yml`, omit competing generated document families from `style.css`,
+  and render the Project Profile families.
+- The comparison must retain the explicit Template-level and user CSS
+  later-cascade boundaries.
+- Generated bundles, reports, HTML, and PDFs remain in the ignored smoke
+  workspace; local font resources and environment setup remain outside
+  repository records.
+
 ## Phase 5: Documentation And Closeout
 
-Status: completed.
+Status: reopened; waiting for the Phase 4 follow-up gate.
 
 ### Scope
 
@@ -434,9 +467,17 @@ Issue #60 communication, pushing, and merging remain separate later work.
   defense-in-depth boundaries. The widened re-review confirmed that these
   choices do not block closeout.
 
-### Gate
+### Original Gate
 
 Passed.
+
+### Reopened Follow-up
+
+The original Phase 5 verification and reviews remain valid for their recorded
+ranges. After the reopened Phase 4 gate, Phase 5 must record the new smoke
+result, update current guidance and lifecycle evidence, rerun appropriate
+documentation and repository checks, and review the widened Phase 5 and
+complete-plan ranges before any lifecycle document returns to `completed`.
 
 ## Checkpoint Commits
 

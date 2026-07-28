@@ -2,7 +2,7 @@
 title: "Markdown PDF Profile font preservation implementation"
 created-date: 2026-07-26
 modified-date: 2026-07-28
-status: completed
+status: active
 agent: codex
 ---
 
@@ -68,7 +68,7 @@ Missing evidence and implementation:
 This is the preferred second plan derived from the shared research:
 
 1. Interactive installed-font search — completed
-2. Markdown PDF Profile font preservation — completed
+2. Markdown PDF Profile font preservation — active
 
 There is no code dependency on the first plan. This plan must preserve any
 effective compatibility Profile regardless of whether its font preference came
@@ -352,6 +352,9 @@ Phase gate:
 
 ### Phase 4: Dedicated Render Smoke Validation
 
+Status: reopened for ordinary font-hint materialization and cascade-boundary
+evidence.
+
 Tasks:
 
 - [x] Add a repeatable Issue #60 smoke harness with operator-supplied local
@@ -380,7 +383,7 @@ Tasks:
       `blocked`.
 - [x] Review the Phase 4 commit range and resolve all actionable findings.
 
-Phase gate:
+Original phase gate:
 
 - The Profile-only control, partial Template bundle, and complete Project bundle
   resolve the expected Profile families for every Profile-owned document slot.
@@ -389,7 +392,45 @@ Phase gate:
 - Negative and deliberate override boundaries remain intact.
 - The exact Phase 4 range has no unresolved actionable finding.
 
+Reopened follow-up tasks:
+
+- [ ] Generate a direct Template without a compatibility Profile using explicit
+      ordinary body, heading, language, code, and symbol `--font-hint` values.
+- [ ] Confirm its report records applied `font-hint` decisions and its
+      `style.css` emits the corresponding families for unowned document slots.
+- [ ] Render the hinted Template and inspect resolved PDF families to prove the
+      generated stylesheet is effective.
+- [ ] Generate the same hinted Template with an owning compatibility Profile
+      and confirm ordinary decisions are blocked, competing document families
+      are omitted, and the earlier Profile CSS remains effective.
+- [ ] Generate a Project from the same hints and confirm reusable document
+      families are persisted in `profile.yml`, competing generated document
+      families are omitted from `style.css`, and the rendered PDF resolves the
+      Project Profile families.
+- [ ] Compare the ordinary hint, Profile-owned suppression, Project ownership,
+      explicit `template_level`, and user-authored CSS scenarios against the
+      unchanged Profile-first, stylesheet-second cascade order.
+- [ ] Retain the generated bundles, reports, HTML, and PDFs in the ignored smoke
+      workspace without recording local font resources or environment setup.
+- [ ] Run focused and repository-wide checks after any harness or coverage
+      change.
+- [ ] Review the reopened Phase 4 range and resolve all actionable findings.
+
+Reopened phase gate:
+
+- Ordinary direct Template hints are proven to emit and render Template-owned
+  families when no Profile owns the slots.
+- The same ordinary hints cannot override Profile-owned slots through later
+  generated CSS.
+- Project generation persists reusable font ownership in `profile.yml` and
+  keeps generated document CSS non-competing.
+- Explicit Template-level and user-authored CSS overrides remain deliberate
+  later-cascade paths.
+- The reopened Phase 4 range has no unresolved actionable finding.
+
 ### Phase 5: Documentation And Closeout
+
+Status: reopened after the new Phase 4 evidence gap was identified.
 
 Tasks:
 
@@ -407,7 +448,7 @@ Tasks:
 - [x] Mark the plan, research, and job completed only after every completion
       criterion is evidenced.
 
-Phase gate:
+Original phase gate:
 
 - Guidance, research, plan, and job evidence match the implemented ownership
   contract and Phase 4 render results.
@@ -418,6 +459,27 @@ Phase gate:
   finding.
 - All completion criteria are satisfied before lifecycle documents become
   `completed`.
+
+Reopened follow-up tasks:
+
+- [ ] Update guidance, research, the plan, and the job with the ordinary
+      font-hint and CSS-priority smoke result.
+- [ ] Record whether the new evidence confirms the contract, requires a narrow
+      implementation correction, or returns the work to discussion.
+- [ ] Re-run documentation, focused, repository, and public-safety checks
+      appropriate to the final follow-up diff.
+- [ ] Review the reopened Phase 5 and widened complete-plan ranges and resolve
+      all actionable findings.
+- [ ] Mark the plan, research, and job completed again only after the reopened
+      Phase 4 and Phase 5 gates pass.
+
+Reopened phase gate:
+
+- Public guidance and lifecycle evidence describe both sides of the cascade
+  contract: Profile-owned omission and unowned ordinary-hint emission.
+- The retained smoke evidence and repository records remain public-safe.
+- The reopened Phase 5 and widened complete-plan ranges have no unresolved
+  actionable finding.
 
 ## Validation Plan
 
@@ -539,6 +601,10 @@ This plan is complete only when:
 - non-font Template styling remains stable
 - Template-owned cover typography remains stable
 - unowned slots and explicit direct overrides retain intended families
+- ordinary direct Template font hints without Profile ownership produce and
+  render the intended families from `style.css`
+- the same ordinary hints respect Profile ownership, while Project generation
+  persists reusable document families in `profile.yml`
 - Project continues rejecting explicit Profile-owned overrides
 - body, language, heading, code, symbol, and page-chrome boundaries are covered
 - partial Template and complete Project bundle renders preserve Profile fonts
