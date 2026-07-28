@@ -84,10 +84,10 @@ fixed:  omit competing generated font-family
                                  rendered PDF
 ```
 
-| Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
-| ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| #60   | shared Template synthesis and rendering | ownership-aware CSS emission implemented; live boundary evidence reopened | prove ordinary hints emit through Template CSS when unowned and move into the Project Profile when coordinated |
-| #61   | local discovery and selection           | implemented and validated through its dedicated plan        | none within the installed-font search scope                        |
+| Issue | Lifecycle boundary                      | Current conclusion                                           | Remaining work                                  |
+| ----- | --------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| #60   | shared Template synthesis and rendering | ownership-aware CSS emission implemented and live-validated  | Phase 5 documentation and lifecycle closeout    |
+| #61   | local discovery and selection           | implemented and validated through its dedicated plan         | none within the installed-font search scope     |
 
 The two issues share data but not implementation ownership. They should produce
 separate plans and may proceed independently.
@@ -766,33 +766,32 @@ coverage without publishing host font paths or a developer-specific inventory.
 
 ## Plan Handoff
 
-| Issue | Selected direction                                                                                                                                                  | Implementation status                            | Non-blocking follow-up                                     |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve ordinary unowned hints, bounded direct-Template overrides, and existing stylesheet order | implementation retained; live evidence reopened | ordinary Template-hint emission and Project ownership smoke |
-| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed | presentation refinements outside the conditional slow path |
+| Issue | Selected direction                                                                                                                                                  | Implementation status                                  | Non-blocking follow-up                                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve ordinary unowned hints, bounded direct-Template overrides, and existing stylesheet order | implemented and validated through the full smoke matrix | PR and Issue communication outside this research lifecycle |
+| #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed       | presentation refinements outside the conditional slow path |
 
 The separate implementation plans own these checkpoints. Issue #61 remains
-complete and reviewed. Issue #60 is reopened because its live smoke proved
-Profile-owned omission and deliberate overrides but did not directly prove that
-ordinary unowned hints still emit effective Template CSS or that coordinated
-Project hints persist through `profile.yml`. PR, release, and issue-closing
-actions remain outside this research lifecycle.
+complete and reviewed. Issue #60 now has live evidence for ordinary unowned
+Template emission, Profile-owned suppression, coordinated Project persistence,
+explicit Template-level overrides, and user-authored CSS under the unchanged
+cascade order. PR, release, and issue-closing actions remain outside this
+research lifecycle.
 
 ## Research Exit Criteria
 
-Current Issue #60 evidence includes failing pre-fix direct Template and Project
+Issue #60 evidence includes failing pre-fix direct Template and Project
 reproductions, classified body, language, heading, code, symbol, and page-chrome
 boundaries, and ownership-aware omission coverage that preserves valid
 direct-Template `template_level` decisions. The original generated CSS and
 rendered partial Template, complete Project, negative-boundary,
 deliberate-override, and Interactive scenarios prove the Profile-owned
-preservation side of the selected mechanism.
-
-Remaining Issue #60 proof is live ordinary-hint evidence showing that an
-unowned direct Template emits and renders its hinted families from `style.css`,
-the same hints remain non-competing under an owning Profile, and coordinated
-Project hints persist through `profile.yml`. The comparison must retain the
-explicit Template-level and user-authored CSS later-cascade boundaries.
+preservation side of the selected mechanism. The follow-up smoke proves the
+other side: an unowned direct Template emits and renders its hinted families
+from `style.css`, the same hints remain non-competing under an owning Profile,
+and coordinated Project hints persist through `profile.yml`. Explicit
+Template-level and user-authored CSS remain deliberate later-cascade
+boundaries.
 
 The Issue #61 criteria above are complete: fixtures cover primary-family,
 alias, and full-name retention, ranking and tie-breaking, primary-family
@@ -800,11 +799,9 @@ selection, the two-stage lifecycle, timeout, cancellation, fallback, and cache
 reuse. The evidence spike and live closeout record public-safe timing and
 outcome aggregates without host inventories.
 
-The linked plans and jobs contain the original implementation and render
-evidence. Keep this research `in-progress` until the reopened smoke compares
-ordinary unowned Template hints, Profile-owned suppression, coordinated Project
-ownership, explicit Template-level overrides, and user-authored CSS under the
-unchanged cascade order.
+The linked plans and jobs contain the implementation, render evidence, and
+review boundaries. No implementation or live-proof gap remains; this research
+can close when the reopened Phase 5 documentation and whole-plan reviews pass.
 
 ## Related Plans
 

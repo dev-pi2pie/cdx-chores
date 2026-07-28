@@ -112,10 +112,11 @@ By default, the follow-up render uses layered CSS: the profile-derived default
 stylesheet stays enabled and the project `style.css` is applied after it. This
 keeps the normal cascade available for deliberate user styling. Generated
 Project CSS omits competing families for Profile-owned document font slots
-while retaining Template-owned layout and cover typography; Project validation
-recomputes that ownership boundary from the final Profile and rejects a
-generated stylesheet that bypasses it. Profile-owned page chrome, cover
-defaults, and Shiki hooks remain active through their existing boundaries.
+while retaining Template-owned layout and cover typography. Reusable font
+choices belong to the final `profile.yml`; Project validation recomputes that
+ownership boundary from the final Profile and rejects a generated stylesheet
+that bypasses it. Profile-owned page chrome, cover defaults, and Shiki hooks
+remain active through their existing boundaries.
 
 ## Ownership Model
 
@@ -172,6 +173,12 @@ cdx-chores md pdf-project codex ./multilingual-notes.md \
   --font-hint "use JetBrains Mono for code" \
   --output ./multilingual-pdf-project
 ```
+
+Accepted reusable font hints are persisted in the generated `profile.yml`.
+The coordinated Template phase then treats those Profile slots as owned, so
+generated `style.css` omits competing document families. The Project bundle
+therefore carries reusable font policy in its Profile and presentation-only
+Template CSS beside it.
 
 Recipe flags such as `--preset`, `--page-size`, `--orientation`, `--margin*`,
 `--toc`, `--toc-depth`, and `--toc-page-break` are not part of the project Codex

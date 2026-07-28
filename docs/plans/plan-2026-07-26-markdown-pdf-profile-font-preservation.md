@@ -429,7 +429,7 @@ Reopened phase gate acceptance conditions:
 
 ### Phase 5: Documentation And Closeout
 
-Status: reopened after the new Phase 4 evidence gap was identified.
+Status: reopened follow-up validation complete; exact-range review pending.
 
 Tasks:
 
@@ -461,11 +461,11 @@ Original phase gate:
 
 Reopened follow-up tasks:
 
-- [ ] Update guidance, research, the plan, and the job with the ordinary
+- [x] Update guidance, research, the plan, and the job with the ordinary
       font-hint and CSS-priority smoke result.
-- [ ] Record whether the new evidence confirms the contract, requires a narrow
+- [x] Record whether the new evidence confirms the contract, requires a narrow
       implementation correction, or returns the work to discussion.
-- [ ] Re-run documentation, focused, repository, and public-safety checks
+- [x] Re-run documentation, focused, repository, and public-safety checks
       appropriate to the final follow-up diff.
 - [ ] Review the reopened Phase 5 and widened complete-plan ranges and resolve
       all actionable findings.
@@ -496,7 +496,8 @@ bun test \
   test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts \
   test/cli-actions-md-to-pdf-recipe-fonts.test.ts \
   test/cli-actions-md-to-pdf-bundle.test.ts \
-  test/cli-interactive-markdown-pdf/font-hints.test.ts
+  test/cli-interactive-markdown-pdf/font-hints.test.ts \
+  test/markdown-pdf-profile-font-preservation-smoke.test.ts
 ```
 
 Add focused tests for the dedicated smoke harness and its safe output boundary.
@@ -534,6 +535,12 @@ Write local render artifacts only to a gitignored workspace:
 11. Verify a user CSS override still wins through the normal cascade.
 12. Select an installed family through Interactive and verify it reaches the
     preserved render path.
+13. Generate and render ordinary hints without a compatibility Profile, then
+    confirm the families are emitted through Template `style.css`.
+14. Repeat the hints with an owning compatibility Profile and confirm generated
+    document families are omitted while Profile families remain effective.
+15. Generate a coordinated Project and confirm reusable hints persist through
+    `profile.yml` while generated `style.css` remains non-competing.
 
 Do not record the local smoke workspace, font file paths, machine-specific
 dependency setup, or localhost URLs in repository documents.

@@ -445,7 +445,7 @@ Follow-up review:
 
 ## Phase 5: Documentation And Closeout
 
-Status: reopened; follow-up work not entered.
+Status: Phase 5 follow-up validation complete; exact-range review pending.
 
 ### Scope
 
@@ -529,6 +529,50 @@ ranges. After the reopened Phase 4 gate, Phase 5 must record the new smoke
 result, update current guidance and lifecycle evidence, rerun appropriate
 documentation and repository checks, and review the widened Phase 5 and
 complete-plan ranges before any lifecycle document returns to `completed`.
+
+Reopened starting boundary:
+
+- Starting commit:
+  `0536fe4`.
+- The worktree was clean before the Phase 5 follow-up began.
+- Phase 4 passed its reopened gate and exact-range review.
+
+Reopened documentation result:
+
+- The ordinary no-Profile Template path emits accepted font hints through
+  generated `style.css`.
+- The same ordinary hints remain omitted for slots owned by a compatibility
+  Profile, without changing stylesheet order.
+- Coordinated Project hints persist as reusable ownership in `profile.yml`
+  while generated `style.css` remains non-competing.
+- Explicit Template-level and user-authored CSS remain deliberate later
+  overrides.
+- The new evidence confirms the implemented contract; no implementation
+  correction or return to discussion is required.
+- Template, Project, general usage, and Interactive guidance now describe the
+  relevant artifact ownership and cascade boundaries.
+- The related research no longer describes the completed Phase 4 proof as
+  missing.
+- PR creation, release-note authoring, and Issue #60 communication remain
+  outside this Phase 5 closeout.
+
+Reopened verification:
+
+- Phase 4 live-render evidence remains authoritative because the Phase 5
+  follow-up changes documentation only.
+- Focused ownership and smoke suite: 262 passed, 0 failed with 2,243
+  assertions across 12 files.
+- Full repository suite: 1,847 passed, 0 failed with 9,963 assertions across
+  229 files.
+- `bun run lint` passed.
+- `bun run format:check` passed.
+- `bunx tsc --noEmit` passed.
+- `bun run build` passed.
+- Markdown relative-link checks passed for the seven changed lifecycle and
+  guidance documents.
+- Public-safety scanning found no added local workspace path, font file path,
+  machine-specific dependency setup, or localhost reference.
+- `git diff --check` passed.
 
 ## Checkpoint Commits
 

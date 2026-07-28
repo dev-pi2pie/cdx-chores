@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-07-27
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---
@@ -191,8 +191,11 @@ The candidate review reports applied, blocked, and unresolved font directions
 where the direct helper returns that information.
 
 Codex Profile review shows reusable settings from the generated Profile.
-Project review shows them from its generated contained Profile. Template
-review has no reusable code-settings block.
+Project review shows reusable font choices from its generated contained
+Profile, with non-competing Template CSS beside it. Template review has no
+reusable code-settings block; applied ordinary font directions for unowned
+slots are reflected in generated `style.css`, while compatibility-Profile-owned
+directions are reported as blocked.
 
 ## Prepare Once, Then Commit
 
