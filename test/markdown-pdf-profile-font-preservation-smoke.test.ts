@@ -377,22 +377,53 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         plan.commands.find(({ id }) => id === "project-hints-generate")?.argv ?? [];
       expect(projectGenerate).not.toContain("--base-profile");
 
-      expect(plan.inspection.reports.map((path) => path.slice(smokeDir.length + 1))).toEqual(
-        expect.arrayContaining([
-          "ordinary-hints-template/template.codex-report.json",
-          "profile-owned-hints-template/template.codex-report.json",
-          "project-hints/project.codex-report.json",
-        ]),
+      const ordinaryRender =
+        plan.commands.find(({ id }) => id === "ordinary-hints-template-render")?.argv ?? [];
+      expect(ordinaryRender).toContain("--template");
+      expect(ordinaryRender).toContain(join(smokeDir, "ordinary-hints-template", "template.html"));
+      expect(ordinaryRender).toContain("--css");
+      expect(ordinaryRender).toContain(join(smokeDir, "ordinary-hints-template", "style.css"));
+      expect(ordinaryRender).not.toContain("--profile");
+      expect(ordinaryRender).not.toContain("--bundle");
+
+      const ownedRender =
+        plan.commands.find(({ id }) => id === "profile-owned-hints-template-render")?.argv ?? [];
+      expect(ownedRender).toContain("--template");
+      expect(ownedRender).toContain(
+        join(smokeDir, "profile-owned-hints-template", "template.html"),
       );
+      expect(ownedRender).toContain("--css");
+      expect(ownedRender).toContain(join(smokeDir, "profile-owned-hints-template", "style.css"));
+      expect(ownedRender).toContain("--profile");
+      expect(ownedRender).toContain(profilePath);
+      expect(ownedRender).not.toContain("--bundle");
+
+      const projectRender =
+        plan.commands.find(({ id }) => id === "project-hints-render")?.argv ?? [];
+      expect(projectRender).toContain("--bundle");
+      expect(projectRender).toContain(join(smokeDir, "project-hints"));
+      expect(projectRender).not.toContain("--template");
+      expect(projectRender).not.toContain("--css");
+      expect(projectRender).not.toContain("--profile");
+
+      expect(plan.inspection.reports.map((path) => path.slice(smokeDir.length + 1))).toEqual([
+        "partial-template/template.codex-report.json",
+        "complete-project/project.codex-report.json",
+        "template-level-override/template.codex-report.json",
+        "ordinary-hints-template/template.codex-report.json",
+        "profile-owned-hints-template/template.codex-report.json",
+        "project-hints/project.codex-report.json",
+      ]);
       expect(
         plan.inspection.generatedStylesheets.map((path) => path.slice(smokeDir.length + 1)),
-      ).toEqual(
-        expect.arrayContaining([
-          "ordinary-hints-template/style.css",
-          "profile-owned-hints-template/style.css",
-          "project-hints/style.css",
-        ]),
-      );
+      ).toEqual([
+        "partial-template/style.css",
+        "complete-project/style.css",
+        "template-level-override/style.css",
+        "ordinary-hints-template/style.css",
+        "profile-owned-hints-template/style.css",
+        "project-hints/style.css",
+      ]);
       expect(
         plan.inspection.renderedOutputs.map((path) => path.slice(smokeDir.length + 1)),
       ).toEqual([
