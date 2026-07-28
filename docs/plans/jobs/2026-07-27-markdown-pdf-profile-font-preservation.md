@@ -445,7 +445,7 @@ Follow-up review:
 
 ## Phase 5: Documentation And Closeout
 
-Status: reopened; waiting for the Phase 4 follow-up gate.
+Status: reopened; follow-up work not entered.
 
 ### Scope
 
