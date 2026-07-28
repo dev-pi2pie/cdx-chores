@@ -278,7 +278,7 @@ fonts:
 See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
 for exact mixed-language assignment. A language-keyed body entry emits a
 matching `:lang(...)` rule, but it does not detect or label content; rendered
-Markdown still needs matching attributes such as `[繁體中文]{lang=zh-Hant}`.
+Markdown still needs a matching bracketed inline span or fenced block Div.
 
 Use `font list`, `font inspect`, and `font check` when you need local evidence
 for exact family names or glyph coverage before writing a hint. `--font-hint`

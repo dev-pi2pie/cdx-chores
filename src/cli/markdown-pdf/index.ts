@@ -79,3 +79,5 @@ export type {
   NormalizeMarkdownPdfOptionsInput,
   NormalizedMarkdownPdfOptions,
 } from "./validation";
+export { MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, assessMarkdownPdfRequirements } from "./requirements";
+export type { MarkdownPdfRequirements } from "./requirements";

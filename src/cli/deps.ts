@@ -24,6 +24,19 @@ export interface CommandStatus {
   installHint: string;
 }
 
+export type CommandVersionRequirementStatus =
+  | "satisfied"
+  | "missing"
+  | "unsupported"
+  | "unverified";
+
+export interface CommandVersionRequirement {
+  status: CommandVersionRequirementStatus;
+  available: boolean;
+  version: string | null;
+  minimumVersion: string;
+}
+
 function firstLine(output: string): string {
   return output.split(/\r?\n/, 1)[0]?.trim() ?? "";
 }
@@ -168,14 +181,107 @@ export async function requireCommandAvailable(
   command: DependencyCommand,
   platform: NodeJS.Platform,
   runner: DependencyCommandRunner = execCommand,
-): Promise<void> {
+): Promise<CommandStatus> {
   const status = await inspectCommand(command, platform, runner);
   if (status.available) {
-    return;
+    return status;
   }
 
   throw new CliError(
     `Missing required dependency: ${command}. Install suggestion: ${status.installHint}`,
+    {
+      code: "DEPENDENCY_MISSING",
+      exitCode: 2,
+    },
+  );
+}
+
+function parseDottedNumericVersion(version: string): number[] | null {
+  if (!/^\d+(?:\.\d+)*$/u.test(version)) {
+    return null;
+  }
+
+  const components = version.split(".").map(Number);
+  return components.every((component) => Number.isSafeInteger(component)) ? components : null;
+}
+
+function compareDottedNumericVersions(actual: number[], minimum: number[]): number {
+  const componentCount = Math.max(actual.length, minimum.length);
+  for (let index = 0; index < componentCount; index += 1) {
+    const actualComponent = actual[index] ?? 0;
+    const minimumComponent = minimum[index] ?? 0;
+    if (actualComponent !== minimumComponent) {
+      return actualComponent > minimumComponent ? 1 : -1;
+    }
+  }
+  return 0;
+}
+
+export function assessCommandMinimumVersion(
+  status: CommandStatus,
+  minimumVersion: string,
+): CommandVersionRequirement {
+  if (!status.available) {
+    return {
+      status: "missing",
+      available: false,
+      version: null,
+      minimumVersion,
+    };
+  }
+
+  const actual = status.version ? parseDottedNumericVersion(status.version) : null;
+  const minimum = parseDottedNumericVersion(minimumVersion);
+  if (!actual || !minimum) {
+    return {
+      status: "unverified",
+      available: true,
+      version: status.version,
+      minimumVersion,
+    };
+  }
+
+  return {
+    status: compareDottedNumericVersions(actual, minimum) >= 0 ? "satisfied" : "unsupported",
+    available: true,
+    version: status.version,
+    minimumVersion,
+  };
+}
+
+export function requireCommandMinimumVersion(
+  status: CommandStatus,
+  minimumVersion: string,
+  capability: string,
+): void {
+  const requirement = assessCommandMinimumVersion(status, minimumVersion);
+  if (requirement.status === "satisfied") {
+    return;
+  }
+
+  if (requirement.status === "unsupported") {
+    throw new CliError(
+      `Unsupported dependency version: ${status.name} ${requirement.version}. ${capability} requires ${status.name} ${minimumVersion} or newer.`,
+      {
+        code: "DEPENDENCY_VERSION_UNSUPPORTED",
+        exitCode: 2,
+      },
+    );
+  }
+
+  if (requirement.status === "unverified") {
+    const detected = requirement.version ? ` Detected output: ${requirement.version}.` : "";
+    throw new CliError(
+      `Unable to verify the ${status.name} version.${detected} ${capability} requires ${status.name} ${minimumVersion} or newer.`,
+      {
+        code: "DEPENDENCY_VERSION_UNKNOWN",
+        exitCode: 2,
+      },
+    );
+  }
+
+  throw new CliError(
+    `Missing required dependency: ${status.name}. Install suggestion: ${status.installHint}`,
     {
       code: "DEPENDENCY_MISSING",
       exitCode: 2,

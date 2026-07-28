@@ -184,9 +184,9 @@ Language-specific hints do not annotate or classify the input Markdown. See
 [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
 for exact mixed-language assignment. A persisted choice such as
 `fonts.body.zh-Hant` only takes exact precedence for rendered content with a
-matching `lang` attribute, such as `[繁體中文]{lang=zh-Hant}`. Passing Project
-compatibility validation proves that the Profile and Template agree; it does
-not prove that the source contains matching language markers.
+matching `lang` attribute from a bracketed inline span or fenced block Div.
+Passing Project compatibility validation proves that the Profile and Template
+agree; it does not prove that the source contains matching language markers.
 
 Recipe flags such as `--preset`, `--page-size`, `--orientation`, `--margin*`,
 `--toc`, `--toc-depth`, and `--toc-page-break` are not part of the project Codex

@@ -31,8 +31,9 @@ cdx-chores interactive
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
-Rendering requires Pandoc and WeasyPrint. Codex-assisted preparation also
-requires configured Codex support. Check available capabilities with:
+Rendering requires Pandoc 2.0 or newer and WeasyPrint. Codex-assisted
+preparation also requires configured Codex support. Check available
+capabilities with:
 
 ```bash
 cdx-chores doctor
@@ -164,9 +165,9 @@ adding it. Accepted hints can be edited, removed, or reordered.
 Choosing a language-specific intended use records a preference for that Profile
 language slot; it does not annotate or classify the Markdown. For exact
 mixed-language assignment, mark the relevant content with Pandoc attributes
-such as `[日本語]{lang=ja}` or `[繁體中文]{lang=zh-Hant}`. Without those
-markers, the selected family only participates in fallback ordering and an
-earlier family that covers the same characters may be used instead. See
+such as a bracketed inline span or fenced block Div. Without those markers, the
+selected family only participates in fallback ordering and an earlier family
+that covers the same characters may be used instead. See
 [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
 for the full contract.
 

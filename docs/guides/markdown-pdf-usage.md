@@ -16,7 +16,7 @@ WeasyPrint.
 
 `md to-pdf` requires both external tools:
 
-- `pandoc` for Markdown-to-HTML conversion
+- Pandoc 2.0 or newer for Markdown-to-HTML conversion
 - `weasyprint` for HTML/CSS-to-PDF rendering
 
 Check the local environment before using the command in scripts or CI:
@@ -30,6 +30,11 @@ For machine-readable checks:
 ```bash
 cdx-chores doctor --json
 ```
+
+Doctor reports an installed Pandoc version below 2.0 as unsupported for
+`md.to-pdf`, while leaving other Pandoc-backed capabilities under their own
+requirements. The JSON result keeps `capabilities["md.to-pdf"]` as a boolean
+and explains the detected versions through `markdownPdf.requirements`.
 
 ## Current Command Boundary
 
@@ -697,6 +702,28 @@ pdf:
 
 English text with [繁體中文]{lang=zh-Hant}, [日本語]{lang=ja}, and [한국어]{lang=ko}.
 ```
+
+Pandoc's default `markdown` reader recognizes bracketed inline spans:
+
+```markdown
+[繁體中文]{lang=zh-Hant}
+```
+
+It also recognizes fenced block Divs:
+
+```markdown
+::: {lang=zh-Hant}
+這是一個繁體中文區塊。
+:::
+```
+
+The bracketed-span extension has been enabled by default since Pandoc 1.18.
+The fenced-Div extension has been enabled by default since Pandoc 2.0, which
+sets the `md to-pdf` minimum. The renderer therefore keeps `--from markdown`
+without adding explicit extension flags. See the official
+[Pandoc 1.18 release](https://github.com/jgm/pandoc/releases/tag/1.18),
+[Pandoc 2.0 release](https://github.com/jgm/pandoc/releases/tag/2.0), and
+[Divs and Spans manual](https://pandoc.org/demo/example33/8.18-divs-and-spans.html).
 
 Raw HTML works as an escape hatch:
 
