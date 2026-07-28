@@ -359,6 +359,57 @@ render artifacts and machine-specific setup remain outside repository records.
 
 Passed.
 
+## Phase 5: Documentation And Closeout
+
+Status: in-progress.
+
+### Scope
+
+Phase 5 aligns current public guidance, research, the implementation plan, and
+this job with the implemented ownership contract and Phase 4 render evidence.
+It closes this documentation lifecycle only after focused, repository, Phase 5,
+and complete-plan reviews pass. Stable release-note authoring, PR creation,
+Issue #60 communication, pushing, and merging remain separate later work.
+
+### Starting Boundary
+
+- Starting commit:
+  `3e2d087ff310813f5a63a5b1ec94d54078754433`.
+- The worktree was clean before Phase 5 began.
+- Phase 4 passed its gate and exact-range review.
+
+### Documentation Contract
+
+- The implementation plan now records the confirmed before-and-after flow:
+  generated Template CSS previously overrode earlier Profile CSS through the
+  normal cascade; ownership-aware synthesis now omits competing document
+  families while preserving non-font styling and Template-owned cover
+  typography.
+- Template guidance explains that preservation comes from ownership-aware
+  output rather than higher Profile cascade priority.
+- Project guidance explains that the final Profile determines both generated
+  omission and stylesheet re-synthesis validation.
+- General usage guidance keeps deliberate user CSS and `--no-default-css`
+  outside the preservation guarantee.
+- The related research records the reproduced version boundary, selected fix,
+  implementation evidence, and remaining documentation-review gate.
+- Stable release notes remain governed by the later stable release workflow;
+  Phase 5 does not create a future stable-tag record or perform PR/Issue work.
+
+### Verification
+
+Pending the Phase 5 documentation, focused, and repository gates.
+
+### Review
+
+Pending fresh review of the Phase 5 range and the complete implementation range
+starting after
+`b3ce965d82b7c5f24d2835ac871f71ec89f8efcd`.
+
+### Gate
+
+Pending.
+
 ## Checkpoint Commits
 
 ### Phase 1

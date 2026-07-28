@@ -138,7 +138,8 @@ uses its normalized final Profile.
 - partial Template and complete Project bundles
 - generated CSS inspection and rendered-PDF evidence
 - inherited Interactive behavior through existing shared services
-- focused tests, live render smoke, current guidance, and release records
+- focused tests, live render smoke, current guidance, and the release-note
+  handoff boundary
 
 ### Out of scope
 
@@ -152,9 +153,23 @@ uses its normalized final Profile.
 - changes to installed-font discovery or ranking from Issue #61
 - redesigning base-profile candidate selection
 
-## Implementation Approach
+## Resolved Implementation Pattern
 
-Derive an explicit ownership mask before CSS synthesis:
+Before this fix, the Profile and generated Template both declared document
+font families. The renderer correctly loaded Profile-derived CSS first and
+bundle CSS second, so the later Template presets won through the normal
+cascade:
+
+```text
+effective compatibility Profile
+  -> Profile CSS declares selected document families
+  -> generated Template CSS declares preset families later
+  -> normal cascade selects the Template families
+  -> rendered PDF loses the Profile font choices
+```
+
+The fix keeps the existing stylesheet order and derives an explicit ownership
+mask before CSS synthesis:
 
 ```text
 normalized compatibility Profile
@@ -166,15 +181,30 @@ normalized compatibility Profile
   -> Profile family remains effective
 ```
 
-The internal ownership mask should carry exact canonical non-empty role/keys
-and derived CSS-slot booleans. It must remain separate from the bounded
+The resulting flow is:
+
+```text
+effective compatibility Profile
+  -> derive body, language, heading, code, and page-chrome ownership
+  -> generated Template CSS omits families for Profile-owned document slots
+  -> Template layout, sizing, colors, and cover typography remain
+  -> existing stylesheet order stays unchanged
+  -> rendered PDF retains the Profile font choices
+```
+
+For complete Projects, validation derives the same ownership boundary from the
+final Project Profile, re-synthesizes the expected stylesheet, and rejects a
+stylesheet that reintroduces a competing generated family.
+
+The internal ownership mask carries exact canonical non-empty role/keys and
+derived CSS-slot booleans. It remains separate from the bounded
 `profileFonts` prompt/report summary and must not expose the full Profile to
 Codex.
 
-The implementation should not duplicate Profile font serialization inside the
-Template. It should omit only competing Template font declarations. Because the
-current body rule uses the `font` shorthand, it must preserve body size and line
-height through separate declarations when the family is omitted.
+The implementation does not duplicate Profile font serialization inside the
+Template. It omits only competing Template font declarations. Body size and
+line height remain separate declarations so suppressing the former `font`
+shorthand family does not remove non-font styling.
 
 Language selectors and the combined code stack require explicit handling.
 `code.default` and `code.symbols` share one rendered fallback stack, so either
@@ -363,8 +393,8 @@ Phase gate:
 
 Tasks:
 
-- [ ] Update current guidance and release records for the fixed ownership
-      contract.
+- [ ] Update current guidance for the fixed ownership contract and record that
+      stable release notes remain part of the later release workflow.
 - [ ] Update the related research with evidence, plan/job links, and accurate
       completion status.
 - [ ] Finalize the implementation job with Phase 4 smoke evidence, Phase 5
@@ -379,8 +409,10 @@ Tasks:
 
 Phase gate:
 
-- Guidance, release records, research, plan, and job evidence match the shipped
-  ownership contract and Phase 4 render results.
+- Guidance, research, plan, and job evidence match the implemented ownership
+  contract and Phase 4 render results.
+- Stable release-note authoring, PR creation, and Issue #60 closure remain
+  outside this plan.
 - Public records contain no local-only environment or workspace details.
 - The exact Phase 5 and complete-plan ranges have no unresolved actionable
   finding.

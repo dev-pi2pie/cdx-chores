@@ -550,6 +550,12 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
 
+A Codex-generated Template with a compatibility Profile omits competing font
+families for Profile-owned document slots while retaining non-font Template
+styling and Template-owned cover typography. This ownership-aware omission
+does not change the cascade boundary: manually authored or edited CSS loaded
+later can still override Profile styling deliberately.
+
 A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile text cover settings will not appear in the rendered PDF.
 
 The Codex profile helper stays inside the profile boundary. Use custom templates or CSS for local cover images, arbitrary CSS, custom HTML layout, exact table styling, and other template-only behavior.

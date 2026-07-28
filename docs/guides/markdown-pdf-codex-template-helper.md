@@ -248,10 +248,12 @@ cdx-chores md pdf-template codex ./multilingual-report.md \
 ```
 
 Profile-owned font settings remain the durable default. When a concrete
-`--base-profile` font source exists, template-level font output is suppressed
-unless Codex returns an explicit template-level style decision that passes the
-bounded role/key contract. This keeps helper-generated template CSS from
-silently fighting profile fonts.
+`--base-profile` font source exists, generated `style.css` omits competing
+families for Profile-owned document slots while retaining non-font styling and
+Template-owned cover typography. An explicit template-level style decision may
+still emit a bounded deliberate override. The renderer's stylesheet order does
+not change; preservation comes from ownership-aware Template output rather than
+from giving Profile CSS higher cascade priority.
 
 Use `md pdf-profile codex` first when the main goal is reusable typography,
 page numbers, page shape, page chrome, or Shiki code-highlight settings. Use

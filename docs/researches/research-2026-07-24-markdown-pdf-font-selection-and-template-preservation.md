@@ -224,12 +224,13 @@ the complete bundle before passing it to the Template phase.
 | User-authored or edited CSS              | deliberate cascade override, not the generation defect                                                |
 | Render with `--no-default-css`           | outside the preservation guarantee because Profile-derived CSS is intentionally disabled              |
 
-### Source-Supported Conflict
+### Confirmed Conflict
 
-Evidence status: source-supported hypothesis; direct reproduction and rendered
-output evidence are still pending.
+Evidence status: reproduced, implemented, and verified through generated CSS
+inspection and rendered output for direct Template, complete Project, and
+Interactive paths.
 
-Source review establishes the likely causal chain:
+Source review and Phase 1 reproduction established the causal chain:
 
 1. Direct Template normalizes its supplied `--base-profile`, while Project
    forwards its final normalized Profile into the same Template synthesis
@@ -244,7 +245,7 @@ Source review establishes the likely causal chain:
 6. Project validation checks reported font decisions, not competing preset
    declarations in the generated CSS.
 
-The resulting conflict is:
+The pre-fix conflict was:
 
 ```text
 Direct Template                         Project
@@ -280,25 +281,23 @@ Direct Template                         Project
                   Preset Font wins accidentally
 ```
 
-The direct Template helper and Project share the faulty synthesis boundary even
-though their output bundles differ. Reproduction should start with direct
-`md pdf-template codex --base-profile`, then prove that the Project Template
-phase and both Interactive wrappers inherit the same behavior. Direct Template
-render evidence must supply the same compatibility Profile explicitly; Project
-render evidence obtains its final Profile from the complete bundle.
+The direct Template helper and Project shared the faulty synthesis boundary even
+though their output bundles differ. Their reproductions produced the same
+effective generated CSS conflict and byte-identical rendered output. The direct
+Template render supplied its compatibility Profile explicitly; the Project
+render obtained its final Profile from the complete bundle.
 
 ### Version Boundary
 
-The shared Template synthesis exists in released `v0.1.5`, and the Project path
-also shipped in that stable release. The behavior remains relevant to the
-latest released canary, `v0.1.6-canary.3`.
-
-The exact first affected commit or canary for each direct path should be
-recorded only after tag-based reproduction confirms it.
+The direct Template path and the shared synthesis conflict first coexist with
+the Project path in `v0.1.5-canary.4`; `v0.1.5` is the first affected stable
+release. Tag comparison confirmed that the causal synthesis files were
+unchanged across that boundary. Stable release-note authoring for the fix
+remains part of the later release workflow.
 
 ### Selected Fix: Ownership-Aware Font CSS Emission
 
-Generated Template CSS should omit `font-family` declarations for CSS font
+Generated Template CSS now omits `font-family` declarations for CSS font
 slots owned by the effective compatibility Profile. That Profile is the
 normalized `--base-profile` for direct Template and the normalized final
 Project Profile for Project. The ownership mask must come from the full
@@ -346,11 +345,11 @@ body {                          body {
              Profile Font remains effective
 ```
 
-This direction does not reverse stylesheet order, add `!important`, or copy
-Profile font stacks into a second policy implementation. If the focused
-synthesis spike shows that omission cannot preserve a supported CSS slot, keep
-the research open and reconsider the direction rather than silently duplicating
-Profile serialization.
+The implementation does not reverse stylesheet order, add `!important`, or
+copy Profile font stacks into a second policy implementation. Focused
+synthesis coverage and rendered evidence confirm that omission preserves the
+supported document slots while keeping non-font Template styling and
+Template-owned cover typography.
 
 ### CSS Font Ownership Slots
 
@@ -769,28 +768,21 @@ coverage without publishing host font paths or a developer-specific inventory.
 
 | Issue | Selected direction                                                                                                                                                  | Implementation status                            | Non-blocking follow-up                                     |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | draft plan; reproduction and rendering remain    | Interactive base-candidate and lineage wording             |
+| #60   | omit Template `font-family` output for slots owned by the effective compatibility Profile; preserve bounded direct-Template overrides and existing stylesheet order | implemented, rendered, documented, and reviewed  | PR and release communication outside this research         |
 | #61   | keep fontconfig, retain aliases and full names for lookup, rank deterministically, and preserve custom input first                                                  | implemented, validated, documented, and reviewed | presentation refinements outside the conditional slow path |
 
-The separate implementation plans own these checkpoints. Issue #61 is complete
-and reviewed; Issue #60 remains independently actionable.
+The separate implementation plans own these checkpoints. Both implementation
+directions are complete and reviewed; PR, release, and issue-closing actions
+remain outside this research lifecycle.
 
 ## Research Exit Criteria
 
-Keep this document `in-progress` because Issue #60 reproduction and rendered
-evidence remain open. Issue #61 has satisfied its installed-font discovery and
-selection exit criteria.
-
-The research can become `completed` when:
-
-- Issue #60 has failing direct Template and Project reproductions with distinct
-  compatibility-Profile and Template preset families
-- the affected body, language, heading, code, symbol, and page-chrome boundaries
-  are classified
-- ownership-aware omission is proven for Profile-owned slots without suppressing
-  valid direct-Template `template_level` decisions
-- generated CSS and rendered partial Template and complete Project bundles
-  prove the selected preservation mechanism
+Issue #60 now has failing pre-fix direct Template and Project reproductions,
+classified body, language, heading, code, symbol, and page-chrome boundaries,
+and ownership-aware omission coverage that preserves valid direct-Template
+`template_level` decisions. Generated CSS and rendered partial Template,
+complete Project, negative-boundary, deliberate-override, and Interactive
+scenarios prove the selected mechanism.
 
 The Issue #61 criteria above are complete: fixtures cover primary-family,
 alias, and full-name retention, ranking and tie-breaking, primary-family
@@ -798,8 +790,9 @@ selection, the two-stage lifecycle, timeout, cancellation, fallback, and cache
 reuse. The evidence spike and live closeout record public-safe timing and
 outcome aggregates without host inventories.
 
-The linked plans and jobs contain the implementation evidence. Keep this
-research `in-progress` until the remaining Issue #60 criteria are recorded.
+The linked plans and jobs contain the implementation and render evidence. This
+research can become `completed` when the final Phase 5 documentation and
+complete-plan reviews report no unresolved actionable findings.
 
 ## Related Plans
 
@@ -810,6 +803,7 @@ research `in-progress` until the remaining Issue #60 criteria are recorded.
 
 - [Interactive Markdown PDF font-discovery evidence](../plans/jobs/2026-07-27-interactive-markdown-pdf-font-discovery-evidence.md)
 - [Interactive Markdown PDF font-search implementation](../plans/jobs/2026-07-27-interactive-markdown-pdf-font-search-implementation.md)
+- [Markdown PDF Profile font preservation implementation](../plans/jobs/2026-07-27-markdown-pdf-profile-font-preservation.md)
 
 ## Related Research
 

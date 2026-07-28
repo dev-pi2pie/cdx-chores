@@ -110,8 +110,12 @@ cross-directory composition, and role-specific troubleshooting.
 
 By default, the follow-up render uses layered CSS: the profile-derived default
 stylesheet stays enabled and the project `style.css` is applied after it. This
-keeps profile-owned page chrome, fonts, cover defaults, and Shiki hooks active
-while allowing the project stylesheet to style template-owned layout.
+keeps the normal cascade available for deliberate user styling. Generated
+Project CSS omits competing families for Profile-owned document font slots
+while retaining Template-owned layout and cover typography; Project validation
+recomputes that ownership boundary from the final Profile and rejects a
+generated stylesheet that bypasses it. Profile-owned page chrome, cover
+defaults, and Shiki hooks remain active through their existing boundaries.
 
 ## Ownership Model
 
