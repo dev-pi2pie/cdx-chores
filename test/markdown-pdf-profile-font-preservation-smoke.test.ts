@@ -8,10 +8,14 @@ const scriptPath = "scripts/generate-markdown-pdf-profile-font-preservation-smok
 const ownershipMarkerName = ".cdx-chores-profile-font-preservation-smoke";
 const ownershipMarkerContent = "cdx-chores markdown-pdf profile-font-preservation smoke v1\n";
 
-function runHarness(args: string[], env?: NodeJS.ProcessEnv) {
+function runHarness(
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+  execution: { cwd?: string; script?: string } = {},
+) {
   const proc = Bun.spawnSync({
-    cmd: [process.execPath, scriptPath, ...args],
-    cwd: REPO_ROOT,
+    cmd: [process.execPath, execution.script ?? scriptPath, ...args],
+    cwd: execution.cwd ?? REPO_ROOT,
     stdout: "pipe",
     stderr: "pipe",
     env: env ? { ...process.env, ...env } : process.env,
@@ -266,7 +270,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
     });
   });
 
-  test("clean preserves an unowned direct child", async () => {
+  test("clean preserves a direct child without the exact ownership marker", async () => {
     await withSmokeFixture(async ({ smokeDir }) => {
       const keepPath = join(smokeDir, "keep.txt");
       await mkdir(smokeDir, { recursive: true });
@@ -276,6 +280,13 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("without its ownership marker");
+      expect(await readFile(keepPath, "utf8")).toBe("keep");
+
+      await writeFile(join(smokeDir, ownershipMarkerName), "wrong owner\n", "utf8");
+      const wrongMarkerResult = runHarness(["clean", "--smoke-dir", smokeDir]);
+
+      expect(wrongMarkerResult.exitCode).toBe(1);
+      expect(wrongMarkerResult.stderr).toContain("without its ownership marker");
       expect(await readFile(keepPath, "utf8")).toBe("keep");
     });
   });
@@ -354,6 +365,59 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       });
       const assistedCommands = await readExecutedSmokeCommands(commandLogPath);
       expect(assistedCommands).toEqual(plan.commands.map(loggedCommand));
+
+      const cleanResult = runHarness(["clean", "--smoke-dir", smokeDir]);
+      expect(cleanResult.exitCode).toBe(0);
+      await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  test("run creates a missing production smoke root in an isolated repository", async () => {
+    await withTempFixtureDir("markdown-pdf-profile-font-preservation-repo", async (fixtureDir) => {
+      const isolatedRepo = join(fixtureDir, "repo");
+      const isolatedScript = join(
+        isolatedRepo,
+        "scripts",
+        "generate-markdown-pdf-profile-font-preservation-smoke.mjs",
+      );
+      const inputPath = join(isolatedRepo, "input.md");
+      const profilePath = join(isolatedRepo, "profile.yml");
+      const smokeRoot = join(isolatedRepo, "examples", "playground", "md-pdf", "smoke");
+      const smokeDir = join(smokeRoot, "run");
+      const stubBinDir = join(fixtureDir, "bin");
+      const commandLogPath = join(fixtureDir, "commands.log");
+
+      await mkdir(join(isolatedRepo, "scripts"), { recursive: true });
+      await writeFile(isolatedScript, await readFile(join(REPO_ROOT, scriptPath), "utf8"), "utf8");
+      await writeFile(inputPath, "# Isolated smoke\n", "utf8");
+      await writeFile(profilePath, "fonts: {}\n", "utf8");
+      await mkdir(join(isolatedRepo, "examples", "playground", "md-pdf"), {
+        recursive: true,
+      });
+      await writeSmokeCommandStubs(stubBinDir);
+      await expect(stat(smokeRoot)).rejects.toMatchObject({ code: "ENOENT" });
+
+      const result = runHarness(
+        ["run", "--input", inputPath, "--profile", profilePath, "--smoke-dir", smokeDir],
+        {
+          PATH: stubBinDir,
+          SMOKE_COMMAND_LOG: commandLogPath,
+        },
+        { cwd: isolatedRepo, script: isolatedScript },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(await readFile(join(smokeDir, ownershipMarkerName), "utf8")).toBe(
+        ownershipMarkerContent,
+      );
+
+      const cleanResult = runHarness(["clean", "--smoke-dir", smokeDir], undefined, {
+        cwd: isolatedRepo,
+        script: isolatedScript,
+      });
+      expect(cleanResult.exitCode).toBe(0);
+      await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

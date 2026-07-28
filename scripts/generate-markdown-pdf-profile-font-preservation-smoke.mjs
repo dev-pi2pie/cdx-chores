@@ -202,6 +202,22 @@ async function assertSafeSmokeMutationTarget(smokeDir) {
   await assertNoSymlinkedMutationComponents(smokeDir);
 }
 
+async function ensureAllowedMutationRoot(smokeDir) {
+  const allowedRoot = allowedMutationRoot(smokeDir);
+  try {
+    await mkdir(allowedRoot);
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "EEXIST")) {
+      throw error;
+    }
+  }
+  const rootStat = await lstat(allowedRoot);
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
+    throw new Error("Refusing to use a generated-output root that is not a real directory.");
+  }
+  await assertNoSymlinkedMutationComponents(smokeDir);
+}
+
 async function detachAndRemoveOwnedSmokeDir(smokeDir) {
   await assertSafeSmokeMutationTarget(smokeDir);
   try {
@@ -554,6 +570,7 @@ async function runSmoke(
 
   const plan = createPlan(inputPath, profilePath, smokeDir, templateHeadingFamily);
   await detachAndRemoveOwnedSmokeDir(smokeDir);
+  await ensureAllowedMutationRoot(smokeDir);
   await mkdir(smokeDir);
   await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent, "utf8");
   await mkdir(join(smokeDir, "outputs"));
