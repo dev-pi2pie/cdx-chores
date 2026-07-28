@@ -218,6 +218,18 @@ async function ensureAllowedMutationRoot(smokeDir) {
   await assertNoSymlinkedMutationComponents(smokeDir);
 }
 
+async function assertCanonicalSmokeDir(smokeDir) {
+  const allowedRoot = allowedMutationRoot(smokeDir);
+  const [canonicalRoot, canonicalSmokeDir] = await Promise.all([
+    realpath(allowedRoot),
+    realpath(smokeDir),
+  ]);
+  if (dirname(canonicalSmokeDir) !== canonicalRoot) {
+    throw new Error("Refusing to write a smoke directory outside its canonical output root.");
+  }
+  await assertNoSymlinkedMutationComponents(smokeDir);
+}
+
 async function detachAndRemoveOwnedSmokeDir(smokeDir) {
   await assertSafeSmokeMutationTarget(smokeDir);
   try {
@@ -572,6 +584,7 @@ async function runSmoke(
   await detachAndRemoveOwnedSmokeDir(smokeDir);
   await ensureAllowedMutationRoot(smokeDir);
   await mkdir(smokeDir);
+  await assertCanonicalSmokeDir(smokeDir);
   await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent, "utf8");
   await mkdir(join(smokeDir, "outputs"));
   await writeFile(
