@@ -352,7 +352,7 @@ Phase gate:
 
 ### Phase 4: Dedicated Render Smoke Validation
 
-Status: reopened follow-up evidence complete; exact-range review pending.
+Status: reopened follow-up complete; gate passed.
 
 Tasks:
 
@@ -413,7 +413,7 @@ Reopened follow-up tasks:
       workspace without recording local font resources or environment setup.
 - [x] Run focused and repository-wide checks after any harness or coverage
       change.
-- [ ] Review the reopened Phase 4 range and resolve all actionable findings.
+- [x] Review the reopened Phase 4 range and resolve all actionable findings.
 
 Reopened phase gate acceptance conditions:
 

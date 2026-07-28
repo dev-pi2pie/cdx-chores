@@ -361,8 +361,7 @@ Passed.
 
 ### Reopened Follow-up
 
-Status: live evidence and repository verification complete; exact-range review
-pending.
+Status: Phase 4 follow-up complete; Phase 4 gate passed.
 
 The original Phase 4 matrix proved Profile-owned omission, Project parity,
 explicit Template-level override behavior, user CSS precedence, and Interactive
@@ -387,6 +386,11 @@ Follow-up execution boundary:
   Profile-owned Template, and Project generation.
 - `41f1992` corrected those scenarios to require the existing explicit
   Codex-assisted opt-in before the live run.
+- `c6887a1` recorded the public-safe live evidence and repository verification.
+- `1ca86cf` resolved review feedback by deriving commands, scenarios, and
+  inspection paths from one descriptor table.
+- `20499a5` pinned the exact hinted render commands and inspection surfaces in
+  the harness tests.
 
 Follow-up evidence:
 
@@ -425,7 +429,19 @@ Follow-up verification:
 - `bunx tsc --noEmit` passed.
 - `bun run build` passed.
 - `git diff --check` passed.
-- Exact reopened Phase 4 range review remains pending.
+
+Follow-up review:
+
+- Correctness, security, maintainability, test, and documentation reviewers
+  reviewed
+  `08d682575ea0bab33514e5fc8b65d02347d09fb5..20499a5`.
+- One maintainability finding about duplicated scenario wiring was resolved by
+  the descriptor-table refactor.
+- Two test-review findings about render-command and inspection-list coverage
+  were resolved with exact independent assertions.
+- The final widened review reported no unresolved actionable findings.
+- The reopened Phase 4 gate passed. Phase 5 remains reopened and was not
+  entered during this follow-up.
 
 ## Phase 5: Documentation And Closeout
 
@@ -548,6 +564,9 @@ complete-plan ranges before any lifecycle document returns to `completed`.
 - `a000c63` — enforce canonical output containment before generated writes.
 - `8936e56` — add the ordinary-hint ownership smoke scenarios.
 - `41f1992` — require explicit Codex assistance for the hinted scenarios.
+- `c6887a1` — record public-safe ordinary-hint smoke evidence.
+- `1ca86cf` — derive the hinted smoke plan from one descriptor table.
+- `20499a5` — pin hinted render commands and inspection surfaces.
 
 ### Phase 5
 
