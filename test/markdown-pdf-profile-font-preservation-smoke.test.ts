@@ -321,7 +321,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe("");
       const plan = JSON.parse(result.stdout) as {
-        commands: Array<{ id: string; argv: string[] }>;
+        commands: Array<{ id: string; argv: string[]; requiresCodexAssisted?: boolean }>;
         fontHints: string[];
         scenarios: Array<{ id: string; mode: string; commandIds: string[] }>;
         inspection: {
@@ -332,9 +332,9 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       };
       expect(plan.fontHints).toEqual(followUpFontHints);
       expect(plan.scenarios.slice(-4).map(({ id, mode }) => ({ id, mode }))).toEqual([
-        { id: "ordinary-hints-template", mode: "automated" },
-        { id: "profile-owned-hints-template", mode: "automated" },
-        { id: "project-hints", mode: "automated" },
+        { id: "ordinary-hints-template", mode: "codex-assisted" },
+        { id: "profile-owned-hints-template", mode: "codex-assisted" },
+        { id: "project-hints", mode: "codex-assisted" },
         { id: "interactive", mode: "manual" },
       ]);
       expect(plan.commands.slice(-6).map(({ id }) => id)).toEqual([
@@ -348,10 +348,19 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
 
       for (const id of [
         "ordinary-hints-template-generate",
+        "ordinary-hints-template-render",
         "profile-owned-hints-template-generate",
+        "profile-owned-hints-template-render",
         "project-hints-generate",
+        "project-hints-render",
       ]) {
         const argv = plan.commands.find((command) => command.id === id)?.argv ?? [];
+        expect(plan.commands.find((command) => command.id === id)?.requiresCodexAssisted).toBe(
+          true,
+        );
+        if (id.endsWith("-render")) {
+          continue;
+        }
         expect(collectedOptionValues(argv, "--font-hint")).toEqual(followUpFontHints);
         expect(argv).toContain("--input");
         expect(argv).toContain("--keep-codex-report");
@@ -555,20 +564,45 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         ...fontHintArgs(followUpFontHints),
       ];
 
-      const result = runHarness(args, {
+      const localResult = runHarness(args, {
         PATH: stubBinDir,
         SMOKE_COMMAND_LOG: commandLogPath,
       });
 
-      expect(result.exitCode).toBe(0);
-      expect(result.stderr).toBe("");
-      expect(JSON.parse(result.stdout)).toEqual({
+      expect(localResult.exitCode).toBe(0);
+      expect(localResult.stderr).toBe("");
+      expect(JSON.parse(localResult.stdout)).toEqual({
         category: "COMPLETE_LOCAL",
-        commandCount: 13,
-        skippedScenarios: ["template-level-override", "interactive"],
+        commandCount: 7,
+        skippedScenarios: [
+          "template-level-override",
+          "ordinary-hints-template",
+          "profile-owned-hints-template",
+          "project-hints",
+          "interactive",
+        ],
+      });
+      const localCommands = await readExecutedSmokeCommands(commandLogPath);
+      expect(localCommands).toHaveLength(7);
+      expect(localCommands.filter((command) => command.includes("--font-hint"))).toHaveLength(0);
+
+      await writeFile(commandLogPath, "", "utf8");
+      const assistedResult = runHarness(
+        [...args, "--allow-codex-assisted", "--template-heading-family", "Operator Heading"],
+        {
+          PATH: stubBinDir,
+          SMOKE_COMMAND_LOG: commandLogPath,
+        },
+      );
+      expect(assistedResult.exitCode).toBe(0);
+      expect(assistedResult.stderr).toBe("");
+      expect(JSON.parse(assistedResult.stdout)).toEqual({
+        category: "COMPLETE",
+        commandCount: 15,
+        skippedScenarios: ["interactive"],
       });
       const commands = await readExecutedSmokeCommands(commandLogPath);
-      expect(commands).toHaveLength(13);
+      expect(commands).toHaveLength(15);
       expect(commands.filter((command) => command.includes("--font-hint"))).toHaveLength(3);
       expect(commands).toEqual(
         expect.arrayContaining([

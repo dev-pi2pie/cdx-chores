@@ -509,6 +509,7 @@ function createPlan(
           {
             id: "ordinary-hints-template-generate",
             scenario: "ordinary-hints-template",
+            requiresCodexAssisted: true,
             argv: [
               "bun",
               "src/bin.ts",
@@ -527,6 +528,7 @@ function createPlan(
           {
             id: "ordinary-hints-template-render",
             scenario: "ordinary-hints-template",
+            requiresCodexAssisted: true,
             argv: renderArgv({
               input: inputPath,
               template: join(ordinaryHintsBundle, "template.html"),
@@ -538,6 +540,7 @@ function createPlan(
           {
             id: "profile-owned-hints-template-generate",
             scenario: "profile-owned-hints-template",
+            requiresCodexAssisted: true,
             argv: [
               "bun",
               "src/bin.ts",
@@ -558,6 +561,7 @@ function createPlan(
           {
             id: "profile-owned-hints-template-render",
             scenario: "profile-owned-hints-template",
+            requiresCodexAssisted: true,
             argv: renderArgv({
               input: inputPath,
               profile: profilePath,
@@ -570,6 +574,7 @@ function createPlan(
           {
             id: "project-hints-generate",
             scenario: "project-hints",
+            requiresCodexAssisted: true,
             argv: [
               "bun",
               "src/bin.ts",
@@ -588,6 +593,7 @@ function createPlan(
           {
             id: "project-hints-render",
             scenario: "project-hints",
+            requiresCodexAssisted: true,
             argv: renderArgv({
               bundle: projectHintsBundle,
               input: inputPath,
@@ -603,12 +609,12 @@ function createPlan(
       : [
           {
             id: "ordinary-hints-template",
-            mode: "automated",
+            mode: "codex-assisted",
             commandIds: ["ordinary-hints-template-generate", "ordinary-hints-template-render"],
           },
           {
             id: "profile-owned-hints-template",
-            mode: "automated",
+            mode: "codex-assisted",
             commandIds: [
               "profile-owned-hints-template-generate",
               "profile-owned-hints-template-render",
@@ -616,7 +622,7 @@ function createPlan(
           },
           {
             id: "project-hints",
-            mode: "automated",
+            mode: "codex-assisted",
             commandIds: ["project-hints-generate", "project-hints-render"],
           },
         ];
