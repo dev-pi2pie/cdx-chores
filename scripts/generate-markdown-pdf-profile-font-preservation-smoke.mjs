@@ -362,12 +362,38 @@ function createPlan(
   const partialBundle = join(smokeDir, "partial-template");
   const projectBundle = join(smokeDir, "complete-project");
   const deliberateBundle = join(smokeDir, "template-level-override");
-  const ordinaryHintsBundle = join(smokeDir, "ordinary-hints-template");
-  const profileOwnedHintsBundle = join(smokeDir, "profile-owned-hints-template");
-  const projectHintsBundle = join(smokeDir, "project-hints");
   const userCssPath = join(smokeDir, "user-override.css");
   const outputPath = (name, extension) => join(smokeDir, "outputs", `${name}.${extension}`);
   const fontHintArgv = fontHints.flatMap((hint) => ["--font-hint", hint]);
+  const fontHintScenarioDescriptors =
+    fontHints.length === 0
+      ? []
+      : [
+          {
+            id: "ordinary-hints-template",
+            authoringCommand: "pdf-template",
+            bundle: join(smokeDir, "ordinary-hints-template"),
+            reportName: "template.codex-report.json",
+            renderMode: "template",
+            usesBaseProfile: false,
+          },
+          {
+            id: "profile-owned-hints-template",
+            authoringCommand: "pdf-template",
+            bundle: join(smokeDir, "profile-owned-hints-template"),
+            reportName: "template.codex-report.json",
+            renderMode: "template",
+            usesBaseProfile: true,
+          },
+          {
+            id: "project-hints",
+            authoringCommand: "pdf-project",
+            bundle: join(smokeDir, "project-hints"),
+            reportName: "project.codex-report.json",
+            renderMode: "bundle",
+            usesBaseProfile: false,
+          },
+        ];
 
   const baseCommands = [
     {
@@ -502,130 +528,58 @@ function createPlan(
       }),
     },
   ];
-  const fontHintCommands =
-    fontHints.length === 0
-      ? []
-      : [
-          {
-            id: "ordinary-hints-template-generate",
-            scenario: "ordinary-hints-template",
-            requiresCodexAssisted: true,
-            argv: [
-              "bun",
-              "src/bin.ts",
-              "md",
-              "pdf-template",
-              "codex",
-              "--input",
-              inputPath,
-              ...fontHintArgv,
-              "--output",
-              ordinaryHintsBundle,
-              "--keep-codex-report",
-              "--overwrite",
-            ],
-          },
-          {
-            id: "ordinary-hints-template-render",
-            scenario: "ordinary-hints-template",
-            requiresCodexAssisted: true,
-            argv: renderArgv({
+  const fontHintCommands = fontHintScenarioDescriptors.flatMap(
+    ({ authoringCommand, bundle, id, renderMode, usesBaseProfile }) => {
+      const generateArgv = [
+        "bun",
+        "src/bin.ts",
+        "md",
+        authoringCommand,
+        "codex",
+        "--input",
+        inputPath,
+        ...(usesBaseProfile ? ["--base-profile", profilePath] : []),
+        ...fontHintArgv,
+        "--output",
+        bundle,
+        "--keep-codex-report",
+        "--overwrite",
+      ];
+      const renderOptions =
+        renderMode === "bundle"
+          ? { bundle, input: inputPath }
+          : {
+              css: join(bundle, "style.css"),
               input: inputPath,
-              template: join(ordinaryHintsBundle, "template.html"),
-              css: join(ordinaryHintsBundle, "style.css"),
-              html: outputPath("ordinary-hints-template", "html"),
-              output: outputPath("ordinary-hints-template", "pdf"),
-            }),
-          },
-          {
-            id: "profile-owned-hints-template-generate",
-            scenario: "profile-owned-hints-template",
-            requiresCodexAssisted: true,
-            argv: [
-              "bun",
-              "src/bin.ts",
-              "md",
-              "pdf-template",
-              "codex",
-              "--input",
-              inputPath,
-              "--base-profile",
-              profilePath,
-              ...fontHintArgv,
-              "--output",
-              profileOwnedHintsBundle,
-              "--keep-codex-report",
-              "--overwrite",
-            ],
-          },
-          {
-            id: "profile-owned-hints-template-render",
-            scenario: "profile-owned-hints-template",
-            requiresCodexAssisted: true,
-            argv: renderArgv({
-              input: inputPath,
-              profile: profilePath,
-              template: join(profileOwnedHintsBundle, "template.html"),
-              css: join(profileOwnedHintsBundle, "style.css"),
-              html: outputPath("profile-owned-hints-template", "html"),
-              output: outputPath("profile-owned-hints-template", "pdf"),
-            }),
-          },
-          {
-            id: "project-hints-generate",
-            scenario: "project-hints",
-            requiresCodexAssisted: true,
-            argv: [
-              "bun",
-              "src/bin.ts",
-              "md",
-              "pdf-project",
-              "codex",
-              "--input",
-              inputPath,
-              ...fontHintArgv,
-              "--output",
-              projectHintsBundle,
-              "--keep-codex-report",
-              "--overwrite",
-            ],
-          },
-          {
-            id: "project-hints-render",
-            scenario: "project-hints",
-            requiresCodexAssisted: true,
-            argv: renderArgv({
-              bundle: projectHintsBundle,
-              input: inputPath,
-              html: outputPath("project-hints", "html"),
-              output: outputPath("project-hints", "pdf"),
-            }),
-          },
-        ];
+              ...(usesBaseProfile ? { profile: profilePath } : {}),
+              template: join(bundle, "template.html"),
+            };
+      return [
+        {
+          id: `${id}-generate`,
+          scenario: id,
+          requiresCodexAssisted: true,
+          argv: generateArgv,
+        },
+        {
+          id: `${id}-render`,
+          scenario: id,
+          requiresCodexAssisted: true,
+          argv: renderArgv({
+            ...renderOptions,
+            html: outputPath(id, "html"),
+            output: outputPath(id, "pdf"),
+          }),
+        },
+      ];
+    },
+  );
   const commands = [...baseCommands, ...fontHintCommands];
-  const fontHintScenarios =
-    fontHints.length === 0
-      ? []
-      : [
-          {
-            id: "ordinary-hints-template",
-            mode: "codex-assisted",
-            commandIds: ["ordinary-hints-template-generate", "ordinary-hints-template-render"],
-          },
-          {
-            id: "profile-owned-hints-template",
-            mode: "codex-assisted",
-            commandIds: [
-              "profile-owned-hints-template-generate",
-              "profile-owned-hints-template-render",
-            ],
-          },
-          {
-            id: "project-hints",
-            mode: "codex-assisted",
-            commandIds: ["project-hints-generate", "project-hints-render"],
-          },
-        ];
+  const fontHintScenarios = fontHintScenarioDescriptors.map(({ id }) => ({
+    id,
+    mode: "codex-assisted",
+    commandIds: [`${id}-generate`, `${id}-render`],
+  }));
 
   return {
     schemaVersion: 1,
@@ -667,34 +621,15 @@ function createPlan(
         join(partialBundle, "template.codex-report.json"),
         join(projectBundle, "project.codex-report.json"),
         join(deliberateBundle, "template.codex-report.json"),
-        ...(fontHints.length === 0
-          ? []
-          : [
-              join(ordinaryHintsBundle, "template.codex-report.json"),
-              join(profileOwnedHintsBundle, "template.codex-report.json"),
-              join(projectHintsBundle, "project.codex-report.json"),
-            ]),
+        ...fontHintScenarioDescriptors.map(({ bundle, reportName }) => join(bundle, reportName)),
       ],
       generatedStylesheets: [
         join(partialBundle, "style.css"),
         join(projectBundle, "style.css"),
         join(deliberateBundle, "style.css"),
-        ...(fontHints.length === 0
-          ? []
-          : [
-              join(ordinaryHintsBundle, "style.css"),
-              join(profileOwnedHintsBundle, "style.css"),
-              join(projectHintsBundle, "style.css"),
-            ]),
+        ...fontHintScenarioDescriptors.map(({ bundle }) => join(bundle, "style.css")),
       ],
-      renderedOutputs:
-        fontHints.length === 0
-          ? []
-          : [
-              outputPath("ordinary-hints-template", "pdf"),
-              outputPath("profile-owned-hints-template", "pdf"),
-              outputPath("project-hints", "pdf"),
-            ],
+      renderedOutputs: fontHintScenarioDescriptors.map(({ id }) => outputPath(id, "pdf")),
       templateLevelDecisionReport: join(deliberateBundle, "template.codex-report.json"),
     },
   };
