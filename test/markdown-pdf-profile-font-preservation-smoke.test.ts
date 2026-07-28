@@ -33,6 +33,11 @@ async function writeSmokeCommandStubs(stubBinDir: string) {
         "#!/bin/sh",
         'if [ "$1" != "--version" ]; then',
         `  printf '%s\\t%s\\n' '${command}' "$*" >> "$SMOKE_COMMAND_LOG"`,
+        '  if [ -n "$SMOKE_FAIL_PATTERN" ]; then',
+        '    case "$*" in',
+        '      *"$SMOKE_FAIL_PATTERN"*) exit 7 ;;',
+        "    esac",
+        "  fi",
         "fi",
         "",
       ].join("\n"),
@@ -349,6 +354,42 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       });
       const assistedCommands = await readExecutedSmokeCommands(commandLogPath);
       expect(assistedCommands).toEqual(plan.commands.map(loggedCommand));
+    });
+  });
+
+  test("run stops at the first failed emitted command", async () => {
+    await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
+      const stubBinDir = join(smokeDir, "..", "bin");
+      const commandLogPath = join(smokeDir, "..", "commands.log");
+      await writeSmokeCommandStubs(stubBinDir);
+
+      const planResult = runHarness([
+        "plan",
+        "--input",
+        inputPath,
+        "--profile",
+        profilePath,
+        "--smoke-dir",
+        smokeDir,
+      ]);
+      const plan = JSON.parse(planResult.stdout) as {
+        commands: Array<{ argv: string[] }>;
+      };
+      const result = runHarness(
+        ["run", "--input", inputPath, "--profile", profilePath, "--smoke-dir", smokeDir],
+        {
+          PATH: stubBinDir,
+          SMOKE_COMMAND_LOG: commandLogPath,
+          SMOKE_FAIL_PATTERN: "md pdf-project codex",
+        },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Smoke command failed: complete-project-generate (exit 7).");
+      expect(await readExecutedSmokeCommands(commandLogPath)).toEqual(
+        plan.commands.slice(0, 4).map(({ argv }) => `${argv[0]}\t${argv.slice(1).join(" ")}`),
+      );
     });
   });
 

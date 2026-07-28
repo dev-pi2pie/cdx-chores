@@ -215,6 +215,13 @@ async function detachAndRemoveOwnedSmokeDir(smokeDir) {
     }
     throw error;
   }
+  try {
+    if ((await readFile(join(smokeDir, ownershipMarkerName), "utf8")) !== ownershipMarkerContent) {
+      throw new Error("Unexpected ownership marker content.");
+    }
+  } catch {
+    throw new Error("Refusing to remove a smoke directory without its ownership marker.");
+  }
 
   const detachedPath = join(dirname(smokeDir), `.${basename(smokeDir)}.cleanup-${randomUUID()}`);
   await rename(smokeDir, detachedPath);
@@ -232,10 +239,14 @@ async function detachAndRemoveOwnedSmokeDir(smokeDir) {
   if (!owned) {
     try {
       await rename(detachedPath, smokeDir);
-    } catch {
-      // Preserve the detached target rather than deleting an unowned path.
+    } catch (error) {
+      throw new Error(
+        `Refusing to remove a detached smoke directory whose ownership changed; restoration failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
-    throw new Error("Refusing to remove a smoke directory without its ownership marker.");
+    throw new Error("Refusing to remove a smoke directory whose ownership changed.");
   }
 
   await rm(detachedPath, { recursive: true, force: true });
@@ -543,8 +554,9 @@ async function runSmoke(
 
   const plan = createPlan(inputPath, profilePath, smokeDir, templateHeadingFamily);
   await detachAndRemoveOwnedSmokeDir(smokeDir);
-  await mkdir(join(smokeDir, "outputs"), { recursive: true });
+  await mkdir(smokeDir);
   await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent, "utf8");
+  await mkdir(join(smokeDir, "outputs"));
   await writeFile(
     join(smokeDir, "user-override.css"),
     [
