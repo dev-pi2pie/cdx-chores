@@ -229,7 +229,12 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         scenarios: Array<{ id: string; mode: string; commandIds: string[] }>;
         fontHints: string[];
         input: string;
-        inspection: { templateLevelDecisionReport: string };
+        inspection: {
+          generatedStylesheets: string[];
+          renderedOutputs: string[];
+          reports: string[];
+          templateLevelDecisionReport: string;
+        };
       };
       expect(plan.input).toBe(inputPath);
       expect(plan.fontHints).toEqual([]);
@@ -302,6 +307,19 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       expect(plan.inspection.templateLevelDecisionReport).toEndWith(
         "template-level-override/template.codex-report.json",
       );
+      expect(plan.inspection.reports.map((path) => path.slice(smokeDir.length + 1))).toEqual([
+        "partial-template/template.codex-report.json",
+        "complete-project/project.codex-report.json",
+        "template-level-override/template.codex-report.json",
+      ]);
+      expect(
+        plan.inspection.generatedStylesheets.map((path) => path.slice(smokeDir.length + 1)),
+      ).toEqual([
+        "partial-template/style.css",
+        "complete-project/style.css",
+        "template-level-override/style.css",
+      ]);
+      expect(plan.inspection.renderedOutputs).toEqual([]);
     });
   });
 
@@ -331,13 +349,28 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         };
       };
       expect(plan.fontHints).toEqual(followUpFontHints);
-      expect(plan.scenarios.slice(-4).map(({ id, mode }) => ({ id, mode }))).toEqual([
+      expect(plan.scenarios.map(({ id, mode }) => ({ id, mode }))).toEqual([
+        { id: "profile-control", mode: "automated" },
+        { id: "partial-template", mode: "automated" },
+        { id: "complete-project", mode: "automated" },
+        { id: "template-level-override", mode: "codex-assisted" },
+        { id: "no-default-css", mode: "automated" },
+        { id: "user-css", mode: "automated" },
         { id: "ordinary-hints-template", mode: "codex-assisted" },
         { id: "profile-owned-hints-template", mode: "codex-assisted" },
         { id: "project-hints", mode: "codex-assisted" },
         { id: "interactive", mode: "manual" },
       ]);
-      expect(plan.commands.slice(-6).map(({ id }) => id)).toEqual([
+      expect(plan.commands.map(({ id }) => id)).toEqual([
+        "profile-control-render",
+        "partial-template-generate",
+        "partial-template-render",
+        "complete-project-generate",
+        "complete-project-render",
+        "template-level-override-generate",
+        "template-level-override-render",
+        "no-default-css-render",
+        "user-css-render",
         "ordinary-hints-template-generate",
         "ordinary-hints-template-render",
         "profile-owned-hints-template-generate",
