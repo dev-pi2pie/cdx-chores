@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Font Selection and Template Preservation"
 created-date: 2026-07-24
-modified-date: 2026-07-27
+modified-date: 2026-07-28
 status: in-progress
 agent: codex
 ---
@@ -64,10 +64,10 @@ Direct Template path                    Project path
                             v
 [Issue #60 - Profile font preservation]
 
-current: Template preset font-family may be emitted
-         for a Profile-owned CSS font slot
+before: Template preset font-family could be emitted
+        for a Profile-owned CSS font slot
 
-target:  omit competing generated font-family
+fixed:  omit competing generated font-family
                                       |
                           +-----------+-----------+
                           |                       |
@@ -86,7 +86,7 @@ target:  omit competing generated font-family
 
 | Issue | Lifecycle boundary                      | Current conclusion                                          | Remaining proof                                                    |
 | ----- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| #60   | shared Template synthesis and rendering | use ownership-aware CSS emission                            | reproduce and render partial Template and complete Project bundles |
+| #60   | shared Template synthesis and rendering | ownership-aware CSS emission implemented and rendered      | none within the implementation research scope                       |
 | #61   | local discovery and selection           | implemented and validated through its dedicated plan        | none within the installed-font search scope                        |
 
 The two issues share data but not implementation ownership. They should produce

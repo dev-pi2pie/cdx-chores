@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-23
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---

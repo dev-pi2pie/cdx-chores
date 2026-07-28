@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-07-22
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---

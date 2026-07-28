@@ -950,6 +950,59 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     ]);
   });
 
+  test("restores the body family for an explicit template-level default override", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: {
+          body: { default: "Profile Serif" },
+        },
+      },
+    }).profile;
+    const signals = createSynthesisSignals({
+      baseProfilePreset: "article",
+      profileFonts: {
+        families: [{ family: "Profile Serif", key: "default", role: "body" }],
+        overflowFamilyCount: 0,
+      },
+    });
+    const result = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({
+        signals,
+        fontDecisions: [
+          {
+            family: "Editorial Serif",
+            key: "default",
+            role: "body",
+            source: "template-style",
+            templateLevel: true,
+          },
+        ],
+      }),
+      fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedProfile),
+      outputPlan: createSynthesisOutputPlan(),
+      signals,
+    });
+
+    expect(cssDeclarationsForSelector(result.styleCss, ":root")).toMatchObject({
+      "--template-body-font": '"Editorial Serif", serif',
+    });
+    expect(cssDeclarationsForSelector(result.styleCss, "body")).toMatchObject({
+      "font-family": "var(--template-body-font)",
+      "font-size": "10.5pt",
+      "line-height": "1.5",
+    });
+    expect(result.fontDecisions).toEqual([
+      expect.objectContaining({
+        key: "default",
+        overridesProfileFont: true,
+        profileOwned: true,
+        reason: "template-level-override",
+        role: "body",
+        status: "applied",
+      }),
+    ]);
+  });
+
   test("canonicalizes explicit language overrides before restoring their selector", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {

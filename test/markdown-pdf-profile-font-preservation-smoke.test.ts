@@ -291,6 +291,31 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
     });
   });
 
+  test("run preserves a smoke directory without the exact ownership marker", async () => {
+    await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
+      const stubBinDir = join(smokeDir, "..", "bin");
+      const keepPath = join(smokeDir, "keep.txt");
+      await writeSmokeCommandStubs(stubBinDir);
+      await mkdir(smokeDir, { recursive: true });
+      await writeFile(keepPath, "keep", "utf8");
+
+      const args = ["run", "--input", inputPath, "--profile", profilePath, "--smoke-dir", smokeDir];
+      const env = { PATH: stubBinDir };
+      const result = runHarness(args, env);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("without its ownership marker");
+      expect(await readFile(keepPath, "utf8")).toBe("keep");
+
+      await writeFile(join(smokeDir, ownershipMarkerName), "wrong owner\n", "utf8");
+      const wrongMarkerResult = runHarness(args, env);
+
+      expect(wrongMarkerResult.exitCode).toBe(1);
+      expect(wrongMarkerResult.stderr).toContain("without its ownership marker");
+      expect(await readFile(keepPath, "utf8")).toBe("keep");
+    });
+  });
+
   test("run executes eligible commands and derives skipped scenarios", async () => {
     await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
       const stubBinDir = join(smokeDir, "..", "bin");

@@ -549,7 +549,8 @@ This plan is complete only when:
   local render artifacts
 - focused and repository checks pass
 - live-render evidence exists for both bundle shapes
-- guidance, release records, research, and job links are current
+- guidance, research, job links, and the release-note handoff boundary are
+  current
 - the complete-plan review has no unresolved actionable findings
 
 ## Related Research

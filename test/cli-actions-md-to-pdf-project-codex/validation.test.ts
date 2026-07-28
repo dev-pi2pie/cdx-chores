@@ -651,6 +651,69 @@ describe("cli action modules: md pdf-project codex validation", () => {
     );
   });
 
+  test("rejects codex-assisted stylesheets that diverge from ownership-aware synthesis", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-adapted-font-css-conflict",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        await writeFile(
+          join(fixtureDir, "report.md"),
+          [
+            "# Report",
+            "",
+            "| c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 |",
+            "| -- | -- | -- | -- | -- | -- | -- | -- |",
+            "| a | b | c | d | e | f | g | h |",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, {
+            baseProfile: "base.yml",
+            input: "report.md",
+            profileCodexRunner: adaptedProfileRunner({ candidateId: "wide-table" }),
+            templateCodexRunner: async () => templateResponse({ recipePreset: "wide-table" }),
+          });
+        expect(templatePhase.codexResult).toBeDefined();
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            styleCss: `${templatePhase.synthesis.styleCss}\nbody { font-family: Forged Family; }\n`,
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expectNoUsableValidationFailure(validation, {
+          name: "profile-template-compatibility",
+          messageIncludes: "ownership-aware synthesis from the final profile",
+        });
+      },
+    );
+  });
+
   test("rejects templates that drop profile-owned ToC hooks", async () => {
     await withTempFixtureDir("md-pdf-project-codex-validation-toc-hooks", async (fixtureDir) => {
       await writeFile(
