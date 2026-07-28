@@ -654,7 +654,16 @@ pageNumbers:
 
 ## Profile Fonts And Mixed Language
 
-Most mixed-language documents should start with ordered fallback fonts. Put the Latin/body default first when Latin text should keep the primary body font:
+Mixed-language font configuration has three separate responsibilities:
+
+| Input | Responsibility |
+| --- | --- |
+| `pdf.content-langs` | Declares expected languages and orders configured language families in the general body fallback stack |
+| `fonts.body.<language>` | Assigns a family to one language slot and emits a matching `:lang(...)` rule |
+| A rendered `lang` attribute | Activates that language rule for an exact span or block |
+
+Most mixed-language documents should start with ordered fallback fonts. Put the
+Latin/body default first when Latin text should keep the primary body font:
 
 ```yaml
 fonts:
@@ -695,7 +704,15 @@ Raw HTML works as an escape hatch:
 English text with <span lang="ja">日本語</span>.
 ```
 
-`pdf.content-langs` declares expected content languages for profile preparation and validation. It does not detect or rewrite language boundaries. Exact font switching still requires language-marked Markdown or HTML.
+`pdf.content-langs` does not detect scripts, classify text, or rewrite language
+boundaries. Without a matching language marker, the text inherits the document
+language and uses the general body fallback stack. An earlier family that covers
+the same characters may therefore be selected before the configured
+language-specific family, which might not appear in the rendered PDF at all.
+
+See the
+[language-tagged CJK smoke input](../../examples/playground/md-pdf/cjk-font-smoke-lang-tagged.md)
+for a complete mixed-language example.
 
 CJK is the first-class mixed-language target for this profile slice. Latin-extended and RTL content have smoke coverage for profile normalization and generated CSS, but this does not claim renderer-specific RTL shaping quality.
 

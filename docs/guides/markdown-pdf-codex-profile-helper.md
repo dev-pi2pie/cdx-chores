@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-07-22
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---
@@ -274,6 +274,11 @@ fonts:
     default: "JetBrains Mono"
     symbols: "Noto Sans Symbols 2"
 ```
+
+See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
+for exact mixed-language assignment. A language-keyed body entry emits a
+matching `:lang(...)` rule, but it does not detect or label content; rendered
+Markdown still needs matching attributes such as `[繁體中文]{lang=zh-Hant}`.
 
 Use `font list`, `font inspect`, and `font check` when you need local evidence
 for exact family names or glyph coverage before writing a hint. `--font-hint`

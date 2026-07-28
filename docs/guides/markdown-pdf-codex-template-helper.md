@@ -247,6 +247,13 @@ cdx-chores md pdf-template codex ./multilingual-report.md \
   --output ./multilingual-template
 ```
 
+Language-specific Template decisions still require matching rendered `lang`
+attributes for exact assignment. See
+[Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
+for the shared content-label contract. A hint for Traditional Chinese body text
+does not classify or rewrite the Markdown; mark the intended content with
+syntax such as `[繁體中文]{lang=zh-Hant}`.
+
 Without a compatibility Profile, an accepted ordinary font hint can own an
 unowned document slot and emit its family through generated `style.css`. When a
 concrete `--base-profile` owns that slot, generated `style.css` instead omits

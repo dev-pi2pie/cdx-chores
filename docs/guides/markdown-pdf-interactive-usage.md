@@ -161,6 +161,15 @@ headings and titles, code text, code symbols, and artifact-supported page
 headers and footers. The editor previews the compiled direct equivalent before
 adding it. Accepted hints can be edited, removed, or reordered.
 
+Choosing a language-specific intended use records a preference for that Profile
+language slot; it does not annotate or classify the Markdown. For exact
+mixed-language assignment, mark the relevant content with Pandoc attributes
+such as `[日本語]{lang=ja}` or `[繁體中文]{lang=zh-Hant}`. Without those
+markers, the selected family only participates in fallback ordering and an
+earlier family that covers the same characters may be used instead. See
+[Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
+for the full contract.
+
 Interactive searches a local fontconfig inventory only. It groups each primary
 family with its reported aliases and full names, ranks exact, prefix,
 token-prefix, substring, and ordered-subsequence matches deterministically, and
