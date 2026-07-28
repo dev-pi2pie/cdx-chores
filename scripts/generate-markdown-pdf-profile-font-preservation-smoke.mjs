@@ -28,12 +28,13 @@ function printUsage() {
       "Plan, run, or clean the Markdown PDF Profile font-preservation smoke.",
       "",
       "Usage:",
-      "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs plan --input <path> --profile <path> --smoke-dir <path> [--template-heading-family <installed-family>]",
-      "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs run --input <path> --profile <path> --smoke-dir <path> [--allow-codex-assisted --template-heading-family <installed-family>]",
+      "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs plan --input <path> --profile <path> --smoke-dir <path> [--font-hint <text> ...] [--template-heading-family <installed-family>]",
+      "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs run --input <path> --profile <path> --smoke-dir <path> [--font-hint <text> ...] [--allow-codex-assisted --template-heading-family <installed-family>]",
       "  bun scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs clean --smoke-dir <path>",
       "",
       "The smoke directory must be a direct, harness-owned generated-output child.",
       "Input and Profile files must remain outside the generated-output directory.",
+      "Repeatable font hints add direct unowned, Profile-owned, and Project ownership scenarios.",
       "Codex-assisted scenarios require explicit opt-in.",
       "Interactive installed-font selection is a documented manual scenario in the plan.",
     ].join("\n"),
@@ -43,7 +44,7 @@ function printUsage() {
 function requiredValue(rest, index, flag) {
   const value = rest[index + 1];
   if (!value || value.startsWith("--")) {
-    throw new Error(`Expected a path after ${flag}`);
+    throw new Error(`Expected a value after ${flag}`);
   }
   return value;
 }
@@ -61,6 +62,7 @@ function parseArgs(argv) {
   let profilePath;
   let smokeDir;
   let allowCodexAssisted = false;
+  const fontHints = [];
   let templateHeadingFamily;
   for (let index = 0; index < rest.length; index += 1) {
     const arg = rest[index];
@@ -82,6 +84,21 @@ function parseArgs(argv) {
     }
     if (arg === "--smoke-dir") {
       smokeDir = resolve(repoRoot, requiredValue(rest, index, arg));
+      index += 1;
+      continue;
+    }
+    if (arg === "--font-hint") {
+      if (command === "clean") {
+        throw new Error(`Unknown argument: ${arg}`);
+      }
+      const fontHint = requiredValue(rest, index, arg).trim();
+      if (!fontHint) {
+        throw new Error("--font-hint must not be blank.");
+      }
+      if (/[\r\n]/u.test(fontHint)) {
+        throw new Error("--font-hint must be a single-line value.");
+      }
+      fontHints.push(fontHint);
       index += 1;
       continue;
     }
@@ -129,6 +146,7 @@ function parseArgs(argv) {
   return {
     allowCodexAssisted,
     command,
+    fontHints,
     inputPath,
     profilePath,
     smokeDir,
@@ -339,14 +357,19 @@ function createPlan(
   profilePath,
   smokeDir,
   templateHeadingFamily = templateHeadingFamilyPlaceholder,
+  fontHints = [],
 ) {
   const partialBundle = join(smokeDir, "partial-template");
   const projectBundle = join(smokeDir, "complete-project");
   const deliberateBundle = join(smokeDir, "template-level-override");
+  const ordinaryHintsBundle = join(smokeDir, "ordinary-hints-template");
+  const profileOwnedHintsBundle = join(smokeDir, "profile-owned-hints-template");
+  const projectHintsBundle = join(smokeDir, "project-hints");
   const userCssPath = join(smokeDir, "user-override.css");
   const outputPath = (name, extension) => join(smokeDir, "outputs", `${name}.${extension}`);
+  const fontHintArgv = fontHints.flatMap((hint) => ["--font-hint", hint]);
 
-  const commands = [
+  const baseCommands = [
     {
       id: "profile-control-render",
       scenario: "profile-control",
@@ -479,9 +502,128 @@ function createPlan(
       }),
     },
   ];
+  const fontHintCommands =
+    fontHints.length === 0
+      ? []
+      : [
+          {
+            id: "ordinary-hints-template-generate",
+            scenario: "ordinary-hints-template",
+            argv: [
+              "bun",
+              "src/bin.ts",
+              "md",
+              "pdf-template",
+              "codex",
+              "--input",
+              inputPath,
+              ...fontHintArgv,
+              "--output",
+              ordinaryHintsBundle,
+              "--keep-codex-report",
+              "--overwrite",
+            ],
+          },
+          {
+            id: "ordinary-hints-template-render",
+            scenario: "ordinary-hints-template",
+            argv: renderArgv({
+              input: inputPath,
+              template: join(ordinaryHintsBundle, "template.html"),
+              css: join(ordinaryHintsBundle, "style.css"),
+              html: outputPath("ordinary-hints-template", "html"),
+              output: outputPath("ordinary-hints-template", "pdf"),
+            }),
+          },
+          {
+            id: "profile-owned-hints-template-generate",
+            scenario: "profile-owned-hints-template",
+            argv: [
+              "bun",
+              "src/bin.ts",
+              "md",
+              "pdf-template",
+              "codex",
+              "--input",
+              inputPath,
+              "--base-profile",
+              profilePath,
+              ...fontHintArgv,
+              "--output",
+              profileOwnedHintsBundle,
+              "--keep-codex-report",
+              "--overwrite",
+            ],
+          },
+          {
+            id: "profile-owned-hints-template-render",
+            scenario: "profile-owned-hints-template",
+            argv: renderArgv({
+              input: inputPath,
+              profile: profilePath,
+              template: join(profileOwnedHintsBundle, "template.html"),
+              css: join(profileOwnedHintsBundle, "style.css"),
+              html: outputPath("profile-owned-hints-template", "html"),
+              output: outputPath("profile-owned-hints-template", "pdf"),
+            }),
+          },
+          {
+            id: "project-hints-generate",
+            scenario: "project-hints",
+            argv: [
+              "bun",
+              "src/bin.ts",
+              "md",
+              "pdf-project",
+              "codex",
+              "--input",
+              inputPath,
+              ...fontHintArgv,
+              "--output",
+              projectHintsBundle,
+              "--keep-codex-report",
+              "--overwrite",
+            ],
+          },
+          {
+            id: "project-hints-render",
+            scenario: "project-hints",
+            argv: renderArgv({
+              bundle: projectHintsBundle,
+              input: inputPath,
+              html: outputPath("project-hints", "html"),
+              output: outputPath("project-hints", "pdf"),
+            }),
+          },
+        ];
+  const commands = [...baseCommands, ...fontHintCommands];
+  const fontHintScenarios =
+    fontHints.length === 0
+      ? []
+      : [
+          {
+            id: "ordinary-hints-template",
+            mode: "automated",
+            commandIds: ["ordinary-hints-template-generate", "ordinary-hints-template-render"],
+          },
+          {
+            id: "profile-owned-hints-template",
+            mode: "automated",
+            commandIds: [
+              "profile-owned-hints-template-generate",
+              "profile-owned-hints-template-render",
+            ],
+          },
+          {
+            id: "project-hints",
+            mode: "automated",
+            commandIds: ["project-hints-generate", "project-hints-render"],
+          },
+        ];
 
   return {
     schemaVersion: 1,
+    fontHints,
     input: inputPath,
     profile: profilePath,
     smokeDir,
@@ -504,6 +646,7 @@ function createPlan(
       },
       { id: "no-default-css", mode: "automated", commandIds: ["no-default-css-render"] },
       { id: "user-css", mode: "automated", commandIds: ["user-css-render"] },
+      ...fontHintScenarios,
       {
         id: "interactive",
         mode: "manual",
@@ -518,12 +661,34 @@ function createPlan(
         join(partialBundle, "template.codex-report.json"),
         join(projectBundle, "project.codex-report.json"),
         join(deliberateBundle, "template.codex-report.json"),
+        ...(fontHints.length === 0
+          ? []
+          : [
+              join(ordinaryHintsBundle, "template.codex-report.json"),
+              join(profileOwnedHintsBundle, "template.codex-report.json"),
+              join(projectHintsBundle, "project.codex-report.json"),
+            ]),
       ],
       generatedStylesheets: [
         join(partialBundle, "style.css"),
         join(projectBundle, "style.css"),
         join(deliberateBundle, "style.css"),
+        ...(fontHints.length === 0
+          ? []
+          : [
+              join(ordinaryHintsBundle, "style.css"),
+              join(profileOwnedHintsBundle, "style.css"),
+              join(projectHintsBundle, "style.css"),
+            ]),
       ],
+      renderedOutputs:
+        fontHints.length === 0
+          ? []
+          : [
+              outputPath("ordinary-hints-template", "pdf"),
+              outputPath("profile-owned-hints-template", "pdf"),
+              outputPath("project-hints", "pdf"),
+            ],
       templateLevelDecisionReport: join(deliberateBundle, "template.codex-report.json"),
     },
   };
@@ -560,6 +725,7 @@ async function runSmoke(
   smokeDir,
   allowCodexAssisted,
   templateHeadingFamily,
+  fontHints,
 ) {
   await assertSafeSmokeMutationTarget(smokeDir);
   assertResourceOutsideSmoke(inputPath, smokeDir, "Markdown input");
@@ -580,7 +746,7 @@ async function runSmoke(
     return;
   }
 
-  const plan = createPlan(inputPath, profilePath, smokeDir, templateHeadingFamily);
+  const plan = createPlan(inputPath, profilePath, smokeDir, templateHeadingFamily, fontHints);
   await detachAndRemoveOwnedSmokeDir(smokeDir);
   await ensureAllowedMutationRoot(smokeDir);
   await mkdir(smokeDir);
@@ -651,6 +817,7 @@ async function main() {
           options.profilePath,
           options.smokeDir,
           options.templateHeadingFamily,
+          options.fontHints,
         ),
         null,
         2,
@@ -664,6 +831,7 @@ async function main() {
     options.smokeDir,
     options.allowCodexAssisted,
     options.templateHeadingFamily,
+    options.fontHints,
   );
 }
 

@@ -7,6 +7,21 @@ import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 const scriptPath = "scripts/generate-markdown-pdf-profile-font-preservation-smoke.mjs";
 const ownershipMarkerName = ".cdx-chores-profile-font-preservation-smoke";
 const ownershipMarkerContent = "cdx-chores markdown-pdf profile-font-preservation smoke v1\n";
+const followUpFontHints = [
+  "Prefer Source Serif 4 for English body",
+  "Prefer Source Sans 3 for headings",
+  "Prefer Noto Serif JP for Japanese body",
+  "Prefer JetBrains Mono for code",
+  "Prefer Noto Sans Symbols 2 for symbols",
+];
+
+function fontHintArgs(hints: string[]) {
+  return hints.flatMap((hint) => ["--font-hint", hint]);
+}
+
+function collectedOptionValues(argv: string[], option: string) {
+  return argv.flatMap((value, index) => (value === option ? [argv[index + 1]] : []));
+}
 
 function runHarness(
   args: string[],
@@ -80,7 +95,11 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       "Input and Profile files must remain outside the generated-output directory",
     );
     expect(result.stdout).toContain("--allow-codex-assisted");
+    expect(result.stdout).toContain("--font-hint <text> ...");
     expect(result.stdout).toContain("--template-heading-family <installed-family>");
+    expect(result.stdout).toContain(
+      "font hints add direct unowned, Profile-owned, and Project ownership scenarios",
+    );
     expect(result.stdout).toContain("require explicit opt-in");
     expect(result.stdout).toContain("Interactive installed-font selection");
     expect(result.stdout).not.toContain("phase-4");
@@ -94,6 +113,9 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
     ).toContain("Unknown argument: --profile");
     expect(runHarness(["clean", "--smoke-dir", "unused", "--input", "input.md"]).stderr).toContain(
       "Unknown argument: --input",
+    );
+    expect(runHarness(["clean", "--smoke-dir", "unused", "--font-hint", "Inter"]).stderr).toContain(
+      "Unknown argument: --font-hint",
     );
     expect(
       runHarness([
@@ -121,8 +143,37 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       "--smoke-dir is required",
     );
     expect(runHarness(["clean"]).stderr).toContain("--smoke-dir is required");
-    expect(runHarness(["plan", "--input"]).stderr).toContain("Expected a path after --input");
-    expect(runHarness(["plan", "--profile"]).stderr).toContain("Expected a path after --profile");
+    expect(runHarness(["plan", "--input"]).stderr).toContain("Expected a value after --input");
+    expect(runHarness(["plan", "--profile"]).stderr).toContain("Expected a value after --profile");
+    expect(runHarness(["plan", "--font-hint"]).stderr).toContain(
+      "Expected a value after --font-hint",
+    );
+    expect(
+      runHarness([
+        "plan",
+        "--input",
+        "input.md",
+        "--profile",
+        "profile.yml",
+        "--smoke-dir",
+        "unused",
+        "--font-hint",
+        "   ",
+      ]).stderr,
+    ).toContain("--font-hint must not be blank");
+    expect(
+      runHarness([
+        "plan",
+        "--input",
+        "input.md",
+        "--profile",
+        "profile.yml",
+        "--smoke-dir",
+        "unused",
+        "--font-hint",
+        "Inter\nfor headings",
+      ]).stderr,
+    ).toContain("--font-hint must be a single-line value");
     expect(
       runHarness([
         "run",
@@ -176,10 +227,12 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
           argv: string[];
         }>;
         scenarios: Array<{ id: string; mode: string; commandIds: string[] }>;
+        fontHints: string[];
         input: string;
         inspection: { templateLevelDecisionReport: string };
       };
       expect(plan.input).toBe(inputPath);
+      expect(plan.fontHints).toEqual([]);
       expect(plan.scenarios.map(({ id, mode }) => ({ id, mode }))).toEqual([
         { id: "profile-control", mode: "automated" },
         { id: "partial-template", mode: "automated" },
@@ -249,6 +302,95 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       expect(plan.inspection.templateLevelDecisionReport).toEndWith(
         "template-level-override/template.codex-report.json",
       );
+    });
+  });
+
+  test("adds the ordinary-hint ownership matrix when font hints are supplied", async () => {
+    await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
+      const result = runHarness([
+        "plan",
+        "--input",
+        inputPath,
+        "--profile",
+        profilePath,
+        "--smoke-dir",
+        smokeDir,
+        ...fontHintArgs(followUpFontHints),
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      const plan = JSON.parse(result.stdout) as {
+        commands: Array<{ id: string; argv: string[] }>;
+        fontHints: string[];
+        scenarios: Array<{ id: string; mode: string; commandIds: string[] }>;
+        inspection: {
+          generatedStylesheets: string[];
+          renderedOutputs: string[];
+          reports: string[];
+        };
+      };
+      expect(plan.fontHints).toEqual(followUpFontHints);
+      expect(plan.scenarios.slice(-4).map(({ id, mode }) => ({ id, mode }))).toEqual([
+        { id: "ordinary-hints-template", mode: "automated" },
+        { id: "profile-owned-hints-template", mode: "automated" },
+        { id: "project-hints", mode: "automated" },
+        { id: "interactive", mode: "manual" },
+      ]);
+      expect(plan.commands.slice(-6).map(({ id }) => id)).toEqual([
+        "ordinary-hints-template-generate",
+        "ordinary-hints-template-render",
+        "profile-owned-hints-template-generate",
+        "profile-owned-hints-template-render",
+        "project-hints-generate",
+        "project-hints-render",
+      ]);
+
+      for (const id of [
+        "ordinary-hints-template-generate",
+        "profile-owned-hints-template-generate",
+        "project-hints-generate",
+      ]) {
+        const argv = plan.commands.find((command) => command.id === id)?.argv ?? [];
+        expect(collectedOptionValues(argv, "--font-hint")).toEqual(followUpFontHints);
+        expect(argv).toContain("--input");
+        expect(argv).toContain("--keep-codex-report");
+      }
+
+      const ordinaryGenerate =
+        plan.commands.find(({ id }) => id === "ordinary-hints-template-generate")?.argv ?? [];
+      expect(ordinaryGenerate).not.toContain("--base-profile");
+      const ownedGenerate =
+        plan.commands.find(({ id }) => id === "profile-owned-hints-template-generate")?.argv ?? [];
+      expect(ownedGenerate).toContain("--base-profile");
+      expect(ownedGenerate).toContain(profilePath);
+      const projectGenerate =
+        plan.commands.find(({ id }) => id === "project-hints-generate")?.argv ?? [];
+      expect(projectGenerate).not.toContain("--base-profile");
+
+      expect(plan.inspection.reports.map((path) => path.slice(smokeDir.length + 1))).toEqual(
+        expect.arrayContaining([
+          "ordinary-hints-template/template.codex-report.json",
+          "profile-owned-hints-template/template.codex-report.json",
+          "project-hints/project.codex-report.json",
+        ]),
+      );
+      expect(
+        plan.inspection.generatedStylesheets.map((path) => path.slice(smokeDir.length + 1)),
+      ).toEqual(
+        expect.arrayContaining([
+          "ordinary-hints-template/style.css",
+          "profile-owned-hints-template/style.css",
+          "project-hints/style.css",
+        ]),
+      );
+      expect(
+        plan.inspection.renderedOutputs.map((path) => path.slice(smokeDir.length + 1)),
+      ).toEqual([
+        "outputs/ordinary-hints-template.pdf",
+        "outputs/profile-owned-hints-template.pdf",
+        "outputs/project-hints.pdf",
+      ]);
     });
   });
 
@@ -394,6 +536,48 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
       const cleanResult = runHarness(["clean", "--smoke-dir", smokeDir]);
       expect(cleanResult.exitCode).toBe(0);
       await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  test("run executes and retains the ordinary-hint ownership matrix", async () => {
+    await withSmokeFixture(async ({ inputPath, profilePath, smokeDir }) => {
+      const stubBinDir = join(smokeDir, "..", "bin");
+      const commandLogPath = join(smokeDir, "..", "commands.log");
+      await writeSmokeCommandStubs(stubBinDir);
+      const args = [
+        "run",
+        "--input",
+        inputPath,
+        "--profile",
+        profilePath,
+        "--smoke-dir",
+        smokeDir,
+        ...fontHintArgs(followUpFontHints),
+      ];
+
+      const result = runHarness(args, {
+        PATH: stubBinDir,
+        SMOKE_COMMAND_LOG: commandLogPath,
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(JSON.parse(result.stdout)).toEqual({
+        category: "COMPLETE_LOCAL",
+        commandCount: 13,
+        skippedScenarios: ["template-level-override", "interactive"],
+      });
+      const commands = await readExecutedSmokeCommands(commandLogPath);
+      expect(commands).toHaveLength(13);
+      expect(commands.filter((command) => command.includes("--font-hint"))).toHaveLength(3);
+      expect(commands).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("ordinary-hints-template"),
+          expect.stringContaining("profile-owned-hints-template"),
+          expect.stringContaining("project-hints"),
+        ]),
+      );
+      expect((await stat(join(smokeDir, "outputs"))).isDirectory()).toBe(true);
     });
   });
 
