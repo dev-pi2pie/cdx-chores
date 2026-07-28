@@ -1,8 +1,7 @@
-import {
-  suggestMarkdownPdfTemplateWithCodex,
-  type MarkdownPdfTemplateCodexResult,
-  type MarkdownPdfTemplateCodexRunner,
-} from "../../../adapters/codex/markdown-pdf-template";
+import type {
+  MarkdownPdfTemplateCodexResult,
+  MarkdownPdfTemplateCodexRunner,
+} from "../../../adapters/codex/markdown-pdf-template/types";
 import {
   createCodexProgressSession,
   createDirectCodexProgressPresenter,
@@ -15,6 +14,7 @@ import { normalizeMarkdownPdfProfile } from "../profile";
 import { collectMarkdownPdfFontSignals } from "../profile/signals";
 import { collectMdPdfTemplateCodexRecipeSignals } from "../template-codex/recipe-signals";
 import {
+  deriveMdPdfTemplateCodexFontOwnership,
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
   validateMdPdfTemplateCodexSynthesis,
@@ -94,13 +94,11 @@ function createFinalProfileSummary(
 }
 
 function createTemplateSignalsFromProject(input: {
+  normalizedFinalProfile: ReturnType<typeof normalizeMarkdownPdfProfile>;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   signals: MdPdfProjectCodexSignalCollection;
   signalMode: MarkdownPdfProjectCodexTemplatePhaseSummary["signalMode"];
 }): MdPdfTemplateCodexSignalCollection {
-  const normalizedFinalProfile = normalizeMarkdownPdfProfile({
-    profile: input.profilePhase.finalProfile,
-  });
   return {
     signalMode: input.signalMode,
     documentSignals: input.signals.shared.document,
@@ -109,19 +107,19 @@ function createTemplateSignalsFromProject(input: {
       summary: createFinalProfileSummary(input.profilePhase),
     },
     recipe: collectMdPdfTemplateCodexRecipeSignals({
-      baseProfileRecipeOptions: normalizedFinalProfile.recipeOptions,
+      baseProfileRecipeOptions: input.normalizedFinalProfile.recipeOptions,
       documentSignals: input.signals.shared.document,
       explicitRecipe: { fields: [], options: {} },
     }),
     title: {
-      baseProfileMetadataTitle: normalizedFinalProfile.profile.titleBlock.metadataTitle,
+      baseProfileMetadataTitle: input.normalizedFinalProfile.profile.titleBlock.metadataTitle,
       explicitKeepMetadataTitleIntent: input.signals.shared.title.explicitKeepMetadataTitleIntent,
       explicitHideMetadataTitleIntent: input.signals.shared.title.explicitHideMetadataTitleIntent,
     },
     fonts: {
       hints: input.signals.profile.fonts.hints,
       profileFonts: collectMarkdownPdfFontSignals({
-        profile: normalizedFinalProfile.profile,
+        profile: input.normalizedFinalProfile.profile,
       }),
     },
     coverImage: input.signals.template.coverImage,
@@ -149,6 +147,8 @@ async function suggestProjectTemplateWithCodexProgress(input: {
   codexProgress.begin("Requesting Codex Markdown PDF project template recommendation");
   let codexProgressStatus: DirectCodexProgressStatus = "error";
   try {
+    const { suggestMarkdownPdfTemplateWithCodex } =
+      await import("../../../adapters/codex/markdown-pdf-template");
     const result = input.templateCodexRunner
       ? await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
@@ -191,7 +191,12 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     input.signals.modes.template === "codex-assisted" || forwardedProfileDirections.length > 0;
   const signalMode = shouldRunCodex ? "codex-assisted" : input.signals.modes.template;
   const outputPlan = createProjectTemplateOutputPlan(input.outputPlan);
+  const normalizedFinalProfile = normalizeMarkdownPdfProfile({
+    profile: input.profilePhase.finalProfile,
+  });
+  const fontOwnership = deriveMdPdfTemplateCodexFontOwnership(normalizedFinalProfile.profile);
   const signals = createTemplateSignalsFromProject({
+    normalizedFinalProfile,
     profilePhase: input.profilePhase,
     signalMode,
     signals: input.signals,
@@ -213,10 +218,11 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
   const synthesis = codexResult
     ? synthesizeMdPdfTemplateCodexFromDecision({
         decision: codexResult.decision,
+        fontOwnership,
         outputPlan,
         signals,
       })
-    : synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+    : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
 
   validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
 

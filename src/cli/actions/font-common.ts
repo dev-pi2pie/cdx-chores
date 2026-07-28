@@ -12,10 +12,9 @@ export function printFontDebugAttempts(runtime: CliRuntime, discovery: DiscoverF
   printLine(runtime.stdout, "");
   printLine(runtime.stdout, pc.bold("Debug:"));
   for (const attempt of discovery.attempts) {
-    const status = attempt.status === "success" ? "success" : "failed";
     printLine(
       runtime.stdout,
-      `- ${attempt.adapter}: ${status} in ${attempt.durationMs}ms (${attempt.message})`,
+      `- ${attempt.adapter}: ${attempt.status} in ${attempt.durationMs}ms (${attempt.message})`,
     );
   }
 }

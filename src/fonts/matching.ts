@@ -5,7 +5,14 @@ interface MatchedFontFace {
   matchRank: number;
 }
 
-const FIRST_LOOSE_MATCH_RANK = 2;
+const FONT_FAMILY_MATCH_RANK = {
+  exactFamily: 0,
+  exactMetadata: 1,
+  familySubstring: 2,
+  fullNameSubstring: 3,
+} as const;
+
+const FIRST_AMBIGUOUS_MATCH_RANK = FONT_FAMILY_MATCH_RANK.exactMetadata;
 
 export type FontCheckFaceSelectionReason = "no-matching-family" | "ambiguous-family";
 
@@ -26,19 +33,20 @@ export function fontFamilyMatchRank(
   }
   const needle = normalizeFontQuery(family);
   const faceFamily = normalizeFontQuery(face.family);
-  const fullName = normalizeFontQuery(face.fullName);
+  const aliases = (face.aliases ?? []).map(normalizeFontQuery);
+  const fullNames = [face.fullName, ...(face.fullNames ?? [])].map(normalizeFontQuery);
 
   if (faceFamily === needle) {
-    return 0;
+    return FONT_FAMILY_MATCH_RANK.exactFamily;
   }
-  if (fullName === needle) {
-    return 1;
+  if (aliases.includes(needle) || fullNames.includes(needle)) {
+    return FONT_FAMILY_MATCH_RANK.exactMetadata;
   }
-  if (faceFamily.includes(needle)) {
-    return 2;
+  if (faceFamily.includes(needle) || aliases.some((name) => name.includes(needle))) {
+    return FONT_FAMILY_MATCH_RANK.familySubstring;
   }
-  if (fullName.includes(needle)) {
-    return 3;
+  if (fullNames.some((name) => name.includes(needle))) {
+    return FONT_FAMILY_MATCH_RANK.fullNameSubstring;
   }
   return undefined;
 }
@@ -48,8 +56,8 @@ export function matchesFontFamily(face: FontFace, family: string | undefined): b
 }
 
 export function uniqueFontFaces(faces: FontFace[]): FontFace[] {
-  const seen = new Set<string>();
-  return faces.filter((face) => {
+  const unique = new Map<string, FontFace>();
+  for (const face of faces) {
     // Provider metadata is part of identity so separate faces in a TTC collection are not collapsed.
     const key = [
       face.family,
@@ -62,12 +70,34 @@ export function uniqueFontFaces(faces: FontFace[]): FontFace[] {
     ]
       .join("\0")
       .toLowerCase();
-    if (seen.has(key)) {
-      return false;
+    const current = unique.get(key);
+    if (!current) {
+      unique.set(key, face);
+      continue;
     }
-    seen.add(key);
-    return true;
-  });
+    const aliases = mergedLookupNames(current.aliases, face.aliases);
+    const fullNames = mergedLookupNames(current.fullNames, face.fullNames);
+    unique.set(key, {
+      ...current,
+      ...(aliases.length > 0 ? { aliases } : {}),
+      ...(fullNames.length > 0 ? { fullNames } : {}),
+    });
+  }
+  return [...unique.values()];
+}
+
+function mergedLookupNames(
+  left: readonly string[] | undefined,
+  right: readonly string[] | undefined,
+): string[] {
+  const merged = new Map<string, string>();
+  for (const name of [...(left ?? []), ...(right ?? [])]) {
+    const normalized = normalizeFontQuery(name);
+    if (normalized && !merged.has(normalized)) {
+      merged.set(normalized, name);
+    }
+  }
+  return [...merged.values()];
 }
 
 export function sortFontFaces(left: FontFace, right: FontFace): number {
@@ -159,8 +189,8 @@ function bestMatchRank(matches: MatchedFontFace[]): number {
   return Math.min(...matches.map((match) => match.matchRank));
 }
 
-function hasAmbiguousLooseFamilyMatch(matches: MatchedFontFace[], matchRank: number): boolean {
-  if (matchRank < FIRST_LOOSE_MATCH_RANK) {
+function hasAmbiguousFamilyMatch(matches: MatchedFontFace[], matchRank: number): boolean {
+  if (matchRank < FIRST_AMBIGUOUS_MATCH_RANK) {
     return false;
   }
   const bestMatches = matches.filter((match) => match.matchRank === matchRank);
@@ -175,7 +205,7 @@ export function selectFontFaceForCheck(faces: FontFace[], family: string): FontC
   }
 
   const matchRank = bestMatchRank(matched);
-  if (hasAmbiguousLooseFamilyMatch(matched, matchRank)) {
+  if (hasAmbiguousFamilyMatch(matched, matchRank)) {
     return { status: "inconclusive", reason: "ambiguous-family" };
   }
 

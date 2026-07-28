@@ -1,13 +1,15 @@
-import type { FontFace } from "../../../../fonts";
-
-import { compareMarkdownPdfInteractiveFontHintFamilies } from "./text";
 import {
+  DEFAULT_INSTALLED_FONT_MATCH_LIMIT,
+  rankSearchableFontFamilies,
+} from "../../../../fonts/search-ranking";
+import type { FontFace, SearchableFontFamily } from "../../../../fonts/types";
+
+import {
+  compareMarkdownPdfInteractiveFontHintFamilies,
   normalizeMarkdownPdfInteractiveFontHintFamilyName,
   normalizeMarkdownPdfInteractiveFontHintText,
 } from "./text";
 import type { MarkdownPdfInteractiveFontHintPreferenceChoice } from "./types";
-
-const DEFAULT_MATCH_LIMIT = 6;
 
 export function collectInstalledFontFamilies(faces: readonly Pick<FontFace, "family">[]): string[] {
   const seen = new Map<string, string>();
@@ -30,24 +32,30 @@ export function collectInstalledFontFamilies(faces: readonly Pick<FontFace, "fam
 export function filterInstalledFontFamilies(
   families: readonly string[],
   term: string,
-  limit = DEFAULT_MATCH_LIMIT,
+  limit = DEFAULT_INSTALLED_FONT_MATCH_LIMIT,
 ): string[] {
-  const normalizedTerm = normalizeMarkdownPdfInteractiveFontHintFamilyName(term);
-  const matching = normalizedTerm
-    ? families.filter((family) =>
-        normalizeMarkdownPdfInteractiveFontHintFamilyName(family).includes(normalizedTerm),
-      )
-    : [...families];
-  return matching.slice(0, limit);
+  return rankSearchableFontFamilies(
+    families.map((family) => ({ family, aliases: [], fullNames: [] })),
+    term,
+    limit,
+  );
 }
 
 export function buildMarkdownPdfInteractiveFontHintPreferenceChoices(input: {
   term?: string;
-  families: readonly string[];
+  families?: readonly string[];
+  records?: readonly SearchableFontFamily[];
   current?: string;
 }): MarkdownPdfInteractiveFontHintPreferenceChoice[] {
   const typedValue = input.term ?? input.current ?? "";
-  const matches = filterInstalledFontFamilies(input.families, input.term ?? "");
+  const records =
+    input.records ??
+    (input.families ?? []).map((family) => ({ family, aliases: [], fullNames: [] }));
+  const matches = rankSearchableFontFamilies(
+    records,
+    input.term ?? "",
+    DEFAULT_INSTALLED_FONT_MATCH_LIMIT,
+  );
   const normalizedTypedValue = normalizeMarkdownPdfInteractiveFontHintFamilyName(typedValue);
   const filteredMatches = matches.filter(
     (family) => normalizeMarkdownPdfInteractiveFontHintFamilyName(family) !== normalizedTypedValue,

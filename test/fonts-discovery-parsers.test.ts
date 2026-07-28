@@ -16,10 +16,42 @@ describe("font discovery parsers", () => {
       {
         family: "JetBrainsMono Nerd Font",
         fullName: "JetBrainsMono Nerd Font Mono Bold Italic",
+        fullNames: ["JetBrainsMono Nerd Font Mono Bold Italic"],
         style: "italic",
         weight: 700,
         path: "/home/user/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf",
         format: "ttf",
+        source: "system",
+      },
+    ]);
+  });
+
+  test("retains fontconfig family aliases and every reported full name", () => {
+    const faces = parseFontconfigList(
+      [
+        "Noto Sans CJK JP,Noto Sans JP,noto sans jp\tNoto Sans CJK JP Regular,Noto Sans JP Regular,noto sans jp regular\tRegular\t/fonts/NotoSansCJK-Regular.otf\t",
+        "Brand Sans,Brand Sans\t\tRegular\t/fonts/BrandSans-Regular.otf\t",
+        "",
+      ].join("\n"),
+    );
+
+    expect(faces).toEqual([
+      {
+        family: "Noto Sans CJK JP",
+        aliases: ["Noto Sans JP"],
+        fullName: "Noto Sans CJK JP Regular,Noto Sans JP Regular,noto sans jp regular",
+        fullNames: ["Noto Sans CJK JP Regular", "Noto Sans JP Regular"],
+        style: "normal",
+        path: "/fonts/NotoSansCJK-Regular.otf",
+        format: "otf",
+        source: "system",
+      },
+      {
+        family: "Brand Sans",
+        fullName: "Brand Sans",
+        style: "normal",
+        path: "/fonts/BrandSans-Regular.otf",
+        format: "otf",
         source: "system",
       },
     ]);

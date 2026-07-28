@@ -1,6 +1,6 @@
 import { parseMarkdown } from "../../../markdown";
 
-import { requireCommandAvailable } from "../../deps";
+import { requireCommandAvailable, requireCommandMinimumVersion } from "../../deps";
 import { CliError } from "../../errors";
 import { readTextFileRequired } from "../../file-io";
 import { defaultOutputPath, resolveFromCwd } from "../../path-utils";
@@ -31,6 +31,7 @@ import {
   type MarkdownPdfProcessRunner,
   type RenderMarkdownPdfResult,
 } from "../../markdown-pdf/render";
+import { MARKDOWN_PDF_MINIMUM_PANDOC_VERSION } from "../../markdown-pdf/requirements";
 import {
   normalizeMarkdownPdfOptions,
   type NormalizeMarkdownPdfOptionsInput,
@@ -229,7 +230,8 @@ export async function executePlannedMarkdownPdfRender(
   options: ExecutePlannedMarkdownPdfRenderOptions = {},
 ): Promise<RenderMarkdownPdfResult> {
   const runner = options.runner ?? execCommand;
-  await requireCommandAvailable("pandoc", runtime.platform, runner);
+  const pandoc = await requireCommandAvailable("pandoc", runtime.platform, runner);
+  requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
   await requireCommandAvailable("weasyprint", runtime.platform, runner);
 
   return renderMarkdownPdf({

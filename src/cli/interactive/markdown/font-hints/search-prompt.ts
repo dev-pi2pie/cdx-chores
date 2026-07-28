@@ -1,4 +1,4 @@
-import type { input } from "@inquirer/prompts";
+import type { input, select } from "@inquirer/prompts";
 import type search from "@inquirer/search";
 import { emitKeypressEvents } from "node:readline";
 
@@ -74,4 +74,23 @@ export async function promptMarkdownPdfInteractiveFontHintInput(
       signal,
     });
   });
+}
+
+export async function promptMarkdownPdfInteractiveFontHintSlowPath(
+  runtime: CliRuntime,
+  selectPrompt: typeof select,
+  config: Parameters<typeof select>[0],
+  sessionSignal: AbortSignal,
+): Promise<"custom" | "wait" | undefined> {
+  const selected = await promptWithEscapeNavigation(runtime, sessionSignal, async (signal) => {
+    return await selectPrompt(config, {
+      input: runtime.stdin,
+      output: runtime.stderr,
+      signal,
+    });
+  });
+  if (selected === undefined || selected === "custom" || selected === "wait") {
+    return selected;
+  }
+  throw new TypeError("The font discovery slow-path prompt returned an invalid choice.");
 }
