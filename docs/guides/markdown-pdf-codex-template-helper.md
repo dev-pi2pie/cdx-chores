@@ -313,7 +313,6 @@ read an existing `template.html` or `style.css` as a refinement input.
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
-- [PDF Backend License Guidance](pdf-backend-license-guidance.md)
 - [Markdown PDF Codex Helper Roadmap](../researches/research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
 - [Markdown PDF Template Codex Helper](../researches/research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown PDF template Codex helper implementation](../plans/plan-2026-06-23-markdown-pdf-template-codex-helper.md)

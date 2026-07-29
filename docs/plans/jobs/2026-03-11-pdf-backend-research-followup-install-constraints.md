@@ -27,4 +27,4 @@ Adjust the revised PDF backend research so it reflects the current install prefe
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`

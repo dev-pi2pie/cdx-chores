@@ -1,7 +1,7 @@
 ---
 title: "Markdown to PDF profiles, fonts, and page chrome implementation"
 created-date: 2026-05-07
-modified-date: 2026-05-07
+modified-date: 2026-07-29
 status: completed
 agent: codex
 ---
@@ -483,12 +483,12 @@ Final validation evidence:
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](../researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
 - [Font Inspect and Check Commands](../researches/research-2026-05-07-font-inspect-and-check-commands.md)
 - [Markdown to PDF with WeasyPrint](../researches/research-2026-05-06-markdown-to-pdf-weasyprint.md)
-- [PDF Backend Comparison for Merge, Split, and Image Workflows](../researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md)
+- [PDF Backend Comparison for Merge, Split, and Image Workflows](../researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - cancelled historical backend comparison for the unadopted PDF-native route.
 
 ## Related Plans
 
 - [Markdown to PDF WeasyPrint Implementation](plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md)
-- [PDF CLI Workflows Implementation](plan-2026-03-11-pdf-cli-workflows-implementation.md)
+- [PDF CLI Workflows Implementation](archive/plan-2026-03-11-pdf-cli-workflows-implementation.md) - cancelled historical PDF-native proposal; future native work requires new research and planning.
 
 ## Related Jobs
 

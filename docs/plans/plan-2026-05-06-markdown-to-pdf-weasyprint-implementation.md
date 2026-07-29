@@ -1,7 +1,7 @@
 ---
 title: "Markdown to PDF with WeasyPrint implementation"
 created-date: 2026-05-06
-modified-date: 2026-05-06
+modified-date: 2026-07-29
 status: completed
 agent: codex
 ---
@@ -16,7 +16,7 @@ The first implementation should make the direct CLI useful without adding Codex-
 
 The related research freezes the main product decisions:
 
-- `md to-pdf` belongs under the Markdown command group, not the separate PDF-native command group.
+- `md to-pdf` belongs under the Markdown command group; the historical proposal for a separate PDF-native command group was not adopted.
 - Pandoc should parse Markdown and generate standalone HTML.
 - WeasyPrint should render the generated HTML and print CSS to PDF.
 - Default HTML and CSS should be built into the tool, but users should be able to materialize and customize the recipe.
@@ -178,7 +178,7 @@ cdx-chores md to-pdf --input report.md --html-output report.render.html
 
 - Add or update public usage docs after the command is implemented.
 - Link the implementation job record back to this plan and the research doc.
-- Keep the separate `pdf` command group plan as the owner for PDF-native workflows.
+- Keep PDF-native workflows outside this Markdown plan; any renewed native-PDF direction requires fresh research and planning.
 
 ## Non-Goals
 
@@ -404,12 +404,12 @@ git diff --check
 ## Related Research
 
 - `docs/researches/research-2026-05-06-markdown-to-pdf-weasyprint.md`
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` — cancelled historical comparison for an unadopted PDF-native route; its backend recommendations are not current guidance.
 - `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md` — separate PDF-native workflow plan. This plan should not absorb merge, split, image conversion, or PDF-to-Markdown extraction.
+- `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md` — cancelled historical PDF-native proposal. This Markdown plan does not implement those native operations, and renewed PDF-native work requires new research and planning.
 
 ## Related Jobs
 

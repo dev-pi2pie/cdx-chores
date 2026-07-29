@@ -1,20 +1,26 @@
 ---
 title: "PDF CLI workflows implementation"
 created-date: 2026-03-11
-modified-date: 2026-03-11
-status: draft
+modified-date: 2026-07-29
+status: cancelled
 agent: codex
 ---
 
 ## Goal
 
-Turn the current PDF backend research into an implementation-ready plan for the `pdf` command group, covering direct CLI usage, interactive-mode design, capability reporting, and phased delivery for the first PDF workflow release.
+Record the proposed implementation route for a native `pdf` command group covering direct CLI usage, interactive-mode design, capability reporting, and phased delivery. This route was later cancelled before implementation began.
 
-## Why This Plan
+## Status Note
 
-The repo already exposes deferred `pdf` command placeholders in `src/command.ts`, but the actual behavior contract is still missing.
+This plan is cancelled and should not be used as a current implementation plan.
 
-The PDF research is now specific enough to freeze:
+No phase began, and the deferred public `pdf` command placeholders that motivated the plan were removed shortly after it was drafted. The repository later developed the separate Markdown-owned `md to-pdf` workflow, but that workflow does not implement or supersede the native PDF merge, split, extraction, rendering, images-to-PDF, or PDF-to-Markdown proposal recorded here.
+
+Future PDF-native work should begin with fresh research and a new plan that re-evaluate current product priorities, command architecture, dependencies, backend behavior, and licensing constraints. The unchecked checklist and proposed contracts below are preserved as historical context rather than unfinished current work.
+
+## Historical Rationale
+
+At the time of drafting, the related PDF research appeared specific enough to propose:
 
 - `pdfcpu` as the launch default for merge, split, embedded-image extraction, and likely images-to-PDF packaging
 - `mutool` as a technically strong but license-sensitive optional backend
@@ -22,11 +28,11 @@ The PDF research is now specific enough to freeze:
 - `pymupdf4llm` as the planned `pdf to-markdown` backend, but only behind license review or commercial licensing approval
 - a deliberate choice not to rely on `qpdf` in the current implementation path
 
-This plan converts that research into a concrete command surface and implementation sequence without reopening the backend decision.
+The plan attempted to convert that research into a concrete command surface and implementation sequence without reopening the backend decision.
 
-## Current State
+## Historical State at Draft Time
 
-- `src/command.ts` already includes deferred placeholders for:
+- `src/command.ts` included deferred placeholders for:
   - `pdf merge`
   - `pdf split`
   - `pdf to-images`
@@ -36,9 +42,11 @@ This plan converts that research into a concrete command surface and implementat
 - `doctor` does not yet report the PDF capability matrix described in the research
 - the repo does not yet document PDF license-sensitive backend guidance in the command family itself
 - the documented `pdf to-images` contract is now mode-based, but the implementation is still deferred
-- the research doc is still `draft`, which is correct until implementation begins
+- the related research remained `draft`
 
-## Design Contract
+Those placeholders were removed on 2026-03-12 so public help would describe implemented features only. No native `pdf` command family is currently shipped.
+
+## Historical Proposed Design
 
 ### Command family scope
 
@@ -309,7 +317,7 @@ Recommended prompt flow:
 6. If this flow uses a license-sensitive user-provided backend, show a short note that the backend is not bundled by `cdx-chores` and that users or operators remain responsible for license compliance.
 7. Run conversion with visible progress feedback.
 
-## Scope
+## Historical Proposed Scope
 
 - implement the real `pdf` subcommands now deferred in `src/command.ts`
 - add `pdf to-markdown`
@@ -463,7 +471,7 @@ Recommended prompt flow:
 - [ ] record any contract drift back into the research and this plan
 - [ ] capture follow-up plans if render mode backend selection or advanced layout controls need refinement
 
-## Success Criteria
+## Historical Proposed Success Criteria
 
 - the `pdf` command group is no longer deferred for the first release workflows
 - direct CLI and interactive mode share one consistent command contract
@@ -473,7 +481,7 @@ Recommended prompt flow:
 - `pdf to-markdown` writes default external assets to an `images/` sibling directory of the markdown output and links them correctly
 - the default shipped path avoids license ambiguity for proprietary or commercial distribution
 
-## Verification
+## Historical Proposed Verification
 
 - `bunx tsc --noEmit`
 - focused PDF command tests under `test/`
@@ -487,10 +495,29 @@ Recommended prompt flow:
   - markdown with external images in the default `images/` directory, only if that backend path is implemented
   - markdown without exported images, only if that backend path is implemented
 
+## Historical Review (2026-07-29)
+
+This plan was reviewed after the repository's development route had moved away from the proposed native PDF command family.
+
+Review findings:
+
+- none of the seven implementation phases began
+- the deferred command placeholders were removed rather than promoted into supported commands
+- the plan assumes an older command-registration structure and freezes backend and licensing choices that require fresh validation
+- the current `md to-pdf` workflow is a separate Markdown-owned product path and should not be interpreted as implementation of this plan
+- no current milestone or active implementation record indicates that this exact PDF-native proposal is expected to resume
+
+Conclusion:
+
+- the proposal remains useful historical design context, but it is not a current development commitment
+- the plan is intentionally cancelled rather than blocked because execution is no longer expected to resume from this document
+- all implementation checklist items remain unchecked because the proposed work was not completed
+- any future PDF-native command family should start from new research and a new implementation plan
+- this document is ready to move into `docs/plans/archive/` during the coordinated PDF-native lifecycle archive pass
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
 - `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans

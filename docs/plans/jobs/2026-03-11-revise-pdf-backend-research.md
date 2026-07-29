@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Revise `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` so it reflects current product decisions for the PDF command group and removes machine-specific environment disclosure.
+Revise `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` so it reflects current product decisions for the PDF command group and removes machine-specific environment disclosure.
 
 ## What Changed
 
@@ -31,7 +31,7 @@ Revise `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-spl
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
 
 ## Related Plans
 

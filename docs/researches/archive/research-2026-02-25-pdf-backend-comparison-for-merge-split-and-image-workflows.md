@@ -1,16 +1,24 @@
 ---
 title: "PDF backend comparison for merge/split and image workflows"
 created-date: 2026-02-25
-modified-date: 2026-03-11
-status: draft
+modified-date: 2026-07-29
+status: cancelled
 agent: codex
 ---
 
 ## Goal
 
-Compare candidate backends for PDF merge/split, PDF-image workflows, and PDF-to-markdown extraction, then freeze a launch-phase recommendation for `cdx-chores` without baking machine-specific environment state into the research record.
+Record the historical comparison of candidate backends for PDF merge/split, PDF-image workflows, and PDF-to-Markdown extraction that informed a proposed native `pdf` command family.
 
-## Key Findings
+## Status Note
+
+This research direction is cancelled and should not be used as current backend or implementation guidance.
+
+The proposed native PDF command family and backend mapping were not adopted. Although the comparison work remains useful historical context, its launch recommendation, dependency choices, backend behavior, and licensing assumptions require fresh validation before any future implementation.
+
+Future PDF-native work should begin with new research that reflects the repository's current product route and command architecture. The findings, recommendations, and draft decisions below are preserved to show what was considered at the time.
+
+## Historical Findings
 
 ### 1. `pdfcpu` is the best launch-phase anchor backend for the PDF command group
 
@@ -141,7 +149,7 @@ Implication:
 | `pymupdf4llm` | PDF content extraction for LLM/RAG workflows | No | Image/vector export within markdown extraction flow | No | Strong | Strong fit for markdown plus extracted assets, but should be treated as license-sensitive because of the Artifex licensing model around PyMuPDF | License-sensitive candidate for `pdf to-markdown` |
 | `pandoc` | Document format conversion | No | No | No | Converts document formats, not PDF structure ops | Useful elsewhere, not a PDF backend for these workflows | Not a fit for this backend set |
 
-## Implications or Recommendations
+## Historical Recommendations (Not Current Guidance)
 
 ### A. Freeze a permissive-first launch backend mapping
 
@@ -209,7 +217,7 @@ Before implementation, validation should focus on:
 - image-order preservation and page sizing behavior for `pdfcpu import`
 - markdown progress behavior and external-image-folder output ergonomics for `pymupdf4llm`, only if license review approves its use
 
-## Decision Updates
+## Historical Draft Decisions
 
 ### Draft decision 1. `pdfcpu` should be the default merge/split backend
 
@@ -250,7 +258,7 @@ Decision for this milestone:
 - default to external image references in an `images/` folder relative to the markdown output path, while still supporting other image modes
 - if exposed in product UX later, guide docs and command help should identify it clearly as a license-sensitive user-provided backend
 
-## Deferred Decisions and Revisit Triggers
+## Historical Deferred Decisions and Revisit Triggers
 
 ### 1. Separate page-rasterization mode
 
@@ -293,6 +301,26 @@ Revisit trigger:
 
 - the project intentionally adopts AGPL-compliant distribution for the relevant workflow, or
 - a commercial license is obtained from Artifex
+
+## Historical Review (2026-07-29)
+
+This research was reviewed together with the cancelled PDF CLI workflow plan.
+
+Review findings:
+
+- the research produced a detailed comparison, but its stated launch-phase direction was never adopted
+- no native `pdf` command family is currently shipped
+- the deferred PDF command placeholders were removed before implementation began
+- the later Markdown-owned `md to-pdf` workflow is a separate product path and does not validate the native PDF backend recommendations in this document
+- dependency capabilities, backend behavior, licensing constraints, and product priorities are time-sensitive and must be re-evaluated before future PDF-native work
+
+Conclusion:
+
+- the comparison remains historical context rather than current technical guidance
+- the research direction is intentionally cancelled because the proposed implementation route is no longer planned
+- the cancelled status does not mean every historical observation was incorrect; it means the document should not own a current product decision
+- future PDF-native exploration should use a new research document instead of reopening this one
+- this document is ready to move into `docs/researches/archive/` during the coordinated PDF-native lifecycle archive pass
 
 ## Related Plans
 
