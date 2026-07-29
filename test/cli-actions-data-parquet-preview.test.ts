@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { join } from "node:path";
 
 import { actionDataParquetPreview, actionDataPreview } from "../src/cli/actions";
@@ -11,6 +11,10 @@ function parquetFixturePath(name: string): string {
 }
 
 describe("cli action modules: data parquet preview", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
   test("actionDataParquetPreview renders Parquet summary and table output", async () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     const inputPath = parquetFixturePath("basic.parquet");
@@ -135,6 +139,33 @@ describe("cli action modules: data parquet preview", () => {
         code: "PARQUET_PREVIEW_FAILED",
         exitCode: 2,
         messageIncludes: "Failed to preview Parquet file:",
+      },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataParquetPreview surfaces DuckDB initialization failures", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+    const inputPath = parquetFixturePath("basic.parquet");
+
+    mock.module("@duckdb/node-api", () => ({
+      DuckDBConnection: {
+        create: async () => {
+          throw new Error("native initialization failed");
+        },
+      },
+    }));
+
+    await expectCliError(
+      () =>
+        actionDataParquetPreview(runtime, {
+          input: toRepoRelativePath(inputPath),
+        }),
+      {
+        code: "DUCKDB_UNAVAILABLE",
+        exitCode: 2,
+        messageIncludes: "DuckDB is unavailable for Parquet preview: native initialization failed",
       },
     );
 
