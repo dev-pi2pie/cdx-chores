@@ -1,8 +1,8 @@
 ---
 title: "Schema-aware query workspace direction"
 created-date: 2026-04-01
-modified-date: 2026-04-23
-status: draft
+modified-date: 2026-07-29
+status: completed
 agent: codex
 milestone: v0.1.0
 ---
@@ -18,6 +18,16 @@ Answer one design-direction question at research level only:
 - if the product later wants natural SQL such as `select * from public.users`, what workspace model would support that coherently
 - and how should that future route relate to the current flat alias-based `--relation` contract
 
+## Status Note
+
+This research is complete for its original `v0.1.0` decision boundary:
+
+- retain the flat workspace model with simple, explicit SQL aliases
+- allow qualified backend selectors such as `analytics.events` without exposing them as literal dotted aliases
+- defer schema-preserving workspace design unless natural qualified SQL becomes an active product requirement
+
+The document is not a comprehensive design for remote or connection-backed databases. Future PostgreSQL, MySQL, or similar support requires new research that treats connection lifecycle, security, execution, discovery, and namespace behavior as separate decisions.
+
 ## Related Research
 
 - `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`
@@ -29,12 +39,6 @@ Answer one design-direction question at research level only:
 
 - `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/archive/plan-2026-03-31-data-query-workspace-alias-followup.md`
-
-Status note:
-
-- this document is intentionally forward-looking and does not propose a `v0.1.0` implementation change
-- the current stable direction remains the flat workspace model with simple SQL aliases such as `events=analytics.events`
-- directory-pattern multi-file relation assembly is now tracked separately in `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md` so that schema-aware workspace design does not absorb file-discovery and stacking semantics
 
 ## Problem
 
@@ -298,7 +302,7 @@ For future design exploration:
 - treat Model C as the more coherent long-term route if the product wants natural dotted SQL
 - avoid Model B as the default future direction unless the product explicitly wants quoted literal identifiers to become part of normal usage
 
-## Suggested Follow-up
+## Deferred Follow-up Direction
 
 After `v0.1.0`, if workspace SQL ergonomics becomes a priority, the next research or plan should answer these questions explicitly:
 
@@ -309,8 +313,56 @@ After `v0.1.0`, if workspace SQL ergonomics becomes a priority, the next researc
 - how should interactive prompting suggest or display namespace-preserving bindings
 - how should Codex drafting describe schema-aware relations in prompts and generated SQL expectations
 
-## Open Questions
+## Deferred Follow-up Questions
 
 - Should schema-aware workspace be limited to two-part names such as `schema.table`, or should it plan for deeper selectors from the beginning
 - Should single-source mode stay bound to the logical table `file` even if workspace mode later becomes schema-aware
 - Should future schema-aware support remain limited to file-backed catalogs first, or should it be designed together with future connection-backed sources
+
+## Historical Review (2026-07-29)
+
+This research is complete for its original narrow milestone, but it should not be treated as a comprehensive design for future database connectivity or namespace-aware querying.
+
+### What the research established
+
+- the `v0.1.0` workspace should retain simple, explicit SQL aliases
+- local DuckDB selectors may use qualified backend names such as `analytics.events`
+- workspace SQL should continue targeting the chosen alias, such as `events`
+- literal dotted aliases should not be introduced as an ad hoc compatibility shortcut
+
+The shipped local SQLite and DuckDB-file workspace follows that direction.
+
+### Why this document is closing
+
+The document was written early in the data-query lifecycle and combines several concerns that now need separate treatment:
+
+- namespace preservation inside local DuckDB files
+- SQL-visible relation naming
+- future connection-backed database sources
+- remote catalog, schema, and table discovery
+- possible deeper identifiers such as `catalog.schema.table`
+
+It does not define remote connection configuration, credentials, transport security, capability discovery, query execution boundaries, or materialization and pushdown behavior. It therefore is not a sufficient foundation for future PostgreSQL, MySQL, or other connection-backed support.
+
+### Future research boundary
+
+If connection-backed database support becomes an active direction, create new research rather than reopening this document.
+
+That research should distinguish:
+
+1. source and connection lifecycle
+2. credential and security handling
+3. backend and extension strategy
+4. remote execution versus local materialization
+5. catalog, schema, and table discovery
+6. workspace alias and namespace behavior
+7. CLI, interactive, Codex, and `doctor` integration
+
+Schema preservation should be one decision inside that larger research, not the starting assumption for the entire feature.
+
+### Conclusion
+
+- the original flat-alias recommendation was adopted
+- the conditional schema-aware model was not an implementation commitment
+- the broader remote-database question remains open and requires better-scoped research
+- this document is complete for its original milestone and is ready for a separate later archive review

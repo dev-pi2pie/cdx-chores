@@ -25,7 +25,7 @@ Reduce the current discussion into a research-level direction that answers:
 ## Related Research
 
 - `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`
-- `docs/researches/research-2026-04-01-schema-aware-query-workspace-direction.md`
+- `docs/researches/archive/research-2026-04-01-schema-aware-query-workspace-direction.md`
 - `docs/researches/archive/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
 - `docs/researches/archive/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 
