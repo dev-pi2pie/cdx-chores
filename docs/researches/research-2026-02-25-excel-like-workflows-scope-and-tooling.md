@@ -1,13 +1,28 @@
 ---
 title: "Excel-like workflows scope and tooling (beyond CSV)"
 created-date: 2026-02-25
-status: draft
+modified-date: 2026-07-29
+status: superseded
 agent: codex
 ---
 
 ## Goal
 
-Define a launch-phase research baseline for Excel-like/tabular document workflows (for example `.xlsx`, `.xlsb`, `.ods`) so `cdx-chores` can scope work beyond JSON/CSV conversion without overcommitting to a single tool too early.
+Record the original launch-phase research baseline for Excel-like/tabular document workflows (for example `.xlsx`, `.xlsb`, `.ods`) that was considered before the current DuckDB-backed data workflow was selected.
+
+## Status Note
+
+This research is superseded and should no longer be used as current implementation guidance.
+
+The proposed Python adapter layer, dedicated `excel` command group, and Python-module checks in `doctor` were not adopted. Current `.xlsx` extraction and query support instead stays within the Node.js-compatible TypeScript data workflow and uses DuckDB's managed `excel` extension.
+
+Current guidance lives in:
+
+- `docs/guides/data-extract-usage.md`
+- `docs/guides/data-query-usage.md`
+- `docs/guides/data-duckdb-usage.md`
+
+The findings below remain as historical context for the alternatives considered at the beginning of the project.
 
 ## Key Findings
 
@@ -84,7 +99,9 @@ Implication: `pandoc` may be useful for specific document-centric transformation
 | `xlsx2csv` | Fast one-way conversion | `xlsx` -> `csv` | Yes (convert) | CSV output | Simple CLI/Python API, batch-friendly | Narrow scope (conversion only) | Medium (optional backend/benchmark) |
 | `pandoc` | Document-centric conversions | includes `xlsx` input | Yes (document model) | Many document outputs | Already available locally; useful in some pipelines | Conversion may be lossy for spreadsheet semantics | Low/conditional for spreadsheet data workflows |
 
-## Implications or Recommendations
+## Historical Recommendations (Not Current Guidance)
+
+The following recommendations describe the earlier Python-oriented direction. They are retained for traceability and are not the current product architecture.
 
 ### A. Keep JSON/CSV internal in TypeScript, but add a Python adapter layer for Excel-like workflows
 
@@ -131,13 +148,30 @@ For Excel-like features, dependency checks may need to validate Python modules, 
 
 This is different from command-only checks like `ffmpeg` or `pandoc`.
 
-## Open Questions
+## Historical Open Questions
+
+These questions belonged to the superseded Python-backed direction and are no longer active planning questions:
 
 1. Which Python runtime should be the supported baseline for spreadsheet features (system Python vs venv-managed Python)?
 2. Should `cdx-chores` bundle Python helper scripts in-repo, or only shell out to user-managed Python commands?
 3. Is `.xlsb` support a launch-phase requirement, or can it be deferred until after `.xlsx` workflows are stable?
 4. Should multi-sheet exports default to one file per sheet, or a combined JSON object/CSV directory layout?
 5. Where should spreadsheet commands live long-term: `excel` command group, `data excel-*` subcommands, or both with aliases?
+
+## Historical Review (2026-07-29)
+
+This document was reviewed against the shipped data workflow before archival:
+
+- `.xlsx` inputs are supported by `data extract`, `data query`, and the interactive data-query flow
+- workbook sheet selection and Excel-specific shaping use the existing `data` command family
+- DuckDB's managed `excel` extension owns the current backend lifecycle
+- the implementation remains in the TypeScript/Node.js architecture and does not require pandas, openpyxl, pyxlsb, xlsx2csv, or a supported Python runtime
+- `.xlsb`, `.ods`, formatting-preserving workbook edits, formula authoring, and macro-sensitive workflows remain outside the current shipped scope
+
+Conclusion:
+
+- the research did identify relevant spreadsheet concerns, but its recommended backend and command architecture were replaced by the later DuckDB-backed data workflow
+- the document should be treated as historical context and is ready to move into `docs/researches/archive/` during the next coordinated archive pass
 
 ## Related Research
 
@@ -153,4 +187,3 @@ This is different from command-only checks like `ffmpeg` or `pandoc`.
 [^pyxlsb-pypi]: [pyxlsb on PyPI](https://pypi.org/project/pyxlsb/)
 [^xlsx2csv-pypi]: [xlsx2csv on PyPI](https://pypi.org/project/xlsx2csv/)
 [^pandoc-manual]: [Pandoc manual](https://pandoc.org/MANUAL.html)
-
