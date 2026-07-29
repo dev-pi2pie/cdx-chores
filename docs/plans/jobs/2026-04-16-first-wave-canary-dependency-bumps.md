@@ -18,7 +18,7 @@ Apply the first-wave canary dependency bumps for low-risk tooling packages, refr
 
 ## Related Research
 
-- `docs/researches/research-2026-04-16-canary-dependency-review.md`
+- `docs/researches/archive/research-2026-04-16-canary-dependency-review.md`
 
 ## Changes
 

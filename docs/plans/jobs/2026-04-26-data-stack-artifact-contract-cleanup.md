@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement the narrow `data stack` artifact contract cleanup from `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`.
+Implement the narrow `data stack` artifact contract cleanup from `docs/plans/archive/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`.
 
 ## What Changed
 
@@ -147,9 +147,9 @@ bun test test/cli-interactive-routing.test.ts
 
 ## Related Research
 
-- `docs/researches/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md`
+- `docs/researches/archive/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`
-- `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
+- `docs/plans/archive/plan-2026-04-26-data-stack-artifact-contract-cleanup.md`
+- `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`

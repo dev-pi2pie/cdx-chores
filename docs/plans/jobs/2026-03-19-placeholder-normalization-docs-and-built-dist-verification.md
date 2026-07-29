@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed the remaining implementation tasks from `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
+Completed the remaining implementation tasks from `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
 
 This slice finished three areas:
 

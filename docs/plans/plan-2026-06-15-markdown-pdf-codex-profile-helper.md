@@ -828,4 +828,4 @@ Manual smoke coverage should use `examples/playground/` for temporary Markdown i
 - [Markdown to PDF Profiles, Fonts, and Page Chrome](../researches/research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md)
 - [Font Inspect and Check Commands](../researches/research-2026-05-07-font-inspect-and-check-commands.md)
 - [Markdown PDF Shiki Code Highlighting](../researches/research-2026-05-16-markdown-pdf-shiki-code-highlighting.md)
-- [Data stack artifact and Codex contract cleanup](../researches/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md)
+- [Data stack artifact and Codex contract cleanup](../researches/archive/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md)

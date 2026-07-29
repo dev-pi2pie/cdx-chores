@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Complete Phase 3 and Phase 4 from `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md` by adding workspace-aware Codex drafting and interactive workspace query flow for `data query`.
+Complete Phase 3 and Phase 4 from `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md` by adding workspace-aware Codex drafting and interactive workspace query flow for `data query`.
 
 ## Scope
 
@@ -18,7 +18,7 @@ Complete Phase 3 and Phase 4 from `docs/plans/plan-2026-03-31-data-query-workspa
 - `src/cli/duckdb/query/types.ts`
 - `src/cli/interactive/data-query/`
 - focused CLI, action, interactive, and harness tests under `test/`
-- checklist updates in `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
+- checklist updates in `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
 
 ## Constraints
 
@@ -64,12 +64,12 @@ Complete Phase 3 and Phase 4 from `docs/plans/plan-2026-03-31-data-query-workspa
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
-- `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
+- `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`
 - `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`

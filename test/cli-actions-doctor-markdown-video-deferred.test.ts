@@ -88,6 +88,10 @@ describe("cli action modules: doctor", () => {
     expect(typeof payload.tools.weasyprint.available).toBe("boolean");
     expect(Object.hasOwn(payload.capabilities, "md.to-docx")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "md.to-pdf")).toBe(true);
+    expect(typeof payload.markdownPdf.ready).toBe("boolean");
+    expect(payload.markdownPdf.requirements.pandoc.minimumVersion).toBe("2.0");
+    expect(typeof payload.markdownPdf.requirements.pandoc.status).toBe("string");
+    expect(typeof payload.markdownPdf.requirements.weasyprint.status).toBe("string");
     expect(Object.hasOwn(payload.capabilities, "video.gif")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.csv")).toBe(true);
     expect(Object.hasOwn(payload.capabilities, "data.query.duckdb")).toBe(true);
@@ -200,6 +204,138 @@ describe("cli action modules: doctor", () => {
     expectNoStderr();
     expect(stdout.text).toContain("fontconfig discovery: unavailable");
     expect(stdout.text).toContain("fontconfig coverage: available (2.15.0)");
+  });
+
+  test("actionDoctor reports installed old Pandoc as unsupported for Markdown PDF only", async () => {
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+    await actionDoctor(runtime, {
+      json: true,
+      dependencyRunner: doctorDependencyRunner({
+        pandoc: ok("pandoc 1.19.2\n"),
+        ffmpeg: ok("ffmpeg version 8.0.1\n"),
+        weasyprint: ok("WeasyPrint version 68.0\n"),
+        "fc-list": ok("fontconfig version 2.15.0\n"),
+        "fc-query": ok("fontconfig version 2.15.0\n"),
+      }),
+    });
+
+    expectNoStderr();
+    const payload = JSON.parse(stdout.text);
+    expect(payload.tools.pandoc).toMatchObject({
+      available: true,
+      version: "1.19.2",
+    });
+    expect(payload.markdownPdf).toMatchObject({
+      ready: false,
+      requirements: {
+        pandoc: {
+          status: "unsupported",
+          available: true,
+          version: "1.19.2",
+          minimumVersion: "2.0",
+        },
+        weasyprint: {
+          status: "satisfied",
+          available: true,
+          version: "68.0",
+        },
+      },
+    });
+    expect(payload.capabilities["md.to-docx"]).toBe(true);
+    expect(payload.capabilities["md.to-pdf"]).toBe(false);
+  });
+
+  test("actionDoctor maps Markdown PDF requirement states to JSON readiness", async () => {
+    const cases = [
+      {
+        statuses: {
+          pandoc: ok("pandoc 3.9\n"),
+          weasyprint: ok("WeasyPrint version 68.0\n"),
+        },
+        ready: true,
+        pandocStatus: "satisfied",
+        weasyprintStatus: "satisfied",
+      },
+      {
+        statuses: {
+          pandoc: ok("pandoc custom-build\n"),
+          weasyprint: ok("WeasyPrint version 68.0\n"),
+        },
+        ready: false,
+        pandocStatus: "unverified",
+        weasyprintStatus: "satisfied",
+      },
+      {
+        statuses: {
+          weasyprint: ok("WeasyPrint version 68.0\n"),
+        },
+        ready: false,
+        pandocStatus: "missing",
+        weasyprintStatus: "satisfied",
+      },
+      {
+        statuses: {
+          pandoc: ok("pandoc 3.9\n"),
+        },
+        ready: false,
+        pandocStatus: "satisfied",
+        weasyprintStatus: "missing",
+      },
+    ] as const;
+
+    for (const scenario of cases) {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      await actionDoctor(runtime, {
+        json: true,
+        dependencyRunner: doctorDependencyRunner({
+          ffmpeg: ok("ffmpeg version 8.0.1\n"),
+          "fc-list": ok("fontconfig version 2.15.0\n"),
+          "fc-query": ok("fontconfig version 2.15.0\n"),
+          ...scenario.statuses,
+        }),
+      });
+
+      expectNoStderr();
+      const payload = JSON.parse(stdout.text);
+      expect(payload.markdownPdf.ready).toBe(scenario.ready);
+      expect(payload.markdownPdf.requirements.pandoc.status).toBe(scenario.pandocStatus);
+      expect(payload.markdownPdf.requirements.weasyprint.status).toBe(scenario.weasyprintStatus);
+      expect(payload.capabilities["md.to-pdf"]).toBe(scenario.ready);
+    }
+  });
+
+  test("actionDoctor explains unsupported and unverified Markdown PDF capability states", async () => {
+    const cases = [
+      {
+        pandoc: "pandoc 1.19.2\n",
+        expected: "md.to-pdf: unsupported",
+        detail: "Pandoc 1.19.2 is below the required 2.0",
+      },
+      {
+        pandoc: "pandoc custom-build\n",
+        expected: "md.to-pdf: unverified",
+        detail: "Pandoc 2.0 or newer could not be verified",
+      },
+    ] as const;
+
+    for (const scenario of cases) {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+
+      await actionDoctor(runtime, {
+        dependencyRunner: doctorDependencyRunner({
+          pandoc: ok(scenario.pandoc),
+          ffmpeg: ok("ffmpeg version 8.0.1\n"),
+          weasyprint: ok("WeasyPrint version 68.0\n"),
+          "fc-list": ok("fontconfig version 2.15.0\n"),
+          "fc-query": ok("fontconfig version 2.15.0\n"),
+        }),
+      });
+
+      expectNoStderr();
+      expect(stdout.text).toContain(scenario.expected);
+      expect(stdout.text).toContain(scenario.detail);
+    }
   });
 
   test("actionDataDuckDbDoctor emits human-readable DuckDB extension report", async () => {

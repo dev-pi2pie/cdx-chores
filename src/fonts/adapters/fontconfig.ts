@@ -1,5 +1,6 @@
 import { extname } from "node:path";
 
+import { normalizeFontQuery } from "../matching";
 import type { FontDiscoveryAdapter, FontFace, FontFormat, FontStyle } from "../types";
 
 const FONTCONFIG_LIST_FORMAT = "%{family}\t%{fullname}\t%{style}\t%{file}\t%{index}\n";
@@ -69,13 +70,16 @@ function fontWeightFromText(value: string): number | undefined {
   return undefined;
 }
 
-function firstFontFamily(value: string): string {
-  return (
-    value
-      .split(",")
-      .map((part) => part.trim())
-      .find(Boolean) ?? ""
-  );
+function fontconfigNames(value: string | undefined): string[] {
+  const names = new Map<string, string>();
+  for (const part of value?.split(",") ?? []) {
+    const name = part.trim();
+    const normalized = normalizeFontQuery(name);
+    if (name && !names.has(normalized)) {
+      names.set(normalized, name);
+    }
+  }
+  return [...names.values()];
 }
 
 function fontFaceIndexFromText(value: string | undefined): number | undefined {
@@ -105,16 +109,20 @@ export function parseFontconfigList(stdout: string): FontFace[] {
   const faces: FontFace[] = [];
   for (const line of stdout.split(/\r?\n/)) {
     const row = parseFontconfigListRow(line);
-    const family = firstFontFamily(row.rawFamily);
+    const [family = "", ...aliases] = fontconfigNames(row.rawFamily);
     if (!family) {
       continue;
     }
+    const fullNames = fontconfigNames(row.rawFullName);
+    const fullName = row.rawFullName?.trim() || family;
     const styleText = row.rawStyle?.trim() ?? "";
     const path = row.rawPath?.trim() || undefined;
     const faceIndex = fontFaceIndexFromText(row.rawFaceIndex);
     faces.push({
       family,
-      fullName: row.rawFullName?.trim() || family,
+      ...(aliases.length > 0 ? { aliases } : {}),
+      fullName,
+      ...(fullNames.length > 0 ? { fullNames } : {}),
       style: fontStyleFromText(styleText),
       weight: fontWeightFromText(styleText),
       path,
@@ -128,8 +136,8 @@ export function parseFontconfigList(stdout: string): FontFace[] {
 
 export const fontconfigFontAdapter: FontDiscoveryAdapter = {
   name: "fontconfig",
-  async discover({ runner }) {
-    const result = await runner("fc-list", ["--format", FONTCONFIG_LIST_FORMAT]);
+  async discover({ runner, runOptions }) {
+    const result = await runner("fc-list", ["--format", FONTCONFIG_LIST_FORMAT], runOptions);
     if (!result.ok) {
       return {
         faces: [],

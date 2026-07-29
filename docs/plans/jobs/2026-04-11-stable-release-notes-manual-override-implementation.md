@@ -23,7 +23,7 @@ Implement the stable release-notes manual override flow so `CHANGELOGS/vX.Y.Z.md
 - added `RELEASE_NOTES_POLICY.md` as the root-level release-note policy reference
 - updated `AGENTS.md` to point future agents at `RELEASE_NOTES_POLICY.md`
 - added `CHANGELOGS/.gitkeep` so the stable release-note directory is tracked before the first real manual release body lands
-- updated `docs/plans/plan-2026-04-11-stable-release-notes-manual-override.md` to completed status and checked off the implementation phases
+- updated `docs/plans/archive/plan-2026-04-11-stable-release-notes-manual-override.md` to completed status and checked off the implementation phases
 
 ## Verification
 
@@ -31,6 +31,6 @@ Implement the stable release-notes manual override flow so `CHANGELOGS/vX.Y.Z.md
 
 ## Related Documents
 
-- `docs/plans/plan-2026-04-11-stable-release-notes-manual-override.md`
+- `docs/plans/archive/plan-2026-04-11-stable-release-notes-manual-override.md`
 - `RELEASE_NOTES_POLICY.md`
 - `AGENTS.md`

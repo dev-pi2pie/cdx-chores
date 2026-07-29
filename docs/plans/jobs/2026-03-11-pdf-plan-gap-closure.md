@@ -27,4 +27,4 @@ Resolve the remaining contract gaps in the PDF workflow implementation plan afte
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md`
+- `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md`

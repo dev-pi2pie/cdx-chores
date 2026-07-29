@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 4 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by converting `src/cli/duckdb/query.ts` into a folder-based module while preserving the current public exports.
+Execute Phase 4 from `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by converting `src/cli/duckdb/query.ts` into a folder-based module while preserving the current public exports.
 
 ## Scope
 
@@ -51,11 +51,11 @@ src/cli/duckdb/query/
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## What Changed
 

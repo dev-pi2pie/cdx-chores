@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-07-10
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---
@@ -12,8 +12,9 @@ Document the direct `md pdf-profile codex` helper for drafting reusable Markdown
 PDF profiles from bounded document signals, user intent, font hints, existing
 profiles, and deterministic fallback defaults.
 
-This guide covers the direct profile helper only. Interactive Markdown PDF
-flows remain a later workflow layer.
+This guide covers the direct profile helper only. For guided Profile
+preparation, temporary or durable rendering, and saved-recipe handoff, see
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -274,6 +275,11 @@ fonts:
     symbols: "Noto Sans Symbols 2"
 ```
 
+See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
+for exact mixed-language assignment. A language-keyed body entry emits a
+matching `:lang(...)` rule, but it does not detect or label content; rendered
+Markdown still needs a matching bracketed inline span or fenced block Div.
+
 Use `font list`, `font inspect`, and `font check` when you need local evidence
 for exact family names or glyph coverage before writing a hint. `--font-hint`
 does not install fonts and does not bypass profile validation.
@@ -351,9 +357,9 @@ template-only behavior.
 
 ## Related Docs
 
+- [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
-- [PDF Backend License Guidance](pdf-backend-license-guidance.md)
 - [Markdown PDF Codex Helper Roadmap](../researches/research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
 - [Markdown PDF Template Codex Helper](../researches/research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown PDF Codex profile helper implementation](../plans/plan-2026-06-15-markdown-pdf-codex-profile-helper.md)

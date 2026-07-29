@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-07-10
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---
@@ -12,8 +12,9 @@ Document the direct `md pdf-project codex` helper for drafting one coordinated
 Markdown PDF project folder from shared document signals, intent, font hints,
 base profiles, and local cover-image signals.
 
-This guide covers the direct project helper only. Interactive Markdown PDF flows
-remain a later workflow layer.
+This guide covers the direct project helper only. For guided Project bundle
+preparation, temporary or durable rendering, and saved-recipe handoff, see
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -109,8 +110,13 @@ cross-directory composition, and role-specific troubleshooting.
 
 By default, the follow-up render uses layered CSS: the profile-derived default
 stylesheet stays enabled and the project `style.css` is applied after it. This
-keeps profile-owned page chrome, fonts, cover defaults, and Shiki hooks active
-while allowing the project stylesheet to style template-owned layout.
+keeps the normal cascade available for deliberate user styling. Generated
+Project CSS omits competing families for Profile-owned document font slots
+while retaining Template-owned layout and cover typography. Reusable font
+choices belong to the final `profile.yml`; Project validation recomputes that
+ownership boundary from the final Profile and rejects a generated stylesheet
+that bypasses it. Profile-owned page chrome, cover defaults, and Shiki hooks
+remain active through their existing boundaries.
 
 ## Ownership Model
 
@@ -168,6 +174,20 @@ cdx-chores md pdf-project codex ./multilingual-notes.md \
   --output ./multilingual-pdf-project
 ```
 
+Accepted reusable font hints are persisted in the generated `profile.yml`.
+The coordinated Template phase then treats those Profile slots as owned, so
+generated `style.css` omits competing document families. The Project bundle
+therefore carries reusable font policy in its Profile and presentation-only
+Template CSS beside it.
+
+Language-specific hints do not annotate or classify the input Markdown. See
+[Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
+for exact mixed-language assignment. A persisted choice such as
+`fonts.body.zh-Hant` only takes exact precedence for rendered content with a
+matching `lang` attribute from a bracketed inline span or fenced block Div.
+Passing Project compatibility validation proves that the Profile and Template
+agree; it does not prove that the source contains matching language markers.
+
 Recipe flags such as `--preset`, `--page-size`, `--orientation`, `--margin*`,
 `--toc`, `--toc-depth`, and `--toc-page-break` are not part of the project Codex
 helper surface. Use direct profile/init flows or the final `md to-pdf` render
@@ -205,6 +225,7 @@ bundle-relative paths plus source basenames and metadata.
 
 ## Related Docs
 
+- [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Project Codex Helper Research](../researches/research-2026-07-03-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF project Codex helper implementation plan](../plans/plan-2026-07-04-markdown-pdf-project-codex-helper.md)

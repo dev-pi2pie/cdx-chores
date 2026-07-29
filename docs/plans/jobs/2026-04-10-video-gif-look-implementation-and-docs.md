@@ -34,14 +34,14 @@ Implemented the `--gif-look faithful|vibrant` follow-up for quality-mode GIF con
 
 ## Status Review
 
-- `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`: `completed`
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`: `completed`
+- `docs/researches/archive/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`: `completed`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`: `completed`
 - `docs/guides/video-gif-usage-and-quality-modes.md`: `completed`
 
 ## Related Documents
 
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
 - `docs/guides/video-gif-usage-and-quality-modes.md`
 - `docs/plans/jobs/2026-04-10-video-gif-look-followup-contract-freeze.md`

@@ -29,5 +29,5 @@ The review finding showed that `workflow_dispatch` releases can run with the bra
 ## Related Documents
 
 - `docs/plans/jobs/2026-04-11-stable-release-notes-manual-override-implementation.md`
-- `docs/plans/plan-2026-04-11-stable-release-notes-manual-override.md`
+- `docs/plans/archive/plan-2026-04-11-stable-release-notes-manual-override.md`
 - `RELEASE_NOTES_POLICY.md`

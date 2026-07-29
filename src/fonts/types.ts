@@ -6,7 +6,9 @@ export type FontStyle = "normal" | "italic" | "oblique";
 
 export interface FontFace {
   family: string;
+  aliases?: string[];
   fullName: string;
+  fullNames?: string[];
   style: FontStyle;
   weight?: number;
   path?: string;
@@ -15,19 +17,35 @@ export interface FontFace {
   source: FontSource;
 }
 
+export interface SearchableFontFamily {
+  family: string;
+  aliases: string[];
+  fullNames: string[];
+}
+
 export interface FontDiscoveryCommandResult {
   ok: boolean;
   stdout: string;
   stderr: string;
+  failureKind?: FontDiscoveryFailureKind;
 }
+
+export type FontDiscoveryFailureKind = "timeout";
 
 export type FontDiscoveryCommandRunner = (
   command: string,
   args: string[],
+  options?: FontDiscoveryRunOptions,
 ) => Promise<FontDiscoveryCommandResult>;
+
+export interface FontDiscoveryRunOptions {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
 
 export interface FontDiscoveryAdapterInput {
   runner: FontDiscoveryCommandRunner;
+  runOptions?: FontDiscoveryRunOptions;
 }
 
 export interface FontDiscoveryAdapterResult {
@@ -50,7 +68,7 @@ export type FontDiscoverySelectionReason = "macos-auto-fontconfig" | "macos-auto
 export interface FontDiscoveryAttempt {
   adapter: string;
   command: string;
-  status: "success" | "failed";
+  status: "success" | "failed" | FontDiscoveryFailureKind;
   durationMs: number;
   message: string;
 }
@@ -60,6 +78,8 @@ export interface DiscoverFontsInput {
   runner?: FontDiscoveryCommandRunner;
   discovery?: FontDiscoveryMode;
   includeAttempts?: boolean;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 export interface DiscoverFontsResult {

@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope
 
-Implemented Phase 5 and Phase 6 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Implemented Phase 5 and Phase 6 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 ## Changes
 

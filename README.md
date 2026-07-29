@@ -51,7 +51,7 @@ Runtime requirement:
 | ------------- | --------------------- | ------- | ---------------- |
 | `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
 | `data` | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
-| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json` | Markdown conversion, PDF profile/template/project generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires `pandoc` and `weasyprint` |
+| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json` | Markdown conversion, PDF profile/template/project generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint` |
 | `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
 | `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
 | `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
@@ -72,18 +72,19 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | Area | What ships with `cdx-chores` | Additional requirement | How to verify or repair |
 | ---- | ---------------------------- | ---------------------- | ----------------------- |
 | `md to-docx` | Markdown-to-DOCX command wrapper | `pandoc` must be installed on `PATH` | Run `cdx-chores doctor` |
-| `md to-pdf` | Markdown-to-PDF command wrapper and default HTML/CSS recipe | `pandoc` and `weasyprint` must be installed on `PATH` | Run `cdx-chores doctor` |
+| `md to-pdf` | Markdown-to-PDF command wrapper and default HTML/CSS recipe | Pandoc 2.0+ and `weasyprint` must be installed on `PATH` | Run `cdx-chores doctor` |
 | `video convert`, `video resize`, `video gif` | Video command wrappers | `ffmpeg` must be installed on `PATH` | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
 | `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
 | `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor` |
 
-Codex SDK baseline for `v0.1.5`: `0.144.1`
+Codex SDK baseline for `v0.1.6`: `0.146.0`
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
-helper workflows are direct CLI flows in `v0.1.5`; interactive
-Markdown PDF flows remain deferred to a later release.
+helpers remain available as direct CLI flows. Interactive mode also provides
+`md -> to-pdf` for guided rendering and `md -> pdf-recipes` for durable recipe
+authoring with an optional render handoff.
 
 For automation or machine-readable checks, use:
 
@@ -421,6 +422,7 @@ Video:
 Markdown:
 
 - `docs/guides/markdown-pdf-usage.md`
+- `docs/guides/markdown-pdf-interactive-usage.md`
 - `docs/guides/markdown-pdf-codex-profile-helper.md`
 - `docs/guides/markdown-pdf-codex-template-helper.md`
 - `docs/guides/markdown-pdf-codex-project-helper.md`

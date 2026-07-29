@@ -1,12 +1,12 @@
-import { mkdtemp, realpath, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, parse as parsePath, relative, resolve } from "node:path";
 
 import { parse, serialize, type DefaultTreeAdapterTypes } from "parse5";
 
 import { CliError } from "../errors";
-import { ensureParentDir, readTextFileRequired, writeTextFileSafe } from "../file-io";
+import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "../file-io";
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import type { EffectiveMarkdownPdfCodeOptions } from "./profile";
@@ -666,15 +666,19 @@ export async function renderMarkdownPdf(
     );
 
     if (input.htmlOutputPath) {
-      await writeTextFileSafe(input.htmlOutputPath, html, { overwrite: input.overwrite });
+      await writeTextFileSafe(input.htmlOutputPath, html, {
+        label: "HTML output",
+        overwrite: input.overwrite,
+        parentRootDirectory: parsePath(input.htmlOutputPath).root,
+      });
     }
 
-    await ensureParentDir(input.outputPath);
+    const renderedPdfPath = join(tempDir, "rendered.pdf");
     const weasyprintArgs = ["--base-url", dirname(input.inputPath)];
     for (const cssPath of cssPaths) {
       weasyprintArgs.push("--stylesheet", cssPath);
     }
-    weasyprintArgs.push(finalHtmlPath, input.outputPath);
+    weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
 
     const weasyprint = await runner("weasyprint", weasyprintArgs, {
       cwd: dirname(input.inputPath),
@@ -682,6 +686,11 @@ export async function renderMarkdownPdf(
     if (!weasyprint.ok) {
       throw formatProcessFailure("weasyprint", weasyprint);
     }
+    await writeBufferFileSafe(input.outputPath, await readFile(renderedPdfPath), {
+      label: "PDF output",
+      overwrite: input.overwrite,
+      parentRootDirectory: parsePath(input.outputPath).root,
+    });
 
     return {
       pandoc,

@@ -48,9 +48,9 @@ agent: codex
 
 ## Related Plan
 
-- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`

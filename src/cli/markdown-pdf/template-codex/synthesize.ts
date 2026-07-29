@@ -11,6 +11,10 @@ import {
 import { synthesizeMdPdfTemplateCodexCss } from "./synthesize-css";
 import { synthesizeMdPdfTemplateCodexHtml } from "./synthesize-template";
 import { resolveMdPdfTemplateCodexTitlePolicy } from "./title-policy";
+import {
+  EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
+  type MarkdownPdfTemplateCodexFontOwnership,
+} from "./font-ownership";
 import type { MarkdownPdfTemplateCodexDecision } from "./codex-decision";
 import type {
   MarkdownPdfTemplateCodexManagedAssetBinding,
@@ -36,6 +40,7 @@ function bindManagedAssets(
 }
 
 export function synthesizeMdPdfTemplateCodex(input: {
+  fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexSynthesisResult {
@@ -61,6 +66,8 @@ export function synthesizeMdPdfTemplateCodex(input: {
   });
   const styleCss = synthesizeMdPdfTemplateCodexCss({
     family: templateFamily,
+    fontDecisions: [],
+    fontOwnership: input.fontOwnership ?? EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
     outputPlan: input.outputPlan,
     signals: input.signals,
     slots,
@@ -113,6 +120,7 @@ ${decision.cssBlocks.map((block) => `/* slot=${block.slot} */\n${block.css}`).jo
 
 export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   decision: MarkdownPdfTemplateCodexDecision;
+  fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexSynthesisResult {
@@ -121,6 +129,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   const slots = input.decision.slots;
   const fontDecisions = materializeMdPdfTemplateCodexFontDecisions({
     decisions: input.decision.fontDecisions,
+    fontOwnership: input.fontOwnership,
     signals: input.signals,
   });
   const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots, fontDecisions);
@@ -162,6 +171,8 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   const styleCss = appendDecisionCssBlocks(
     synthesizeMdPdfTemplateCodexCss({
       family: templateFamily,
+      fontDecisions,
+      fontOwnership: input.fontOwnership ?? EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
       outputPlan: input.outputPlan,
       signals: input.signals,
       slots,

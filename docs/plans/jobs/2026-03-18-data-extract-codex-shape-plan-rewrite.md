@@ -12,7 +12,7 @@ Correct the follow-up planning scope after noticing that the earlier improved pl
 ## What Changed
 
 - rewrote the follow-up plan as:
-  - `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+  - `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 - promoted reviewed Codex source-shape assistance to the top-level shared contract instead of treating it as an interactive convenience
 - defined the missing layered model explicitly:
   - deterministic source shaping
@@ -35,10 +35,10 @@ Correct the follow-up planning scope after noticing that the earlier improved pl
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Related Research
 

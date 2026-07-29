@@ -77,7 +77,7 @@ export function parseWindowsFontRegistry(stdout: string): FontFace[] {
 
 export const windowsFontAdapter: FontDiscoveryAdapter = {
   name: "windows-registry",
-  async discover({ runner }) {
+  async discover({ runner, runOptions }) {
     const script = [
       "$fonts = Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts';",
       "$fonts.PSObject.Properties |",
@@ -85,7 +85,7 @@ export const windowsFontAdapter: FontDiscoveryAdapter = {
       "ForEach-Object { [PSCustomObject]@{ name = $_.Name; value = $_.Value } } |",
       "ConvertTo-Json -Compress",
     ].join(" ");
-    const result = await runner("powershell.exe", ["-NoProfile", "-Command", script]);
+    const result = await runner("powershell.exe", ["-NoProfile", "-Command", script], runOptions);
     if (!result.ok) {
       return {
         faces: [],

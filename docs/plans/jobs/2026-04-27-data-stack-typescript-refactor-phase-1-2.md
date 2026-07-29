@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Implement Phases 1 and 2 from `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md` without changing the `data stack` artifact contracts.
+Implement Phases 1 and 2 from `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md` without changing the `data stack` artifact contracts.
 
 ## What Changed
 
@@ -48,8 +48,8 @@ git diff --check
 
 ## Related Research
 
-- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-04-27-data-stack-typescript-refactor-scan.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`

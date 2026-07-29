@@ -334,4 +334,4 @@ Remaining planned follow-up after Direction B:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
+- `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`

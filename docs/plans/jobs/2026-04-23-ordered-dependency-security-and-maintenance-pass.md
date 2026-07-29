@@ -19,8 +19,8 @@ Apply the approved dependency update order, clear the current security concerns,
 
 ## Related Research
 
-- `docs/researches/research-2026-04-01-dependency-upgrade-safety-check.md`
-- `docs/researches/research-2026-04-16-canary-dependency-review.md`
+- `docs/researches/archive/research-2026-04-01-dependency-upgrade-safety-check.md`
+- `docs/researches/archive/research-2026-04-16-canary-dependency-review.md`
 
 ## Changes
 

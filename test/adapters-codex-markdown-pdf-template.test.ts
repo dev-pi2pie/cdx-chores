@@ -234,6 +234,44 @@ describe("Markdown PDF template Codex adapter", () => {
     });
   });
 
+  test("keeps internal full-Profile font ownership out of bounded prompt facts", () => {
+    const signals = {
+      ...createSynthesisSignals({
+        fontHints: ["Editorial"],
+        profileFonts: {
+          families: [{ family: "Bounded Profile Body", key: "default", role: "body" }],
+          overflowFamilyCount: 2,
+        },
+        signalMode: "codex-assisted",
+      }),
+      fontOwnership: {
+        ownedKeys: [{ key: "ja", role: "body" }],
+      },
+      normalizedProfile: {
+        fonts: {
+          body: { ja: "Private Full Profile Sentinel" },
+        },
+      },
+    };
+    const prompt = buildMarkdownPdfTemplateCodexPrompt(requestBase({ signals }));
+    const facts = promptFacts(prompt) as {
+      fontFacts: Record<string, unknown>;
+    };
+
+    expect(facts.fontFacts).toEqual({
+      hints: ["Editorial"],
+      profileFonts: {
+        families: [{ family: "Bounded Profile Body", key: "default", role: "body" }],
+        overflowFamilyCount: 2,
+      },
+    });
+    expect(Object.keys(facts.fontFacts).sort()).toEqual(["hints", "profileFonts"]);
+    expect(prompt).not.toContain("fontOwnership");
+    expect(prompt).not.toContain("ownedKeys");
+    expect(prompt).not.toContain("normalizedProfile");
+    expect(prompt).not.toContain("Private Full Profile Sentinel");
+  });
+
   test("uses schema-valid recipe source facts for document-derived wide-table prompts", () => {
     const prompt = buildMarkdownPdfTemplateCodexPrompt(
       requestBase({
@@ -1084,6 +1122,18 @@ describe("Markdown PDF template Codex adapter", () => {
     ).toThrow("remote URLs or absolute local paths");
     expect(() =>
       validateMarkdownPdfTemplateCodexCssBlock({
+        css: '.pdf-cover-media { background-image: u\\72l("h\\74tps://example.com/a.png"); }',
+        slot: "cover",
+      }),
+    ).toThrow("remote URLs or absolute local paths");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: '.pdf-cover-media { background-image: u/**/rl("\\2fUsers/me/a.png"); }',
+        slot: "cover",
+      }),
+    ).toThrow("remote URLs or absolute local paths");
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
         css: "@import url(https://example.com/a.css);",
         slot: "colors",
       }),
@@ -1124,6 +1174,124 @@ describe("Markdown PDF template Codex adapter", () => {
         slot: "spacing",
       }),
     ).toThrow("outside the spacing slot");
+  });
+
+  test("rejects generated CSS declarations that can override font families", () => {
+    const familyOverrides = [
+      {
+        css: 'body { font-family: "Late Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: '.pdf-cover-media__title { font: 700 22pt/1.15 "Cover Display"; }',
+        slot: "cover" as const,
+      },
+      {
+        css: ':root { --template-body-font: "Late Variable"; }',
+        slot: "colors" as const,
+      },
+      {
+        css: 'body { FoNt-FaMiLy: "Case Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { f/**/ont-fa/**/mily: "Comment Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: 'body { \\66 ont-family: "Escaped Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: ':root { --TeMpLaTe-CoDe-FoNt: "Case Variable"; }',
+        slot: "colors" as const,
+      },
+      {
+        css: 'body { font-\\\nfamily: "Line Continuation Override"; }',
+        slot: "typography" as const,
+      },
+      {
+        css: ':root { --template-body-\\\nfont: "Line Continuation Variable"; }',
+        slot: "colors" as const,
+      },
+      {
+        css: "body { all: initial; }",
+        slot: "typography" as const,
+      },
+      {
+        css: "p { all: unset; }",
+        slot: "typography" as const,
+      },
+    ];
+
+    for (const block of familyOverrides) {
+      expect(() => validateMarkdownPdfTemplateCodexCssBlock(block)).toThrow(
+        "must not declare all, font, font-family, or Template font custom properties",
+      );
+    }
+  });
+
+  test("rejects nested generated CSS rules instead of inspecting partial branches", () => {
+    const nestedBlocks = [
+      'body { p { font-family: "Nested Override"; } }',
+      'body { h1 { font: 12pt "Nested Shorthand"; } }',
+      'body { p { --template-body-font: "Nested Variable"; } }',
+      'body { p { color: red; } font-family: "Post-nesting Override"; }',
+      "body { p { color: red; } all: initial; }",
+      'body { p { color: red; } --template-body-font: "Post-nesting Variable"; }',
+    ];
+
+    for (const css of nestedBlocks) {
+      expect(() =>
+        validateMarkdownPdfTemplateCodexCssBlock({
+          css,
+          slot: "typography",
+        }),
+      ).toThrow("must use plain selector blocks only");
+    }
+  });
+
+  test("ignores braces inside strings and comments when checking rule depth", () => {
+    const flatBlocks = [
+      {
+        css: '.pdf-cover-media__caption { content: "{}"; }',
+        slot: "cover" as const,
+      },
+      {
+        css: "body { /* { } */ color: red; }",
+        slot: "colors" as const,
+      },
+    ];
+
+    for (const block of flatBlocks) {
+      expect(validateMarkdownPdfTemplateCodexCssBlock(block)).toEqual(block);
+    }
+  });
+
+  test("allows non-family typography declarations and Template font variable reads", () => {
+    expect(
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: [
+          "body {",
+          "  font-size: 11pt;",
+          "  font-weight: 400;",
+          "  font-style: normal;",
+          "  outline: var(--template-body-font);",
+          "}",
+        ].join("\n"),
+        slot: "typography",
+      }),
+    ).toEqual({
+      css: [
+        "body {",
+        "  font-size: 11pt;",
+        "  font-weight: 400;",
+        "  font-style: normal;",
+        "  outline: var(--template-body-font);",
+        "}",
+      ].join("\n"),
+      slot: "typography",
+    });
   });
 
   test("direct application validates enum domains before synthesis", () => {

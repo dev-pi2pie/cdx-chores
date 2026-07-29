@@ -20,7 +20,7 @@ What changed:
 Superseded behavior:
 
 - this job supersedes the older interactive default naming recorded in `docs/plans/jobs/2026-04-23-data-stack-phase-6-8-implementation.md`
-- the current interactive default contract is now the generated `data-stack-<timestamp>-<uid>.<format>` naming rule in `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
+- the current interactive default contract is now the generated `data-stack-<timestamp>-<uid>.<format>` naming rule in `docs/plans/archive/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 Verification:
 
@@ -36,8 +36,8 @@ Verification:
 
 Related Plans:
 
-- `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
+- `docs/plans/archive/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 Related Research:
 
-- `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
+- `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md`

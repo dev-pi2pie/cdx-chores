@@ -21,7 +21,7 @@ Implement the first frozen rollout from the shared interactive UX consistency fo
   - final write boundary
 - aligned interactive `data extract` wording so source interpretation and semantic header review stay separate from output setup and destination choices
 - updated the interactive usage guides for `data extract` and `data preview`
-- marked the completed rollout items in `docs/plans/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
+- marked the completed rollout items in `docs/plans/archive/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
 
 ## Verification
 
@@ -30,9 +30,9 @@ Implement the first frozen rollout from the shared interactive UX consistency fo
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
-- `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
+- `docs/plans/archive/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
+- `docs/plans/archive/plan-2026-03-30-interactive-data-query-followup-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-30-interactive-data-query-followup-ux.md`
+- `docs/researches/archive/research-2026-03-30-interactive-data-query-followup-ux.md`

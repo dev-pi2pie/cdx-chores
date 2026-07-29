@@ -87,8 +87,8 @@ export function parseMacosSystemProfilerFonts(stdout: string): FontFace[] {
 
 export const macosFontAdapter: FontDiscoveryAdapter = {
   name: "macos-system-profiler",
-  async discover({ runner }) {
-    const result = await runner("system_profiler", ["SPFontsDataType", "-json"]);
+  async discover({ runner, runOptions }) {
+    const result = await runner("system_profiler", ["SPFontsDataType", "-json"], runOptions);
     if (!result.ok) {
       return {
         faces: [],

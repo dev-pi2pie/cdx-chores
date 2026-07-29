@@ -37,12 +37,14 @@ const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly stri
 };
 
 function includesRemoteOrLocalPathReference(css: string): boolean {
-  return (
-    /https?:\/\//iu.test(css) ||
-    /\bfile:\/\//iu.test(css) ||
-    /\burl\s*\(/iu.test(css) ||
-    /\burl\s*\(\s*['"]?(?:\/|[A-Za-z]:\\|~\/|\.\.\/)/iu.test(css) ||
-    /['"](?:\/Users\/|\/home\/|\/var\/|\/tmp\/|[A-Za-z]:\\)/u.test(css)
+  const inspectedCss = [css, normalizeCssForInspection(css, false)];
+  return inspectedCss.some(
+    (value) =>
+      /https?:\/\//iu.test(value) ||
+      /\bfile:\/\//iu.test(value) ||
+      /\burl\s*\(/iu.test(value) ||
+      /\burl\s*\(\s*['"]?(?:\/|[A-Za-z]:\\|~\/|\.\.\/)/iu.test(value) ||
+      /['"](?:\/Users\/|\/home\/|\/var\/|\/tmp\/|[A-Za-z]:\\)/iu.test(value),
   );
 }
 
@@ -58,25 +60,130 @@ function includesRequiredHookRemoval(css: string): boolean {
   );
 }
 
-function hasBalancedBraces(css: string): boolean {
+function decodeCssEscape(css: string, index: number): { nextIndex: number; value: string } {
+  const next = css[index + 1];
+  if (next === "\n" || next === "\f") {
+    return { nextIndex: index + 1, value: "" };
+  }
+  if (next === "\r") {
+    return {
+      nextIndex: css[index + 2] === "\n" ? index + 2 : index + 1,
+      value: "",
+    };
+  }
+  const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
+  if (hex) {
+    const codePoint = Number.parseInt(hex, 16);
+    let nextIndex = index + hex.length;
+    const trailingWhitespace = css[nextIndex + 1];
+    if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
+      nextIndex += trailingWhitespace === "\r" && css[nextIndex + 2] === "\n" ? 2 : 1;
+    }
+    return {
+      nextIndex,
+      value: codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD",
+    };
+  }
+  return next ? { nextIndex: index + 1, value: next } : { nextIndex: index, value: "\\" };
+}
+
+function normalizeCssForInspection(css: string, maskStrings: boolean): string {
+  let result = "";
+  let quote: '"' | "'" | undefined;
+
+  for (let index = 0; index < css.length; index += 1) {
+    const char = css[index];
+    const next = css[index + 1];
+    if (!char) {
+      break;
+    }
+
+    if (quote) {
+      if (char === "\\") {
+        const escape = decodeCssEscape(css, index);
+        result += maskStrings ? " " : escape.value.toLowerCase();
+        index = escape.nextIndex;
+        continue;
+      }
+      if (char === quote) {
+        quote = undefined;
+      }
+      result += maskStrings ? " " : char.toLowerCase();
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      result += maskStrings ? " " : char;
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      const commentEnd = css.indexOf("*/", index + 2);
+      if (commentEnd === -1) {
+        return result;
+      }
+      index = commentEnd + 1;
+      continue;
+    }
+
+    if (char === "\\") {
+      const escape = decodeCssEscape(css, index);
+      result += escape.value.toLowerCase();
+      index = escape.nextIndex;
+      continue;
+    }
+
+    result += char.toLowerCase();
+  }
+
+  return result;
+}
+
+function includesFontOwnershipOverride(css: string): boolean {
+  const normalized = normalizeCssForInspection(css, true);
+  const declarationMatcher = /(?:^|[;{}])\s*([^:{}]+?)\s*:/gu;
+  for (const match of normalized.matchAll(declarationMatcher)) {
+    const property = match[1]?.trim();
+    if (!property) {
+      continue;
+    }
+    if (
+      property === "all" ||
+      property === "font" ||
+      property === "font-family" ||
+      /^--template-[a-z0-9_-]+-font$/u.test(property)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function inspectCssBraceStructure(css: string): {
+  balanced: boolean;
+  nested: boolean;
+} {
   let depth = 0;
-  for (const char of css) {
+  let nested = false;
+  for (const char of normalizeCssForInspection(css, true)) {
     if (char === "{") {
       depth += 1;
+      nested ||= depth > 1;
     } else if (char === "}") {
       depth -= 1;
       if (depth < 0) {
-        return false;
+        return { balanced: false, nested };
       }
     }
   }
-  return depth === 0;
+  return { balanced: depth === 0, nested };
 }
 
 function topLevelSelectors(css: string): string[] {
   const selectors: string[] = [];
   const matcher = /([^{}]+)\{/gu;
-  for (const match of css.matchAll(matcher)) {
+  for (const match of normalizeCssForInspection(css, true).matchAll(matcher)) {
     const selector = match[1]?.trim();
     if (selector) {
       selectors.push(selector);
@@ -109,13 +216,19 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
       `Markdown PDF template Codex response ${context}.css must be at most ${MAX_CSS_BLOCK_CHARS} characters.`,
     );
   }
-  if (!hasBalancedBraces(css)) {
+  const braceStructure = inspectCssBraceStructure(css);
+  if (!braceStructure.balanced) {
     throw new Error(`Markdown PDF template Codex response ${context}.css has unbalanced braces.`);
   }
   if (/@import\b/iu.test(css)) {
     throw new Error(`Markdown PDF template Codex response ${context}.css must not use @import.`);
   }
   if (/@/u.test(css)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
+    );
+  }
+  if (braceStructure.nested) {
     throw new Error(
       `Markdown PDF template Codex response ${context}.css must use plain selector blocks only.`,
     );
@@ -133,6 +246,11 @@ export function validateMarkdownPdfTemplateCodexCssBlock(
   if (includesRequiredHookRemoval(css)) {
     throw new Error(
       `Markdown PDF template Codex response ${context}.css must preserve required template selectors.`,
+    );
+  }
+  if (includesFontOwnershipOverride(css)) {
+    throw new Error(
+      `Markdown PDF template Codex response ${context}.css must not declare all, font, font-family, or Template font custom properties.`,
     );
   }
   const selectors = topLevelSelectors(css);

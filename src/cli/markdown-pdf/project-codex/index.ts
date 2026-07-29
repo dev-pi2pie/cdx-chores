@@ -1,4 +1,5 @@
 export { normalizeMdPdfProjectCodexCommandState } from "./options";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 export { createMdPdfProjectCodexIdentity, createMdPdfProjectCodexIdentityValues } from "./identity";
 export {
   planMdPdfProjectCodexOutput,
@@ -16,6 +17,16 @@ export {
   type MdPdfProjectCodexSignalFacts,
 } from "./signal-mode";
 export { collectMdPdfProjectCodexSignals } from "./signals";
+export {
+  prepareMdPdfProjectCodex,
+  rebindMdPdfProjectCodexPreparedArtifact,
+  writePreparedMdPdfProjectCodexBundle,
+  writePreparedMdPdfProjectCodexReportIfRequested,
+  type MarkdownPdfProjectCodexPreparedArtifact,
+  type MarkdownPdfProjectCodexPreparedBinding,
+  type MarkdownPdfProjectCodexPreparedLayout,
+  type MdPdfProjectCodexAcceptedTemplatePhase,
+} from "./prepared";
 export {
   runMdPdfProjectCodexProfilePhase,
   type MdPdfProjectCodexProfilePhaseResult,

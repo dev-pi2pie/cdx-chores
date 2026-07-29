@@ -22,9 +22,9 @@ Implement the cleaner, narrower DOCX metadata discovery approach that keeps `/_r
 - Updated `test/adapters-docx-ooxml-metadata.test.ts`:
   - kept the no-fetch regression guard
   - added coverage for metadata discovery from non-default package part locations without relationship-type URI matching
-- Updated `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`:
+- Updated `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`:
   - clarified that OOXML relationship/schema strings remain research/spec background only for this implementation direction
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - changed Phase 3 wording from local URI-identifier handling to identifier-free metadata discovery
 
 ## Verification
@@ -35,8 +35,8 @@ Implement the cleaner, narrower DOCX metadata discovery approach that keeps `/_r
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

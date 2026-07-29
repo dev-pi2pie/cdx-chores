@@ -45,6 +45,105 @@ describe("interactive mode routing: top-level smoke", () => {
     ]);
   });
 
+  test("shows the markdown pdf submenu entries before the existing markdown routes", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.selectChoicesByMessage["Choose a command"]).toContainEqual({
+      name: "md",
+      value: "md",
+      description: "Markdown utilities",
+    });
+    expect(
+      result.selectChoicesByMessage["Choose a markdown command"]?.map((choice) => choice.value),
+    ).toEqual([
+      "md:to-pdf",
+      "md:pdf-recipes",
+      "md:to-docx",
+      "md:frontmatter-to-json",
+      "back",
+      "cancel",
+    ]);
+    expect(
+      result.selectChoicesByMessage["Choose a markdown command"]?.map(
+        (choice) => choice.description ?? "",
+      ),
+    ).toEqual([
+      "Create a PDF",
+      "Prepare reusable PDF recipes",
+      "",
+      "",
+      "Return to the main command menu",
+      "Exit interactive mode",
+    ]);
+  });
+
+  test("returns from the markdown submenu to the root menu", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "back", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+      "select:Choose a command",
+    ]);
+  });
+
+  test("routes a built-in markdown pdf render through the prepared service", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: ["md", "md:to-pdf", "built-in", "inherit", "default"],
+      requiredPathQueue: ["fixtures/doc.md"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
+  test("returns from markdown pdf source selection to the markdown submenu", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: ["md", "md:to-pdf", "back", "cancel"],
+      requiredPathQueue: ["fixtures/doc.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+      "select:Choose a recipe for this PDF",
+      "select:Choose a markdown command",
+    ]);
+  });
+
+  test("routes the markdown pdf recipes branch into deterministic artifact selection", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: ["md", "md:pdf-recipes", "cancel"],
+    });
+
+    expect(result.actionCalls).toEqual([]);
+    expect(result.pathCalls).toHaveLength(0);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a markdown command",
+      "select:What would you like to create?",
+    ]);
+    expect(result.error).toBeUndefined();
+  });
+
   test("routes a markdown flow through file output options", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -64,6 +163,27 @@ describe("interactive mode routing: top-level smoke", () => {
           overwrite: false,
           pretty: true,
           dataOnly: true,
+        },
+      },
+    ]);
+  });
+
+  test("preserves the existing markdown to-docx route after the module move", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["md", "md:to-docx"],
+      requiredPathQueue: ["fixtures/doc.md"],
+      optionalPathQueue: ["fixtures/doc.docx"],
+      confirmQueue: [true],
+    });
+
+    expect(result.actionCalls).toEqual([
+      {
+        name: "md:to-docx",
+        options: {
+          input: "fixtures/doc.md",
+          output: "fixtures/doc.docx",
+          overwrite: true,
         },
       },
     ]);

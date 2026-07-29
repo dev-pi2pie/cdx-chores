@@ -25,8 +25,8 @@ Revise the active PDF research and implementation plan so `pdf to-images` is doc
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md`
+- `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md`

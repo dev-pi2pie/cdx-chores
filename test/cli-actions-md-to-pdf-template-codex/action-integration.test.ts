@@ -3,8 +3,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
+import type { CodexProgressPresenter } from "../../src/cli/actions/codex-progress";
+import { prepareMdPdfTemplateCodex } from "../../src/cli/actions/markdown/pdf-template-codex";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
+import {
+  bindPreparedMdPdfTemplateCodexOutput,
+  writePreparedMdPdfTemplateCodexBundle,
+} from "../../src/cli/markdown-pdf/template-codex";
 import { createPdfRunner } from "../cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -169,6 +175,65 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
 }
 
 describe("cli action modules: md pdf-template codex integration", () => {
+  test("prepares once, rebinds the destination, and writes the accepted artifact", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-prepared-rebind", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const coverImagePath = join(fixtureDir, "cover.png");
+      const initialOutputPath = join(fixtureDir, "initial-template-output");
+      const reboundOutputPath = join(fixtureDir, "rebound-template-output");
+      const acceptedCover = minimalPng(1200, 800);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(coverImagePath, acceptedCover);
+
+      let runnerCalls = 0;
+      const { runtime } = createActionTestRuntime();
+      const prepared = await prepareMdPdfTemplateCodex(runtime, {
+        input: toRepoRelativePath(inputPath),
+        intent: "create a report cover",
+        coverImage: toRepoRelativePath(coverImagePath),
+        output: toRepoRelativePath(initialOutputPath),
+        keepCodexReport: true,
+        templateBundleIdFactory: () => "md-pdf-template-prepared-test",
+        codexRunner: async () => {
+          runnerCalls += 1;
+          return codexTemplateResponse({ coverEnabled: true });
+        },
+      });
+      const acceptedTemplate = prepared.synthesis.templateHtml;
+      const acceptedStyle = prepared.synthesis.styleCss;
+      const acceptedReport = JSON.stringify(prepared.reportArtifact);
+
+      await writeFile(coverImagePath, minimalPng(640, 480));
+      const rebound = bindPreparedMdPdfTemplateCodexOutput(prepared, {
+        outputDirectory: reboundOutputPath,
+      });
+      await writePreparedMdPdfTemplateCodexBundle({ prepared: rebound, runtime });
+
+      expect(runnerCalls).toBe(1);
+      expect(rebound.bundleId).toBe("md-pdf-template-prepared-test");
+      expect(rebound.outputPlan.bundleId).toBe(prepared.outputPlan.bundleId);
+      expect(rebound.synthesis.templateHtml).toBe(acceptedTemplate);
+      expect(rebound.synthesis.styleCss).toBe(acceptedStyle);
+      expect(JSON.stringify(rebound.reportArtifact)).toBe(acceptedReport);
+      expect(await pathExists(initialOutputPath)).toBe(false);
+      expect(await readFile(join(reboundOutputPath, "template.html"), "utf8")).toBe(
+        acceptedTemplate,
+      );
+      expect(await readFile(join(reboundOutputPath, "style.css"), "utf8")).toBe(acceptedStyle);
+      expect(
+        Buffer.compare(
+          await readFile(join(reboundOutputPath, "assets", "cover.png")),
+          acceptedCover,
+        ),
+      ).toBe(0);
+      expect(
+        JSON.stringify(
+          JSON.parse(await readFile(join(reboundOutputPath, "template.codex-report.json"), "utf8")),
+        ),
+      ).toBe(acceptedReport);
+    });
+  });
+
   test("writes only requested diagnostic reports during dry runs", async () => {
     await withTempFixtureDir("md-pdf-template-codex-action-dry-run-report", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
@@ -345,7 +410,219 @@ describe("cli action modules: md pdf-template codex integration", () => {
           status: "applied",
         }),
       ]);
+      expect(JSON.stringify(report)).not.toContain("fontOwnership");
+      expect(JSON.stringify(report)).not.toContain("ownedKeys");
     });
+  });
+
+  test("preserves real base-profile font ownership through the direct action path", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-base-profile-font-conflict",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(
+          profilePath,
+          [
+            "metadata:",
+            "  internalMarker: FULL_PROFILE_PRIVATE_MARKER",
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "  heading:",
+            "    default: Profile Heading",
+            "  code:",
+            "    default: Profile Code",
+            "  pageChrome:",
+            "    default: Profile Chrome",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          fontHint: ["Suggested Heading"],
+          output: toRepoRelativePath(outputPath),
+          keepCodexReport: true,
+          codexRunner: stubCodexRunner(
+            codexTemplateResponse({
+              fontDecisions: [
+                {
+                  family: "Suggested Heading",
+                  key: "default",
+                  role: "heading",
+                  source: "font-hint",
+                  template_level: false,
+                },
+              ],
+            }),
+          ),
+        });
+
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(styleCss).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
+        expect(styleCss).toContain('--template-heading-font: "Noto Sans", "Arial", sans-serif;');
+        expect(styleCss).toContain(
+          '--template-monospace-font: "Noto Sans Mono", "SFMono-Regular", "Consolas", monospace;',
+        );
+        expect(styleCss).toContain("font-size: 10.5pt;");
+        expect(styleCss).toContain("line-height: 1.5;");
+        expect(styleCss).not.toMatch(/body \{[^}]*font-family:/s);
+        expect(styleCss).not.toMatch(/h1, h2, h3, h4, h5, h6 \{[^}]*font-family:/s);
+        expect(styleCss).not.toMatch(/(?:^|\n)code \{[^}]*font-family:/s);
+        expect(styleCss).not.toContain("Profile Heading");
+        expect(styleCss).not.toContain("Profile Chrome");
+
+        const report = JSON.parse(
+          await readFile(join(outputPath, "template.codex-report.json"), "utf8"),
+        ) as {
+          baseProfile: { available: boolean };
+          decision: {
+            fontDecisions: Array<{
+              family: string;
+              key: string;
+              profileOwned: boolean;
+              reason?: string;
+              role: string;
+              status: string;
+            }>;
+          };
+        };
+        expect(report.baseProfile.available).toBe(true);
+        expect(report.decision.fontDecisions).toEqual([
+          expect.objectContaining({
+            family: "Suggested Heading",
+            key: "default",
+            profileOwned: true,
+            reason: "profile-font-owned",
+            role: "heading",
+            status: "blocked",
+          }),
+        ]);
+        const serializedReport = JSON.stringify(report);
+        expect(serializedReport).not.toContain("fontOwnership");
+        expect(serializedReport).not.toContain("ownedKeys");
+        expect(serializedReport).not.toContain("FULL_PROFILE_PRIVATE_MARKER");
+      },
+    );
+  });
+
+  test("uses ownership only for real base Profiles in deterministic synthesis", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-deterministic-font-ownership",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const profileOutputPath = join(fixtureDir, "profile-template-output");
+        const fallbackOutputPath = join(fixtureDir, "fallback-template-output");
+        await writeFile(
+          profilePath,
+          [
+            "fonts:",
+            "  body:",
+            "    default: Profile Body",
+            "  heading:",
+            "    default: Profile Heading",
+            "  code:",
+            "    symbols: Profile Symbols",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          output: toRepoRelativePath(profileOutputPath),
+        });
+        await actionMdPdfTemplateCodex(runtime, {
+          output: toRepoRelativePath(fallbackOutputPath),
+          preset: "report",
+        });
+
+        const profileCss = await readFile(join(profileOutputPath, "style.css"), "utf8");
+        expect(profileCss).not.toMatch(/body \{[^}]*font-family:/s);
+        expect(profileCss).not.toMatch(/h1, h2, h3, h4, h5, h6 \{[^}]*font-family:/s);
+        expect(profileCss).not.toMatch(/(?:^|\n)code \{[^}]*font-family:/s);
+
+        const fallbackCss = await readFile(join(fallbackOutputPath, "style.css"), "utf8");
+        expect(fallbackCss).toMatch(/body \{[^}]*font-family: var\(--template-body-font\);/s);
+        expect(fallbackCss).toMatch(
+          /h1, h2, h3, h4, h5, h6 \{[^}]*font-family: var\(--template-heading-font\);/s,
+        );
+        expect(fallbackCss).toMatch(
+          /(?:^|\n)code \{[^}]*font-family: var\(--template-monospace-font\);/s,
+        );
+      },
+    );
+  });
+
+  test("applies and reports an explicit direct Template font override", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-base-profile-font-override",
+      async (fixtureDir) => {
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(
+          profilePath,
+          ["fonts:", "  heading:", "    default: Profile Heading", ""].join("\n"),
+          "utf8",
+        );
+
+        const { runtime } = createActionTestRuntime();
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: toRepoRelativePath(profilePath),
+          intent: "Use a distinct Template heading face",
+          output: toRepoRelativePath(outputPath),
+          keepCodexReport: true,
+          codexRunner: stubCodexRunner(
+            codexTemplateResponse({
+              fontDecisions: [
+                {
+                  family: "Template Heading",
+                  key: "default",
+                  role: "heading",
+                  source: "template-style",
+                  template_level: true,
+                },
+              ],
+            }),
+          ),
+        });
+
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(styleCss).toContain('--template-heading-font: "Template Heading", sans-serif;');
+        expect(styleCss).toMatch(
+          /h1, h2, h3, h4, h5, h6 \{[^}]*font-family: var\(--template-heading-font\);/s,
+        );
+
+        const report = JSON.parse(
+          await readFile(join(outputPath, "template.codex-report.json"), "utf8"),
+        ) as {
+          decision: {
+            fontDecisions: Array<{
+              family: string;
+              overridesProfileFont: boolean;
+              profileOwned: boolean;
+              reason: string;
+              status: string;
+              templateLevel: boolean;
+            }>;
+          };
+        };
+        expect(report.decision.fontDecisions).toEqual([
+          expect.objectContaining({
+            family: "Template Heading",
+            overridesProfileFont: true,
+            profileOwned: true,
+            reason: "template-level-override",
+            status: "applied",
+            templateLevel: true,
+          }),
+        ]);
+      },
+    );
   });
 
   test("routes cover image plus font hints through Codex-assisted synthesis", async () => {
@@ -438,6 +715,38 @@ describe("cli action modules: md pdf-template codex integration", () => {
       );
       expect(stdout.text).toContain("Decision mode: adapted");
     });
+  });
+
+  test("uses an injected Codex progress presenter without direct progress output", async () => {
+    await withTempFixtureDir(
+      "md-pdf-template-codex-action-progress-injected",
+      async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const outputPath = join(fixtureDir, "template-output");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        const events: string[] = [];
+        const codexProgressPresenter: CodexProgressPresenter = {
+          start: (label) => events.push(`start:${label}`),
+          update: (label) => events.push(`update:${label}`),
+          stop: (status) => events.push(`stop:${status}`),
+        };
+        const { runtime, stderr } = createActionTestRuntime();
+
+        await actionMdPdfTemplateCodex(runtime, {
+          codexProgressPresenter,
+          input: toRepoRelativePath(inputPath),
+          intent: "make headings quieter",
+          output: toRepoRelativePath(outputPath),
+          codexRunner: stubCodexRunner(codexTemplateResponse()),
+        });
+
+        expect(events).toEqual([
+          "start:Requesting Codex Markdown PDF template recommendation",
+          "stop:done",
+        ]);
+        expect(stderr.text).not.toContain("Requesting Codex Markdown PDF template recommendation");
+      },
+    );
   });
 
   test("summarizes conservative fallback Codex-assisted decisions", async () => {

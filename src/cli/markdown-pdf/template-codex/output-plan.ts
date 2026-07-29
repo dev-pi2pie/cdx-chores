@@ -24,7 +24,7 @@ import type {
 const TEMPLATE_CODEX_OUTPUT_RETRY_LIMIT = 10;
 const TEMPLATE_HTML_BUNDLE_PATH = "template.html";
 const STYLE_CSS_BUNDLE_PATH = "style.css";
-const DEFAULT_REPORT_BUNDLE_PATH = "template.codex-report.json";
+export const MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_BUNDLE_PATH = "template.codex-report.json";
 
 export type MdPdfTemplateCodexOutputWriteMode = "bundle" | "report-only";
 
@@ -71,7 +71,7 @@ function plannedReportFile(
     };
   }
   return {
-    ...plannedBundleFile(outputDirectory, DEFAULT_REPORT_BUNDLE_PATH),
+    ...plannedBundleFile(outputDirectory, MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_BUNDLE_PATH),
     location: "in-bundle",
   };
 }

@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed Phase 3, Phase 4, and Phase 5 from `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
+Completed Phase 3, Phase 4, and Phase 5 from `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
 
 The slice widened reviewed source-shape artifacts and suggestions to support `headerRow`, aligned interactive reviewed Codex shaping and header review with the existing analyzer-status surface, and rewrote interactive `data extract` so it stages output format and destination review before the final materialization write.
 

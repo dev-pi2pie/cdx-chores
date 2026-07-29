@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Completed Phase 12 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Completed Phase 12 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 This job closes the follow-up that reopened the interactive `data stack` workflow after Phase 11. The goal was to make the flow closer to `data extract`: review sources and shape first, explain dry-run early, then preview deterministic work before write or plan save.
 

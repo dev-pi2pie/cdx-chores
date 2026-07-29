@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Completed Phase 13 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Completed Phase 13 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 This job closes the follow-up that made interactive `data stack` source discovery less prompt-heavy. The default path now previews matched files from the selected input format before asking for filename pattern or traversal settings.
 

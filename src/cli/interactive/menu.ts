@@ -14,6 +14,8 @@ export type InteractiveActionKey =
   | "data:csv-to-tsv"
   | "data:tsv-to-csv"
   | "data:tsv-to-json"
+  | "md:to-pdf"
+  | "md:pdf-recipes"
   | "md:to-docx"
   | "md:frontmatter-to-json"
   | "rename:file"
@@ -45,6 +47,7 @@ type InteractiveSubmenuConfig = {
 };
 
 interface SelectInteractiveActionOptions {
+  initialGroup?: InteractiveSubmenuGroup;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
   selectMenuChoiceImpl?: typeof selectInteractiveMenuChoice;
@@ -74,6 +77,12 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
   md: {
     message: "Choose a markdown command",
     choices: [
+      { name: "to-pdf", value: "md:to-pdf", description: "Create a PDF" },
+      {
+        name: "pdf-recipes",
+        value: "md:pdf-recipes",
+        description: "Prepare reusable PDF recipes",
+      },
       { name: "to-docx", value: "md:to-docx" },
       { name: "frontmatter-to-json", value: "md:frontmatter-to-json" },
     ],
@@ -103,15 +112,19 @@ export async function selectInteractiveAction(
   const stdin = options.stdin ?? process.stdin;
   const stdout = options.stdout ?? process.stdout;
   const selectMenuChoice = options.selectMenuChoiceImpl ?? selectInteractiveMenuChoice;
+  let initialGroup = options.initialGroup;
 
   while (true) {
-    const rootChoice = await selectMenuChoice<InteractiveRootChoice>({
-      message: "Choose a command",
-      choices: INTERACTIVE_ROOT_CHOICES,
-      exitValue: "cancel",
-      input: stdin,
-      output: stdout,
-    });
+    const rootChoice =
+      initialGroup ??
+      (await selectMenuChoice<InteractiveRootChoice>({
+        message: "Choose a command",
+        choices: INTERACTIVE_ROOT_CHOICES,
+        exitValue: "cancel",
+        input: stdin,
+        output: stdout,
+      }));
+    initialGroup = undefined;
 
     if (rootChoice === "cancel") {
       return "cancel";

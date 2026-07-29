@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-10
+modified-date: 2026-07-28
 status: completed
 agent: codex
 ---
@@ -16,7 +16,7 @@ WeasyPrint.
 
 `md to-pdf` requires both external tools:
 
-- `pandoc` for Markdown-to-HTML conversion
+- Pandoc 2.0 or newer for Markdown-to-HTML conversion
 - `weasyprint` for HTML/CSS-to-PDF rendering
 
 Check the local environment before using the command in scripts or CI:
@@ -31,11 +31,20 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-## Current Release Boundary
+Doctor reports an installed Pandoc version below 2.0 as unsupported for
+`md.to-pdf`, while leaving other Pandoc-backed capabilities under their own
+requirements. The JSON result keeps `capabilities["md.to-pdf"]` as a boolean
+and explains the detected versions through `markdownPdf.requirements`.
 
-Markdown PDF rendering, profile initialization, template initialization, and the
-direct Codex-assisted profile, template, and project helpers are direct CLI
-flows. Interactive Markdown PDF flows remain deferred to a later plan.
+## Current Command Boundary
+
+Markdown PDF rendering, profile initialization, template initialization, and
+the Codex-assisted profile, template, and project helpers remain available as
+direct CLI flows. Interactive mode now orchestrates the same artifacts through
+`md -> to-pdf` for rendering and `md -> pdf-recipes` for durable authoring.
+
+See [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md) for the
+guided preparation, review, lifecycle, recovery, and handoff behavior.
 
 ## Codex Helper Choice
 
@@ -321,7 +330,7 @@ The HTML file is written only when `--html-output` is passed.
 
 ## Code Highlighting
 
-Code highlighting is off by default. Enable Shiki highlighting for a render with:
+Direct Profile initialization and direct rendering default to highlighting off. Enable Shiki highlighting for a render with:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --code-highlight
@@ -358,6 +367,42 @@ Supported Shiki light themes are:
 - `catppuccin-latte`
 
 Unknown, dark, or non-allowlisted theme names fail validation instead of silently falling back. `--code-highlight` can enable highlighting for a profile that leaves `code.highlight` false, while `--no-code-highlight` disables highlighting, line numbers, and transformer notation for that render.
+
+### Interactive Mapping
+
+Interactive mode reuses this direct and Profile contract rather than defining
+another code-highlighting schema.
+
+This table mirrors the interactive prompt choices; the interactive guide
+covers prompt placement, backtracking, and generated lifecycle behavior.
+
+Interactive Profile `formal-guide` includes a Code highlighting section.
+Highlighting defaults to enabled in that guided Profile flow, Theme defaults
+to `github-light`, and line numbers and transformer notation default to off.
+Theme is part of Code highlighting and is asked only when highlighting is
+enabled. Disabling the section skips its dependent prompts and forces line
+numbers and transformer notation off.
+
+That guided default does not change direct Profile initialization or
+Interactive Profile `starter`; both remain off by default.
+
+For each Interactive `to-pdf` render, `Code highlighting for this PDF` maps to
+the existing direct behavior:
+
+| Interactive choice | Direct equivalent | Behavior |
+| --- | --- | --- |
+| `Use recipe setting` | omit both flags | Use the resolved Profile; without one, remain off. |
+| `Enable for this render` | `--code-highlight` | Enable Shiki for this PDF without mutating the Profile. |
+| `Disable for this render` | `--no-code-highlight` | Disable highlighting and its dependent features for this PDF. |
+
+Theme, line numbers, and transformer notation remain Profile-owned. Template
+bundles own Shiki-compatible CSS only and expose no reusable code settings.
+A Project bundle can carry code settings through its contained Profile, while
+Project preparation remains Codex Assistant-only. Interactive reviews
+separate reusable Profile settings, the one-render override, and the effective
+render. See
+[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md) for prompt
+placement, navigation, and generated lifecycle behavior.
 
 Line numbers are profile-only:
 
@@ -506,9 +551,23 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 `md pdf-template init` writes a complete editable recipe snapshot: `template.html` and `style.css`. Preset choices are baked into that generated CSS.
 
-`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, and font stacks. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
+`md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, font stacks, and code highlighting. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
 
 When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
+
+For Codex-generated font output, ownership determines what is serialized:
+
+- Without a compatibility Profile, an accepted ordinary Template font hint can
+  own an unowned document slot and emit its family through `style.css`.
+- With a compatibility Profile that owns the slot, generated Template
+  `style.css` omits the competing family while retaining non-font styling and
+  Template-owned cover typography.
+- A coordinated Project persists reusable font choices in `profile.yml`; its
+  generated `style.css` omits the corresponding document families.
+
+This ownership-aware behavior does not change the cascade boundary: Profile CSS
+loads before the Template or user stylesheet, so manually authored or edited
+CSS loaded later can still override Profile styling deliberately.
 
 A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile text cover settings will not appear in the rendered PDF.
 
@@ -524,8 +583,9 @@ The Codex profile helper stays inside the profile boundary. Use custom templates
 | Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
 | Render with | `md to-pdf --profile ...` or a profile-only `--bundle` | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
 
-Template bundles can style highlighted code, but Shiki is enabled only by
-`md to-pdf --code-highlight` or an effective profile.
+Template bundles can style highlighted code, but Shiki is enabled only by an
+effective Profile or a render override such as `md to-pdf --code-highlight`
+or Interactive `Enable for this render`.
 
 For a Codex-assisted path that drafts reviewable template artifacts, use
 `md pdf-template codex`:
@@ -599,7 +659,16 @@ pageNumbers:
 
 ## Profile Fonts And Mixed Language
 
-Most mixed-language documents should start with ordered fallback fonts. Put the Latin/body default first when Latin text should keep the primary body font:
+Mixed-language font configuration has three separate responsibilities:
+
+| Input | Responsibility |
+| --- | --- |
+| `pdf.content-langs` | Declares expected languages and orders configured language families in the general body fallback stack |
+| `fonts.body.<language>` | Assigns a family to one language slot and emits a matching `:lang(...)` rule |
+| A rendered `lang` attribute | Activates that language rule for an exact span or block |
+
+Most mixed-language documents should start with ordered fallback fonts. Put the
+Latin/body default first when Latin text should keep the primary body font:
 
 ```yaml
 fonts:
@@ -634,13 +703,43 @@ pdf:
 English text with [繁體中文]{lang=zh-Hant}, [日本語]{lang=ja}, and [한국어]{lang=ko}.
 ```
 
+Pandoc's default `markdown` reader recognizes bracketed inline spans:
+
+```markdown
+[繁體中文]{lang=zh-Hant}
+```
+
+It also recognizes fenced block Divs:
+
+```markdown
+::: {lang=zh-Hant}
+這是一個繁體中文區塊。
+:::
+```
+
+The bracketed-span extension has been enabled by default since Pandoc 1.18.
+The fenced-Div extension has been enabled by default since Pandoc 2.0, which
+sets the `md to-pdf` minimum. The renderer therefore keeps `--from markdown`
+without adding explicit extension flags. See the official
+[Pandoc 1.18 release](https://github.com/jgm/pandoc/releases/tag/1.18),
+[Pandoc 2.0 release](https://github.com/jgm/pandoc/releases/tag/2.0), and
+[Divs and Spans manual](https://pandoc.org/demo/example33/8.18-divs-and-spans.html).
+
 Raw HTML works as an escape hatch:
 
 ```markdown
 English text with <span lang="ja">日本語</span>.
 ```
 
-`pdf.content-langs` declares expected content languages for profile preparation and validation. It does not detect or rewrite language boundaries. Exact font switching still requires language-marked Markdown or HTML.
+`pdf.content-langs` does not detect scripts, classify text, or rewrite language
+boundaries. Without a matching language marker, the text inherits the document
+language and uses the general body fallback stack. An earlier family that covers
+the same characters may therefore be selected before the configured
+language-specific family, which might not appear in the rendered PDF at all.
+
+See the
+[language-tagged CJK smoke input](../../examples/playground/md-pdf/cjk-font-smoke-lang-tagged.md)
+for a complete mixed-language example.
 
 CJK is the first-class mixed-language target for this profile slice. Latin-extended and RTL content have smoke coverage for profile normalization and generated CSS, but this does not claim renderer-specific RTL shaping quality.
 

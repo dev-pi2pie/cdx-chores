@@ -139,4 +139,4 @@ This follow-up should treat the problem as shared TUI behavior, not as a prompt-
 
 ## Related Research
 
-- `docs/researches/research-2026-03-29-inline-ghost-prompt-wrap-bug.md`
+- `docs/researches/archive/research-2026-03-29-inline-ghost-prompt-wrap-bug.md`

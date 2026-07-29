@@ -11,13 +11,13 @@ Address review feedback on the DOCX flag-graduation research and plan documents 
 
 ## What Changed
 
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - changed status to `active`
   - added `modified-date`
   - defined the compatibility release behavior for `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL` as a no-op with a yellow `stderr` deprecation notice
   - specified that the warning must remain human-facing only and must not alter CSV or other machine-readable outputs
   - tied flag removal to the next shipped release after one release has carried the compatibility notice
-- Updated `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`:
+- Updated `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`:
   - changed status to `in-progress`
   - aligned the deprecation strategy with the compatibility-release warning behavior
   - made the release-boundary requirement for flag removal explicit
@@ -32,8 +32,8 @@ Address review feedback on the DOCX flag-graduation research and plan documents 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

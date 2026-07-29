@@ -12,6 +12,7 @@ import {
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
+import type { CodexProgressSession } from "../../actions/codex-progress";
 import type {
   MarkdownPdfProjectCodexOutputPlan,
   MarkdownPdfProjectCodexProfilePhaseSummary,
@@ -95,6 +96,7 @@ function filterTemplateOwnedProfileDirections(input: {
 export async function runMdPdfProjectCodexProfilePhase(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;
+  progressSession?: CodexProgressSession;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
@@ -117,6 +119,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     decision = await runMarkdownPdfCodexProfileOrchestration({
       context: orchestrationContext,
       profileCodexRunner: input.profileCodexRunner,
+      progressSession: input.progressSession,
       progressLabel: "Requesting Codex Markdown PDF project profile recommendation",
       runtime: input.runtime,
     });

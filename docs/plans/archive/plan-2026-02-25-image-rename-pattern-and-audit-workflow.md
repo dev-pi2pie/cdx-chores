@@ -256,7 +256,7 @@ Rename plan CSV schema should be documented in a dedicated guide:
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Status Notes
 

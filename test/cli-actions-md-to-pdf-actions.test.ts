@@ -7,10 +7,57 @@ import { actionMdToPdf } from "../src/cli/actions";
 import { CliError } from "../src/cli/errors";
 import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
 import { createPdfRunner, ok } from "./cli-actions-md-to-pdf.helpers";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf rendering", () => {
+  test("rejects unsupported and unverified Pandoc versions before rendering", async () => {
+    const cases = [
+      {
+        versionOutput: "pandoc 1.19.2\n",
+        code: "DEPENDENCY_VERSION_UNSUPPORTED",
+        messageIncludes: "md to-pdf requires pandoc 2.0 or newer",
+      },
+      {
+        versionOutput: "pandoc custom-build\n",
+        code: "DEPENDENCY_VERSION_UNKNOWN",
+        messageIncludes: "Unable to verify the pandoc version",
+      },
+    ] as const;
+
+    for (const scenario of cases) {
+      await withTempFixtureDir("md-to-pdf-pandoc-version", async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        const calls: Array<{ command: string; args: string[] }> = [];
+        const runner: MarkdownPdfProcessRunner = async (command, args) => {
+          calls.push({ command, args });
+          if (command === "pandoc" && args.includes("--version")) {
+            return ok(scenario.versionOutput);
+          }
+          throw new Error(`unexpected command: ${command}`);
+        };
+        const { runtime, expectNoOutput } = createActionTestRuntime();
+
+        await expectCliError(
+          () =>
+            actionMdToPdf(runtime, {
+              input: toRepoRelativePath(inputPath),
+              runner,
+            }),
+          {
+            code: scenario.code,
+            exitCode: 2,
+            messageIncludes: scenario.messageIncludes,
+          },
+        );
+
+        expect(calls).toEqual([{ command: "pandoc", args: ["--version"] }]);
+        expectNoOutput();
+      });
+    }
+  });
+
   test("renders derived PDF output and optional HTML output with injected process runner", async () => {
     await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
@@ -40,6 +87,14 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(stderr.text).toContain("Markdown PDF render warnings:");
       expect(stderr.text).toContain("WARNING: missing image metadata");
 
+      const pandocRender = calls.find(
+        (call) => call.command === "pandoc" && !call.args.includes("--version"),
+      );
+      const pandocFromIndex = pandocRender?.args.indexOf("--from") ?? -1;
+      expect(pandocRender?.args.slice(pandocFromIndex, pandocFromIndex + 2)).toEqual([
+        "--from",
+        "markdown",
+      ]);
       const weasyprintRender = calls.find(
         (call) => call.command === "weasyprint" && !call.args.includes("--info"),
       );
@@ -47,6 +102,57 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--base-url") + 1]).toBe(
         fixtureDir,
       );
+      expect(weasyprintRender?.args.at(-1)).not.toBe(outputPath);
+    });
+  });
+
+  test("rejects a dangling PDF output symlink at the final write boundary", async () => {
+    await withTempFixtureDir("md-to-pdf-output-dangling-symlink", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const targetPath = join(fixtureDir, "generated-profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await symlink(targetPath, outputPath);
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          overwrite: true,
+          runner,
+        }),
+      ).rejects.toMatchObject({ code: "OUTPUT_SYMLINK" });
+
+      await expect(readFile(targetPath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  test("rejects a PDF output through a symlinked parent directory", async () => {
+    await withTempFixtureDir("md-to-pdf-output-parent-symlink", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const realOutputDirectory = join(fixtureDir, "real-output");
+      const outputAliasDirectory = join(fixtureDir, "output-alias");
+      const outputPath = join(outputAliasDirectory, "report.pdf");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await mkdir(realOutputDirectory);
+      await symlink(realOutputDirectory, outputAliasDirectory);
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          overwrite: true,
+          runner,
+        }),
+      ).rejects.toMatchObject({ code: "OUTPUT_SYMLINK" });
+
+      await expect(readFile(join(realOutputDirectory, "report.pdf"))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     });
   });
 

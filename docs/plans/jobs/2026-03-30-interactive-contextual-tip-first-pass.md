@@ -32,8 +32,8 @@ Implement the first deterministic checkpoint-tip layer for interactive `data que
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-30-interactive-contextual-tip-followup.md`
+- `docs/plans/archive/plan-2026-03-30-interactive-contextual-tip-followup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-30-interactive-contextual-tip-usage.md`
+- `docs/researches/archive/research-2026-03-30-interactive-contextual-tip-usage.md`

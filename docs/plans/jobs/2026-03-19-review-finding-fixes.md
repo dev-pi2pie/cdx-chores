@@ -35,4 +35,4 @@ Address the March 19 review findings for Excel workbook metadata parsing and rev
 
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
 - `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`

@@ -15,8 +15,8 @@ The `gif-look` feature was later implemented the same day. This record remains u
 
 ## What Changed
 
-- reopened `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md` as active follow-up research
-- reopened `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md` as an active plan
+- reopened `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md` as active follow-up research
+- reopened `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md` as an active plan
 - added Phase 8 for visual-intent look tuning follow-up
 - locked the design direction that:
   - `--gif-profile` remains the source-type flag
@@ -35,14 +35,14 @@ The `gif-look` feature was later implemented the same day. This record remains u
 
 At the time this contract was frozen:
 
-- `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`: `in-progress`
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`: `active`
+- `docs/researches/archive/research-2026-04-10-video-gif-high-quality-mode.md`: `completed`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`: `in-progress`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`: `active`
 - `docs/guides/video-gif-usage-and-quality-modes.md`: `completed`
 
 ## Related Documents
 
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
 - `docs/guides/video-gif-usage-and-quality-modes.md`
 - `docs/plans/jobs/2026-04-10-video-gif-plan-closeout-and-status-alignment.md`

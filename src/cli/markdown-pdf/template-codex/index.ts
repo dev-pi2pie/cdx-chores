@@ -1,4 +1,6 @@
 export { normalizeMdPdfTemplateCodexCommandState } from "./options";
+export { prepareMdPdfTemplateCodex } from "./prepare";
+export type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 export { collectMdPdfTemplateCodexSignals } from "./signals";
 export { createMdPdfTemplateCodexBundleId } from "./identity";
 export {
@@ -16,11 +18,29 @@ export {
 } from "./slots";
 export { resolveMdPdfTemplateCodexTitlePolicy } from "./title-policy";
 export {
+  deriveMdPdfTemplateCodexFontOwnership,
+  EMPTY_MD_PDF_TEMPLATE_CODEX_FONT_OWNERSHIP,
+  mdPdfTemplateCodexOwnsFontKey,
+  mdPdfTemplateCodexOwnsFontSlot,
+} from "./font-ownership";
+export type {
+  MarkdownPdfTemplateCodexFontOwnership,
+  MarkdownPdfTemplateCodexOwnedFontKey,
+} from "./font-ownership";
+export {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "./synthesize";
 export { validateMdPdfTemplateCodexSynthesis } from "./validate-template";
 export { copyMdPdfTemplateCodexManagedAssets } from "./asset-copy";
+export {
+  bindPreparedMdPdfTemplateCodexOutput,
+  createPreparedMdPdfTemplateCodexArtifact,
+  rebindPreparedMdPdfTemplateCodexArtifact,
+  writePreparedMdPdfTemplateCodexBundle,
+  writePreparedMdPdfTemplateCodexReport,
+  type PreparedMdPdfTemplateCodexArtifact,
+} from "./prepared";
 export {
   createMdPdfTemplateCodexReportArtifact,
   MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,

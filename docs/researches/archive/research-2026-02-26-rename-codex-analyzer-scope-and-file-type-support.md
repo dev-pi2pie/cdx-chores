@@ -177,7 +177,7 @@ The deterministic rename path should remain the default fallback for all unsuppo
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## References
 

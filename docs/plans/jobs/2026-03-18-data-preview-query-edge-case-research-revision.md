@@ -65,8 +65,8 @@ Revise the edge-case research doc so it reflects the current lightweight `data p
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
-- `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 - `docs/plans/archive/plan-2026-03-17-delimited-text-preview-and-conversion-parity.md`
 
 ## Related Research

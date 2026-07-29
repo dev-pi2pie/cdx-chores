@@ -8,6 +8,7 @@ import {
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
 } from "../src/adapters/codex/markdown-pdf-profile";
 import { actionMdPdfProfileCodex } from "../src/cli/actions";
+import type { CodexProgressPresenter } from "../src/cli/actions/codex-progress";
 import { readMarkdownPdfCodexReportArtifact } from "../src/cli/markdown-pdf/codex-report";
 import { readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../src/cli/markdown-pdf/profile";
@@ -490,6 +491,34 @@ describe("cli action modules: md pdf-profile codex", () => {
         "\r\u001b[2KRequesting Codex Markdown PDF profile recommendation... done\n",
       );
       expect(stdout.text).toContain("Decision: adapted");
+    });
+  });
+
+  test("uses an injected Codex progress presenter without direct progress output", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-progress-injected", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n", "utf8");
+      const events: string[] = [];
+      const codexProgressPresenter: CodexProgressPresenter = {
+        start: (label) => events.push(`start:${label}`),
+        update: (label) => events.push(`update:${label}`),
+        stop: (status) => events.push(`stop:${status}`),
+      };
+      const { runtime, stderr } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProfileCodex(runtime, {
+        codexProgressPresenter,
+        codexRunner: adaptedRunner("article"),
+        dryRun: true,
+        input: "report.md",
+        intent: "article profile",
+        output: "profile.yml",
+      });
+
+      expect(events).toEqual([
+        "start:Requesting Codex Markdown PDF profile recommendation",
+        "stop:done",
+      ]);
+      expect(stderr.text).not.toContain("Requesting Codex Markdown PDF profile recommendation");
     });
   });
 
@@ -1894,6 +1923,40 @@ describe("cli action modules: md pdf-profile codex", () => {
       );
       expect(report.input.path).toBe("report.md");
       expect(report.profile.outputPath).toBe("profile.yml");
+    });
+  });
+
+  test("redacts parent traversal from report paths outside cwd", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-public-report-paths", async (fixtureDir) => {
+      const workspace = join(fixtureDir, "workspace");
+      const external = join(fixtureDir, "private-inputs");
+      await mkdir(workspace, { recursive: true });
+      await mkdir(external, { recursive: true });
+      const inputPath = join(external, "client-report.md");
+      const baseProfilePath = join(external, "client-base.yml");
+      const outputPath = join(external, "client-profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(baseProfilePath, "page:\n  size: Letter\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: workspace,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: baseProfilePath,
+        codexReportOutput: "codex-report.json",
+        codexRunner: adaptedRunner("base-profile"),
+        input: inputPath,
+        intent: "article profile",
+        output: outputPath,
+      });
+
+      const reportPath = join(workspace, "codex-report.json");
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.input.path).toBe("client-report.md");
+      expect(report.selectedBase.path).toBe("client-base.yml");
+      expect(report.profile.outputPath).toBe("client-profile.yml");
+      expect(await readFile(reportPath, "utf8")).not.toContain("../");
     });
   });
 

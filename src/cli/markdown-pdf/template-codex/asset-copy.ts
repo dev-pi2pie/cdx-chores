@@ -74,6 +74,57 @@ async function readManagedAssetSource(
   }
 }
 
+export interface PreparedMdPdfTemplateCodexManagedAsset {
+  role: MarkdownPdfTemplateCodexPlannedAsset["role"];
+  bundlePath: string;
+  sourceBasename: string;
+  content: Buffer;
+}
+
+export async function prepareMdPdfTemplateCodexManagedAssets(input: {
+  managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
+  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+}): Promise<PreparedMdPdfTemplateCodexManagedAsset[]> {
+  const acceptedBundlePaths = new Set(input.managedAssets.map((asset) => asset.bundlePath));
+  return Promise.all(
+    input.outputPlan.assets
+      .filter((asset) => acceptedBundlePaths.has(asset.bundlePath))
+      .map(async (asset) => ({
+        role: asset.role,
+        bundlePath: asset.bundlePath,
+        sourceBasename: asset.sourceBasename,
+        content: await readManagedAssetSource(asset),
+      })),
+  );
+}
+
+export async function writePreparedMdPdfTemplateCodexManagedAssets(input: {
+  managedAssets: PreparedMdPdfTemplateCodexManagedAsset[];
+  outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  overwrite?: boolean;
+}): Promise<void> {
+  const plannedAssets = new Map(input.outputPlan.assets.map((asset) => [asset.bundlePath, asset]));
+  for (const asset of input.managedAssets) {
+    const plannedAsset = plannedAssets.get(asset.bundlePath);
+    if (!plannedAsset) {
+      throw new CliError(`managed asset ${asset.bundlePath} is not present in the output plan.`, {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      });
+    }
+    assertInsideOutputDirectory({
+      outputDirectory: input.outputPlan.outputDirectory,
+      path: plannedAsset.path,
+      pathLabel: `managed asset ${asset.bundlePath}`,
+    });
+    await writeBufferFileSafe(plannedAsset.path, asset.content, {
+      label: `managed asset ${asset.bundlePath}`,
+      overwrite: input.overwrite,
+      parentRootDirectory: input.outputPlan.outputDirectory,
+    });
+  }
+}
+
 export async function copyMdPdfTemplateCodexManagedAssets(input: {
   managedAssets: MarkdownPdfTemplateCodexManagedAssetBinding[];
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;

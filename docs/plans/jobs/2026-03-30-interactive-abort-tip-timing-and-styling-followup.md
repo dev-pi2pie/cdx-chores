@@ -45,7 +45,7 @@ The follow-up keeps the tip where it is useful while reducing visual noise in sh
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
+- `docs/plans/archive/plan-2026-03-30-shared-interactive-ux-consistency-followup.md`
 
 ## Related Jobs
 

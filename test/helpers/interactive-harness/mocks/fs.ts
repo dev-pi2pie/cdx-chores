@@ -18,11 +18,13 @@ export function installFsPromiseMocks(context: HarnessRunnerContext): void {
         (context.statExistsQueue.length > 0 ? context.statExistsQueue.shift() === true : false);
       if (statExists) {
         return {
+          dev: 1,
+          ino: [...resolvedPath].reduce((value, character) => value + character.codePointAt(0)!, 0),
           isDirectory: () => false,
           isFile: () => true,
         };
       }
-      throw new Error("ENOENT");
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     },
   }));
 }

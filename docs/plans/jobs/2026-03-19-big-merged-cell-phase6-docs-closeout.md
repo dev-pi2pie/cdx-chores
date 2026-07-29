@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed Phase 6 of `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
+Completed Phase 6 of `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
 
 This pass updated the user-facing guides for the shipped `body-start-row` contract and closed the related research and plan statuses.
 
@@ -25,8 +25,8 @@ This pass updated the user-facing guides for the shipped `body-start-row` contra
 - updated `docs/guides/data-query-interactive-usage.md` so reviewed source-shape guidance now mentions `body-start-row`
 - updated `docs/guides/data-schema-and-mapping-usage.md` so strict header-mapping artifact matching now includes optional `input.bodyStartRow`
 - marked:
-  - `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md` as `completed`
-  - `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md` as `completed`
+  - `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md` as `completed`
+  - `docs/researches/archive/research-2026-03-19-big-merged-cell-shaping-gap.md` as `completed`
 
 ## Verification
 
@@ -38,8 +38,8 @@ This pass updated the user-facing guides for the shipped `body-start-row` contra
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
+- `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md`
+- `docs/researches/archive/research-2026-03-19-big-merged-cell-shaping-gap.md`

@@ -4,12 +4,51 @@ import { inspectCommand } from "../deps";
 import type { DependencyCommandRunner } from "../deps";
 import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 import { inspectDataQueryExtensions } from "../duckdb/query";
+import { assessMarkdownPdfRequirements } from "../markdown-pdf/requirements";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
 
 export interface DoctorOptions {
   json?: boolean;
   dependencyRunner?: DependencyCommandRunner;
+}
+
+function markdownPdfCapabilityStatus(
+  requirements: ReturnType<typeof assessMarkdownPdfRequirements>,
+): "available" | "unavailable" | "unsupported" | "unverified" {
+  if (requirements.ready) {
+    return "available";
+  }
+  if (
+    requirements.requirements.pandoc.status === "missing" ||
+    requirements.requirements.weasyprint.status === "missing"
+  ) {
+    return "unavailable";
+  }
+  return requirements.requirements.pandoc.status === "unsupported" ? "unsupported" : "unverified";
+}
+
+function markdownPdfCapabilityDetail(
+  requirements: ReturnType<typeof assessMarkdownPdfRequirements>,
+): string | undefined {
+  const details: string[] = [];
+  const pandoc = requirements.requirements.pandoc;
+  const weasyprint = requirements.requirements.weasyprint;
+
+  if (pandoc.status === "missing") {
+    details.push("Pandoc is missing");
+  } else if (pandoc.status === "unsupported") {
+    details.push(
+      `Pandoc ${pandoc.version ?? "unknown"} is below the required ${pandoc.minimumVersion}`,
+    );
+  } else if (pandoc.status === "unverified") {
+    details.push(`Pandoc ${pandoc.minimumVersion} or newer could not be verified`);
+  }
+  if (weasyprint.status === "missing") {
+    details.push("WeasyPrint is missing");
+  }
+
+  return details.length > 0 ? details.join("; ") : undefined;
 }
 
 export async function actionDoctor(
@@ -79,9 +118,10 @@ export async function actionDoctor(
       codexEnvironment.detail ?? (queryExtensions.available ? undefined : queryExtensions.detail),
   };
 
+  const markdownPdf = assessMarkdownPdfRequirements(pandoc, weasyprint);
   const capabilities = {
     "md.to-docx": pandoc.available,
-    "md.to-pdf": pandoc.available && weasyprint.available,
+    "md.to-pdf": markdownPdf.ready,
     "video.convert": ffmpeg.available,
     "video.resize": ffmpeg.available,
     "video.gif": ffmpeg.available,
@@ -119,6 +159,7 @@ export async function actionDoctor(
       platform: runtime.platform,
       nodeVersion: process.version,
       tools: { pandoc, ffmpeg, weasyprint },
+      markdownPdf,
       query: {
         available: queryExtensions.available,
         detail: queryExtensions.detail,
@@ -151,6 +192,21 @@ export async function actionDoctor(
   printLine(runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("Capabilities:")));
   for (const [capability, available] of Object.entries(capabilities)) {
+    if (capability === "md.to-pdf") {
+      const status = markdownPdfCapabilityStatus(markdownPdf);
+      const detail = markdownPdfCapabilityDetail(markdownPdf);
+      const statusText =
+        status === "available"
+          ? pc.green(status)
+          : status === "unavailable"
+            ? pc.red(status)
+            : pc.yellow(status);
+      printLine(
+        runtime.stdout,
+        `- ${pc.bold(capability)}: ${statusText}${detail ? ` (${detail})` : ""}`,
+      );
+      continue;
+    }
     printLine(
       runtime.stdout,
       `- ${pc.bold(capability)}: ${available ? pc.green("available") : pc.red("unavailable")}`,

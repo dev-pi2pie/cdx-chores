@@ -253,7 +253,7 @@ These should degrade to deterministic rename with reason codes, not fail the com
 
 - `docs/plans/archive/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
 - `docs/plans/archive/plan-2026-02-26-document-text-rename-analyzer-milestone.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## Related Research
 

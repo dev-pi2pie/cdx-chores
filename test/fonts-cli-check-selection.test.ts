@@ -117,6 +117,72 @@ describe("font CLI check selection", () => {
     expect(commands).toEqual(["fc-list"]);
   });
 
+  test("selects the primary family face for exact alias and additional full-name queries", async () => {
+    for (const family of ["Noto Sans JP", "Noto Sans JP Regular"]) {
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      runtime.platform = "linux";
+
+      await actionFontCheck(runtime, {
+        json: true,
+        family,
+        text: "A",
+        discovery: "fontconfig",
+        runner: async (_command, args) =>
+          args[0] === "--version"
+            ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
+            : args[0] === "--format"
+              ? {
+                  ok: true,
+                  stdout:
+                    "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/fonts/NotoSansCJK-Regular.otf\n",
+                  stderr: "",
+                }
+              : { ok: true, stdout: "0041\n", stderr: "" },
+      });
+
+      const payload = JSON.parse(stdout.text) as {
+        checkedFace: string;
+        result: string;
+      };
+      expect(payload).toMatchObject({
+        checkedFace: "Noto Sans CJK JP Regular,Noto Sans JP Regular",
+        result: "pass",
+      });
+      expectNoStderr();
+    }
+  });
+
+  test("keeps shared exact alias matches across primary families inconclusive", async () => {
+    const { runtime, stdout } = createActionTestRuntime();
+    runtime.platform = "linux";
+
+    const result = await actionFontCheck(runtime, {
+      json: true,
+      family: "Shared Sans",
+      text: "A",
+      discovery: "fontconfig",
+      runner: async () => ({
+        ok: true,
+        stdout: [
+          "First Sans,Shared Sans\tFirst Sans Regular\tRegular\t/fonts/FirstSans.otf",
+          "Second Sans,Shared Sans\tSecond Sans Regular\tRegular\t/fonts/SecondSans.otf",
+          "",
+        ].join("\n"),
+        stderr: "",
+      }),
+    });
+
+    expect(result).toMatchObject({
+      result: "inconclusive",
+      reason: "ambiguous-family",
+    });
+    expect(JSON.parse(stdout.text)).toMatchObject({
+      checkedFace: null,
+      result: "inconclusive",
+      reason: "ambiguous-family",
+    });
+  });
+
   test("reports selected no-path font check faces as inconclusive", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     const commands: string[] = [];

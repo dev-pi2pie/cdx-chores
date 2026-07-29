@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 6 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by removing the mixed-responsibility ownership in `src/cli/fs-utils.ts` without breaking existing import compatibility.
+Execute Phase 6 from `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by removing the mixed-responsibility ownership in `src/cli/fs-utils.ts` without breaking existing import compatibility.
 
 ## Scope
 
@@ -49,11 +49,11 @@ src/cli/
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## What Changed
 

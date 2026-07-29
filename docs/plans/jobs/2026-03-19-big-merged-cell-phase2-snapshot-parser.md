@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed Phase 2 of `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
+Completed Phase 2 of `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
 
 This phase fixed the worksheet snapshot corruption that affected reviewed source-shape evidence for the hard merged-band workbook.
 
@@ -40,8 +40,8 @@ Confirmed examples from the corrected snapshot:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
+- `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md`
+- `docs/researches/archive/research-2026-03-19-big-merged-cell-shaping-gap.md`

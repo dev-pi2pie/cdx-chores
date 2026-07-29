@@ -1,5 +1,6 @@
 import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexRunner } from "../../../adapters/codex/markdown-pdf-template";
+import type { CodexProgressPresenter } from "../../actions/codex-progress";
 import type { MarkdownPdfProjectCodexIdentityUidFactory } from "./types-identity";
 
 export interface MdPdfProjectCodexOptions {
@@ -17,10 +18,12 @@ export interface MdPdfProjectCodexOptions {
   identityUidFactory?: MarkdownPdfProjectCodexIdentityUidFactory;
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
+  codexProgressPresenter?: CodexProgressPresenter;
 }
 
 type MdPdfProjectCodexNonCliOption =
   | "identityUidFactory"
+  | "codexProgressPresenter"
   | "positionalInput"
   | "profileCodexRunner"
   | "templateCodexRunner";

@@ -167,7 +167,7 @@ It also creates a cleaner foundation for upcoming command growth within existing
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 

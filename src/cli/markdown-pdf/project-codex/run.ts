@@ -2,97 +2,15 @@ import { printLine } from "../../actions/shared";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
-import { collectMdPdfProjectCodexSignals } from "./signals";
 import {
-  planMdPdfProjectCodexOutput,
-  validateMdPdfProjectCodexOutputWritability,
-  type MdPdfProjectCodexOutputWriteMode,
-} from "./output-plan";
-import { normalizeMdPdfProjectCodexCommandState } from "./options";
-import { runMdPdfProjectCodexProfilePhase } from "./profile-phase";
-import { runMdPdfProjectCodexTemplatePhase } from "./template-phase";
-import type {
-  MarkdownPdfProjectCodexOutputPlan,
-  MdPdfProjectCodexOptions,
-  MdPdfProjectCodexSignalCollection,
-  NormalizedMdPdfProjectCodexCommandState,
-} from "./types";
+  prepareMdPdfProjectCodex,
+  writePreparedMdPdfProjectCodexBundle,
+  writePreparedMdPdfProjectCodexReportIfRequested,
+} from "./prepared";
+import type { MdPdfProjectCodexOptions } from "./types";
 import { printMdPdfProjectCodexSummary } from "./summary";
 import { sanitizeMdPdfProjectCodexReportText } from "./report-redaction";
-import {
-  validateMdPdfProjectCodexProject,
-  type MarkdownPdfProjectCodexValidationSummary,
-} from "./validate-project";
-import {
-  writeMdPdfProjectCodexBundle,
-  writeMdPdfProjectCodexReportIfRequested,
-} from "./write-project";
-import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
-import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
-
-interface MdPdfProjectCodexPreflight {
-  outputPlan: MarkdownPdfProjectCodexOutputPlan;
-  profilePhase: MdPdfProjectCodexProfilePhaseResult;
-  signals: MdPdfProjectCodexSignalCollection;
-  state: NormalizedMdPdfProjectCodexCommandState;
-  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
-  validation: MarkdownPdfProjectCodexValidationSummary;
-}
-
-function initialWriteMode(input: {
-  signals: MdPdfProjectCodexSignalCollection;
-  state: NormalizedMdPdfProjectCodexCommandState;
-}): MdPdfProjectCodexOutputWriteMode {
-  return input.state.dryRun || input.signals.modes.project === "codex-assisted"
-    ? "report-only"
-    : "bundle";
-}
-
-async function preflightMdPdfProjectCodex(
-  runtime: CliRuntime,
-  options: MdPdfProjectCodexOptions,
-): Promise<MdPdfProjectCodexPreflight> {
-  const state = await normalizeMdPdfProjectCodexCommandState(runtime, options);
-  const signals = await collectMdPdfProjectCodexSignals(runtime, state);
-  const outputPlan = await planMdPdfProjectCodexOutput({
-    identityUidFactory: options.identityUidFactory,
-    runtime,
-    state,
-    signalMode: signals.modes.project,
-    writeMode: initialWriteMode({ signals, state }),
-  });
-  const profilePhase = await runMdPdfProjectCodexProfilePhase({
-    outputPlan,
-    profileCodexRunner: options.profileCodexRunner,
-    runtime,
-    signals,
-    state,
-  });
-  const templatePhase = await runMdPdfProjectCodexTemplatePhase({
-    outputPlan,
-    profilePhase,
-    runtime,
-    signals,
-    state,
-    templateCodexRunner: options.templateCodexRunner,
-  });
-  const validation = validateMdPdfProjectCodexProject({
-    outputPlan,
-    profilePhase,
-    runtime,
-    state,
-    templatePhase,
-  });
-  if (!state.dryRun && validation.decisionMode !== "no-usable-project") {
-    await validateMdPdfProjectCodexOutputWritability({
-      plan: outputPlan,
-      runtime,
-      state,
-      writeMode: "bundle",
-    });
-  }
-  return { outputPlan, profilePhase, signals, state, templatePhase, validation };
-}
+import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
 
 function throwNoUsableProject(validation: MarkdownPdfProjectCodexValidationSummary): never {
   throw new CliError(
@@ -114,36 +32,26 @@ export async function actionMdPdfProjectCodex(
   runtime: CliRuntime,
   options: MdPdfProjectCodexOptions,
 ): Promise<void> {
-  const preflight = await preflightMdPdfProjectCodex(runtime, options);
+  const prepared = await prepareMdPdfProjectCodex(runtime, options);
+  const preflight = {
+    outputPlan: prepared.binding.outputPlan,
+    profilePhase: prepared.profilePhase,
+    signals: prepared.signals,
+    state: prepared.binding.state,
+    templatePhase: prepared.binding.templatePhase,
+    validation: prepared.binding.validation,
+  };
   printMdPdfProjectCodexSummary(runtime, preflight);
 
   if (preflight.state.dryRun) {
-    await writeMdPdfProjectCodexReportIfRequested({
-      outputPlan: preflight.outputPlan,
-      overwrite: preflight.state.overwrite,
-      profilePhase: preflight.profilePhase,
-      runtime,
-      signals: preflight.signals,
-      state: preflight.state,
-      templatePhase: preflight.templatePhase,
-      validation: preflight.validation,
-    });
+    await writePreparedMdPdfProjectCodexReportIfRequested(runtime, prepared);
     if (preflight.validation.decisionMode === "no-usable-project") {
       throwNoUsableProject(preflight.validation);
     }
     return;
   }
 
-  await writeMdPdfProjectCodexBundle({
-    outputPlan: preflight.outputPlan,
-    overwrite: preflight.state.overwrite,
-    profilePhase: preflight.profilePhase,
-    runtime,
-    signals: preflight.signals,
-    state: preflight.state,
-    templatePhase: preflight.templatePhase,
-    validation: preflight.validation,
-  });
+  await writePreparedMdPdfProjectCodexBundle(runtime, prepared);
   if (preflight.validation.decisionMode === "no-usable-project") {
     if (preflight.outputPlan.report) {
       printLine(

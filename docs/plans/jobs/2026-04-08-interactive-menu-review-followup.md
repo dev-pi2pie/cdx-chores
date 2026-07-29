@@ -28,8 +28,8 @@ Address the post-implementation review findings in the interactive menu follow-u
 
 - `src/cli/interactive/index.ts`
 - `src/cli/interactive/menu-prompt.ts`
-- `docs/plans/plan-2026-04-08-interactive-menu-exit-keys.md`
-- `docs/researches/research-2026-04-08-interactive-exit-key-semantics.md`
+- `docs/plans/archive/plan-2026-04-08-interactive-menu-exit-keys.md`
+- `docs/researches/archive/research-2026-04-08-interactive-exit-key-semantics.md`
 - `docs/plans/jobs/2026-04-08-interactive-menu-exit-keys.md`
 - `test/cli-interactive-menu.test.ts`
 - `test/cli-interactive-menu-prompt.test.ts`
@@ -41,11 +41,11 @@ Address the post-implementation review findings in the interactive menu follow-u
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-08-interactive-menu-exit-keys.md`
+- `docs/plans/archive/plan-2026-04-08-interactive-menu-exit-keys.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-04-08-interactive-exit-key-semantics.md`
+- `docs/researches/archive/research-2026-04-08-interactive-exit-key-semantics.md`
 
 ## Related Jobs
 

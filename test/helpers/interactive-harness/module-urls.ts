@@ -12,6 +12,24 @@ export const pathModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/p
 export const pathConfigModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/prompts/path-config.ts"),
 ).href;
+export const markdownPdfRenderServiceModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/actions/markdown/to-pdf-service.ts"),
+).href;
+export const markdownPdfRenderBundleModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/markdown-pdf/render-bundle.ts"),
+).href;
+export const markdownPdfDeterministicAuthoringModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/interactive/markdown/deterministic-authoring.ts"),
+).href;
+export const markdownPdfCodexServiceModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/interactive/markdown/codex-service.ts"),
+).href;
+export const markdownPdfLifecycleModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/interactive/markdown/lifecycle.ts"),
+).href;
+export const fontDiscoveryModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/fonts/discovery.ts"),
+).href;
 export const interactiveIndexUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/index.ts"),
 ).href;

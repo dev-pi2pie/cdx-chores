@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 2 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by extracting shared data workflow helpers where duplication is already real, while preserving current CLI and interactive behavior.
+Execute Phase 2 from `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by extracting shared data workflow helpers where duplication is already real, while preserving current CLI and interactive behavior.
 
 ## Scope
 
@@ -52,11 +52,11 @@ Execute Phase 2 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## What Changed
 

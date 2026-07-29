@@ -226,4 +226,4 @@ These have minimal cross-domain dependencies and are good for proving the module
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`

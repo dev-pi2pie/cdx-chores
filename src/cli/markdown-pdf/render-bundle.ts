@@ -52,6 +52,10 @@ export interface DiscoverMarkdownPdfRenderBundleOptions {
   profileResolved?: boolean;
 }
 
+interface InspectMarkdownPdfRenderBundleOptions extends DiscoverMarkdownPdfRenderBundleOptions {
+  preview?: boolean;
+}
+
 const PROFILE_EXTENSIONS = new Set([".yml", ".yaml", ".json"]);
 const PROFILE_ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
 
@@ -182,10 +186,11 @@ function candidateRole(extension: string): MarkdownPdfRenderBundleRole | undefin
   return undefined;
 }
 
-export async function discoverMarkdownPdfRenderBundle(
+async function inspectMarkdownPdfRenderBundle(
   directory: string,
-  options: DiscoverMarkdownPdfRenderBundleOptions = {},
+  options: InspectMarkdownPdfRenderBundleOptions = {},
 ): Promise<MarkdownPdfRenderBundleCandidates> {
+  const preview = options.preview === true;
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -239,7 +244,9 @@ export async function discoverMarkdownPdfRenderBundle(
   candidates.css.sort(compareCandidates);
 
   const inspectProfileCandidates =
-    !options.profileResolved || (candidates.template.length === 0 && candidates.css.length === 0);
+    preview ||
+    !options.profileResolved ||
+    (candidates.template.length === 0 && candidates.css.length === 0);
   if (inspectProfileCandidates) {
     profileCandidates.sort(compareCandidates);
     for (const candidate of profileCandidates) {
@@ -252,13 +259,13 @@ export async function discoverMarkdownPdfRenderBundle(
       }
       const classification = await classifyMarkdownPdfRenderBundleProfile(candidate.path);
       if (classification.kind === "unclassified") {
-        if (!options.profileResolved) {
+        if (preview || !options.profileResolved) {
           candidates.ignoredProfileFiles.push(candidate.basename);
         }
         continue;
       }
       if (classification.kind === "invalid-profile") {
-        if (!options.profileResolved) {
+        if (!preview && !options.profileResolved) {
           throw classification.error;
         }
         continue;
@@ -271,6 +278,7 @@ export async function discoverMarkdownPdfRenderBundle(
   candidates.ignoredProfileFiles.sort();
 
   if (
+    !preview &&
     candidates.profile.length === 0 &&
     candidates.template.length === 0 &&
     candidates.css.length === 0
@@ -292,6 +300,19 @@ export async function discoverMarkdownPdfRenderBundle(
   }
 
   return candidates;
+}
+
+export async function discoverMarkdownPdfRenderBundle(
+  directory: string,
+  options: DiscoverMarkdownPdfRenderBundleOptions = {},
+): Promise<MarkdownPdfRenderBundleCandidates> {
+  return await inspectMarkdownPdfRenderBundle(directory, options);
+}
+
+export async function previewMarkdownPdfRenderBundle(
+  directory: string,
+): Promise<MarkdownPdfRenderBundleCandidates> {
+  return await inspectMarkdownPdfRenderBundle(directory, { preview: true });
 }
 
 const ROLE_RESOLUTION_CONFIG = [

@@ -17,7 +17,7 @@ Current stable scope:
 - managed extensions:
   - `sqlite`
   - `excel`
-- no uninstall command in `v0.1.5`
+- no uninstall command in the current stable contract
 
 ### Commands
 

@@ -112,6 +112,8 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
       expect(signals.recipe.effectiveOptions.orientation).toBe("portrait");
       expect(signals.recipe.effectiveOptions.toc).toBe(true);
       expect(signals.recipe.effectiveOptions.tocDepth).toBe(4);
+      expect(JSON.stringify(signals)).not.toContain("fontOwnership");
+      expect(JSON.stringify(signals)).not.toContain("ownedKeys");
     });
   });
 

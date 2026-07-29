@@ -408,7 +408,7 @@ Why this direction fits best:
 - `docs/plans/jobs/2026-03-01-large-rename-preview-manual-qa-and-smoke-checks.md`
 - `docs/plans/archive/plan-2026-02-25-interactive-path-hints-and-autocomplete-ux.md`
 - `docs/plans/archive/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## References
 

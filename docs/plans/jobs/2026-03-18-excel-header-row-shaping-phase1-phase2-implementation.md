@@ -11,7 +11,7 @@ Implement the Phase 1 contract freeze and Phase 2 shared deterministic Excel hea
 
 ## What Changed
 
-- updated the follow-up plan contract in `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md` so the next shaping surface is explicitly frozen around:
+- updated the follow-up plan contract in `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md` so the next shaping surface is explicitly frozen around:
   - `--header-row <n>`
   - absolute worksheet row numbering
   - valid reviewed source-shape outcome combinations
@@ -53,9 +53,9 @@ Implement the Phase 1 contract freeze and Phase 2 shared deterministic Excel hea
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 
 ## Related Research
 

@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-07-10
+modified-date: 2026-07-22
 status: completed
 agent: codex
 ---
@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration Guidance (Current + Planned)
 
-Codex SDK baseline for `v0.1.5`: `0.144.1`
+Codex SDK baseline for `v0.1.6`: `0.146.0`
 
 `@openai/codex-sdk` is used in runtime code through `src/adapters/codex/shared.ts`, with feature-specific adapters for rename suggestions, document rename analysis, Markdown PDF profile suggestions, and data workflow Codex assistance.
 
@@ -117,7 +117,7 @@ Current scope note:
 See also:
 
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
 
 ## Designing a New Chore Command (Checklist)
@@ -162,9 +162,9 @@ Example:
 
 - `docs/plans/archive/plan-2026-02-25-cli-actions-modularization.md`
 - `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## Historical Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`

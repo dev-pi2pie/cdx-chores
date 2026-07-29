@@ -56,8 +56,8 @@ Implement Phase 1 of the data stack replay and Codex assist plan by adding the r
 
 ## Related Plan
 
-- `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
+- `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
+- `docs/researches/archive/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`

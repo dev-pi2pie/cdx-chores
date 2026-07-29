@@ -1,7 +1,7 @@
 ---
 title: "Markdown to PDF with WeasyPrint"
 created-date: 2026-05-06
-modified-date: 2026-05-06
+modified-date: 2026-07-29
 status: completed
 agent: codex
 ---
@@ -52,7 +52,7 @@ The `doctor` action checked `pandoc` and mapped it to the `md.to-docx` capabilit
 
 There was no `md to-pdf` command, no generated Markdown PDF recipe, no WeasyPrint check in `doctor`, and no public contract for page layout defaults, table of contents behavior, custom HTML/CSS, or image handling.
 
-There is an existing draft plan for the `pdf` command group. That plan covers PDF-native workflows such as merge, split, PDF-to-images, images-to-PDF, and PDF-to-Markdown extraction. This research is separate: it covers Markdown-to-PDF generation under the `md` command group, using Markdown input, an HTML/CSS recipe, and WeasyPrint rendering. The dedicated `md to-pdf` implementation plan links both tracks so `md to-pdf` and `pdf to-markdown` do not collide over asset-directory or capability-reporting language.
+The repository historically explored a separate `pdf` command group for PDF-native workflows such as merge, split, PDF-to-images, images-to-PDF, and PDF-to-Markdown extraction. That direction was later cancelled and archived. This research remains separate: it covers the shipped Markdown-to-PDF generation path under the `md` command group, using Markdown input, an HTML/CSS recipe, and WeasyPrint rendering. Any renewed PDF-native work requires fresh research and planning rather than resuming the archived proposal.
 
 ## Scope
 
@@ -457,7 +457,7 @@ None currently. The remaining ToC page-break control question is now recorded as
 ## Related Plans
 
 - `docs/plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md` — dedicated implementation plan for the deterministic v1 `md to-pdf` workflow described by this research.
-- `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md` — related draft plan for the separate `pdf` command group. It should remain the owner for PDF-native workflows such as merge, split, image extraction/rendering, images-to-PDF, and PDF-to-Markdown extraction. This research informs the Markdown-owned plan instead of replacing that PDF plan.
+- `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md` — cancelled historical proposal for a separate PDF-native command group. The current Markdown-owned workflow does not implement those native operations; any renewed PDF-native work requires fresh research and planning.
 
 ## Related Jobs
 
@@ -466,8 +466,8 @@ None currently. The remaining ToC page-break control question is now recorded as
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` — related PDF backend comparison. It explains why `pandoc` is not a fit for PDF-native backend operations and why `pymupdf4llm` is a license-gated candidate for `pdf to-markdown`. This Markdown-to-PDF research takes a different direction: Pandoc is useful for Markdown-to-HTML, while WeasyPrint handles the final HTML/CSS-to-PDF render.
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md` — historical CLI architecture baseline that introduced the shared action layer and `doctor` capability model.
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` — cancelled historical comparison for the unadopted PDF-native direction. Its backend observations are not current implementation guidance and require fresh validation before future use.
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md` — historical CLI architecture baseline that introduced the shared action layer and `doctor` capability model.
 
 ## Related Historical Docs
 
