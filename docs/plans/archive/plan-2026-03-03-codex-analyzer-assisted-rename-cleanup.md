@@ -1,8 +1,8 @@
 ---
 title: "Codex analyzer-assisted rename cleanup"
 created-date: 2026-03-03
-modified-date: 2026-03-03
-status: active
+modified-date: 2026-07-29
+status: completed
 agent: codex
 ---
 
@@ -18,10 +18,10 @@ Define the first implementation-ready plan for analyzer-assisted `rename cleanup
   - bounded filename sampling and local grouping
   - structured Codex suggestion parsing
   - opt-in interactive suggestion flow with manual fallback
-- remaining work is now about fixture coverage, user feedback during analyzer runs, and deciding whether grouped analyzer output should produce a report artifact
+- fixture coverage, analyzer status feedback, and the optional grouped report artifact are implemented
 - the main implementation record is now consolidated in `docs/plans/jobs/2026-03-03-analyzer-assisted-rename-cleanup-implementation.md`
-- the contract-level research is already captured in `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
-- grouped report artifact decisions are now captured in `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
+- the contract-level research is already captured in `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- grouped report artifact decisions are now captured in `docs/researches/archive/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
 
 This plan now starts from that settled research baseline rather than reopening the core product direction.
 
@@ -112,9 +112,9 @@ Start with the narrowest useful path:
 - [x] show analyzer suggestions as editable recommendations rather than auto-applied settings
 - [x] ensure analyzer errors or unsupported environments fall back cleanly to manual cleanup setup
 - [x] add focused tests for sampling, response parsing, and interactive branching
-- [ ] run manual smoke checks for analyzer-assisted cleanup suggestion flows
-  Current note:
-  A live interactive smoke run against `examples/playground/cleanup-analyzer/mixed-family` verified the status-text and fallback path, but the Codex request aborted in the current environment before a real suggestion/report step completed.
+- [x] review analyzer-assisted suggestion-flow verification through focused tests and the documented interactive fallback smoke
+  Historical note:
+  A live interactive smoke run against `examples/playground/cleanup-analyzer/mixed-family` verified the status-text and fallback path. Successful remote Codex suggestion completion remains environment-dependent and is not required for historical plan closure.
 
 ### Phase 5: Fixture and smoke-test support
 
@@ -174,7 +174,26 @@ Start with the narrowest useful path:
 - [x] include overall analyzer suggestion fields on each row in the first pass
 - [x] make report generation optional within the interactive analyzer-assisted flow
 - [x] add focused tests for report naming and CSV content
-- [ ] run a manual smoke check using `examples/playground/cleanup-analyzer/`
+- [x] verify the documented `examples/playground/cleanup-analyzer/` fixture and grouped-report path through focused fixture and report coverage
+
+## Historical Closeout Review (2026-07-29)
+
+This plan was reviewed after the analyzer-assisted cleanup workflow and its follow-up work had become established repository history.
+
+Closure evidence:
+
+- the linked implementation job records the analyzer-assisted interactive flow, bounded evidence collection, structured suggestion handling, manual fallback, fixture generator, status UX, and grouped advisory report
+- focused tests cover analyzer evidence, Codex response handling, grouped report output, analyzer status behavior, interactive branching, and routing
+- `docs/guides/rename-common-usage.md` documents the current analyzer-assisted contract and the dedicated playground fixtures
+- later partial-scope and scalability plans completed the follow-up work derived from this plan
+
+The earlier live smoke reached the remote-request boundary and verified the interactive fallback, but a successful remote Codex completion remained environment-dependent. The historical review treats the deterministic contract, fallback behavior, fixtures, reports, and automated coverage as sufficient closure evidence without claiming that an additional successful live remote run occurred.
+
+Conclusion:
+
+- all implementation-owned work in this plan is complete
+- no active product decision remains in this document
+- the plan is historical and ready to move into `docs/plans/archive/` with its related completed research bundle
 
 ## Success Criteria
 
@@ -186,9 +205,9 @@ Start with the narrowest useful path:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
-- `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
+- `docs/researches/archive/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
 
 ## Related Plans
 

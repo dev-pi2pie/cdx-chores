@@ -25,7 +25,7 @@ Set a narrow first-pass design that:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
 - `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 - `docs/plans/archive/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
@@ -39,8 +39,8 @@ Set a narrow first-pass design that:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
-- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
+- `docs/researches/archive/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
+- `docs/researches/archive/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
 
 ## Key Findings
 

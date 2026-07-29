@@ -360,8 +360,8 @@ Current preferred direction:
 ## Related Research
 
 - `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
-- `docs/researches/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 

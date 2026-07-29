@@ -19,7 +19,7 @@ Settle the artifact boundary without blurring:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
 ## Key Findings
 
@@ -156,4 +156,4 @@ Recommended next implementation boundary:
 - `docs/guides/rename-plan-csv-schema.md`
 - `src/cli/actions/rename/cleanup-analyzer.ts`
 - `src/cli/actions/rename/cleanup-codex.ts`
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`

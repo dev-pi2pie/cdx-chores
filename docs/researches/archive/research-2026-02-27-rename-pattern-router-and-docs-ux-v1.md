@@ -212,7 +212,7 @@ The note remains useful as the design rationale, but it is no longer an open dra
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-02-26-interactive-two-layer-command-menu-refactor.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-03-04-rename-uid-pattern-placeholder.md`
 
 ## Related Research

@@ -34,4 +34,4 @@ Fix the interactive `rename cleanup` regression where selected analyzer families
 
 ## Related Research
 
-- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
+- `docs/researches/archive/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`

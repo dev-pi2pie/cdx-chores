@@ -35,7 +35,7 @@ This plan intentionally excludes DOCX/PDF extraction implementation, which is no
 
 Key context:
 
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
   - Phase 4 follow-up explicitly calls for a document-text analyzer plan (`.md`/`.txt` first, no Python dependency)
 - `docs/researches/archive/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
   - defines extractor-first approach and normalized evidence ideas
@@ -301,11 +301,11 @@ This milestone is successful if:
 
 - `docs/researches/archive/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
 - `docs/plans/archive/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
 - `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

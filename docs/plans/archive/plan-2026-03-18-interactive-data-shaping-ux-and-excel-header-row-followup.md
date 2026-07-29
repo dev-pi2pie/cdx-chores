@@ -410,7 +410,7 @@ Decision boundary:
 - `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
-- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
 ## Related Research
 

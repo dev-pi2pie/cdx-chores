@@ -428,7 +428,7 @@ Status note:
 
 - `docs/researches/archive/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
 - `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md`
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 
 ## Related Plans
 

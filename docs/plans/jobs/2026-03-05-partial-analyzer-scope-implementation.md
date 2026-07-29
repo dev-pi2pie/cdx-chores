@@ -88,4 +88,4 @@ Implement Phase 1 through Phase 8 of `docs/plans/archive/plan-2026-03-05-partial
 
 ## Related Research
 
-- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
+- `docs/researches/archive/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`

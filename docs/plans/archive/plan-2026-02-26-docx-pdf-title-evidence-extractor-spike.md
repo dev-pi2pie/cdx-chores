@@ -29,7 +29,7 @@ The repository now includes `mammoth` and `pdfjs-dist`, which is enough to begin
 
 Relevant context already documented:
 
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
   - Phase 4 follow-up calls out document analyzer planning and DOCX/PDF extractor research
 - `docs/researches/archive/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
   - proposes hybrid extractor design and normalized evidence schema
@@ -224,10 +224,10 @@ This spike is successful if it produces:
 - `docs/researches/archive/research-2026-02-26-docx-pdf-title-evidence-spike-findings.md`
 - `docs/researches/archive/research-2026-02-26-rename-doc-title-extraction-and-interactive-pattern-ux.md`
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-02-26-docx-pdf-rename-analyzer-implementation-pdf-first.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`

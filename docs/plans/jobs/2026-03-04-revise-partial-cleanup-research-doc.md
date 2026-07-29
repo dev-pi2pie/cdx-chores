@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md` so the partial-cleanup follow-up contract is clearer and less likely to be misread during implementation.
+Tighten `docs/researches/archive/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md` so the partial-cleanup follow-up contract is clearer and less likely to be misread during implementation.
 
 ## What Changed
 
@@ -53,7 +53,7 @@ Tighten `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-s
 
 ## Related Research
 
-- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
+- `docs/researches/archive/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
 
 ## Related Plans
 

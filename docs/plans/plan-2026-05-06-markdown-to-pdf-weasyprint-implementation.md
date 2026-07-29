@@ -405,7 +405,7 @@ git diff --check
 
 - `docs/researches/research-2026-05-06-markdown-to-pdf-weasyprint.md`
 - `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 

@@ -467,7 +467,7 @@ None currently. The remaining ToC page-break control question is now recorded as
 ## Related Research
 
 - `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md` — related PDF backend comparison. It explains why `pandoc` is not a fit for PDF-native backend operations and why `pymupdf4llm` is a license-gated candidate for `pdf to-markdown`. This Markdown-to-PDF research takes a different direction: Pandoc is useful for Markdown-to-HTML, while WeasyPrint handles the final HTML/CSS-to-PDF render.
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md` — historical CLI architecture baseline that introduced the shared action layer and `doctor` capability model.
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md` — historical CLI architecture baseline that introduced the shared action layer and `doctor` capability model.
 
 ## Related Historical Docs
 

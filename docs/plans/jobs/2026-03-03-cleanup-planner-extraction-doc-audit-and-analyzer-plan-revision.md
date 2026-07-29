@@ -18,7 +18,7 @@ Completed the next three follow-up tasks after the cleanup review pass.
 - kept the public cleanup action contract stable while reducing the weight of `cleanup.ts`
 - audited job records for stale references to the removed monolithic cleanup and interactive test files
 - updated those records to point at the current split test files
-- revised `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md` into an active next-step plan with:
+- revised `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md` into an active next-step plan with:
   - settled Phase 1 contract items checked
   - explicit first implementation slice
   - likely touchpoints
