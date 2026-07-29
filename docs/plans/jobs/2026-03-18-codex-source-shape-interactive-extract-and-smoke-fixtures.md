@@ -34,7 +34,7 @@ Land the missing reviewed Codex source-shape layer, reuse it in `data extract`, 
 - updated interactive `data query` Codex Assistant prompts to use `Describe the query intent:`
 - added `scripts/generate-data-extract-fixtures.mjs` for deterministic public-safe extract and shaping fixtures under `examples/playground/data-extract/`
 - documented the new shape-suggestion flow and interactive extract behavior in `docs/guides/data-extract-usage.md` and refreshed the interactive query guide
-- completed the checklist in `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- completed the checklist in `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 
 ## Verification
 
@@ -52,10 +52,10 @@ Land the missing reviewed Codex source-shape layer, reuse it in `data extract`, 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Related Research
 

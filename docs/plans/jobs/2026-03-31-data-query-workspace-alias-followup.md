@@ -19,7 +19,7 @@ Implement the follow-up workspace alias contract so `data query` keeps implicit 
 - query and Codex command/action coverage under `test/`
 - interactive routing coverage under `test/`
 - query, Codex, and interactive guides under `docs/guides/`
-- checklist/status updates in `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`
+- checklist/status updates in `docs/plans/archive/plan-2026-03-31-data-query-workspace-alias-followup.md`
 
 ## Constraints
 
@@ -59,10 +59,10 @@ Implement the follow-up workspace alias contract so `data query` keeps implicit 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`
-- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-alias-followup.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
-- `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
+- `docs/researches/archive/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
+- `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`

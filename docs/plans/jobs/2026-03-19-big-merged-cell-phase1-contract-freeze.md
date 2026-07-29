@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed Phase 1 of `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
+Completed Phase 1 of `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
 
 This pass did not change runtime behavior. It froze the deterministic contract for the hard merged-sheet follow-up and checked the current schema surfaces so the next implementation phases can proceed without reopening naming or validation decisions.
 
@@ -40,8 +40,8 @@ The current implementation still hard-codes the pre-follow-up shape contract in 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
+- `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md`
+- `docs/researches/archive/research-2026-03-19-big-merged-cell-shaping-gap.md`

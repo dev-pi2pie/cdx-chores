@@ -15,13 +15,13 @@ This plan turns the size scan into a phased implementation path. It intentionall
 ## Related Research
 
 - `docs/researches/research-2026-05-09-typescript-size-refactor-scan.md`
-- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Implementation Records
 

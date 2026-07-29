@@ -34,4 +34,4 @@ Address the March 10 code-review findings for the new `data query` and `data que
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`

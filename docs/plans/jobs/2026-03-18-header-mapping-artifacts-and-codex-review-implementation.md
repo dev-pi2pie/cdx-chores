@@ -33,7 +33,7 @@ Land the first reviewed semantic-header workflow so `data query` can suggest, pe
   - `Edit one`
   - `Keep generated names`
 - added the shared schema-and-mapping guide and linked the query guides back to it
-- completed the checklist in `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- completed the checklist in `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Verification
 
@@ -53,8 +53,8 @@ Land the first reviewed semantic-header workflow so `data query` can suggest, pe
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Related Research

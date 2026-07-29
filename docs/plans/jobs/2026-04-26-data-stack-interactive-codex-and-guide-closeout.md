@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope
 
-Completed Phase 7 and Phase 8 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Completed Phase 7 and Phase 8 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 This job closes the remaining implementation slice for reviewed interactive Codex recommendations and the public data-stack usage guide.
 

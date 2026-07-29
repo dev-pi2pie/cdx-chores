@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Complete the remaining executable work from `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md` by finishing the fixture/docs/test pass and landing DuckDB-file workspace support for `data query`.
+Complete the remaining executable work from `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md` by finishing the fixture/docs/test pass and landing DuckDB-file workspace support for `data query`.
 
 ## Scope
 
@@ -20,7 +20,7 @@ Complete the remaining executable work from `docs/plans/plan-2026-03-31-data-que
 - `scripts/generate-data-query-fixtures.mjs`
 - query, Codex, extract, doctor, interactive, and UX tests under `test/`
 - query and extract guides under `docs/guides/`
-- checklist/status updates in `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
+- checklist/status updates in `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
 
 ## Constraints
 
@@ -54,10 +54,10 @@ Complete the remaining executable work from `docs/plans/plan-2026-03-31-data-que
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
-- `docs/plans/plan-2026-03-31-data-extract-duckdb-file-parity.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
+- `docs/plans/archive/plan-2026-03-31-data-extract-duckdb-file-parity.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
+- `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`

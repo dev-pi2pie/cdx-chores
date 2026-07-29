@@ -14,12 +14,12 @@ Close the DOCX graduation track by removing the last gate-era cleanup leftovers,
 - Removed leftover gate-era message assertions from:
   - `test/cli-actions-rename-file.test.ts`
   - `test/cli-actions-rename-batch-codex-docs.test.ts`
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - changed plan status to `completed`
   - rewrote the setup/background wording so the env-gated behavior is clearly described as plan-start history
   - closed all Phase 7 checklist items and the Phase 7 deliverable
   - marked `bun test` complete after full-suite verification
-- Updated `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`:
+- Updated `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`:
   - changed status to `completed`
   - added an outcome update summarizing the shipped default-on DOCX behavior
   - rewrote the gate-era findings in historical tense so they no longer read as current runtime state
@@ -37,8 +37,8 @@ Close the DOCX graduation track by removing the last gate-era cleanup leftovers,
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

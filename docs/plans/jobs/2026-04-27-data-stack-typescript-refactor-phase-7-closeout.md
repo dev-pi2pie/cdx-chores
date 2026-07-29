@@ -74,8 +74,8 @@ Results:
 
 ## Related
 
-- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
-- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/researches/archive/research-2026-04-27-data-stack-typescript-refactor-scan.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-1-2.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-3-4.md`
 - `docs/plans/jobs/2026-04-27-data-stack-typescript-refactor-phase-5-6.md`

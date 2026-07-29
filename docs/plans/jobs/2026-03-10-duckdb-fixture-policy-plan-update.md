@@ -17,7 +17,7 @@ Clarify the DuckDB Parquet preview plan so Parquet fixture generation is treated
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Verification
 
@@ -25,4 +25,4 @@ Clarify the DuckDB Parquet preview plan so Parquet fixture generation is treated
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`

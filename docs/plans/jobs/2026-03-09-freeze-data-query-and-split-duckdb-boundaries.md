@@ -18,7 +18,7 @@ Clarify the DuckDB Parquet preview plan so it no longer branches on unresolved q
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 - `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Verification
@@ -29,7 +29,7 @@ Clarify the DuckDB Parquet preview plan so it no longer branches on unresolved q
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Related Research
 

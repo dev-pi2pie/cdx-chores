@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Implement Phases 3 and 4 from `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md` without changing direct `data stack` command behavior.
+Implement Phases 3 and 4 from `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md` without changing direct `data stack` command behavior.
 
 ## What Changed
 
@@ -53,8 +53,8 @@ bun test test/cli-command-data-stack
 
 ## Related Research
 
-- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-04-27-data-stack-typescript-refactor-scan.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`

@@ -368,7 +368,7 @@ Current preferred direction:
 - `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 - `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
 - `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## References
 

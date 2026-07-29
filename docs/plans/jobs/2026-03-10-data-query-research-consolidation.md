@@ -54,7 +54,7 @@ Consolidate the March 10 discussion-driven updates to the `data query` research 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Related Research
 

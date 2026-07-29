@@ -20,21 +20,21 @@ Answer one design-direction question at research level only:
 
 ## Related Research
 
-- `docs/researches/research-2026-03-31-multi-source-query-workspace-contract.md`
-- `docs/researches/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
-- `docs/researches/research-2026-03-30-interactive-data-query-followup-ux.md`
-- `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
+- `docs/researches/archive/research-2026-03-31-multi-source-query-workspace-contract.md`
+- `docs/researches/archive/research-2026-03-31-workspace-file-alias-reservation-reconsideration.md`
+- `docs/researches/archive/research-2026-03-30-interactive-data-query-followup-ux.md`
+- `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-31-data-query-workspace-implementation.md`
-- `docs/plans/plan-2026-03-31-data-query-workspace-alias-followup.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-implementation.md`
+- `docs/plans/archive/plan-2026-03-31-data-query-workspace-alias-followup.md`
 
 Status note:
 
 - this document is intentionally forward-looking and does not propose a `v0.1.0` implementation change
 - the current stable direction remains the flat workspace model with simple SQL aliases such as `events=analytics.events`
-- directory-pattern multi-file relation assembly is now tracked separately in `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md` so that schema-aware workspace design does not absorb file-discovery and stacking semantics
+- directory-pattern multi-file relation assembly is now tracked separately in `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md` so that schema-aware workspace design does not absorb file-discovery and stacking semantics
 
 ## Problem
 

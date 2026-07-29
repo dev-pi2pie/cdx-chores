@@ -16,7 +16,7 @@ Make the offline-safe OOXML identifier strategy concrete in code by documenting 
 - Updated `test/adapters-docx-ooxml-metadata.test.ts`:
   - added a regression test that temporarily traps `globalThis.fetch`
   - verifies `readDocxCoreMetadata()` reads metadata from a DOCX fixture without making any fetch call
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - added an explicit Phase 3 checklist item for the no-fetch regression test
 
 ## Verification
@@ -25,8 +25,8 @@ Make the offline-safe OOXML identifier strategy concrete in code by documenting 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

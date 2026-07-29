@@ -23,14 +23,14 @@ Address review findings in the DuckDB extension lifecycle follow-up plan so the 
 - re-read the lifecycle plan after revision
 - cross-checked the revised scope against:
   - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-  - `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+  - `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
   - `docs/researches/archive/research-2026-03-09-data-query-scope-and-contract.md`
 
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
 
 ## Related Research
 

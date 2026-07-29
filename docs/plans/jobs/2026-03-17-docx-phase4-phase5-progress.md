@@ -102,8 +102,8 @@ Phase 5 decision:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

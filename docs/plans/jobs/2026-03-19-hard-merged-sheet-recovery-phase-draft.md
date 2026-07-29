@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Extended `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md` with a new Phase 7 for the remaining hard merged-sheet Excel gaps.
+Extended `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md` with a new Phase 7 for the remaining hard merged-sheet Excel gaps.
 
 ## Why
 

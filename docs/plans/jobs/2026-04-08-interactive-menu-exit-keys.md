@@ -57,11 +57,11 @@ Current shipped behavior after the follow-up:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-08-interactive-menu-exit-keys.md`
+- `docs/plans/archive/plan-2026-04-08-interactive-menu-exit-keys.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-04-08-interactive-exit-key-semantics.md`
+- `docs/researches/archive/research-2026-04-08-interactive-exit-key-semantics.md`
 
 ## Related Jobs
 
