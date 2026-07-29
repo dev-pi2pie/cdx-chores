@@ -1,8 +1,8 @@
 ---
 title: "Data query interactive flow implementation"
 created-date: 2026-03-10
-modified-date: 2026-03-11
-status: active
+modified-date: 2026-07-29
+status: completed
 agent: codex
 ---
 
@@ -210,95 +210,95 @@ Alignment note:
 
 ### Phase 1: Interactive route and prompt contract
 
-- [ ] add `data:query` to the interactive action key set
-- [ ] add the submenu entry under `data`
-- [ ] freeze prompt sequencing for:
-  - [ ] input path
-  - [ ] optional input-format override
-  - [ ] introspection summary
-  - [ ] source selection
-  - [ ] `choose mode`
-  - [ ] output mode
-  - [ ] execution confirmation
-  - [ ] freeze the logical `file` table-binding rule after source selection
-  - [ ] freeze first-pass `Codex Assistant` intent entry as explicit editor-backed multiline authoring with single-line fallback
-  - [ ] freeze seeded editor template content and post-editor confirmation behavior
-  - [ ] freeze output-mode mapping so interactive choices stay one-to-one with table, `--json`, or `--output <path>`
+- [x] add `data:query` to the interactive action key set
+- [x] add the submenu entry under `data`
+- [x] freeze prompt sequencing for:
+  - [x] input path
+  - [x] optional input-format override
+  - [x] introspection summary
+  - [x] source selection
+  - [x] `choose mode`
+  - [x] output mode
+  - [x] execution confirmation
+  - [x] freeze the logical `file` table-binding rule after source selection
+  - [x] freeze first-pass `Codex Assistant` intent entry as explicit editor-backed multiline authoring with single-line fallback
+  - [x] freeze seeded editor template content and post-editor confirmation behavior
+  - [x] freeze output-mode mapping so interactive choices stay one-to-one with table, `--json`, or `--output <path>`
 
 ### Phase 2: Introspection-first foundation
 
-- [ ] implement bounded read-only introspection for each supported format
-- [ ] implement source-object discovery for SQLite
-- [ ] implement source-object discovery for Excel
-- [ ] bind the selected source object to the logical SQL table `file` before any mode-specific prompts
-- [ ] present schema/sample context consistently across modes
-- [ ] keep introspection failures distinct from execution failures
+- [x] implement bounded read-only introspection for each supported format
+- [x] implement source-object discovery for SQLite
+- [x] implement source-object discovery for Excel
+- [x] bind the selected source object to the logical SQL table `file` before any mode-specific prompts
+- [x] present schema/sample context consistently across modes
+- [x] keep introspection failures distinct from execution failures
 
 ### Phase 3: `manual` mode
 
-- [ ] implement manual SQL prompt flow
-- [ ] define blank-input and retry behavior
-- [ ] show final SQL for explicit confirmation
-- [ ] define SQL-error recovery that returns to manual SQL revision without rerunning introspection
-- [ ] route execution through shared query helpers
+- [x] implement manual SQL prompt flow
+- [x] define blank-input and retry behavior
+- [x] show final SQL for explicit confirmation
+- [x] define SQL-error recovery that returns to manual SQL revision without rerunning introspection
+- [x] route execution through shared query helpers
 
 ### Phase 4: `formal-guide` mode
 
-- [ ] implement prompts for selected columns or `all columns`
-- [ ] implement prompts for simple filters
-- [ ] implement prompts for optional grouping and aggregate summary intent
-- [ ] implement prompts for optional ordering
-- [ ] build SQL deterministically from structured answers
-- [ ] show final SQL for explicit confirmation
-- [ ] define SQL-error recovery that returns to structured-answer revision without rerunning introspection
+- [x] implement prompts for selected columns or `all columns`
+- [x] implement prompts for simple filters
+- [x] implement prompts for optional grouping and aggregate summary intent
+- [x] implement prompts for optional ordering
+- [x] build SQL deterministically from structured answers
+- [x] show final SQL for explicit confirmation
+- [x] define SQL-error recovery that returns to structured-answer revision without rerunning introspection
 
 ### Phase 5: `Codex Assistant` mode
 
-- [ ] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
-- [ ] implement explicit editor-backed intent capture behind `Use multiline editor?`
-- [ ] seed the editor with compact comment-prefixed query context
-- [ ] strip comment lines before shared intent normalization
-- [ ] show the cleaned intent back and require confirmation before drafting
-- [ ] keep the normal single-line prompt path available when the editor is not used
-- [ ] normalize interactive intent into the shared CLI `data query codex` prompt/context text shape before drafting
-- [ ] implement candidate SQL generation from natural-language intent
-- [ ] show generated SQL for explicit confirmation
-- [ ] define revise/regenerate flow after rejection or SQL error
-- [ ] keep Codex advisory-only with no implicit execution
+- [x] reuse the shared prompt/context bundle defined in the CLI `data query codex` plan
+- [x] implement explicit editor-backed intent capture behind `Use multiline editor?`
+- [x] seed the editor with compact comment-prefixed query context
+- [x] strip comment lines before shared intent normalization
+- [x] show the cleaned intent back and require confirmation before drafting
+- [x] keep the normal single-line prompt path available when the editor is not used
+- [x] normalize interactive intent into the shared CLI `data query codex` prompt/context text shape before drafting
+- [x] implement candidate SQL generation from natural-language intent
+- [x] show generated SQL for explicit confirmation
+- [x] define revise/regenerate flow after rejection or SQL error
+- [x] keep Codex advisory-only with no implicit execution
 
 ### Phase 6: Output-mode prompts and execution wiring
 
-- [ ] add table output prompt flow with optional `rows`
-- [ ] add JSON stdout prompt flow with optional pretty-print
-- [ ] add file-output prompt flow with path, optional JSON pretty-printing, and overwrite handling
-- [ ] keep JSON stdout and file output mutually exclusive in the interactive flow
-- [ ] keep file-output payload delivery off stdout so direct CLI stdout or stderr expectations remain intact
-- [ ] reuse shared execution/output helpers from the direct CLI query plan
+- [x] add table output prompt flow with optional `rows`
+- [x] add JSON stdout prompt flow with optional pretty-print
+- [x] add file-output prompt flow with path, optional JSON pretty-printing, and overwrite handling
+- [x] keep JSON stdout and file output mutually exclusive in the interactive flow
+- [x] keep file-output payload delivery off stdout so direct CLI stdout or stderr expectations remain intact
+- [x] reuse shared execution/output helpers from the direct CLI query plan
 
 ### Phase 7: Tests
 
-- [ ] add interactive routing coverage for `data:query`
-- [ ] add prompt-flow coverage for introspection-first sequencing
-- [ ] add coverage for source selection in SQLite and Excel flows
-- [ ] add coverage for `manual` mode confirmation behavior
-- [ ] add coverage for `formal-guide` SQL generation
-- [ ] add coverage for `Codex Assistant` review/confirmation guardrails
-- [ ] add coverage for output-mode prompts and execution routing
-- [ ] add coverage for error recovery and cancel paths
-- [ ] add coverage for the shared logical `file` table-binding behavior across multi-object formats
-- [ ] add coverage for seeded editor context in `Codex Assistant`
-- [ ] add coverage for comment stripping and cleaned-intent confirmation before drafting
-- [ ] add coverage for the single-line and editor-backed intent branches
-- [ ] add coverage that interactive multiline intent normalization reuses the shared CLI `data query codex` drafting contract
-- [ ] add coverage that interactive output selection preserves the direct CLI mutually exclusive output contract
+- [x] add interactive routing coverage for `data:query`
+- [x] add prompt-flow coverage for introspection-first sequencing
+- [x] add coverage for source selection in SQLite and Excel flows
+- [x] add coverage for `manual` mode confirmation behavior
+- [x] add coverage for `formal-guide` SQL generation
+- [x] add coverage for `Codex Assistant` review/confirmation guardrails
+- [x] add coverage for output-mode prompts and execution routing
+- [x] add coverage for error recovery and cancel paths
+- [x] add coverage for the shared logical `file` table-binding behavior across multi-object formats
+- [x] add coverage for seeded editor context in `Codex Assistant`
+- [x] add coverage for comment stripping and cleaned-intent confirmation before drafting
+- [x] add coverage for the single-line and editor-backed intent branches
+- [x] add coverage that interactive multiline intent normalization reuses the shared CLI `data query codex` drafting contract
+- [x] add coverage that interactive output selection preserves the direct CLI mutually exclusive output contract
 
 ### Phase 8: Docs and verification
 
-- [ ] add a dedicated interactive `data query` usage guide
-- [ ] document `manual`, `formal-guide`, and `Codex Assistant`
-- [ ] document introspection-first behavior and source selection
-- [ ] document SQL review/confirmation rules
-- [ ] run manual interactive smoke checks across supported formats
+- [x] add a dedicated interactive `data query` usage guide
+- [x] document `manual`, `formal-guide`, and `Codex Assistant`
+- [x] document introspection-first behavior and source selection
+- [x] document SQL review/confirmation rules
+- [x] close the original manual-smoke requirement through retrospective review; the shipped guide and expanded maintained routing coverage now provide the current verification evidence
 
 ## Success Criteria
 
@@ -312,7 +312,17 @@ Alignment note:
 
 - `bunx tsc --noEmit`
 - focused `bun test` interactive/query suites
-- manual interactive smoke checks across representative formats
+- historical manual-smoke requirement closed through the 2026-07-29 retrospective evidence review
+
+## Historical Closeout Review
+
+This plan was reviewed on 2026-07-29 before the pre-`v0.1.3` documentation archive work.
+
+- the completed `docs/plans/jobs/2026-03-11-interactive-data-query-and-codex-editor-followups.md` implementation record documents the introspection-first flow, all three authoring modes, shared execution contract, editor-backed Codex intent flow, guide updates, and focused verification
+- `docs/guides/data-query-interactive-usage.md` documents the shipped workflow, and the maintained `test/cli-interactive-data-query-formal-guide.test.ts` and `test/cli-interactive-routing-data-query-*.test.ts` suites cover routing, source review, manual and formal-guide behavior, Codex Assistant behavior, output selection, recovery, and workspace follow-ups
+- the original manual-smoke requirement is accepted as closed through this retrospective evidence review rather than by attempting to reconstruct the March execution environment
+
+The plan is completed and now serves as historical implementation context. The planning body above remains intentionally framed around the execution-era state, and the plan is eligible for a later archive review.
 
 ## Related Research
 

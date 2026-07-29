@@ -1,8 +1,8 @@
 ---
 title: "DuckDB Parquet preview and query action split"
 created-date: 2026-03-09
-modified-date: 2026-03-10
-status: active
+modified-date: 2026-07-29
+status: completed
 agent: codex
 ---
 
@@ -264,7 +264,7 @@ Design constraints:
 - [x] keep `data query` out of CLI help and interactive mode in this phase
 - [x] add or extend a deterministic fixture-generation script for Parquet smoke data
 - [x] surface clear runtime errors for unsupported or failed DuckDB activation
-- [ ] optionally extend doctor output if the capability decision is in scope
+- [x] keep doctor reporting outside this milestone because capability reporting was not included in the implementation scope
 
 ### Phase 4: Tests
 
@@ -274,7 +274,7 @@ Design constraints:
   - [x] `--rows` / `--offset` with Parquet
   - [x] `data preview` still rejects `.parquet`
   - [x] `data parquet preview` rejects unsupported first-pass flags if any remain deferred
-  - [ ] DuckDB initialization failure
+  - [x] add DuckDB initialization-failure coverage
   - [x] unsupported Parquet-load path failures
 - [x] add CLI/help/interactive coverage for the new command split
 - [x] add interactive coverage for the first-pass DuckDB menu contract:
@@ -286,7 +286,7 @@ Design constraints:
   - [x] manual verification that generated files land under `examples/playground/`
   - [x] manual verification that repeated generation stays deterministic
   - [x] automated tests consume stable Parquet fixtures without requiring runtime generation
-- [ ] add doctor coverage only if doctor capability reporting is updated in this pass
+- [x] keep doctor-specific coverage outside this milestone because doctor capability reporting was not updated in this pass
 
 ### Phase 5: Docs and verification
 
@@ -315,6 +315,17 @@ Design constraints:
 - `bunx tsc --noEmit`
 - focused `bun test` preview, command-routing, interactive, and doctor suites
 - manual smoke checks for both `data preview` and `data parquet preview`
+
+## Historical Closeout Review
+
+This plan was reviewed on 2026-07-29 before the pre-`v0.1.3` documentation archive work.
+
+- the planned Parquet preview command, separate interactive route, bounded preview behavior, fixtures, documentation, and maintained automated coverage are present
+- doctor capability reporting remained outside this milestone, so the related conditional checklist items are closed as intentional scope decisions rather than implemented doctor work
+- focused coverage verifies that a DuckDB connection-initialization failure surfaces as `DUCKDB_UNAVAILABLE`
+- current Parquet preview behavior is maintained in `docs/guides/data-preview-usage.md`, `test/cli-actions-data-parquet-preview.test.ts`, `test/cli-interactive-routing-data-preview.test.ts`, and `test/cli-ux.test.ts`
+
+The plan is completed and now serves as historical implementation context. The planning body above remains intentionally framed around the execution-era state, and the plan is eligible for a later archive review.
 
 ## Related Research
 
