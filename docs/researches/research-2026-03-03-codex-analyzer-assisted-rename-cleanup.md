@@ -1,8 +1,8 @@
 ---
 title: "Codex analyzer-assisted rename cleanup suggestions"
 created-date: 2026-03-03
-modified-date: 2026-03-03
-status: in-progress
+modified-date: 2026-07-29
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ Define the first practical contract for Codex analyzer-assisted `rename cleanup`
 
 ## Status Note
 
-This research remains in progress as a living contract reference. The first implementation now exists and is tracked in `docs/plans/jobs/2026-03-03-analyzer-assisted-rename-cleanup-implementation.md`, while the remaining open verification item stays in the dedicated follow-up plan.
+This research is complete. The first-pass contract was implemented and verified through the linked implementation job, then extended through completed partial-scope and scalability follow-ups. The remaining environment-dependent live suggestion/report smoke item belongs to the active implementation plan and does not leave the research question open.
 
 ## Milestone Goal
 
@@ -27,10 +27,20 @@ Set a narrow first-pass design that:
 
 - `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
+- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
+- `docs/plans/archive/plan-2026-03-05-partial-analyzer-assisted-cleanup-scope-implementation.md`
+- `docs/plans/archive/plan-2026-03-05-rename-cleanup-analyzer-scalability.md`
 
-## Related Job Record
+## Related Job Records
 
 - `docs/plans/jobs/2026-03-03-analyzer-assisted-rename-cleanup-implementation.md`
+- `docs/plans/jobs/2026-03-05-partial-analyzer-scope-implementation.md`
+- `docs/plans/jobs/2026-03-05-rename-cleanup-analyzer-scalability.md`
+
+## Related Research
+
+- `docs/researches/research-2026-03-03-rename-cleanup-analyzer-report-artifact.md`
+- `docs/researches/research-2026-03-04-partial-analyzer-assisted-cleanup-scope.md`
 
 ## Key Findings
 
@@ -170,13 +180,10 @@ Recommended first-pass non-goals:
 - no automatic execution from analyzer output
 - no hidden analyzer invocation during normal cleanup
 
-## Related Plans
-
-- `docs/plans/archive/plan-2026-03-03-interactive-rename-template-and-cleanup-flow-enhancements.md`
-- `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
-
 ## References
 
 - `src/cli/actions/rename/cleanup.ts`
-- `src/cli/actions/rename/codex.ts`
+- `src/cli/actions/rename/cleanup-analyzer.ts`
+- `src/cli/actions/rename/cleanup-codex.ts`
+- `src/cli/interactive/rename-cleanup/index.ts`
 - `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
