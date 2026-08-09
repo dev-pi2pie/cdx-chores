@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Implemented the first execution slice of Phase 7 from `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
+Implemented the first execution slice of Phase 7 from `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`.
 
 This slice focused on the two merged-sheet failures observed after the earlier reviewed-shape work:
 

@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope
 
-Completed Phase 10 and Phase 11 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Completed Phase 10 and Phase 11 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 This job closes the interactive Codex hardening and schema-mode product-contract follow-up after the Phase 9 checkpoint work.
 

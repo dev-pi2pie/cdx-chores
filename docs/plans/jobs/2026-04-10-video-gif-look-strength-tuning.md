@@ -25,7 +25,7 @@ Strengthened the shipped `faithful` and `vibrant` GIF look recipes so the visual
 
 ## Related Documents
 
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
 - `docs/guides/video-gif-usage-and-quality-modes.md`
 - `docs/plans/jobs/2026-04-10-video-gif-look-implementation-and-docs.md`

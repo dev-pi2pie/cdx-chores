@@ -74,9 +74,9 @@ Full-suite result note:
 
 ## Related Research
 
-- `docs/researches/research-2026-04-10-video-gif-high-quality-mode.md`
-- `docs/researches/research-2026-04-10-video-gif-profile-color-tuning.md`
+- `docs/researches/archive/research-2026-04-10-video-gif-high-quality-mode.md`
+- `docs/researches/archive/research-2026-04-10-video-gif-profile-color-tuning.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`
+- `docs/plans/archive/plan-2026-04-10-video-gif-high-quality-mode-implementation.md`

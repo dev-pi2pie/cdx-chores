@@ -63,4 +63,4 @@ That pointed to a terminal-compatibility gap in the renderer itself. The final i
 
 ## Related Research
 
-- `docs/researches/research-2026-03-29-inline-ghost-prompt-wrap-bug.md`
+- `docs/researches/archive/research-2026-03-29-inline-ghost-prompt-wrap-bug.md`

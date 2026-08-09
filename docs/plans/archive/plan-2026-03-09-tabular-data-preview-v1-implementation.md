@@ -264,4 +264,4 @@ Recommended additional manual smoke focus:
 
 - `docs/researches/archive/research-2026-03-02-tabular-data-preview-and-query-scope.md`
 - `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
-- `docs/researches/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
+- `docs/researches/archive/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`

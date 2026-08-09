@@ -360,15 +360,15 @@ Current preferred direction:
 ## Related Research
 
 - `docs/researches/archive/research-2026-02-28-interactive-large-rename-preview-ux-research.md`
-- `docs/researches/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-09-tabular-data-preview-v1-implementation.md`
 - `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`
 - `docs/plans/archive/plan-2026-03-09-data-preview-contains-filter.md`
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## References
 

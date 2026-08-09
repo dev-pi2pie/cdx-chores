@@ -30,7 +30,7 @@ Upgrade the currently reviewed outdated dependencies in the approved order:
 
 ## Notes
 
-- Risk review is documented in `docs/researches/research-2026-04-01-dependency-upgrade-safety-check.md`.
+- Risk review is documented in `docs/researches/archive/research-2026-04-01-dependency-upgrade-safety-check.md`.
 - Upgraded in approved order:
   1. `oxfmt` -> `0.43.0`
   2. `tsdown` -> `0.21.7`

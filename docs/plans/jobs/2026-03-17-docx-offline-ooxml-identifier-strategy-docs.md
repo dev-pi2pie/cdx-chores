@@ -11,11 +11,11 @@ Record the decision that DOCX OOXML relationship/schema URLs are treated as offl
 
 ## What Changed
 
-- Updated `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`:
+- Updated `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`:
   - added the finding that `schemas.openxmlformats.org` URLs are not reliable runtime fetch targets
   - clarified the correct extended-properties relationship identifier
   - added a recommendation to keep identifier handling local, offline-safe, and lightweight
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - added offline-safe OOXML identifier handling to scope/design
   - added a dedicated rollout phase for implementing and documenting the lightweight approach
   - marked schema bundle download/cache/update work as out of scope for the current plan
@@ -29,8 +29,8 @@ Record the decision that DOCX OOXML relationship/schema URLs are treated as offl
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

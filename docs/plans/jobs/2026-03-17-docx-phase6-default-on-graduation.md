@@ -22,7 +22,7 @@ Complete Phase 6 of the DOCX graduation plan by removing the runtime env gate, m
   - changed DOCX from experimental/env-gated to supported best-effort `--codex-docs` coverage
   - kept a historical note that older `v0.0.7` guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1`
   - clarified that the env-gated path is deprecated history rather than active behavior
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md` to close Phase 6 items and its deliverable.
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md` to close Phase 6 items and its deliverable.
 
 ## Compatibility Note
 
@@ -36,8 +36,8 @@ Complete Phase 6 of the DOCX graduation plan by removing the runtime env gate, m
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`

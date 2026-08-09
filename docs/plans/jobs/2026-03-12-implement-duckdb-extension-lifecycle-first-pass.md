@@ -32,7 +32,7 @@ Implement the first-pass DuckDB extension lifecycle improvements for `data query
 
 - `docs/plans/archive/plan-2026-03-12-duckdb-extension-lifecycle-for-data-query.md`
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
 
 ## Related Research
 

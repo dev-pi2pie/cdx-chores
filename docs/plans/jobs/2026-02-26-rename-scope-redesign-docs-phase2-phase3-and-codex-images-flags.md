@@ -79,7 +79,7 @@ Manual CLI checks:
 
 ## Notes
 
-- The redesign plan `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md` is now complete for its current scope (Phases 1-3).
+- The redesign plan `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md` is now complete for its current scope (Phases 1-3).
 - Phase 4 remains intentionally deferred and should be handled by separate follow-up plans (document-text analyzer planning and backend research for binary docs/media analyzers).
 - Historical completed plans/job records still mention `--codex` as part of past implementation snapshots and were not mass-edited.
 
@@ -91,11 +91,11 @@ Manual CLI checks:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
 - `docs/plans/archive/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md`
 
 ## Related Research
 
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`

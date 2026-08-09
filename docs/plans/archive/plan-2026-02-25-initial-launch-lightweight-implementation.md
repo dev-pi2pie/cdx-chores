@@ -176,9 +176,9 @@ This plan intentionally avoids heavy backend decisions (advanced PDF pipelines, 
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
-- `docs/researches/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-excel-like-workflows-scope-and-tooling.md`
 
 ## Status Notes
 

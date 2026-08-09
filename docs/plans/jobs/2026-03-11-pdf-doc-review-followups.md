@@ -1,6 +1,7 @@
 ---
 title: "Draft and revise PDF docs and plan"
 created-date: 2026-03-11
+modified-date: 2026-07-29
 status: completed
 agent: codex
 ---
@@ -11,7 +12,7 @@ Capture the March 11 PDF documentation work in one consolidated job record, cove
 
 ## What Changed
 
-- added `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md`
+- added `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md`
 - drafted the implementation plan for:
   - `pdf merge`
   - `pdf split`
@@ -19,7 +20,7 @@ Capture the March 11 PDF documentation work in one consolidated job record, cove
   - `pdf from-images`
   - `pdf to-markdown`
 - documented first-pass direct CLI command shapes, flag usage, and interactive prompt flows for the PDF command family
-- added `docs/guides/pdf-backend-license-guidance.md`
+- added the then-current `docs/guides/pdf-backend-license-guidance.md` draft, which was later removed during the 2026-07-29 PDF-native lifecycle closeout
 - aligned the plan with the current backend direction:
   - `pdfcpu` as the launch default
   - no immediate `qpdf` dependency
@@ -39,6 +40,13 @@ Capture the March 11 PDF documentation work in one consolidated job record, cove
 - adjusted the markdown backend wording from an unconditional default to a planned candidate gated by license approval
 - added checklist, doctor-reporting, guide, and test items for clear messaging around license-sensitive user-provided backends
 
+## Historical Follow-up (2026-07-29)
+
+- the proposed native PDF command direction was cancelled before implementation
+- the research and implementation plan were moved into their archive locations
+- the unshipped backend-license guide was removed from the current guide area
+- the archived research now preserves the historical backend and licensing discussion
+
 ## Verification
 
 - reviewed existing deferred PDF command placeholders in `src/command.ts`
@@ -56,8 +64,8 @@ Capture the March 11 PDF documentation work in one consolidated job record, cove
 
 ## Related Research
 
-- `docs/researches/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
+- `docs/researches/archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md`
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-11-pdf-cli-workflows-implementation.md`
+- `docs/plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md`

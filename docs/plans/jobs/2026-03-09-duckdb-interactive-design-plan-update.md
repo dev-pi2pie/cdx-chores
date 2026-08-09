@@ -19,7 +19,7 @@ Upgrade the DuckDB split-action plan so it includes an explicit first-pass inter
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Verification
 
@@ -29,5 +29,5 @@ Upgrade the DuckDB split-action plan so it includes an explicit first-pass inter
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 - `docs/plans/archive/plan-2026-03-09-data-preview-interactive-and-color-polish.md`

@@ -37,8 +37,8 @@ Finish the remaining unchecked work in the `data query` CLI implementation plan 
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
-- `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 
 ## Related Research
 

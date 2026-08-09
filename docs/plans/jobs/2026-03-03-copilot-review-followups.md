@@ -39,4 +39,4 @@ Address the Copilot review follow-ups for interactive cleanup validation, test h
 
 ## Related Research
 
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`

@@ -18,7 +18,7 @@ Apply the currently reviewed outdated dependency bumps in the working tree after
 
 ## Related Research
 
-- `docs/researches/research-2026-04-01-dependency-upgrade-safety-check.md`
+- `docs/researches/archive/research-2026-04-01-dependency-upgrade-safety-check.md`
 
 ## Verification Plan
 

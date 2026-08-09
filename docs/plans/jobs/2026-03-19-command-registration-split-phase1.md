@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Execute Phase 1 from `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by splitting `src/command.ts` into command registration modules and shared option helpers while preserving current CLI behavior.
+Execute Phase 1 from `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md` by splitting `src/command.ts` into command registration modules and shared option helpers while preserving current CLI behavior.
 
 ## Scope
 
@@ -49,11 +49,11 @@ src/cli/options/
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## What Changed
 

@@ -99,5 +99,5 @@ This draft assumes the following implementation direction:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-02-27-rename-pattern-router-and-docs-ux-v1-implementation.md`

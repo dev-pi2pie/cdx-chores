@@ -12,7 +12,7 @@ Provide one compact reference for the current rename timestamp placeholders and 
 
 ## Status
 
-This guide documents the stable `v0.1.5` timestamp placeholder contract.
+This guide documents the current stable timestamp placeholder contract.
 
 Current behavior is implemented:
 

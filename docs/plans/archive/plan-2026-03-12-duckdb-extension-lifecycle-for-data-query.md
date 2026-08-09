@@ -360,9 +360,9 @@ After that lands, evaluate whether the dedicated `data duckdb ...` family is sti
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 - `docs/plans/archive/plan-2026-03-10-data-query-cli-implementation.md`
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
 
 ## Related Research
 

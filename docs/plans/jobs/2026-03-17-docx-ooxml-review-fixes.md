@@ -31,4 +31,4 @@ Address review findings in the DOCX OOXML metadata helper around XML encoding su
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`

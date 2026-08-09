@@ -34,9 +34,9 @@ Verification:
 
 Related Plans:
 
-- `docs/plans/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
-- `docs/plans/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
+- `docs/plans/archive/plan-2026-04-23-data-stack-mixed-source-input-router-implementation.md`
+- `docs/plans/archive/plan-2026-04-23-data-stack-interactive-mixed-source-followup.md`
 
 Related Research:
 
-- `docs/researches/research-2026-04-23-data-stack-multi-file-assembly.md`
+- `docs/researches/archive/research-2026-04-23-data-stack-multi-file-assembly.md`

@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Resolve the two intentionally deferred Phase 2 items from `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md` now that Phase 3 and Phase 4 have stabilized the interactive data-query and DuckDB query boundaries.
+Resolve the two intentionally deferred Phase 2 items from `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md` now that Phase 3 and Phase 4 have stabilized the interactive data-query and DuckDB query boundaries.
 
 ## Deferred Items To Reassess
 
@@ -84,11 +84,11 @@ Possible destination if justified:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
+- `docs/plans/archive/plan-2026-03-19-typescript-structural-refactor-sequencing.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-typescript-refactor-scan.md`
+- `docs/researches/archive/research-2026-03-19-typescript-refactor-scan.md`
 
 ## What Changed
 

@@ -35,4 +35,4 @@ The follow-up keeps the prompt labels aligned with the real navigation behavior.
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-30-interactive-data-query-followup-implementation.md`
+- `docs/plans/archive/plan-2026-03-30-interactive-data-query-followup-implementation.md`

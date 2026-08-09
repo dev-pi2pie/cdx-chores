@@ -57,7 +57,7 @@ Focused smoke check run and passed:
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-02-27-codex-auto-flag-routing-alignment.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 
 ## Related Research
 

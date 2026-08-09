@@ -797,8 +797,8 @@ A non-Codex heuristic recommender could choose a built-in preset from simple doc
 - [Markdown PDF Template Codex Helper](research-2026-06-18-markdown-pdf-template-codex-helper.md)
 - [Markdown PDF Project Codex Helper](research-2026-07-03-markdown-pdf-project-codex-helper.md)
 - [Markdown PDF Interactive Mode](research-2026-07-03-markdown-pdf-interactive-mode.md)
-- [Data stack replay records, duplicate handling, and Codex schema assist](research-2026-04-24-data-stack-replay-and-codex-schema-assist.md)
-- [Data stack artifact and Codex contract cleanup](research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md)
+- [Data stack replay records, duplicate handling, and Codex schema assist](archive/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md)
+- [Data stack artifact and Codex contract cleanup](archive/research-2026-04-26-data-stack-artifact-and-codex-contract-cleanup.md)
 
 ## Related Jobs
 

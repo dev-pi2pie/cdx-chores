@@ -11,11 +11,11 @@ Align the DOCX graduation docs with the decision to remove `CDX_CHORES_CODEX_DOC
 
 ## What Changed
 
-- Updated `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`:
+- Updated `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`:
   - removed the one-release compatibility no-op recommendation
   - changed the recommendation to remove the env gate as part of DOCX graduation
   - reframed the remaining compatibility story as a legacy `v0.0.7` usage note only
-- Updated `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
+- Updated `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`:
   - changed the rollout to remove the env gate during default-on graduation
   - removed compatibility-notice work from verification and success criteria
   - added the usage-guide deprecation note as part of the graduation deliverable
@@ -32,11 +32,11 @@ Align the DOCX graduation docs with the decision to remove `CDX_CHORES_CODEX_DOC
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
+- `docs/plans/archive/plan-2026-03-17-docx-metadata-helper-and-flag-graduation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-17-docx-experimental-flag-recommendation.md`
+- `docs/researches/archive/research-2026-03-17-docx-experimental-flag-recommendation.md`
 
 ## Related Jobs
 

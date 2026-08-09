@@ -7,7 +7,7 @@ agent: codex
 
 ## Goal
 
-Complete Phase 6 of `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` by adding direct `data query --source-shape <path>` replay without widening this slice into `data query codex` command-surface changes.
+Complete Phase 6 of `docs/plans/archive/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` by adding direct `data query --source-shape <path>` replay without widening this slice into `data query codex` command-surface changes.
 
 ## What Changed
 

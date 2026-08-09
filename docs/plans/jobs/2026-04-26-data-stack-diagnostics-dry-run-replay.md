@@ -47,8 +47,8 @@ Result: passed after review fixes. The final focused test pass ran 88 tests cove
 
 ## Related Plan
 
-- `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
+- `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`
+- `docs/researches/archive/research-2026-04-24-data-stack-replay-and-codex-schema-assist.md`

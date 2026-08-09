@@ -11,7 +11,7 @@ Apply the already-verified direct dependency upgrades for March 2026 and confirm
 
 ## Related Research
 
-- `docs/researches/research-2026-03-27-dependency-upgrade-verification.md`
+- `docs/researches/archive/research-2026-03-27-dependency-upgrade-verification.md`
 
 ## Changes
 

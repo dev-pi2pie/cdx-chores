@@ -1,7 +1,7 @@
 ---
 title: "Markdown to PDF Profiles, Fonts, and Page Chrome"
 created-date: 2026-05-07
-modified-date: 2026-05-07
+modified-date: 2026-07-29
 status: completed
 agent: codex
 ---
@@ -639,13 +639,13 @@ Completed first-slice recommendations:
 - [Markdown to PDF with WeasyPrint](research-2026-05-06-markdown-to-pdf-weasyprint.md) - completed first-lane research for deterministic Markdown-to-PDF rendering through Pandoc HTML and WeasyPrint.
 - [Font Command Discovery Options](research-2026-05-07-font-command-discovery-options.md) - follow-up research for `font list` diagnostics, discovery selection, and platform-specific adapter behavior.
 - [Font Inspect and Check Commands](research-2026-05-07-font-inspect-and-check-commands.md) - draft checkpoint for adding `font inspect` and `font check` before Codex Helper font assistance.
-- [PDF Backend Comparison for Merge, Split, and Image Workflows](research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - related PDF backend context for the separate `pdf` command group.
+- [PDF Backend Comparison for Merge, Split, and Image Workflows](archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - cancelled historical backend comparison for an unadopted PDF-native route; future work requires fresh research.
 
 ## Related Plans
 
 - [Markdown to PDF Profiles, Fonts, and Page Chrome Implementation](../plans/plan-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome-implementation.md) - completed implementation plan for the profile layer described by this research.
 - [Markdown to PDF WeasyPrint Implementation](../plans/plan-2026-05-06-markdown-to-pdf-weasyprint-implementation.md) - implementation plan for the first deterministic `md to-pdf` workflow.
-- [PDF CLI Workflows Implementation](../plans/plan-2026-03-11-pdf-cli-workflows-implementation.md) - related draft plan for PDF-native workflows.
+- [PDF CLI Workflows Implementation](../plans/archive/plan-2026-03-11-pdf-cli-workflows-implementation.md) - cancelled historical PDF-native proposal, not a current implementation owner.
 
 ## Related Jobs
 

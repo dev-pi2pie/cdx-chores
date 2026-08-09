@@ -598,7 +598,7 @@ Possible extraction boundary:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/plans/archive/plan-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/plans/archive/plan-2026-03-03-rename-cleanup-v1-implementation.md`
 - `docs/plans/archive/plan-2026-03-02-cli-tui-foundation-and-path-inline-refactor.md`
 - `docs/plans/archive/plan-2026-03-02-interactive-path-sibling-navigation-and-ghost-preview.md`
@@ -607,7 +607,7 @@ Possible extraction boundary:
 ## Related Research
 
 - `docs/researches/archive/research-2026-03-02-rename-cleanup-subcommand-and-pattern-hints.md`
-- `docs/researches/research-2026-03-03-rename-cleanup-option-surface-and-conflict-strategy.md`
-- `docs/researches/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
+- `docs/researches/archive/research-2026-03-03-rename-cleanup-option-surface-and-conflict-strategy.md`
+- `docs/researches/archive/research-2026-03-03-codex-analyzer-assisted-rename-cleanup.md`
 - `docs/researches/archive/research-2026-02-28-interactive-path-ghost-hint-and-sibling-navigation-ux.md`
 - `docs/researches/archive/research-2026-03-01-rename-timestamp-format-and-template-ux.md`

@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal
 
-Implement Direction B from `docs/plans/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` without broadening into query-side source-shape replay or `data query codex` surface changes.
+Implement Direction B from `docs/plans/archive/plan-2026-03-20-data-command-surface-followup-headerless-and-source-shape-replay.md` without broadening into query-side source-shape replay or `data query codex` surface changes.
 
 ## What Changed
 

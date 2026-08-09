@@ -29,7 +29,7 @@ Land the first deterministic source-shaping slice from the edge-case research so
   - conservative suspicious raw whole-sheet warning
   - manual range recovery with re-inspection before SQL authoring
 - updated public guides for preview, direct query, interactive query, and Codex drafting
-- completed the checklist in `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- completed the checklist in `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
 
 ## Verification
 
@@ -43,8 +43,8 @@ Land the first deterministic source-shaping slice from the edge-case research so
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 
 ## Related Research

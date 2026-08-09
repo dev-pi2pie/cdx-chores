@@ -161,5 +161,5 @@ That is enough product surface to keep separate from both deterministic shaping 
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`

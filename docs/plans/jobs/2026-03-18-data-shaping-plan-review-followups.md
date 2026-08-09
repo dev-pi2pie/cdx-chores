@@ -11,11 +11,11 @@ Address the March 18 review findings on the new data-shaping plan set so the pla
 
 ## Changes
 
-- updated `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- updated `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
 - made the accepted Excel `--range` part of the active shaped-source state across introspection, drafting, and execution
 - updated `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
 - froze `data extract` header suggestion as a reviewed two-step flow that stops after writing a mapping artifact and only materializes on a follow-up run with `--header-mapping <path>`
-- updated `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- updated `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 - narrowed first-pass mapping reuse to normalized input-reference matching and deferred file-content fingerprinting or stale-file detection
 - updated `docs/researches/archive/research-2026-03-16-data-preview-query-edge-cases.md`
 - linked the three new March 18 plan docs back into the research doc's `Related Plans` section
@@ -28,9 +28,9 @@ Address the March 18 review findings on the new data-shaping plan set so the pla
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Related Research
 

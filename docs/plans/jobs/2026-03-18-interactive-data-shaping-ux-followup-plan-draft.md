@@ -16,7 +16,7 @@ Capture the next follow-up plan after the first reviewed source-shape implementa
   - the recently completed reviewed source-shape and interactive extract implementation plan
   - the edge-case research for merged-header Excel workbooks
   - the existing rename dry-run and analyzer-assisted cleanup interaction pattern
-- drafted `docs/plans/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
+- drafted `docs/plans/archive/plan-2026-03-18-interactive-data-shaping-ux-and-excel-header-row-followup.md`
 - froze the main follow-up themes in the new plan:
   - interactive Codex thinking/progress UX parity
   - staged review-before-write extract flow
@@ -39,8 +39,8 @@ Capture the next follow-up plan after the first reviewed source-shape implementa
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-data-extract-interactive-and-public-smoke-fixtures.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
 
 ## Related Research
 

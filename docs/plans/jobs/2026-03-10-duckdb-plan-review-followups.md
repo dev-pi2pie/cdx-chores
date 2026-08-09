@@ -19,7 +19,7 @@ Consolidate the March 10 review-driven updates to the DuckDB Parquet preview pla
 
 ## Files
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`
 
 ## Verification
 
@@ -31,4 +31,4 @@ Consolidate the March 10 review-driven updates to the DuckDB Parquet preview pla
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-09-duckdb-parquet-preview-integration.md`
+- `docs/plans/archive/plan-2026-03-09-duckdb-parquet-preview-integration.md`

@@ -7,7 +7,7 @@ agent: codex
 
 ## Summary
 
-Completed Phases 3, 4, and 5 of `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
+Completed Phases 3, 4, and 5 of `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`.
 
 This pass validated the internal two-pass fallback, landed the deterministic `body-start-row` contract across query and extract, and widened reviewed source-shape artifacts plus prompt handling to carry `bodyStartRow`.
 
@@ -84,8 +84,8 @@ Reviewed source-shape flows now support `bodyStartRow` end to end:
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
+- `docs/plans/archive/plan-2026-03-19-big-merged-cell-source-shape-followup.md`
 
 ## Related Research
 
-- `docs/researches/research-2026-03-19-big-merged-cell-shaping-gap.md`
+- `docs/researches/archive/research-2026-03-19-big-merged-cell-shaping-gap.md`

@@ -36,5 +36,5 @@ git diff --check
 
 ## Related
 
-- `docs/plans/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
-- `docs/researches/research-2026-04-27-data-stack-typescript-refactor-scan.md`
+- `docs/plans/archive/plan-2026-04-27-data-stack-typescript-refactor-implementation.md`
+- `docs/researches/archive/research-2026-04-27-data-stack-typescript-refactor-scan.md`

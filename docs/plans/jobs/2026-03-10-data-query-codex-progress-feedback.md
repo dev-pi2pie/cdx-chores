@@ -37,8 +37,8 @@ Add visible progress feedback to `data query codex` before result rendering, and
 
 ## Related Plans
 
-- `docs/plans/plan-2026-03-10-data-query-codex-cli-drafting.md`
-- `docs/plans/plan-2026-03-10-data-query-interactive-flow-implementation.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-codex-cli-drafting.md`
+- `docs/plans/archive/plan-2026-03-10-data-query-interactive-flow-implementation.md`
 
 ## Related Research
 

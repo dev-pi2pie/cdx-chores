@@ -54,8 +54,8 @@ Land the first direct `data extract` lane so one shaped logical table can be mat
 ## Related Plans
 
 - `docs/plans/archive/plan-2026-03-18-data-extract-shaped-table-materialization.md`
-- `docs/plans/plan-2026-03-18-data-source-shaping-foundation.md`
-- `docs/plans/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
+- `docs/plans/archive/plan-2026-03-18-data-source-shaping-foundation.md`
+- `docs/plans/archive/plan-2026-03-18-header-mapping-artifacts-and-codex-review.md`
 
 ## Related Research
 

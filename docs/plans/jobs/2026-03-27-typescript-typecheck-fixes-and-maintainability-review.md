@@ -12,4 +12,4 @@ Fix the existing baseline `tsc --noEmit` failures in the interactive data flow, 
 
 ## Related Research
 
-- `docs/researches/research-2026-03-27-dependency-upgrade-verification.md`
+- `docs/researches/archive/research-2026-03-27-dependency-upgrade-verification.md`

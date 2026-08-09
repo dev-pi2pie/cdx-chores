@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope
 
-Completed Phase 9 of `docs/plans/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
+Completed Phase 9 of `docs/plans/archive/plan-2026-04-25-data-stack-replay-and-codex-assist-implementation.md`.
 
 This job closes the follow-up that moved interactive `data stack` Codex assist out of the final write/save action menu and into a contextual diagnostic checkpoint.
 

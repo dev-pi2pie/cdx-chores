@@ -320,13 +320,13 @@ Recommended analyzer categories (even if some share a backend):
 
 - `docs/plans/archive/plan-2026-02-26-document-text-rename-analyzer-milestone.md`
 - `docs/plans/archive/plan-2026-02-26-docx-pdf-title-evidence-extractor-spike.md`
-- `docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
+- `docs/plans/archive/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md`
 - `docs/plans/archive/plan-2026-02-25-image-rename-pattern-and-audit-workflow.md`
 
 ## Related Research
 
 - `docs/researches/archive/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md`
-- `docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
+- `docs/researches/archive/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md`
 
 ## References
 
