@@ -221,7 +221,7 @@ pageNumbers
 |                 logical value for each page
 |
 +-- visibility
-|   +-- scope: body | document       where a value may be shown
+|   +-- scope: document | body       where a value may be shown
 |   `-- cover exception              cover pages are always hidden
 |                         |
 |                         v
@@ -249,7 +249,7 @@ The proposed values and defaults are:
 
 | Field       | Proposed values      | Default    | Responsibility              |
 | ----------- | -------------------- | ---------- | --------------------------- |
-| `scope`     | `body` or `document` | `body`     | page-number visibility      |
+| `scope`     | `document` or `body` | `body`     | page-number visibility      |
 | `countFrom` | `document` or `body` | `document` | logical sequence origin     |
 | `start`     | integer `>= 0`       | `1`        | first value in the sequence |
 | `increment` | integer `>= 1`       | `1`        | per-page arithmetic step    |
