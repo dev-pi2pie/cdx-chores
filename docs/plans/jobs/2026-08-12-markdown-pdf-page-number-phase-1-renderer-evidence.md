@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 1 renderer evidence"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -55,13 +55,13 @@ and are not committed.
 - [x] Clean successful laboratories and close retained diagnostic laboratories
       when resolved or abandoned.
 - [x] Run focused and repository validation.
-- [ ] Review the exact Phase 1 commit range and resolve actionable findings.
+- [x] Review the exact Phase 1 commit range and resolve actionable findings.
 
 ## Evidence Status
 
 The renderer matrix, current-launch control, extraction checks, representative
-visual inspection, laboratory closeout, and repository validation are
-complete. Phase 1 remains active until exact-range review closes.
+visual inspection, laboratory closeout, repository validation, and exact-range
+review are complete.
 
 ## Renderer Matrix
 
@@ -82,11 +82,10 @@ was unavailable. It did not affect baseline selection. The harness was changed
 to the available Poppler executable, the same matrix was rerun, and the retained
 diagnostic laboratory was removed after the issue was resolved.
 
-## Provisional Capability Baselines
+## Accepted Capability Baselines
 
 The recorded evidence result identifies WeasyPrint `65.1` as the lowest passing
-candidate for every retained capability. Phase 1 acceptance remains pending
-the exact-range review.
+candidate for every retained capability.
 
 - document and body sequence origins
 - `start: 0`, default arithmetic, and `increment: 2`
@@ -129,13 +128,32 @@ defect.
 - `9184a9fa` — explicit shared-Python executable selection for candidate
   consistency.
 
+## Evidence And Review Commits
+
+- `a5fb714f` — completed renderer matrix, boundary-value evidence, and
+  public-safe findings.
+- `d21fb524` — exact-range review fixes for command failure classification,
+  lifecycle cleanup, PNG validation, and optional-sentinel reporting.
+- `b52bacff` — structural PNG evidence validation and platform-safe test paths.
+
+The exact Phase 1 range `de646be9..b52bacff` was reviewed after all fixes.
+Maintainability, test-quality, security, and documentation re-reviews found no
+remaining material findings.
+
+## Validation
+
+- Focused renderer-evidence tests: 23 passed, 0 failed.
+- TypeScript type-check: passed.
+- Lint and formatting checks: passed.
+- Production build: passed.
+- Full repository suite: 1,875 passed, 0 failed.
+- `git diff --check`: passed.
+
 ## Verdict
 
-**Recorded result: Continue.** The retained sequence, visibility, positioning,
-and bounded style capabilities have a reproducible WeasyPrint `65.1` evidence
-result. Phase 2 may encode the value domains above only after the exact-range
-review accepts Phase 1. The final evidence commit and reviewed range will be
-recorded during that closeout.
+**Continue.** The retained sequence, visibility, positioning, and bounded style
+capabilities have an accepted, reproducible WeasyPrint `65.1` baseline. Phase 2
+may encode the value domains above.
 
 ## Related Research
 

@@ -362,7 +362,7 @@ Tasks:
       the recorded renderer evidence.
 - [x] Run focused checks and the full repository validation suite, and record
       the passing result in the Phase 1 job.
-- [ ] Review the exact Phase 1 implementation and evidence commit range,
+- [x] Review the exact Phase 1 implementation and evidence commit range,
       resolve every actionable finding, and record the final verdict before
       beginning Phase 2.
 
