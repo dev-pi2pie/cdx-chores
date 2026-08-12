@@ -443,7 +443,7 @@ Phase checkpoint:
 
 ### Phase 3: HTML Body Hooks And Template Compatibility
 
-Tasks:
+#### Phase 3A: Structural Body Contract
 
 - [ ] Add the stable `.document-body` hook to the built-in body `<main>`.
 - [ ] Adopt `.document-body` in generated Template-Codex required-hook
@@ -453,8 +453,22 @@ Tasks:
       or structurally unrelated matches for body-origin numbering.
 - [ ] Inspect actual selected or generated HTML rather than synthesis metadata
       when proving the boundary.
+- [ ] Treat exactly one class-token match containing the single real `$body$`
+      insertion point as proven; reject missing, duplicate, unrelated,
+      comment-only, attribute-only, and script-only matches.
+
+#### Phase 3B: Selected-Template Compatibility
+
 - [ ] Preserve the warning-based legacy inference only for document-origin body
       visibility; never use it to satisfy a body-origin request.
+- [ ] Inspect the final explicitly selected or bundle-resolved Template after
+      Profile resolution and fail before dependency probes or output writes
+      when a body-origin request lacks a proven boundary.
+- [ ] Preserve existing generic Profile-only, Template-only, CSS-only,
+      Template/CSS, and complete-bundle behavior when no body proof is needed.
+
+#### Phase 3C: Template Helper And Base Profile
+
 - [ ] Review direct `md pdf-template codex --base-profile` behavior when the
       Profile requests document-origin or body-origin numbering.
 - [ ] Preserve Profile-only and Template/CSS partial bundle inputs in the direct
@@ -462,8 +476,18 @@ Tasks:
       externally owned Profile contract.
 - [ ] Keep Template signals and generated Template CSS free of duplicated
       Profile-owned page-number values.
+- [ ] Keep generated output as a Template/CSS partial bundle and include the
+      external base Profile in the follow-up render command without copying it
+      into the bundle.
 - [ ] Add built-in, generated, legacy custom, missing-hook, duplicate-hook,
       direct Template-helper, base-Profile, and partial-bundle tests.
+- [ ] Create and maintain
+      `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-3-template-compatibility.md`
+      with checkpoint commits, validation evidence, and the exact-range review
+      verdict.
+- [ ] Review the exact Phase 3 implementation and evidence commit range,
+      resolve every actionable finding, and record the final verdict before
+      beginning Phase 4.
 
 Phase checkpoint:
 
@@ -475,7 +499,11 @@ Phase checkpoint:
 
 ### Phase 4: Page-Number And Page-Chrome CSS
 
-Tasks:
+#### Phase 4A: Sequence And Visibility
+
+- [ ] Confirm the document-origin first-page reset selector and separator span
+      behavior with compact temporary renderer micro-smokes before selecting
+      the generator strategy.
 
 - [ ] Generate document-origin reset and increment rules from normalized
       `start` and `increment`.
@@ -486,6 +514,9 @@ Tasks:
 - [ ] Implement selective `scope: body` and `scope: document` visibility.
 - [ ] Restore only page-number content on eligible ToC pages without restoring
       unrelated headers or footers.
+
+#### Phase 4B: Position, Style, And Cascade
+
 - [ ] Preserve all six existing positions and page-number-wins slot output.
 - [ ] Emit header/footer typography and separator CSS only for Phase 1-proven,
       renderer-proven style fields.
@@ -494,6 +525,22 @@ Tasks:
       `!important` or a parallel stylesheet order.
 - [ ] Add deterministic CSS tests for all sequence, visibility, position,
       style, cover, title, ToC, body, and legacy Template branches.
+
+#### Phase 4C: Product Renderer Evidence
+
+- [ ] Extend the compact Phase 1 harness with Profile-driven product scenarios
+      without committing generated HTML, CSS, PDF, PNG, environment, or raw
+      report artifacts.
+- [ ] Run every accepted candidate, extract expected labels by physical page,
+      inspect representative PNGs, and close every successful or resolved
+      temporary laboratory.
+- [ ] Create and maintain
+      `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-4-page-number-css.md`
+      with selector decisions, renderer outcomes, checkpoint commits,
+      validation evidence, cleanup state, and exact-range review verdict.
+- [ ] Review the exact Phase 4 implementation and evidence commit range,
+      resolve every actionable finding, and record the final verdict before
+      beginning Phase 5.
 
 Phase checkpoint:
 
