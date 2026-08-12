@@ -785,64 +785,64 @@ Phase checkpoint:
 
 #### Phase 8A: Authoritative Base Profile And Final Profile
 
-- [ ] Audit direct `md pdf-project codex` from shared signals through Profile
+- [x] Audit direct `md pdf-project codex` from shared signals through Profile
       phase, normalized final Profile, Template phase, validation, and the
       existing write/report/handoff boundaries before changing behavior.
-- [ ] Load, shape-validate, and normalize `--base-profile` before either Project
+- [x] Load, shape-validate, and normalize `--base-profile` before either Project
       Codex phase; malformed files, unknown Profile keys, invalid arithmetic,
       and invalid scope/origin combinations must fail rather than being silently
       repaired by Codex.
-- [ ] Treat the normalized base Profile as the authoritative patch base, not as
+- [x] Treat the normalized base Profile as the authoritative patch base, not as
       advisory context. The bounded Profile decision may preserve or explicitly
       revise supported fields, and the resulting normalized final Profile is
       the sole page-number contract passed onward.
-- [ ] Apply bounded patch semantics explicitly: an omitted patch key preserves
+- [x] Apply bounded patch semantics explicitly: an omitted patch key preserves
       the normalized base value; a present allowed key replaces it, including
       exact `false` and `0`; `null`, unknown keys, and invalid values are
       rejected rather than treated as omission, deletion, or a request for
       Codex repair.
-- [ ] Add base/final Profile fixtures for omitted new fields, explicit
+- [x] Add base/final Profile fixtures for omitted new fields, explicit
       `enabled: false`, literal `start: 0`, non-default `increment`, both valid
       origins, retained page-chrome style, deliberate bounded revision, and
       every invalid validation boundary. Add direct patch tests for omitted,
       present `false`, present `0`, `null`, unknown, and invalid keys.
-- [ ] Preserve explicit valid base values unless the reviewed bounded decision
+- [x] Preserve explicit valid base values unless the reviewed bounded decision
       changes them; the final in-memory Profile must not lose false, zero, or
       another valid non-default value.
 
 #### Phase 8B: Template Coordination
 
-- [ ] Pass the normalized final Profile into Template coordination without
+- [x] Pass the normalized final Profile into Template coordination without
       copying page-number enablement, sequence, visibility, label, position, or
       page-chrome style into Template signals or generated Template CSS.
-- [ ] Keep Project-specific orchestration free of a second page-number schema
+- [x] Keep Project-specific orchestration free of a second page-number schema
       and preserve existing Template-owned layout, cover, title, ToC, code, and
       asset decisions.
-- [ ] Reuse Phase 6 capability requirements and diagnostic payload types for
+- [x] Reuse Phase 6 capability requirements and diagnostic payload types for
       the final Profile; Project preparation must not invent a second
       capability matrix or imply that authoring checked the installed renderer.
 
 #### Phase 8C: Generated Structure And CSS Validation
 
-- [ ] Inspect the actual generated `template.html`, not synthesis metadata, and
+- [x] Inspect the actual generated `template.html`, not synthesis metadata, and
       require one usable `.document-body` containing the live `$body$` insertion
       point plus the existing required Pandoc, title, ToC, code, and cover hooks.
-- [ ] Reuse the Phase 3 body-boundary validator and the Phase 6 shared
+- [x] Reuse the Phase 3 body-boundary validator and the Phase 6 shared
       diagnostic envelope and stable missing-boundary condition instead of
       defining Project-only structural semantics.
-- [ ] Validate the freshly generated Template stylesheet contribution before it
+- [x] Validate the freshly generated Template stylesheet contribution before it
       is written or combined with Profile-derived renderer CSS. Do not feed
       Profile-generated counter, margin-box, or page-chrome CSS into this
       ownership validator or reject the Profile for owning its renderer rules.
-- [ ] Allow the Template contribution to own ordinary document layout,
+- [x] Allow the Template contribution to own ordinary document layout,
       unnamed `@page` size and margins, named cover and ToC presentation and
       clearing, and the exact renderer-proven named-ToC behavior retained by
       Phase 4.
-- [ ] Reject only Template-contributed ordinary-page margin-box content that
+- [x] Reject only Template-contributed ordinary-page margin-box content that
       uses page counters, page-counter reset or increment rules, and typography,
       font, or separator declarations that compete with Profile-owned ordinary
       page chrome.
-- [ ] Name and cover the allowed fixtures
+- [x] Name and cover the allowed fixtures
       `template-layout-and-unnamed-page-geometry`,
       `template-named-cover-presentation`, and
       `template-named-toc-presentation-and-clearing`; name and cover the
@@ -850,46 +850,55 @@ Phase checkpoint:
       `template-page-counter-reset-or-increment`,
       `template-competing-page-chrome-typography`, and
       `template-competing-page-chrome-separator`.
-- [ ] Do not apply this generated-CSS validator to later user edits, arbitrary
+- [x] Do not apply this generated-CSS validator to later user edits, arbitrary
       custom stylesheets, or generic Template/CSS partial bundles; those remain
       the deliberate lower-level override path and render-time responsibility.
 
 #### Phase 8D: No-Output Validation Integration
 
-- [ ] Run base/final Profile, generated-structure, CSS-ownership, shared
+- [x] Run base/final Profile, generated-structure, CSS-ownership, shared
       diagnostic, and capability-requirement validation before Project bundle,
       report, summary, or follow-up-command writes.
-- [ ] Permit only process-owned in-memory values and, where parser or file-shape
-      inspection requires filesystem inputs, one ownership-marked OS-temporary
-      inspection area. Guard cleanup by the exact resolved path and ownership
-      marker, clean it on success and handled failure, and test refusal to clean
-      an unmarked or broader path.
-- [ ] Return typed validation results and public-safe diagnostics to the
-      prepared Project flow. Phase 8 owns validation computation only; Phase 9
-      owns serialization into summaries/reports, artifact references, and
-      render handoff.
-- [ ] On validation failure, expose no usable Project bundle, replayable input
+- [x] Permit only process-owned in-memory values. If parser or file-shape
+      inspection later requires filesystem inputs, use one ownership-marked
+      OS-temporary inspection area with exact-path and ownership-marker cleanup
+      guards. Phase 8 remained in memory, so that conditional cleanup and
+      unsafe-path refusal branch was not applicable, implemented, or exercised.
+- [x] Return typed validation results and public-safe diagnostics to the
+      prepared Project flow. Preserve the existing generic Project report
+      serialization of each validation result's name, status, and message.
+      Phase 9 owns structured diagnostic and capability-requirement fields, any
+      report/summary schema extension, artifact references, and render handoff.
+- [x] On validation failure, expose no usable Project bundle, replayable input
       claim, or follow-up render command. Create no persistent Project output
       directory, Profile, Template, Stylesheet, report, or partial role unless
       the caller explicitly requested the existing report-only failure path;
-      that path may serialize only the public-safe typed validation result
-      through Phase 9 and must not create or claim replayable roles.
-- [ ] Prove success and handled failure leave no temporary inspection artifacts
-      and that report-only failure leaves only its explicitly requested report,
-      with no Project output directory or Profile/Template/Stylesheet role.
-- [ ] Add focused Project tests for base/final Profile preservation and
+      that path retains its existing public-safe report behavior and must not
+      create or claim replayable roles. Its generic validation result may
+      contain the new result's name, status, and message. Phase 8 adds no
+      structured diagnostic fields, capability-requirement fields, or stable
+      condition ID to reports or summaries; Phase 9 owns that work.
+- [x] Prove success and handled failure leave no temporary inspection artifacts
+      and that report-only failure leaves only its existing explicitly
+      requested report, with no Project output directory or
+      Profile/Template/Stylesheet role. Because validation remained in memory,
+      no marked temporary area or cleanup/refusal path was needed.
+- [x] Add focused Project tests for base/final Profile preservation and
       revision, Template signal ownership, actual-HTML hook validation,
       the named generated-CSS allowed/rejected fixtures, shared diagnostics,
-      typed validation results, ownership-guarded temporary cleanup, report-only
-      failure, and no-output failure ordering.
+      typed validation results, in-memory no-temporary-artifact behavior,
+      report-only failure, and no-output failure ordering.
 - [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-8-project-coordination.md`
       with starting boundary `7b7ae9b5`, 8A/8B/8C/8D
       checkpoints, public-safe evidence, validation results, and cleanup state.
-- [ ] Run focused Project/Profile/Template validation, the broad Markdown PDF
+- [x] Run focused Project/Profile/Template validation, the broad Markdown PDF
       regression slice, and the full repository suite; run
       `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
-      `bun run build`, and `git diff --check` at the final evidence tip.
+      `bun run build`, and `git diff --check` at the final implementation tip.
+      If a correction changes that tip, rerun affected gates before review;
+      evidence-only documentation then requires targeted format and diff
+      checks.
 - [ ] Review the exact aggregate Phase 8 range from the recorded Phase 7 final
       tip through the final Phase 8 evidence tip
       (`7b7ae9b5..<phase-8-final-tip>`), replace the remaining placeholder with
@@ -913,14 +922,21 @@ Phase checkpoint:
   preservation, body-hook coherence, and generated-CSS ownership before any
   bundle handoff.
 - Phase 8 returns typed validation results through the shared diagnostic and
-  capability contracts; Phase 9 alone serializes those results and owns
-  report, summary, and render-command handoff.
+  capability contracts and preserves existing generic `validationResults`
+  serialization of name, status, and message. Phase 8 adds no structured
+  diagnostic fields, capability-requirement fields, stable condition ID, or
+  schema extension to reports or summaries; Phase 9 owns those new fields and
+  render-command handoff. Correction `0bbd6408` restores this boundary and
+  keeps the stable body-boundary validation condition ID in in-memory
+  diagnostics only.
 - Phase 8 leaves no temporary inspection artifacts and no persistent Project
-  roles; an explicitly requested report-only failure may leave only its
-  public-safe report through the Phase 9 output boundary.
+  roles; validation is in memory, so no temporary cleanup/refusal branch is
+  implemented or exercised. An explicitly requested report-only failure may
+  leave only its existing public-safe report.
 - Focused, broad Markdown PDF, full repository, static, format, build, and diff
-  checks pass at the reviewed final tip, and one exact aggregate review covers
-  8A, 8B, 8C, and 8D.
+  checks pass at final implementation and validation tip `0bbd6408`. The exact
+  aggregate review covering 8A, 8B, 8C, 8D, evidence, and the correction
+  remains pending.
 
 ### Phase 9: Project Bundle, Report, And Render Handoff
 
