@@ -219,12 +219,9 @@ function referencesPageCounter(value: string): boolean {
   return false;
 }
 
-function mutatesPageCounter(input: { property: string; value: string }): boolean {
+function declaresCounterMutation(property: string): boolean {
   return (
-    (input.property === "counter-reset" ||
-      input.property === "counter-increment" ||
-      input.property === "counter-set") &&
-    /(?:^|[^-_A-Za-z0-9])pages?(?:$|[^-_A-Za-z0-9])/u.test(input.value)
+    property === "counter-reset" || property === "counter-increment" || property === "counter-set"
   );
 }
 
@@ -291,10 +288,12 @@ export function validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
   if (blocks.length > MAX_TEMPLATE_CSS_BLOCKS) {
     throw new Error("Generated Template stylesheet exceeds the supported rule count.");
   }
-  if (blocks.some((block) => declarations(block.body).some(mutatesPageCounter))) {
-    throw new Error(
-      "Generated Template stylesheet must not mutate the Profile-owned page counter.",
-    );
+  if (
+    blocks.some((block) =>
+      declarations(block.body).some((declaration) => declaresCounterMutation(declaration.property)),
+    )
+  ) {
+    throw new Error("Generated Template stylesheet must not declare counter mutation.");
   }
   if (
     blocks.some((block) =>

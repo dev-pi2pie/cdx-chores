@@ -654,17 +654,25 @@ describe("cli action modules: md pdf-project codex validation", () => {
           profileCodexRunner: adaptedProfileRunner(),
           templateCodexRunner: async () =>
             templateResponse({
-              cssBlocks: [{ css: "body { counter-set: page 7; }", slot: "spacing" }],
+              cssBlocks: [
+                {
+                  css: "body { --folio: page 7; counter-set: var(--folio); }",
+                  slot: "spacing",
+                },
+              ],
             }),
         });
 
         expect(templatePhase.codexResult?.decision.cssBlocks).toEqual([
-          { css: "body { counter-set: page 7; }", slot: "spacing" },
+          {
+            css: "body { --folio: page 7; counter-set: var(--folio); }",
+            slot: "spacing",
+          },
         ]);
-        expect(templatePhase.synthesis.styleCss).toContain("counter-set: page 7");
+        expect(templatePhase.synthesis.styleCss).toContain("counter-set: var(--folio)");
         expectNoUsableValidationFailure(validation, {
           name: "template-page-number-css-ownership",
-          messageIncludes: "must not mutate the Profile-owned page counter",
+          messageIncludes: "must not declare counter mutation",
         });
       },
     );

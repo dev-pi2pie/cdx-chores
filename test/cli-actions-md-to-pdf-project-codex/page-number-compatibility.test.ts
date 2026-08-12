@@ -74,14 +74,14 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
         validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
           `@page body { ${declaration}; margin: 18mm; }`,
         ),
-      ).toThrow("must not mutate the Profile-owned page counter");
+      ).toThrow("must not declare counter mutation");
     }
 
     expect(() =>
       validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
         "@page cover { counter-increment: page 1; margin: 0; }",
       ),
-    ).toThrow("must not mutate the Profile-owned page counter");
+    ).toThrow("must not declare counter mutation");
   });
 
   test("rejects page-counter mutation in every Template selector and nesting level", () => {
@@ -92,7 +92,19 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
       "@supports (display: grid) { @layer template { article { counter-reset: chapter 1 page 0; } } }",
     ]) {
       expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
-        "must not mutate the Profile-owned page counter",
+        "must not declare counter mutation",
+      );
+    }
+  });
+
+  test("rejects counter mutation through custom-property indirection and custom counters", () => {
+    for (const css of [
+      "body { --folio: page 99; counter-reset: var(--folio); }",
+      ".document-body { counter-increment: chapter 1; }",
+      "@media print { main { counter-set: section 4; } }",
+    ]) {
+      expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
+        "must not declare counter mutation",
       );
     }
   });
@@ -155,7 +167,6 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
         /* @page { counter-reset: page; } */
         body::before { content: "counter-set: page 8"; }
         @page {
-          counter-reset: chapter-page 1;
           @bottom-center { content: "counter(page)" counter(chapter-page); }
         }
       `),
