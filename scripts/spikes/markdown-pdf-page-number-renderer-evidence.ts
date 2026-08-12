@@ -4,19 +4,25 @@ import { lstat, mkdir, readFile, realpath, rename, rm, writeFile } from "node:fs
 import { devNull, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inflateSync } from "node:zlib";
 
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 import {
   materializePageNumberRendererContract,
+  PAGE_NUMBER_AUTOMATED_EVIDENCE,
   PAGE_NUMBER_BODY_HOOK_CASES,
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
+  PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
   WEASYPRINT_CANDIDATES,
 } from "../../test/fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
+  ExpectedPdfDocument,
+  PageNumberRegion,
   PageOrientation,
+  ProductRendererScenario,
   RendererContractScenario,
   WeasyPrintCandidate,
 } from "../../test/fixtures/markdown-pdf/page-number-renderer-contract";
@@ -29,8 +35,9 @@ const maximumOutputBytes = 64 * 1024;
 const commandTimeoutMs = 120_000;
 
 const harnessContract = {
-  version: 1,
+  version: 3,
   candidates: WEASYPRINT_CANDIDATES.map((candidate) => candidate.id),
+  productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
   stages: [
     "setup",
     "dependency-install",
@@ -86,6 +93,15 @@ export type CommandRunner = (request: CommandRequest) => Promise<CommandResult>;
 
 export interface PdfPageEvidence {
   text: string;
+  runs: readonly PdfTextRunEvidence[];
+  widthMillimeters: number;
+  heightMillimeters: number;
+}
+
+export interface PdfTextRunEvidence {
+  text: string;
+  xMillimeters: number;
+  yMillimeters: number;
   widthMillimeters: number;
   heightMillimeters: number;
 }
@@ -112,6 +128,7 @@ export interface CandidateEvidence {
   scenarios: Array<{ id: string; passed: boolean }>;
   doctorPassed: boolean;
   actualLaunchPassed: boolean;
+  productScenarios: Array<{ id: string; passed: boolean }>;
 }
 
 export interface BodyHookEvidence {
@@ -122,15 +139,20 @@ export interface BodyHookEvidence {
 }
 
 export interface RendererEvidenceReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   catalogDigest: string;
   harnessDigest: string;
   outcome: "failed" | "inconclusive" | "passed";
+  evidenceStatus: "complete" | "visual-review-required";
   retained: boolean;
   labPath: string;
   bodyHooks: BodyHookEvidence[];
   candidates: CandidateEvidence[];
   failures: EvidenceFailure[];
+  evidenceBoundary: {
+    automated: readonly string[];
+    visualReviewRequired: Array<{ scenarioId: string; assertions: readonly string[] }>;
+  };
 }
 
 export interface RunRendererEvidenceOptions {
@@ -334,14 +356,36 @@ export const inspectPdf: PdfInspector = async (pdfPath) => {
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      const text = (textContent.items as Array<{ str?: string }>)
+      const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = page.view;
+      const items = textContent.items as Array<{
+        str?: string;
+        transform?: readonly number[];
+        width?: number;
+        height?: number;
+      }>;
+      const runs = items
+        .map((item): PdfTextRunEvidence | undefined => {
+          const text = item.str?.replace(/\s+/gu, " ").trim() ?? "";
+          const transform = item.transform;
+          if (!text || !transform || transform.length < 6) return undefined;
+          const heightPoints = Math.abs(item.height ?? transform[3] ?? 0);
+          return {
+            text,
+            xMillimeters: millimetersFromPoints((transform[4] ?? 0) - x1),
+            yMillimeters: millimetersFromPoints((transform[5] ?? 0) - y1 - heightPoints),
+            widthMillimeters: millimetersFromPoints(Math.abs(item.width ?? 0)),
+            heightMillimeters: millimetersFromPoints(heightPoints),
+          };
+        })
+        .filter((run): run is PdfTextRunEvidence => run !== undefined);
+      const text = items
         .map((item) => item.str ?? "")
         .join(" ")
         .replace(/\s+/gu, " ")
         .trim();
-      const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = page.view;
       pages.push({
         text,
+        runs,
         widthMillimeters: millimetersFromPoints(Math.abs(x2 - x1)),
         heightMillimeters: millimetersFromPoints(Math.abs(y2 - y1)),
       });
@@ -381,7 +425,71 @@ function nearlyEqual(left: number, right: number): boolean {
   return Math.abs(left - right) <= 0.6;
 }
 
-function validatePdfEvidence(scenario: RendererContractScenario, evidence: PdfEvidence): string[] {
+function runOccupiesRegion(
+  run: PdfTextRunEvidence,
+  page: PdfPageEvidence,
+  region: PageNumberRegion,
+): boolean {
+  const horizontalCenter = run.xMillimeters + run.widthMillimeters / 2;
+  const verticalCenter = run.yMillimeters + run.heightMillimeters / 2;
+  const horizontal =
+    region === "bottom-center"
+      ? horizontalCenter >= page.widthMillimeters * 0.3 &&
+        horizontalCenter <= page.widthMillimeters * 0.7
+      : horizontalCenter >= page.widthMillimeters * 0.6;
+  const vertical =
+    region === "top-right"
+      ? verticalCenter >= page.heightMillimeters * 0.8
+      : verticalCenter <= page.heightMillimeters * 0.2;
+  return horizontal && vertical;
+}
+
+function normalizedLabelText(value: string): string {
+  return value.replace(/\s+/gu, "");
+}
+
+function findContiguousLabelRun(
+  page: PdfPageEvidence,
+  label: string,
+): PdfTextRunEvidence | undefined {
+  const expected = normalizedLabelText(label);
+  for (let start = 0; start < page.runs.length; start += 1) {
+    let actual = "";
+    let left = Number.POSITIVE_INFINITY;
+    let bottom = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    let top = Number.NEGATIVE_INFINITY;
+    for (
+      let index = start;
+      index < page.runs.length && actual.length <= expected.length;
+      index += 1
+    ) {
+      const run = page.runs[index];
+      if (!run) break;
+      actual += normalizedLabelText(run.text);
+      left = Math.min(left, run.xMillimeters);
+      bottom = Math.min(bottom, run.yMillimeters);
+      right = Math.max(right, run.xMillimeters + run.widthMillimeters);
+      top = Math.max(top, run.yMillimeters + run.heightMillimeters);
+      if (actual === expected) {
+        return {
+          text: label,
+          xMillimeters: left,
+          yMillimeters: bottom,
+          widthMillimeters: right - left,
+          heightMillimeters: top - bottom,
+        };
+      }
+      if (!expected.startsWith(actual)) break;
+    }
+  }
+  return undefined;
+}
+
+function validatePdfEvidence(
+  scenario: { expected: ExpectedPdfDocument },
+  evidence: PdfEvidence,
+): string[] {
   const mismatches: string[] = [];
   if (evidence.pageCount !== scenario.expected.pageCount) {
     mismatches.push(
@@ -399,15 +507,28 @@ function validatePdfEvidence(scenario: RendererContractScenario, evidence: PdfEv
       mismatches.push(`physical page ${index + 1} is missing marker ${expected.marker}`);
     }
     for (const label of expected.pageNumberLabels) {
-      if (!page.text.includes(label)) {
+      const labelRun = findContiguousLabelRun(page, label);
+      if (!labelRun) {
         mismatches.push(`physical page ${index + 1} is missing label ${label}`);
+      } else if (
+        expected.pageNumberRegion &&
+        !runOccupiesRegion(labelRun, page, expected.pageNumberRegion)
+      ) {
+        mismatches.push(
+          `physical page ${index + 1} label ${label} is outside ${expected.pageNumberRegion}`,
+        );
+      }
+    }
+    for (const forbidden of expected.forbiddenText ?? []) {
+      if (page.text.includes(forbidden)) {
+        mismatches.push(`physical page ${index + 1} contains forbidden text ${forbidden}`);
       }
     }
     const allLabels = scenario.expected.pages.flatMap((item) => item.pageNumberLabels);
     for (const unexpected of allLabels.filter(
       (label) => !expected.pageNumberLabels.includes(label),
     )) {
-      if (page.text.includes(unexpected)) {
+      if (findContiguousLabelRun(page, unexpected)) {
         mismatches.push(`physical page ${index + 1} contains out-of-order label ${unexpected}`);
       }
     }
@@ -560,29 +681,205 @@ function contractFailure(
   return { stage, classification: "contract-failure", message, candidateId, scenarioId };
 }
 
+function crc32(contents: Buffer): number {
+  let crc = 0xffffffff;
+  for (const byte of contents) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function validatePng(contents: Buffer): void {
+  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (
+    contents.length < signature.length ||
+    !contents.subarray(0, signature.length).equals(signature)
+  ) {
+    throw new Error("invalid PNG signature");
+  }
+
+  let offset = signature.length;
+  let width = 0;
+  let height = 0;
+  let bitDepth = 0;
+  let colorType = -1;
+  let sawHeader = false;
+  let sawEnd = false;
+  const imageData: Buffer[] = [];
+  while (offset < contents.length) {
+    if (contents.length - offset < 12) throw new Error("truncated PNG chunk header");
+    const length = contents.readUInt32BE(offset);
+    const typeStart = offset + 4;
+    const dataStart = typeStart + 4;
+    const dataEnd = dataStart + length;
+    const chunkEnd = dataEnd + 4;
+    if (chunkEnd > contents.length) throw new Error("truncated PNG chunk payload");
+    const type = contents.subarray(typeStart, dataStart).toString("ascii");
+    const data = contents.subarray(dataStart, dataEnd);
+    if (crc32(contents.subarray(typeStart, dataEnd)) !== contents.readUInt32BE(dataEnd)) {
+      throw new Error(`invalid PNG ${type} checksum`);
+    }
+    if (!sawHeader && type !== "IHDR") throw new Error("PNG must begin with IHDR");
+    if (type === "IHDR") {
+      if (sawHeader || length !== 13) throw new Error("invalid PNG IHDR");
+      sawHeader = true;
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      bitDepth = data[8] ?? 0;
+      colorType = data[9] ?? -1;
+      const validDepths: Record<number, readonly number[]> = {
+        0: [1, 2, 4, 8, 16],
+        2: [8, 16],
+        3: [1, 2, 4, 8],
+        4: [8, 16],
+        6: [8, 16],
+      };
+      if (
+        width === 0 ||
+        height === 0 ||
+        !validDepths[colorType]?.includes(bitDepth) ||
+        data[10] !== 0 ||
+        data[11] !== 0 ||
+        data[12] !== 0
+      ) {
+        throw new Error("invalid or unsupported PNG IHDR values");
+      }
+    } else if (type === "IDAT") {
+      if (!sawHeader || sawEnd || length === 0) throw new Error("invalid PNG IDAT");
+      imageData.push(data);
+    } else if (type === "IEND") {
+      if (!sawHeader || sawEnd || length !== 0 || chunkEnd !== contents.length) {
+        throw new Error("invalid PNG IEND");
+      }
+      sawEnd = true;
+    }
+    offset = chunkEnd;
+  }
+  if (!sawHeader || imageData.length === 0 || !sawEnd) {
+    throw new Error("PNG is missing required chunks");
+  }
+
+  const channels = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 } as Record<number, number>)[colorType];
+  if (!channels) throw new Error("unsupported PNG color type");
+  const rowBytes = Math.ceil((width * channels * bitDepth) / 8);
+  const decoded = inflateSync(Buffer.concat(imageData));
+  if (decoded.length !== height * (rowBytes + 1)) {
+    throw new Error("PNG scanline data has unexpected length");
+  }
+  for (let row = 0; row < height; row += 1) {
+    if ((decoded[row * (rowBytes + 1)] ?? 5) > 4) {
+      throw new Error("PNG scanline uses an invalid filter");
+    }
+  }
+}
+
 async function assertPngEvidence(paths: readonly string[]): Promise<string[]> {
   const mismatches: string[] = [];
-  const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   for (const path of paths) {
     try {
       const contents = await readFile(path);
-      if (contents.length <= 0) {
-        mismatches.push(`${basename(path)} is empty`);
-      } else if (
-        contents.length < 24 ||
-        !contents.subarray(0, pngSignature.length).equals(pngSignature) ||
-        contents.readUInt32BE(8) !== 13 ||
-        contents.subarray(12, 16).toString("ascii") !== "IHDR" ||
-        contents.readUInt32BE(16) === 0 ||
-        contents.readUInt32BE(20) === 0
-      ) {
-        mismatches.push(`${basename(path)} is not a valid PNG`);
-      }
+      if (contents.length <= 0) mismatches.push(`${basename(path)} is empty`);
+      else validatePng(contents);
     } catch {
-      mismatches.push(`${basename(path)} is missing`);
+      try {
+        await readFile(path);
+        mismatches.push(`${basename(path)} is not a valid PNG`);
+      } catch {
+        mismatches.push(`${basename(path)} is missing`);
+      }
     }
   }
   return mismatches;
+}
+
+interface RenderedScenarioEvidenceInput {
+  runner: CommandRunner;
+  pdfInspector: PdfInspector;
+  failures: EvidenceFailure[];
+  candidateId: WeasyPrintCandidate["id"];
+  scenarioId: string;
+  outputDirectory: string;
+  renderStage: Extract<EvidenceStage, "actual-launch" | "contract-render">;
+  extractionStage: Extract<EvidenceStage, "actual-launch-extraction" | "contract-extraction">;
+  renderArgv: (pdfPath: string) => readonly string[];
+  pngPages: readonly number[];
+  validate: (evidence: PdfEvidence) => string[];
+  env?: NodeJS.ProcessEnv;
+}
+
+async function runRenderedScenarioEvidence(input: RenderedScenarioEvidenceInput): Promise<boolean> {
+  await mkdir(input.outputDirectory, { recursive: true });
+  const pdfPath = join(input.outputDirectory, "output.pdf");
+  const rendered = await runChecked(
+    input.runner,
+    commandRequest(input.renderStage, input.renderArgv(pdfPath), {
+      candidateId: input.candidateId,
+      scenarioId: input.scenarioId,
+      ...(input.env ? { env: input.env } : {}),
+    }),
+  );
+  if (rendered.failure) {
+    input.failures.push(rendered.failure);
+    return false;
+  }
+
+  let mismatches: string[];
+  try {
+    mismatches = input.validate(await input.pdfInspector(pdfPath));
+  } catch (error) {
+    input.failures.push({
+      stage: input.extractionStage,
+      classification: "setup-failure",
+      candidateId: input.candidateId,
+      scenarioId: input.scenarioId,
+      message: publicSafeText(error instanceof Error ? error.message : String(error)),
+    });
+    return false;
+  }
+
+  const pngPaths: string[] = [];
+  let pngCommandFailed = false;
+  for (const pageNumber of input.pngPages) {
+    const pngBase = join(input.outputDirectory, `page-${pageNumber}`);
+    pngPaths.push(`${pngBase}.png`);
+    const renderedPng = await runChecked(
+      input.runner,
+      commandRequest(
+        "png-render",
+        [
+          "pdftoppm",
+          "-png",
+          "-f",
+          String(pageNumber),
+          "-l",
+          String(pageNumber),
+          "-singlefile",
+          pdfPath,
+          pngBase,
+        ],
+        { candidateId: input.candidateId, scenarioId: input.scenarioId },
+      ),
+    );
+    if (renderedPng.failure) {
+      input.failures.push(renderedPng.failure);
+      pngCommandFailed = true;
+    }
+  }
+  if (!pngCommandFailed) mismatches.push(...(await assertPngEvidence(pngPaths)));
+  if (mismatches.length > 0) {
+    input.failures.push(
+      contractFailure(
+        input.extractionStage,
+        mismatches.join("; "),
+        input.candidateId,
+        input.scenarioId,
+      ),
+    );
+  }
+  return mismatches.length === 0 && !pngCommandFailed;
 }
 
 export async function runRendererEvidence(
@@ -634,6 +931,7 @@ async function runRendererEvidenceInLaboratory(
       scenarios: [],
       doctorPassed: false,
       actualLaunchPassed: false,
+      productScenarios: [],
     };
     candidates.push(candidateResult);
 
@@ -704,74 +1002,21 @@ async function runRendererEvidenceInLaboratory(
       const scenarioDirectory = contract.scenarioDirectories[scenario.id];
       if (!scenarioDirectory) throw new Error(`Missing materialized scenario ${scenario.id}.`);
       const candidateScenarioDirectory = join(labRoot, "results", candidate.id, scenario.id);
-      await mkdir(candidateScenarioDirectory, { recursive: true });
-      const pdfPath = join(candidateScenarioDirectory, "output.pdf");
-      const renderRequest = commandRequest(
-        "contract-render",
-        [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
-        { candidateId: candidate.id, scenarioId: scenario.id },
-      );
-      const rendered = await runChecked(runner, renderRequest);
-      if (rendered.failure) {
-        failures.push(rendered.failure);
-        candidateResult.scenarios.push({ id: scenario.id, passed: false });
-        continue;
-      }
-      let scenarioMismatches: string[] = [];
-      try {
-        scenarioMismatches = validatePdfEvidence(scenario, await pdfInspector(pdfPath));
-      } catch (error) {
-        failures.push({
-          stage: "contract-extraction",
-          classification: "setup-failure",
-          candidateId: candidate.id,
-          scenarioId: scenario.id,
-          message: publicSafeText(error instanceof Error ? error.message : String(error)),
-        });
-        candidateResult.scenarios.push({ id: scenario.id, passed: false });
-        continue;
-      }
-
-      const pngPaths: string[] = [];
-      let pngCommandFailed = false;
-      for (const pageNumber of scenario.expected.pngPages) {
-        const pngBase = join(candidateScenarioDirectory, `page-${pageNumber}`);
-        pngPaths.push(`${pngBase}.png`);
-        const pngRequest = commandRequest(
-          "png-render",
-          [
-            "pdftoppm",
-            "-png",
-            "-f",
-            String(pageNumber),
-            "-l",
-            String(pageNumber),
-            "-singlefile",
-            pdfPath,
-            pngBase,
-          ],
-          { candidateId: candidate.id, scenarioId: scenario.id },
-        );
-        const renderedPng = await runChecked(runner, pngRequest);
-        if (renderedPng.failure) {
-          failures.push(renderedPng.failure);
-          pngCommandFailed = true;
-        }
-      }
-      if (!pngCommandFailed) scenarioMismatches.push(...(await assertPngEvidence(pngPaths)));
-      if (scenarioMismatches.length > 0) {
-        failures.push(
-          contractFailure(
-            "contract-extraction",
-            scenarioMismatches.join("; "),
-            candidate.id,
-            scenario.id,
-          ),
-        );
-      }
       candidateResult.scenarios.push({
         id: scenario.id,
-        passed: scenarioMismatches.length === 0 && !pngCommandFailed,
+        passed: await runRenderedScenarioEvidence({
+          runner,
+          pdfInspector,
+          failures,
+          candidateId: candidate.id,
+          scenarioId: scenario.id,
+          outputDirectory: candidateScenarioDirectory,
+          renderStage: "contract-render",
+          extractionStage: "contract-extraction",
+          renderArgv: (pdfPath) => [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
+          pngPages: scenario.expected.pngPages,
+          validate: (evidence) => validatePdfEvidence(scenario, evidence),
+        }),
       });
     }
 
@@ -854,12 +1099,56 @@ async function runRendererEvidenceInLaboratory(
         });
       }
     }
+
+    for (const scenario of PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS) {
+      const productLaunch = contract.productLaunches[scenario.id];
+      if (!productLaunch) throw new Error(`Missing materialized product launch ${scenario.id}.`);
+      const productDirectory = join(
+        labRoot,
+        "results",
+        candidate.id,
+        "product-launches",
+        scenario.id,
+      );
+      candidateResult.productScenarios.push({
+        id: scenario.id,
+        passed: await runRenderedScenarioEvidence({
+          runner,
+          pdfInspector,
+          failures,
+          candidateId: candidate.id,
+          scenarioId: scenario.id,
+          outputDirectory: productDirectory,
+          renderStage: "actual-launch",
+          extractionStage: "actual-launch-extraction",
+          renderArgv: (productPdf) => [
+            process.execPath,
+            "dist/esm/bin.mjs",
+            "md",
+            "to-pdf",
+            "--input",
+            productLaunch.markdownPath,
+            "--profile",
+            productLaunch.profilePath,
+            ...(productLaunch.templatePath ? ["--template", productLaunch.templatePath] : []),
+            ...(productLaunch.cssPath ? ["--css", productLaunch.cssPath] : []),
+            "--output",
+            productPdf,
+            "--overwrite",
+          ],
+          pngPages: scenario.expected.pngPages,
+          validate: (evidence) => validatePdfEvidence(scenario, evidence),
+          env: selectedEnvironment,
+        }),
+      });
+    }
   }
 
   const requiredScenarioIds = new Set(
-    PAGE_NUMBER_RENDERER_SCENARIOS.filter((scenario) => scenario.required).map(
-      (scenario) => scenario.id,
-    ),
+    [
+      ...PAGE_NUMBER_RENDERER_SCENARIOS.filter((scenario) => scenario.required),
+      ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.filter((scenario) => scenario.required),
+    ].map((scenario: RendererContractScenario | ProductRendererScenario) => scenario.id),
   );
   const hasRequiredContractFailure = failures.some(
     (failure) =>
@@ -876,15 +1165,27 @@ async function runRendererEvidenceInLaboratory(
       : "passed";
   const retained = options.keep === true || outcome !== "passed";
   const report: RendererEvidenceReport = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     catalogDigest: contract.catalogDigest,
     harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
     outcome,
+    evidenceStatus: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.some(
+      (scenario) => scenario.visualReviewRequired.length > 0,
+    )
+      ? "visual-review-required"
+      : "complete",
     retained,
     labPath: labRoot,
     bodyHooks,
     candidates,
     failures,
+    evidenceBoundary: {
+      automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
+      visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
+        scenarioId: scenario.id,
+        assertions: scenario.visualReviewRequired,
+      })),
+    },
   };
   await writeFile(
     join(labRoot, "results", reportName),

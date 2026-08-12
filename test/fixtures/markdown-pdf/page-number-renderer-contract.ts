@@ -3,10 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PAGE_NUMBER_RENDERER_CONTRACT_VERSION = 1;
+export const PAGE_NUMBER_RENDERER_CONTRACT_VERSION = 3;
 export const PAGE_NUMBER_LAB_MARKER_NAME = ".cdx-chores-page-number-renderer-evidence";
 export const PAGE_NUMBER_LAB_MARKER_CONTENT =
-  "cdx-chores markdown-pdf page-number renderer evidence v1\n";
+  "cdx-chores markdown-pdf page-number renderer evidence v3\n";
 
 export type RendererCapability =
   | "blank-pages"
@@ -22,6 +22,23 @@ export type RendererCapability =
   | "typography";
 
 export type PageOrientation = "landscape" | "portrait";
+export type PageNumberRegion = "bottom-center" | "bottom-right" | "top-right";
+
+export const PAGE_NUMBER_AUTOMATED_EVIDENCE = [
+  "candidate-selected CLI launch",
+  "physical page count and order",
+  "page-number text and visibility",
+  "page dimensions and orientation",
+  "page-number margin-box region",
+  "complete decodable PNG production",
+] as const;
+
+export type VisualReviewAssertion =
+  | "color"
+  | "font-family"
+  | "separator"
+  | "stylesheet-cascade"
+  | "typography";
 
 export interface WeasyPrintCandidate {
   id: "wp-65-1" | "wp-68-0" | "wp-69-0";
@@ -35,6 +52,16 @@ export interface WeasyPrintCandidate {
 export interface ExpectedPhysicalPage {
   marker: string;
   pageNumberLabels: readonly string[];
+  pageNumberRegion?: PageNumberRegion;
+  forbiddenText?: readonly string[];
+}
+
+export interface ExpectedPdfDocument {
+  pageCount: number;
+  sizeMillimeters: readonly [width: number, height: number];
+  orientation: PageOrientation;
+  pages: readonly ExpectedPhysicalPage[];
+  pngPages: readonly number[];
 }
 
 export interface RendererContractScenario {
@@ -44,13 +71,19 @@ export interface RendererContractScenario {
   capabilities: readonly RendererCapability[];
   html: string;
   css: string;
-  expected: {
-    pageCount: number;
-    sizeMillimeters: readonly [width: number, height: number];
-    orientation: PageOrientation;
-    pages: readonly ExpectedPhysicalPage[];
-    pngPages: readonly number[];
-  };
+  expected: ExpectedPdfDocument;
+}
+
+export interface ProductRendererScenario {
+  id: string;
+  purpose: string;
+  required: true;
+  markdown: string;
+  profile: string;
+  template?: string;
+  css?: string;
+  expected: ExpectedPdfDocument;
+  visualReviewRequired: readonly VisualReviewAssertion[];
 }
 
 export interface MaterializedRendererContract {
@@ -62,6 +95,17 @@ export interface MaterializedRendererContract {
     markdownPath: string;
     profilePath: string;
   };
+  productLaunches: Readonly<
+    Record<
+      string,
+      {
+        markdownPath: string;
+        profilePath: string;
+        templatePath?: string;
+        cssPath?: string;
+      }
+    >
+  >;
 }
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
@@ -457,6 +501,312 @@ export const PAGE_NUMBER_RENDERER_SCENARIOS: readonly RendererContractScenario[]
   },
 ];
 
+const productDocumentOriginMarkdown = `---
+title: PRODUCTACOVER
+author: Renderer evidence
+---
+
+# PRODUCT-A-BODY-1
+
+Product document-origin body page one.
+
+<div style="break-after: page"></div>
+
+# PRODUCT-A-BODY-2
+
+Product document-origin body page two.
+
+<div style="break-after: page"></div>
+
+# PRODUCT-A-BODY-3
+
+Product document-origin body page three.
+`;
+
+const productDocumentOriginProfile = `page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+toc:
+  enabled: true
+  depth: 1
+  pageBreak: after
+
+cover:
+  enabled: true
+  style: plain
+
+titleBlock:
+  metadataTitle: hide
+
+footer:
+  center: "PRODUCT-A-REPLACED-SLOT"
+
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "PRODUCT-A-{page}/{pages}"
+  scope: document
+  countFrom: document
+  start: 0
+  increment: 2
+`;
+
+const productBodyOriginMarkdown = `# PRODUCT-B-BODY-1
+
+Product body-origin page one.
+
+<div style="break-after: page"></div>
+
+# PRODUCT-B-BODY-2
+
+Product body-origin page two.
+
+<div style="break-after: page"></div>
+
+# PRODUCT-B-BODY-3
+
+Product body-origin page three.
+`;
+
+const productBodyOriginProfile = `page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+toc:
+  enabled: true
+  depth: 1
+  pageBreak: after
+
+fonts:
+  pageChrome:
+    default: "DejaVu Sans"
+
+titleBlock:
+  metadataTitle: hide
+
+header:
+  right: "PRODUCT-B-REPLACED-SLOT"
+  style:
+    fontSize: 9pt
+    fontWeight: 700
+    lineHeight: 1.5
+    color: "#2457a6"
+    separator:
+      width: 1pt
+      style: solid
+      color: "#2457a6"
+      gap: 2mm
+
+pageNumbers:
+  enabled: true
+  position: top-right
+  format: "PRODUCT-B-{page}/{pages}"
+  scope: body
+  countFrom: body
+  start: 0
+  increment: 2
+`;
+
+const productBodyOriginTemplate = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Product body-origin renderer evidence</title>
+  </head>
+  <body>
+$if(toc)$
+    <nav id="TOC" role="doc-toc">
+      <p>PRODUCT-B-PREBODY</p>
+$toc$
+    </nav>
+$endif$
+    <main class="document-body">
+$body$
+    </main>
+  </body>
+</html>
+`;
+
+const productStylesheetPrecedenceMarkdown = `# PRODUCT-C-BODY-1
+
+Product stylesheet-precedence page one.
+
+<div style="break-after: page"></div>
+
+# PRODUCT-C-BODY-2
+
+Product stylesheet-precedence page two.
+`;
+
+const productStylesheetPrecedenceProfile = `page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+fonts:
+  pageChrome:
+    default: "DejaVu Sans"
+
+titleBlock:
+  metadataTitle: hide
+
+footer:
+  right: "PRODUCT-C-REPLACED-SLOT"
+  style:
+    fontSize: 7pt
+    fontWeight: 400
+    lineHeight: 1.1
+    color: "#aa2200"
+    separator:
+      width: 0.5pt
+      style: solid
+      color: "#aa2200"
+      gap: 1mm
+
+pageNumbers:
+  enabled: true
+  position: bottom-right
+  format: "PRODUCT-C-{page}/{pages}"
+  scope: body
+  countFrom: document
+  start: 1
+  increment: 1
+`;
+
+const productStylesheetPrecedenceCss = `@page body {
+  @bottom-right {
+    font-size: 15pt;
+    font-weight: 700;
+    line-height: 1.8;
+    color: #0055aa;
+    border-top-color: #0055aa;
+  }
+}
+`;
+
+export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererScenario[] = [
+  {
+    id: "product-built-in-document-origin",
+    purpose:
+      "Automate the built-in Profile path through cover and ToC participation, selected-slot replacement, document-origin arithmetic, and bottom-center placement.",
+    required: true,
+    markdown: productDocumentOriginMarkdown,
+    profile: productDocumentOriginProfile,
+    expected: {
+      pageCount: 5,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        {
+          marker: "PRODUCTACOVER",
+          pageNumberLabels: [],
+          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-A-BODY-1",
+          pageNumberLabels: ["PRODUCT-A-2/5"],
+          pageNumberRegion: "bottom-center",
+          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-A-BODY-1",
+          pageNumberLabels: ["PRODUCT-A-4/5"],
+          pageNumberRegion: "bottom-center",
+          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-A-BODY-2",
+          pageNumberLabels: ["PRODUCT-A-6/5"],
+          pageNumberRegion: "bottom-center",
+          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-A-BODY-3",
+          pageNumberLabels: ["PRODUCT-A-8/5"],
+          pageNumberRegion: "bottom-center",
+          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+        },
+      ],
+      pngPages: [1, 2, 5],
+    },
+    visualReviewRequired: [],
+  },
+  {
+    id: "product-explicit-body-origin",
+    purpose:
+      "Automate a selected Template body boundary with body-only visibility, top-right placement, and body-origin arithmetic; visual review covers the configured presentation.",
+    required: true,
+    markdown: productBodyOriginMarkdown,
+    profile: productBodyOriginProfile,
+    template: productBodyOriginTemplate,
+    expected: {
+      pageCount: 4,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        {
+          marker: "PRODUCT-B-PREBODY",
+          pageNumberLabels: [],
+          forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-B-BODY-1",
+          pageNumberLabels: ["PRODUCT-B-0/4"],
+          pageNumberRegion: "top-right",
+          forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-B-BODY-2",
+          pageNumberLabels: ["PRODUCT-B-2/4"],
+          pageNumberRegion: "top-right",
+          forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-B-BODY-3",
+          pageNumberLabels: ["PRODUCT-B-4/4"],
+          pageNumberRegion: "top-right",
+          forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
+        },
+      ],
+      pngPages: [1, 2, 4],
+    },
+    visualReviewRequired: ["font-family", "typography", "color", "separator"],
+  },
+  {
+    id: "product-custom-stylesheet-precedence",
+    purpose:
+      "Automate later-stylesheet launch, Profile-owned content, and bottom-right placement; visual review covers font ownership and the presentation cascade.",
+    required: true,
+    markdown: productStylesheetPrecedenceMarkdown,
+    profile: productStylesheetPrecedenceProfile,
+    css: productStylesheetPrecedenceCss,
+    expected: {
+      pageCount: 2,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        {
+          marker: "PRODUCT-C-BODY-1",
+          pageNumberLabels: ["PRODUCT-C-1/2"],
+          pageNumberRegion: "bottom-right",
+          forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
+        },
+        {
+          marker: "PRODUCT-C-BODY-2",
+          pageNumberLabels: ["PRODUCT-C-2/2"],
+          pageNumberRegion: "bottom-right",
+          forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
+        },
+      ],
+      pngPages: [1, 2],
+    },
+    visualReviewRequired: ["font-family", "typography", "color", "separator", "stylesheet-cascade"],
+  },
+];
+
 export const PAGE_NUMBER_BODY_HOOK_CASES = [
   {
     id: "generated-hook-document-origin",
@@ -489,6 +839,14 @@ function stableCatalogPayload(launchMarkdown: string, launchProfile: string) {
     version: PAGE_NUMBER_RENDERER_CONTRACT_VERSION,
     candidates: WEASYPRINT_CANDIDATES,
     scenarios: PAGE_NUMBER_RENDERER_SCENARIOS,
+    productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+    evidenceBoundary: {
+      automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
+      visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
+        scenarioId: scenario.id,
+        assertions: scenario.visualReviewRequired,
+      })),
+    },
     bodyHookCases: PAGE_NUMBER_BODY_HOOK_CASES,
     launch: { markdown: launchMarkdown, profile: launchProfile },
   });
@@ -527,6 +885,15 @@ export async function materializePageNumberRendererContract(
   const fixtureRoot = join(labRoot, "fixtures");
   const scenarioDirectories: Record<string, string> = {};
   const bodyHookPaths: Record<string, string> = {};
+  const productLaunches: Record<
+    string,
+    {
+      markdownPath: string;
+      profilePath: string;
+      templatePath?: string;
+      cssPath?: string;
+    }
+  > = {};
 
   await mkdir(fixtureRoot);
   for (const scenario of PAGE_NUMBER_RENDERER_SCENARIOS) {
@@ -564,6 +931,22 @@ export async function materializePageNumberRendererContract(
           scenarios: PAGE_NUMBER_RENDERER_SCENARIOS.map(
             ({ html: _html, css: _css, ...scenario }) => scenario,
           ),
+          productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map(
+            ({
+              markdown: _markdown,
+              profile: _profile,
+              template: _template,
+              css: _css,
+              ...scenario
+            }) => scenario,
+          ),
+          evidenceBoundary: {
+            automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
+            visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
+              scenarioId: scenario.id,
+              assertions: scenario.visualReviewRequired,
+            })),
+          },
           bodyHookCases: PAGE_NUMBER_BODY_HOOK_CASES.map(
             ({ html: _html, ...bodyHookCase }) => bodyHookCase,
           ),
@@ -575,11 +958,37 @@ export async function materializePageNumberRendererContract(
     ),
   ]);
 
+  const productLaunchDirectory = join(fixtureRoot, "product-launches");
+  await mkdir(productLaunchDirectory);
+  for (const scenario of PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS) {
+    const scenarioDirectory = join(productLaunchDirectory, scenario.id);
+    await mkdir(scenarioDirectory);
+    const markdownPath = join(scenarioDirectory, "input.md");
+    const profilePath = join(scenarioDirectory, "profile.yml");
+    const templatePath = scenario.template ? join(scenarioDirectory, "template.html") : undefined;
+    const cssPath = scenario.css ? join(scenarioDirectory, "custom.css") : undefined;
+    await Promise.all([
+      writeFile(markdownPath, scenario.markdown, "utf8"),
+      writeFile(profilePath, scenario.profile, "utf8"),
+      ...(templatePath && scenario.template
+        ? [writeFile(templatePath, scenario.template, "utf8")]
+        : []),
+      ...(cssPath && scenario.css ? [writeFile(cssPath, scenario.css, "utf8")] : []),
+    ]);
+    productLaunches[scenario.id] = {
+      markdownPath,
+      profilePath,
+      ...(templatePath ? { templatePath } : {}),
+      ...(cssPath ? { cssPath } : {}),
+    };
+  }
+
   return {
     catalogDigest,
     fixtureRoot,
     bodyHookPaths,
     scenarioDirectories,
     launch: { markdownPath, profilePath },
+    productLaunches,
   };
 }
