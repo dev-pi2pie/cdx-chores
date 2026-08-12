@@ -1,4 +1,6 @@
+import { CliError } from "../../errors";
 import type { NormalizedMarkdownPdfProfile } from "../profile";
+import { inspectMarkdownPdfTemplateBody } from "../template-body";
 import {
   assessMarkdownPdfTemplateCompatibility,
   type MarkdownPdfTemplateCompatibilityResult,
@@ -291,6 +293,16 @@ export function assessMdPdfProjectCodexProfileBodyCompatibility(input: {
   profile: NormalizedMarkdownPdfProfile;
   templateHtml: string;
 }): MarkdownPdfTemplateCompatibilityResult {
+  const inspection = inspectMarkdownPdfTemplateBody(input.templateHtml);
+  if (inspection.status !== "proven") {
+    throw new CliError(
+      `The generated Project Template requires exactly one .document-body element containing the single live $body$ insertion point (found ${inspection.status}).`,
+      {
+        code: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+        exitCode: 2,
+      },
+    );
+  }
   return assessMarkdownPdfTemplateCompatibility({
     builtIn: false,
     profile: input.profile,

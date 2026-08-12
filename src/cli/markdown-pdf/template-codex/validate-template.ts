@@ -155,6 +155,7 @@ function assertBundlePathInsideOutput(input: {
 
 export function validateMdPdfTemplateCodexSynthesis(input: {
   compatibilityProfile?: NormalizedMarkdownPdfProfile;
+  deferBodyBoundaryValidationToProject?: boolean;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   synthesis: MarkdownPdfTemplateCodexSynthesisResult;
 }): void {
@@ -194,17 +195,19 @@ export function validateMdPdfTemplateCodexSynthesis(input: {
     return;
   }
 
-  assertContains(
-    input.synthesis.templateHtml,
-    MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
-    "Pandoc body placeholder",
-    "template.html",
-  );
-  const bodyInspection = inspectMarkdownPdfTemplateBody(input.synthesis.templateHtml);
-  if (bodyInspection.status !== "proven") {
-    validationError(
-      `template.html must contain exactly one .document-body element owning the single live $body$ insertion point (found ${bodyInspection.status}).`,
+  if (!input.deferBodyBoundaryValidationToProject) {
+    assertContains(
+      input.synthesis.templateHtml,
+      MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+      "Pandoc body placeholder",
+      "template.html",
     );
+    const bodyInspection = inspectMarkdownPdfTemplateBody(input.synthesis.templateHtml);
+    if (bodyInspection.status !== "proven") {
+      validationError(
+        `template.html must contain exactly one .document-body element owning the single live $body$ insertion point (found ${bodyInspection.status}).`,
+      );
+    }
   }
   if (input.compatibilityProfile) {
     assessMarkdownPdfTemplateCompatibility({

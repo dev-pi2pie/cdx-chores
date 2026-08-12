@@ -209,6 +209,48 @@ function expectRedactedReportText(value: string): void {
   expect(value).not.toContain("localhost");
 }
 
+async function prepareWriteValidationFixture(
+  fixtureDir: string,
+  baseProfile: string,
+  options: { report?: boolean } = {},
+) {
+  await writeFile(join(fixtureDir, "base.yml"), baseProfile, "utf8");
+  await writeFile(join(fixtureDir, "report.md"), "# Validation report\n\nBody content.\n", "utf8");
+  const { runtime } = createActionTestRuntime({
+    cwd: fixtureDir,
+    now: () => new Date("2026-07-04T08:00:00.000Z"),
+  });
+  const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+    baseProfile: "base.yml",
+    ...(options.report === false ? {} : { codexReportOutput: "project-validation-report.json" }),
+    input: "report.md",
+    output: "project-output",
+  });
+  const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+  const outputPlan = await planMdPdfProjectCodexOutput({
+    identityUidFactory: () => "abc12345",
+    runtime,
+    signalMode: signals.modes.project,
+    state,
+    writeMode: "bundle",
+  });
+  const profilePhase = await runMdPdfProjectCodexProfilePhase({
+    outputPlan,
+    profileCodexRunner: adaptedProfileRunner(),
+    runtime,
+    signals,
+    state,
+  });
+  const templatePhase = await runMdPdfProjectCodexTemplatePhase({
+    outputPlan,
+    profilePhase,
+    runtime,
+    signals,
+    state,
+  });
+  return { outputPlan, profilePhase, runtime, signals, state, templatePhase };
+}
+
 describe("cli action modules: md pdf-project codex action writes", () => {
   test("writes only requested advisory reports during dry runs", async () => {
     await withTempFixtureDir("md-pdf-project-codex-action-dry-run-report", async (fixtureDir) => {
@@ -1137,6 +1179,109 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         expect(error.message).toContain("project-output/profile.yml");
         expectPrivacySafeReport(error.message, fixtureDir);
         expect(await pathExists(join(outputPath, "project.codex-report.json"))).toBe(false);
+      },
+    );
+  });
+
+  test("writes only an external public-safe report for a generated body-boundary failure", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-action-body-validation-no-output",
+      async (fixtureDir) => {
+        const fixture = await prepareWriteValidationFixture(fixtureDir, BASE_PROFILE);
+        expect(fixture.state.inputPath).toBe(join(fixtureDir, "report.md"));
+        expect(fixture.signals.shared.document.available).toBe(true);
+        fixture.templatePhase.synthesis.templateHtml =
+          fixture.templatePhase.synthesis.templateHtml.replace(
+            'class="document-body"',
+            'class="document-content"',
+          );
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan: fixture.outputPlan,
+          profilePhase: fixture.profilePhase,
+          runtime: fixture.runtime,
+          state: fixture.state,
+          templatePhase: fixture.templatePhase,
+        });
+
+        expect(validation).toMatchObject({
+          decisionMode: "no-usable-project",
+          renderCommand: undefined,
+        });
+        expect(validation.results).toContainEqual(
+          expect.objectContaining({
+            conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+            name: "profile-body-page-number-compatibility",
+            status: "failed",
+          }),
+        );
+
+        await writeMdPdfProjectCodexBundle({ ...fixture, validation });
+
+        const reportPath = join(fixtureDir, "project-validation-report.json");
+        expect(await pathExists(reportPath)).toBe(true);
+        expect(await pathExists(fixture.outputPlan.outputDirectory)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.profile.path)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.templateHtml.path)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.styleCss.path)).toBe(false);
+        const reportText = await readFile(reportPath, "utf8");
+        expectPrivacySafeReport(reportText, fixtureDir);
+        const report = JSON.parse(reportText) as {
+          files: Array<{ role: string }>;
+          followUpRenderCommand?: unknown;
+          input: { markdown?: unknown };
+          validationResults: Array<{ conditionId?: string; name: string; status: string }>;
+        };
+        expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
+        expect(report.followUpRenderCommand).toBeUndefined();
+        expect(report.input.markdown).toBeUndefined();
+        expect(report.validationResults).toContainEqual(
+          expect.objectContaining({
+            name: "profile-body-page-number-compatibility",
+            status: "failed",
+          }),
+        );
+        expect(
+          report.validationResults.find((result) => result.status === "failed"),
+        ).not.toHaveProperty("conditionId");
+      },
+    );
+  });
+
+  test("writes no output for Template page-counter ownership failure without a requested report", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-action-css-validation-no-output",
+      async (fixtureDir) => {
+        const fixture = await prepareWriteValidationFixture(fixtureDir, BASE_PROFILE, {
+          report: false,
+        });
+        expect(fixture.state.inputPath).toBe(join(fixtureDir, "report.md"));
+        expect(fixture.signals.shared.document.available).toBe(true);
+        fixture.templatePhase.synthesis.styleCss +=
+          "\n@page { @bottom-center { content: counter(page); } }\n";
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan: fixture.outputPlan,
+          profilePhase: fixture.profilePhase,
+          runtime: fixture.runtime,
+          state: fixture.state,
+          templatePhase: fixture.templatePhase,
+        });
+
+        expect(validation.decisionMode).toBe("no-usable-project");
+        expect(validation.renderCommand).toBeUndefined();
+        expect(validation.results).toContainEqual(
+          expect.objectContaining({
+            name: "template-page-number-css-ownership",
+            status: "failed",
+          }),
+        );
+
+        await writeMdPdfProjectCodexBundle({ ...fixture, validation });
+
+        expect(await pathExists(fixture.outputPlan.outputDirectory)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.profile.path)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.templateHtml.path)).toBe(false);
+        expect(await pathExists(fixture.outputPlan.styleCss.path)).toBe(false);
+        expect(await pathExists(join(fixtureDir, "project-validation-report.json"))).toBe(false);
       },
     );
   });

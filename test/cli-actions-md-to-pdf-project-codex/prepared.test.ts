@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -75,6 +75,62 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
+  test("returns shared diagnostics and capability requirements without serializing Phase 9 fields", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-prepared-page-validation",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "header:",
+            "  center: Existing page chrome",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: document",
+            "  countFrom: document",
+            "  start: 4",
+            "  increment: 1",
+            "  position: top-center",
+            "  format: '{page}'",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        const filesBefore = await readdir(fixtureDir);
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+        const prepared = await prepareMdPdfProjectCodex(runtime, {
+          baseProfile: "base.yml",
+          dryRun: true,
+          output: "project-output",
+        });
+
+        expect(prepared.binding.validation.diagnostics.conditions).toEqual([
+          expect.objectContaining({
+            conditionId: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+            context: expect.objectContaining({ area: "header", slot: "center" }),
+          }),
+        ]);
+        expect(prepared.binding.validation.capabilityRequirements).toEqual([
+          {
+            capabilityId: "pageNumbers.start",
+            minimumVersion: "65.1",
+            requestedBy: ["pageNumbers.start"],
+          },
+          {
+            capabilityId: "pageNumbers.scope.document",
+            minimumVersion: "65.1",
+            requestedBy: ["pageNumbers.scope"],
+          },
+        ]);
+        expect(prepared.binding.reportArtifact).not.toHaveProperty("diagnostics");
+        expect(prepared.binding.reportArtifact).not.toHaveProperty("capabilityRequirements");
+        expect(await readdir(fixtureDir)).toEqual(filesBefore);
+        expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
+      },
+    );
+  });
+
   test("uses one injected presenter across the Profile and Template Codex stages", async () => {
     await withTempFixtureDir("md-pdf-project-codex-progress-shared", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");

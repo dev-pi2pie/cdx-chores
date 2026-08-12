@@ -1,6 +1,11 @@
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
+import { collectMarkdownPdfDiagnostics, type MarkdownPdfDiagnostics } from "../diagnostics";
 import { normalizeMarkdownPdfProfile, validateMarkdownPdfProfileShape } from "../profile";
+import {
+  collectMarkdownPdfProfileAuthoringCapabilityRequirements,
+  type MarkdownPdfProfileAuthoringCapabilityRequirement,
+} from "../profile-authoring-review";
 import {
   deriveMdPdfTemplateCodexFontOwnership,
   mdPdfTemplateCodexOwnsFontSlot,
@@ -23,17 +28,22 @@ import type {
   MarkdownPdfProjectCodexOutputPlan,
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
+import type { MarkdownPdfTemplateCompatibilityResult } from "../template-compatibility";
 
 export type MarkdownPdfProjectCodexValidationStatus = "passed" | "failed" | "skipped";
+export type MarkdownPdfProjectCodexValidationConditionId = "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED";
 
 export interface MarkdownPdfProjectCodexValidationResult {
+  conditionId?: MarkdownPdfProjectCodexValidationConditionId;
   name: string;
   status: MarkdownPdfProjectCodexValidationStatus;
   message?: string;
 }
 
 export interface MarkdownPdfProjectCodexValidationSummary {
+  capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
   decisionMode: MarkdownPdfProjectCodexDecisionMode;
+  diagnostics: MarkdownPdfDiagnostics;
   results: MarkdownPdfProjectCodexValidationResult[];
   renderCommand?: MarkdownPdfProjectCodexRenderCommand;
   fallbackReason?: string;
@@ -50,6 +60,8 @@ interface MarkdownPdfProjectCodexValidationInput {
 }
 
 interface CollectedProjectValidation {
+  capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
+  diagnostics: MarkdownPdfDiagnostics;
   normalizedProfile?: NormalizedProjectProfile;
   results: MarkdownPdfProjectCodexValidationResult[];
 }
@@ -60,6 +72,9 @@ function errorMessage(error: unknown): string {
 
 function failedValidation(name: string, error: unknown): MarkdownPdfProjectCodexValidationResult {
   return {
+    ...(error instanceof CliError && error.code === "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED"
+      ? { conditionId: error.code }
+      : {}),
     name,
     status: "failed",
     message: errorMessage(error),
@@ -244,6 +259,7 @@ function collectProjectValidationResults(
 ): CollectedProjectValidation {
   const results: MarkdownPdfProjectCodexValidationResult[] = [];
   let normalizedProfile: NormalizedProjectProfile | undefined;
+  let templateCompatibility: MarkdownPdfTemplateCompatibilityResult | undefined;
 
   try {
     validateMarkdownPdfProfileShape(input.profilePhase.finalProfile);
@@ -263,6 +279,7 @@ function collectProjectValidationResults(
 
   try {
     validateMdPdfTemplateCodexSynthesis({
+      deferBodyBoundaryValidationToProject: true,
       outputPlan: input.templatePhase.outputPlan,
       synthesis: input.templatePhase.synthesis,
     });
@@ -280,7 +297,7 @@ function collectProjectValidationResults(
 
   if (normalizedProfile && input.templatePhase.phase.decisionMode !== "no-usable-project") {
     try {
-      assessMdPdfProjectCodexProfileBodyCompatibility({
+      templateCompatibility = assessMdPdfProjectCodexProfileBodyCompatibility({
         profile: normalizedProfile.profile,
         templateHtml: input.templatePhase.synthesis.templateHtml,
       });
@@ -378,7 +395,19 @@ function collectProjectValidationResults(
     );
   }
 
-  return { normalizedProfile, results };
+  const capabilityRequirements = normalizedProfile
+    ? collectMarkdownPdfProfileAuthoringCapabilityRequirements(normalizedProfile.profile)
+    : [];
+  const diagnostics =
+    normalizedProfile && templateCompatibility
+      ? collectMarkdownPdfDiagnostics({
+          pageNumbers: normalizedProfile.profile.pageNumbers,
+          profile: normalizedProfile.profile,
+          templateCompatibility,
+        })
+      : { conditions: [] };
+
+  return { capabilityRequirements, diagnostics, normalizedProfile, results };
 }
 
 function resolveProjectValidationSummary(
@@ -414,7 +443,9 @@ function resolveProjectValidationSummary(
   });
 
   return {
+    capabilityRequirements: input.capabilityRequirements,
     decisionMode,
+    diagnostics: input.diagnostics,
     results,
     renderCommand,
     ...(fallbackReason ? { fallbackReason } : {}),

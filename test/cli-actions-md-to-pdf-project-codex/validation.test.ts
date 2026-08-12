@@ -691,10 +691,11 @@ describe("cli action modules: md pdf-project codex validation", () => {
             (result) => result.name === "profile-body-page-number-compatibility",
           ),
         ).toMatchObject({
+          conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
           name: "profile-body-page-number-compatibility",
           status: "failed",
           message: expect.stringContaining(
-            "countFrom: body requires exactly one .document-body element",
+            "generated Project Template requires exactly one .document-body element",
           ),
         });
       },

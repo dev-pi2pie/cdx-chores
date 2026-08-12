@@ -227,7 +227,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
 
   validateMdPdfTemplateCodexSynthesis({
-    compatibilityProfile: normalizedFinalProfile.profile,
+    deferBodyBoundaryValidationToProject: true,
     outputPlan,
     synthesis,
   });
