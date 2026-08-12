@@ -68,16 +68,18 @@ available when Profile page numbers are disabled.
 
 - Phase 5A command, help, and preparation tests: 40 passed, 0 failed, using
   `bun test test/cli-actions-md-to-pdf-command-wiring.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts --timeout 30000`.
-- Phase 5B no-default-CSS matrix: 9 passed, 0 failed, using
+- Phase 5B no-default-CSS matrix: 11 passed, 0 failed, using
   `bun test test/cli-actions-md-to-pdf-no-default-css.test.ts --timeout 30000`.
 - Focused Phase 5B plus existing action, Profile-rendering, bundle, and
-  preparation regressions: 95 passed, 0 failed, using
+  preparation regressions: 99 passed, 0 failed, using
   `bun test test/cli-actions-md-to-pdf-no-default-css.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-bundle.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts --timeout 30000`.
-- Broad Markdown PDF regression slice: 922 passed, 0 failed, using
+- Broad Markdown PDF regression slice: 926 passed, 0 failed, using
   `rg --files test | rg 'md-to-pdf|markdown-pdf' | xargs bun test --timeout 30000`.
-- Full repository suite: 1,967 passed, 0 failed, using
+- Full repository suite: 1,971 passed, 0 failed, with 11,245 assertions, using
   `bun test --timeout 30000`.
-- Static and build checks passed with `bunx tsc --noEmit`, `bun run lint`,
+- The broad and full suites and all static/build checks were rerun after the
+  test-only exact-review tip. Static and build checks passed with
+  `bunx tsc --noEmit`, `bun run lint`,
   `bun run format:check`, `bun run build`, and `git diff --check`.
 - Recorded toolchain: Bun 1.3.14, TypeScript 7.0.2, Oxlint 1.77.0, Oxfmt
   0.62.0, and Tsdown 0.22.14.
