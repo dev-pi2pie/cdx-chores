@@ -46,6 +46,7 @@ interface MarkdownPdfCliOptions extends MarkdownPdfRecipeCliOptions {
   htmlOutput?: string;
   allowRemoteAssets?: boolean;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
 }
 
 interface MarkdownPdfTemplateInitCliOptions extends MarkdownPdfRecipeCliOptions {
@@ -143,6 +144,8 @@ export function registerMarkdownCommands(
         .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
         .option("--code-highlight", "Enable Shiki code highlighting")
         .option("--no-code-highlight", "Disable Shiki code highlighting")
+        .option("--page-numbers", "Enable Profile page numbers for this render")
+        .option("--no-page-numbers", "Disable Profile page numbers for this render")
         .action(async (options: MarkdownPdfCliOptions) => {
           await actions.actionMdToPdf(runtime, {
             ...options,

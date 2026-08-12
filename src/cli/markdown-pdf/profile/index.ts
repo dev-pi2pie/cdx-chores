@@ -23,6 +23,11 @@ export type {
   CreateMarkdownPdfPageChromeCssInput,
   MarkdownPdfPageChromeBodyBoundary,
 } from "./page-chrome";
+export { resolveMarkdownPdfPageNumberConfiguration } from "./page-number-configuration";
+export type {
+  MarkdownPdfPageNumberConfigurationSource,
+  ResolvedMarkdownPdfPageNumberConfiguration,
+} from "./page-number-configuration";
 export { resolveMarkdownPdfPlaceholderText } from "./placeholders";
 export { parseMarkdownPdfProfileFile, readMarkdownPdfProfileFile } from "./parse";
 export type { MarkdownPdfProfileParseResult } from "./parse";

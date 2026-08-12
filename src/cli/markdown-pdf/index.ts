@@ -69,6 +69,7 @@ export {
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
   resolveMarkdownPdfCodeOptions,
+  resolveMarkdownPdfPageNumberConfiguration,
   serializeMarkdownPdfProfile,
   validateMarkdownPdfProfileShape,
 } from "./profile";
@@ -85,6 +86,7 @@ export type {
   MarkdownPdfPageChromeSeparatorStyle,
   MarkdownPdfPageChromeSlots,
   MarkdownPdfPageNumberCountOrigin,
+  MarkdownPdfPageNumberConfigurationSource,
   MarkdownPdfPageNumberScope,
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
@@ -98,6 +100,7 @@ export type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
+  ResolvedMarkdownPdfPageNumberConfiguration,
 } from "./profile";
 export type {
   CreateMarkdownPdfPageChromeCssInput,

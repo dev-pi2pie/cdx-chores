@@ -12,6 +12,111 @@ import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-te
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("Markdown PDF prepared render service", () => {
+  test.each([
+    {
+      expected: false,
+      label: "uses the normalized default when no Profile or override is present",
+      override: undefined,
+      profileEnabled: false,
+      profileSource: undefined,
+      source: "default",
+    },
+    {
+      expected: true,
+      label: "inherits enabled from the loaded Profile when the override is omitted",
+      override: undefined,
+      profileEnabled: true,
+      profileSource: "pageNumbers:\n  enabled: true\n",
+      source: "profile",
+    },
+    {
+      expected: false,
+      label: "uses an explicit disable over an enabled Profile",
+      override: false,
+      profileEnabled: true,
+      profileSource: "pageNumbers:\n  enabled: true\n",
+      source: "direct-override",
+    },
+    {
+      expected: true,
+      label: "uses an explicit enable over a disabled Profile",
+      override: true,
+      profileEnabled: false,
+      profileSource: "pageNumbers:\n  enabled: false\n",
+      source: "direct-override",
+    },
+  ])("$label", async ({ expected, override, profileEnabled, profileSource, source }) => {
+    await withTempFixtureDir("md-to-pdf-page-number-precedence", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      if (profileSource) {
+        await writeFile(profilePath, profileSource, "utf8");
+      }
+      const { runtime } = createActionTestRuntime();
+
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        pageNumbers: override,
+        profile: profileSource ? toRepoRelativePath(profilePath) : undefined,
+      });
+
+      expect(prepared.normalizedProfile.pageNumbers.enabled).toBe(profileEnabled);
+      expect(prepared.pageNumberConfiguration).toMatchObject({
+        effective: { enabled: expected },
+        override,
+        profileEnabled,
+        source,
+      });
+      expect(prepared.pageNumberConfiguration.effective).not.toBe(
+        prepared.normalizedProfile.pageNumbers,
+      );
+      expect(prepared.recipe.styleCss.includes("counter(page)")).toBe(expected);
+    });
+  });
+
+  test("uses the effective enablement for body-boundary compatibility without mutating Profile", async () => {
+    await withTempFixtureDir("md-to-pdf-page-number-effective-body", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "pageNumbers:",
+          "  enabled: false",
+          "  scope: body",
+          "  countFrom: body",
+          "  start: 3",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const { runtime } = createActionTestRuntime();
+
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        pageNumbers: true,
+        profile: toRepoRelativePath(profilePath),
+      });
+
+      expect(prepared.normalizedProfile.pageNumbers).toMatchObject({
+        countFrom: "body",
+        enabled: false,
+        scope: "body",
+        start: 3,
+      });
+      expect(prepared.pageNumberConfiguration.effective).toMatchObject({
+        countFrom: "body",
+        enabled: true,
+        scope: "body",
+        start: 3,
+      });
+      expect(prepared.templateCompatibility.bodyBoundary).toBe("proven");
+      expect(prepared.recipe.styleCss).toContain("@page body:nth(1 of body)");
+    });
+  });
+
   test("prepares a reviewable recipe and explicit role provenance without writing outputs", async () => {
     await withTempFixtureDir("md-to-pdf-prepared", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

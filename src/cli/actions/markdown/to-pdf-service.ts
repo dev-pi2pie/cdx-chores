@@ -18,8 +18,10 @@ import {
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
   resolveMarkdownPdfCodeOptions,
+  resolveMarkdownPdfPageNumberConfiguration,
   type EffectiveMarkdownPdfCodeOptions,
   type NormalizedMarkdownPdfProfile,
+  type ResolvedMarkdownPdfPageNumberConfiguration,
 } from "../../markdown-pdf/profile";
 import {
   collectMarkdownPdfTitleSignals,
@@ -49,6 +51,7 @@ export interface PrepareMarkdownPdfRenderInput extends NormalizeMarkdownPdfOptio
   css?: string;
   noDefaultCss?: boolean;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
 }
 
 export interface PreparedMarkdownPdfRender {
@@ -61,6 +64,7 @@ export interface PreparedMarkdownPdfRender {
   noDefaultCss?: boolean;
   normalizedProfile: NormalizedMarkdownPdfProfile;
   options: NormalizedMarkdownPdfOptions;
+  pageNumberConfiguration: ResolvedMarkdownPdfPageNumberConfiguration;
   recipe: MarkdownPdfRecipe;
   resolvedInputs: MarkdownPdfRenderBundleResolvedInputs;
   resolvedBundle?: MarkdownPdfRenderBundleResolvedInputs;
@@ -145,9 +149,18 @@ export async function prepareMarkdownPdfRender(
     profile: normalizedProfile.profile.code,
     cliHighlight: input.codeHighlight,
   });
+  const pageNumberConfiguration = resolveMarkdownPdfPageNumberConfiguration({
+    profile: normalizedProfile.profile.pageNumbers,
+    profileSource: profilePath ? "profile" : "default",
+    override: input.pageNumbers,
+  });
+  const effectiveProfile: NormalizedMarkdownPdfProfile = {
+    ...normalizedProfile.profile,
+    pageNumbers: pageNumberConfiguration.effective,
+  };
   const titleSignals = collectMarkdownPdfTitleSignals(parsedMarkdown.content, parsedMarkdown.data);
   const initialRecipe = createMarkdownPdfRecipe(options, {
-    profile: normalizedProfile.profile,
+    profile: effectiveProfile,
     titleSignals,
   });
 
@@ -163,12 +176,12 @@ export async function prepareMarkdownPdfRender(
     : initialRecipe.templateHtml;
   const templateCompatibility = assessMarkdownPdfTemplateCompatibility({
     builtIn: customTemplatePath === undefined,
-    profile: normalizedProfile.profile,
+    profile: effectiveProfile,
     templateHtml: selectedTemplateHtml,
   });
   const recipe = createMarkdownPdfRecipe(options, {
     bodyBoundary: templateCompatibility.bodyBoundary,
-    profile: normalizedProfile.profile,
+    profile: effectiveProfile,
     titleSignals,
   });
 
@@ -190,6 +203,7 @@ export async function prepareMarkdownPdfRender(
     noDefaultCss: input.noDefaultCss,
     normalizedProfile: normalizedProfile.profile,
     options,
+    pageNumberConfiguration,
     recipe,
     resolvedInputs,
     resolvedBundle,

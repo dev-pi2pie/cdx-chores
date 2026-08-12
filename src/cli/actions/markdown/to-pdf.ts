@@ -24,6 +24,7 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   noDefaultCss?: boolean;
   htmlOutput?: string;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
   overwrite?: boolean;
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
