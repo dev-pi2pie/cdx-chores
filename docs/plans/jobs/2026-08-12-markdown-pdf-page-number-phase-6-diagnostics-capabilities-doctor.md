@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 6 diagnostics, capabilities, and doctor"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -46,7 +46,7 @@ Phase 3 structural body validator.
 - [x] Run focused validation and the Markdown PDF regression slice.
 - [x] Run the full repository suite plus TypeScript, lint, format, build, and
       `git diff --check`; record public-safe results.
-- [ ] Review the exact Phase 6 implementation/evidence range, resolve all
+- [x] Review the exact Phase 6 implementation/evidence range, resolve all
       actionable findings, widen the range, and record the final verdict.
 
 ## Diagnostic Contract
@@ -122,43 +122,54 @@ areas share the same renderer capability.
 - `b7242e90` — Phase 6 activation and shared warning diagnostics.
 - `fad15c13` — effective capability matrix and pre-render gates.
 - `2ed0a3da` — request-neutral doctor parity and human/JSON coverage.
+- `c51cdd4b` — Phase 6 implementation and validation evidence.
+- `f2b0301b` — exact-review capability minimum and cross-surface corrections.
 
 ## Validation Record
 
-- Phase 6A diagnostics and integration validation passed 93 tests with 0
+- Phase 6A diagnostics and integration validation passed 94 tests with 0
   failures across diagnostics, Template compatibility, preparation, and action
   suites, using
   `bun test test/cli-actions-md-to-pdf-diagnostics.test.ts test/cli-actions-md-to-pdf-template-compatibility.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts --timeout 30000`.
-- Phase 6B capability validation passed 137 tests with 0 failures across the
+- Phase 6B capability validation passed 144 tests with 0 failures across the
   field matrix, effective precedence, status taxonomy, and pre-output gates,
   using
   `bun test test/cli-markdown-pdf-renderer-capabilities.test.ts test/cli-actions-md-to-pdf-diagnostics.test.ts test/cli-actions-md-to-pdf-template-compatibility.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts --timeout 30000`.
-- Phase 6C doctor/requirements validation passed 79 tests with 0 failures and
-  556 assertions after human-output review fixes, using
+- Phase 6C doctor/requirements validation passed 86 tests with 0 failures and
+  612 assertions after exact-review fixes, using
   `bun test test/cli-markdown-pdf-renderer-capabilities.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts --timeout 30000`.
-- Broad Markdown PDF and doctor regression validation passed 1,017 tests with
-  0 failures and 7,403 assertions, using
+- Broad Markdown PDF and doctor regression validation passed 1,025 tests with
+  0 failures and 7,461 assertions, using
   `rg --files test | rg 'md-to-pdf|markdown-pdf|doctor-markdown' | xargs bun test --timeout 30000`.
-- Full repository validation passed 2,037 tests with 0 failures and 11,630
+- Full repository validation passed 2,045 tests with 0 failures and 11,688
   assertions, using `bun test --timeout 30000`.
 - `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
-  `bun run build`, and `git diff --check` passed at the Phase 6 implementation
-  tip.
+  `bun run build`, and `git diff --check` passed at the final Phase 6 evidence
+  tip `f2b0301b`.
 - No renderer laboratory or generated HTML, CSS, PDF, PNG, or raw report was
   created or retained by this phase.
 
 ## Exact-Range Review
 
-To be completed after implementation and evidence commits. Review the named
-Phase 6 starting boundary through the final evidence tip, resolve every
-actionable finding, record the widened range, and confirm that `doctor` and
-pre-render validation use the same evaluator before Phase 7 begins. This one
-aggregate review must include the recorded 6A, 6B, and 6C checkpoints.
+- Reviewed range: `7052f52a..f2b0301b`.
+- Maintainability review corrected the evaluator to assess every matrix entry
+  against its own declared minimum; the widened range has no remaining
+  material design or Node.js runtime concerns.
+- Test review added schema-valid full body/document advanced Profiles, combined
+  unsupported/unverified no-output gates, sequential diagnostic reset,
+  unknown-capability handling, and same-fixture doctor JSON/human parity. The
+  widened range has no remaining material test gaps.
+- Security review found no material command, input-validation, output-write,
+  probe, or diagnostic-disclosure concerns.
+- Documentation review clarified that the capability snapshot is nested in the
+  existing JSON-only doctor payload and required final-tip evidence refresh.
+- Every actionable finding was resolved, final-tip validation was recorded,
+  and the widened range was re-reviewed.
 
 ## Final Verdict
 
-**Provisional Continue.** Phase 6A/6B/6C implementation and validation are
-complete. The aggregate exact-range review remains required before Phase 7.
+**Continue to Phase 7.** Shared diagnostics, capability-specific gates, and
+request-neutral doctor reporting are implemented, validated, and reviewed.
 
 ## Related Research
 

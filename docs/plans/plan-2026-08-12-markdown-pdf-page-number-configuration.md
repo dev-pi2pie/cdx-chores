@@ -669,7 +669,7 @@ Phase checkpoint:
 - [x] Run focused checks, the Markdown PDF regression slice, and the full
       repository validation suite; record static/build/format and
       `git diff --check` results in the Phase 6 job.
-- [ ] Review the exact Phase 6 implementation and evidence range, resolve
+- [x] Review the exact Phase 6 implementation and evidence range, resolve
       every actionable finding, and record the widened range and final verdict
       in the job before beginning Phase 7.
 
