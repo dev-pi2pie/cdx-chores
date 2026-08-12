@@ -444,10 +444,15 @@ describe("Markdown PDF page-chrome area styling", () => {
     );
 
     const bodyRule = namedPageRule(bodyCss, "body");
+    const bodyTocRule = namedPageRule(bodyCss, "toc");
     const tocRule = namedPageRule(documentCss, "toc");
     expect(bodyRule).toContain(
       '@top-right {\n    content: "Body " counter(page);\n    font-weight: 700;\n    padding-bottom: 2mm;\n  }',
     );
+    expect(bodyTocRule).toContain("@top-right {\n    content: none;");
+    expect(bodyTocRule).not.toContain("Body ");
+    expect(bodyTocRule).not.toContain("font-weight: 700;");
+    expect(bodyTocRule).not.toContain("padding-bottom: 2mm;");
     expect(tocRule).toContain(
       '@bottom-left {\n    content: "Document " counter(page);\n    color: #345678;\n    border-top-width: 1pt;\n  }',
     );

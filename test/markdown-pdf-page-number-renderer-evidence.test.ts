@@ -21,6 +21,7 @@ import type {
   PdfTextRunEvidence,
 } from "../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import {
+  PAGE_NUMBER_AUTOMATED_EVIDENCE,
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
@@ -234,11 +235,13 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(report.catalogDigest).toMatch(/^[a-f0-9]{64}$/u);
       expect(report.outcome).toBe("passed");
       expect(report.evidenceStatus).toBe("visual-review-required");
-      expect(report.evidenceBoundary.automated).toContain("page-number margin-box region");
-      expect(report.evidenceBoundary.visualReviewRequired).toContainEqual({
-        scenarioId: "product-custom-stylesheet-precedence",
-        assertions: expect.arrayContaining(["font-family", "stylesheet-cascade"]),
-      });
+      expect(report.evidenceBoundary.automated).toEqual(PAGE_NUMBER_AUTOMATED_EVIDENCE);
+      expect(report.evidenceBoundary.visualReviewRequired).toEqual(
+        PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
+          scenarioId: scenario.id,
+          assertions: scenario.visualReviewRequired,
+        })),
+      );
       expect(mock.requests.length).toBeGreaterThan(0);
       expect(new Set(mock.requests.map((request) => request.timeoutMs))).toEqual(
         new Set([120_000]),

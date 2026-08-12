@@ -90,17 +90,32 @@ active until the exact implementation/evidence range review closes.
   review completed those assertions: representative images were legible,
   unclipped, non-overlapping, correctly positioned, and showed the expected
   separator and later-stylesheet presentation changes.
+- On 2026-08-12 UTC, Codex reviewed product scenario A, B, and C representative
+  pages from WeasyPrint 69.0. The checklist covered visibility, sequence,
+  selected margin-box placement, clipping, overlap, typography, color,
+  separator direction/gap, and later-stylesheet presentation. The earlier
+  separator contact sheet compared all three accepted candidates; automated
+  extraction, placement, and PNG checks covered every scenario on every
+  accepted candidate.
 - Every successful or resolved owned temporary laboratory was closed after
   extraction and visual review. No generated renderer artifact was committed.
 
 ## Validation
 
-- Phase 4B focused suite: 57 passed, 0 failed.
-- Broad Markdown PDF regression slice: 901 passed, 0 failed.
-- Renderer-evidence harness: 26 passed, 0 failed.
-- Full repository suite at `9842cbb9`: 1,950 passed, 0 failed.
-- TypeScript type-check, lint, formatting, production build, and
-  `git diff --check`: passed.
+- Phase 4B focused suite: 57 passed, 0 failed, using
+  `bun test test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-page-chrome.test.ts test/cli-actions-md-to-pdf-recipe.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts --timeout 30000`.
+- Broad Markdown PDF regression slice: 901 passed, 0 failed, using
+  `rg --files test | rg 'md-to-pdf|markdown-pdf' | xargs bun test --timeout 30000`.
+- Renderer-evidence harness: 26 passed, 0 failed, using
+  `bun test test/markdown-pdf-page-number-renderer-evidence.test.ts`.
+- Full repository suite at `9842cbb9`: 1,950 passed, 0 failed, using
+  `bun test --timeout 30000`.
+- Static and build validation used `bunx tsc --noEmit`, `bun run lint`,
+  `bun run format:check`, `bun run build`, and `git diff --check`.
+- Recorded toolchain: Bun 1.3.14, TypeScript 7.0.2, Oxlint 1.77.0, Oxfmt
+  0.62.0, and Tsdown 0.22.14. The live matrix used the checked-in harness and
+  its pinned WeasyPrint 65.1, 68.0, and 69.0 candidate contract; local
+  executable paths and environment details remain intentionally unrecorded.
 
 ## Provisional Verdict
 
