@@ -40,6 +40,11 @@ export {
   type MarkdownPdfProjectCodexRenderCommand,
 } from "./render-command";
 export {
+  assessMdPdfProjectCodexProfileBodyCompatibility,
+  MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES,
+  validateMdPdfProjectCodexTemplatePageNumberCssOwnership,
+} from "./page-number-compatibility";
+export {
   validateMdPdfProjectCodexProject,
   type MarkdownPdfProjectCodexValidationResult,
   type MarkdownPdfProjectCodexValidationStatus,

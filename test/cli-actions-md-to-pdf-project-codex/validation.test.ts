@@ -231,6 +231,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
           { name: "profile-shape", status: "passed" },
           { name: "profile-normalization", status: "passed" },
           { name: "template-static-validation", status: "passed" },
+          { name: "profile-body-page-number-compatibility", status: "passed" },
+          { name: "template-page-number-css-ownership", status: "passed" },
           { name: "artifact-boundaries", status: "passed" },
           { name: "managed-asset-bindings", status: "passed" },
           { name: "profile-template-compatibility", status: "passed" },
@@ -289,6 +291,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
         { name: "profile-shape", status: "passed" },
         { name: "profile-normalization", status: "passed" },
         { name: "template-static-validation", status: "skipped" },
+        { name: "profile-body-page-number-compatibility", status: "skipped" },
+        { name: "template-page-number-css-ownership", status: "skipped" },
         { name: "artifact-boundaries", status: "passed" },
         { name: "managed-asset-bindings", status: "skipped" },
         { name: "profile-template-compatibility", status: "skipped" },
@@ -601,6 +605,100 @@ describe("cli action modules: md pdf-project codex validation", () => {
 
       expectNoUsableValidationFailure(validation, { name: "template-static-validation" });
     });
+  });
+
+  test("returns a typed failure for Template-owned ordinary page-counter CSS", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-page-counter-css",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\n",
+          "utf8",
+        );
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            styleCss: `${templatePhase.synthesis.styleCss}\n@page { @bottom-center { content: counter(page); } }\n`,
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "must not place Profile-owned page counters",
+        });
+      },
+    );
+  });
+
+  test("names final Profile and actual generated body incompatibility", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-profile-body-compatibility",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: body",
+            "  countFrom: body",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            templateHtml: templatePhase.synthesis.templateHtml.replace(
+              "document-body",
+              "article-body",
+            ),
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expect(validation).toMatchObject({
+          decisionMode: "no-usable-project",
+          renderCommand: undefined,
+        });
+        expect(
+          validation.results.find(
+            (result) => result.name === "profile-body-page-number-compatibility",
+          ),
+        ).toMatchObject({
+          name: "profile-body-page-number-compatibility",
+          status: "failed",
+          message: expect.stringContaining(
+            "countFrom: body requires exactly one .document-body element",
+          ),
+        });
+      },
+    );
   });
 
   test("rejects stylesheet ownership conflicts without relying on font decisions", async () => {

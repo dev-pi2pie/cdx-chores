@@ -9,6 +9,11 @@ import {
   validateMdPdfTemplateCodexSynthesis,
 } from "../template-codex";
 import { assertProjectCodexBundlePathInsideOutput } from "./path-collisions";
+import {
+  assessMdPdfProjectCodexProfileBodyCompatibility,
+  MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES,
+  validateMdPdfProjectCodexTemplatePageNumberCssOwnership,
+} from "./page-number-compatibility";
 import { createMdPdfProjectCodexRenderCommand } from "./render-command";
 import type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
@@ -271,6 +276,61 @@ function collectProjectValidationResults(
     );
   } catch (error) {
     results.push(failedValidation("template-static-validation", error));
+  }
+
+  if (normalizedProfile && input.templatePhase.phase.decisionMode !== "no-usable-project") {
+    try {
+      assessMdPdfProjectCodexProfileBodyCompatibility({
+        profile: normalizedProfile.profile,
+        templateHtml: input.templatePhase.synthesis.templateHtml,
+      });
+      results.push(
+        passedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+        ),
+      );
+    } catch (error) {
+      results.push(
+        failedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+          error,
+        ),
+      );
+    }
+  } else {
+    results.push(
+      skippedValidation(
+        MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+        "Skipped because an earlier validation step produced no usable final Profile or Template.",
+      ),
+    );
+  }
+
+  if (input.templatePhase.phase.decisionMode !== "no-usable-project") {
+    try {
+      // This is the Template contribution only. Profile renderer CSS and later
+      // user stylesheets are outside this Project-generation boundary.
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
+        input.templatePhase.synthesis.styleCss,
+      );
+      results.push(
+        passedValidation(MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership),
+      );
+    } catch (error) {
+      results.push(
+        failedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership,
+          error,
+        ),
+      );
+    }
+  } else {
+    results.push(
+      skippedValidation(
+        MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership,
+        "Skipped because the template phase produced no generated stylesheet.",
+      ),
+    );
   }
 
   try {

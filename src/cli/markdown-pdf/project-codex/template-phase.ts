@@ -226,7 +226,11 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
       })
     : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
 
-  validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
+  validateMdPdfTemplateCodexSynthesis({
+    compatibilityProfile: normalizedFinalProfile.profile,
+    outputPlan,
+    synthesis,
+  });
 
   return {
     codexResult,
