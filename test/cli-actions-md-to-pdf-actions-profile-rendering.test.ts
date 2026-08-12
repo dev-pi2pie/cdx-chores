@@ -14,6 +14,63 @@ import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf profile rendering", () => {
+  test.each([
+    {
+      directOverride: true,
+      label: "direct enable",
+      profileSource: undefined,
+    },
+    {
+      directOverride: undefined,
+      label: "Profile enable",
+      profileSource: "pageNumbers:\n  enabled: true\n  format: Page {page}\n",
+    },
+  ])("passes effective page-number CSS to the renderer for $label", async (scenario) => {
+    await withTempFixtureDir("md-to-pdf-effective-page-number-render", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Report\n", "utf8");
+      if (scenario.profileSource) {
+        await writeFile(profilePath, scenario.profileSource, "utf8");
+      }
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((argument, index) => (argument === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        profile: scenario.profileSource ? toRepoRelativePath(profilePath) : undefined,
+        pageNumbers: scenario.directOverride,
+        runner: capturingRunner,
+      });
+
+      expect(renderedStyles).toHaveLength(1);
+      expect(renderedStyles[0]).toContain("counter-increment: page 1;");
+      expect(renderedStyles[0]).toContain("counter(page)");
+      if (scenario.profileSource) {
+        expect(renderedStyles[0]).toContain('content: "Page " counter(page);');
+      }
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expectNoStderr();
+    });
+  });
+
   test("loads cover and font profile settings into generated recipe files", async () => {
     await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "mixed-report.md");

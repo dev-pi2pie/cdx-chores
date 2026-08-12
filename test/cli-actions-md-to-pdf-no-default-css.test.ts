@@ -62,11 +62,25 @@ describe("Markdown PDF page numbers with no default CSS", () => {
       explicitProfile: undefined,
       label: "enabled bundle Profile",
     },
+    {
+      bundleProfile: "enabled-with-style" as const,
+      directOverride: undefined,
+      explicitProfile: undefined,
+      label: "enabled bundle Profile with a custom stylesheet counter",
+    },
+    {
+      bundleProfile: undefined,
+      directOverride: true,
+      explicitProfile: undefined,
+      label: "direct enable with an explicit custom stylesheet counter",
+      withExplicitCss: true,
+    },
   ])("rejects $label before output resolution or render probes", async (scenario) => {
     await withTempFixtureDir("md-to-pdf-no-default-css-reject", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const profilePath = join(fixtureDir, "profile.yml");
       const bundleDirectory = join(fixtureDir, "bundle");
+      const explicitCssPath = join(fixtureDir, "custom.css");
       const outputPath = join(fixtureDir, "report.pdf");
       const htmlOutputPath = join(fixtureDir, "report.html");
       await writeFile(inputPath, "# Report\n", "utf8");
@@ -81,7 +95,21 @@ describe("Markdown PDF page numbers with no default CSS", () => {
         await mkdir(bundleDirectory);
         await writeFile(
           join(bundleDirectory, "profile.yml"),
-          `pageNumbers:\n  enabled: ${scenario.bundleProfile}\n`,
+          "pageNumbers:\n  enabled: true\n",
+          "utf8",
+        );
+        if (scenario.bundleProfile === "enabled-with-style") {
+          await writeFile(
+            join(bundleDirectory, "style.css"),
+            "@page { @bottom-center { content: counter(page); } }\n",
+            "utf8",
+          );
+        }
+      }
+      if (scenario.withExplicitCss) {
+        await writeFile(
+          explicitCssPath,
+          "@page { @bottom-center { content: counter(page); } }\n",
           "utf8",
         );
       }
@@ -100,6 +128,7 @@ describe("Markdown PDF page numbers with no default CSS", () => {
                 : toRepoRelativePath(bundleDirectory),
             profile:
               scenario.explicitProfile === undefined ? undefined : toRepoRelativePath(profilePath),
+            css: scenario.withExplicitCss ? toRepoRelativePath(explicitCssPath) : undefined,
             pageNumbers: scenario.directOverride,
             noDefaultCss: true,
             runner,
@@ -120,6 +149,9 @@ describe("Markdown PDF page numbers with no default CSS", () => {
       }
       if (scenario.bundleProfile !== undefined) {
         expectedEntries.push("bundle");
+      }
+      if (scenario.withExplicitCss) {
+        expectedEntries.push("custom.css");
       }
       expect((await readdir(fixtureDir)).sort()).toEqual(expectedEntries.sort());
       expectNoOutput();
