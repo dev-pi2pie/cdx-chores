@@ -701,7 +701,7 @@ export async function runRendererEvidence(
         const pngRequest = commandRequest(
           "png-render",
           [
-            "pdftocairo",
+            "pdftoppm",
             "-png",
             "-f",
             String(pageNumber),
@@ -901,6 +901,7 @@ async function main(argv: string[]): Promise<void> {
       pythonExecutable,
     });
     console.log(JSON.stringify(publicEvidenceReport(report), null, 2));
+    if (report.retained) console.error(`Retained laboratory: ${report.labPath}`);
     if (report.outcome !== "passed") process.exitCode = 1;
     return;
   }

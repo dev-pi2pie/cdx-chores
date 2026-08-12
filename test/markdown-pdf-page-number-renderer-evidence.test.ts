@@ -210,6 +210,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
             expect(request.argv[request.argv.indexOf("-f") + 1]).toBe(expectedPage);
             expect(request.argv[request.argv.indexOf("-l") + 1]).toBe(expectedPage);
             expect(request.argv).toContain("-singlefile");
+            expect(request.argv[0]).toBe("pdftoppm");
             expect(request.argv.at(-2)).toContain(`/${candidate.id}/${scenario.id}/output.pdf`);
             expect(request.argv.at(-1)).toContain(`/page-${expectedPage}`);
           }
@@ -570,7 +571,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         fail: (request) => {
           if (!failed && request.stage === "png-render") {
             failed = true;
-            return { exitCode: 4, stdout: "", stderr: "pdftocairo launch failed" };
+            return { exitCode: 4, stdout: "", stderr: "pdftoppm launch failed" };
           }
           return undefined;
         },

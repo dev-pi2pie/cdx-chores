@@ -135,13 +135,13 @@ added.
 
 Defaults preserve the current behavior:
 
-| Field       | Default    |
-| ----------- | ---------- |
-| `enabled`   | `false`    |
-| `scope`     | `body`     |
-| `countFrom` | `document` |
-| `start`     | `1`        |
-| `increment` | `1`        |
+| Field       | Default          |
+| ----------- | ---------------- |
+| `enabled`   | `false`          |
+| `scope`     | `body`           |
+| `countFrom` | `document`       |
+| `start`     | `1`              |
+| `increment` | `1`              |
 | `position`  | existing default |
 | `format`    | existing default |
 
@@ -306,60 +306,62 @@ local setup, retention choices, or resolved filesystem details.
 
 Tasks:
 
-- [ ] Record the exact proposed permanent fixture file list in the Phase 1 job
+- [x] Record the exact proposed permanent fixture file list in the Phase 1 job
       before adding it, and review additions that expand that boundary.
-- [ ] Add a typed fixture catalog under `test/fixtures/markdown-pdf/` that
+- [x] Add a typed fixture catalog under `test/fixtures/markdown-pdf/` that
       materializes the renderer-contract HTML/CSS scenarios into the temporary
       laboratory, plus one shared Markdown/Profile actual-launch pair.
-- [ ] Keep copied inputs, generated HTML/CSS, PDFs, PNGs, reports, and candidate
+- [x] Keep copied inputs, generated HTML/CSS, PDFs, PNGs, reports, and candidate
       environments in the ownership-marked temporary laboratory; do not
       force-add ignored playground artifacts.
-- [ ] Guard cleanup with the exact resolved laboratory path and an ownership
+- [x] Guard cleanup with the exact resolved laboratory path and an ownership
       marker, and refuse unmarked, missing-marker, or broader parent paths.
-- [ ] After extraction, visual inspection, and public-safe evidence recording,
+- [x] After extraction, visual inspection, and public-safe evidence recording,
       remove a successful laboratory automatically unless an explicit local
       keep option was selected; retain failed and inconclusive laboratories for
       diagnosis, then remove them after the issue is resolved or the run is
       formally abandoned.
-- [ ] Add deterministic tests for successful cleanup, failure retention,
+- [x] Add deterministic tests for successful cleanup, failure retention,
       retained-laboratory closeout, explicit retention, and refusal to clean an
       unsafe path.
-- [ ] Materialize isolated WeasyPrint `65.1`, `68.0`, and `69.0` candidate
+- [x] Materialize isolated WeasyPrint `65.1`, `68.0`, and `69.0` candidate
       projects under one uniquely named OS temporary laboratory.
-- [ ] Use the same Python minor version and fixture inputs for every candidate.
-- [ ] Record effective WeasyPrint, Pydyf, FontTools, Python, and shared native
+- [x] Use the same Python minor version and fixture inputs for every candidate.
+- [x] Record effective WeasyPrint, Pydyf, FontTools, Python, and shared native
       Pango versions without recording local environment names or paths.
-- [ ] Cover default arithmetic, `start: 0`, `increment: 2`, document origin,
+- [x] Cover default arithmetic, `start: 0`, `increment: 2`, document origin,
       body origin, and the first-body reset boundary.
-- [ ] Cover single-page and multi-page covers, title/front-matter output,
+- [x] Cover single-page and multi-page covers, title/front-matter output,
       single-page and multi-page ToCs, blank pages, and long-content
       repagination.
-- [ ] Cover both visibility scopes, all six positions, portrait, landscape,
+- [x] Cover both visibility scopes, all six positions, portrait, landscape,
       narrow margins, typography, and separators.
-- [ ] Keep the upstream page-group repagination case as a separate sentinel and
+- [x] Keep the upstream page-group repagination case as a separate sentinel and
       promote it to a required fixture only if the selected generator strategy
       depends on equivalent page-group state.
-- [ ] Extract page-number text by physical page and render representative PNGs
+- [x] Extract page-number text by physical page and render representative PNGs
       for visual inspection.
-- [ ] Add an actual-launch control lane that selects each candidate renderer,
+- [x] Add an actual-launch control lane that selects each candidate renderer,
       runs `doctor --json`, and renders a shared input through the currently
       shipped `md to-pdf` path.
-- [ ] Treat the actual-launch control as proof of candidate selection and
+- [x] Treat the actual-launch control as proof of candidate selection and
       existing launch compatibility, not as proof of advanced controls that do
       not exist until later phases.
-- [ ] Classify contract mismatches separately from setup, dependency, native
+- [x] Classify contract mismatches separately from setup, dependency, native
       library, font-discovery, or executable-launch failures.
-- [ ] Establish the lowest passing version separately for reset, increment,
+- [x] Establish the lowest passing version separately for reset, increment,
       document visibility, body origin, and each proposed style capability.
-- [ ] Constrain or stop any capability that does not pass on `69.0` before
+- [x] Constrain or stop any capability that does not pass on `69.0` before
       implementing its public contract.
-- [ ] Create or update
+- [x] Create or update
       `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-page-number-phase-1-renderer-evidence.md`
       during execution with the public-safe version matrix, fixture outcomes,
       baseline decisions, limitations, and retained or constrained capability
       set.
-- [ ] Update the research conclusions and lifecycle status only as supported by
+- [x] Update the research conclusions and lifecycle status only as supported by
       the recorded renderer evidence.
+- [x] Run focused checks and the full repository validation suite, and record
+      the passing result in the Phase 1 job.
 - [ ] Review the exact Phase 1 implementation and evidence commit range,
       resolve every actionable finding, and record the final verdict before
       beginning Phase 2.
@@ -714,8 +716,9 @@ Tasks:
 - [ ] Record where source selection, Markdown input selection, authoritative
       renderer preparation, recipe review, output selection, final review, and
       recovery occur for each source family.
-- [ ] Add `Use recipe setting`, `Enable for this PDF`, and `Disable for this
-      PDF` as the one-render page-number choices.
+- [ ] Add `Use recipe setting` as a one-render page-number choice.
+- [ ] Add `Enable for this PDF` and `Disable for this PDF` as the other
+      one-render page-number choices.
 - [ ] Compile the choices to the shared optional enablement override
       `undefined`, `true`, and `false` without adding a second detailed
       page-number object.

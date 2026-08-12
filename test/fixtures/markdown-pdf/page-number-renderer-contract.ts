@@ -252,22 +252,22 @@ export const PAGE_NUMBER_RENDERER_SCENARIOS: readonly RendererContractScenario[]
   margin: 9mm;
 }
 @page position-top-left {
-  @top-left { content: "PN-POS-TL-1"; font: 700 9pt sans-serif; color: #2457a6; border-bottom: 0.6pt solid #2457a6; padding-bottom: 1.5mm; }
+  @top-left { content: "PN-POS-TL-1"; font: 400 6pt/1 sans-serif; color: #2457a6; border-bottom: 0.25pt solid #2457a6; padding-bottom: 0; }
 }
 @page position-top-center {
-  @top-center { content: "PN-POS-TC-2"; font: 700 9pt sans-serif; color: #2457a6; border-bottom: 0.6pt solid #2457a6; padding-bottom: 1.5mm; }
+  @top-center { content: "PN-POS-TC-2"; font: 500 8.5pt/1.2 sans-serif; color: #667085; border-bottom: 0.5pt solid #d0d5dd; padding-bottom: 2mm; }
 }
 @page position-top-right {
-  @top-right { content: "PN-POS-TR-3"; font: 700 9pt sans-serif; color: #2457a6; border-bottom: 0.6pt solid #2457a6; padding-bottom: 1.5mm; }
+  @top-right { content: "PN-POS-TR-3"; font: 600 10pt/1.5 sans-serif; color: #344054; border-bottom: 1pt solid #98a2b3; padding-bottom: 3mm; }
 }
 @page position-bottom-left {
-  @bottom-left { content: "PN-POS-BL-4"; font: 700 9pt sans-serif; color: #2457a6; border-top: 0.6pt solid #2457a6; padding-top: 1.5mm; }
+  @bottom-left { content: "PN-POS-BL-4"; font: 700 12pt/2 sans-serif; color: #101828; border-top: 2pt solid #475467; padding-top: 4mm; }
 }
 @page position-bottom-center {
-  @bottom-center { content: "PN-POS-BC-5"; font: 700 9pt sans-serif; color: #2457a6; border-top: 0.6pt solid #2457a6; padding-top: 1.5mm; }
+  @bottom-center { content: "PN-POS-BC-5"; font: 400 7pt/1.1 sans-serif; color: #1d2939; border-top: 0.75pt solid #667085; padding-top: 1mm; }
 }
 @page position-bottom-right {
-  @bottom-right { content: "PN-POS-BR-6"; font: 700 9pt sans-serif; color: #2457a6; border-top: 0.6pt solid #2457a6; padding-top: 1.5mm; }
+  @bottom-right { content: "PN-POS-BR-6"; font: 700 11pt/1.8 sans-serif; color: #2457a6; border-top: 1.5pt solid #2457a6; padding-top: 3.5mm; }
 }
 .position-top-left { page: position-top-left; }
 .position-top-center { page: position-top-center; }
@@ -360,9 +360,9 @@ export const PAGE_NUMBER_RENDERER_SCENARIOS: readonly RendererContractScenario[]
       orientation: "portrait",
       pages: [
         { marker: "PAGE-SENTINEL-PRE", pageNumberLabels: [] },
-        { marker: "PAGE-SENTINEL-BODY-1", pageNumberLabels: ["PN-SENTINEL-21"] },
-        { marker: "PAGE-SENTINEL-BODY-2", pageNumberLabels: ["PN-SENTINEL-22"] },
-        { marker: "PAGE-SENTINEL-BODY-3", pageNumberLabels: ["PN-SENTINEL-23"] },
+        { marker: "PAGE-SENTINEL-BODY-1", pageNumberLabels: ["PN-SENTINEL-20"] },
+        { marker: "PAGE-SENTINEL-BODY-2", pageNumberLabels: ["PN-SENTINEL-21"] },
+        { marker: "PAGE-SENTINEL-BODY-3", pageNumberLabels: ["PN-SENTINEL-22"] },
       ],
       pngPages: [2, 4],
     },

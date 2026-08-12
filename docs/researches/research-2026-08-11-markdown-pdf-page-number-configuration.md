@@ -111,12 +111,7 @@ The normalized page-number Profile currently contains:[^profile-types]
 interface NormalizedMarkdownPdfPageNumbers {
   enabled: boolean;
   position:
-    | "top-left"
-    | "top-center"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-center"
-    | "bottom-right";
+    "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
   format: string;
   scope: "body";
 }
@@ -711,6 +706,16 @@ project setup, dependency resolution, native-library, font-discovery,
 executable-launch, or unrelated environment failure is inconclusive: retain the
 laboratory, correct the environment, and rerun the same version. It must not
 silently select a higher minimum.
+
+The recorded Phase 1 matrix passed every retained renderer-contract capability,
+the informative repagination sentinel, the generated and legacy body-hook
+cases, and the current-command launch control on WeasyPrint `65.1`, `68.0`, and
+`69.0`. The recorded evidence result identifies `65.1` as the capability-
+specific minimum for the retained sequence, visibility, positioning, layout,
+typography, and separator subset; Phase 1 acceptance remains pending its exact-
+range review. The linked Phase 1 job owns the exact bounded style domains and
+public-safe environment matrix. Advanced Profile controls remain unimplemented
+until the later plan phases land.
 
 For each render, record the command result and warnings, PDF page count and
 dimensions, extracted page-number text by physical page, and representative
