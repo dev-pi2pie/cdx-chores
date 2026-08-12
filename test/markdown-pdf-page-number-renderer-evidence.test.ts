@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, normalize, sep } from "node:path";
 
 import {
   closeRetainedEvidenceLaboratory,
@@ -57,6 +57,20 @@ function expectedActualLaunchEvidence(): PdfEvidence {
   };
 }
 
+function pathHasSegment(path: string, segment: string): boolean {
+  return normalize(path).split(sep).includes(segment);
+}
+
+function mockPng(): Buffer {
+  const header = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(header);
+  header.writeUInt32BE(13, 8);
+  header.write("IHDR", 12, "ascii");
+  header.writeUInt32BE(1, 16);
+  header.writeUInt32BE(1, 20);
+  return header;
+}
+
 function createMockExecution(options: MockExecutionOptions = {}) {
   const requests: CommandRequest[] = [];
   const runner = async (request: CommandRequest): Promise<CommandResult> => {
@@ -69,9 +83,7 @@ function createMockExecution(options: MockExecutionOptions = {}) {
       if (!pngBase) throw new Error("mock png request has no output base");
       await writeFile(
         `${pngBase}.png`,
-        options.corruptPng
-          ? Buffer.from("not-a-png", "utf8")
-          : Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
+        options.corruptPng ? Buffer.from("not-a-png", "utf8") : mockPng(),
       );
     }
     if (request.stage === "environment-inspection") {
@@ -107,7 +119,7 @@ function createMockExecution(options: MockExecutionOptions = {}) {
   };
 
   const inspectPdf = async (path: string): Promise<PdfEvidence> => {
-    const scenario = PAGE_NUMBER_RENDERER_SCENARIOS.find((item) => path.includes(`/${item.id}/`));
+    const scenario = PAGE_NUMBER_RENDERER_SCENARIOS.find((item) => pathHasSegment(path, item.id));
     const expected = scenario ? expectedScenarioEvidence(scenario) : expectedActualLaunchEvidence();
     return options.inspect?.(path, expected) ?? expected;
   };
@@ -394,7 +406,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(sentinel).toBeDefined();
       const mock = createMockExecution({
         inspect: (path, expected) =>
-          sentinel && path.includes(`/${sentinel.id}/`)
+          sentinel && pathHasSegment(path, sentinel.id)
             ? {
                 ...expected,
                 pages: expected.pages.map((page, index) =>
@@ -513,6 +525,25 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         corruptReport.failures.some((failure) => failure.message.includes("is not a valid PNG")),
       ).toBe(true);
       await closeRetainedEvidenceLaboratory(corruptReport.labPath, temporaryRoot);
+
+      const truncated = createMockExecution();
+      const truncatedReport = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "truncated-png",
+        runner: async (request) => {
+          const result = await truncated.runner(request);
+          if (request.stage === "png-render") {
+            await writeFile(`${request.argv.at(-1)}.png`, mockPng().subarray(0, 16));
+          }
+          return result;
+        },
+        inspectPdf: truncated.inspectPdf,
+      });
+      expect(truncatedReport.outcome).toBe("failed");
+      expect(
+        truncatedReport.failures.some((failure) => failure.message.includes("is not a valid PNG")),
+      ).toBe(true);
+      await closeRetainedEvidenceLaboratory(truncatedReport.labPath, temporaryRoot);
     });
   });
 

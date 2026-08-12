@@ -568,7 +568,14 @@ async function assertPngEvidence(paths: readonly string[]): Promise<string[]> {
       const contents = await readFile(path);
       if (contents.length <= 0) {
         mismatches.push(`${basename(path)} is empty`);
-      } else if (!contents.subarray(0, pngSignature.length).equals(pngSignature)) {
+      } else if (
+        contents.length < 24 ||
+        !contents.subarray(0, pngSignature.length).equals(pngSignature) ||
+        contents.readUInt32BE(8) !== 13 ||
+        contents.subarray(12, 16).toString("ascii") !== "IHDR" ||
+        contents.readUInt32BE(16) === 0 ||
+        contents.readUInt32BE(20) === 0
+      ) {
         mismatches.push(`${basename(path)} is not a valid PNG`);
       }
     } catch {
