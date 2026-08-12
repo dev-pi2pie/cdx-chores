@@ -90,7 +90,7 @@ accepted by exact-range review.
 - TypeScript type-check: passed.
 - Lint and formatting checks: passed.
 - Production build: passed.
-- Full repository suite: 1,888 passed, 0 failed.
+- Final reviewed-tip repository suite: 1,890 passed, 0 failed.
 - `git diff --check`: passed.
 
 ## Exact-Range Review
