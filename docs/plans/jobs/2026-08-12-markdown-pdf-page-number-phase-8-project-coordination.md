@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 8 Project coordination"
 created-date: 2026-08-12
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -157,12 +157,13 @@ handoff.
 - 8B Template coordination checkpoint: `cbf9fd59`.
 - 8C generated structure and CSS checkpoint: `cd79b7be`.
 - 8D no-output integration checkpoint: `ccae59e4`.
-- Evidence documentation: `<phase-8-evidence-commit>`.
-- Review-finding corrections: `0bbd6408`.
+- Evidence documentation: `127b2c16`.
+- Pre-evidence boundary correction: `0bbd6408`.
+- Aggregate-review corrections: `221a1a50`, `c42e2534`, `ad6ff9a5`,
+  `2c17864b`, `4a4fe680`, and `01879241`.
 
-Replace each placeholder only after the corresponding commit exists. A
-documentation-only closeout commit that records the final aggregate verdict is
-outside the implementation/evidence review range.
+A documentation-only closeout commit that records this final aggregate verdict
+is outside the reviewed implementation/evidence range.
 
 The independently prepared 8B checkpoint landed before 8A; the labels above
 record responsibility rather than commit chronology. The aggregate review
@@ -175,7 +176,7 @@ capability-requirement fields to reports or summaries, and the stable
 body-boundary validation condition ID remains available only through the
 in-memory typed diagnostic returned by Project validation.
 
-## Validation Plan And Evidence Placeholders
+## Validation Evidence
 
 - 8A Project/Profile regression at the pre-final Project tip:
   `bun test test/cli-actions-md-to-pdf-project-codex --timeout 30000` passed
@@ -195,57 +196,61 @@ in-memory typed diagnostic returned by Project validation.
   no-temporary-artifact validation:
   `bun test test/cli-actions-md-to-pdf-project-codex/action-write.test.ts test/cli-actions-md-to-pdf-project-codex/prepared.test.ts test/cli-actions-md-to-pdf-project-codex/validation.test.ts --timeout 30000`
   passed 47 tests and 903 assertions.
-- Final Project regression:
+- Final Project regression at `01879241`:
   `bun test test/cli-actions-md-to-pdf-project-codex --timeout 30000` passed
-  108 tests and 1,477 assertions.
-- Broad Markdown PDF regression:
+  119 tests and 1,550 assertions.
+- Broad Markdown PDF regression at `01879241`:
   `rg --files test | rg 'md-to-pdf|markdown-pdf|doctor-markdown' | xargs bun test --timeout 30000`
-  passed 1,069 tests and 7,853 assertions.
-- Full repository suite: `bun test --timeout 30000` passed 2,089 tests and
-  12,080 assertions with 0 failures.
-- Static and build validation passed at `0bbd6408`: `bunx tsc --noEmit`,
+  passed 1,080 tests and 7,929 assertions.
+- Full repository suite at `01879241`: `bun test --timeout 30000` passed
+  2,100 tests and 12,156 assertions with 0 failures.
+- Static and build validation passed at `01879241`: `bunx tsc --noEmit`,
   `bun run lint`, `bun run format:check`, `bun run build`, and
   `git diff --check`. The build used Bun `1.3.14` and tsdown `0.22.14`; the
-  existing TypeScript 7 preview warning remained non-blocking. `0bbd6408` is
-  the final implementation and validation tip for this evidence snapshot.
+  existing TypeScript 7 preview warning remained non-blocking.
 - Cleanup state: Phase 8 used process-owned in-memory validation only, created
   no temporary inspection laboratory, and retained no generated Project,
   Profile, Template, Stylesheet, HTML, CSS, PDF, PNG, renderer, raw report, or
   validation artifact. Because no temporary area existed, marked-area cleanup
   and unsafe-path refusal were neither required nor exercised.
 - Evidence-document gate: targeted formatting for this job and its parent plan
-  and `git diff --check` pass in the evidence worktree. The evidence commit
-  requires those documentation gates only; it does not become a claimed final
-  implementation or aggregate-review tip until its full hash is recorded.
+  and `git diff --check` passed for evidence commit `127b2c16`. This
+  documentation-only closeout remains outside the exact reviewed range and
+  requires the same two gates.
 
 ## Exact Aggregate Review
 
 - Required aggregate base: `7b7ae9b5`.
-- Final implementation and validation tip for this evidence snapshot:
-  `0bbd6408`.
-- Phase 8 evidence tip: `<phase-8-evidence-tip>`.
-- Proposed exact review range: `7b7ae9b5..<phase-8-evidence-tip>`.
-- Maintainability review: pending.
-- Test review: pending.
-- Security review: pending.
-- Documentation review: pending.
-- Actionable-finding resolution and widened-range verdict: pending.
-
-Replace the final-tip placeholder with the exact full commit before review.
-If corrections land, widen the tip, repeat affected validation, re-review the
-exact widened range, and record every accepted finding and disposition before
-Phase 9 begins.
+- Evidence tip: `127b2c16`.
+- Final implementation, validation, and correction tip: `01879241`.
+- Exact final reviewed range: `7b7ae9b5..01879241`.
+- Security review: accepted findings covering counter mutation through custom
+  properties and references, dynamic counter attributes, and counter-producing
+  functions were closed by `c42e2534`, `2c17864b`, `4a4fe680`, and
+  `01879241`.
+- Maintainability review: accepted findings covering `pageChrome` font leakage,
+  ordinary `@page` inheritance, progress-status cleanup, the public-validator
+  bypass, and unrelated-counter scope were closed by `221a1a50`, `ad6ff9a5`,
+  `2c17864b`, and `01879241`.
+- Test review: accepted findings covering exact `false` and `0` omission
+  semantics, the exact sanitized report message, and positive counter-grammar
+  cases were closed by `221a1a50`, `c42e2534`, `4a4fe680`, and `01879241`.
+- Documentation review: accepted findings clarified Phase 9 serialization
+  ownership, the not-applicable temporary-area branch, and evidence-tip wording
+  in `127b2c16` and this closeout.
+- Actionable-finding resolution: complete. Each widened correction range was
+  re-reviewed, and the final reviewers reported no remaining actionable
+  findings through `01879241`.
 
 ## Final Verdict
 
-**Provisional verdict: Continue after review.** Phase 8A through 8D
-implementation and validation are complete through correction `0bbd6408`. The
-job remains `in-progress` because the evidence commit does not yet exist and
-the exact aggregate range has not been reviewed. No aggregate-review verdict is
-claimed by this provisional evidence record.
-Phase 9 must not begin until the evidence tip replaces the remaining
-placeholder, the exact range is reviewed, every actionable finding is resolved,
-and the final verdict is recorded here.
+**Final verdict: Continue to Phase 9.** Phase 8A through 8D, evidence, review,
+and accepted corrections are complete in exact reviewed range
+`7b7ae9b5..01879241`. Focused Project, broad Markdown PDF, full repository,
+static, format, build, and diff checks pass at the final tip, all actionable
+review findings are closed, and no temporary inspection laboratory or generated
+artifact remains. The parent plan stays `active`, and the related research
+stays `in-progress` while later phases remain unrun.
 
 ## Related Research
 

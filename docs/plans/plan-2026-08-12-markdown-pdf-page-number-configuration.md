@@ -899,12 +899,11 @@ Phase checkpoint:
       If a correction changes that tip, rerun affected gates before review;
       evidence-only documentation then requires targeted format and diff
       checks.
-- [ ] Review the exact aggregate Phase 8 range from the recorded Phase 7 final
-      tip through the final Phase 8 evidence tip
-      (`7b7ae9b5..<phase-8-final-tip>`), replace the remaining placeholder with
-      the exact full commit before review, resolve every actionable finding,
-      widen the tip when fixes land, and record the final exact range and
-      verdict in the Phase 8 job before beginning Phase 9.
+- [x] Review the exact aggregate Phase 8 range from the recorded Phase 7 final
+      tip through the final Phase 8 correction tip
+      (`7b7ae9b5..01879241`), resolve every actionable finding, widen the tip
+      when fixes land, and record the final exact range and verdict in the
+      Phase 8 job before beginning Phase 9.
 
 Phase checkpoint:
 
@@ -933,10 +932,12 @@ Phase checkpoint:
   roles; validation is in memory, so no temporary cleanup/refusal branch is
   implemented or exercised. An explicitly requested report-only failure may
   leave only its existing public-safe report.
-- Focused, broad Markdown PDF, full repository, static, format, build, and diff
-  checks pass at final implementation and validation tip `0bbd6408`. The exact
-  aggregate review covering 8A, 8B, 8C, 8D, evidence, and the correction
-  remains pending.
+- Focused Project, broad Markdown PDF, full repository, static, format, build,
+  and diff checks pass at final tip `01879241`. Exact aggregate range
+  `7b7ae9b5..01879241` covers 8A, 8B, 8C, 8D, evidence commit `127b2c16`, and
+  all review corrections. Security, maintainability, test, and documentation
+  review findings are closed; the documentation-only closeout commit remains
+  outside that reviewed range.
 
 ### Phase 9: Project Bundle, Report, And Render Handoff
 
