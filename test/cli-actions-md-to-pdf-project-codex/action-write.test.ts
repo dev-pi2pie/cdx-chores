@@ -41,10 +41,10 @@ const SENSITIVE_DIAGNOSTIC_TEXT =
   "Rejected /Users/alice/private/style.css, file:///Users/alice/private/style.css, ssh://host/private/style.css, smb://server/share/style.css, vscode://file/secrets/style.css, C:\\Users\\Alice\\style.css, \\\\server\\share\\style.css, ./secrets/style.css, ../drafts/style.css, assets/internal-style.css, and https://example.test/private?token=abc from localhost:3000, 127.0.0.1:3000, 127.1:3000, 2130706433:3000, and [::1]:3000";
 
 function adaptedProfileRunner(unmatchedDirections: string[] = []): MarkdownPdfCodexProfileRunner {
-  return async () =>
+  return async ({ prompt }) =>
     JSON.stringify({
       decision_mode: "adapted",
-      selected_candidate_id: "article",
+      selected_candidate_id: prompt.includes('"id": "base-profile"') ? "base-profile" : "article",
       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
       accepted_font_patches: [],
       reasoning: "The project profile should adapt to the document signals.",
@@ -97,7 +97,7 @@ function adaptedTemplateResponse(
     template_family: "document-layered",
     recipe_preset: "article",
     slots: {
-      recipe_preset: { preset: "article", source: "base-profile" },
+      recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: false,
         byline: "none",

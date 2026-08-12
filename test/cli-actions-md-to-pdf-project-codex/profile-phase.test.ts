@@ -204,7 +204,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           facts: profilePromptFacts(options.prompt),
           workingDirectory: options.workingDirectory,
         });
-        return adaptedProfileRunner("wide-table", ["unsupported custom CSS"])();
+        return adaptedProfileRunner("base-profile", ["unsupported custom CSS"])();
       };
 
       const { outputPlan, result, stderr } = await runProfilePhaseFixture(fixtureDir, {
@@ -243,27 +243,15 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
         families: [],
       });
       expect(capturedRequests[0]?.facts.supportedSchemaSummary).toContain("toc.enabled");
-      expect(candidateSummaryIds(capturedRequests[0]?.facts ?? {})).toEqual([
-        "base-profile",
-        "default",
-        "article",
-        "report",
-        "wide-table",
-        "compact",
-        "reader",
+      expect(candidateSummaryIds(capturedRequests[0]?.facts ?? {})).toEqual(["base-profile"]);
+      expect(capturedRequests[0]?.facts.candidateSummaries).toEqual([
+        expect.objectContaining({ id: "base-profile" }),
       ]);
-      expect(capturedRequests[0]?.facts.candidateSummaries).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: "base-profile" }),
-          expect.objectContaining({ id: "wide-table" }),
-        ]),
-      );
       expect(result.unmatchedProfileDirections).toEqual(["unsupported custom CSS"]);
       expect(result.identity).toMatchObject({
         id: "md-pdf-profile-20260704T080000Z-abc12345",
         source: "codex",
-        basedOn: "wide-table",
-        preset: "wide-table",
+        basedOn: "md-pdf-profile-20260101T000000Z-ba5e0001",
       });
       expect(result.finalProfile).toMatchObject({
         fonts: { body: { default: "Source Serif 4" } },
@@ -279,7 +267,31 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
       async (fixtureDir) => {
         await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody content.\n", "utf8");
         const basePath = join(fixtureDir, "base.yml");
-        const baseYaml = "pageNumbers:\n  enabled: false\n  scope: body\n";
+        const baseYaml = [
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: body",
+          "  countFrom: body",
+          "  start: 7",
+          "  increment: 3",
+          "  position: top-right",
+          '  format: "Base {page} / {pages}"',
+          "header:",
+          '  left: "Stable header"',
+          "  style:",
+          '    fontSize: "9pt"',
+          '    color: "#123456"',
+          "    separator:",
+          '      width: "0.75pt"',
+          "      style: solid",
+          '      color: "#654321"',
+          '      gap: "1.5mm"',
+          "footer:",
+          '  right: "Stable footer"',
+          "  style:",
+          "    fontWeight: 600",
+          "",
+        ].join("\n");
         await writeFile(basePath, baseYaml, "utf8");
         let capturedFacts: Record<string, unknown> = {};
 
@@ -293,13 +305,9 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
               decision_mode: "adapted",
               selected_candidate_id: "base-profile",
               accepted_patches: [
-                { op: "replace", path: "/pageNumbers/enabled", value: true },
-                { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+                { op: "replace", path: "/pageNumbers/enabled", value: false },
                 { op: "replace", path: "/pageNumbers/start", value: 0 },
-                { op: "replace", path: "/pageNumbers/increment", value: 2 },
-                { op: "replace", path: "/header/style/color", value: "#123456" },
-                { op: "replace", path: "/header/style/separator/gap", value: 0 },
-                { op: "replace", path: "/footer/style/fontWeight", value: 500 },
+                { op: "replace", path: "/footer/style/separator/gap", value: 0 },
               ],
               accepted_font_patches: [],
               reasoning: "Apply the bounded reusable page-number profile fields.",
@@ -312,21 +320,146 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
 
         expect(result.finalProfile.pageNumbers).toMatchObject({
           countFrom: "body",
-          enabled: true,
-          increment: 2,
+          enabled: false,
+          format: "Base {page} / {pages}",
+          increment: 3,
+          position: "top-right",
           scope: "body",
           start: 0,
         });
-        expect(result.finalProfile.header).toMatchObject({
-          style: { color: "#123456", separator: { gap: 0 } },
+        expect(result.finalProfile.header).toEqual({
+          left: "Stable header",
+          style: {
+            color: "#123456",
+            fontSize: "9pt",
+            separator: {
+              color: "#654321",
+              gap: "1.5mm",
+              style: "solid",
+              width: "0.75pt",
+            },
+          },
         });
-        expect(result.finalProfile.footer).toMatchObject({ style: { fontWeight: 500 } });
+        expect(result.finalProfile.footer).toEqual({
+          right: "Stable footer",
+          style: { fontWeight: 600, separator: { gap: 0 } },
+        });
         expect((result.finalProfile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
         expect(result.serializedProfile).toContain("start: 0");
         expect(capturedFacts).toHaveProperty("pageNumberContract");
         expect(capturedFacts).toHaveProperty("patchValueConstraints");
+
+        const revisedOrigin = await runProfilePhaseFixture(fixtureDir, {
+          baseProfile: "base.yml",
+          input: "report.md",
+          intent: "Count body page numbers from the document origin",
+          profileCodexRunner: async () =>
+            JSON.stringify({
+              decision_mode: "adapted",
+              selected_candidate_id: "base-profile",
+              accepted_patches: [
+                { op: "replace", path: "/pageNumbers/countFrom", value: "document" },
+              ],
+              accepted_font_patches: [],
+              reasoning: "Revise only the page-number count origin.",
+              warnings: [],
+              fallback_reason: "",
+              unmatched_directions: [],
+            }),
+        });
+        expect(revisedOrigin.result.finalProfile.pageNumbers).toEqual({
+          countFrom: "document",
+          enabled: true,
+          format: "Base {page} / {pages}",
+          increment: 3,
+          position: "top-right",
+          scope: "body",
+          start: 7,
+        });
         expect(await readFile(basePath, "utf8")).toBe(baseYaml);
         await expectNoPlannedProjectArtifacts(outputPlan);
+        await expectNoPlannedProjectArtifacts(revisedOrigin.outputPlan);
+      },
+    );
+  });
+
+  test("rejects non-base selection and invalid bounded patches when a base profile is present", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-authoritative-base-profile",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody content.\n", "utf8");
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          "pageNumbers:\n  enabled: true\n  scope: body\n  countFrom: document\n  start: 1\n  increment: 2\n",
+          "utf8",
+        );
+        const invalidDecisions = [
+          {
+            expectedCode: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID",
+            name: "non-base candidate",
+            selectedCandidateId: "wide-table",
+            patches: [],
+          },
+          {
+            expectedCode: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED",
+            name: "null patch",
+            selectedCandidateId: "base-profile",
+            patches: [{ op: "replace", path: "/pageNumbers/enabled", value: null }],
+          },
+          {
+            expectedCode: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED",
+            name: "unknown patch",
+            selectedCandidateId: "base-profile",
+            patches: [{ op: "replace", path: "/pageNumbers/unknown", value: true }],
+          },
+          {
+            expectedCode: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID",
+            name: "invalid patch value",
+            selectedCandidateId: "base-profile",
+            patches: [{ op: "replace", path: "/pageNumbers/increment", value: 0 }],
+          },
+        ];
+
+        for (const invalidDecision of invalidDecisions) {
+          const { runtime } = createActionTestRuntime({
+            cwd: fixtureDir,
+            now: () => new Date("2026-07-04T08:00:00.000Z"),
+          });
+          const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+            baseProfile: "base.yml",
+            input: "report.md",
+          });
+          const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+          const outputPlan = await planMdPdfProjectCodexOutput({
+            identityUidFactory: () => "abc12345",
+            runtime,
+            signalMode: signals.modes.project,
+            state,
+          });
+
+          await expectCliError(
+            () =>
+              runMdPdfProjectCodexProfilePhase({
+                outputPlan,
+                profileCodexRunner: async () =>
+                  JSON.stringify({
+                    decision_mode: "adapted",
+                    selected_candidate_id: invalidDecision.selectedCandidateId,
+                    accepted_patches: invalidDecision.patches,
+                    accepted_font_patches: [],
+                    reasoning: invalidDecision.name,
+                    warnings: [],
+                    fallback_reason: "",
+                    unmatched_directions: [],
+                  }),
+                runtime,
+                signals,
+                state,
+              }),
+            { code: invalidDecision.expectedCode },
+          );
+          await expectNoPlannedProjectArtifacts(outputPlan);
+        }
       },
     );
   });

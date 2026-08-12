@@ -36,10 +36,11 @@ function adaptedProfileRunner(
     unmatchedDirections?: string[];
   } = {},
 ) {
-  return async () =>
+  return async ({ prompt }: { prompt: string }) =>
     JSON.stringify({
       decision_mode: "adapted",
-      selected_candidate_id: input.candidateId ?? "article",
+      selected_candidate_id:
+        input.candidateId ?? (prompt.includes('"id": "base-profile"') ? "base-profile" : "article"),
       accepted_patches: input.patches ?? [{ op: "replace", path: "/toc/enabled", value: true }],
       accepted_font_patches: [],
       reasoning: "The project profile should adapt to the document signals.",
@@ -686,8 +687,9 @@ describe("cli action modules: md pdf-project codex validation", () => {
           await runValidationFixture(fixtureDir, {
             baseProfile: "base.yml",
             input: "report.md",
-            profileCodexRunner: adaptedProfileRunner({ candidateId: "wide-table" }),
-            templateCodexRunner: async () => templateResponse({ recipePreset: "wide-table" }),
+            profileCodexRunner: adaptedProfileRunner(),
+            templateCodexRunner: async () =>
+              templateResponse({ recipePreset: "wide-table", recipeSource: "document-signal" }),
           });
         expect(templatePhase.codexResult).toBeDefined();
         const invalidTemplatePhase = {

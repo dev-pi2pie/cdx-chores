@@ -77,6 +77,7 @@ const NO_USABLE_MARKDOWN_PDF_CODEX_PROFILE_MESSAGE =
 
 export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
   baseProfileCandidate?: MarkdownPdfProfileCandidate;
+  baseProfileRole?: "authoritative" | "candidate";
   createdAt: string;
   documentSignals: MarkdownPdfDocumentSignals;
   fontHints: string[];
@@ -88,6 +89,7 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
 }): MarkdownPdfCodexProfileOrchestrationContext {
   const candidateResolution = resolveMarkdownPdfCodexProfileCandidates({
     baseProfileCandidate: input.baseProfileCandidate,
+    baseProfileRole: input.baseProfileRole,
     signalMode: input.signalMode,
   });
   const fontSignals =

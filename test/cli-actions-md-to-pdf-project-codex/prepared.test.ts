@@ -29,7 +29,7 @@ const BASE_PROFILE = [
 function adaptedProfileResponse(): string {
   return JSON.stringify({
     decision_mode: "adapted",
-    selected_candidate_id: "article",
+    selected_candidate_id: "base-profile",
     accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
     accepted_font_patches: [],
     reasoning: "Adapt the project profile to the document.",
@@ -45,7 +45,7 @@ function adaptedTemplateResponse(): string {
     template_family: "document-layered",
     recipe_preset: "article",
     slots: {
-      recipe_preset: { preset: "article", source: "base-profile" },
+      recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: true,
         byline: "none",
