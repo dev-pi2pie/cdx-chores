@@ -105,7 +105,7 @@ $if(toc)$
 $toc$
 </nav>
 $endif$
-<main>
+<main class="document-body">
 $body$
 </main>
 </body>

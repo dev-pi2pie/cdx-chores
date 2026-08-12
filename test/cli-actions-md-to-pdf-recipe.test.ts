@@ -13,6 +13,7 @@ describe("markdown PDF recipe generation", () => {
     );
 
     expect(recipe.templateHtml).toContain("$body$");
+    expect(recipe.templateHtml).toContain('<main class="document-body">');
     expect(recipe.templateHtml).toContain("$toc$");
     expect(recipe.styleCss).toContain("size: A4 portrait");
     expect(recipe.styleCss).toContain("break-after: page");

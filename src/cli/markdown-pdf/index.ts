@@ -1,5 +1,10 @@
 export { createMarkdownPdfCss, createMarkdownPdfRecipe, createMarkdownPdfTemplate } from "./recipe";
 export type { CreateMarkdownPdfRecipeInput, MarkdownPdfRecipe } from "./recipe";
+export { inspectMarkdownPdfTemplateBody } from "./template-body";
+export type {
+  MarkdownPdfTemplateBodyInspection,
+  MarkdownPdfTemplateBodyStatus,
+} from "./template-body";
 export type { MarkdownPdfCodexReportBinding } from "./codex-report-binding";
 export { renderMarkdownPdf } from "./render";
 export type {
