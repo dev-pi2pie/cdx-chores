@@ -96,6 +96,29 @@ export interface ExecutePlannedMarkdownPdfRenderOptions {
   codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
 
+export const MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON =
+  "page-numbers-require-generated-default-css";
+
+export interface MarkdownPdfRenderConfigurationConflict {
+  reason: typeof MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON;
+  noDefaultCss: true;
+  pageNumbers: ResolvedMarkdownPdfPageNumberConfiguration;
+}
+
+export function findMarkdownPdfRenderConfigurationConflict(input: {
+  noDefaultCss?: boolean;
+  pageNumbers: ResolvedMarkdownPdfPageNumberConfiguration;
+}): MarkdownPdfRenderConfigurationConflict | undefined {
+  if (input.noDefaultCss !== true || !input.pageNumbers.effective.enabled) {
+    return undefined;
+  }
+  return {
+    reason: MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON,
+    noDefaultCss: true,
+    pageNumbers: input.pageNumbers,
+  };
+}
+
 export async function prepareMarkdownPdfRender(
   runtime: CliRuntime,
   input: PrepareMarkdownPdfRenderInput,
@@ -154,6 +177,16 @@ export async function prepareMarkdownPdfRender(
     profileSource: profilePath ? "profile" : "default",
     override: input.pageNumbers,
   });
+  const renderConfigurationConflict = findMarkdownPdfRenderConfigurationConflict({
+    noDefaultCss: input.noDefaultCss,
+    pageNumbers: pageNumberConfiguration,
+  });
+  if (renderConfigurationConflict) {
+    throw new CliError(
+      "Effective page numbers require the generated default stylesheet; remove --no-default-css or disable page numbers for this render.",
+      { code: "INVALID_INPUT", exitCode: 2 },
+    );
+  }
   const effectiveProfile: NormalizedMarkdownPdfProfile = {
     ...normalizedProfile.profile,
     pageNumbers: pageNumberConfiguration.effective,
