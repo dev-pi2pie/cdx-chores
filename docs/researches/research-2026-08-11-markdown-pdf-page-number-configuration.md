@@ -395,8 +395,10 @@ whether the separator sits below a header or above a footer.
 
 `fontFamily` remains owned by `fonts.pageChrome`. Explicit dimensions, offsets,
 positional padding, raw CSS, and page-number-specific style remain outside the
-typed surface. The separator remains evidence-gated until renderer fixtures fix
-its span and empty-area behavior.
+typed surface. Renderer micro-smokes now fix the first implementation behavior:
+separator CSS belongs only to occupied margin boxes. Empty sibling boxes do not
+extend a meaningful continuous separator span and must not be synthesized for
+that purpose.
 
 ## Placeholder-Language Compatibility Direction
 

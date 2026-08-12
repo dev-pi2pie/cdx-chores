@@ -500,7 +500,7 @@ Phase checkpoint:
 
 #### Phase 4A: Sequence And Visibility
 
-- [ ] Confirm the document-origin first-page reset selector and separator span
+- [x] Confirm the document-origin first-page reset selector and separator span
       behavior with compact temporary renderer micro-smokes before selecting
       the generator strategy.
 

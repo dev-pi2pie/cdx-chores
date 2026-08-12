@@ -180,6 +180,94 @@ export const PAGE_NUMBER_RENDERER_SCENARIOS: readonly RendererContractScenario[]
     },
   },
   {
+    id: "document-origin-start-zero-increment-two",
+    purpose: "Prove the first-physical-page reset boundary, start zero, and increment two.",
+    required: true,
+    capabilities: ["reset", "increment"],
+    html: fixtureHtml([
+      { marker: "PAGE-DOC-RESET-1", pageName: "ordinary" },
+      { marker: "PAGE-DOC-RESET-2", pageName: "ordinary" },
+      { marker: "PAGE-DOC-RESET-3", pageName: "ordinary" },
+    ]),
+    css: `${baseCss}
+@page {
+  size: 148mm 210mm;
+  margin: 15mm;
+  counter-increment: page 2;
+  @bottom-center { content: "PN-DOC-RESET-" counter(page) "/" counter(pages); }
+}
+@page:nth(1) { counter-reset: page -2; }
+`,
+    expected: {
+      pageCount: 3,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        { marker: "PAGE-DOC-RESET-1", pageNumberLabels: ["PN-DOC-RESET-0/3"] },
+        { marker: "PAGE-DOC-RESET-2", pageNumberLabels: ["PN-DOC-RESET-2/3"] },
+        { marker: "PAGE-DOC-RESET-3", pageNumberLabels: ["PN-DOC-RESET-4/3"] },
+      ],
+      pngPages: [1, 2, 3],
+    },
+  },
+  {
+    id: "separator-area-span",
+    purpose:
+      "Compare omitted separators, occupied-box separators, and styled empty side boxes in headers and footers.",
+    required: true,
+    capabilities: ["separator"],
+    html: fixtureHtml([
+      { marker: "PAGE-SEP-OMITTED", pageName: "separator-omitted" },
+      { marker: "PAGE-SEP-PARTIAL", pageName: "separator-partial" },
+      { marker: "PAGE-SEP-EMPTY", pageName: "separator-empty" },
+    ]),
+    css: `${baseCss}
+@page {
+  size: 148mm 210mm;
+  margin: 15mm;
+}
+@page separator-omitted {
+  @top-center { content: "SEP-HEADER-OMITTED"; }
+  @bottom-center { content: "SEP-FOOTER-OMITTED"; }
+}
+@page separator-partial {
+  @top-center { content: "SEP-HEADER-PARTIAL"; border-bottom: 1pt solid #2457a6; padding-bottom: 2mm; }
+  @bottom-center { content: "SEP-FOOTER-PARTIAL"; border-top: 1pt solid #2457a6; padding-top: 2mm; }
+}
+@page separator-empty {
+  @top-left { content: ""; border-bottom: 1pt solid #2457a6; padding-bottom: 2mm; }
+  @top-center { content: "SEP-HEADER-EMPTY"; border-bottom: 1pt solid #2457a6; padding-bottom: 2mm; }
+  @top-right { content: ""; border-bottom: 1pt solid #2457a6; padding-bottom: 2mm; }
+  @bottom-left { content: ""; border-top: 1pt solid #2457a6; padding-top: 2mm; }
+  @bottom-center { content: "SEP-FOOTER-EMPTY"; border-top: 1pt solid #2457a6; padding-top: 2mm; }
+  @bottom-right { content: ""; border-top: 1pt solid #2457a6; padding-top: 2mm; }
+}
+.separator-omitted { page: separator-omitted; }
+.separator-partial { page: separator-partial; }
+.separator-empty { page: separator-empty; }
+`,
+    expected: {
+      pageCount: 3,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        {
+          marker: "PAGE-SEP-OMITTED",
+          pageNumberLabels: ["SEP-HEADER-OMITTED", "SEP-FOOTER-OMITTED"],
+        },
+        {
+          marker: "PAGE-SEP-PARTIAL",
+          pageNumberLabels: ["SEP-HEADER-PARTIAL", "SEP-FOOTER-PARTIAL"],
+        },
+        {
+          marker: "PAGE-SEP-EMPTY",
+          pageNumberLabels: ["SEP-HEADER-EMPTY", "SEP-FOOTER-EMPTY"],
+        },
+      ],
+      pngPages: [1, 2, 3],
+    },
+  },
+  {
     id: "body-origin-start-zero-increment-two",
     purpose:
       "Prove the first-body reset boundary, start zero, increment two, and body-only visibility.",

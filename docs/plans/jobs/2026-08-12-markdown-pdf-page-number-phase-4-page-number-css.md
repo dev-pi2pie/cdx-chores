@@ -33,7 +33,7 @@ the Phase 3 selected-Template compatibility boundary.
 
 ## Checkpoints
 
-- [ ] Confirm the document-origin first-page reset selector and separator span
+- [x] Confirm the document-origin first-page reset selector and separator span
       semantics with compact temporary renderer micro-smokes.
 - [ ] 4A: Implement sequence and selective visibility behavior.
 - [ ] 4B: Implement position, bounded style, and cascade behavior.
@@ -45,8 +45,25 @@ the Phase 3 selected-Template compatibility boundary.
 
 ## Evidence Status
 
-Phase 4 is active. No selector, CSS-generation, or product-renderer verdict is
-accepted yet.
+Phase 4 is active. The pre-generator selector and separator decisions are
+accepted; CSS-generation and product-renderer verdicts remain open.
+
+## Pre-Generator Renderer Evidence
+
+- WeasyPrint 65.1, 68.0, and 69.0 passed the compact document-reset and
+  separator-area scenarios, the retained Phase 1 scenarios, selected-version
+  doctor checks, and the current actual-launch control.
+- `@page:nth(1)` with a reset seed of `start - increment` produced the expected
+  document-origin sequence `0, 2, 4` when `start: 0` and `increment: 2`.
+- Omitted separators produced no line. Styling an occupied header or footer
+  margin box produced a legible bounded line. Identically styled empty sibling
+  boxes did not form a meaningful continuous span, so generated separator CSS
+  will target occupied boxes only.
+- Extracted labels and representative PNGs agreed across accepted candidates;
+  no clipping or overlap was observed.
+- The successful temporary laboratory was closed after visual review. Earlier
+  inconclusive setup attempts were not treated as renderer evidence and their
+  owned laboratories were also closed.
 
 ## Temporary Evidence Lifecycle
 
