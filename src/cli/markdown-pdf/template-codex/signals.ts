@@ -2,6 +2,7 @@ import { readTextFileRequired } from "../../file-io";
 import {
   createMarkdownPdfProfileCandidates,
   loadMarkdownPdfBaseProfileCandidate,
+  type MarkdownPdfProfileCandidateSummary,
 } from "../profile/candidates";
 import { normalizeMarkdownPdfProfile, type NormalizedMarkdownPdfProfile } from "../profile";
 import {
@@ -33,8 +34,8 @@ interface MdPdfTemplateCodexSignalContext {
   signals: MdPdfTemplateCodexSignalCollection;
 }
 
-function baseProfileSummaryForTemplate(
-  summary: NonNullable<Awaited<ReturnType<typeof loadMarkdownPdfBaseProfileCandidate>>["summary"]>,
+export function createMdPdfTemplateCodexBaseProfileSummary(
+  summary: MarkdownPdfProfileCandidateSummary,
 ): MarkdownPdfTemplateCodexBaseProfileSummary {
   return {
     id: summary.id,
@@ -111,7 +112,7 @@ export async function collectMdPdfTemplateCodexSignalContext(
       baseProfile: {
         available: Boolean(baseProfileCandidate),
         ...(baseProfileCandidate
-          ? { summary: baseProfileSummaryForTemplate(baseProfileCandidate.summary) }
+          ? { summary: createMdPdfTemplateCodexBaseProfileSummary(baseProfileCandidate.summary) }
           : {}),
       },
       recipe,

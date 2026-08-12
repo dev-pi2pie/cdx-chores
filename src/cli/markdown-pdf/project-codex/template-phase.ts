@@ -13,6 +13,7 @@ import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 import { normalizeMarkdownPdfProfile } from "../profile";
 import { collectMarkdownPdfFontSignals } from "../profile/signals";
 import { collectMdPdfTemplateCodexRecipeSignals } from "../template-codex/recipe-signals";
+import { createMdPdfTemplateCodexBaseProfileSummary } from "../template-codex/signals";
 import {
   deriveMdPdfTemplateCodexFontOwnership,
   synthesizeMdPdfTemplateCodex,
@@ -76,13 +77,13 @@ function topLevelProfileFields(profile: Record<string, unknown>): string[] {
 
 function createFinalProfileSummary(
   profilePhase: MdPdfProjectCodexProfilePhaseResult,
-): MarkdownPdfProfileCandidateSummary {
+): MdPdfTemplateCodexSignalCollection["baseProfile"]["summary"] {
   const {
     basedOn: _basedOn,
     preset: _preset,
     ...selectedSummary
   } = profilePhase.selectedCandidate.summary;
-  return {
+  const summary: MarkdownPdfProfileCandidateSummary = {
     ...selectedSummary,
     ...(profilePhase.identity.basedOn ? { basedOn: profilePhase.identity.basedOn } : {}),
     ...(profilePhase.identity.preset ? { preset: profilePhase.identity.preset } : {}),
@@ -91,6 +92,7 @@ function createFinalProfileSummary(
     label: "Final project profile",
     presetBacked: Boolean(profilePhase.identity.preset),
   };
+  return createMdPdfTemplateCodexBaseProfileSummary(summary);
 }
 
 function createTemplateSignalsFromProject(input: {
