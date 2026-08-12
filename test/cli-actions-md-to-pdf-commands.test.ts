@@ -485,6 +485,7 @@ describe("cli command: md pdf-template codex", () => {
       expect(result.stdout).toContain(`Codex report: ${toRepoRelativePath(reportPath)}`);
       expect(result.stdout).toContain("Follow-up render: cdx-chores md to-pdf");
       expect(result.stdout).toContain(`--bundle '${toRepoRelativePath(outputPath)}'`);
+      expect(result.stdout).toContain(`--profile '${toRepoRelativePath(baseProfilePath)}'`);
       expect(result.stdout).not.toContain("--template");
       expect(result.stdout).not.toContain("--css");
       expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
@@ -494,6 +495,7 @@ describe("cli command: md pdf-template codex", () => {
         artifactType: string;
         decision: { mode: string };
         files: Array<{ bundlePath: string }>;
+        followUpRenderCommand: string;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
       expect(report.decision.mode).toBe("deterministic");
@@ -501,6 +503,10 @@ describe("cli command: md pdf-template codex", () => {
         "template.html",
         "style.css",
       ]);
+      expect(report.followUpRenderCommand).toContain(
+        `--profile '${toRepoRelativePath(baseProfilePath)}'`,
+      );
+      expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
     });
   });
 

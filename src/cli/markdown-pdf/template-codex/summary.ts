@@ -24,6 +24,9 @@ function renderFollowUpRenderCommand(input: {
   return createMdPdfTemplateCodexRenderCommand({
     bundlePath: formatPathForDisplay(input.runtime, input.outputPlan.outputDirectory),
     inputPath,
+    ...(input.state.baseProfilePath
+      ? { profilePath: formatPathForDisplay(input.runtime, input.state.baseProfilePath) }
+      : {}),
   });
 }
 

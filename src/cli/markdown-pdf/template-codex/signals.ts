@@ -3,7 +3,7 @@ import {
   createMarkdownPdfProfileCandidates,
   loadMarkdownPdfBaseProfileCandidate,
 } from "../profile/candidates";
-import { normalizeMarkdownPdfProfile } from "../profile";
+import { normalizeMarkdownPdfProfile, type NormalizedMarkdownPdfProfile } from "../profile";
 import {
   collectMarkdownPdfDocumentSignals,
   collectMarkdownPdfFontSignals,
@@ -23,12 +23,36 @@ import { classifyMdPdfTemplateCodexSignalMode } from "./signal-mode";
 import type { CliRuntime } from "../../types";
 import type {
   MdPdfTemplateCodexSignalCollection,
+  MarkdownPdfTemplateCodexBaseProfileSummary,
   NormalizedMdPdfTemplateCodexCommandState,
 } from "./types";
 
 interface MdPdfTemplateCodexSignalContext {
+  compatibilityProfile?: NormalizedMarkdownPdfProfile;
   fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   signals: MdPdfTemplateCodexSignalCollection;
+}
+
+function baseProfileSummaryForTemplate(
+  summary: NonNullable<Awaited<ReturnType<typeof loadMarkdownPdfBaseProfileCandidate>>["summary"]>,
+): MarkdownPdfTemplateCodexBaseProfileSummary {
+  return {
+    id: summary.id,
+    kind: summary.kind,
+    label: summary.label,
+    presetBacked: summary.presetBacked,
+    ...(summary.preset ? { preset: summary.preset } : {}),
+    ...(summary.basedOn ? { basedOn: summary.basedOn } : {}),
+    fields: summary.fields.filter((field) => field !== "pageNumbers"),
+    traits: {
+      cover: summary.traits.cover,
+      toc: summary.traits.toc,
+      codeHighlight: summary.traits.codeHighlight,
+      lineNumbers: summary.traits.lineNumbers,
+      density: summary.traits.density,
+      bestFor: summary.traits.bestFor,
+    },
+  };
 }
 
 export async function collectMdPdfTemplateCodexSignalContext(
@@ -75,6 +99,7 @@ export async function collectMdPdfTemplateCodexSignalContext(
   });
 
   return {
+    ...(normalizedBaseProfile ? { compatibilityProfile: normalizedBaseProfile.profile } : {}),
     ...(normalizedBaseProfile
       ? {
           fontOwnership: deriveMdPdfTemplateCodexFontOwnership(normalizedBaseProfile.profile),
@@ -85,7 +110,9 @@ export async function collectMdPdfTemplateCodexSignalContext(
       documentSignals,
       baseProfile: {
         available: Boolean(baseProfileCandidate),
-        summary: baseProfileCandidate?.summary,
+        ...(baseProfileCandidate
+          ? { summary: baseProfileSummaryForTemplate(baseProfileCandidate.summary) }
+          : {}),
       },
       recipe,
       title: {

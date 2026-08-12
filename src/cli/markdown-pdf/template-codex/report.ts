@@ -209,6 +209,13 @@ function followUpRenderCommand(input: {
   return createMdPdfTemplateCodexRenderCommand({
     bundlePath: "<template-bundle>",
     inputPath,
+    ...(input.state.baseProfilePath
+      ? {
+          profilePath:
+            publicPathDisplay(input.runtime, input.state.baseProfilePath)?.display ??
+            "<base-profile.yml>",
+        }
+      : {}),
   });
 }
 
@@ -273,6 +280,10 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
     validationResults: [
       {
         name: "static-template-validation",
+        status: input.synthesis.decisionMode === "no-usable-template" ? "skipped" : "passed",
+      },
+      {
+        name: "document-body-boundary",
         status: input.synthesis.decisionMode === "no-usable-template" ? "skipped" : "passed",
       },
     ],

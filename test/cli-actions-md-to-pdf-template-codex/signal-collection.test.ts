@@ -117,6 +117,63 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
     });
   });
 
+  test("keeps page-number and page-chrome values out of Template model signals", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-private-page-profile", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        baseProfilePath,
+        [
+          "header:",
+          "  style:",
+          "    color: '#123ABC'",
+          "    fontSize: 11pt",
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: body",
+          "  countFrom: body",
+          "  start: 17",
+          "  increment: 3",
+          "  position: top-right",
+          "  format: 'Confidential {page}'",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        baseProfile: toRepoRelativePath(baseProfilePath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const serialized = JSON.stringify(signals);
+
+      expect(signals.baseProfile).toEqual({
+        available: true,
+        summary: {
+          id: "base-profile",
+          kind: "base-profile",
+          label: "User supplied base profile",
+          presetBacked: false,
+          basedOn: "untracked-base-profile",
+          fields: ["header"],
+          traits: {
+            cover: false,
+            toc: false,
+            codeHighlight: false,
+            lineNumbers: false,
+            density: "standard",
+            bestFor: ["user supplied base profile"],
+          },
+        },
+      });
+      expect(serialized).not.toContain("pageNumbers");
+      expect(serialized).not.toContain("Confidential");
+      expect(serialized).not.toContain("#123ABC");
+      expect(serialized).not.toContain("fontSize");
+      expect(serialized).not.toContain("top-right");
+    });
+  });
+
   test("derives wide-table recipe from strong table signals when no page recipe owner exists", async () => {
     await withTempFixtureDir("md-pdf-template-codex-wide-table-signals", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "wide-report.md");

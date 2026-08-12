@@ -888,6 +888,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(report.managedAssets).toEqual([]);
       expect(report.validationResults).toEqual([
         { name: "static-template-validation", status: "skipped" },
+        { name: "document-body-boundary", status: "skipped" },
       ]);
       expect(report.followUpRenderCommand).toBeUndefined();
     });
@@ -1147,5 +1148,50 @@ describe("cli action modules: md pdf-template codex integration", () => {
         expect(combinedCss).toContain("counter(page)");
       },
     );
+  });
+
+  test("keeps document- and body-origin base Profiles external to generated bundles", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-origin-profile-compat", async (fixtureDir) => {
+      for (const countFrom of ["document", "body"] as const) {
+        const profilePath = join(fixtureDir, `${countFrom}.yml`);
+        const outputPath = join(fixtureDir, `${countFrom}-template`);
+        await writeFile(
+          profilePath,
+          [
+            "header:",
+            "  style:",
+            "    color: '#123ABC'",
+            "    fontSize: 11pt",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: body",
+            `  countFrom: ${countFrom}`,
+            "  start: 17",
+            "  increment: 3",
+            "  position: top-right",
+            "  format: 'Confidential {page}'",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: `${countFrom}.yml`,
+          output: `${countFrom}-template`,
+        });
+
+        const templateHtml = await readFile(join(outputPath, "template.html"), "utf8");
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(templateHtml).toContain('<main class="document-body">');
+        expect(templateHtml).not.toContain("Confidential");
+        expect(styleCss).not.toContain("Confidential");
+        expect(styleCss).not.toContain("#123ABC");
+        expect(styleCss).not.toContain("counter(page)");
+        expect(styleCss).not.toContain("@top-right");
+        expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
+        expect(stdout.text).toContain(`--profile '${countFrom}.yml'`);
+      }
+    });
   });
 });

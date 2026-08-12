@@ -66,7 +66,8 @@ export async function prepareMdPdfTemplateCodex(
   options: MdPdfTemplateCodexOptions,
 ): Promise<PreparedMdPdfTemplateCodexArtifact> {
   const state = await normalizeMdPdfTemplateCodexCommandState(runtime, options);
-  const { fontOwnership, signals } = await collectMdPdfTemplateCodexSignalContext(runtime, state);
+  const { compatibilityProfile, fontOwnership, signals } =
+    await collectMdPdfTemplateCodexSignalContext(runtime, state);
   assertUsableMdPdfTemplateCodexSignalMode(signals.signalMode);
   const outputPlan = await planMdPdfTemplateCodexOutput({
     runtime,
@@ -99,7 +100,7 @@ export async function prepareMdPdfTemplateCodex(
       writeMode: "bundle",
     });
   }
-  validateMdPdfTemplateCodexSynthesis({ outputPlan, synthesis });
+  validateMdPdfTemplateCodexSynthesis({ compatibilityProfile, outputPlan, synthesis });
   return createPreparedMdPdfTemplateCodexArtifact({
     outputPlan,
     runtime,

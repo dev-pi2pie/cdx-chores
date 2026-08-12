@@ -22,6 +22,10 @@ describe("cli action modules: md pdf-template codex families", () => {
           marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
         }),
         expect.objectContaining({
+          id: "document-body",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.documentBodyClass,
+        }),
+        expect.objectContaining({
           id: "toc-conditional",
           marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional,
         }),
@@ -61,6 +65,10 @@ describe("cli action modules: md pdf-template codex families", () => {
         expect.objectContaining({
           id: "body-placeholder",
           marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "document-body",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.documentBodyClass,
         }),
         expect.objectContaining({
           id: "toc-conditional",
