@@ -702,6 +702,37 @@ describe("cli action modules: md pdf-project codex validation", () => {
     );
   });
 
+  test("rejects typed attr counter mutation received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-attr-counter-mutation",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [
+                {
+                  css: "body { counter-reset: attr(data-counter type(<custom-ident>)); }",
+                  slot: "spacing",
+                },
+              ],
+            }),
+        });
+
+        expect(templatePhase.synthesis.styleCss).toContain(
+          "counter-reset: attr(data-counter type(<custom-ident>))",
+        );
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "indeterminate counter mutation",
+        });
+      },
+    );
+  });
+
   test("names final Profile and actual generated body incompatibility", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-validation-profile-body-compatibility",

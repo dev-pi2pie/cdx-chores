@@ -99,11 +99,14 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
     }
   });
 
-  test("rejects counter mutation through custom-property indirection", () => {
+  test("rejects counter mutation through dynamic function values", () => {
     for (const css of [
       "body { --folio: page 99; counter-reset: var(--folio); }",
       ".document-body { counter-increment: var(--sequence); }",
       "@media print { main { counter-set: v\\61 r(--counter-name); } }",
+      "article { counter-reset: attr(data-counter type(<custom-ident>)); }",
+      "aside { counter-increment: \\61 ttr(data-counter); }",
+      "section { counter-set: env(counter-name); }",
     ]) {
       expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
         "indeterminate counter mutation",

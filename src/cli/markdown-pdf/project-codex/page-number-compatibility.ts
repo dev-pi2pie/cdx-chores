@@ -242,7 +242,7 @@ function counterMutationCompetesWithProfile(input: { property: string; value: st
     return false;
   }
   return (
-    /\bvar\s*\(/iu.test(input.value) ||
+    /[-_A-Za-z][-_A-Za-z0-9]*\s*\(/u.test(input.value) ||
     /(?:^|[^-_A-Za-z0-9])pages?(?:$|[^-_A-Za-z0-9])/iu.test(input.value)
   );
 }
