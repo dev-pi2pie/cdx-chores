@@ -5,10 +5,11 @@ import type {
   PreparedMarkdownPdfDeterministicRecipe,
 } from "./deterministic-authoring";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import { renderReusableMarkdownPdfCodeReview } from "./code-highlighting-review";
 import {
-  renderReusableMarkdownPdfCodeReview,
-  resolveReusableMarkdownPdfCode,
-} from "./code-highlighting-review";
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "../../markdown-pdf/profile-authoring-review";
 
 export type MarkdownPdfCandidateReviewAction =
   | "save"
@@ -18,6 +19,8 @@ export type MarkdownPdfCandidateReviewAction =
   | "revise-margins"
   | "revise-toc"
   | "revise-code"
+  | "revise-page-chrome"
+  | "revise-page-numbers"
   | "change-mode"
   | "change-artifact"
   | "cancel";
@@ -58,11 +61,12 @@ export function renderDeterministicRecipeReview(
     `- ToC: ${options.toc ? `enabled (depth ${options.tocDepth}, page break ${options.tocPageBreak})` : "disabled"}`,
   );
   if (candidate.artifact === "profile") {
+    const review = collectMarkdownPdfProfileAuthoringReview(candidate.prepared.profile);
     printLine(runtime.stderr, "");
-    renderReusableMarkdownPdfCodeReview(
-      runtime,
-      resolveReusableMarkdownPdfCode(candidate.prepared.profile),
-    );
+    renderReusableMarkdownPdfCodeReview(runtime, review.normalizedProfile.code);
+    for (const line of formatMarkdownPdfProfileAuthoringReview(review)) {
+      printLine(runtime.stderr, line);
+    }
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");
@@ -114,10 +118,18 @@ export function markdownPdfCandidateReviewChoices(
     candidate.preparation === "formal-guide" && candidate.artifact === "profile"
       ? ([{ name: "Revise code highlighting", value: "revise-code" }] as const)
       : [];
+  const profileRevisionChoices =
+    candidate.preparation === "formal-guide" && candidate.artifact === "profile"
+      ? ([
+          { name: "Revise page numbers", value: "revise-page-numbers" },
+          { name: "Revise page chrome", value: "revise-page-chrome" },
+        ] as const)
+      : [];
   return [
     ...acceptChoices,
     ...commonRevisionChoices,
     ...codeRevisionChoices,
+    ...profileRevisionChoices,
     { name: "Change preparation mode", value: "change-mode" as const },
     { name: "Change artifact", value: "change-artifact" as const },
     { name: "Cancel", value: "cancel" as const },

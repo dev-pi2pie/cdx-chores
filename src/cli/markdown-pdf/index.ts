@@ -21,6 +21,15 @@ export {
   MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
   MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
 } from "./renderer-capabilities";
+export {
+  collectMarkdownPdfProfileAuthoringCapabilityRequirements,
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "./profile-authoring-review";
+export type {
+  MarkdownPdfProfileAuthoringCapabilityRequirement,
+  MarkdownPdfProfileAuthoringReview,
+} from "./profile-authoring-review";
 export type {
   MarkdownPdfRendererCapabilityAssessment,
   MarkdownPdfRendererCapabilityDefinition,

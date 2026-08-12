@@ -6,7 +6,7 @@ import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { createMarkdownPdfProfileConfig } from "./materialize";
 import { inferMarkdownPdfProfileFormat } from "./schema";
 import { serializeMarkdownPdfProfile } from "./serialize";
-import type { MarkdownPdfProfileFormat, NormalizedMarkdownPdfCode } from "./types";
+import type { MarkdownPdfProfileFormat, NormalizedMarkdownPdfProfile } from "./types";
 
 export interface PreparedMarkdownPdfProfileInit {
   normalizedOptions: NormalizedMarkdownPdfOptions;
@@ -29,13 +29,13 @@ export interface BoundMarkdownPdfProfileInitDestination {
 
 export function prepareMarkdownPdfProfileInit(
   normalizedOptions: NormalizedMarkdownPdfOptions,
-  input: { code?: NormalizedMarkdownPdfCode } = {},
+  input: Partial<
+    Pick<NormalizedMarkdownPdfProfile, "code" | "footer" | "header" | "pageNumbers">
+  > = {},
 ): PreparedMarkdownPdfProfileInit {
   const acceptedOptions = structuredClone(normalizedOptions);
   const profile = structuredClone(createMarkdownPdfProfileConfig(acceptedOptions));
-  if (input.code) {
-    profile.code = structuredClone(input.code);
-  }
+  Object.assign(profile, structuredClone(input));
   return {
     normalizedOptions: acceptedOptions,
     profile,

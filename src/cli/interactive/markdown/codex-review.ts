@@ -17,6 +17,10 @@ import {
   resolveGeneratedReusableMarkdownPdfCode,
 } from "./code-highlighting-review";
 import type { NormalizedMarkdownPdfCode } from "../../markdown-pdf/profile";
+import {
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "../../markdown-pdf/profile-authoring-review";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -187,10 +191,19 @@ export function renderMarkdownPdfCodexCandidateReview(
       printLine(runtime.stderr, `- ${direction}`);
     }
   }
-  const code = reusableCode(candidate);
+  const profileReview =
+    candidate.artifact === "profile" && candidate.prepared.kind === "profile"
+      ? collectMarkdownPdfProfileAuthoringReview(candidate.prepared.finalProfile)
+      : undefined;
+  const code = profileReview?.normalizedProfile.code ?? reusableCode(candidate);
   if (code) {
     printLine(runtime.stderr, "");
     renderReusableMarkdownPdfCodeReview(runtime, code);
+  }
+  if (profileReview) {
+    for (const line of formatMarkdownPdfProfileAuthoringReview(profileReview)) {
+      printLine(runtime.stderr, line);
+    }
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");

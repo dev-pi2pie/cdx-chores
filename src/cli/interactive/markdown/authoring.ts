@@ -34,8 +34,10 @@ import {
   reviseMarkdownPdfFormalGuideCode,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
+  reviseMarkdownPdfFormalGuidePageChrome,
+  reviseMarkdownPdfFormalGuidePageNumbers,
   reviseMarkdownPdfFormalGuideToc,
-  type MarkdownPdfFormalGuideGroup,
+  type MarkdownPdfProfileFormalGuideGroup,
 } from "./formal-guide";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 import {
@@ -136,7 +138,7 @@ async function prepareCandidate(
 
 async function reviseCandidate(
   candidate: PreparedMarkdownPdfDeterministicRecipe,
-  group: MarkdownPdfFormalGuideGroup,
+  group: MarkdownPdfProfileFormalGuideGroup,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
   const prompts = createMarkdownPdfFormalGuidePrompts();
   if (candidate.artifact === "profile") {
@@ -158,6 +160,12 @@ async function reviseCandidate(
       case "toc":
         revised = await reviseMarkdownPdfFormalGuideToc(answers, prompts);
         break;
+      case "page-numbers":
+        revised = await reviseMarkdownPdfFormalGuidePageNumbers(answers, prompts);
+        break;
+      case "page-chrome":
+        revised = await reviseMarkdownPdfFormalGuidePageChrome(answers, prompts);
+        break;
     }
     return prepareMarkdownPdfDeterministicRecipe({
       artifact: "profile",
@@ -167,7 +175,7 @@ async function reviseCandidate(
     });
   }
   const answers = candidate.formalGuideAnswers;
-  if (!answers || group === "code") {
+  if (!answers || group === "code" || group === "page-numbers" || group === "page-chrome") {
     return candidate;
   }
   const revised =
@@ -267,7 +275,11 @@ async function reviewCandidate(
           ? "margins"
           : action === "revise-toc"
             ? "toc"
-            : "code",
+            : action === "revise-page-numbers"
+              ? "page-numbers"
+              : action === "revise-page-chrome"
+                ? "page-chrome"
+                : "code",
     );
   }
 }

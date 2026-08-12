@@ -183,7 +183,9 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
             ? { kind: "no-usable-profile" }
             : {
                 decisionMode: "generated",
-                finalProfile: { code: GENERATED_CODE },
+                finalProfile: context.scenario.markdownPdfCodexFinalProfile ?? {
+                  code: GENERATED_CODE,
+                },
                 kind: "profile",
                 signalMode: setup.sample ? "document-informed" : "intent-only",
                 suggestedOutputPath: suggestedOutput,
@@ -330,6 +332,10 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                 normalizedOptions,
                 profile: {
                   code: formalGuideAnswers.code ?? DEFAULT_CODE,
+                  ...(formalGuideAnswers.pageChrome as Record<string, unknown> | undefined),
+                  ...(formalGuideAnswers.pageNumbers
+                    ? { pageNumbers: formalGuideAnswers.pageNumbers }
+                    : {}),
                   page: normalizedOptions,
                 },
               }

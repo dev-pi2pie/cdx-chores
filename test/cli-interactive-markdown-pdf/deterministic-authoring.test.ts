@@ -83,9 +83,9 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "save",
         "exit",
       ],
-      inputQueue: ["15mm", "10mm", "11mm", "12mm", "13mm"],
+      inputQueue: ["15mm", "", "", "", "", "", "", "10mm", "11mm", "12mm", "13mm"],
       requiredPathQueue: ["recipes/formal.json"],
-      confirmQueue: [true, true, false, false, false, true],
+      confirmQueue: [true, true, false, false, false, false, false, false, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -196,7 +196,8 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "revise-code",
         "cancel",
       ],
-      confirmQueue: [false, true, true, true, false],
+      inputQueue: ["", "", "", "", "", ""],
+      confirmQueue: [false, true, true, true, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -222,6 +223,160 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(
       result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
     ).toContain("revise-code");
+  });
+
+  test("reviews and revises normalized Profile page policy with advisory requirements", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...RECIPES_ENTRY,
+        "profile",
+        "formal-guide",
+        "article",
+        "A4",
+        "preset-default",
+        "preset-default",
+        "body",
+        "body",
+        "top-right",
+        500,
+        "revise-page-numbers",
+        "body",
+        "document",
+        "bottom-center",
+        "save",
+        "exit",
+      ],
+      inputQueue: [
+        "0",
+        "2",
+        "Page {page}",
+        "{company}",
+        "",
+        "{title}",
+        "8pt",
+        "1.1",
+        "#123456",
+        "",
+        "",
+        "",
+        "1",
+        "1",
+        "{page}",
+      ],
+      requiredPathQueue: ["recipes/page-policy.yml"],
+      confirmQueue: [false, false, true, true, false, false, true, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfDeterministicPrepareCalls[0]?.formalGuideAnswers).toMatchObject({
+      pageNumbers: {
+        enabled: true,
+        scope: "body",
+        countFrom: "body",
+        start: 0,
+        increment: 2,
+        position: "top-right",
+        format: "Page {page}",
+      },
+      pageChrome: {
+        header: {
+          left: "{company}",
+          center: "",
+          right: "{title}",
+          style: {
+            fontSize: "8pt",
+            fontWeight: 500,
+            lineHeight: 1.1,
+            color: "#123456",
+          },
+        },
+      },
+    });
+    expect(result.markdownPdfDeterministicPrepareCalls[1]?.formalGuideAnswers).toMatchObject({
+      pageNumbers: {
+        enabled: true,
+        scope: "body",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      },
+      pageChrome: {
+        header: { style: { fontSize: "8pt" } },
+      },
+    });
+    expect(result.stderr).toContain("Reusable Profile page numbers:");
+    expect(result.stderr).toContain("- Start: 0");
+    expect(result.stderr).toContain("- Increment: 2");
+    expect(result.stderr).toContain("Reusable Profile page chrome:");
+    expect(result.stderr).toContain("- capabilityId: pageNumbers.start");
+    expect(result.stderr).toContain("  requestedBy: pageNumbers.start");
+    expect(result.stderr).toContain("  minimumVersion: 65.1");
+    expect(result.stderr).not.toContain("installed");
+    expect(result.stderr).not.toContain("conditionId");
+    expect(result.stderr).not.toContain("readiness");
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([
+      { artifact: "profile", candidateId: "deterministic-2" },
+    ]);
+  });
+
+  test("dispatches page-chrome revision without changing other formal-guide groups", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...RECIPES_ENTRY,
+        "profile",
+        "formal-guide",
+        "article",
+        "A4",
+        "preset-default",
+        "preset-default",
+        "revise-page-chrome",
+        "cancel",
+      ],
+      inputQueue: [
+        "Initial header",
+        "",
+        "{title}",
+        "Initial footer",
+        "",
+        "{date}",
+        "Revised header",
+        "{company}",
+        "{title}",
+        "Revised footer",
+        "{author}",
+        "{date}",
+      ],
+      confirmQueue: [false, false, false, false, false, false, false],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
+    const initial = result.markdownPdfDeterministicPrepareCalls[0]?.formalGuideAnswers as Record<
+      string,
+      unknown
+    >;
+    const revised = result.markdownPdfDeterministicPrepareCalls[1]?.formalGuideAnswers as Record<
+      string,
+      unknown
+    >;
+    for (const group of ["layout", "margins", "toc", "code", "pageNumbers"] as const) {
+      expect(revised[group]).toEqual(initial[group]);
+    }
+    expect(initial.pageChrome).toEqual({
+      header: { left: "Initial header", center: "", right: "{title}" },
+      footer: { left: "Initial footer", center: "", right: "{date}" },
+    });
+    expect(revised.pageChrome).toEqual({
+      header: { left: "Revised header", center: "{company}", right: "{title}" },
+      footer: { left: "Revised footer", center: "{author}", right: "{date}" },
+    });
+    expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
   });
 
   test("keeps Template formal-guide prompts and review free of reusable Profile settings", () => {
@@ -250,9 +405,17 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       ),
     ).toBe(false);
     expect(result.stderr).not.toContain("Reusable Profile settings:");
+    expect(result.stderr).not.toContain("Reusable Profile page numbers:");
+    expect(result.stderr).not.toContain("Advisory renderer capability requirements:");
     expect(
       result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
     ).not.toContain("revise-code");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+    ).not.toContain("revise-page-numbers");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+    ).not.toContain("revise-page-chrome");
   });
 
   test("changes durable output without preparing the candidate again", () => {

@@ -708,6 +708,29 @@ describe("interactive Markdown PDF Codex authoring", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexBindErrorMessage: "Output already exists",
+      markdownPdfCodexFinalProfile: {
+        code: {
+          highlight: true,
+          theme: "light-plus",
+          lineNumbers: true,
+          transformerNotation: false,
+        },
+        pageNumbers: {
+          enabled: true,
+          scope: "body",
+          countFrom: "body",
+          start: 0,
+          increment: 2,
+          position: "top-right",
+          format: "Page {page}",
+        },
+        header: {
+          left: "{company}",
+          center: "",
+          right: "{title}",
+          style: { fontSize: "8pt", color: "#667085" },
+        },
+      },
       selectQueue: [
         ...recipesCodexSelections("profile"),
         "continue",
@@ -745,6 +768,15 @@ describe("interactive Markdown PDF Codex authoring", () => {
       }),
     ]);
     expect(result.stderr).toContain("Unable to save recipe: Output already exists");
+    expect(result.stderr.match(/Reusable Profile page numbers:/g)).toHaveLength(2);
+    expect(result.stderr).toContain("- Start: 0");
+    expect(result.stderr).toContain("- Increment: 2");
+    expect(result.stderr).toContain("- capabilityId: pageNumbers.countFrom.body");
+    expect(result.stderr).toContain("  requestedBy: pageNumbers.countFrom");
+    expect(result.stderr).toContain("  minimumVersion: 65.1");
+    expect(result.stderr).not.toContain("installed");
+    expect(result.stderr).not.toContain("conditionId");
+    expect(result.stderr).not.toContain("readiness");
   });
 
   test.each(["review", "cancel"] as const)(

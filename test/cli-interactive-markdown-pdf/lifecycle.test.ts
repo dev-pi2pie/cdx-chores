@@ -150,7 +150,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "cancel",
       ],
       requiredPathQueue: ["fixtures/report.md"],
-      confirmQueue: [false, true, true, true, false, false],
+      inputQueue: ["", "", "", "", "", ""],
+      confirmQueue: [false, true, true, true, false, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -218,7 +219,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "cancel",
       ],
       requiredPathQueue: ["fixtures/report.md"],
-      confirmQueue: [false, false, false, false],
+      inputQueue: ["", "", "", "", "", ""],
+      confirmQueue: [false, false, false, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls.map((call) => call.preparation)).toEqual([
