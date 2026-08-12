@@ -1,3 +1,5 @@
+import { parse, type DefaultTreeAdapterTypes } from "parse5";
+
 import { CliError } from "../errors";
 import type { NormalizedMarkdownPdfProfile } from "./profile";
 import {
@@ -14,12 +16,26 @@ export interface MarkdownPdfTemplateCompatibilityResult {
   warnings: string[];
 }
 
-function isManagedTemplate(templateHtml: string, builtIn: boolean): boolean {
+function isManagedTemplateNode(node: DefaultTreeAdapterTypes.Node): boolean {
+  if (node.nodeName === "#comment" && "data" in node) {
+    return node.data.trimStart().startsWith("cdx-chores md pdf-template codex |");
+  }
+  if ("tagName" in node && node.tagName === "meta") {
+    const attributes = new Map(node.attrs.map((attribute) => [attribute.name, attribute.value]));
+    if (
+      attributes.get("name")?.toLowerCase() === "generator" &&
+      attributes.get("content") === "cdx-chores md pdf-template codex"
+    ) {
+      return true;
+    }
+  }
   return (
-    builtIn ||
-    templateHtml.includes('<meta name="generator" content="cdx-chores md pdf-template codex">') ||
-    templateHtml.includes("<!-- cdx-chores md pdf-template codex |")
+    "childNodes" in node && node.childNodes.some((childNode) => isManagedTemplateNode(childNode))
   );
+}
+
+function isManagedTemplate(templateHtml: string, builtIn: boolean): boolean {
+  return builtIn || isManagedTemplateNode(parse(templateHtml));
 }
 
 function bodyBoundaryError(input: {

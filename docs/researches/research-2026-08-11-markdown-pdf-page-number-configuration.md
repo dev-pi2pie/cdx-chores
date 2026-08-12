@@ -549,10 +549,10 @@ Implementation should review every layer that can affect page chrome:
 
 - built-in cover, metadata title, ToC, and `<main>` order
 - named-page hooks for cover and ToC
-- `.document-body` on the built-in and generated `<main>` element; the current
-  Template-Codex output already emits the class, while its required-hook
-  validator still needs to adopt it alongside `$body$`, title and ToC
-  conditionals, `$toc$`, and `#TOC`[^template-contract]
+- `.document-body` on the built-in and generated `<main>` element; the shared
+  structural validator now requires exactly one class-token match containing
+  the single live `$body$` insertion point alongside the existing title and ToC
+  hooks[^template-contract]
 - legacy custom Template warning inference under `countFrom: document`
 - hard failure for `countFrom: body` when no body-start hook can be proven
 - multi-page cover content and unexpected overflow

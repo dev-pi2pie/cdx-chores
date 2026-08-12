@@ -65,8 +65,10 @@ Phase 3 remains active until the exact-range review closes.
 
 **Continue after exact-range review.** Built-in and generated Templates expose
 one proven body boundary; body-origin requests fail before renderer probes or
-writes when proof is absent; legacy document-origin fallback warns once; and
-the Template helper keeps its base Profile external to the partial bundle.
+writes when proof is absent; an unmanaged legacy Template with no body hook
+warns once for document-origin body visibility, while malformed or managed
+Templates fail; and the Template helper keeps its base Profile external to the
+partial bundle.
 
 ## Related Research
 

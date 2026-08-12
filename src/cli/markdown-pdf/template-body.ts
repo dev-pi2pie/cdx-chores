@@ -2,6 +2,18 @@ import { parse, type DefaultTreeAdapterTypes } from "parse5";
 
 const DOCUMENT_BODY_CLASS = "document-body";
 const PANDOC_BODY_INSERTION = "$body$";
+const INERT_TEXT_CONTAINER_TAGS = new Set([
+  "iframe",
+  "noembed",
+  "noframes",
+  "noscript",
+  "plaintext",
+  "script",
+  "style",
+  "textarea",
+  "title",
+  "xmp",
+]);
 
 type Parse5Node = DefaultTreeAdapterTypes.Node;
 type Parse5Element = DefaultTreeAdapterTypes.Element;
@@ -50,7 +62,7 @@ function inspectNode(
     hooks.push(node);
   }
 
-  if (isElement(node) && (node.tagName === "script" || node.tagName === "style")) {
+  if (isElement(node) && INERT_TEXT_CONTAINER_TAGS.has(node.tagName)) {
     return;
   }
 
@@ -71,8 +83,9 @@ function inspectNode(
 /**
  * Proves the body boundary from parsed, executable HTML structure.
  *
- * Pandoc body tokens in comments, attributes, scripts, styles, and inert template
- * content are not live text insertion points and therefore do not count.
+ * Pandoc body tokens in comments, attributes, raw-text containers,
+ * escapable-raw-text containers, and inert template content are not live body
+ * insertion points and therefore do not count.
  */
 export function inspectMarkdownPdfTemplateBody(
   templateHtml: string,

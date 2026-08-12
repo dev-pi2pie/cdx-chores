@@ -80,23 +80,30 @@ describe("markdown PDF template body contract", () => {
     ).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
   });
 
-  test("does not count script-only matches", () => {
-    expect(
-      inspectMarkdownPdfTemplateBody(
-        '<main class="document-body"><script>const body = "$body$";</script></main>',
-      ),
-    ).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
+  test.each([
+    "iframe",
+    "noembed",
+    "noframes",
+    "noscript",
+    "plaintext",
+    "script",
+    "style",
+    "textarea",
+    "title",
+    "xmp",
+  ])("does not count a body token in the inert %s text container", (tagName) => {
+    const result = inspectMarkdownPdfTemplateBody(
+      `<main class="document-body"><${tagName}>$body$</${tagName}></main>`,
+    );
+
+    expect(result).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
   });
 
-  test("does not count style-only or inert template matches", () => {
-    const style = inspectMarkdownPdfTemplateBody(
-      '<main class="document-body"><style>.sample::after { content: "$body$"; }</style></main>',
-    );
-    const inert = inspectMarkdownPdfTemplateBody(
+  test("does not count an insertion in inert template content", () => {
+    const result = inspectMarkdownPdfTemplateBody(
       '<main class="document-body"><template><p>$body$</p></template></main>',
     );
 
-    expect(style).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
-    expect(inert).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
+    expect(result).toEqual({ status: "missing-insertion", hookCount: 1, insertionCount: 0 });
   });
 });
