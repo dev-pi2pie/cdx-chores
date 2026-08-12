@@ -435,6 +435,39 @@ describe("cli action modules: doctor", () => {
     },
   );
 
+  test("keeps human capability status and IDs aligned with JSON for the same fixture", async () => {
+    const statuses = {
+      pandoc: ok("pandoc 3.9\n"),
+      ffmpeg: ok("ffmpeg version 8.0.1\n"),
+      weasyprint: ok("WeasyPrint version 65.0\n"),
+      "fc-list": ok("fontconfig version 2.15.0\n"),
+      "fc-query": ok("fontconfig version 2.15.0\n"),
+    };
+    const jsonRuntime = createActionTestRuntime();
+    const humanRuntime = createActionTestRuntime();
+
+    await actionDoctor(jsonRuntime.runtime, {
+      json: true,
+      dependencyRunner: doctorDependencyRunner(statuses),
+    });
+    await actionDoctor(humanRuntime.runtime, {
+      dependencyRunner: doctorDependencyRunner(statuses),
+    });
+
+    jsonRuntime.expectNoStderr();
+    humanRuntime.expectNoStderr();
+    const payload = JSON.parse(jsonRuntime.stdout.text);
+    expect(humanRuntime.stdout.text).toContain("Markdown PDF renderer capabilities:");
+    for (const capability of payload.markdownPdf.rendererCapabilities.capabilities) {
+      expect(humanRuntime.stdout.text).toContain(
+        `${capability.id}: ${capability.status}, minimum=${capability.minimumVersion}`,
+      );
+      expect(humanRuntime.stdout.text).toContain(`diagnostic=${capability.diagnosticConditionId}`);
+    }
+    expect(payload.markdownPdf.ready).toBeTrue();
+    expect(humanRuntime.stdout.text).toContain("md.to-pdf: available");
+  });
+
   test("preserves doctor dependency-check failure semantics for a renderer probe exception", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     const runner: DependencyCommandRunner = async (command) => {

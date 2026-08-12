@@ -285,30 +285,26 @@ export function assessMarkdownPdfRendererCapabilities(input: {
   renderer?: CommandStatus;
   probeFailed?: boolean;
 }): MarkdownPdfRendererCapabilityAssessment {
-  let status: MarkdownPdfRendererCapabilityStatus;
-  if (input.probeFailed) {
-    status = "probe-failed";
-  } else if (!input.renderer) {
-    status = "unknown";
-  } else {
-    status = assessCommandMinimumVersion(
-      input.renderer,
-      MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-    ).status;
-  }
-
-  const diagnosticConditionId = status === "satisfied" ? undefined : conditionIdForStatus(status);
   return {
     renderer: {
       name: "weasyprint",
       available: input.renderer?.available ?? null,
       version: input.renderer?.version ?? null,
     },
-    capabilities: MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.map((definition) => ({
-      ...definition,
-      status,
-      ...(diagnosticConditionId ? { diagnosticConditionId } : {}),
-    })),
+    capabilities: MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.map((definition) => {
+      const status: MarkdownPdfRendererCapabilityStatus = input.probeFailed
+        ? "probe-failed"
+        : !input.renderer
+          ? "unknown"
+          : assessCommandMinimumVersion(input.renderer, definition.minimumVersion).status;
+      const diagnosticConditionId =
+        status === "satisfied" ? undefined : conditionIdForStatus(status);
+      return {
+        ...definition,
+        status,
+        ...(diagnosticConditionId ? { diagnosticConditionId } : {}),
+      };
+    }),
   };
 }
 
@@ -316,25 +312,30 @@ export function assertMarkdownPdfRendererCapabilities(input: {
   assessment: MarkdownPdfRendererCapabilityAssessment;
   requests: readonly MarkdownPdfRendererCapabilityRequest[];
 }): void {
-  const requestIds = new Set(input.requests.map(({ capabilityId }) => capabilityId));
-  const unavailable = input.assessment.capabilities.filter(
-    (capability) => requestIds.has(capability.id) && capability.status !== "satisfied",
+  const capabilities = new Map(
+    input.assessment.capabilities.map((capability) => [capability.id, capability]),
   );
+  const unavailable = input.requests.flatMap((request) => {
+    const capability = capabilities.get(request.capabilityId);
+    return !capability || capability.status !== "satisfied" ? [{ request, capability }] : [];
+  });
   if (unavailable.length === 0) {
     return;
   }
 
   const first = unavailable[0];
-  const requested = input.requests
-    .filter(({ capabilityId }) => unavailable.some(({ id }) => id === capabilityId))
-    .map(({ capabilityId, requestedBy }) => `${capabilityId} (${requestedBy.join(", ")})`)
+  const requested = unavailable
+    .map(({ request, capability }) => {
+      const minimum = capability ? capability.minimumVersion : "unknown";
+      return `${request.capabilityId} (${request.requestedBy.join(", ")}; minimum ${minimum})`;
+    })
     .join("; ");
   const version = input.assessment.renderer.version ?? "unknown";
   throw new CliError(
-    `WeasyPrint ${version} cannot provide the effectively requested Markdown PDF renderer capabilities: ${requested}. Required baseline: ${MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION}.`,
+    `WeasyPrint ${version} cannot provide the effectively requested Markdown PDF renderer capabilities: ${requested}.`,
     {
       code:
-        first?.diagnosticConditionId ??
+        first?.capability?.diagnosticConditionId ??
         MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.rendererCapabilityUnknown,
       exitCode: 2,
     },

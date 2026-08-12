@@ -60,9 +60,9 @@ failure, unknown capability, and unsupported capability. Warnings are
 successful diagnostics emitted to `stderr` in plain rendering and carried in
 structured collections for Project reports and later Interactive review.
 Hard render-gate errors use the command's normal nonzero path and the same
-identifier in structured error surfaces. `doctor --json` emits only its
-structured capability snapshot on `stdout`; neither errors nor warnings mix
-prose into JSON output.
+identifier in structured error surfaces. `doctor --json` emits JSON-only
+structured output on `stdout`, including the nested capability snapshot;
+neither errors nor warnings mix prose into that JSON output.
 
 The warning accumulator emits each condition at most once per rendered
 document and resets for each new render. Occupied-slot detection trims the

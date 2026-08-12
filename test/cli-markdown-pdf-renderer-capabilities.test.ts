@@ -17,6 +17,7 @@ import {
 } from "../src/cli/markdown-pdf";
 import type {
   MarkdownPdfProcessRunner,
+  MarkdownPdfRendererCapabilityId,
   MarkdownPdfRendererCapabilityStatus,
   NormalizedMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf";
@@ -61,8 +62,8 @@ function profileWithAdvancedControls(): NormalizedMarkdownPdfProfile {
       ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers,
       enabled: true,
       position: "bottom-center",
-      scope: "document",
-      countFrom: "document",
+      scope: "body",
+      countFrom: "body",
       start: 0,
       increment: 2,
     },
@@ -91,6 +92,30 @@ function runnerWithWeasyPrintVersion(version: string): {
 
 async function expectMissing(path: string): Promise<void> {
   await expect(stat(path)).rejects.toMatchObject({ code: "ENOENT" });
+}
+
+function fullAdvancedProfileSource(numberingBoundary: "body" | "document"): string {
+  return [
+    "header:",
+    "  left: Advanced header",
+    "  style:",
+    "    fontSize: 8pt",
+    "    fontWeight: 500",
+    "    lineHeight: 1.2",
+    '    color: "#123456"',
+    "    separator:",
+    "      width: 0.5pt",
+    "      style: solid",
+    '      color: "#abcdef"',
+    "      gap: 0",
+    "pageNumbers:",
+    "  enabled: true",
+    "  start: 0",
+    "  increment: 2",
+    `  scope: ${numberingBoundary}`,
+    `  countFrom: ${numberingBoundary}`,
+    "",
+  ].join("\n");
 }
 
 const CAPABILITY_FIELD_CASES = MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.flatMap((capability) =>
@@ -141,8 +166,8 @@ describe("Markdown PDF renderer capability matrix", () => {
         requestedBy: ["pageNumbers.increment"],
       },
       {
-        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
-        requestedBy: ["pageNumbers.scope"],
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin,
+        requestedBy: ["pageNumbers.countFrom"],
       },
       {
         capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize,
@@ -177,6 +202,27 @@ describe("Markdown PDF renderer capability matrix", () => {
         requestedBy: ["header.style.separator.gap", "footer.style.separator.gap"],
       },
     ]);
+
+    const documentProfile: NormalizedMarkdownPdfProfile = {
+      ...profile,
+      pageNumbers: {
+        ...profile.pageNumbers,
+        scope: "document",
+        countFrom: "document",
+      },
+    };
+    expect(
+      collectMarkdownPdfRendererCapabilityRequests({
+        profile: documentProfile,
+        pageNumbers: documentProfile.pageNumbers,
+      }).find(
+        ({ capabilityId }) =>
+          capabilityId === MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
+      ),
+    ).toEqual({
+      capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
+      requestedBy: ["pageNumbers.scope"],
+    });
   });
 
   test("gates styles only for occupied areas or the enabled page-number target", () => {
@@ -320,6 +366,65 @@ describe("Markdown PDF renderer capability matrix", () => {
       });
     }
     expect(() => assertMarkdownPdfRendererCapabilities({ assessment, requests: [] })).not.toThrow();
+  });
+
+  test("reports each unavailable capability's own minimum version", () => {
+    const assessment = assessMarkdownPdfRendererCapabilities({
+      renderer: rendererStatus({ version: "65.0" }),
+    });
+    assessment.capabilities[0] = {
+      ...assessment.capabilities[0]!,
+      minimumVersion: "65.2",
+    };
+    assessment.capabilities[1] = {
+      ...assessment.capabilities[1]!,
+      minimumVersion: "66.0",
+    };
+
+    expect(() =>
+      assertMarkdownPdfRendererCapabilities({
+        assessment,
+        requests: [
+          {
+            capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberStart,
+            requestedBy: ["pageNumbers.start"],
+          },
+          {
+            capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement,
+            requestedBy: ["pageNumbers.increment"],
+          },
+        ],
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        message: expect.stringMatching(
+          /pageNumbers\.start.*minimum 65\.2.*pageNumbers\.increment.*minimum 66\.0/u,
+        ),
+      }),
+    );
+  });
+
+  test("fails an unknown requested capability with the stable unknown ID", () => {
+    const assessment = assessMarkdownPdfRendererCapabilities({
+      renderer: rendererStatus({ version: "65.1" }),
+    });
+
+    expect(() =>
+      assertMarkdownPdfRendererCapabilities({
+        assessment,
+        requests: [
+          {
+            capabilityId: "pageNumbers.future" as MarkdownPdfRendererCapabilityId,
+            requestedBy: ["pageNumbers.start"],
+          },
+        ],
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        code: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.rendererCapabilityUnknown,
+        message: expect.stringContaining("minimum unknown"),
+      }),
+    );
   });
 });
 
@@ -614,4 +719,71 @@ describe("Markdown PDF renderer capability gate", () => {
       expectNoStderr();
     });
   });
+
+  test.each(["body", "document"] as const)(
+    "renders the full styled %s-numbering advanced Profile at the baseline",
+    async (numberingBoundary) => {
+      await withTempFixtureDir("md-pdf-capability-full-baseline", async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "report.pdf");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await writeFile(profilePath, fullAdvancedProfileSource(numberingBoundary), "utf8");
+        const { calls, runner } = runnerWithWeasyPrintVersion("65.1");
+        const { runtime } = createActionTestRuntime();
+
+        await actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          profile: toRepoRelativePath(profilePath),
+          output: toRepoRelativePath(outputPath),
+          runner,
+        });
+
+        expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+        expect(calls.some(({ command }) => command === "pandoc")).toBeTrue();
+        expect(
+          calls.some(({ command, args }) => command === "weasyprint" && !args.includes("--info")),
+        ).toBeTrue();
+      });
+    },
+  );
+
+  test.each([
+    ["65.0", MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.rendererCapabilityUnsupported],
+    ["custom-build", MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.rendererCapabilityUnverified],
+  ])(
+    "rejects a combined advanced Profile on WeasyPrint %s before render or output",
+    async (version, code) => {
+      await withTempFixtureDir("md-pdf-capability-full-reject", async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "report.pdf");
+        const htmlOutputPath = join(fixtureDir, "report.html");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await writeFile(profilePath, fullAdvancedProfileSource("body"), "utf8");
+        const { calls, runner } = runnerWithWeasyPrintVersion(version);
+        const { runtime, expectNoOutput } = createActionTestRuntime();
+
+        await expectCliError(
+          () =>
+            actionMdToPdf(runtime, {
+              input: toRepoRelativePath(inputPath),
+              profile: toRepoRelativePath(profilePath),
+              output: toRepoRelativePath(outputPath),
+              htmlOutput: toRepoRelativePath(htmlOutputPath),
+              runner,
+            }),
+          { code, exitCode: 2, messageIncludes: "pageChrome.separator.gap" },
+        );
+
+        expect(calls).toEqual([
+          { command: "pandoc", args: ["--version"] },
+          { command: "weasyprint", args: ["--info"] },
+        ]);
+        await expectMissing(outputPath);
+        await expectMissing(htmlOutputPath);
+        expectNoOutput();
+      });
+    },
+  );
 });

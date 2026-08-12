@@ -252,4 +252,38 @@ describe("Markdown PDF structured diagnostics", () => {
       expect(stderr.text.match(/physical PDF page count/g)).toHaveLength(1);
     });
   });
+
+  test("resets structured diagnostics between sequential renders", async () => {
+    await withTempFixtureDir("md-pdf-diagnostics-sequential", async (fixtureDir) => {
+      const firstInputPath = join(fixtureDir, "first.md");
+      const secondInputPath = join(fixtureDir, "second.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      await writeFile(firstInputPath, "# First\n", "utf8");
+      await writeFile(secondInputPath, "# Second\n", "utf8");
+      await writeFile(
+        profilePath,
+        ["footer:", "  center: Existing footer", "pageNumbers:", "  enabled: true", ""].join("\n"),
+        "utf8",
+      );
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, stderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(firstInputPath),
+        profile: toRepoRelativePath(profilePath),
+        output: toRepoRelativePath(join(fixtureDir, "first.pdf")),
+        runner,
+      });
+      const firstRenderStderr = stderr.text;
+      expect(firstRenderStderr.match(/replace configured footer\.center content/g)).toHaveLength(1);
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(secondInputPath),
+        output: toRepoRelativePath(join(fixtureDir, "second.pdf")),
+        runner,
+      });
+
+      expect(stderr.text).toBe(firstRenderStderr);
+    });
+  });
 });
