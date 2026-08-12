@@ -34,17 +34,17 @@ Phase 3 structural body validator.
 
 ## Subphase Checkpoints
 
-- [ ] Activate Phase 6 and record the clean starting boundary.
-- [ ] 6A: Freeze condition IDs, structured payload fields, occupied-slot trim
+- [x] Activate Phase 6 and record the clean starting boundary.
+- [x] 6A: Freeze condition IDs, structured payload fields, occupied-slot trim
       semantics, and one-warning-per-render lifecycle.
-- [ ] 6B: Implement the effective-control matrix, capability evaluator,
+- [x] 6B: Implement the effective-control matrix, capability evaluator,
       unknown-state handling, and no-output pre-render gates.
-- [ ] 6C: Reuse the evaluator and diagnostic IDs in `doctor --json` and prove
+- [x] 6C: Reuse the evaluator and diagnostic IDs in `doctor --json` and prove
       parity with plain rendering and pre-render validation.
-- [ ] Record an implementation commit and focused evidence for 6A, 6B, and 6C
+- [x] Record an implementation commit and focused evidence for 6A, 6B, and 6C
       separately before the aggregate Phase 6 review.
-- [ ] Run focused validation and the Markdown PDF regression slice.
-- [ ] Run the full repository suite plus TypeScript, lint, format, build, and
+- [x] Run focused validation and the Markdown PDF regression slice.
+- [x] Run the full repository suite plus TypeScript, lint, format, build, and
       `git diff --check`; record public-safe results.
 - [ ] Review the exact Phase 6 implementation/evidence range, resolve all
       actionable findings, widen the range, and record the final verdict.
@@ -73,6 +73,17 @@ Phase 3 remains the source of truth for proving the `.document-body` and live
 `$body$` boundary. Phase 6 maps a failed proof to the stable missing-boundary
 diagnostic and does not implement a second structural check.
 
+Implemented warning IDs are
+`MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED`,
+`MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE`, and
+`MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK`. Capability states use
+`MARKDOWN_PDF_RENDERER_CAPABILITY_MISSING`,
+`MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED`,
+`MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED`,
+`MARKDOWN_PDF_RENDERER_CAPABILITY_PROBE_FAILED`, and
+`MARKDOWN_PDF_RENDERER_CAPABILITY_UNKNOWN`. The Phase 3 structural failure
+retains its existing stable `MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED` code.
+
 ## Capability Evidence
 
 Record a concrete capability matrix mapping non-default `start`, non-default
@@ -99,12 +110,42 @@ has a render request. Human doctor output remains readable, `doctor --json`
 remains JSON-only on `stdout`, and existing basic `md.to-pdf` readiness does
 not become synonymous with advanced page-number availability.
 
+Every retained advanced field maps to one of twelve explicit capability IDs.
+All twelve currently use the Phase 1-proven WeasyPrint `65.1` baseline:
+non-default start, non-default increment, document scope, body count origin,
+the four bounded typography properties, and the four bounded separator
+properties. The matrix retains header/footer field provenance even when both
+areas share the same renderer capability.
+
+## Checkpoint Commits
+
+- `b7242e90` — Phase 6 activation and shared warning diagnostics.
+- `fad15c13` — effective capability matrix and pre-render gates.
+- `2ed0a3da` — request-neutral doctor parity and human/JSON coverage.
+
 ## Validation Record
 
-To be completed during implementation with focused test names and passing
-counts, Markdown PDF regression and full-suite results, static/build checks,
-condition-ID parity evidence, warning-frequency evidence, and no-output-on-
-error evidence. Record only repository-relative, public-safe information.
+- Phase 6A diagnostics and integration validation passed 93 tests with 0
+  failures across diagnostics, Template compatibility, preparation, and action
+  suites, using
+  `bun test test/cli-actions-md-to-pdf-diagnostics.test.ts test/cli-actions-md-to-pdf-template-compatibility.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts --timeout 30000`.
+- Phase 6B capability validation passed 137 tests with 0 failures across the
+  field matrix, effective precedence, status taxonomy, and pre-output gates,
+  using
+  `bun test test/cli-markdown-pdf-renderer-capabilities.test.ts test/cli-actions-md-to-pdf-diagnostics.test.ts test/cli-actions-md-to-pdf-template-compatibility.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-assets.test.ts --timeout 30000`.
+- Phase 6C doctor/requirements validation passed 79 tests with 0 failures and
+  556 assertions after human-output review fixes, using
+  `bun test test/cli-markdown-pdf-renderer-capabilities.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts --timeout 30000`.
+- Broad Markdown PDF and doctor regression validation passed 1,017 tests with
+  0 failures and 7,403 assertions, using
+  `rg --files test | rg 'md-to-pdf|markdown-pdf|doctor-markdown' | xargs bun test --timeout 30000`.
+- Full repository validation passed 2,037 tests with 0 failures and 11,630
+  assertions, using `bun test --timeout 30000`.
+- `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+  `bun run build`, and `git diff --check` passed at the Phase 6 implementation
+  tip.
+- No renderer laboratory or generated HTML, CSS, PDF, PNG, or raw report was
+  created or retained by this phase.
 
 ## Exact-Range Review
 
@@ -116,7 +157,8 @@ aggregate review must include the recorded 6A, 6B, and 6C checkpoints.
 
 ## Final Verdict
 
-Pending Phase 6A/6B/6C implementation, validation, and exact-range review.
+**Provisional Continue.** Phase 6A/6B/6C implementation and validation are
+complete. The aggregate exact-range review remains required before Phase 7.
 
 ## Related Research
 
