@@ -552,34 +552,34 @@ Phase checkpoint:
 
 #### Phase 5A: Tri-State Override And Effective Configuration
 
-- [ ] Register `--page-numbers` and `--no-page-numbers` on direct
+- [x] Register `--page-numbers` and `--no-page-numbers` on direct
       `md to-pdf` using the existing optional-boolean convention.
-- [ ] Preserve the omitted/inherit, explicit-enable, and explicit-disable
+- [x] Preserve the omitted/inherit, explicit-enable, and explicit-disable
       tri-state through command, action, preparation, and render layers.
-- [ ] Resolve the direct override only into effective
+- [x] Resolve the direct override only into effective
       `pageNumbers.enabled`; never mutate or serialize the loaded Profile.
-- [ ] Make the resolved Profile setting, direct override, and effective setting
+- [x] Make the resolved Profile setting, direct override, and effective setting
       separately available to review and diagnostic logic.
-- [ ] Preserve the effective page-number snapshot, Profile/override
+- [x] Preserve the effective page-number snapshot, Profile/override
       precedence, and no-default-CSS incompatibility reason as internal
       preparation context for Phase 6 without defining a second public
       diagnostic schema.
 
 #### Phase 5B: `--no-default-css` Compatibility Boundary
 
-- [ ] Keep `--no-default-css` authoritative: when page numbers are effectively
+- [x] Keep `--no-default-css` authoritative: when page numbers are effectively
       enabled, reject the combination before intermediate or PDF output because
       the generated page-chrome contract is disabled.
-- [ ] Keep deliberate custom-CSS page counters available when Profile page
+- [x] Keep deliberate custom-CSS page counters available when Profile page
       numbers are disabled; do not inspect or claim ownership of arbitrary user
       counter CSS.
-- [ ] Add command help, forwarding, precedence, no-default-CSS, loaded-Profile,
+- [x] Add command help, forwarding, precedence, no-default-CSS, loaded-Profile,
       bundle, and no-Profile compatibility tests.
-- [ ] Create and maintain
+- [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-5-effective-render-configuration.md`
       with the starting boundary, 5A/5B checkpoints, validation evidence,
       public-safe failure behavior, and cleanup status.
-- [ ] Run focused checks, the Markdown PDF regression slice, and the full
+- [x] Run focused checks, the Markdown PDF regression slice, and the full
       repository validation suite; record the passing results in the Phase 5
       job before closing the phase.
 - [ ] Review the exact Phase 5 implementation and evidence range, resolve

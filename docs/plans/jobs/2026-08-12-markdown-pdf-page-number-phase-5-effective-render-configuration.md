@@ -21,7 +21,7 @@ available when Profile page numbers are disabled.
 - The related research remains `in-progress` while later phases continue.
 - The worktree was clean at the recorded starting commit. Phase 5 activation
   documentation and the first 5A implementation slice began together and are
-  checkpointed from that same boundary.
+  tracked from that same boundary.
 
 ## Permanent File Boundary
 
@@ -37,15 +37,15 @@ available when Profile page numbers are disabled.
 ## Checkpoints
 
 - [x] Activate Phase 5 and record the clean starting boundary.
-- [ ] 5A: Register the optional boolean flags and preserve tri-state
+- [x] 5A: Register the optional boolean flags and preserve tri-state
       precedence through effective render configuration.
-- [ ] 5B: Enforce the `--no-default-css` incompatibility before intermediate or
+- [x] 5B: Enforce the `--no-default-css` incompatibility before intermediate or
       PDF output while preserving deliberate custom-CSS counters.
-- [ ] Add command help and compatibility tests for Profile, bundle, and
+- [x] Add command help and compatibility tests for Profile, bundle, and
       no-Profile inputs.
-- [ ] Run focused validation, the Markdown PDF regression slice, and the full
+- [x] Run focused validation, the Markdown PDF regression slice, and the full
       repository suite.
-- [ ] Record static/build/format and `git diff --check` results.
+- [x] Record static/build/format and `git diff --check` results.
 - [ ] Review the exact Phase 5 implementation and evidence range, resolve all
       actionable findings, and record the widened range and final verdict.
 
@@ -66,9 +66,28 @@ available when Profile page numbers are disabled.
 
 ## Validation Record
 
-To be completed during implementation with focused test names and passing
-counts, the Markdown PDF regression result, the full repository result, and
-static/build checks. Record only repository-relative, public-safe evidence.
+- Phase 5A command, help, and preparation tests: 40 passed, 0 failed, using
+  `bun test test/cli-actions-md-to-pdf-command-wiring.test.ts test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts --timeout 30000`.
+- Phase 5B no-default-CSS matrix: 9 passed, 0 failed, using
+  `bun test test/cli-actions-md-to-pdf-no-default-css.test.ts --timeout 30000`.
+- Focused Phase 5B plus existing action, Profile-rendering, bundle, and
+  preparation regressions: 95 passed, 0 failed, using
+  `bun test test/cli-actions-md-to-pdf-no-default-css.test.ts test/cli-actions-md-to-pdf-actions-validation.test.ts test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts test/cli-actions-md-to-pdf-bundle.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts --timeout 30000`.
+- Broad Markdown PDF regression slice: 922 passed, 0 failed, using
+  `rg --files test | rg 'md-to-pdf|markdown-pdf' | xargs bun test --timeout 30000`.
+- Full repository suite: 1,967 passed, 0 failed, using
+  `bun test --timeout 30000`.
+- Static and build checks passed with `bunx tsc --noEmit`, `bun run lint`,
+  `bun run format:check`, `bun run build`, and `git diff --check`.
+- Recorded toolchain: Bun 1.3.14, TypeScript 7.0.2, Oxlint 1.77.0, Oxfmt
+  0.62.0, and Tsdown 0.22.14.
+- Phase 5 created no renderer laboratory or generated HTML, CSS, PDF, PNG, or
+  raw report artifact, so no temporary evidence remained to clean up.
+
+## Checkpoint Commits
+
+- `8114b2fc` — Phase 5 activation and direct tri-state effective configuration.
+- `e7404a2d` — no-default-CSS incompatibility and custom-counter compatibility.
 
 ## Exact-Range Review
 
@@ -78,7 +97,8 @@ every actionable finding, and record the widened range before Phase 6 begins.
 
 ## Final Verdict
 
-Pending Phase 5A/5B implementation, validation, and exact-range review.
+**Provisional Continue.** Phase 5A/5B implementation and validation are
+complete. The exact-range review remains required before Phase 6 begins.
 
 ## Related Research
 
