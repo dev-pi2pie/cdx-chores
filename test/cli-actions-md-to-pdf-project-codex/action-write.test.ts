@@ -1209,9 +1209,15 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         });
         expect(validation.results).toContainEqual(
           expect.objectContaining({
-            conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
             name: "profile-body-page-number-compatibility",
             status: "failed",
+          }),
+        );
+        expect(validation.diagnostics.conditions).toContainEqual(
+          expect.objectContaining({
+            conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+            context: { kind: "missing-body-boundary" },
+            severity: "error",
           }),
         );
 
@@ -1228,21 +1234,18 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         const report = JSON.parse(reportText) as {
           files: Array<{ role: string }>;
           followUpRenderCommand?: unknown;
-          input: { markdown?: unknown };
-          validationResults: Array<{ conditionId?: string; name: string; status: string }>;
+          validationResults: Array<{ name: string; status: string }>;
         };
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
         expect(report.followUpRenderCommand).toBeUndefined();
-        expect(report.input.markdown).toBeUndefined();
+        expect(report).not.toHaveProperty("diagnostics");
+        expect(report).not.toHaveProperty("capabilityRequirements");
         expect(report.validationResults).toContainEqual(
           expect.objectContaining({
             name: "profile-body-page-number-compatibility",
             status: "failed",
           }),
         );
-        expect(
-          report.validationResults.find((result) => result.status === "failed"),
-        ).not.toHaveProperty("conditionId");
       },
     );
   });

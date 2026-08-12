@@ -161,7 +161,7 @@ function sanitizePhaseSummary<T extends { fallbackReason?: string; warnings: str
 function sanitizeValidationResults(
   results: readonly MarkdownPdfProjectCodexValidationResult[],
 ): MarkdownPdfProjectCodexValidationResult[] {
-  return results.map(({ conditionId: _conditionId, ...result }) => ({
+  return results.map((result) => ({
     ...result,
     ...(result.message ? { message: sanitizeMdPdfProjectCodexReportText(result.message) } : {}),
   }));
@@ -199,7 +199,7 @@ export function createMdPdfProjectCodexReportArtifact(input: {
       template: sanitizePhaseSummary(input.templatePhase.phase),
     },
     input: {
-      ...(input.validation.decisionMode !== "no-usable-project" && input.state.inputPath
+      ...(input.state.inputPath
         ? { markdown: publicPathDisplay(input.runtime, input.state.inputPath) }
         : {}),
       ...(input.state.intent

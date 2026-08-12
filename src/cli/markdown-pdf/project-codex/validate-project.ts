@@ -1,6 +1,6 @@
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
-import { collectMarkdownPdfDiagnostics, type MarkdownPdfDiagnostics } from "../diagnostics";
+import { collectMarkdownPdfDiagnostics, type MarkdownPdfDiagnostic } from "../diagnostics";
 import { normalizeMarkdownPdfProfile, validateMarkdownPdfProfileShape } from "../profile";
 import {
   collectMarkdownPdfProfileAuthoringCapabilityRequirements,
@@ -31,10 +31,19 @@ import type {
 import type { MarkdownPdfTemplateCompatibilityResult } from "../template-compatibility";
 
 export type MarkdownPdfProjectCodexValidationStatus = "passed" | "failed" | "skipped";
-export type MarkdownPdfProjectCodexValidationConditionId = "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED";
+
+export interface MarkdownPdfProjectCodexBodyBoundaryDiagnostic {
+  conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED";
+  context: { kind: "missing-body-boundary" };
+  message: string;
+  severity: "error";
+}
+
+export interface MarkdownPdfProjectCodexValidationDiagnostics {
+  conditions: Array<MarkdownPdfDiagnostic | MarkdownPdfProjectCodexBodyBoundaryDiagnostic>;
+}
 
 export interface MarkdownPdfProjectCodexValidationResult {
-  conditionId?: MarkdownPdfProjectCodexValidationConditionId;
   name: string;
   status: MarkdownPdfProjectCodexValidationStatus;
   message?: string;
@@ -43,7 +52,7 @@ export interface MarkdownPdfProjectCodexValidationResult {
 export interface MarkdownPdfProjectCodexValidationSummary {
   capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
   decisionMode: MarkdownPdfProjectCodexDecisionMode;
-  diagnostics: MarkdownPdfDiagnostics;
+  diagnostics: MarkdownPdfProjectCodexValidationDiagnostics;
   results: MarkdownPdfProjectCodexValidationResult[];
   renderCommand?: MarkdownPdfProjectCodexRenderCommand;
   fallbackReason?: string;
@@ -61,7 +70,7 @@ interface MarkdownPdfProjectCodexValidationInput {
 
 interface CollectedProjectValidation {
   capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
-  diagnostics: MarkdownPdfDiagnostics;
+  diagnostics: MarkdownPdfProjectCodexValidationDiagnostics;
   normalizedProfile?: NormalizedProjectProfile;
   results: MarkdownPdfProjectCodexValidationResult[];
 }
@@ -72,9 +81,6 @@ function errorMessage(error: unknown): string {
 
 function failedValidation(name: string, error: unknown): MarkdownPdfProjectCodexValidationResult {
   return {
-    ...(error instanceof CliError && error.code === "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED"
-      ? { conditionId: error.code }
-      : {}),
     name,
     status: "failed",
     message: errorMessage(error),
@@ -260,6 +266,7 @@ function collectProjectValidationResults(
   const results: MarkdownPdfProjectCodexValidationResult[] = [];
   let normalizedProfile: NormalizedProjectProfile | undefined;
   let templateCompatibility: MarkdownPdfTemplateCompatibilityResult | undefined;
+  let bodyBoundaryDiagnostic: MarkdownPdfProjectCodexBodyBoundaryDiagnostic | undefined;
 
   try {
     validateMarkdownPdfProfileShape(input.profilePhase.finalProfile);
@@ -307,6 +314,14 @@ function collectProjectValidationResults(
         ),
       );
     } catch (error) {
+      if (error instanceof CliError && error.code === "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED") {
+        bodyBoundaryDiagnostic = {
+          conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+          context: { kind: "missing-body-boundary" },
+          message: error.message,
+          severity: "error",
+        };
+      }
       results.push(
         failedValidation(
           MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
@@ -398,7 +413,7 @@ function collectProjectValidationResults(
   const capabilityRequirements = normalizedProfile
     ? collectMarkdownPdfProfileAuthoringCapabilityRequirements(normalizedProfile.profile)
     : [];
-  const diagnostics =
+  const sharedDiagnostics =
     normalizedProfile && templateCompatibility
       ? collectMarkdownPdfDiagnostics({
           pageNumbers: normalizedProfile.profile.pageNumbers,
@@ -406,6 +421,12 @@ function collectProjectValidationResults(
           templateCompatibility,
         })
       : { conditions: [] };
+  const diagnostics: MarkdownPdfProjectCodexValidationDiagnostics = {
+    conditions: [
+      ...sharedDiagnostics.conditions,
+      ...(bodyBoundaryDiagnostic ? [bodyBoundaryDiagnostic] : []),
+    ],
+  };
 
   return { capabilityRequirements, diagnostics, normalizedProfile, results };
 }

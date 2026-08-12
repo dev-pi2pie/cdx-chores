@@ -46,7 +46,8 @@ export {
 } from "./page-number-compatibility";
 export {
   validateMdPdfProjectCodexProject,
-  type MarkdownPdfProjectCodexValidationConditionId,
+  type MarkdownPdfProjectCodexBodyBoundaryDiagnostic,
+  type MarkdownPdfProjectCodexValidationDiagnostics,
   type MarkdownPdfProjectCodexValidationResult,
   type MarkdownPdfProjectCodexValidationStatus,
   type MarkdownPdfProjectCodexValidationSummary,
