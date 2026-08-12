@@ -9,6 +9,7 @@ import {
   collectMarkdownPdfDocumentSignals,
   collectMarkdownPdfFontSignals,
   createAbsentMarkdownPdfDocumentSignals,
+  type MarkdownPdfFontSignals,
 } from "../profile/signals";
 import {
   hasExplicitHideMetadataTitleIntent,
@@ -54,6 +55,20 @@ export function createMdPdfTemplateCodexBaseProfileSummary(
       bestFor: summary.traits.bestFor,
     },
   };
+}
+
+export function collectMdPdfTemplateCodexFontSignals(
+  profile: NormalizedMarkdownPdfProfile,
+): MarkdownPdfFontSignals {
+  return collectMarkdownPdfFontSignals({
+    profile: {
+      ...profile,
+      fonts: {
+        ...profile.fonts,
+        pageChrome: {},
+      },
+    },
+  });
 }
 
 export async function collectMdPdfTemplateCodexSignalContext(
@@ -127,9 +142,7 @@ export async function collectMdPdfTemplateCodexSignalContext(
       },
       fonts: {
         hints: state.fontHints,
-        profileFonts: collectMarkdownPdfFontSignals({
-          profile: normalizedSelectedProfile.profile,
-        }),
+        profileFonts: collectMdPdfTemplateCodexFontSignals(normalizedSelectedProfile.profile),
       },
       coverImage,
     },

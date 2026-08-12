@@ -11,9 +11,11 @@ import {
 import type { CliRuntime } from "../../types";
 import type { MarkdownPdfProfileCandidateSummary } from "../profile/candidates";
 import { normalizeMarkdownPdfProfile } from "../profile";
-import { collectMarkdownPdfFontSignals } from "../profile/signals";
 import { collectMdPdfTemplateCodexRecipeSignals } from "../template-codex/recipe-signals";
-import { createMdPdfTemplateCodexBaseProfileSummary } from "../template-codex/signals";
+import {
+  collectMdPdfTemplateCodexFontSignals,
+  createMdPdfTemplateCodexBaseProfileSummary,
+} from "../template-codex/signals";
 import {
   deriveMdPdfTemplateCodexFontOwnership,
   synthesizeMdPdfTemplateCodex,
@@ -120,9 +122,7 @@ function createTemplateSignalsFromProject(input: {
     },
     fonts: {
       hints: input.signals.profile.fonts.hints,
-      profileFonts: collectMarkdownPdfFontSignals({
-        profile: input.normalizedFinalProfile.profile,
-      }),
+      profileFonts: collectMdPdfTemplateCodexFontSignals(input.normalizedFinalProfile.profile),
     },
     coverImage: input.signals.template.coverImage,
   };

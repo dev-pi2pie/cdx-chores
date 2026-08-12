@@ -51,6 +51,7 @@ export {
   type MarkdownPdfProjectCodexValidationResult,
   type MarkdownPdfProjectCodexValidationStatus,
   type MarkdownPdfProjectCodexValidationSummary,
+  type MdPdfProjectCodexValidator,
 } from "./validate-project";
 export {
   createMdPdfProjectCodexReportArtifact,

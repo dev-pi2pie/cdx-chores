@@ -219,10 +219,12 @@ function referencesPageCounter(value: string): boolean {
   return false;
 }
 
-function resetsOrIncrementsPageCounter(input: { property: string; value: string }): boolean {
+function mutatesPageCounter(input: { property: string; value: string }): boolean {
   return (
-    (input.property === "counter-reset" || input.property === "counter-increment") &&
-    /(?:^|[^-_A-Za-z0-9])page(?:$|[^-_A-Za-z0-9])/u.test(input.value)
+    (input.property === "counter-reset" ||
+      input.property === "counter-increment" ||
+      input.property === "counter-set") &&
+    /(?:^|[^-_A-Za-z0-9])pages?(?:$|[^-_A-Za-z0-9])/u.test(input.value)
   );
 }
 
@@ -238,7 +240,23 @@ function competesWithOrdinaryPageChrome(property: string): boolean {
   );
 }
 
+function competesWithInheritedOrdinaryPageChrome(property: string): boolean {
+  return (
+    ORDINARY_PAGE_CHROME_PROPERTIES.has(property) ||
+    property === "font" ||
+    property.startsWith("font-")
+  );
+}
+
 function assertOrdinaryPageOwnership(pageRule: CssBlock): void {
+  for (const declaration of declarations(pageRule.body)) {
+    if (competesWithInheritedOrdinaryPageChrome(declaration.property)) {
+      throw new Error(
+        `Generated Template stylesheet must not declare competing ordinary-page ${declaration.property} styling.`,
+      );
+    }
+  }
+
   for (const marginBox of cssBlocks(pageRule.body).filter((block) =>
     PAGE_MARGIN_BOX_PATTERN.test(block.prelude.trim()),
   )) {
@@ -273,14 +291,23 @@ export function validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
   if (blocks.length > MAX_TEMPLATE_CSS_BLOCKS) {
     throw new Error("Generated Template stylesheet exceeds the supported rule count.");
   }
+  if (blocks.some((block) => declarations(block.body).some(mutatesPageCounter))) {
+    throw new Error(
+      "Generated Template stylesheet must not mutate the Profile-owned page counter.",
+    );
+  }
+  if (
+    blocks.some((block) =>
+      declarations(block.body).some((declaration) => referencesPageCounter(declaration.value)),
+    )
+  ) {
+    throw new Error(
+      "Generated Template stylesheet must not reference Profile-owned page counters.",
+    );
+  }
   for (const block of blocks) {
     if (!isPageRule(block.prelude)) {
       continue;
-    }
-    if (declarations(block.body).some(resetsOrIncrementsPageCounter)) {
-      throw new Error(
-        "Generated Template stylesheet must not reset or increment the Profile-owned page counter.",
-      );
     }
     if (!isAllowedNamedPage(block.prelude)) {
       assertOrdinaryPageOwnership(block);

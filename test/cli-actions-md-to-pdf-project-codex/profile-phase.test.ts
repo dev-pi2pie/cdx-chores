@@ -383,6 +383,64 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
     );
   });
 
+  test("preserves omitted false and zero values from the authoritative base profile", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-profile-phase-authoritative-base-omission",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody content.\n", "utf8");
+        const basePath = join(fixtureDir, "base.yml");
+        const baseYaml = [
+          "pageNumbers:",
+          "  enabled: false",
+          "  scope: body",
+          "  countFrom: document",
+          "  start: 0",
+          "  increment: 3",
+          "footer:",
+          "  style:",
+          "    separator:",
+          "      gap: 0",
+          "",
+        ].join("\n");
+        await writeFile(basePath, baseYaml, "utf8");
+
+        const { outputPlan, result } = await runProfilePhaseFixture(fixtureDir, {
+          baseProfile: "base.yml",
+          input: "report.md",
+          intent: "Move the page-number label without changing its values",
+          profileCodexRunner: async () =>
+            JSON.stringify({
+              decision_mode: "adapted",
+              selected_candidate_id: "base-profile",
+              accepted_patches: [
+                { op: "replace", path: "/pageNumbers/position", value: "top-right" },
+              ],
+              accepted_font_patches: [],
+              reasoning: "Revise only the page-number position.",
+              warnings: [],
+              fallback_reason: "",
+              unmatched_directions: [],
+            }),
+        });
+
+        expect(result.finalProfile.pageNumbers).toEqual({
+          countFrom: "document",
+          enabled: false,
+          increment: 3,
+          position: "top-right",
+          scope: "body",
+          start: 0,
+        });
+        expect(result.finalProfile.footer).toEqual({ style: { separator: { gap: 0 } } });
+        expect(result.serializedProfile).toContain("enabled: false");
+        expect(result.serializedProfile).toContain("start: 0");
+        expect(result.serializedProfile).toContain("gap: 0");
+        expect(await readFile(basePath, "utf8")).toBe(baseYaml);
+        await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
+  });
+
   test("rejects non-base selection and invalid bounded patches when a base profile is present", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-authoritative-base-profile",

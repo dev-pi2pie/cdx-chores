@@ -39,6 +39,7 @@ import type {
 } from "./types";
 import {
   validateMdPdfProjectCodexProject,
+  type MdPdfProjectCodexValidator,
   type MarkdownPdfProjectCodexValidationSummary,
 } from "./validate-project";
 import {
@@ -257,12 +258,13 @@ function createBinding(input: {
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexAcceptedTemplatePhase;
+  validator?: MdPdfProjectCodexValidator;
 }): MarkdownPdfProjectCodexPreparedBinding {
   const templatePhase = bindTemplatePhase({
     outputPlan: input.outputPlan,
     templatePhase: input.templatePhase,
   });
-  const validation = validateMdPdfProjectCodexProject({
+  const validation = (input.validator ?? validateMdPdfProjectCodexProject)({
     outputPlan: input.outputPlan,
     profilePhase: input.profilePhase,
     runtime: input.runtime,
@@ -324,7 +326,7 @@ export async function prepareMdPdfProjectCodex(
       state,
       templateCodexRunner: options.templateCodexRunner,
     });
-    const completedProgressStatus = projectProgressStatus({
+    const completedPhaseProgressStatus = projectProgressStatus({
       profilePhase,
       templatePhase: completeTemplatePhase,
     });
@@ -336,6 +338,7 @@ export async function prepareMdPdfProjectCodex(
       signals,
       state,
       templatePhase,
+      validator: options.projectValidator,
     });
     if (!state.dryRun && binding.validation.decisionMode !== "no-usable-project") {
       await validateMdPdfProjectCodexOutputWritability({
@@ -352,7 +355,10 @@ export async function prepareMdPdfProjectCodex(
             outputPlan,
             templatePhase: binding.templatePhase,
           });
-    progressStatus = completedProgressStatus;
+    progressStatus =
+      binding.validation.decisionMode === "no-usable-project"
+        ? "error"
+        : completedPhaseProgressStatus;
     return {
       identity: stableIdentity(outputPlan),
       layout: preparedLayout(outputPlan),

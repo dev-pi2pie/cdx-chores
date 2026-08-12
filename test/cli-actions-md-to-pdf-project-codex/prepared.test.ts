@@ -10,6 +10,7 @@ import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/m
 import {
   prepareMdPdfProjectCodex,
   rebindMdPdfProjectCodexPreparedArtifact,
+  validateMdPdfProjectCodexProject,
   writePreparedMdPdfProjectCodexBundle,
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
@@ -75,6 +76,65 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
+  test("stops injected progress as error when typed Project validation rejects generated structure", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-progress-validation-error",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+        await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+        const events: string[] = [];
+        const codexProgressPresenter: CodexProgressPresenter = {
+          start: (label) => events.push(`start:${label}`),
+          update: (label) => events.push(`update:${label}`),
+          stop: (status) => events.push(`stop:${status}`),
+        };
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+        const prepared = await prepareMdPdfProjectCodex(runtime, {
+          baseProfile: "base.yml",
+          codexProgressPresenter,
+          coverImage: "cover.png",
+          dryRun: true,
+          input: "report.md",
+          intent: "Create a custom layout.",
+          output: "project-output",
+          profileCodexRunner: async () => adaptedProfileResponse(),
+          projectValidator: (input) =>
+            validateMdPdfProjectCodexProject({
+              ...input,
+              templatePhase: {
+                ...input.templatePhase,
+                synthesis: {
+                  ...input.templatePhase.synthesis,
+                  templateHtml: input.templatePhase.synthesis.templateHtml.replace(
+                    'class="document-body"',
+                    'class="document-content"',
+                  ),
+                },
+              },
+            }),
+          templateCodexRunner: async () => adaptedTemplateResponse(),
+        });
+
+        expect(prepared.binding.validation.decisionMode).toBe("no-usable-project");
+        expect(prepared.binding.validation.renderCommand).toBeUndefined();
+        expect(prepared.binding.validation.diagnostics.conditions).toContainEqual(
+          expect.objectContaining({
+            conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+            severity: "error",
+          }),
+        );
+        expect(events).toEqual([
+          "start:Requesting Codex Markdown PDF project profile recommendation",
+          "update:Requesting Codex Markdown PDF project template recommendation",
+          "stop:error",
+        ]);
+        expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
+      },
+    );
+  });
+
   test("returns shared diagnostics and capability requirements without serializing Phase 9 fields", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-prepared-page-validation",

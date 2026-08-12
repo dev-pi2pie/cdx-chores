@@ -6,7 +6,7 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
   test("allows template-layout-and-unnamed-page-geometry", () => {
     expect(() =>
       validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
-        @page { size: A4 portrait; margin: 20mm 18mm; }
+        @page { size: A4 portrait; margin: 20mm 18mm; border: 0; padding: 0; }
         body { color: #123456; line-height: 1.5; }
         main { display: block; }
       `),
@@ -46,23 +46,55 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
           @bottom-center { content: "Page " c\\6f unter(page); }
         }
       `),
-    ).toThrow("must not place Profile-owned page counters");
+    ).toThrow("must not reference Profile-owned page counters");
+  });
+
+  test("rejects direct and indirect page-counter references in every declaration value", () => {
+    for (const css of [
+      "@page { @bottom-center { --folio: counter(page); content: var(--folio); } }",
+      "@page { --folio: counter(pages); @bottom-center { content: var(--folio); } }",
+      "body { --folio: c\\6f unter(p\\61 ge); }",
+      'main { marker: c\\6f unters(pages, "."); }',
+    ]) {
+      expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
+        "must not reference Profile-owned page counters",
+      );
+    }
   });
 
   test("rejects template-page-counter-reset-or-increment", () => {
-    for (const declaration of ["counter-reset: page 0", "counter-increment: p\\61 ge 2"]) {
+    for (const declaration of [
+      "counter-reset: page 0",
+      "counter-increment: p\\61 ge 2",
+      "counter-\\73 et: page 5",
+      "counter-reset: pages 0",
+      "counter-increment: p\\61 ges 2",
+    ]) {
       expect(() =>
         validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
           `@page body { ${declaration}; margin: 18mm; }`,
         ),
-      ).toThrow("must not reset or increment the Profile-owned page counter");
+      ).toThrow("must not mutate the Profile-owned page counter");
     }
 
     expect(() =>
       validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
         "@page cover { counter-increment: page 1; margin: 0; }",
       ),
-    ).toThrow("must not reset or increment the Profile-owned page counter");
+    ).toThrow("must not mutate the Profile-owned page counter");
+  });
+
+  test("rejects page-counter mutation in every Template selector and nesting level", () => {
+    for (const css of [
+      "body { counter-reset: page 0; }",
+      ".document-body { counter-increment: page 2; }",
+      "@media print { main { counter-set: page 9; } }",
+      "@supports (display: grid) { @layer template { article { counter-reset: chapter 1 page 0; } } }",
+    ]) {
+      expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
+        "must not mutate the Profile-owned page counter",
+      );
+    }
   });
 
   test("rejects template-competing-page-chrome-typography", () => {
@@ -82,6 +114,31 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
     }
   });
 
+  test("rejects inherited page-chrome styling directly on ordinary page rules", () => {
+    for (const property of ["all", "color", "line-height", "font", "font-family", "font-size"]) {
+      expect(() =>
+        validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
+          @page { size: A4; margin: 20mm; ${property}: initial; }
+        `),
+      ).toThrow(`ordinary-page ${property} styling`);
+    }
+
+    expect(() =>
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
+        @page :first { font-weight: 700; }
+      `),
+    ).toThrow("ordinary-page font-weight styling");
+  });
+
+  test("allows direct page-chrome presentation on named cover and toc page rules", () => {
+    expect(() =>
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
+        @page cover { margin: 0; color: white; font-family: sans-serif; }
+        @page toc { margin: 18mm; line-height: 1.4; font-size: 9pt; }
+      `),
+    ).not.toThrow();
+  });
+
   test("rejects template-competing-page-chrome-separator", () => {
     for (const property of ["border-top", "border-block-start-width", "padding-bottom"]) {
       expect(() =>
@@ -96,6 +153,7 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
     expect(() =>
       validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
         /* @page { counter-reset: page; } */
+        body::before { content: "counter-set: page 8"; }
         @page {
           counter-reset: chapter-page 1;
           @bottom-center { content: "counter(page)" counter(chapter-page); }

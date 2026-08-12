@@ -257,12 +257,10 @@ describe("cli action modules: md pdf-project codex template phase", () => {
             key: "symbols",
             role: "code",
           }),
-          expect.objectContaining({
-            family: "Profile Chrome",
-            key: "default",
-            role: "pageChrome",
-          }),
         ]),
+      );
+      expect(templatePhase.signals.fonts.profileFonts.families).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ role: "pageChrome" })]),
       );
       expect(profilePhase.finalProfile).toMatchObject({
         fonts: {
@@ -405,6 +403,10 @@ describe("cli action modules: md pdf-project codex template phase", () => {
             "  position: top-right",
             "  format: 'Confidential {page} / {pages}'",
             "fonts:",
+            "  body:",
+            "    default: Private Body Font",
+            "  code:",
+            "    default: Private Code Font",
             "  pageChrome:",
             "    default: Private Chrome Font",
             "",
@@ -448,6 +450,11 @@ describe("cli action modules: md pdf-project codex template phase", () => {
             },
           },
           footer: { right: "Private project footer" },
+          fonts: {
+            body: { default: "Source Serif 4" },
+            code: { default: "Private Code Font" },
+            pageChrome: { default: "Private Chrome Font" },
+          },
           pageNumbers: {
             countFrom: "body",
             enabled: true,
@@ -467,6 +474,28 @@ describe("cli action modules: md pdf-project codex template phase", () => {
         });
         expect(templatePhase.signals.recipe.effectiveOptions.toc).toBe(true);
         expect(templatePhase.signals.coverImage.available).toBe(true);
+        expect(templatePhase.signals.fonts.profileFonts.families).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              family: "Source Serif 4",
+              key: "default",
+              role: "body",
+            }),
+            expect.objectContaining({
+              family: "Private Code Font",
+              key: "default",
+              role: "code",
+            }),
+          ]),
+        );
+        expect(templatePhase.signals.fonts.profileFonts.families).not.toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              family: "Private Chrome Font",
+              role: "pageChrome",
+            }),
+          ]),
+        );
 
         const serializedFacts = JSON.stringify(capturedFacts);
         const generatedTemplate = [
@@ -482,11 +511,11 @@ describe("cli action modules: md pdf-project codex template phase", () => {
           "#456DEF",
           "7.5pt",
           "0.7pt",
+          "Private Chrome Font",
         ]) {
           expect(serializedFacts).not.toContain(privateValue);
           expect(generatedTemplate).not.toContain(privateValue);
         }
-        expect(generatedTemplate).not.toContain("Private Chrome Font");
         expect(templatePhase.synthesis.managedAssets).toEqual([
           { role: "cover-image", bundlePath: "assets/cover.png", sourceBasename: "cover.png" },
         ]);

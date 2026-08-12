@@ -52,6 +52,7 @@ function adaptedProfileRunner(
 
 function templateResponse(input: {
   coverEnabled?: boolean;
+  cssBlocks?: Array<{ css: string; slot: "spacing" }>;
   decisionMode?: string;
   recipePreset?: string;
   recipeSource?: string;
@@ -89,7 +90,7 @@ function templateResponse(input: {
       typography: { scale: "standard" },
       colors: { palette: "neutral" },
     },
-    css_blocks: [],
+    css_blocks: input.cssBlocks ?? [],
     font_decisions: [],
     managed_assets: coverEnabled
       ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }]
@@ -636,7 +637,34 @@ describe("cli action modules: md pdf-project codex validation", () => {
 
         expectNoUsableValidationFailure(validation, {
           name: "template-page-number-css-ownership",
-          messageIncludes: "must not place Profile-owned page counters",
+          messageIncludes: "must not reference Profile-owned page counters",
+        });
+      },
+    );
+  });
+
+  test("rejects page-counter mutation received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-counter-css",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [{ css: "body { counter-set: page 7; }", slot: "spacing" }],
+            }),
+        });
+
+        expect(templatePhase.codexResult?.decision.cssBlocks).toEqual([
+          { css: "body { counter-set: page 7; }", slot: "spacing" },
+        ]);
+        expect(templatePhase.synthesis.styleCss).toContain("counter-set: page 7");
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "must not mutate the Profile-owned page counter",
         });
       },
     );

@@ -135,6 +135,11 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
           "  increment: 3",
           "  position: top-right",
           "  format: 'Confidential {page}'",
+          "fonts:",
+          "  body:",
+          "    default: Template Body Font",
+          "  pageChrome:",
+          "    default: Private Chrome Font",
           "",
         ].join("\n"),
         "utf8",
@@ -155,7 +160,7 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
           label: "User supplied base profile",
           presetBacked: false,
           basedOn: "untracked-base-profile",
-          fields: ["header"],
+          fields: ["fonts", "header"],
           traits: {
             cover: false,
             toc: false,
@@ -171,6 +176,19 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
       expect(serialized).not.toContain("#123ABC");
       expect(serialized).not.toContain("fontSize");
       expect(serialized).not.toContain("top-right");
+      expect(serialized).not.toContain("Private Chrome Font");
+      expect(signals.fonts.profileFonts.families).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            family: "Template Body Font",
+            key: "default",
+            role: "body",
+          }),
+        ]),
+      );
+      expect(signals.fonts.profileFonts.families).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ role: "pageChrome" })]),
+      );
     });
   });
 
