@@ -751,16 +751,15 @@ Phase checkpoint:
 - [x] Run focused direct Profile-helper and Interactive authoring tests, the
       broad Markdown PDF regression slice, and the full repository suite; run
       `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
-      `bun run build`, and `git diff --check` at final implementation tip
-      `1e674295`.
-- [ ] Commit the Phase 7 job and plan evidence update as documentation-only
+      `bun run build`, and `git diff --check` at final reviewed implementation
+      tip `992cfdc5`.
+- [x] Commit the Phase 7 job and plan evidence update as documentation-only
       after confirming its scope and passing at least `bun run format:check`
       and `git diff --check`; record that commit as the evidence tip.
-- [ ] Review the exact aggregate Phase 7 range from base `62d223af` through the
-      final Phase 7 evidence tip (`62d223af..<phase-7-final-tip>`), replace the
-      placeholder with the exact full commit before review, resolve every
-      actionable finding, widen the tip when fixes land, and record the final
-      exact range and verdict in the Phase 7 job before beginning Phase 8.
+- [x] Review the exact aggregate Phase 7 implementation/evidence range
+      `62d223af..992cfdc5`, including evidence commit `903c94c6` and the fixes
+      that widened the final tip; resolve every actionable finding and record
+      the final verdict in the Phase 7 job before beginning Phase 8.
 
 Phase checkpoint:
 
@@ -776,10 +775,11 @@ Phase checkpoint:
   readiness verdict; only render preparation and `doctor` evaluate the
   installed renderer.
 - Focused, broad Markdown PDF, full repository, static, format, build, and diff
-  checks pass at final implementation tip `1e674295`. The documentation-only
-  evidence commit preserves its scope and passes at least format and diff
-  checks, and one exact aggregate review through that evidence tip covers 7A,
-  7B, and 7C.
+  checks pass at final reviewed implementation tip `992cfdc5`. Evidence commit
+  `903c94c6` is inside the exact reviewed range `62d223af..992cfdc5`, which
+  covers 7A, 7B, 7C, and all resolved review findings. The subsequent
+  documentation-only closeout commit is outside that reviewed range and must
+  preserve its two-document scope and pass format and diff checks.
 
 ### Phase 8: Project Profile/Template Coordination And Validation
 

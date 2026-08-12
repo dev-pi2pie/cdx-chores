@@ -2,7 +2,7 @@
 title: "Markdown PDF page-number Phase 7 Profile authoring"
 created-date: 2026-08-12
 modified-date: 2026-08-13
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -59,14 +59,14 @@ Template-only authoring remains free of Profile-owned page-number policy.
 - [x] Run focused direct-helper and Interactive authoring validation.
 - [x] Run the broad Markdown PDF regression slice and full repository suite.
 - [x] Run TypeScript, lint, format, build, and `git diff --check` at final
-      implementation tip `1e674295`.
-- [ ] Commit this evidence update as documentation-only after confirming its
+      reviewed implementation tip `992cfdc5`.
+- [x] Commit the evidence update as documentation-only after confirming its
       scope and passing `bun run format:check` and `git diff --check`; record
       that commit as the evidence tip.
-- [ ] Review the exact aggregate `62d223af..<phase-7-final-tip>` range after
-      replacing the placeholder with the exact full final commit, resolve all
-      actionable findings, widen the tip for any fixes, and record the final
-      exact range and verdict before Phase 8 begins.
+- [x] Review the exact aggregate implementation/evidence range
+      `62d223af..992cfdc5`, including evidence commit `903c94c6` and the fixes
+      that widened the tip; resolve all actionable findings and record the
+      final verdict before Phase 8 begins.
 
 ## Capability Posture
 
@@ -102,7 +102,7 @@ capability reporting. Both reuse the Phase 6 evaluator and diagnostic contract.
 ## Evidence Record
 
 All focused, broad, full-repository, static, format, build, and diff results
-reported below ran at final implementation tip `1e674295`.
+reported below ran at final reviewed implementation tip `992cfdc5`.
 
 - 7A audit: the existing base-Profile, bounded-patch, normalization,
   serialization, and write paths already preserve omitted fields, explicit
@@ -129,25 +129,46 @@ reported below ran at final implementation tip `1e674295`.
   not invalidate a reusable Profile.
 - Direct focused validation:
   `bun test test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-actions-md-to-pdf-profile-codex-command-wiring.test.ts test/cli-actions-md-to-pdf-profile-codex-helpers.test.ts test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts test/cli-actions-md-to-pdf-profile-codex-prepared.test.ts test/adapters-codex-markdown-pdf-profile.test.ts --timeout 30000`
-  passed with 99 tests and 747 assertions.
+  passed with 101 tests and 752 assertions.
 - Interactive focused validation:
   `bun test test/cli-interactive-markdown-pdf test/cli-markdown-pdf-profile-authoring-review.test.ts test/cli-markdown-pdf-renderer-capabilities.test.ts --timeout 30000`
-  passed with 199 tests and 832 assertions.
+  passed with 207 tests and 898 assertions.
 - Broad Markdown PDF regression:
   `rg --files test | rg 'md-to-pdf|markdown-pdf|doctor-markdown' | xargs bun test --timeout 30000`
-  passed with 1,043 tests and 7,630 assertions.
-- Full repository validation: `bun test --timeout 30000` passed with 2,063
-  tests and 11,857 assertions.
-- Static validation at implementation tip `1e674295`: `bunx tsc --noEmit`,
+  passed with 1,053 tests and 7,701 assertions.
+- Full repository validation: `bun test --timeout 30000` passed with 2,073
+  tests and 11,928 assertions.
+- Static validation at reviewed implementation tip `992cfdc5`:
+  `bunx tsc --noEmit`,
   `bun run lint`, `bun run format:check`, `bun run build`, and
   `git diff --check` passed with Bun `1.3.14`, TypeScript `7.0.2`, Oxlint
   `1.77.0`, Oxfmt `0.62.0`, and Tsdown `0.22.14`.
 - Cleanup state: no renderer lab was used, and no generated HTML, CSS, PDF,
   PNG, renderer output, raw report, or temporary validation artifact remains or
   is included in the Phase 7 checkpoints.
-- The pending evidence commit is documentation-only. Before it becomes the
-  aggregate review tip, its diff must preserve that scope and pass at least
-  `bun run format:check` and `git diff --check`.
+- Evidence commit `903c94c6` was documentation-only, preserved the intended
+  two-file scope, and passed `bun run format:check` and `git diff --check`.
+
+## Review Findings And Dispositions
+
+- Security review: accepted the actionable terminal-control finding. Free-form
+  Profile review values could reach terminal output without escaped control
+  characters; `992cfdc5` serializes the format value safely and adds direct,
+  Interactive, and shared-review regression coverage.
+- Maintainability review: accepted the actionable broad-assignment finding.
+  Profile initialization now assigns only the four supported optional fields
+  explicitly, preserving clone behavior while preventing unexpected runtime
+  keys from crossing the typed boundary.
+- Test review: accepted the actionable coverage findings. `992cfdc5` adds
+  prompt-adapter boundary and conversion tests, an exact revision through
+  binding, write, and reload, complete capability aggregation and entry-shape
+  assertions, and exact direct/Interactive Profile assertions instead of
+  partial matches.
+- Documentation review: the evidence and lifecycle boundary was accepted after
+  recording `903c94c6` inside the reviewed range and distinguishing this later
+  documentation-only closeout from the reviewed implementation/evidence range.
+- All accepted actionable findings were resolved in `992cfdc5`; no actionable
+  findings remain for the reviewed Phase 7 range.
 
 ## Checkpoint Commits
 
@@ -156,32 +177,37 @@ reported below ran at final implementation tip `1e674295`.
 - Phase 7B formal-guide implementation: `05833dcd`.
 - Phase 7C Interactive integration: `d79a5e31`.
 - Phase 7A direct-helper audit and review-summary implementation: `1e674295`.
-- Implementation and validation tip: `1e674295`.
-- Evidence tip: pending this job-record update; no exact aggregate review range
-  is claimed before that evidence commit exists.
+- Evidence documentation: `903c94c6`.
+- Review-finding corrections and final implementation/validation tip:
+  `992cfdc5`.
 
 ## Exact-Range Review
 
 - Required aggregate base: `62d223af`.
-- Required aggregate tip: pending evidence commit.
-- Proposed review range: `62d223af..<evidence-tip>`; replace the placeholder
-  with the full evidence commit before review.
-- Reviewed range: pending.
-- Maintainability review: pending.
-- Test review: pending.
-- Security review: pending.
-- Documentation review: pending.
-- Actionable-finding resolution and widened-range verdict: pending.
+- Final reviewed tip: `992cfdc5`.
+- Reviewed implementation/evidence range: `62d223af..992cfdc5`. The range
+  includes evidence commit `903c94c6` and the review corrections that widened
+  the final tip to `992cfdc5`.
+- Maintainability review: complete; accepted finding resolved.
+- Test review: complete; accepted findings resolved.
+- Security review: complete; accepted finding resolved.
+- Documentation review: complete; lifecycle and evidence boundary accepted.
+- Actionable-finding resolution and widened-range verdict: complete; no
+  unresolved actionable findings remain.
+- The subsequent documentation-only closeout commit that records this final
+  verdict is not part of the reviewed implementation/evidence range. It must
+  preserve the two-document scope and pass `bun run format:check` and
+  `git diff --check` before commit.
 
 ## Final Verdict
 
-**Provisional: Continue to the exact aggregate Phase 7 range review.** 7A, 7B,
-7C, and substantive validation are complete at implementation tip `1e674295`,
-but this evidence record is not yet a commit. Continue only after its commit
-preserves the documentation-only scope and passes `bun run format:check` and
-`git diff --check`. Do not begin Phase 8 until that evidence tip replaces the
-placeholder and the exact aggregate range, including the evidence commit, has
-been reviewed with its final verdict recorded.
+**Continue to Phase 8.** Phase 7A, 7B, and 7C are complete, final validation
+passed at `992cfdc5`, and the exact implementation/evidence range
+`62d223af..992cfdc5` has no unresolved actionable findings. The parent plan
+remains `active`, and the related research remains `in-progress` while later
+phases continue. The documentation-only commit that records this closeout is
+outside the reviewed range and must pass format and diff checks without
+expanding scope.
 
 ## Related Research
 
