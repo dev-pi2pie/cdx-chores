@@ -55,6 +55,239 @@ describe("markdown PDF profile normalization", () => {
       position: "bottom-center",
       format: "{page}",
       scope: "body",
+      countFrom: "document",
+      start: 1,
+      increment: 1,
+    });
+  });
+
+  test("normalizes page-number sequence controls and preserves a zero start", () => {
+    const defaults = normalizeMarkdownPdfProfile().profile;
+    expect(defaults.pageNumbers).toEqual({
+      enabled: false,
+      position: "bottom-center",
+      format: "{page}",
+      scope: "body",
+      countFrom: "document",
+      start: 1,
+      increment: 1,
+    });
+
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        pageNumbers: {
+          enabled: true,
+          scope: "document",
+          countFrom: "document",
+          start: 0,
+          increment: 2,
+        },
+      },
+    });
+
+    expect(result.profile.pageNumbers).toMatchObject({
+      enabled: true,
+      scope: "document",
+      countFrom: "document",
+      start: 0,
+      increment: 2,
+    });
+  });
+
+  test("normalizes bounded header and footer styles without inventing omitted fields", () => {
+    const result = normalizeMarkdownPdfProfile({
+      profile: {
+        header: {
+          left: "{title}",
+          style: {
+            fontSize: "6pt",
+            fontWeight: 400,
+            lineHeight: 1,
+            color: "#A0b1C2",
+            separator: {
+              width: ".25pt",
+              style: "solid",
+              color: "#d0d5dd",
+              gap: 0,
+            },
+          },
+        },
+        footer: {
+          style: {
+            fontSize: "12.0pt",
+            fontWeight: 700,
+            lineHeight: 2,
+            separator: {
+              width: "2.00pt",
+              gap: "4.0mm",
+            },
+          },
+        },
+      },
+    }).profile;
+
+    expect(result.header).toEqual({
+      left: "{title}",
+      center: "",
+      right: "",
+      style: {
+        fontSize: "6pt",
+        fontWeight: 400,
+        lineHeight: 1,
+        color: "#A0b1C2",
+        separator: {
+          width: ".25pt",
+          style: "solid",
+          color: "#d0d5dd",
+          gap: 0,
+        },
+      },
+    });
+    expect(result.footer.style).toEqual({
+      fontSize: "12.0pt",
+      fontWeight: 700,
+      lineHeight: 2,
+      separator: {
+        width: "2.00pt",
+        gap: "4.0mm",
+      },
+    });
+    expect(normalizeMarkdownPdfProfile().profile.header).toEqual({
+      left: "",
+      center: "",
+      right: "",
+    });
+  });
+
+  test("rejects invalid page-number sequence values and combinations", () => {
+    const invalidCases: Array<{ message: string; pageNumbers: Record<string, unknown> }> = [
+      { pageNumbers: { scope: "chapter" }, message: "scope must be one of" },
+      { pageNumbers: { countFrom: "chapter" }, message: "countFrom must be one of" },
+      {
+        pageNumbers: { scope: "document", countFrom: "body" },
+        message: "scope document cannot be used with countFrom body",
+      },
+      { pageNumbers: { start: -1 }, message: "start must be a non-negative integer" },
+      { pageNumbers: { start: 1.5 }, message: "start must be an integer" },
+      { pageNumbers: { increment: 0 }, message: "increment must be a positive integer" },
+      { pageNumbers: { increment: 1.5 }, message: "increment must be an integer" },
+    ];
+
+    for (const invalidCase of invalidCases) {
+      expect(() =>
+        normalizeMarkdownPdfProfile({
+          profile: { pageNumbers: invalidCase.pageNumbers },
+        }),
+      ).toThrow(invalidCase.message);
+    }
+  });
+
+  test("rejects values outside the bounded page-chrome style domains", () => {
+    const invalidCases: Array<{ message: string; style: Record<string, unknown> }> = [
+      { style: { fontSize: "5.9pt" }, message: "fontSize must be a pt length" },
+      { style: { fontSize: "8.55pt" }, message: "fontSize must be a pt length" },
+      { style: { fontSize: "8px" }, message: "fontSize must be a pt length" },
+      { style: { fontWeight: 450 }, message: "fontWeight must be one of" },
+      { style: { lineHeight: 0 }, message: "lineHeight must be a number" },
+      { style: { lineHeight: "1.2" }, message: "lineHeight must be a number" },
+      { style: { color: "#abc" }, message: "color must be a six-digit" },
+      {
+        style: { separator: { width: "0pt" } },
+        message: "separator.width must be a pt length",
+      },
+      {
+        style: { separator: { width: "0.255pt" } },
+        message: "separator.width must be a pt length",
+      },
+      {
+        style: { separator: { style: "dashed" } },
+        message: "separator.style must be solid",
+      },
+      {
+        style: { separator: { color: "red" } },
+        message: "separator.color must be a six-digit",
+      },
+      {
+        style: { separator: { gap: "4.1mm" } },
+        message: "separator.gap must be 0 or an mm length",
+      },
+      {
+        style: { separator: { gap: "2.25mm" } },
+        message: "separator.gap must be 0 or an mm length",
+      },
+    ];
+
+    for (const invalidCase of invalidCases) {
+      expect(() =>
+        normalizeMarkdownPdfProfile({
+          profile: { header: { style: invalidCase.style } },
+        }),
+      ).toThrow(invalidCase.message);
+    }
+  });
+
+  test("preserves page-number and style zero values through YAML and JSON", async () => {
+    const profile = {
+      header: {
+        style: {
+          separator: {
+            gap: 0,
+          },
+        },
+      },
+      pageNumbers: {
+        enabled: true,
+        scope: "body",
+        countFrom: "body",
+        start: 0,
+        increment: 2,
+      },
+    };
+
+    await withTempFixtureDir("md-pdf-profile-page-number-zero", async (fixtureDir) => {
+      for (const format of ["json", "yaml"] as const) {
+        const extension = format === "json" ? "json" : "yml";
+        const profilePath = join(fixtureDir, `profile.${extension}`);
+        await writeFile(profilePath, serializeMarkdownPdfProfile(profile, format), "utf8");
+
+        const loaded = await readMarkdownPdfProfileFile(profilePath);
+        expect(loaded).toEqual(profile);
+        const normalized = normalizeMarkdownPdfProfile({ profile: loaded }).profile;
+        expect(normalized.pageNumbers.start).toBe(0);
+        expect(normalized.header.style?.separator?.gap).toBe(0);
+      }
+    });
+  });
+
+  test("rejects unknown nested page-chrome and page-number keys", async () => {
+    await withTempFixtureDir("md-pdf-profile-page-number-schema", async (fixtureDir) => {
+      const cases = [
+        {
+          file: "style.yml",
+          source: "header:\n  style:\n    fontFamily: serif\n",
+          message: "profile.header.style.fontFamily",
+        },
+        {
+          file: "separator.yml",
+          source: "footer:\n  style:\n    separator:\n      radius: 1pt\n",
+          message: "profile.footer.style.separator.radius",
+        },
+        {
+          file: "page-numbers.yml",
+          source: "pageNumbers:\n  style: {}\n",
+          message: "profile.pageNumbers.style",
+        },
+      ];
+
+      for (const invalidCase of cases) {
+        const profilePath = join(fixtureDir, invalidCase.file);
+        await writeFile(profilePath, invalidCase.source, "utf8");
+        await expectCliError(() => readMarkdownPdfProfileFile(profilePath), {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: invalidCase.message,
+        });
+      }
     });
   });
 

@@ -48,11 +48,52 @@ export interface MarkdownPdfPageChromeSlots {
   right: string;
 }
 
+export const MARKDOWN_PDF_PAGE_NUMBER_SCOPES = ["document", "body"] as const;
+
+export type MarkdownPdfPageNumberScope = (typeof MARKDOWN_PDF_PAGE_NUMBER_SCOPES)[number];
+
+export const MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS = ["document", "body"] as const;
+
+export type MarkdownPdfPageNumberCountOrigin =
+  (typeof MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS)[number];
+
+export const MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS = [400, 500, 600, 700] as const;
+
+export type MarkdownPdfPageChromeFontWeight =
+  (typeof MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS)[number];
+
+export const MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES = ["solid"] as const;
+
+export type MarkdownPdfPageChromeSeparatorStyle =
+  (typeof MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES)[number];
+
+export interface NormalizedMarkdownPdfPageChromeSeparator {
+  width?: string;
+  style?: MarkdownPdfPageChromeSeparatorStyle;
+  color?: string;
+  gap?: string | 0;
+}
+
+export interface NormalizedMarkdownPdfPageChromeStyle {
+  fontSize?: string;
+  fontWeight?: MarkdownPdfPageChromeFontWeight;
+  lineHeight?: number;
+  color?: string;
+  separator?: NormalizedMarkdownPdfPageChromeSeparator;
+}
+
+export interface NormalizedMarkdownPdfPageChromeArea extends MarkdownPdfPageChromeSlots {
+  style?: NormalizedMarkdownPdfPageChromeStyle;
+}
+
 export interface NormalizedMarkdownPdfPageNumbers {
   enabled: boolean;
   position: MarkdownPdfPageChromePosition;
   format: string;
-  scope: "body";
+  scope: MarkdownPdfPageNumberScope;
+  countFrom: MarkdownPdfPageNumberCountOrigin;
+  start: number;
+  increment: number;
 }
 
 export type MarkdownPdfMetadataTitleBlockMode = "auto" | "show" | "hide";
@@ -90,8 +131,8 @@ export interface NormalizedMarkdownPdfProfile {
   identity?: NormalizedMarkdownPdfProfileIdentity;
   metadata: MarkdownPdfMetadata;
   code: NormalizedMarkdownPdfCode;
-  header: MarkdownPdfPageChromeSlots;
-  footer: MarkdownPdfPageChromeSlots;
+  header: NormalizedMarkdownPdfPageChromeArea;
+  footer: NormalizedMarkdownPdfPageChromeArea;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   titleBlock: NormalizedMarkdownPdfTitleBlock;
   cover: NormalizedMarkdownPdfCover;

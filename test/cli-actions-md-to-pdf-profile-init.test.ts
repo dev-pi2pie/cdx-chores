@@ -27,6 +27,13 @@ describe("cli action modules: md to-pdf profile init", () => {
       expect(profile).not.toContain("profile:");
       expect(profile).toContain("pageNumbers:");
       expect(profile).toContain("enabled: false");
+      expect(profile).toContain("scope: body");
+      expect(profile).toContain("countFrom: document");
+      expect(profile).toContain("start: 1");
+      expect(profile).toContain("increment: 1");
+      expect(profile).toContain("position: bottom-center");
+      expect(profile).toContain('format: "{page}"');
+      expect(profile).not.toContain("style:");
       expect(stdout.text).toContain("Wrote Markdown PDF profile:");
       expectNoStderr();
     });

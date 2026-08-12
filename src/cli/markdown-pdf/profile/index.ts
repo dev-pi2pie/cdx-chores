@@ -1,5 +1,14 @@
 export { DEFAULT_MARKDOWN_PDF_PROFILE, DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
 export { MARKDOWN_PDF_CODE_THEMES } from "./types";
+export {
+  isMarkdownPdfPageChromeColor,
+  isMarkdownPdfPageChromeFontSize,
+  isMarkdownPdfPageChromeFontWeight,
+  isMarkdownPdfPageChromeLineHeight,
+  isMarkdownPdfPageChromeSeparatorGap,
+  isMarkdownPdfPageChromeSeparatorStyle,
+  isMarkdownPdfPageChromeSeparatorWidth,
+} from "./page-number-domains";
 export { createMarkdownPdfCoverCss, createMarkdownPdfCoverHtml } from "./cover";
 export { createMarkdownPdfFontCss } from "./fonts";
 export { normalizeMarkdownPdfProfileIdentity } from "./identity";
@@ -30,6 +39,10 @@ export type {
   MarkdownPdfFontRole,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSlots,
+  MarkdownPdfPageChromeFontWeight,
+  MarkdownPdfPageChromeSeparatorStyle,
+  MarkdownPdfPageNumberCountOrigin,
+  MarkdownPdfPageNumberScope,
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
@@ -37,8 +50,17 @@ export type {
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
+  NormalizedMarkdownPdfPageChromeArea,
+  NormalizedMarkdownPdfPageChromeSeparator,
+  NormalizedMarkdownPdfPageChromeStyle,
   NormalizedMarkdownPdfProfileIdentity,
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
+} from "./types";
+export {
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
 } from "./types";

@@ -47,8 +47,18 @@ const PAGE_KEYS = new Set([
 const TOC_KEYS = new Set(["enabled", "depth", "pageBreak"]);
 const COVER_KEYS = new Set(["enabled", "style", "fields"]);
 const COVER_FIELD_KEYS = new Set(["title", "subtitle", "author", "company", "date"]);
-const CHROME_KEYS = new Set(["left", "center", "right"]);
-const PAGE_NUMBER_KEYS = new Set(["enabled", "position", "format", "scope"]);
+const CHROME_KEYS = new Set(["left", "center", "right", "style"]);
+const CHROME_STYLE_KEYS = new Set(["fontSize", "fontWeight", "lineHeight", "color", "separator"]);
+const CHROME_SEPARATOR_KEYS = new Set(["width", "style", "color", "gap"]);
+const PAGE_NUMBER_KEYS = new Set([
+  "enabled",
+  "position",
+  "format",
+  "scope",
+  "countFrom",
+  "start",
+  "increment",
+]);
 const TITLE_BLOCK_KEYS = new Set(["metadataTitle"]);
 const CODE_KEYS = new Set(["highlight", "theme", "lineNumbers", "transformerNotation"]);
 const PDF_KEYS = new Set(["content-langs"]);
@@ -103,6 +113,19 @@ function assertOptionalObject(value: unknown, label: string): Record<string, unk
     return undefined;
   }
   return assertPlainObject(value, label);
+}
+
+function validatePageChromeShape(value: Record<string, unknown>, label: string): void {
+  assertAllowedKeys(value, CHROME_KEYS, label);
+  const style = assertOptionalObject(value.style, `${label}.style`);
+  if (!style) {
+    return;
+  }
+  assertAllowedKeys(style, CHROME_STYLE_KEYS, `${label}.style`);
+  const separator = assertOptionalObject(style.separator, `${label}.style.separator`);
+  if (separator) {
+    assertAllowedKeys(separator, CHROME_SEPARATOR_KEYS, `${label}.style.separator`);
+  }
 }
 
 export function validateMarkdownPdfBodyFontKey(key: string): void {
@@ -165,12 +188,12 @@ export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>
 
   const header = assertOptionalObject(profile.header, "profile.header");
   if (header) {
-    assertAllowedKeys(header, CHROME_KEYS, "profile.header");
+    validatePageChromeShape(header, "profile.header");
   }
 
   const footer = assertOptionalObject(profile.footer, "profile.footer");
   if (footer) {
-    assertAllowedKeys(footer, CHROME_KEYS, "profile.footer");
+    validatePageChromeShape(footer, "profile.footer");
   }
 
   const pageNumbers = assertOptionalObject(profile.pageNumbers, "profile.pageNumbers");

@@ -2,6 +2,15 @@ import { CliError } from "../../errors";
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
 import { normalizeMarkdownPdfProfileIdentity } from "./identity";
+import {
+  isMarkdownPdfPageChromeColor,
+  isMarkdownPdfPageChromeFontSize,
+  isMarkdownPdfPageChromeFontWeight,
+  isMarkdownPdfPageChromeLineHeight,
+  isMarkdownPdfPageChromeSeparatorGap,
+  isMarkdownPdfPageChromeSeparatorStyle,
+  isMarkdownPdfPageChromeSeparatorWidth,
+} from "./page-number-domains";
 import { validateMarkdownPdfBodyFontKey } from "./schema";
 import type {
   EffectiveMarkdownPdfCodeOptions,
@@ -10,8 +19,12 @@ import type {
   MarkdownPdfFontConfig,
   MarkdownPdfMetadata,
   MarkdownPdfMetadataTitleBlockMode,
+  MarkdownPdfPageNumberCountOrigin,
+  MarkdownPdfPageNumberScope,
   MarkdownPdfPageChromePosition,
-  MarkdownPdfPageChromeSlots,
+  NormalizedMarkdownPdfPageChromeArea,
+  NormalizedMarkdownPdfPageChromeSeparator,
+  NormalizedMarkdownPdfPageChromeStyle,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
   NormalizedMarkdownPdfProfileIdentity,
@@ -21,7 +34,11 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfTitleBlock,
 } from "./types";
-import { MARKDOWN_PDF_CODE_THEMES } from "./types";
+import {
+  MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+} from "./types";
 
 const META_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
@@ -32,6 +49,10 @@ const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
   "bottom-center",
   "bottom-right",
 ]);
+const PAGE_NUMBER_SCOPES = new Set<MarkdownPdfPageNumberScope>(MARKDOWN_PDF_PAGE_NUMBER_SCOPES);
+const PAGE_NUMBER_COUNT_ORIGINS = new Set<MarkdownPdfPageNumberCountOrigin>(
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+);
 const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
 const METADATA_TITLE_BLOCK_MODES = new Set<MarkdownPdfMetadataTitleBlockMode>([
   "auto",
@@ -163,13 +184,126 @@ function numberValue(value: unknown, label: string): number | undefined {
   return value;
 }
 
-function normalizeChromeSlots(value: unknown, label: string): MarkdownPdfPageChromeSlots {
+function invalidValue(message: string): never {
+  throw new CliError(message, {
+    code: "INVALID_INPUT",
+    exitCode: 2,
+  });
+}
+
+function optionalObjectValue(value: unknown, label: string): Record<string, unknown> | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    Object.getPrototypeOf(value) !== Object.prototype
+  ) {
+    return invalidValue(`${label} must be a plain object.`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function normalizePageChromeSeparator(
+  value: unknown,
+  label: string,
+): NormalizedMarkdownPdfPageChromeSeparator | undefined {
+  const input = optionalObjectValue(value, label);
+  if (!input) {
+    return undefined;
+  }
+  const output: NormalizedMarkdownPdfPageChromeSeparator = {};
+
+  if (input.width !== undefined) {
+    if (!isMarkdownPdfPageChromeSeparatorWidth(input.width)) {
+      return invalidValue(
+        `${label}.width must be a pt length from 0.25pt through 2pt with at most two fractional digits.`,
+      );
+    }
+    output.width = input.width;
+  }
+  if (input.style !== undefined) {
+    if (!isMarkdownPdfPageChromeSeparatorStyle(input.style)) {
+      return invalidValue(`${label}.style must be solid.`);
+    }
+    output.style = input.style;
+  }
+  if (input.color !== undefined) {
+    if (!isMarkdownPdfPageChromeColor(input.color)) {
+      return invalidValue(`${label}.color must be a six-digit hexadecimal color.`);
+    }
+    output.color = input.color;
+  }
+  if (input.gap !== undefined) {
+    if (!isMarkdownPdfPageChromeSeparatorGap(input.gap)) {
+      return invalidValue(
+        `${label}.gap must be 0 or an mm length from 0mm through 4mm with at most one fractional digit.`,
+      );
+    }
+    output.gap = input.gap;
+  }
+
+  return output;
+}
+
+function normalizePageChromeStyle(
+  value: unknown,
+  label: string,
+): NormalizedMarkdownPdfPageChromeStyle | undefined {
+  const input = optionalObjectValue(value, label);
+  if (!input) {
+    return undefined;
+  }
+  const output: NormalizedMarkdownPdfPageChromeStyle = {};
+
+  if (input.fontSize !== undefined) {
+    if (!isMarkdownPdfPageChromeFontSize(input.fontSize)) {
+      return invalidValue(
+        `${label}.fontSize must be a pt length from 6pt through 12pt with at most one fractional digit.`,
+      );
+    }
+    output.fontSize = input.fontSize;
+  }
+  if (input.fontWeight !== undefined) {
+    if (!isMarkdownPdfPageChromeFontWeight(input.fontWeight)) {
+      return invalidValue(`${label}.fontWeight must be one of: 400, 500, 600, 700.`);
+    }
+    output.fontWeight = input.fontWeight;
+  }
+  if (input.lineHeight !== undefined) {
+    if (!isMarkdownPdfPageChromeLineHeight(input.lineHeight)) {
+      return invalidValue(`${label}.lineHeight must be a number from 1 through 2.`);
+    }
+    output.lineHeight = input.lineHeight;
+  }
+  if (input.color !== undefined) {
+    if (!isMarkdownPdfPageChromeColor(input.color)) {
+      return invalidValue(`${label}.color must be a six-digit hexadecimal color.`);
+    }
+    output.color = input.color;
+  }
+  const separator = normalizePageChromeSeparator(input.separator, `${label}.separator`);
+  if (separator) {
+    output.separator = separator;
+  }
+
+  return output;
+}
+
+function normalizeChromeSlots(value: unknown, label: string): NormalizedMarkdownPdfPageChromeArea {
   const input = readObject(value);
-  return {
+  const output: NormalizedMarkdownPdfPageChromeArea = {
     left: stringValue(input.left, `${label}.left`) ?? "",
     center: stringValue(input.center, `${label}.center`) ?? "",
     right: stringValue(input.right, `${label}.right`) ?? "",
   };
+  const style = normalizePageChromeStyle(input.style, `${label}.style`);
+  if (style) {
+    output.style = style;
+  }
+  return output;
 }
 
 function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers {
@@ -191,11 +325,32 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
   const scope =
     stringValue(input.scope, "profile.pageNumbers.scope") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.scope;
-  if (scope !== "body") {
-    throw new CliError("profile.pageNumbers.scope must be body.", {
-      code: "INVALID_INPUT",
-      exitCode: 2,
-    });
+  if (!PAGE_NUMBER_SCOPES.has(scope as MarkdownPdfPageNumberScope)) {
+    return invalidValue("profile.pageNumbers.scope must be one of: document, body.");
+  }
+
+  const countFrom =
+    stringValue(input.countFrom, "profile.pageNumbers.countFrom") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.countFrom;
+  if (!PAGE_NUMBER_COUNT_ORIGINS.has(countFrom as MarkdownPdfPageNumberCountOrigin)) {
+    return invalidValue("profile.pageNumbers.countFrom must be one of: document, body.");
+  }
+  if (scope === "document" && countFrom === "body") {
+    return invalidValue("profile.pageNumbers.scope document cannot be used with countFrom body.");
+  }
+
+  const start =
+    numberValue(input.start, "profile.pageNumbers.start") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.start;
+  if (start < 0) {
+    return invalidValue("profile.pageNumbers.start must be a non-negative integer.");
+  }
+
+  const increment =
+    numberValue(input.increment, "profile.pageNumbers.increment") ??
+    DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.increment;
+  if (increment < 1) {
+    return invalidValue("profile.pageNumbers.increment must be a positive integer.");
   }
 
   return {
@@ -206,7 +361,10 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
     format:
       stringValue(input.format, "profile.pageNumbers.format") ??
       DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.format,
-    scope,
+    scope: scope as MarkdownPdfPageNumberScope,
+    countFrom: countFrom as MarkdownPdfPageNumberCountOrigin,
+    start,
+    increment,
   };
 }
 
