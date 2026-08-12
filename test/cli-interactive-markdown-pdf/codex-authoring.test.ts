@@ -779,6 +779,37 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).not.toContain("readiness");
   });
 
+  test("escapes terminal controls in Interactive Codex Profile review", () => {
+    const escape = "\u001B";
+    const bell = "\u0007";
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: {
+        pageNumbers: {
+          enabled: true,
+          format: `Page ${escape}]8;;https://example.invalid${bell}link {page}`,
+        },
+        header: {
+          left: `${escape}[31mred${escape}[0m`,
+          center: `${escape}]0;title${bell}`,
+          right: "",
+        },
+      },
+      selectQueue: [...recipesCodexSelections("profile"), "continue", "cancel"],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr).not.toContain(escape);
+    expect(result.stderr).not.toContain(bell);
+    expect(result.stderr).toContain(
+      'Format: "Page \\u001b]8;;https://example.invalid\\u0007link {page}"',
+    );
+    expect(result.stderr).toContain('left="\\u001b[31mred\\u001b[0m"');
+    expect(result.stderr).toContain('center="\\u001b]0;title\\u0007"');
+  });
+
   test.each(["review", "cancel"] as const)(
     "offers immediate %s from output selection without destination binding",
     (next) => {

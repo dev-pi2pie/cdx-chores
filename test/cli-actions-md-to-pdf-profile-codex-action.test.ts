@@ -199,7 +199,7 @@ describe("cli action modules: md pdf-profile codex", () => {
           "- Start: 0",
           "- Increment: 2",
           "- Position: top-right",
-          "- Format: Page {page} of {pages}",
+          '- Format: "Page {page} of {pages}"',
         ].join("\n"),
       );
       expect(stdout.text).toContain(
@@ -219,6 +219,31 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(stdout.text).not.toMatch(
         /installed|readiness|diagnostic condition|diagnosticConditionId|status:/i,
       );
+    });
+  });
+
+  test("escapes terminal controls in direct Profile authoring review", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-terminal-controls", async (fixtureDir) => {
+      const escape = "\u001B";
+      const bell = "\u0007";
+      const format = `Page ${escape}]8;;https://example.invalid${bell}link${escape}]8;;${bell} {page}`;
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: pageNumberRunner("default", [
+          { op: "replace", path: "/pageNumbers/enabled", value: true },
+          { op: "replace", path: "/pageNumbers/format", value: format },
+        ]),
+        intent: "safe review output",
+        output: "profile.yml",
+      });
+
+      expect(stdout.text).not.toContain(escape);
+      expect(stdout.text).not.toContain(bell);
+      expect(stdout.text).toContain('Format: "Page \\u001b]8;;https://example.invalid\\u0007link');
     });
   });
 
@@ -268,23 +293,21 @@ describe("cli action modules: md pdf-profile codex", () => {
       });
 
       const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
-      expect(profile.pageNumbers).toMatchObject({
-        countFrom: "body",
+      expect(profile.pageNumbers).toEqual({
         enabled: true,
+        countFrom: "body",
+        format: "{page} / {pages}",
         increment: 2,
+        position: "top-right",
         scope: "body",
         start: 0,
       });
-      expect(profile.header).toMatchObject({
+      expect(profile.header).toEqual({
         left: "Base header",
         style: { fontSize: "8.5pt", separator: { gap: 0 } },
       });
-      expect(profile.footer).toMatchObject({
+      expect(profile.footer).toEqual({
         style: { fontWeight: 600, separator: { style: "solid" } },
-      });
-      expect(profile.pageNumbers).toMatchObject({
-        format: "{page} / {pages}",
-        position: "top-right",
       });
       expect((profile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
       expect(stdout.text).toContain(
@@ -956,7 +979,7 @@ describe("cli action modules: md pdf-profile codex", () => {
           "- Start: 0",
           "- Increment: 2",
           "- Position: top-right",
-          "- Format: Page {page} of {pages}",
+          '- Format: "Page {page} of {pages}"',
         ].join("\n"),
       );
       expect(stdout.text).toContain(
@@ -1386,7 +1409,7 @@ describe("cli action modules: md pdf-profile codex", () => {
           "- Start: 0",
           "- Increment: 3",
           "- Position: top-left",
-          "- Format: Page {page} of {pages}",
+          '- Format: "Page {page} of {pages}"',
         ].join("\n"),
       );
       expect(stdout.text).not.toContain("Advisory renderer capability requirements:");

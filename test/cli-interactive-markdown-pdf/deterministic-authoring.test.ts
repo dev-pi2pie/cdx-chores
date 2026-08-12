@@ -270,43 +270,55 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
-    expect(result.markdownPdfDeterministicPrepareCalls[0]?.formalGuideAnswers).toMatchObject({
-      pageNumbers: {
-        enabled: true,
-        scope: "body",
-        countFrom: "body",
-        start: 0,
-        increment: 2,
-        position: "top-right",
-        format: "Page {page}",
-      },
-      pageChrome: {
-        header: {
-          left: "{company}",
-          center: "",
-          right: "{title}",
-          style: {
-            fontSize: "8pt",
-            fontWeight: 500,
-            lineHeight: 1.1,
-            color: "#123456",
-          },
+    const firstAnswers = result.markdownPdfDeterministicPrepareCalls[0]
+      ?.formalGuideAnswers as Record<string, unknown>;
+    const secondAnswers = result.markdownPdfDeterministicPrepareCalls[1]
+      ?.formalGuideAnswers as Record<string, unknown>;
+    expect(firstAnswers.pageNumbers).toEqual({
+      enabled: true,
+      scope: "body",
+      countFrom: "body",
+      start: 0,
+      increment: 2,
+      position: "top-right",
+      format: "Page {page}",
+    });
+    expect(firstAnswers.pageChrome).toEqual({
+      header: {
+        left: "{company}",
+        center: "",
+        right: "{title}",
+        style: {
+          fontSize: "8pt",
+          fontWeight: 500,
+          lineHeight: 1.1,
+          color: "#123456",
         },
       },
+      footer: { left: "", center: "", right: "" },
     });
-    expect(result.markdownPdfDeterministicPrepareCalls[1]?.formalGuideAnswers).toMatchObject({
-      pageNumbers: {
-        enabled: true,
-        scope: "body",
-        countFrom: "document",
-        start: 1,
-        increment: 1,
-        position: "bottom-center",
-        format: "{page}",
+    expect(secondAnswers.pageNumbers).toEqual({
+      enabled: true,
+      scope: "body",
+      countFrom: "document",
+      start: 1,
+      increment: 1,
+      position: "bottom-center",
+      format: "{page}",
+    });
+    expect(secondAnswers.pageChrome).toEqual({
+      header: {
+        left: "{company}",
+        center: "",
+        right: "{title}",
+        style: {
+          fontSize: "8pt",
+          fontWeight: 500,
+          lineHeight: 1.1,
+          color: "#123456",
+        },
       },
-      pageChrome: {
-        header: { style: { fontSize: "8pt" } },
-      },
+      footer: { left: "", center: "", right: "" },
     });
     expect(result.stderr).toContain("Reusable Profile page numbers:");
     expect(result.stderr).toContain("- Start: 0");

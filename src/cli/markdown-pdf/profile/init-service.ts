@@ -35,7 +35,18 @@ export function prepareMarkdownPdfProfileInit(
 ): PreparedMarkdownPdfProfileInit {
   const acceptedOptions = structuredClone(normalizedOptions);
   const profile = structuredClone(createMarkdownPdfProfileConfig(acceptedOptions));
-  Object.assign(profile, structuredClone(input));
+  if (input.code !== undefined) {
+    profile.code = structuredClone(input.code);
+  }
+  if (input.header !== undefined) {
+    profile.header = structuredClone(input.header);
+  }
+  if (input.footer !== undefined) {
+    profile.footer = structuredClone(input.footer);
+  }
+  if (input.pageNumbers !== undefined) {
+    profile.pageNumbers = structuredClone(input.pageNumbers);
+  }
   return {
     normalizedOptions: acceptedOptions,
     profile,

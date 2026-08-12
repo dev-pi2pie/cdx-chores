@@ -90,7 +90,7 @@ export function formatMarkdownPdfProfileAuthoringReview(
     `- Start: ${pageNumbers.start}`,
     `- Increment: ${pageNumbers.increment}`,
     `- Position: ${pageNumbers.position}`,
-    `- Format: ${pageNumbers.format}`,
+    `- Format: ${JSON.stringify(pageNumbers.format)}`,
     "",
     "Reusable Profile page chrome:",
     ...formatPageChromeArea("Header", review.normalizedProfile.header),

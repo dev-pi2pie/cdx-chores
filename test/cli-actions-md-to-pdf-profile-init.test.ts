@@ -143,6 +143,34 @@ describe("cli action modules: md to-pdf profile init", () => {
     });
   });
 
+  test("copies only supported defined Profile fields from runtime input", () => {
+    const normalizedOptions = normalizeMarkdownPdfOptions();
+    const directEquivalent = prepareMarkdownPdfProfileInit(normalizedOptions);
+    const runtimeInput = {
+      code: undefined,
+      header: undefined,
+      footer: undefined,
+      pageNumbers: {
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 0,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      },
+      unexpected: "must not be copied",
+    } as const;
+    const prepared = prepareMarkdownPdfProfileInit(normalizedOptions, runtimeInput as never);
+
+    expect(prepared.profile).toEqual({
+      ...directEquivalent.profile,
+      pageNumbers: runtimeInput.pageNumbers,
+    });
+    expect(prepared.profile).not.toHaveProperty("unexpected");
+    expect(prepared.profile.pageNumbers).not.toBe(runtimeInput.pageNumbers);
+  });
+
   test("prepares once and rebinds YAML and JSON destinations without writing", async () => {
     await withTempFixtureDir("md-pdf-profile-action", async (fixtureDir) => {
       const { runtime, expectNoOutput } = createActionTestRuntime({ cwd: fixtureDir });

@@ -9,6 +9,13 @@ import {
   writeBoundMarkdownPdfDeterministicRecipe,
 } from "../../src/cli/interactive/markdown/deterministic-authoring";
 import { renderDeterministicRecipeReview } from "../../src/cli/interactive/markdown/authoring-review";
+import {
+  compileMarkdownPdfFormalGuideOptions,
+  reviseMarkdownPdfFormalGuidePageChrome,
+  reviseMarkdownPdfFormalGuidePageNumbers,
+  type MarkdownPdfFormalGuidePrompts,
+  type MarkdownPdfProfileFormalGuideAnswers,
+} from "../../src/cli/interactive/markdown/formal-guide";
 import { collectMarkdownPdfProfileAuthoringCapabilityRequirements } from "../../src/cli/markdown-pdf/profile-authoring-review";
 import {
   normalizeMarkdownPdfProfile,
@@ -248,6 +255,93 @@ describe("interactive Markdown PDF deterministic service", () => {
       const reloaded = normalizeMarkdownPdfProfile({ profile: persisted }).profile;
       expect(reloaded.pageNumbers.enabled).toBe(false);
       expect(reloaded.pageNumbers.start).toBe(0);
+    });
+  });
+
+  test("revises page numbers and chrome before exact bind, write, and reload", async () => {
+    await withTempFixtureDir("md-pdf-interactive-revised-page-policy", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const initial: MarkdownPdfProfileFormalGuideAnswers = {
+        layout: {
+          preset: "article",
+          pageSize: "A4",
+          orientation: { mode: "preset-default" },
+        },
+        margins: { mode: "preset-default" },
+        toc: { enabled: true, depth: 4, pageBreak: "after" },
+        code: {
+          highlight: true,
+          theme: "light-plus",
+          lineNumbers: true,
+          transformerNotation: false,
+        },
+        pageNumbers: {
+          enabled: false,
+          scope: "body",
+          countFrom: "document",
+          start: 0,
+          increment: 1,
+          position: "bottom-center",
+          format: "{page}",
+        },
+        pageChrome: {
+          header: { left: "Old", center: "", right: "" },
+          footer: { left: "", center: "", right: "Old" },
+        },
+      };
+      const revisedNumbers = await reviseMarkdownPdfFormalGuidePageNumbers(initial, {
+        pageNumbersEnabled: () => true,
+        pageNumberScope: () => "body",
+        pageNumberDetails: () => ({
+          countFrom: "body",
+          start: 0,
+          increment: 3,
+          position: "top-right",
+          format: "Page {page} / {pages}",
+        }),
+      } as unknown as MarkdownPdfFormalGuidePrompts);
+      const revised = await reviseMarkdownPdfFormalGuidePageChrome(revisedNumbers, {
+        pageChromeArea: ({
+          area,
+        }: Parameters<MarkdownPdfFormalGuidePrompts["pageChromeArea"]>[0]) =>
+          area === "header"
+            ? {
+                left: "{company}",
+                center: "",
+                right: "{title}",
+                style: {
+                  fontSize: "8pt",
+                  fontWeight: 500,
+                  lineHeight: 1.1,
+                  color: "#123456",
+                  separator: {
+                    width: "0.5pt",
+                    style: "solid",
+                    color: "#abcdef",
+                    gap: 0,
+                  },
+                },
+              }
+            : { left: "{author}", center: "", right: "{date}" },
+      } as unknown as MarkdownPdfFormalGuidePrompts);
+      const candidate = prepareMarkdownPdfDeterministicRecipe({
+        artifact: "profile",
+        preparation: "formal-guide",
+        formalGuideAnswers: revised,
+        options: compileMarkdownPdfFormalGuideOptions(revised),
+      });
+      const bound = await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, {
+        output: "revised.yml",
+      });
+      await writeBoundMarkdownPdfDeterministicRecipe(bound);
+      const persisted = await readMarkdownPdfProfileFile(join(fixtureDir, "revised.yml"));
+      const normalized = normalizeMarkdownPdfProfile({ profile: persisted }).profile;
+
+      expect(normalized.pageNumbers).toEqual(revised.pageNumbers);
+      expect(normalized.header).toEqual(revised.pageChrome.header);
+      expect(normalized.footer).toEqual(revised.pageChrome.footer);
+      expect(normalized.code).toEqual(revised.code);
+      expect(persisted.toc).toEqual({ enabled: true, depth: 4, pageBreak: "after" });
     });
   });
 });
