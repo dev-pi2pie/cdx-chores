@@ -286,11 +286,19 @@ Profile schema and direct/Interactive enablement override
 ```
 
 Use capability-specific baselines instead of one blanket minimum version. Keep
-the compatibility fixtures reusable under `examples/playground/md-pdf/`, while
-candidate environments, PDFs, PNGs, and raw environment reports remain in one
-uniquely named OS temporary laboratory. Public evidence records tested
-versions, fixture outcomes, and conclusions without copying local setup or
-resolved filesystem details.
+the committed renderer-contract source corpus compact and explicit under
+`test/fixtures/markdown-pdf/`: prefer one typed catalog that materializes the
+scenario HTML/CSS and one shared Markdown/Profile pair for the actual-launch
+lane. Any expansion requires review in the Phase 1 job. Do not force-add
+artifacts ignored by `examples/playground/.gitignore`.
+
+Candidate copies, environments, generated inputs, PDFs, PNGs, and raw reports
+belong in one uniquely named, ownership-marked OS temporary laboratory. Retain
+the laboratory through extraction and visual review, then remove it after the
+public-safe evidence record is complete. Retain it only for a failed or
+inconclusive run, or when an explicit local keep option is used. Public records
+describe tested versions, fixture outcomes, and conclusions without copying
+local setup, retention choices, or resolved filesystem details.
 
 ## Implementation Phases
 
@@ -298,8 +306,24 @@ resolved filesystem details.
 
 Tasks:
 
-- [ ] Add reusable hand-written HTML/CSS fixtures under
-      `examples/playground/md-pdf/` for the renderer contract.
+- [ ] Record the exact proposed permanent fixture file list in the Phase 1 job
+      before adding it, and review additions that expand that boundary.
+- [ ] Add a typed fixture catalog under `test/fixtures/markdown-pdf/` that
+      materializes the renderer-contract HTML/CSS scenarios into the temporary
+      laboratory, plus one shared Markdown/Profile actual-launch pair.
+- [ ] Keep copied inputs, generated HTML/CSS, PDFs, PNGs, reports, and candidate
+      environments in the ownership-marked temporary laboratory; do not
+      force-add ignored playground artifacts.
+- [ ] Guard cleanup with the exact resolved laboratory path and an ownership
+      marker, and refuse unmarked, missing-marker, or broader parent paths.
+- [ ] After extraction, visual inspection, and public-safe evidence recording,
+      remove a successful laboratory automatically unless an explicit local
+      keep option was selected; retain failed and inconclusive laboratories for
+      diagnosis, then remove them after the issue is resolved or the run is
+      formally abandoned.
+- [ ] Add deterministic tests for successful cleanup, failure retention,
+      retained-laboratory closeout, explicit retention, and refusal to clean an
+      unsafe path.
 - [ ] Materialize isolated WeasyPrint `65.1`, `68.0`, and `69.0` candidate
       projects under one uniquely named OS temporary laboratory.
 - [ ] Use the same Python minor version and fixture inputs for every candidate.
@@ -348,6 +372,10 @@ Phase checkpoint:
   reliably on the newest candidate; return to research before schema changes.
 - An environment/setup failure is inconclusive and must be corrected and rerun
   for the same candidate; it cannot select a higher baseline.
+- A successful laboratory is cleaned only after its evidence is reviewed and
+  recorded; retained diagnostic laboratories remain local and are never named
+  in public records. No unneeded laboratory remains after Phase 1 closes; an
+  explicit local keep option is the only exception.
 
 ### Phase 2: Contract Value Domains And Profile Schema
 
