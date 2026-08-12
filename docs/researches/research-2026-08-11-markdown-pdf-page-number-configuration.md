@@ -2,7 +2,7 @@
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
 modified-date: 2026-08-12
-status: draft
+status: in-progress
 agent: codex
 ---
 

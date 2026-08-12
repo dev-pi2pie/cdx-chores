@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-status: draft
+status: active
 agent: codex
 ---
 
@@ -360,6 +360,9 @@ Tasks:
       set.
 - [ ] Update the research conclusions and lifecycle status only as supported by
       the recorded renderer evidence.
+- [ ] Review the exact Phase 1 implementation and evidence commit range,
+      resolve every actionable finding, and record the final verdict before
+      beginning Phase 2.
 
 Phase checkpoint:
 
@@ -392,6 +395,10 @@ Tasks:
 - [ ] Record the finalized domains, defaults, normalization rules, and examples
       in the Phase 1 evidence job and related research so schema and guidance
       consume one decision source.
+- [ ] Create or update
+      `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-page-number-phase-2-profile-contract.md`
+      with the accepted domains, compatibility results, validation evidence,
+      checkpoint commits, and exact-range review verdict.
 - [ ] Extend normalized types with `scope: document | body`,
       `countFrom: document | body`, `start`, and `increment`.
 - [ ] Add the shared typed `style` shape to `header` and `footer` without adding
@@ -415,6 +422,9 @@ Tasks:
 - [ ] Add old-Profile fixtures proving omitted new fields retain the shipped
       behavior.
 - [ ] Add round-trip fixtures for every new field and validation boundary.
+- [ ] Review the exact Phase 2 implementation and evidence commit range,
+      resolve every actionable finding, and record the final verdict before
+      beginning Phase 3.
 
 Phase checkpoint:
 
