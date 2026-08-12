@@ -5,12 +5,28 @@ import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import { displayPath, printLine } from "../../actions/shared";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
+import {
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "../profile-authoring-review";
 import type { BoundMarkdownPdfProfileCodexDestination } from "./destination";
 import type { PreparedMarkdownPdfProfileCodex } from "./prepare";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
   return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
+}
+
+function printMarkdownPdfProfileAuthoringSummary(input: {
+  finalProfile: Record<string, unknown>;
+  runtime: CliRuntime;
+}): void {
+  const profileFields = { ...input.finalProfile };
+  delete profileFields.profile;
+  const review = collectMarkdownPdfProfileAuthoringReview(profileFields);
+  for (const line of formatMarkdownPdfProfileAuthoringReview(review)) {
+    printLine(input.runtime.stdout, line);
+  }
 }
 
 async function writeReportIfRequested(input: {
@@ -67,6 +83,7 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
     printLine(runtime.stdout, `Fallback reason: ${prepared.result.decision.fallbackReason}`);
   }
   printLine(runtime.stdout, `Profile: ${destination.displayOutputPath}`);
+  printMarkdownPdfProfileAuthoringSummary({ finalProfile: prepared.finalProfile, runtime });
 
   if (destination.dryRun) {
     printLine(runtime.stdout, "Dry run only. No profile was written.");

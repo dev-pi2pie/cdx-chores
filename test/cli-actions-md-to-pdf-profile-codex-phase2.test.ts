@@ -32,6 +32,15 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
       presetBacked: false,
     });
     expect(defaultCandidate?.summary.preset).toBeUndefined();
+    expect(defaultCandidate?.fullProfile.pageNumbers).toEqual({
+      enabled: false,
+      scope: "body",
+      countFrom: "document",
+      start: 1,
+      increment: 1,
+      position: "bottom-center",
+      format: "{page}",
+    });
     expect(articleCandidate?.summary).toMatchObject({
       kind: "preset",
       presetBacked: true,
@@ -104,6 +113,18 @@ describe("markdown PDF Codex profile phase 2 candidates and signals", () => {
         basedOn: "untracked-base-profile",
       });
       expect(legacyCandidate.identity).toBeUndefined();
+      expect(legacyCandidate.fullProfile).not.toHaveProperty("pageNumbers");
+      expect(
+        normalizeMarkdownPdfProfile({ profile: legacyCandidate.fullProfile }).profile.pageNumbers,
+      ).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      });
 
       await expectCliError(
         () => loadMarkdownPdfBaseProfileCandidate({ path: toRepoRelativePath(invalidPath) }),

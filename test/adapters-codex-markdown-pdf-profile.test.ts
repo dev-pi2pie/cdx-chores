@@ -25,6 +25,7 @@ import {
 } from "../src/cli/markdown-pdf/profile/candidates";
 import {
   createMarkdownPdfPageChromeCss,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
   normalizeMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf/profile";
 
@@ -969,6 +970,47 @@ describe("Markdown PDF Codex profile adapter", () => {
           lineHeight,
           separator: { color, gap, style: "solid", width },
         },
+      });
+    }
+  });
+
+  test("accepts every valid page-number origin and placement while preserving false and zero", () => {
+    const validOrigins = [
+      { scope: "document", countFrom: "document" },
+      { scope: "body", countFrom: "document" },
+      { scope: "body", countFrom: "body" },
+    ] as const;
+    for (const [index, position] of MARKDOWN_PDF_PAGE_CHROME_POSITIONS.entries()) {
+      const origin = validOrigins[index % validOrigins.length] ?? validOrigins[0];
+      const result = applyMarkdownPdfCodexDecision({
+        candidates: [sparseCandidate()],
+        decision: {
+          acceptedPatches: [
+            { op: "replace", path: "/pageNumbers/enabled", value: false },
+            { op: "replace", path: "/pageNumbers/scope", value: origin.scope },
+            { op: "replace", path: "/pageNumbers/countFrom", value: origin.countFrom },
+            { op: "replace", path: "/pageNumbers/start", value: 0 },
+            { op: "replace", path: "/pageNumbers/increment", value: index + 1 },
+            { op: "replace", path: "/pageNumbers/position", value: position },
+            { op: "replace", path: "/pageNumbers/format", value: "Page {page} / {pages}" },
+          ],
+          acceptedFontPatches: [],
+          decisionMode: "adapted",
+          reasoning: "accept a valid durable page-number contract",
+          selectedCandidateId: "sparse",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      });
+
+      expect(result.profile?.pageNumbers).toEqual({
+        enabled: false,
+        scope: origin.scope,
+        countFrom: origin.countFrom,
+        start: 0,
+        increment: index + 1,
+        position,
+        format: "Page {page} / {pages}",
       });
     }
   });

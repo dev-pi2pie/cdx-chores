@@ -39,6 +39,31 @@ function adaptedRunner(candidateId = "wide-table") {
     });
 }
 
+function pageNumberRunner(
+  candidateId = "default",
+  patches: Array<{ op: "replace"; path: string; value: boolean | number | string }> = [
+    { op: "replace", path: "/pageNumbers/enabled", value: true },
+    { op: "replace", path: "/pageNumbers/scope", value: "body" },
+    { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+    { op: "replace", path: "/pageNumbers/start", value: 0 },
+    { op: "replace", path: "/pageNumbers/increment", value: 2 },
+    { op: "replace", path: "/pageNumbers/position", value: "top-right" },
+    { op: "replace", path: "/pageNumbers/format", value: "Page {page} of {pages}" },
+  ],
+) {
+  return async () =>
+    JSON.stringify({
+      decision_mode: "adapted",
+      selected_candidate_id: candidateId,
+      accepted_patches: patches,
+      accepted_font_patches: [],
+      reasoning: "Use the requested durable page-number configuration.",
+      warnings: [],
+      fallback_reason: "",
+      unmatched_directions: [],
+    });
+}
+
 function allFontPatchRunner(candidateId = "default") {
   return async () =>
     JSON.stringify({
@@ -133,6 +158,70 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("serializes a no-base adapted page-number profile", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-page-numbers-no-base", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "page-numbers.yml");
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: pageNumberRunner(),
+        intent: "number body pages from zero",
+        output: "page-numbers.yml",
+      });
+
+      const serialized = await readFile(outputPath, "utf8");
+      expect(serialized).toContain("pageNumbers:\n  enabled: true");
+      expect(serialized).toContain("  countFrom: body");
+      expect(serialized).toContain("  start: 0");
+      expect(serialized).toContain("  increment: 2");
+      expect(serialized).toContain("  position: top-right");
+      expect(serialized).toContain("  format: Page {page} of {pages}");
+      const profile = await readMarkdownPdfProfileFile(outputPath);
+      expect(profile.pageNumbers).toEqual({
+        enabled: true,
+        scope: "body",
+        countFrom: "body",
+        start: 0,
+        increment: 2,
+        position: "top-right",
+        format: "Page {page} of {pages}",
+      });
+      expect(profile.profile).toMatchObject({ basedOn: "default", source: "codex" });
+      expect(stdout.text).toContain(
+        [
+          "Reusable Profile page numbers:",
+          "- Enabled: yes",
+          "- Scope: body",
+          "- Count from: body",
+          "- Start: 0",
+          "- Increment: 2",
+          "- Position: top-right",
+          "- Format: Page {page} of {pages}",
+        ].join("\n"),
+      );
+      expect(stdout.text).toContain(
+        [
+          "Advisory renderer capability requirements:",
+          "- capabilityId: pageNumbers.start",
+          "  requestedBy: pageNumbers.start",
+          "  minimumVersion: 65.1",
+          "- capabilityId: pageNumbers.increment",
+          "  requestedBy: pageNumbers.increment",
+          "  minimumVersion: 65.1",
+          "- capabilityId: pageNumbers.countFrom.body",
+          "  requestedBy: pageNumbers.countFrom",
+          "  minimumVersion: 65.1",
+        ].join("\n"),
+      );
+      expect(stdout.text).not.toMatch(
+        /installed|readiness|diagnostic condition|diagnosticConditionId|status:/i,
+      );
+    });
+  });
+
   test("preserves bounded page-number configuration and leaves the base profile immutable", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-page-number-contract", async (fixtureDir) => {
       const basePath = join(fixtureDir, "base.yml");
@@ -146,7 +235,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       ].join("\n");
       await writeFile(basePath, baseYaml, "utf8");
 
-      const { runtime } = createActionTestRuntime({
+      const { runtime, stdout } = createActionTestRuntime({
         cwd: fixtureDir,
         now: () => new Date("2026-06-15T08:15:00.000Z"),
       });
@@ -161,6 +250,8 @@ describe("cli action modules: md pdf-profile codex", () => {
               { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
               { op: "replace", path: "/pageNumbers/start", value: 0 },
               { op: "replace", path: "/pageNumbers/increment", value: 2 },
+              { op: "replace", path: "/pageNumbers/position", value: "top-right" },
+              { op: "replace", path: "/pageNumbers/format", value: "{page} / {pages}" },
               { op: "replace", path: "/header/style/fontSize", value: "8.5pt" },
               { op: "replace", path: "/header/style/separator/gap", value: 0 },
               { op: "replace", path: "/footer/style/fontWeight", value: 600 },
@@ -191,7 +282,29 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(profile.footer).toMatchObject({
         style: { fontWeight: 600, separator: { style: "solid" } },
       });
+      expect(profile.pageNumbers).toMatchObject({
+        format: "{page} / {pages}",
+        position: "top-right",
+      });
       expect((profile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
+      expect(stdout.text).toContain(
+        [
+          "Reusable Profile page chrome:",
+          '- Header: left="Base header", center="", right=""',
+          "- Header style: fontSize=8.5pt, fontWeight=default, lineHeight=default, color=default",
+          "- Header separator: width=default, style=default, color=default, gap=0",
+          '- Footer: left="", center="", right=""',
+          "- Footer style: fontSize=default, fontWeight=600, lineHeight=default, color=default",
+          "- Footer separator: width=default, style=solid, color=default, gap=default",
+        ].join("\n"),
+      );
+      expect(stdout.text).toContain("- capabilityId: pageChrome.fontSize");
+      expect(stdout.text).toContain("  requestedBy: header.style.fontSize");
+      expect(stdout.text).toContain("- capabilityId: pageChrome.separator.gap");
+      expect(stdout.text).toContain("  requestedBy: header.style.separator.gap");
+      expect(stdout.text).not.toMatch(
+        /installed|readiness|diagnostic condition|diagnosticConditionId|status:/i,
+      );
       expect(await readFile(basePath, "utf8")).toBe(baseYaml);
     });
   });
@@ -477,6 +590,15 @@ describe("cli action modules: md pdf-profile codex", () => {
           depth: 2,
           enabled: true,
         },
+        pageNumbers: {
+          enabled: false,
+          scope: "body",
+          countFrom: "document",
+          start: 1,
+          increment: 1,
+          position: "bottom-center",
+          format: "{page}",
+        },
       });
       const profile = await readMarkdownPdfProfileFile(outputPath);
       expect(profile.profile).toMatchObject({
@@ -484,6 +606,78 @@ describe("cli action modules: md pdf-profile codex", () => {
         preset: "wide-table",
         source: "codex",
       });
+    });
+  });
+
+  test("loads a JSON base profile and preserves or revises page-number values in JSON and YAML", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-json-base", async (fixtureDir) => {
+      const basePath = join(fixtureDir, "base.json");
+      const baseProfile = {
+        pageNumbers: {
+          enabled: false,
+          scope: "body",
+          countFrom: "document",
+          start: 0,
+          increment: 3,
+          position: "bottom-left",
+          format: "Base {page} / {pages}",
+        },
+        header: {
+          left: "Stable heading",
+          style: { fontSize: "9pt", separator: { gap: 0 } },
+        },
+      };
+      const baseJson = `${JSON.stringify(baseProfile, null, 2)}\n`;
+      await writeFile(basePath, baseJson, "utf8");
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.json",
+        codexRunner: pageNumberRunner("base-profile", [
+          { op: "replace", path: "/pageNumbers/enabled", value: true },
+          { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+        ]),
+        intent: "enable body-origin page numbers",
+        output: "revised.json",
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.json",
+        codexRunner: pageNumberRunner("base-profile", [
+          { op: "replace", path: "/pageNumbers/increment", value: 4 },
+          { op: "replace", path: "/pageNumbers/position", value: "top-center" },
+        ]),
+        intent: "move and increment page numbers while keeping other values",
+        output: "revised.yml",
+      });
+
+      const jsonProfile = await readMarkdownPdfProfileFile(join(fixtureDir, "revised.json"));
+      expect(jsonProfile.pageNumbers).toEqual({
+        enabled: true,
+        scope: "body",
+        countFrom: "body",
+        start: 0,
+        increment: 3,
+        position: "bottom-left",
+        format: "Base {page} / {pages}",
+      });
+      expect(jsonProfile.header).toEqual(baseProfile.header);
+
+      const yamlProfile = await readMarkdownPdfProfileFile(join(fixtureDir, "revised.yml"));
+      expect(yamlProfile.pageNumbers).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 0,
+        increment: 4,
+        position: "top-center",
+        format: "Base {page} / {pages}",
+      });
+      expect(yamlProfile.header).toEqual(baseProfile.header);
+      expect(await readFile(join(fixtureDir, "revised.yml"), "utf8")).toContain("  start: 0");
+      expect(await readFile(basePath, "utf8")).toBe(baseJson);
     });
   });
 
@@ -726,6 +920,82 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.result.acceptedFontPatches).toEqual([
         { op: "replace-font", role: "body", key: "ja", value: "Noto Serif JP" },
       ]);
+    });
+  });
+
+  test("dry-run previews normalized page numbers and advisory requirements with a public-safe report", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-page-number-dry-run", async (fixtureDir) => {
+      const workspace = join(fixtureDir, "workspace");
+      const privateInputs = join(fixtureDir, "private-inputs");
+      await mkdir(workspace, { recursive: true });
+      await mkdir(privateInputs, { recursive: true });
+      const inputPath = join(privateInputs, "client-report.md");
+      const outputPath = join(privateInputs, "client-profile.yml");
+      await writeFile(inputPath, "# Client report\n", "utf8");
+
+      const { runtime, stdout } = createActionTestRuntime({
+        cwd: workspace,
+        displayPathStyle: "absolute",
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        codexReportOutput: "dry-run-report.json",
+        codexRunner: pageNumberRunner(),
+        dryRun: true,
+        input: inputPath,
+        intent: "number body pages from zero",
+        output: outputPath,
+      });
+
+      expect(stdout.text).toContain(
+        [
+          "Reusable Profile page numbers:",
+          "- Enabled: yes",
+          "- Scope: body",
+          "- Count from: body",
+          "- Start: 0",
+          "- Increment: 2",
+          "- Position: top-right",
+          "- Format: Page {page} of {pages}",
+        ].join("\n"),
+      );
+      expect(stdout.text).toContain(
+        [
+          "Advisory renderer capability requirements:",
+          "- capabilityId: pageNumbers.start",
+          "  requestedBy: pageNumbers.start",
+          "  minimumVersion: 65.1",
+          "- capabilityId: pageNumbers.increment",
+          "  requestedBy: pageNumbers.increment",
+          "  minimumVersion: 65.1",
+          "- capabilityId: pageNumbers.countFrom.body",
+          "  requestedBy: pageNumbers.countFrom",
+          "  minimumVersion: 65.1",
+        ].join("\n"),
+      );
+      expect(stdout.text).toContain("Dry run only. No profile was written.");
+      expect(stdout.text).not.toMatch(
+        /installed|readiness|diagnostic condition|diagnosticConditionId|status:/i,
+      );
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+
+      const reportPath = join(workspace, "dry-run-report.json");
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.input.path).toBe("client-report.md");
+      expect(report.profile.outputPath).toBe("client-profile.yml");
+      expect(report.result.acceptedPatches).toEqual([
+        { op: "replace", path: "/pageNumbers/enabled", value: true },
+        { op: "replace", path: "/pageNumbers/scope", value: "body" },
+        { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+        { op: "replace", path: "/pageNumbers/start", value: 0 },
+        { op: "replace", path: "/pageNumbers/increment", value: 2 },
+        { op: "replace", path: "/pageNumbers/position", value: "top-right" },
+        { op: "replace", path: "/pageNumbers/format", value: "Page {page} of {pages}" },
+      ]);
+      const rawReport = await readFile(reportPath, "utf8");
+      expect(rawReport).not.toContain(fixtureDir);
+      expect(rawReport).not.toContain(privateInputs);
+      expect(rawReport).not.toContain("../");
     });
   });
 
@@ -1024,6 +1294,15 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(stdout.text).toContain("Signal mode: basic-default");
       const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
       expect(profile.profile).toMatchObject({ source: "deterministic" });
+      expect(profile.pageNumbers).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      });
     });
   });
 
@@ -1067,6 +1346,14 @@ describe("cli action modules: md pdf-profile codex", () => {
           "toc:",
           "  enabled: true",
           "  depth: 3",
+          "pageNumbers:",
+          "  enabled: false",
+          "  scope: body",
+          "  countFrom: body",
+          "  start: 0",
+          "  increment: 3",
+          "  position: top-left",
+          '  format: "Page {page} of {pages}"',
           "",
         ].join("\n"),
         "utf8",
@@ -1090,6 +1377,22 @@ describe("cli action modules: md pdf-profile codex", () => {
 
       expect(codexCalls).toBe(0);
       expect(stdout.text).toContain("Signal mode: base-only-deterministic");
+      expect(stdout.text).toContain(
+        [
+          "Reusable Profile page numbers:",
+          "- Enabled: no",
+          "- Scope: body",
+          "- Count from: body",
+          "- Start: 0",
+          "- Increment: 3",
+          "- Position: top-left",
+          "- Format: Page {page} of {pages}",
+        ].join("\n"),
+      );
+      expect(stdout.text).not.toContain("Advisory renderer capability requirements:");
+      expect(stdout.text).not.toMatch(
+        /installed|readiness|diagnostic condition|diagnosticConditionId|status:/i,
+      );
       expect(await readFile(basePath, "utf8")).toBe(baseBefore);
       const derived = await readMarkdownPdfProfileFile(outputPath);
       expect(derived.profile).toMatchObject({
@@ -1098,6 +1401,15 @@ describe("cli action modules: md pdf-profile codex", () => {
         source: "deterministic",
       });
       expect(derived.toc).toMatchObject({ enabled: true, depth: 3 });
+      expect(derived.pageNumbers).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "body",
+        start: 0,
+        increment: 3,
+        position: "top-left",
+        format: "Page {page} of {pages}",
+      });
       const report = await readMarkdownPdfCodexReportArtifact(
         join(fixtureDir, "base-only-report.json"),
       );
@@ -1929,6 +2241,69 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("reports an invalid Codex page-number origin without leaking private paths or writing a profile", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-invalid-origin-report", async (fixtureDir) => {
+      const workspace = join(fixtureDir, "workspace");
+      const privateInputs = join(fixtureDir, "private-inputs");
+      await mkdir(workspace, { recursive: true });
+      await mkdir(privateInputs, { recursive: true });
+      const inputPath = join(privateInputs, "client-report.md");
+      const basePath = join(privateInputs, "client-base.json");
+      const outputPath = join(privateInputs, "client-profile.yml");
+      await writeFile(inputPath, "# Client report\n", "utf8");
+      await writeFile(
+        basePath,
+        `${JSON.stringify({ pageNumbers: { scope: "body", countFrom: "document" } })}\n`,
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime({
+        cwd: workspace,
+        displayPathStyle: "absolute",
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      const error = await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: basePath,
+            codexReportOutput: "failure-report.json",
+            codexRunner: pageNumberRunner("base-profile", [
+              { op: "replace", path: "/pageNumbers/scope", value: "document" },
+              { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+            ]),
+            input: inputPath,
+            intent: "use a conflicting page-number origin",
+            output: outputPath,
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "scope document cannot be used with countFrom body",
+        },
+      );
+
+      expect(error.message).not.toContain(fixtureDir);
+      expect(error.message).not.toContain(privateInputs);
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
+      const reportPath = join(workspace, "failure-report.json");
+      const report = await readMarkdownPdfCodexReportArtifact(reportPath);
+      expect(report.input.path).toBe("client-report.md");
+      expect(report.profile.outputPath).toBe("client-profile.yml");
+      expect(report.result).toMatchObject({
+        status: "failed",
+        failure: {
+          kind: "invalid-application",
+          message: expect.stringContaining("scope document cannot be used with countFrom body"),
+        },
+      });
+      expect(report.result.acceptedPatches).toBeUndefined();
+      const rawReport = await readFile(reportPath, "utf8");
+      expect(rawReport).not.toContain(fixtureDir);
+      expect(rawReport).not.toContain(privateInputs);
+      expect(rawReport).not.toContain("../");
+    });
+  });
+
   test("rejects invalid Codex font patch role and key combinations before writing the profile", async () => {
     for (const [name, acceptedFontPatches, messageIncludes, failureKind] of [
       [
@@ -2041,9 +2416,9 @@ describe("cli action modules: md pdf-profile codex", () => {
       await actionMdPdfProfileCodex(runtime, {
         baseProfile: baseProfilePath,
         codexReportOutput: "codex-report.json",
-        codexRunner: adaptedRunner("base-profile"),
+        codexRunner: pageNumberRunner("base-profile"),
         input: inputPath,
-        intent: "article profile",
+        intent: "durable body page numbers",
         output: outputPath,
       });
 
@@ -2052,7 +2427,19 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.input.path).toBe("client-report.md");
       expect(report.selectedBase.path).toBe("client-base.yml");
       expect(report.profile.outputPath).toBe("client-profile.yml");
-      expect(await readFile(reportPath, "utf8")).not.toContain("../");
+      expect(report.result.acceptedPatches).toEqual([
+        { op: "replace", path: "/pageNumbers/enabled", value: true },
+        { op: "replace", path: "/pageNumbers/scope", value: "body" },
+        { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+        { op: "replace", path: "/pageNumbers/start", value: 0 },
+        { op: "replace", path: "/pageNumbers/increment", value: 2 },
+        { op: "replace", path: "/pageNumbers/position", value: "top-right" },
+        { op: "replace", path: "/pageNumbers/format", value: "Page {page} of {pages}" },
+      ]);
+      const rawReport = await readFile(reportPath, "utf8");
+      expect(rawReport).not.toContain(fixtureDir);
+      expect(rawReport).not.toContain(external);
+      expect(rawReport).not.toContain("../");
     });
   });
 
@@ -2276,6 +2663,16 @@ describe("cli action modules: md pdf-profile codex", () => {
       await writeFile(join(fixtureDir, "profile.yml"), "existing", "utf8");
       await writeFile(join(fixtureDir, "codex-report.json"), "existing", "utf8");
       await writeFile(join(fixtureDir, "invalid.yml"), "unknown:\n  bad: true\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "invalid-arithmetic.yml"),
+        "pageNumbers:\n  start: -1\n  increment: 0\n",
+        "utf8",
+      );
+      await writeFile(
+        join(fixtureDir, "invalid-origin.yml"),
+        "pageNumbers:\n  scope: document\n  countFrom: body\n",
+        "utf8",
+      );
       await writeFile(join(fixtureDir, "base.yml"), "toc:\n  enabled: true\n", "utf8");
       await writeFile(join(fixtureDir, "base.json"), '{"toc":{"enabled":true}}\n', "utf8");
       await writeFile(join(fixtureDir, "sample.json"), "# JSON named Markdown\n", "utf8");
@@ -2463,7 +2860,45 @@ describe("cli action modules: md pdf-profile codex", () => {
           messageIncludes: "Unknown Markdown PDF profile key",
         },
       );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: "invalid-arithmetic.yml",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "report.md",
+            intent: "report",
+            output: "arithmetic-output.yml",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "pageNumbers.start must be a non-negative integer",
+        },
+      );
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            baseProfile: "invalid-origin.yml",
+            codexRunner: async () => {
+              codexCalls += 1;
+              return "{}";
+            },
+            input: "report.md",
+            intent: "report",
+            output: "origin-output.yml",
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "scope document cannot be used with countFrom body",
+        },
+      );
       expect(codexCalls).toBe(0);
+      await expect(readFile(join(fixtureDir, "arithmetic-output.yml"), "utf8")).rejects.toThrow();
+      await expect(readFile(join(fixtureDir, "origin-output.yml"), "utf8")).rejects.toThrow();
     });
   });
 });

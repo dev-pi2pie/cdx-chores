@@ -51,9 +51,27 @@ describe("cli action modules: md to-pdf profile init", () => {
 
       const profile = JSON.parse(await readFile(outputPath, "utf8")) as {
         page: { orientation: string; marginTop: string };
+        pageNumbers: {
+          enabled: boolean;
+          scope: string;
+          countFrom: string;
+          start: number;
+          increment: number;
+          position: string;
+          format: string;
+        };
       };
       expect(profile.page.orientation).toBe("landscape");
       expect(profile.page.marginTop).toBe("12mm");
+      expect(profile.pageNumbers).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      });
       expectNoStderr();
     });
   });
