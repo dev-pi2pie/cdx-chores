@@ -926,6 +926,45 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(styledCss).not.toContain("#123ABC");
   });
 
+  test("accepts exact page-chrome endpoints through Codex patch application", () => {
+    for (const [fontSize, fontWeight, lineHeight, color, width, gap] of [
+      ["6pt", 400, 1, "#000000", ".25pt", 0],
+      ["12pt", 700, 2, "#ABCDEF", "2pt", "4mm"],
+    ] as const) {
+      const result = applyMarkdownPdfCodexDecision({
+        candidates: [sparseCandidate()],
+        decision: {
+          acceptedPatches: [
+            { op: "replace", path: "/header/style/fontSize", value: fontSize },
+            { op: "replace", path: "/header/style/fontWeight", value: fontWeight },
+            { op: "replace", path: "/header/style/lineHeight", value: lineHeight },
+            { op: "replace", path: "/header/style/color", value: color },
+            { op: "replace", path: "/header/style/separator/width", value: width },
+            { op: "replace", path: "/header/style/separator/style", value: "solid" },
+            { op: "replace", path: "/header/style/separator/color", value: color },
+            { op: "replace", path: "/header/style/separator/gap", value: gap },
+          ],
+          acceptedFontPatches: [],
+          decisionMode: "adapted",
+          reasoning: "accept exact renderer-supported endpoints",
+          selectedCandidateId: "sparse",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      });
+
+      expect(result.profile?.header).toMatchObject({
+        style: {
+          color,
+          fontSize,
+          fontWeight,
+          lineHeight,
+          separator: { color, gap, style: "solid", width },
+        },
+      });
+    }
+  });
+
   test("supports conservative fallback and no usable profile decision modes", async () => {
     const fallback = await suggestMarkdownPdfProfileWithCodex({
       ...requestBase,

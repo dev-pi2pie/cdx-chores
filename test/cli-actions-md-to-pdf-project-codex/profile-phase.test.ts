@@ -1041,6 +1041,30 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
         { code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID" },
       );
       await expectNoPlannedProjectArtifacts(outputPlan);
+
+      const invalidStyleRunner: MarkdownPdfCodexProfileRunner = async () =>
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [{ op: "replace", path: "/header/style/fontSize", value: "13pt" }],
+          accepted_font_patches: [],
+          reasoning: "Invalid page chrome value.",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        });
+      await expectCliError(
+        () =>
+          runMdPdfProjectCodexProfilePhase({
+            outputPlan,
+            profileCodexRunner: invalidStyleRunner,
+            runtime,
+            signals,
+            state,
+          }),
+        { code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID" },
+      );
+      await expectNoPlannedProjectArtifacts(outputPlan);
     });
   });
 

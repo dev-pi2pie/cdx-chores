@@ -159,6 +159,41 @@ describe("markdown PDF profile normalization", () => {
     });
   });
 
+  test("accepts every inclusive page-chrome boundary and valid counting combination", () => {
+    const styles = [
+      {
+        fontSize: "6pt",
+        fontWeight: 400,
+        lineHeight: 1,
+        color: "#000000",
+        separator: { width: ".25pt", style: "solid", color: "#aBcDeF", gap: 0 },
+      },
+      {
+        fontSize: "12pt",
+        fontWeight: 700,
+        lineHeight: 2,
+        color: "#FFFFFF",
+        separator: { width: "2pt", style: "solid", color: "#123456", gap: "4mm" },
+      },
+    ] as const;
+
+    for (const style of styles) {
+      expect(
+        normalizeMarkdownPdfProfile({ profile: { header: { style } } }).profile.header.style,
+      ).toEqual(style);
+    }
+
+    for (const pageNumbers of [
+      { scope: "document", countFrom: "document", start: 0, increment: 1 },
+      { scope: "body", countFrom: "document", start: 1, increment: 2 },
+      { scope: "body", countFrom: "body", start: 0, increment: 1 },
+    ]) {
+      expect(normalizeMarkdownPdfProfile({ profile: { pageNumbers } }).profile.pageNumbers).toEqual(
+        expect.objectContaining(pageNumbers),
+      );
+    }
+  });
+
   test("rejects invalid page-number sequence values and combinations", () => {
     const invalidCases: Array<{ message: string; pageNumbers: Record<string, unknown> }> = [
       { pageNumbers: { scope: "chapter" }, message: "scope must be one of" },
