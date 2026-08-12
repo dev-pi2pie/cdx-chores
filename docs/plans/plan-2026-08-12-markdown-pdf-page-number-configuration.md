@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
+modified-date: 2026-08-12
 status: active
 agent: codex
 ---
@@ -686,26 +687,76 @@ Phase checkpoint:
 
 ### Phase 7: Profile Helper And Interactive Durable Authoring
 
-Tasks:
+#### Phase 7A: Direct Profile-Helper Audit And Preservation
 
-- [ ] Preserve and generate the new page-number fields through direct
-      `md pdf-profile codex` candidates, `--base-profile` input, bounded patch
-      application, serialization, review, and optional report output.
+- [ ] Audit direct `md pdf-profile codex` from `--base-profile` loading through
+      candidate construction, bounded patch application, normalization,
+      serialization, human review, write, and optional report output before
+      changing behavior.
+- [ ] Prove that omitted new fields, explicit `enabled: false`, literal
+      `start: 0`, non-default arithmetic, both valid origins, position, format,
+      and retained page-chrome style survive the existing bounded patch and
+      candidate lifecycle without truthiness loss or a parallel schema.
+- [ ] Add only the missing direct-helper seams found by that audit, and keep
+      malformed Profiles, unknown keys, invalid value domains, and invalid
+      scope/origin combinations on the shared Profile validation path.
+- [ ] Keep the direct Profile helper's optional report in Phase 7 scope and
+      apply the existing public-safe path and error redaction to every new
+      page-number and capability-requirement field; add acceptance coverage for
+      both redacted success and failure report content.
+- [ ] Reuse the Phase 6 capability catalog and Phase 1 baselines to describe
+      which renderer capabilities a candidate will require. The authoring
+      review entry contains only requested capability ID, requesting Profile
+      fields, and minimum proven baseline; it contains no installed status,
+      renderer probe, condition ID/result, or readiness verdict.
+- [ ] Keep Profile authoring advisory: it must not probe or gate on the
+      currently installed renderer, and an unsupported local renderer must not
+      invalidate an otherwise valid reusable Profile. Direct rendering and
+      `doctor` retain ownership of installed-version and availability
+      evaluation.
+
+#### Phase 7B: Interactive Formal-Guide Profile Model
+
 - [ ] Add Profile-only page-number and page-chrome groups to Interactive
       formal-guide authoring.
-- [ ] Collect durable sequence, visibility, format, position, and retained
-      style values through the normalized Profile contract.
-- [ ] Enforce the invalid scope/origin combination during Interactive
-      collection and revision.
-- [ ] Show reusable Profile values and effective renderer capability posture in
-      candidate review.
-- [ ] Carry the same durable Profile behavior through existing Profile, bundle,
-      and Codex Profile authoring paths.
-- [ ] Keep Template-only authoring free of Profile-owned page-number policy.
-- [ ] Preserve accepted Profile candidates during authoring revision without
-      repeating unrelated Codex requests.
-- [ ] Add Interactive Profile collection, revision, review, persistence, and
-      generated-artifact tests.
+- [ ] Collect enablement, sequence, visibility, format, position, and retained
+      header/footer style through one draft that compiles into the normalized
+      Profile contract; do not introduce an Interactive-only render or
+      serialization schema.
+- [ ] Preserve exact `false` and zero values during collection and revision,
+      and re-prompt or return to revision for invalid value domains and the
+      invalid scope/origin combination before a candidate is accepted.
+- [ ] Keep Template-only formal-guide authoring free of Profile-owned
+      page-number sequence, visibility, label, position, and page-chrome style.
+
+#### Phase 7C: Interactive Authoring Integration
+
+- [ ] Carry the same durable Profile behavior through existing Profile,
+      complete-bundle, formal-guide, and Codex Profile authoring paths.
+- [ ] Show normalized reusable Profile values plus advisory capability
+      requirements in candidate review using the bounded requirement entry
+      shape without implying that the installed renderer was checked or that a
+      render will succeed.
+- [ ] Preserve an accepted Profile candidate during revision without repeating
+      unrelated Codex requests, then persist and reload the same normalized
+      values through the existing authoring lifecycle.
+- [ ] Add direct-helper and Interactive tests for collection, revision, review,
+      persistence, reload, generated candidates, Template ownership, no
+      renderer probe, unsupported-local-renderer authoring, and public-safe
+      direct Profile report redaction.
+- [ ] Create and maintain
+      `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-7-profile-authoring.md`
+      with the `62d223af` starting boundary, 7A/7B/7C checkpoints, public-safe
+      evidence, validation results, and cleanup state.
+- [ ] Run focused direct Profile-helper and Interactive authoring tests, the
+      broad Markdown PDF regression slice, and the full repository suite; run
+      `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+      `bun run build`, and `git diff --check` at the final evidence tip.
+- [ ] Review the exact aggregate Phase 7 range from base `62d223af` through the
+      final Phase 7 evidence tip (`62d223af..<phase-7-final-tip>`), replace the
+      placeholder with the exact full commit before review, resolve every
+      actionable finding, widen the tip when fixes land, and record the final
+      exact range and verdict in the Phase 7 job before beginning Phase 8.
 
 Phase checkpoint:
 
@@ -715,70 +766,163 @@ Phase checkpoint:
   second render schema.
 - Template ownership remains consistent with existing Markdown PDF artifact
   boundaries.
+- Capability requirements shown during authoring reuse Phase 6 data but remain
+  bounded to requested capability ID, requesting fields, and Phase 1 minimum
+  baseline. They include no installed status, probe, condition result, or
+  readiness verdict; only render preparation and `doctor` evaluate the
+  installed renderer.
+- Focused, broad Markdown PDF, full repository, static, format, build, and diff
+  checks pass at the reviewed final tip, and one exact aggregate review covers
+  7A, 7B, and 7C.
 
 ### Phase 8: Project Profile/Template Coordination And Validation
 
-Tasks:
+#### Phase 8A: Authoritative Base Profile And Final Profile
 
-- [ ] Audit the current direct `md pdf-project codex` pipeline from shared
-      signals through Profile phase, normalized final Profile, Template phase,
-      Project validation, bundle writes, report/summary output, and follow-up
-      render command.
-- [ ] Preserve or generate all retained page-number fields through the Project
-      Profile phase and serialize them into the final `profile.yml`.
-- [ ] Keep `--base-profile` authoritative as the Project Profile phase starting
-      input while allowing the normal bounded Profile decision to preserve or
-      revise supported page-number values.
+- [ ] Audit direct `md pdf-project codex` from shared signals through Profile
+      phase, normalized final Profile, Template phase, validation, and the
+      existing write/report/handoff boundaries before changing behavior.
 - [ ] Load, shape-validate, and normalize `--base-profile` before either Project
       Codex phase; malformed files, unknown Profile keys, invalid arithmetic,
       and invalid scope/origin combinations must fail rather than being silently
       repaired by Codex.
-- [ ] Add base-Profile fixtures for omitted new fields, explicit
+- [ ] Treat the normalized base Profile as the authoritative patch base, not as
+      advisory context. The bounded Profile decision may preserve or explicitly
+      revise supported fields, and the resulting normalized final Profile is
+      the sole page-number contract passed onward.
+- [ ] Apply bounded patch semantics explicitly: an omitted patch key preserves
+      the normalized base value; a present allowed key replaces it, including
+      exact `false` and `0`; `null`, unknown keys, and invalid values are
+      rejected rather than treated as omission, deletion, or a request for
+      Codex repair.
+- [ ] Add base/final Profile fixtures for omitted new fields, explicit
       `enabled: false`, literal `start: 0`, non-default `increment`, both valid
-      origins, and every invalid validation boundary.
-- [ ] Preserve explicit valid base values unless the reviewed bounded Profile
-      decision deliberately changes them; serialization must not lose false,
-      zero, or other valid non-default values.
-- [ ] Keep page-number sequence, visibility, label, position, page-chrome style,
-      and enablement Profile-owned; do not add a Project-specific page-number
-      schema.
+      origins, retained page-chrome style, deliberate bounded revision, and
+      every invalid validation boundary. Add direct patch tests for omitted,
+      present `false`, present `0`, `null`, unknown, and invalid keys.
+- [ ] Preserve explicit valid base values unless the reviewed bounded decision
+      changes them; the final in-memory Profile must not lose false, zero, or
+      another valid non-default value.
+
+#### Phase 8B: Template Coordination
+
 - [ ] Pass the normalized final Profile into Template coordination without
-      copying page-number policy into Template signals or generated Template
-      CSS.
-- [ ] Require generated Project Templates to preserve the stable
-      `.document-body` hook and the existing Pandoc, title, ToC, code, and cover
-      hooks.
-- [ ] Add focused Project compatibility validation proving that body-origin
-      numbering inspects the actual generated `template.html` for one usable
-      `.document-body` boundary plus the required `$body$`, title, ToC, code,
-      and cover hooks rather than trusting synthesis metadata alone.
-- [ ] Prevent a usable Project bundle and follow-up render command when the
-      final Profile requests body origin but the generated HTML cannot prove the
-      boundary; an explicitly requested diagnostic report may record the
-      public-safe failure but must not claim replayable render inputs.
-- [ ] Validate freshly generated Project `style.css` against competing ordinary
-      page-number content, counter-sequence rules, and Profile-owned page-chrome
-      styling.
-- [ ] Permit Template-owned layout and cover presentation, required named cover
-      and ToC page clearing/presentation, and the renderer-proven ToC behavior;
-      do not mistake those rules for competing ordinary body page-number policy.
-- [ ] Keep deliberate user stylesheet edits as the lower-level override path;
-      generated-Project validation governs helper output and does not
-      retroactively reject later user-authored CSS.
+      copying page-number enablement, sequence, visibility, label, position, or
+      page-chrome style into Template signals or generated Template CSS.
+- [ ] Keep Project-specific orchestration free of a second page-number schema
+      and preserve existing Template-owned layout, cover, title, ToC, code, and
+      asset decisions.
+- [ ] Reuse Phase 6 capability requirements and diagnostic payload types for
+      the final Profile; Project preparation must not invent a second
+      capability matrix or imply that authoring checked the installed renderer.
+
+#### Phase 8C: Generated Structure And CSS Validation
+
+- [ ] Inspect the actual generated `template.html`, not synthesis metadata, and
+      require one usable `.document-body` containing the live `$body$` insertion
+      point plus the existing required Pandoc, title, ToC, code, and cover hooks.
+- [ ] Reuse the Phase 3 body-boundary validator and the Phase 6 shared
+      diagnostic envelope and stable missing-boundary condition instead of
+      defining Project-only structural semantics.
+- [ ] Validate the freshly generated Template stylesheet contribution before it
+      is written or combined with Profile-derived renderer CSS. Do not feed
+      Profile-generated counter, margin-box, or page-chrome CSS into this
+      ownership validator or reject the Profile for owning its renderer rules.
+- [ ] Allow the Template contribution to own ordinary document layout,
+      unnamed `@page` size and margins, named cover and ToC presentation and
+      clearing, and the exact renderer-proven named-ToC behavior retained by
+      Phase 4.
+- [ ] Reject only Template-contributed ordinary-page margin-box content that
+      uses page counters, page-counter reset or increment rules, and typography,
+      font, or separator declarations that compete with Profile-owned ordinary
+      page chrome.
+- [ ] Name and cover the allowed fixtures
+      `template-layout-and-unnamed-page-geometry`,
+      `template-named-cover-presentation`, and
+      `template-named-toc-presentation-and-clearing`; name and cover the
+      rejected fixtures `template-ordinary-margin-box-page-counter`,
+      `template-page-counter-reset-or-increment`,
+      `template-competing-page-chrome-typography`, and
+      `template-competing-page-chrome-separator`.
+- [ ] Do not apply this generated-CSS validator to later user edits, arbitrary
+      custom stylesheets, or generic Template/CSS partial bundles; those remain
+      the deliberate lower-level override path and render-time responsibility.
+
+#### Phase 8D: No-Output Validation Integration
+
+- [ ] Run base/final Profile, generated-structure, CSS-ownership, shared
+      diagnostic, and capability-requirement validation before Project bundle,
+      report, summary, or follow-up-command writes.
+- [ ] Permit only process-owned in-memory values and, where parser or file-shape
+      inspection requires filesystem inputs, one ownership-marked OS-temporary
+      inspection area. Guard cleanup by the exact resolved path and ownership
+      marker, clean it on success and handled failure, and test refusal to clean
+      an unmarked or broader path.
+- [ ] Return typed validation results and public-safe diagnostics to the
+      prepared Project flow. Phase 8 owns validation computation only; Phase 9
+      owns serialization into summaries/reports, artifact references, and
+      render handoff.
+- [ ] On validation failure, expose no usable Project bundle, replayable input
+      claim, or follow-up render command. Create no persistent Project output
+      directory, Profile, Template, Stylesheet, report, or partial role unless
+      the caller explicitly requested the existing report-only failure path;
+      that path may serialize only the public-safe typed validation result
+      through Phase 9 and must not create or claim replayable roles.
+- [ ] Prove success and handled failure leave no temporary inspection artifacts
+      and that report-only failure leaves only its explicitly requested report,
+      with no Project output directory or Profile/Template/Stylesheet role.
+- [ ] Add focused Project tests for base/final Profile preservation and
+      revision, Template signal ownership, actual-HTML hook validation,
+      the named generated-CSS allowed/rejected fixtures, shared diagnostics,
+      typed validation results, ownership-guarded temporary cleanup, report-only
+      failure, and no-output failure ordering.
+- [ ] Create and maintain
+      `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-8-project-coordination.md`
+      with the exact Phase 7 final-tip starting boundary, 8A/8B/8C/8D
+      checkpoints, public-safe evidence, validation results, and cleanup state.
+- [ ] Run focused Project/Profile/Template validation, the broad Markdown PDF
+      regression slice, and the full repository suite; run
+      `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+      `bun run build`, and `git diff --check` at the final evidence tip.
+- [ ] Review the exact aggregate Phase 8 range from the recorded Phase 7 final
+      tip through the final Phase 8 evidence tip
+      (`<phase-7-final-tip>..<phase-8-final-tip>`), replace both placeholders
+      with exact full commits before review, resolve every actionable finding,
+      widen the tip when fixes land, and record the final exact range and
+      verdict in the Phase 8 job before beginning Phase 9.
 
 Phase checkpoint:
 
-- Final `profile.yml` remains the authoritative reusable page-number contract.
+- The normalized base Profile is the authoritative patch base, and the
+  normalized final Profile is the sole reusable page-number contract passed to
+  Template coordination and later serialization. Omitted bounded patch keys
+  preserve base values, present valid keys replace them exactly, and null,
+  unknown, or invalid keys fail.
 - Generated `template.html` provides the required structural hooks, and
-  generated `style.css` does not become a competing ordinary page-number owner
-  or forbid valid Template/user presentation boundaries.
+  the validated Template contribution to generated `style.css` does not become
+  a competing ordinary page-number owner or forbid valid Template/user
+  presentation boundaries. Profile-generated renderer CSS is outside that
+  ownership validator.
 - Project compatibility validation covers base-Profile validity, final-Profile
-  preservation, body-hook coherence, and CSS ownership before bundle handoff.
+  preservation, body-hook coherence, and generated-CSS ownership before any
+  bundle handoff.
+- Phase 8 returns typed validation results through the shared diagnostic and
+  capability contracts; Phase 9 alone serializes those results and owns
+  report, summary, and render-command handoff.
+- Phase 8 leaves no temporary inspection artifacts and no persistent Project
+  roles; an explicitly requested report-only failure may leave only its
+  public-safe report through the Phase 9 output boundary.
+- Focused, broad Markdown PDF, full repository, static, format, build, and diff
+  checks pass at the reviewed final tip, and one exact aggregate review covers
+  8A, 8B, 8C, and 8D.
 
 ### Phase 9: Project Bundle, Report, And Render Handoff
 
 Tasks:
 
+- [ ] Consume the typed Phase 8 validation results at the existing Project
+      output boundary; serialize their public-safe diagnostic and capability
+      fields into summaries and optional reports only in this phase.
 - [ ] Show the final contained Profile page-number settings separately from
       Template presentation and Project orchestration in direct and Interactive
       Project candidate review.
