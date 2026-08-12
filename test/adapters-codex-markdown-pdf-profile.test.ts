@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
   MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS,
   MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
@@ -22,6 +23,10 @@ import {
   createMarkdownPdfProfileCandidates,
   type MarkdownPdfProfileCandidate,
 } from "../src/cli/markdown-pdf/profile/candidates";
+import {
+  createMarkdownPdfPageChromeCss,
+  normalizeMarkdownPdfProfile,
+} from "../src/cli/markdown-pdf/profile";
 
 afterEach(() => {
   mock.restore();
@@ -87,6 +92,8 @@ type MarkdownPdfCodexOutputSchemaKey =
   (typeof MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required)[number];
 type MarkdownPdfCodexPatchValueDomainPath =
   (typeof MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS)[number]["path"];
+type MarkdownPdfCodexPatchValueConstraintPath =
+  (typeof MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS)[number]["path"];
 
 describe("Markdown PDF Codex profile adapter", () => {
   test("builds a bounded prompt from summaries and signals", () => {
@@ -97,6 +104,8 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("candidateSummaries");
     expect(prompt).toContain("selectedBaseProfileSummary");
     expect(prompt).toContain("patchValueDomains");
+    expect(prompt).toContain("patchValueConstraints");
+    expect(prompt).toContain("pageNumberContract");
     expect(prompt).toContain("styleDecisionPolicy");
     expect(prompt).toContain("tableLayoutSignal");
     expect(prompt).toContain("titleDecisionSignal");
@@ -118,6 +127,8 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("/cover/style");
     expect(prompt).toContain("plain");
     expect(prompt).toContain("/pageNumbers/position");
+    expect(prompt).toContain("/pageNumbers/countFrom");
+    expect(prompt).toContain("pageNumbers.style is not a supported field");
     expect(prompt).toContain("bottom-center");
     expect(prompt).toContain("titleBlockContract");
     expect(prompt).toContain("/titleBlock/metadataTitle");
@@ -442,8 +453,13 @@ describe("Markdown PDF Codex profile adapter", () => {
     const expectedValueDomainPaths: MarkdownPdfCodexPatchValueDomainPath[] = [
       "/code/theme",
       "/cover/style",
+      "/footer/style/fontWeight",
+      "/footer/style/separator/style",
+      "/header/style/fontWeight",
+      "/header/style/separator/style",
       "/page/orientation",
       "/page/size",
+      "/pageNumbers/countFrom",
       "/pageNumbers/position",
       "/pageNumbers/scope",
       "/titleBlock/metadataTitle",
@@ -456,6 +472,29 @@ describe("Markdown PDF Codex profile adapter", () => {
     for (const domain of MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS) {
       expect(acceptedPatchPaths.has(domain.path)).toBe(true);
     }
+    const expectedConstraintPaths: MarkdownPdfCodexPatchValueConstraintPath[] = [
+      "/footer/style/color",
+      "/footer/style/fontSize",
+      "/footer/style/lineHeight",
+      "/footer/style/separator/color",
+      "/footer/style/separator/gap",
+      "/footer/style/separator/width",
+      "/header/style/color",
+      "/header/style/fontSize",
+      "/header/style/lineHeight",
+      "/header/style/separator/color",
+      "/header/style/separator/gap",
+      "/header/style/separator/width",
+      "/pageNumbers/increment",
+      "/pageNumbers/start",
+    ];
+    expect(MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS.map(({ path }) => path).sort()).toEqual(
+      expectedConstraintPaths.sort(),
+    );
+    for (const constraint of MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS) {
+      expect(acceptedPatchPaths.has(constraint.path)).toBe(true);
+    }
+    expect(acceptedPatchPaths.has("/pageNumbers/style")).toBe(false);
   });
 
   test("starts the default Codex runner in the request working directory", async () => {
@@ -805,6 +844,88 @@ describe("Markdown PDF Codex profile adapter", () => {
     });
   });
 
+  test("applies bounded counting and page-chrome style patches without mutating the candidate", () => {
+    const baseCandidate = sparseCandidate({
+      footer: { center: "Base footer" },
+      pageNumbers: { enabled: false, scope: "body" },
+    });
+    const baseBefore = structuredClone(baseCandidate.fullProfile);
+    const result = applyMarkdownPdfCodexDecision({
+      candidates: [baseCandidate],
+      decision: {
+        acceptedPatches: [
+          { op: "replace", path: "/pageNumbers/enabled", value: true },
+          { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+          { op: "replace", path: "/pageNumbers/start", value: 0 },
+          { op: "replace", path: "/pageNumbers/increment", value: 2 },
+          { op: "replace", path: "/header/style/fontSize", value: "8.5pt" },
+          { op: "replace", path: "/header/style/fontWeight", value: 600 },
+          { op: "replace", path: "/header/style/lineHeight", value: 1.2 },
+          { op: "replace", path: "/header/style/color", value: "#123ABC" },
+          { op: "replace", path: "/header/style/separator/width", value: "0.75pt" },
+          { op: "replace", path: "/header/style/separator/style", value: "solid" },
+          { op: "replace", path: "/header/style/separator/color", value: "#445566" },
+          { op: "replace", path: "/header/style/separator/gap", value: 0 },
+          { op: "replace", path: "/footer/style/fontSize", value: "10pt" },
+          { op: "replace", path: "/footer/style/fontWeight", value: 700 },
+          { op: "replace", path: "/footer/style/lineHeight", value: 1.5 },
+          { op: "replace", path: "/footer/style/color", value: "#AABBCC" },
+          { op: "replace", path: "/footer/style/separator/width", value: "1.5pt" },
+          { op: "replace", path: "/footer/style/separator/style", value: "solid" },
+          { op: "replace", path: "/footer/style/separator/color", value: "#112233" },
+          { op: "replace", path: "/footer/style/separator/gap", value: "3.5mm" },
+        ],
+        acceptedFontPatches: [],
+        decisionMode: "adapted",
+        reasoning: "apply bounded page-number configuration",
+        selectedCandidateId: "sparse",
+        unmatchedDirections: [],
+        warnings: [],
+      },
+    });
+
+    expect(result.profile?.pageNumbers).toMatchObject({
+      countFrom: "body",
+      enabled: true,
+      increment: 2,
+      scope: "body",
+      start: 0,
+    });
+    expect(result.profile?.header).toEqual({
+      style: {
+        color: "#123ABC",
+        fontSize: "8.5pt",
+        fontWeight: 600,
+        lineHeight: 1.2,
+        separator: { color: "#445566", gap: 0, style: "solid", width: "0.75pt" },
+      },
+    });
+    expect(result.profile?.footer).toEqual({
+      center: "Base footer",
+      style: {
+        color: "#AABBCC",
+        fontSize: "10pt",
+        fontWeight: 700,
+        lineHeight: 1.5,
+        separator: { color: "#112233", gap: "3.5mm", style: "solid", width: "1.5pt" },
+      },
+    });
+    expect(result.profile?.pageNumbers).not.toHaveProperty("style");
+    expect(baseCandidate.fullProfile).toEqual(baseBefore);
+
+    const unstyledProfile = structuredClone(result.profile ?? {});
+    delete (unstyledProfile.header as Record<string, unknown>).style;
+    delete (unstyledProfile.footer as Record<string, unknown>).style;
+    const styledCss = createMarkdownPdfPageChromeCss(
+      normalizeMarkdownPdfProfile({ profile: result.profile }).profile,
+    );
+    const unstyledCss = createMarkdownPdfPageChromeCss(
+      normalizeMarkdownPdfProfile({ profile: unstyledProfile }).profile,
+    );
+    expect(styledCss).toBe(unstyledCss);
+    expect(styledCss).not.toContain("#123ABC");
+  });
+
   test("supports conservative fallback and no usable profile decision modes", async () => {
     const fallback = await suggestMarkdownPdfProfileWithCodex({
       ...requestBase,
@@ -1000,6 +1121,85 @@ describe("Markdown PDF Codex profile adapter", () => {
         },
       }),
     ).toThrow("selected unknown candidate");
+  });
+
+  test("rejects invalid counting and page-chrome patch values before materialization", () => {
+    const invalidPatches: Array<{
+      message: string;
+      path: MarkdownPdfCodexPatchValueConstraintPath;
+      value: string | number;
+    }> = [
+      { path: "/pageNumbers/start", value: -1, message: "must be a non-negative integer" },
+      { path: "/pageNumbers/increment", value: 0, message: "must be a positive integer" },
+      { path: "/header/style/fontSize", value: "5.9pt", message: "must be a pt length" },
+      { path: "/header/style/lineHeight", value: 2.1, message: "must be a number from 1" },
+      { path: "/header/style/color", value: "red", message: "six-digit hexadecimal" },
+      {
+        path: "/header/style/separator/width",
+        value: "0.24pt",
+        message: "must be a pt length",
+      },
+      {
+        path: "/footer/style/separator/color",
+        value: "#123",
+        message: "six-digit hexadecimal",
+      },
+      {
+        path: "/footer/style/separator/gap",
+        value: "4.1mm",
+        message: "must be 0 or an mm length",
+      },
+    ];
+
+    for (const invalid of invalidPatches) {
+      expect(() =>
+        applyMarkdownPdfCodexDecision({
+          candidates: [sparseCandidate()],
+          decision: {
+            acceptedPatches: [{ op: "replace", path: invalid.path, value: invalid.value }],
+            acceptedFontPatches: [],
+            decisionMode: "adapted",
+            reasoning: "reject invalid bounded value",
+            selectedCandidateId: "sparse",
+            unmatchedDirections: [],
+            warnings: [],
+          },
+        }),
+      ).toThrow(invalid.message);
+    }
+
+    expect(() =>
+      applyMarkdownPdfCodexDecision({
+        candidates: [sparseCandidate()],
+        decision: {
+          acceptedPatches: [
+            { op: "replace", path: "/pageNumbers/scope", value: "document" },
+            { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+          ],
+          acceptedFontPatches: [],
+          decisionMode: "adapted",
+          reasoning: "reject invalid counting combination",
+          selectedCandidateId: "sparse",
+          unmatchedDirections: [],
+          warnings: [],
+        },
+      }),
+    ).toThrow("scope document cannot be used with countFrom body");
+
+    expect(() =>
+      parseMarkdownPdfCodexDecision(
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [{ op: "replace", path: "/pageNumbers/style", value: "compact" }],
+          accepted_font_patches: [],
+          reasoning: "unsupported style owner",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        }),
+      ),
+    ).toThrow("accepted_patches[0].path must be one of");
   });
 
   test("classifies Codex unavailable and structured-output failures", () => {

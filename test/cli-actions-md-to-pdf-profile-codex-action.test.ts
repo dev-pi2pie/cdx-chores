@@ -133,6 +133,69 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("preserves bounded page-number configuration and leaves the base profile immutable", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-page-number-contract", async (fixtureDir) => {
+      const basePath = join(fixtureDir, "base.yml");
+      const baseYaml = [
+        "pageNumbers:",
+        "  enabled: false",
+        "  scope: body",
+        "header:",
+        "  left: Base header",
+        "",
+      ].join("\n");
+      await writeFile(basePath, baseYaml, "utf8");
+
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-06-15T08:15:00.000Z"),
+      });
+      await actionMdPdfProfileCodex(runtime, {
+        baseProfile: "base.yml",
+        codexRunner: async () =>
+          JSON.stringify({
+            decision_mode: "adapted",
+            selected_candidate_id: "base-profile",
+            accepted_patches: [
+              { op: "replace", path: "/pageNumbers/enabled", value: true },
+              { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+              { op: "replace", path: "/pageNumbers/start", value: 0 },
+              { op: "replace", path: "/pageNumbers/increment", value: 2 },
+              { op: "replace", path: "/header/style/fontSize", value: "8.5pt" },
+              { op: "replace", path: "/header/style/separator/gap", value: 0 },
+              { op: "replace", path: "/footer/style/fontWeight", value: 600 },
+              { op: "replace", path: "/footer/style/separator/style", value: "solid" },
+            ],
+            accepted_font_patches: [],
+            reasoning: "Use the requested bounded page-number configuration.",
+            warnings: [],
+            fallback_reason: "",
+            unmatched_directions: [],
+          }),
+        intent: "Add bounded body page numbering",
+        output: "profile.yml",
+      });
+
+      const profile = await readMarkdownPdfProfileFile(join(fixtureDir, "profile.yml"));
+      expect(profile.pageNumbers).toMatchObject({
+        countFrom: "body",
+        enabled: true,
+        increment: 2,
+        scope: "body",
+        start: 0,
+      });
+      expect(profile.header).toMatchObject({
+        left: "Base header",
+        style: { fontSize: "8.5pt", separator: { gap: 0 } },
+      });
+      expect(profile.footer).toMatchObject({
+        style: { fontWeight: 600, separator: { style: "solid" } },
+      });
+      expect((profile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
+      expect(await readFile(basePath, "utf8")).toBe(baseYaml);
+    });
+  });
+
   test("uses the default direct Codex runner in the current read-only workspace", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-default-runner", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Report\n\nDefault runner.\n", "utf8");
@@ -1830,6 +1893,39 @@ describe("cli action modules: md pdf-profile codex", () => {
       );
       expect(report.result.failure).toMatchObject({ kind: "invalid-application" });
       expect(report.result.failure?.message).toContain("/cover/style");
+
+      await expectCliError(
+        () =>
+          actionMdPdfProfileCodex(runtime, {
+            codexReportOutput: "invalid-counting-report.json",
+            codexRunner: async () =>
+              JSON.stringify({
+                decision_mode: "adapted",
+                selected_candidate_id: "default",
+                accepted_patches: [{ op: "replace", path: "/pageNumbers/increment", value: 0 }],
+                accepted_font_patches: [],
+                reasoning: "Use an invalid counting increment.",
+                warnings: [],
+                fallback_reason: "",
+                unmatched_directions: [],
+              }),
+            input: "report.md",
+            intent: "invalid page-number increment",
+            output: "invalid-counting-profile.yml",
+          }),
+        {
+          code: "MARKDOWN_PDF_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes: "pageNumbers.increment must be a positive integer",
+        },
+      );
+      await expect(
+        readFile(join(fixtureDir, "invalid-counting-profile.yml"), "utf8"),
+      ).rejects.toThrow();
+      const countingReport = await readMarkdownPdfCodexReportArtifact(
+        join(fixtureDir, "invalid-counting-report.json"),
+      );
+      expect(countingReport.result.failure).toMatchObject({ kind: "invalid-application" });
     });
   });
 

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
@@ -271,6 +271,64 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
       });
       await expectNoPlannedProjectArtifacts(outputPlan);
     });
+  });
+
+  test("preserves bounded page-number patches through the project profile phase", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-profile-phase-page-numbers",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody content.\n", "utf8");
+        const basePath = join(fixtureDir, "base.yml");
+        const baseYaml = "pageNumbers:\n  enabled: false\n  scope: body\n";
+        await writeFile(basePath, baseYaml, "utf8");
+        let capturedFacts: Record<string, unknown> = {};
+
+        const { outputPlan, result } = await runProfilePhaseFixture(fixtureDir, {
+          baseProfile: "base.yml",
+          input: "report.md",
+          intent: "Use body page numbering from zero",
+          profileCodexRunner: async ({ prompt }) => {
+            capturedFacts = profilePromptFacts(prompt);
+            return JSON.stringify({
+              decision_mode: "adapted",
+              selected_candidate_id: "base-profile",
+              accepted_patches: [
+                { op: "replace", path: "/pageNumbers/enabled", value: true },
+                { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+                { op: "replace", path: "/pageNumbers/start", value: 0 },
+                { op: "replace", path: "/pageNumbers/increment", value: 2 },
+                { op: "replace", path: "/header/style/color", value: "#123456" },
+                { op: "replace", path: "/header/style/separator/gap", value: 0 },
+                { op: "replace", path: "/footer/style/fontWeight", value: 500 },
+              ],
+              accepted_font_patches: [],
+              reasoning: "Apply the bounded reusable page-number profile fields.",
+              warnings: [],
+              fallback_reason: "",
+              unmatched_directions: [],
+            });
+          },
+        });
+
+        expect(result.finalProfile.pageNumbers).toMatchObject({
+          countFrom: "body",
+          enabled: true,
+          increment: 2,
+          scope: "body",
+          start: 0,
+        });
+        expect(result.finalProfile.header).toMatchObject({
+          style: { color: "#123456", separator: { gap: 0 } },
+        });
+        expect(result.finalProfile.footer).toMatchObject({ style: { fontWeight: 500 } });
+        expect((result.finalProfile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
+        expect(result.serializedProfile).toContain("start: 0");
+        expect(capturedFacts).toHaveProperty("pageNumberContract");
+        expect(capturedFacts).toHaveProperty("patchValueConstraints");
+        expect(await readFile(basePath, "utf8")).toBe(baseYaml);
+        await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
   });
 
   test("keeps template-owned cover directions out of project profile leftovers", async () => {
@@ -949,6 +1007,33 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           runMdPdfProjectCodexProfilePhase({
             outputPlan,
             profileCodexRunner: conservativeFallbackProfileRunner("not-a-candidate"),
+            runtime,
+            signals,
+            state,
+          }),
+        { code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID" },
+      );
+      await expectNoPlannedProjectArtifacts(outputPlan);
+
+      const invalidCountingRunner: MarkdownPdfCodexProfileRunner = async () =>
+        JSON.stringify({
+          decision_mode: "adapted",
+          selected_candidate_id: "default",
+          accepted_patches: [
+            { op: "replace", path: "/pageNumbers/scope", value: "document" },
+            { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
+          ],
+          accepted_font_patches: [],
+          reasoning: "Invalid counting combination.",
+          warnings: [],
+          fallback_reason: "",
+          unmatched_directions: [],
+        });
+      await expectCliError(
+        () =>
+          runMdPdfProjectCodexProfilePhase({
+            outputPlan,
+            profileCodexRunner: invalidCountingRunner,
             runtime,
             signals,
             state,
