@@ -7,13 +7,9 @@ import {
   type MarkdownPdfTemplateBodyInspection,
 } from "./template-body";
 
-export const MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING =
-  "Selected legacy Markdown PDF template has no provable .document-body boundary; body-scoped page-number visibility will use document-origin fallback behavior.";
-
 export interface MarkdownPdfTemplateCompatibilityResult {
   bodyBoundary: "not-required" | "proven" | "legacy-document-origin-fallback";
   inspection?: MarkdownPdfTemplateBodyInspection;
-  warnings: string[];
 }
 
 function isManagedTemplateNode(node: DefaultTreeAdapterTypes.Node): boolean {
@@ -68,12 +64,12 @@ export function assessMarkdownPdfTemplateCompatibility(input: {
 }): MarkdownPdfTemplateCompatibilityResult {
   const pageNumbers = input.profile.pageNumbers;
   if (!pageNumbers.enabled || pageNumbers.scope === "document") {
-    return { bodyBoundary: "not-required", warnings: [] };
+    return { bodyBoundary: "not-required" };
   }
 
   const inspection = inspectMarkdownPdfTemplateBody(input.templateHtml);
   if (inspection.status === "proven") {
-    return { bodyBoundary: "proven", inspection, warnings: [] };
+    return { bodyBoundary: "proven", inspection };
   }
 
   const managed = isManagedTemplate(input.templateHtml, input.builtIn);
@@ -81,7 +77,6 @@ export function assessMarkdownPdfTemplateCompatibility(input: {
     return {
       bodyBoundary: "legacy-document-origin-fallback",
       inspection,
-      warnings: [MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING],
     };
   }
 

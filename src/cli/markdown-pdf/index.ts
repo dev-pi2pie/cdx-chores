@@ -5,11 +5,19 @@ export type {
   MarkdownPdfTemplateBodyInspection,
   MarkdownPdfTemplateBodyStatus,
 } from "./template-body";
-export {
-  assessMarkdownPdfTemplateCompatibility,
-  MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
-} from "./template-compatibility";
+export { assessMarkdownPdfTemplateCompatibility } from "./template-compatibility";
 export type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
+export {
+  collectMarkdownPdfDiagnostics,
+  markdownPdfDiagnosticWarnings,
+  MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
+  MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
+} from "./diagnostics";
+export type {
+  MarkdownPdfDiagnostic,
+  MarkdownPdfDiagnosticConditionId,
+  MarkdownPdfDiagnostics,
+} from "./diagnostics";
 export type { MarkdownPdfCodexReportBinding } from "./codex-report-binding";
 export { renderMarkdownPdf } from "./render";
 export type {

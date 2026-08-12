@@ -35,6 +35,11 @@ import {
 } from "../../markdown-pdf/render";
 import { MARKDOWN_PDF_MINIMUM_PANDOC_VERSION } from "../../markdown-pdf/requirements";
 import {
+  collectMarkdownPdfDiagnostics,
+  markdownPdfDiagnosticWarnings,
+  type MarkdownPdfDiagnostics,
+} from "../../markdown-pdf/diagnostics";
+import {
   normalizeMarkdownPdfOptions,
   type NormalizeMarkdownPdfOptionsInput,
   type NormalizedMarkdownPdfOptions,
@@ -59,6 +64,7 @@ export interface PreparedMarkdownPdfRender {
   code: EffectiveMarkdownPdfCodeOptions;
   customCssPath?: string;
   customTemplatePath?: string;
+  diagnostics: MarkdownPdfDiagnostics;
   ignoredBundleProfileFiles: string[];
   inputPath: string;
   noDefaultCss?: boolean;
@@ -94,6 +100,10 @@ export interface ResolvedMarkdownPdfRenderOutput {
 export interface ExecutePlannedMarkdownPdfRenderOptions {
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
+}
+
+export interface MarkdownPdfRenderExecutionResult extends RenderMarkdownPdfResult {
+  diagnostics: MarkdownPdfDiagnostics;
 }
 
 export const MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON =
@@ -212,6 +222,11 @@ export async function prepareMarkdownPdfRender(
     profile: effectiveProfile,
     templateHtml: selectedTemplateHtml,
   });
+  const diagnostics = collectMarkdownPdfDiagnostics({
+    profile: normalizedProfile.profile,
+    pageNumbers: pageNumberConfiguration.effective,
+    templateCompatibility,
+  });
   const recipe = createMarkdownPdfRecipe(options, {
     bodyBoundary: templateCompatibility.bodyBoundary,
     profile: effectiveProfile,
@@ -231,6 +246,7 @@ export async function prepareMarkdownPdfRender(
     code,
     customCssPath,
     customTemplatePath,
+    diagnostics,
     ignoredBundleProfileFiles,
     inputPath,
     noDefaultCss: input.noDefaultCss,
@@ -293,7 +309,7 @@ export async function executePlannedMarkdownPdfRender(
   runtime: CliRuntime,
   plan: PlannedMarkdownPdfRender,
   options: ExecutePlannedMarkdownPdfRenderOptions = {},
-): Promise<RenderMarkdownPdfResult> {
+): Promise<MarkdownPdfRenderExecutionResult> {
   const runner = options.runner ?? execCommand;
   const pandoc = await requireCommandAvailable("pandoc", runtime.platform, runner);
   requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
@@ -316,6 +332,7 @@ export async function executePlannedMarkdownPdfRender(
   });
   return {
     ...result,
-    warnings: [...plan.prepared.templateCompatibility.warnings, ...result.warnings],
+    diagnostics: plan.prepared.diagnostics,
+    warnings: [...markdownPdfDiagnosticWarnings(plan.prepared.diagnostics), ...result.warnings],
   };
 }

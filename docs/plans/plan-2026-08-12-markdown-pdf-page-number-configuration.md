@@ -600,7 +600,7 @@ Phase checkpoint:
 
 ### Phase 6: Diagnostics, Capability Gates, And Doctor
 
-Tasks:
+#### Phase 6A: Shared Diagnostic Contract And Warning Lifecycle
 
 - [ ] Detect an occupied selected header/footer slot before page-number
       replacement and emit one successful warning per document.
@@ -608,24 +608,70 @@ Tasks:
       origin while preserving its physical-page-count meaning.
 - [ ] Warn once when document-origin body visibility uses the proposed legacy
       custom-Template inference.
-- [ ] Fail before rendering when body origin has no provable body-start hook.
+- [ ] Route plain warnings to `stderr` without changing a successful exit code.
+- [ ] Define one structured diagnostic payload reusable by `doctor --json`,
+      Project reports, and later Interactive review; use stable condition IDs,
+      severity, public-safe message, and optional capability/context details.
+- [ ] Freeze stable IDs for selected-slot, `{pages}` arithmetic,
+      legacy-body-inference, missing-body-boundary, missing renderer,
+      unverified renderer version, renderer probe failure, unknown capability,
+      and unsupported-capability conditions; keep warning prose separate from
+      machine-readable output.
+- [ ] Define occupied-slot detection as a trimmed, non-empty configured value
+      in the selected header/footer area before page-number replacement; test
+      empty, whitespace-only, literal, and metadata-resolving-empty values.
+- [ ] Aggregate each warning condition once per rendered document and reset the
+      accumulator for every new render; do not emit once per physical page or
+      duplicate the same condition across preparation and render layers.
+- [ ] Keep the Phase 3 structural body validator as the sole source of truth
+      for proving `.document-body` and `$body$`; Phase 6 only maps its result to
+      the shared missing-body-boundary diagnostic.
+
+#### Phase 6B: Capability Evaluation And Pre-Render Gates
+
 - [ ] Represent effective advanced controls as explicit renderer capabilities
       rather than one blanket advanced-version boolean.
 - [ ] Gate only controls that are effective after Profile and direct-override
-      precedence.
-- [ ] Fail before output writes when an effectively requested capability is
-      unsupported by the installed renderer.
-- [ ] Keep existing behavior available when no advanced control is effectively
-      requested.
-- [ ] Route plain warnings to `stderr` without changing a successful exit code.
-- [ ] Define one structured diagnostic payload reusable by `doctor --json`,
-      Project reports, and later Interactive review; do not add a direct
-      `md to-pdf` JSON mode or mix prose into JSON `stdout`.
+      precedence; default or ineffective controls must not trigger an advanced
+      gate.
+- [ ] Record the effective-control matrix mapping each retained sequence,
+      origin, scope, header/footer typography field, and separator field to its
+      Phase 1 baseline, evaluator status, and stable failure ID; record the
+      body hook separately as a structural prerequisite.
+- [ ] Define installed-version parse failure, missing renderer, dependency
+      probe failure, and unknown capability states; fail closed for an
+      effectively requested capability and preserve existing behavior when no
+      advanced control is requested.
+- [ ] Fail before intermediate HTML, PDF, report, or other output writes when
+      an effectively requested capability is unsupported by the installed
+      renderer.
+- [ ] Fail before rendering when body origin has no provable body-start hook,
+      using the Phase 3 validator result and the shared diagnostic ID.
+
+#### Phase 6C: Doctor Parity And Cross-Surface Tests
+
 - [ ] Extend `doctor` to report installed renderer version and page-number
       capability availability using the same baseline data as pre-render
       validation.
+- [ ] Keep `doctor` request-neutral: report the installed renderer's baseline
+      capability snapshot and stable statuses/IDs, while pre-render validation
+      filters that same snapshot through the current effective controls.
+- [ ] Preserve normal nonzero CLI failure handling for render gates, structured
+      error representation where a JSON/report surface exists, JSON-only
+      `stdout` for `doctor --json`, and existing human doctor conventions.
 - [ ] Add no-output-on-error, warning-frequency, structured-output, and
-      `doctor` agreement tests.
+      `doctor` agreement tests, including unknown-version and probe-failure
+      states.
+- [ ] Create and maintain
+      `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-6-diagnostics-capabilities-doctor.md`
+      with checkpoint commits, public-safe diagnostic and capability evidence,
+      validation results, and exact-range review.
+- [ ] Run focused checks, the Markdown PDF regression slice, and the full
+      repository validation suite; record static/build/format and
+      `git diff --check` results in the Phase 6 job.
+- [ ] Review the exact Phase 6 implementation and evidence range, resolve
+      every actionable finding, and record the widened range and final verdict
+      in the job before beginning Phase 7.
 
 Phase checkpoint:
 
@@ -635,6 +681,8 @@ Phase checkpoint:
   diagnostic payload.
 - Renderer gating and `doctor` cannot disagree about an installed version.
 - Unsupported advanced behavior fails before PDF or intermediate HTML writes.
+- Phase 6A, 6B, and 6C each have recorded checkpoint evidence, and one exact
+  aggregate Phase 6 range review covers every subphase before completion.
 
 ### Phase 7: Profile Helper And Interactive Durable Authoring
 

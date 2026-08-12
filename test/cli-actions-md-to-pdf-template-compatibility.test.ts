@@ -343,7 +343,7 @@ describe("Markdown PDF selected-template compatibility", () => {
         profile: DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
         templateHtml: "<main>$body$</main>",
       }),
-    ).toEqual({ bodyBoundary: "not-required", warnings: [] });
+    ).toEqual({ bodyBoundary: "not-required" });
 
     expect(
       assessMarkdownPdfTemplateCompatibility({
@@ -358,7 +358,7 @@ describe("Markdown PDF selected-template compatibility", () => {
         },
         templateHtml: "<main>$body$</main>",
       }),
-    ).toEqual({ bodyBoundary: "not-required", warnings: [] });
+    ).toEqual({ bodyBoundary: "not-required" });
   });
 
   test("rejects a managed Template that promises but violates the hook contract", () => {
