@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 2 Profile contract"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -65,14 +65,14 @@ second style object.
       contract without a second schema.
 - [x] Add boundary, invalid-value, compatibility, and serialization tests.
 - [x] Run focused and repository validation.
-- [ ] Review the exact Phase 2 implementation and evidence commit range and
+- [x] Review the exact Phase 2 implementation and evidence commit range and
       resolve every actionable finding.
 
 ## Evidence Status
 
 The Phase 1 renderer evidence establishes the accepted domains. Core Profile,
-Codex Profile, and Project/Profile integration are implemented and validated.
-Phase 2 remains active until exact-range review closes.
+Codex Profile, and Project/Profile integration are implemented, validated, and
+accepted by exact-range review.
 
 ## Checkpoint Commits
 
@@ -81,6 +81,8 @@ Phase 2 remains active until exact-range review closes.
   initialization, serialization behavior, and boundary tests.
 - `777fe89c` — Codex Profile patch paths, shared bounded-domain use, Project
   integration, and fail-closed helper-flow tests.
+- `e11ce8cd` — Phase 2 validation evidence and provisional verdict.
+- `9539327c` — exact inclusive-boundary and Project fail-closed review coverage.
 
 ## Validation
 
@@ -91,13 +93,18 @@ Phase 2 remains active until exact-range review closes.
 - Full repository suite: 1,888 passed, 0 failed.
 - `git diff --check`: passed.
 
-## Provisional Verdict
+## Exact-Range Review
 
-**Continue after exact-range review.** Existing Profiles retain shipped
-defaults, new controls round-trip without coercion, literal zero values are
-preserved, invalid contracts fail before output, and Codex and Project flows
-reuse the shared Profile contract. Renderer CSS remains unchanged in this
-phase.
+The exact Phase 2 range `32357fa8..9539327c` was reviewed after the coverage
+fix. Maintainability, test-quality, security, and documentation re-reviews
+found no remaining material findings.
+
+## Verdict
+
+**Continue.** Existing Profiles retain shipped defaults, new controls
+round-trip without coercion, literal zero values are preserved, invalid
+contracts fail before output, and Codex and Project flows reuse the shared
+Profile contract. Renderer CSS remains unchanged in this phase.
 
 ## Related Research
 

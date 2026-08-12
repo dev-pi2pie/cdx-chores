@@ -401,7 +401,7 @@ Tasks:
       `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-page-number-phase-2-profile-contract.md`
       with the accepted domains, compatibility results, validation evidence,
       and checkpoint commits.
-- [ ] Record the exact-range review verdict in the Phase 2 job before closing
+- [x] Record the exact-range review verdict in the Phase 2 job before closing
       the phase.
 - [x] Extend normalized types with `scope: document | body`,
       `countFrom: document | body`, `start`, and `increment`.
@@ -426,7 +426,7 @@ Tasks:
 - [x] Add old-Profile fixtures proving omitted new fields retain the shipped
       behavior.
 - [x] Add round-trip fixtures for every new field and validation boundary.
-- [ ] Review the exact Phase 2 implementation and evidence commit range,
+- [x] Review the exact Phase 2 implementation and evidence commit range,
       resolve every actionable finding, and record the final verdict before
       beginning Phase 3.
 
