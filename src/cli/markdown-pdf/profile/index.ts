@@ -19,6 +19,10 @@ export {
   resolveMarkdownPdfCodeOptions,
 } from "./normalize";
 export { createMarkdownPdfPageChromeCss } from "./page-chrome";
+export type {
+  CreateMarkdownPdfPageChromeCssInput,
+  MarkdownPdfPageChromeBodyBoundary,
+} from "./page-chrome";
 export { resolveMarkdownPdfPlaceholderText } from "./placeholders";
 export { parseMarkdownPdfProfileFile, readMarkdownPdfProfileFile } from "./parse";
 export type { MarkdownPdfProfileParseResult } from "./parse";

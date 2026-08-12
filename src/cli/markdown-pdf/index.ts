@@ -100,6 +100,10 @@ export type {
   NormalizedMarkdownPdfProfile,
 } from "./profile";
 export type {
+  CreateMarkdownPdfPageChromeCssInput,
+  MarkdownPdfPageChromeBodyBoundary,
+} from "./profile";
+export type {
   MarkdownPdfOrientation,
   MarkdownPdfPageSize,
   MarkdownPdfPreset,

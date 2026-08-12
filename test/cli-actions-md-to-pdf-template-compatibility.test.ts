@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf } from "../src/cli/actions";
+import { actionMdToPdf, prepareMarkdownPdfRender } from "../src/cli/actions";
 import {
   assessMarkdownPdfTemplateCompatibility,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
@@ -29,6 +29,50 @@ async function expectMissing(path: string): Promise<void> {
 }
 
 describe("Markdown PDF selected-template compatibility", () => {
+  test("regenerates built-in CSS from the proven body boundary", async () => {
+    await withTempFixtureDir("md-pdf-template-compat-built-in-css", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, BODY_ORIGIN_PROFILE, "utf8");
+      const { runtime } = createActionTestRuntime();
+
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+      });
+
+      expect(prepared.templateCompatibility.bodyBoundary).toBe("proven");
+      expect(prepared.recipe.styleCss).toContain("@page body {");
+      expect(prepared.recipe.styleCss).toContain("@page body:nth(1 of body) {");
+      expect(prepared.recipe.styleCss).toContain(".document-body {\n  page: body;");
+    });
+  });
+
+  test("regenerates selected-Template CSS from the legacy fallback", async () => {
+    await withTempFixtureDir("md-pdf-template-compat-legacy-css", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const templatePath = join(fixtureDir, "legacy.html");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, BODY_DOCUMENT_PROFILE, "utf8");
+      await writeFile(templatePath, "<main>$body$</main>\n", "utf8");
+      const { runtime } = createActionTestRuntime();
+
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        template: toRepoRelativePath(templatePath),
+      });
+
+      expect(prepared.templateCompatibility.bodyBoundary).toBe("legacy-document-origin-fallback");
+      expect(prepared.recipe.styleCss).toContain("counter-increment: page 1;");
+      expect(prepared.recipe.styleCss).toContain("@page toc {");
+      expect(prepared.recipe.styleCss).not.toContain("@page body");
+      expect(prepared.recipe.styleCss).not.toContain(".document-body {\n  page: body;");
+    });
+  });
+
   test("accepts the built-in body contract for body-origin numbering", async () => {
     await withTempFixtureDir("md-pdf-template-compat-built-in", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

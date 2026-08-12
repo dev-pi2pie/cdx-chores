@@ -1,5 +1,14 @@
 import type { MarkdownPdfPageChromePosition, NormalizedMarkdownPdfProfile } from "./types";
 
+export type MarkdownPdfPageChromeBodyBoundary =
+  | "not-required"
+  | "proven"
+  | "legacy-document-origin-fallback";
+
+export interface CreateMarkdownPdfPageChromeCssInput {
+  bodyBoundary?: MarkdownPdfPageChromeBodyBoundary;
+}
+
 function cssString(value: string): string {
   return JSON.stringify(value);
 }
@@ -75,23 +84,66 @@ function emptyMarginBoxes(): string {
   }`;
 }
 
+function marginBoxRule(
+  cssArea: "top" | "bottom",
+  slot: "left" | "center" | "right",
+  value: string,
+  metadata: Record<string, string>,
+): string {
+  return `  @${cssArea}-${slot} {
+    content: ${cssContentFromTemplate(value, metadata)};
+  }`;
+}
+
+function pageRule(selector: string, declarations: string[], marginBoxes: string[]): string {
+  const content = [...declarations.map((declaration) => `  ${declaration}`), ...marginBoxes].join(
+    "\n\n",
+  );
+  const suffix = !selector ? "" : selector.startsWith(":") ? selector : ` ${selector}`;
+  return `@page${suffix} {
+${content}
+}`;
+}
+
 export function createMarkdownPdfPageChromeCss(
   profile: NormalizedMarkdownPdfProfile | undefined,
+  input: CreateMarkdownPdfPageChromeCssInput = {},
 ): string {
   if (!profile) {
     return "";
   }
 
+  const pageNumbers = profile.pageNumbers;
+  const bodyBoundary = input.bodyBoundary ?? "proven";
+  if (
+    pageNumbers.enabled &&
+    pageNumbers.countFrom === "body" &&
+    bodyBoundary === "legacy-document-origin-fallback"
+  ) {
+    throw new Error(
+      "Markdown PDF page-chrome invariant violated: legacy document-origin fallback cannot satisfy countFrom: body.",
+    );
+  }
+  const usesLegacyDocumentVisibility =
+    pageNumbers.enabled &&
+    pageNumbers.scope === "body" &&
+    bodyBoundary === "legacy-document-origin-fallback";
+  const usesProvenBodyVisibility =
+    pageNumbers.enabled && pageNumbers.scope === "body" && !usesLegacyDocumentVisibility;
+  const usesDocumentVisibility =
+    pageNumbers.enabled && (pageNumbers.scope === "document" || usesLegacyDocumentVisibility);
+  const numberTarget = pageNumbers.enabled ? pageNumberSlot(pageNumbers.position) : undefined;
   const slots = {
     header: { ...profile.header },
     footer: { ...profile.footer },
   };
-  if (profile.pageNumbers.enabled) {
-    const target = pageNumberSlot(profile.pageNumbers.position);
-    slots[target.area][target.slot] = profile.pageNumbers.format;
+  if (numberTarget) {
+    // The selected slot remains page-number-owned even when body visibility
+    // keeps its content off pre-body pages.
+    slots[numberTarget.area][numberTarget.slot] = usesDocumentVisibility ? pageNumbers.format : "";
   }
 
-  const rules: string[] = [];
+  const genericMarginBoxes: string[] = [];
   const pageAreas = [
     ["header", "top"],
     ["footer", "bottom"],
@@ -104,25 +156,78 @@ export function createMarkdownPdfPageChromeCss(
       if (!value) {
         continue;
       }
-      rules.push(`  @${cssArea}-${slot} {
-    content: ${cssContentFromTemplate(value, profile.metadata)};
-  }`);
+      genericMarginBoxes.push(marginBoxRule(cssArea, slot, value, profile.metadata));
     }
   }
 
-  if (rules.length === 0) {
+  const genericDeclarations =
+    pageNumbers.enabled && pageNumbers.countFrom === "document"
+      ? [`counter-increment: page ${pageNumbers.increment};`]
+      : [];
+  const generatedRules: string[] = [];
+
+  if (genericDeclarations.length > 0 || genericMarginBoxes.length > 0) {
+    generatedRules.push(pageRule("", genericDeclarations, genericMarginBoxes));
+  }
+
+  if (pageNumbers.enabled && pageNumbers.countFrom === "document") {
+    generatedRules.push(
+      pageRule(
+        ":nth(1)",
+        [`counter-reset: page ${pageNumbers.start - pageNumbers.increment};`],
+        [],
+      ),
+    );
+  }
+
+  if (usesProvenBodyVisibility || (pageNumbers.enabled && pageNumbers.countFrom === "body")) {
+    const bodyDeclarations =
+      pageNumbers.enabled && pageNumbers.countFrom === "body"
+        ? [`counter-increment: page ${pageNumbers.increment};`]
+        : [];
+    const bodyMarginBoxes =
+      usesProvenBodyVisibility && numberTarget
+        ? [
+            marginBoxRule(
+              numberTarget.area === "header" ? "top" : "bottom",
+              numberTarget.slot,
+              pageNumbers.format,
+              profile.metadata,
+            ),
+          ]
+        : [];
+    generatedRules.push(pageRule("body", bodyDeclarations, bodyMarginBoxes));
+
+    if (pageNumbers.enabled && pageNumbers.countFrom === "body") {
+      generatedRules.push(
+        pageRule(
+          "body:nth(1 of body)",
+          [`counter-reset: page ${pageNumbers.start - pageNumbers.increment};`],
+          [],
+        ),
+      );
+    }
+    generatedRules.push(".document-body {\n  page: body;\n}");
+  }
+
+  if (generatedRules.length === 0) {
     return "";
   }
 
-  return `
-@page {
-${rules.join("\n\n")}
-}
+  const tocMarginBoxes = [emptyMarginBoxes()];
+  if (usesDocumentVisibility && numberTarget) {
+    tocMarginBoxes.push(
+      marginBoxRule(
+        numberTarget.area === "header" ? "top" : "bottom",
+        numberTarget.slot,
+        pageNumbers.format,
+        profile.metadata,
+      ),
+    );
+  }
+  generatedRules.push(pageRule("toc", [], tocMarginBoxes));
 
-@page toc {
-${emptyMarginBoxes()}
-}
-`;
+  return `\n${generatedRules.join("\n\n")}\n`;
 }
 
 export { emptyMarginBoxes as createMarkdownPdfEmptyMarginBoxesCss };

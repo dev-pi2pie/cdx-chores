@@ -5,6 +5,7 @@ import {
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
   createMarkdownPdfPageChromeCss,
+  type MarkdownPdfPageChromeBodyBoundary,
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
 import type { MarkdownPdfTitleSignals } from "./profile/signals";
@@ -15,6 +16,7 @@ export interface MarkdownPdfRecipe {
 }
 
 export interface CreateMarkdownPdfRecipeInput {
+  bodyBoundary?: MarkdownPdfPageChromeBodyBoundary;
   profile?: NormalizedMarkdownPdfProfile;
   titleSignals?: MarkdownPdfTitleSignals;
 }
@@ -239,7 +241,7 @@ blockquote {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(options)}
-${createMarkdownPdfPageChromeCss(input.profile)}
+${createMarkdownPdfPageChromeCss(input.profile, { bodyBoundary: input.bodyBoundary })}
 ${PRESET_CSS[options.preset]}
 ${createMarkdownPdfCoverCss(input.profile, {
   orientation: options.orientation,

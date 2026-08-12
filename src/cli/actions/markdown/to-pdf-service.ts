@@ -146,7 +146,7 @@ export async function prepareMarkdownPdfRender(
     cliHighlight: input.codeHighlight,
   });
   const titleSignals = collectMarkdownPdfTitleSignals(parsedMarkdown.content, parsedMarkdown.data);
-  const recipe = createMarkdownPdfRecipe(options, {
+  const initialRecipe = createMarkdownPdfRecipe(options, {
     profile: normalizedProfile.profile,
     titleSignals,
   });
@@ -160,11 +160,16 @@ export async function prepareMarkdownPdfRender(
 
   const selectedTemplateHtml = customTemplatePath
     ? await readTextFileRequired(customTemplatePath)
-    : recipe.templateHtml;
+    : initialRecipe.templateHtml;
   const templateCompatibility = assessMarkdownPdfTemplateCompatibility({
     builtIn: customTemplatePath === undefined,
     profile: normalizedProfile.profile,
     templateHtml: selectedTemplateHtml,
+  });
+  const recipe = createMarkdownPdfRecipe(options, {
+    bodyBoundary: templateCompatibility.bodyBoundary,
+    profile: normalizedProfile.profile,
+    titleSignals,
   });
 
   const resolvedInputs =
