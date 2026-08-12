@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-12
+modified-date: 2026-08-13
 status: active
 agent: codex
 ---
@@ -689,27 +689,27 @@ Phase checkpoint:
 
 #### Phase 7A: Direct Profile-Helper Audit And Preservation
 
-- [ ] Audit direct `md pdf-profile codex` from `--base-profile` loading through
+- [x] Audit direct `md pdf-profile codex` from `--base-profile` loading through
       candidate construction, bounded patch application, normalization,
       serialization, human review, write, and optional report output before
       changing behavior.
-- [ ] Prove that omitted new fields, explicit `enabled: false`, literal
+- [x] Prove that omitted new fields, explicit `enabled: false`, literal
       `start: 0`, non-default arithmetic, both valid origins, position, format,
       and retained page-chrome style survive the existing bounded patch and
       candidate lifecycle without truthiness loss or a parallel schema.
-- [ ] Add only the missing direct-helper seams found by that audit, and keep
+- [x] Add only the missing direct-helper seams found by that audit, and keep
       malformed Profiles, unknown keys, invalid value domains, and invalid
       scope/origin combinations on the shared Profile validation path.
-- [ ] Keep the direct Profile helper's optional report in Phase 7 scope and
+- [x] Keep the direct Profile helper's optional report in Phase 7 scope and
       apply the existing public-safe path and error redaction to every new
       page-number and capability-requirement field; add acceptance coverage for
       both redacted success and failure report content.
-- [ ] Reuse the Phase 6 capability catalog and Phase 1 baselines to describe
+- [x] Reuse the Phase 6 capability catalog and Phase 1 baselines to describe
       which renderer capabilities a candidate will require. The authoring
       review entry contains only requested capability ID, requesting Profile
       fields, and minimum proven baseline; it contains no installed status,
       renderer probe, condition ID/result, or readiness verdict.
-- [ ] Keep Profile authoring advisory: it must not probe or gate on the
+- [x] Keep Profile authoring advisory: it must not probe or gate on the
       currently installed renderer, and an unsupported local renderer must not
       invalidate an otherwise valid reusable Profile. Direct rendering and
       `doctor` retain ownership of installed-version and availability
@@ -717,41 +717,45 @@ Phase checkpoint:
 
 #### Phase 7B: Interactive Formal-Guide Profile Model
 
-- [ ] Add Profile-only page-number and page-chrome groups to Interactive
+- [x] Add Profile-only page-number and page-chrome groups to Interactive
       formal-guide authoring.
-- [ ] Collect enablement, sequence, visibility, format, position, and retained
+- [x] Collect enablement, sequence, visibility, format, position, and retained
       header/footer style through one draft that compiles into the normalized
       Profile contract; do not introduce an Interactive-only render or
       serialization schema.
-- [ ] Preserve exact `false` and zero values during collection and revision,
+- [x] Preserve exact `false` and zero values during collection and revision,
       and re-prompt or return to revision for invalid value domains and the
       invalid scope/origin combination before a candidate is accepted.
-- [ ] Keep Template-only formal-guide authoring free of Profile-owned
+- [x] Keep Template-only formal-guide authoring free of Profile-owned
       page-number sequence, visibility, label, position, and page-chrome style.
 
 #### Phase 7C: Interactive Authoring Integration
 
-- [ ] Carry the same durable Profile behavior through existing Profile,
+- [x] Carry the same durable Profile behavior through existing Profile,
       complete-bundle, formal-guide, and Codex Profile authoring paths.
-- [ ] Show normalized reusable Profile values plus advisory capability
+- [x] Show normalized reusable Profile values plus advisory capability
       requirements in candidate review using the bounded requirement entry
       shape without implying that the installed renderer was checked or that a
       render will succeed.
-- [ ] Preserve an accepted Profile candidate during revision without repeating
+- [x] Preserve an accepted Profile candidate during revision without repeating
       unrelated Codex requests, then persist and reload the same normalized
       values through the existing authoring lifecycle.
-- [ ] Add direct-helper and Interactive tests for collection, revision, review,
+- [x] Add direct-helper and Interactive tests for collection, revision, review,
       persistence, reload, generated candidates, Template ownership, no
       renderer probe, unsupported-local-renderer authoring, and public-safe
       direct Profile report redaction.
-- [ ] Create and maintain
+- [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-7-profile-authoring.md`
       with the `62d223af` starting boundary, 7A/7B/7C checkpoints, public-safe
       evidence, validation results, and cleanup state.
-- [ ] Run focused direct Profile-helper and Interactive authoring tests, the
+- [x] Run focused direct Profile-helper and Interactive authoring tests, the
       broad Markdown PDF regression slice, and the full repository suite; run
       `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
-      `bun run build`, and `git diff --check` at the final evidence tip.
+      `bun run build`, and `git diff --check` at final implementation tip
+      `1e674295`.
+- [ ] Commit the Phase 7 job and plan evidence update as documentation-only
+      after confirming its scope and passing at least `bun run format:check`
+      and `git diff --check`; record that commit as the evidence tip.
 - [ ] Review the exact aggregate Phase 7 range from base `62d223af` through the
       final Phase 7 evidence tip (`62d223af..<phase-7-final-tip>`), replace the
       placeholder with the exact full commit before review, resolve every
@@ -772,8 +776,10 @@ Phase checkpoint:
   readiness verdict; only render preparation and `doctor` evaluate the
   installed renderer.
 - Focused, broad Markdown PDF, full repository, static, format, build, and diff
-  checks pass at the reviewed final tip, and one exact aggregate review covers
-  7A, 7B, and 7C.
+  checks pass at final implementation tip `1e674295`. The documentation-only
+  evidence commit preserves its scope and passes at least format and diff
+  checks, and one exact aggregate review through that evidence tip covers 7A,
+  7B, and 7C.
 
 ### Phase 8: Project Profile/Template Coordination And Validation
 
