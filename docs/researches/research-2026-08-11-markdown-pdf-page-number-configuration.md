@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
+modified-date: 2026-08-12
 status: draft
 agent: codex
 ---
@@ -624,7 +625,7 @@ releases:
 | ------- | ---------------------------------------------------------------------------------------------- |
 | `65.1`  | oldest serious candidate after fixes for page names, first pages, blank pages, and page groups |
 | `68.0`  | boundary containing the page-group repagination fix                                            |
-| `69.0`  | current development and launch baseline                                                        |
+| `69.0`  | newest candidate in the compatibility matrix                                                   |
 
 The matrix should record capability-specific baselines rather than forcing one
 version on every page-number path. `countFrom: document` should avoid
@@ -633,13 +634,14 @@ must prove the exact first-body reset selector and its behavior during
 repagination; if that implementation uses `@page :nth(1 of body)`, the fix in
 `68.0` is directly relevant.[^weasyprint-changelog]
 
-Each version should run in an independent `uv` project using the same Python
-minor version. The projects must not downgrade or otherwise mutate the user's
-normal Conda environment. Before and after the matrix, record that Conda base
-still reports WeasyPrint `69.0`; any change makes the run invalid. Capture the
-installed WeasyPrint, Pydyf, FontTools, and Python versions for each project,
-plus the shared native Pango version, so that a passing render is reproducible
-as an environment claim rather than only a package-number claim.
+Each version should run in an independent isolated project using the same
+Python minor version. Candidate projects must not mutate one another or the
+developer's active environment. Capture the effective WeasyPrint, Pydyf,
+FontTools, Python, and shared native Pango versions for each project, so that a
+passing render is reproducible as an environment claim rather than only a
+package-number claim. Local environment activation, environment names, and
+machine-specific setup remain operator details and are not part of the public
+research or implementation record.
 
 The laboratory is disposable but intentionally retained through comparison:
 
@@ -653,20 +655,23 @@ realpath(os.tmpdir())/cdx-chores-weasyprint-matrix-<unique>/
 ```
 
 The operating-system temporary root may be exposed through a path alias. The
-laboratory should store and print its canonical path instead of assuming a
-platform-specific location or spelling. This follows the Interactive
-owned-session alias handling, but it is not an Interactive recipe session. The
-matrix root remains available for cross-version inspection and is removed only
-as that exact root after the evidence is recorded. Each `md to-pdf` invocation
-continues to own and remove its separate `cdx-chores-md-pdf-*` renderer scratch
+laboratory should retain its canonical path for local diagnostics and exact
+cleanup instead of assuming a platform-specific location or spelling. The
+resolved machine path is local diagnostic data and should not be copied into
+public records. This follows the Interactive owned-session alias handling, but
+it is not an Interactive recipe session. The matrix root remains available for
+cross-version inspection and is removed only as that exact root after the
+evidence is recorded. Each `md to-pdf` invocation continues to own and remove
+its separate `cdx-chores-md-pdf-*` renderer scratch
 directory.[^interactive-temp-session] [^renderer-temp-source]
 
-An aborted or inconclusive run retains and prints the canonical matrix root for
-diagnosis. Cleanup must target only that exact root and occurs after results are
-recorded or after explicit confirmation that the incomplete evidence is no
-longer needed. A later reusable runner may keep canonical fixture definitions
-under `examples/playground/md-pdf/`, while materialized uv projects, PDFs, PNGs,
-and environment reports remain in the OS temporary laboratory.
+An aborted or inconclusive run retains the canonical matrix root and reports it
+only through local operator output for diagnosis. Cleanup must target only that
+exact root and occurs after results are recorded or after explicit confirmation
+that the incomplete evidence is no longer needed. A later reusable runner may
+keep canonical fixture definitions under `examples/playground/md-pdf/`, while
+materialized candidate projects, PDFs, PNGs, and environment reports remain in
+the OS temporary laboratory.
 
 The smoke has two lanes:
 
@@ -701,11 +706,11 @@ affected capability.
 
 Candidate failures must be classified before applying the selection rule. A
 reproducible mismatch in expected page sequence, visibility, scope, layout, or
-CLI behavior is a contract failure and can disqualify the version. An uv setup,
-dependency resolution, native-library, font-discovery, executable-launch, or
-unrelated Conda failure is inconclusive: retain the laboratory, correct the
-environment, and rerun the same version. It must not silently select a higher
-minimum.
+CLI behavior is a contract failure and can disqualify the version. An isolated
+project setup, dependency resolution, native-library, font-discovery,
+executable-launch, or unrelated environment failure is inconclusive: retain the
+laboratory, correct the environment, and rerun the same version. It must not
+silently select a higher minimum.
 
 For each render, record the command result and warnings, PDF page count and
 dimensions, extracted page-number text by physical page, and representative
