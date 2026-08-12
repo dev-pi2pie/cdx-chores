@@ -167,6 +167,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         temporaryRoot,
         uniqueId: "candidate-commands",
         keep: true,
+        pythonExecutable: "/shared/python3.11",
         runner: mock.runner,
         inspectPdf: mock.inspectPdf,
       });
@@ -180,6 +181,10 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         expect(install?.argv).toContain(`weasyprint==${candidate.weasyPrintVersion}`);
         expect(install?.argv).toContain(`pydyf==${candidate.dependencies.pydyf}`);
         expect(install?.argv).toContain(`fonttools[woff]==${candidate.dependencies.fontTools}`);
+        const setup = mock.requests.find(
+          (request) => request.stage === "setup" && request.candidateId === candidate.id,
+        );
+        expect(setup?.argv[0]).toBe("/shared/python3.11");
 
         const doctor = mock.requests.find(
           (request) => request.stage === "doctor" && request.candidateId === candidate.id,

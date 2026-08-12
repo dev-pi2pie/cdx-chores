@@ -135,6 +135,7 @@ export interface RendererEvidenceReport {
 
 export interface RunRendererEvidenceOptions {
   keep?: boolean;
+  pythonExecutable?: string;
   temporaryRoot?: string;
   uniqueId?: string;
   runner?: CommandRunner;
@@ -598,9 +599,13 @@ export async function runRendererEvidence(
     candidates.push(candidateResult);
 
     const commands = [
-      commandRequest("setup", ["python3", "-m", "venv", environmentDirectory], {
-        candidateId: candidate.id,
-      }),
+      commandRequest(
+        "setup",
+        [options.pythonExecutable ?? "python3", "-m", "venv", environmentDirectory],
+        {
+          candidateId: candidate.id,
+        },
+      ),
       commandRequest(
         "dependency-install",
         [
@@ -867,7 +872,7 @@ function usage(): string {
     "Markdown PDF page-number renderer evidence harness.",
     "",
     "Usage:",
-    "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live [--keep]",
+    "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live [--keep] [--python <executable>]",
     "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts close --lab <retained-lab>",
     "",
     "The run command performs networked candidate installation and live rendering only with --live.",
@@ -883,9 +888,18 @@ async function main(argv: string[]): Promise<void> {
   if (command === "run") {
     if (!args.includes("--live"))
       throw new Error("Refusing to run the live matrix without --live.");
-    const unknown = args.filter((arg) => arg !== "--live" && arg !== "--keep");
+    const pythonIndex = args.indexOf("--python");
+    const pythonExecutable = pythonIndex >= 0 ? args[pythonIndex + 1] : undefined;
+    if (pythonIndex >= 0 && !pythonExecutable) throw new Error("--python requires an executable.");
+    const unknown = args.filter(
+      (arg, index) =>
+        arg !== "--live" && arg !== "--keep" && arg !== "--python" && index !== pythonIndex + 1,
+    );
     if (unknown.length > 0) throw new Error(`Unknown argument: ${unknown[0]}`);
-    const report = await runRendererEvidence({ keep: args.includes("--keep") });
+    const report = await runRendererEvidence({
+      keep: args.includes("--keep"),
+      pythonExecutable,
+    });
     console.log(JSON.stringify(publicEvidenceReport(report), null, 2));
     if (report.outcome !== "passed") process.exitCode = 1;
     return;
