@@ -817,6 +817,10 @@ applying that handoff to the new repository-wide guide.
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
 - [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 
+## Related Plans
+
+- [Markdown PDF Page-Number Configuration Implementation][page-number-plan]
+
 ## References
 
 [^css-page]: [CSS Paged Media Module Level 3: Page-Based Counters](https://www.w3.org/TR/css-page-3/#page-based-counters)
@@ -850,6 +854,7 @@ applying that handoff to the new repository-wide guide.
 [^command-source]: [Markdown command registration](../../src/cli/commands/markdown.ts)
 
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
+[page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
