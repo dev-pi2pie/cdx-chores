@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-13
+modified-date: 2026-08-12
 status: active
 agent: codex
 ---
@@ -882,9 +882,9 @@ Phase checkpoint:
       the named generated-CSS allowed/rejected fixtures, shared diagnostics,
       typed validation results, ownership-guarded temporary cleanup, report-only
       failure, and no-output failure ordering.
-- [ ] Create and maintain
+- [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-8-project-coordination.md`
-      with the exact Phase 7 final-tip starting boundary, 8A/8B/8C/8D
+      with starting boundary `7b7ae9b5`, 8A/8B/8C/8D
       checkpoints, public-safe evidence, validation results, and cleanup state.
 - [ ] Run focused Project/Profile/Template validation, the broad Markdown PDF
       regression slice, and the full repository suite; run
@@ -892,8 +892,8 @@ Phase checkpoint:
       `bun run build`, and `git diff --check` at the final evidence tip.
 - [ ] Review the exact aggregate Phase 8 range from the recorded Phase 7 final
       tip through the final Phase 8 evidence tip
-      (`<phase-7-final-tip>..<phase-8-final-tip>`), replace both placeholders
-      with exact full commits before review, resolve every actionable finding,
+      (`7b7ae9b5..<phase-8-final-tip>`), replace the remaining placeholder with
+      the exact full commit before review, resolve every actionable finding,
       widen the tip when fixes land, and record the final exact range and
       verdict in the Phase 8 job before beginning Phase 9.
 
