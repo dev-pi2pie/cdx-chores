@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 4 CSS"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -40,13 +40,13 @@ the Phase 3 selected-Template compatibility boundary.
 - [x] 4C: Run Profile-driven product renderer extraction and visual evidence.
 - [x] Run focused validation, type-check, lint, formatting, and build.
 - [x] Run the full repository test suite.
-- [ ] Review the exact Phase 4 implementation and evidence range and resolve
+- [x] Review the exact Phase 4 implementation and evidence range and resolve
       every actionable finding.
 
 ## Evidence Status
 
-Phase 4 implementation and renderer evidence are complete. The phase remains
-active until the exact implementation/evidence range review closes.
+Phase 4 implementation, renderer evidence, validation, and exact-range review
+are complete.
 
 ## Checkpoint Commits
 
@@ -55,6 +55,8 @@ active until the exact implementation/evidence range review closes.
 - `12a12fa6` — sequence and selective visibility CSS.
 - `572ce007` — bounded page-chrome style and cascade CSS.
 - `9842cbb9` — Profile-driven product renderer evidence harness.
+- `92caa2ce` — implementation and renderer evidence record.
+- `c3a661a6` — exact-range regression and traceability corrections.
 
 ## Pre-Generator Renderer Evidence
 
@@ -108,7 +110,7 @@ active until the exact implementation/evidence range review closes.
   `rg --files test | rg 'md-to-pdf|markdown-pdf' | xargs bun test --timeout 30000`.
 - Renderer-evidence harness: 26 passed, 0 failed, using
   `bun test test/markdown-pdf-page-number-renderer-evidence.test.ts`.
-- Full repository suite at `9842cbb9`: 1,950 passed, 0 failed, using
+- Full repository suite at `c3a661a6`: 1,950 passed, 0 failed, using
   `bun test --timeout 30000`.
 - Static and build validation used `bunx tsc --noEmit`, `bun run lint`,
   `bun run format:check`, `bun run build`, and `git diff --check`.
@@ -116,11 +118,29 @@ active until the exact implementation/evidence range review closes.
   0.62.0, and Tsdown 0.22.14. The live matrix used the checked-in harness and
   its pinned WeasyPrint 65.1, 68.0, and 69.0 candidate contract; local
   executable paths and environment details remain intentionally unrecorded.
+- The live matrix command was
+  `bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live --keep --python <explicit-python-executable>`;
+  the guarded `close --lab <retained-lab>` operation closed each retained owned
+  laboratory after review. Placeholders intentionally omit local paths.
 
-## Provisional Verdict
+## Exact-Range Review
 
-**Continue after exact-range review.** The CSS generator and renderer evidence
-agree on accepted sequence, visibility, position, style, separator, and
+- Reviewed range: `bee97270..c3a661a6`.
+- Maintainability review found no material concerns after focused validation.
+- Test review added complete visual-boundary mapping and explicit body-origin
+  ToC suppression assertions; the widened range has no remaining material test
+  gaps.
+- Security review found no material CSS-input, subprocess, temporary-lab,
+  redaction, or parser risks in scope.
+- Documentation review added reproducible commands, toolchain versions, manual
+  scenario/candidate coverage, UTC lifecycle metadata, and final-tip full-suite
+  evidence.
+- Every accepted finding was resolved and the widened range was re-reviewed.
+
+## Final Verdict
+
+**Continue to Phase 5.** The CSS generator and renderer evidence agree on
+accepted sequence, visibility, position, style, separator, and
 stylesheet-precedence behavior across the retained renderer matrix.
 
 ## Temporary Evidence Lifecycle

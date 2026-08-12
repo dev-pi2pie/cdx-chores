@@ -537,7 +537,7 @@ Phase checkpoint:
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-4-page-number-css.md`
       with selector decisions, renderer outcomes, checkpoint commits,
       validation evidence, and cleanup state.
-- [ ] Review the exact Phase 4 implementation and evidence commit range,
+- [x] Review the exact Phase 4 implementation and evidence commit range,
       resolve every actionable finding, and record the exact range and final
       verdict in the job before beginning Phase 5.
 
