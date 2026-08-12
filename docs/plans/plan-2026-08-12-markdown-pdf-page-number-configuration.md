@@ -484,7 +484,7 @@ Phase checkpoint:
 - [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-3-template-compatibility.md`
       with checkpoint commits and validation evidence.
-- [ ] Review the exact Phase 3 implementation and evidence commit range,
+- [x] Review the exact Phase 3 implementation and evidence commit range,
       resolve every actionable finding, and record the exact range and final
       verdict in the job before beginning Phase 4.
 

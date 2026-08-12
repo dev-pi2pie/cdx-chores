@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 3 Template compatibility"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -37,13 +37,13 @@ inspector.
 - [x] 3C: Validate Template-helper output and external base-Profile handoff.
 - [x] Run focused validation, type-check, lint, formatting, and build.
 - [x] Run the full repository test suite.
-- [ ] Review the exact Phase 3 implementation and evidence range and resolve
+- [x] Review the exact Phase 3 implementation and evidence range and resolve
       every actionable finding.
 
 ## Evidence Status
 
-All three implementation checkpoints and repository validation are complete.
-Phase 3 remains active until the exact-range review closes.
+All three implementation checkpoints, repository validation, and exact-range
+review are complete.
 
 ## Checkpoint Commits
 
@@ -51,24 +51,40 @@ Phase 3 remains active until the exact-range review closes.
 - `1326438e` — parsed structural body contract and built-in hook.
 - `04919c5f` — selected-Template compatibility and legacy fallback policy.
 - `05e445b2` — Template helper/base-Profile compatibility and external replay.
+- `0b672785` — Phase 3 implementation and validation evidence checkpoint.
+- `fbc0fedb` — exact-range compatibility corrections and expanded regressions.
+- `bf99a902` — Codex identity-comment managed-Template regression.
 
 ## Validation
 
-- Phase-focused compatibility suite: 248 passed, 0 failed.
-- Full repository suite: 1,912 passed, 0 failed.
+- Phase-focused compatibility suite before review fixes: 248 passed, 0 failed.
+- Review-fix structural and compatibility suite: 35 passed, 0 failed.
+- Full repository suite at `bf99a902`: 1,928 passed, 0 failed.
 - TypeScript type-check: passed.
 - Lint and formatting checks: passed.
 - Production build: passed.
 - `git diff --check`: passed.
 
-## Provisional Verdict
+## Exact-Range Review
 
-**Continue after exact-range review.** Built-in and generated Templates expose
-one proven body boundary; body-origin requests fail before renderer probes or
-writes when proof is absent; an unmanaged legacy Template with no body hook
-warns once for document-origin body visibility, while malformed or managed
-Templates fail; and the Template helper keeps its base Profile external to the
-partial bundle.
+- Reviewed range: `d7287e27..bf99a902`.
+- Maintainability review found an inert-text insertion false positive; the
+  inspector now excludes raw, escapable-raw, and inert text containers.
+- Test review added malformed legacy, bundle fallback, warning ordering,
+  managed-marker, and actual Codex identity-comment coverage.
+- Security review found no material issues in the widened range.
+- Documentation review corrected the research inventory and narrowed the
+  recorded legacy fallback boundary.
+- All accepted findings were fixed and the widened range was re-reviewed with
+  no remaining material findings.
+
+## Final Verdict
+
+**Continue to Phase 4.** Built-in and generated Templates expose one proven body
+boundary; body-origin requests fail before renderer probes or writes when proof
+is absent; an unmanaged legacy Template with no body hook warns once for
+document-origin body visibility, while malformed or managed Templates fail;
+and the Template helper keeps its base Profile external to the partial bundle.
 
 ## Related Research
 
