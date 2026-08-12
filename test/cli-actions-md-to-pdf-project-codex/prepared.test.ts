@@ -10,7 +10,6 @@ import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/m
 import {
   prepareMdPdfProjectCodex,
   rebindMdPdfProjectCodexPreparedArtifact,
-  validateMdPdfProjectCodexProject,
   writePreparedMdPdfProjectCodexBundle,
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
@@ -76,13 +75,24 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
-  test("stops injected progress as error when typed Project validation rejects generated structure", async () => {
+  test("stops injected progress as error when typed Project validation rejects cover incompatibility", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-progress-validation-error",
       async (fixtureDir) => {
-        await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "cover:",
+            "  enabled: true",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
         await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
-        await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
         const events: string[] = [];
         const codexProgressPresenter: CodexProgressPresenter = {
           start: (label) => events.push(`start:${label}`),
@@ -94,35 +104,30 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         const prepared = await prepareMdPdfProjectCodex(runtime, {
           baseProfile: "base.yml",
           codexProgressPresenter,
-          coverImage: "cover.png",
           dryRun: true,
           input: "report.md",
           intent: "Create a custom layout.",
           output: "project-output",
           profileCodexRunner: async () => adaptedProfileResponse(),
-          projectValidator: (input) =>
-            validateMdPdfProjectCodexProject({
-              ...input,
-              templatePhase: {
-                ...input.templatePhase,
-                synthesis: {
-                  ...input.templatePhase.synthesis,
-                  templateHtml: input.templatePhase.synthesis.templateHtml.replace(
-                    'class="document-body"',
-                    'class="document-content"',
-                  ),
-                },
-              },
-            }),
-          templateCodexRunner: async () => adaptedTemplateResponse(),
+          templateCodexRunner: async () => {
+            const response = JSON.parse(adaptedTemplateResponse()) as {
+              managed_assets: unknown[];
+              slots: { cover: { enabled: boolean; style: string } };
+            };
+            response.slots.cover.enabled = false;
+            response.slots.cover.style = "none";
+            response.managed_assets = [];
+            return JSON.stringify(response);
+          },
         });
 
         expect(prepared.binding.validation.decisionMode).toBe("no-usable-project");
         expect(prepared.binding.validation.renderCommand).toBeUndefined();
-        expect(prepared.binding.validation.diagnostics.conditions).toContainEqual(
+        expect(prepared.binding.validation.results).toContainEqual(
           expect.objectContaining({
-            conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
-            severity: "error",
+            message: expect.stringContaining("profile-owned text cover"),
+            name: "profile-template-compatibility",
+            status: "failed",
           }),
         );
         expect(events).toEqual([

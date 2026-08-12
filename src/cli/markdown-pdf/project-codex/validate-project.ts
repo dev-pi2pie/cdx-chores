@@ -481,5 +481,3 @@ export function validateMdPdfProjectCodexProject(
     ...collectProjectValidationResults(input),
   });
 }
-
-export type MdPdfProjectCodexValidator = typeof validateMdPdfProjectCodexProject;

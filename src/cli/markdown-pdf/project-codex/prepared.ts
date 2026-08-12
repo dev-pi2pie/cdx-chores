@@ -39,7 +39,6 @@ import type {
 } from "./types";
 import {
   validateMdPdfProjectCodexProject,
-  type MdPdfProjectCodexValidator,
   type MarkdownPdfProjectCodexValidationSummary,
 } from "./validate-project";
 import {
@@ -258,13 +257,12 @@ function createBinding(input: {
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexAcceptedTemplatePhase;
-  validator?: MdPdfProjectCodexValidator;
 }): MarkdownPdfProjectCodexPreparedBinding {
   const templatePhase = bindTemplatePhase({
     outputPlan: input.outputPlan,
     templatePhase: input.templatePhase,
   });
-  const validation = (input.validator ?? validateMdPdfProjectCodexProject)({
+  const validation = validateMdPdfProjectCodexProject({
     outputPlan: input.outputPlan,
     profilePhase: input.profilePhase,
     runtime: input.runtime,
@@ -338,7 +336,6 @@ export async function prepareMdPdfProjectCodex(
       signals,
       state,
       templatePhase,
-      validator: options.projectValidator,
     });
     if (!state.dryRun && binding.validation.decisionMode !== "no-usable-project") {
       await validateMdPdfProjectCodexOutputWritability({
