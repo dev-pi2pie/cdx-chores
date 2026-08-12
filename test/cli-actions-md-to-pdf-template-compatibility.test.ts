@@ -354,4 +354,23 @@ describe("Markdown PDF selected-template compatibility", () => {
       }),
     ).toMatchObject({ bodyBoundary: "legacy-document-origin-fallback" });
   });
+
+  test("treats an actual Codex identity comment as a managed Template marker", () => {
+    expect(() =>
+      assessMarkdownPdfTemplateCompatibility({
+        builtIn: false,
+        profile: {
+          ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+          pageNumbers: {
+            ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers,
+            enabled: true,
+          },
+        },
+        templateHtml: [
+          "<!-- cdx-chores md pdf-template codex | bundle=test | family=editorial-report -->",
+          "<main>$body$</main>",
+        ].join("\n"),
+      }),
+    ).toThrow("selected managed Markdown PDF template requires exactly one .document-body");
+  });
 });
