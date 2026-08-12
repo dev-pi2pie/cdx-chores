@@ -4,6 +4,7 @@ import { inspectCommand } from "../deps";
 import type { DependencyCommandRunner } from "../deps";
 import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
 import { inspectDataQueryExtensions } from "../duckdb/query";
+import { assessMarkdownPdfRendererCapabilities } from "../markdown-pdf/renderer-capabilities";
 import { assessMarkdownPdfRequirements } from "../markdown-pdf/requirements";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
@@ -118,7 +119,12 @@ export async function actionDoctor(
       codexEnvironment.detail ?? (queryExtensions.available ? undefined : queryExtensions.detail),
   };
 
-  const markdownPdf = assessMarkdownPdfRequirements(pandoc, weasyprint);
+  const markdownPdfRequirements = assessMarkdownPdfRequirements(pandoc, weasyprint);
+  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer: weasyprint });
+  const markdownPdf = {
+    ...markdownPdfRequirements,
+    rendererCapabilities,
+  };
   const capabilities = {
     "md.to-docx": pandoc.available,
     "md.to-pdf": markdownPdf.ready,
@@ -210,6 +216,29 @@ export async function actionDoctor(
     printLine(
       runtime.stdout,
       `- ${pc.bold(capability)}: ${available ? pc.green("available") : pc.red("unavailable")}`,
+    );
+  }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Markdown PDF renderer capabilities:")));
+  const rendererVersion = rendererCapabilities.renderer.version ?? "unknown version";
+  const rendererAvailability = rendererCapabilities.renderer.available
+    ? pc.green(`installed (${rendererVersion})`)
+    : pc.red("missing");
+  printLine(runtime.stdout, `- ${pc.bold("weasyprint")}: ${rendererAvailability}`);
+  for (const capability of rendererCapabilities.capabilities) {
+    const status =
+      capability.status === "satisfied"
+        ? pc.green(capability.status)
+        : capability.status === "missing"
+          ? pc.red(capability.status)
+          : pc.yellow(capability.status);
+    const diagnostic = capability.diagnosticConditionId
+      ? `, diagnostic=${capability.diagnosticConditionId}`
+      : "";
+    printLine(
+      runtime.stdout,
+      `- ${pc.bold(capability.id)}: ${status}, minimum=${capability.minimumVersion}${diagnostic}`,
     );
   }
 

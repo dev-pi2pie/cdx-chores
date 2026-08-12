@@ -131,23 +131,52 @@ describe("Markdown PDF renderer capability matrix", () => {
       pageNumbers: profile.pageNumbers,
     });
 
-    expect(requests.map(({ capabilityId }) => capabilityId)).toEqual(
-      MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.map(({ id }) => id).filter(
-        (id) => id !== MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin,
-      ),
-    );
-    expect(
-      requests.find(
-        ({ capabilityId }) =>
-          capabilityId === MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize,
-      )?.requestedBy,
-    ).toEqual(["header.style.fontSize", "footer.style.fontSize"]);
-    expect(
-      requests.find(
-        ({ capabilityId }) =>
-          capabilityId === MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap,
-      )?.requestedBy,
-    ).toEqual(["header.style.separator.gap", "footer.style.separator.gap"]);
+    expect(requests).toEqual([
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberStart,
+        requestedBy: ["pageNumbers.start"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement,
+        requestedBy: ["pageNumbers.increment"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
+        requestedBy: ["pageNumbers.scope"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize,
+        requestedBy: ["header.style.fontSize", "footer.style.fontSize"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontWeight,
+        requestedBy: ["header.style.fontWeight", "footer.style.fontWeight"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeLineHeight,
+        requestedBy: ["header.style.lineHeight", "footer.style.lineHeight"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeColor,
+        requestedBy: ["header.style.color", "footer.style.color"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorWidth,
+        requestedBy: ["header.style.separator.width", "footer.style.separator.width"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorStyle,
+        requestedBy: ["header.style.separator.style", "footer.style.separator.style"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorColor,
+        requestedBy: ["header.style.separator.color", "footer.style.separator.color"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap,
+        requestedBy: ["header.style.separator.gap", "footer.style.separator.gap"],
+      },
+    ]);
   });
 
   test("gates styles only for occupied areas or the enabled page-number target", () => {
