@@ -386,44 +386,46 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Convert every renderer-retained style capability from Phase 1 into an
+- [x] Convert every renderer-retained style capability from Phase 1 into an
       exact public value domain before changing the schema.
-- [ ] Define accepted CSS units and numeric ranges for font size, line height,
+- [x] Define accepted CSS units and numeric ranges for font size, line height,
       separator width, and separator gap, including whether unitless zero is
       valid for each field.
-- [ ] Define the accepted font-weight domain, color grammar, and separator-style
+- [x] Define the accepted font-weight domain, color grammar, and separator-style
       enum; reject arbitrary CSS tokens and values outside the documented
       subset.
-- [ ] Record the finalized domains, defaults, normalization rules, and examples
+- [x] Record the finalized domains, defaults, normalization rules, and examples
       in the Phase 1 evidence job and related research so schema and guidance
       consume one decision source.
-- [ ] Create or update
+- [x] Create or update
       `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-page-number-phase-2-profile-contract.md`
       with the accepted domains, compatibility results, validation evidence,
-      checkpoint commits, and exact-range review verdict.
-- [ ] Extend normalized types with `scope: document | body`,
+      and checkpoint commits.
+- [ ] Record the exact-range review verdict in the Phase 2 job before closing
+      the phase.
+- [x] Extend normalized types with `scope: document | body`,
       `countFrom: document | body`, `start`, and `increment`.
-- [ ] Add the shared typed `style` shape to `header` and `footer` without adding
+- [x] Add the shared typed `style` shape to `header` and `footer` without adding
       `pageNumbers.style`.
-- [ ] Preserve the existing `enabled`, `position`, and `format` defaults.
-- [ ] Default `scope` to `body`, `countFrom` to `document`, `start` to `1`, and
+- [x] Preserve the existing `enabled`, `position`, and `format` defaults.
+- [x] Default `scope` to `body`, `countFrom` to `document`, `start` to `1`, and
       `increment` to `1`.
-- [ ] Preserve literal `start: 0` through parsing, normalization, merging, and
+- [x] Preserve literal `start: 0` through parsing, normalization, merging, and
       serialization.
-- [ ] Reject negative or fractional `start` and non-positive or fractional
+- [x] Reject negative or fractional `start` and non-positive or fractional
       `increment`.
-- [ ] Reject `scope: document` with `countFrom: body` during configuration
+- [x] Reject `scope: document` with `countFrom: body` during configuration
       validation.
-- [ ] Validate bounded font-size, font-weight, line-height, color, separator
+- [x] Validate bounded font-size, font-weight, line-height, color, separator
       width, separator style, separator color, and separator gap values.
-- [ ] Update schema allowlists, defaults, normalization, YAML/JSON
+- [x] Update schema allowlists, defaults, normalization, YAML/JSON
       serialization, deterministic initialization, and Codex Profile adapter
       paths.
-- [ ] Preserve Project/Profile artifact loading and writing through the same
+- [x] Preserve Project/Profile artifact loading and writing through the same
       normalized schema.
-- [ ] Add old-Profile fixtures proving omitted new fields retain the shipped
+- [x] Add old-Profile fixtures proving omitted new fields retain the shipped
       behavior.
-- [ ] Add round-trip fixtures for every new field and validation boundary.
+- [x] Add round-trip fixtures for every new field and validation boundary.
 - [ ] Review the exact Phase 2 implementation and evidence commit range,
       resolve every actionable finding, and record the final verdict before
       beginning Phase 3.
@@ -433,7 +435,8 @@ Phase checkpoint:
 - Every exposed style value has an exact, renderer-proven grammar and boundary;
   no task relies on an undefined meaning of "bounded."
 - Existing Profiles normalize without migration and retain current behavior.
-- New values round-trip through YAML and JSON without loss or coercion.
+- New values round-trip through normalized YAML and JSON without semantic loss
+  or coercion; serialization may emit defaulted fields.
 - Invalid arithmetic, invalid scope/origin combinations, and invalid style
   values fail before rendering.
 - The capability set retained after Phase 1 and the exposed schema still agree.

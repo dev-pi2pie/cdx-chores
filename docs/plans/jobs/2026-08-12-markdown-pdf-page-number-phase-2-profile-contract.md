@@ -24,16 +24,16 @@ in later phases.
 
 ## Accepted Value Domains
 
-| Field | Accepted domain | Zero rule |
-| ----- | --------------- | --------- |
-| `fontSize` | `pt` length from `6pt` through `12pt`, with at most one fractional digit | invalid |
-| `fontWeight` | `400`, `500`, `600`, or `700` | not applicable |
-| `lineHeight` | unitless number from `1` through `2` | invalid |
-| `color` | six-digit hexadecimal color, case-insensitive | not applicable |
-| `separator.width` | `pt` length from `0.25pt` through `2pt`, with at most two fractional digits | invalid; omit `separator` to disable it |
-| `separator.style` | `solid` | not applicable |
-| `separator.color` | six-digit hexadecimal color, case-insensitive | not applicable |
-| `separator.gap` | `mm` length from `0mm` through `4mm`, with at most one fractional digit; numeric zero is also accepted | valid |
+| Field             | Accepted domain                                                                                        | Zero rule                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `fontSize`        | `pt` length from `6pt` through `12pt`, with at most one fractional digit                               | invalid                                 |
+| `fontWeight`      | `400`, `500`, `600`, or `700`                                                                          | not applicable                          |
+| `lineHeight`      | unitless number from `1` through `2`                                                                   | invalid                                 |
+| `color`           | six-digit hexadecimal color, case-insensitive                                                          | not applicable                          |
+| `separator.width` | `pt` length from `0.25pt` through `2pt`, with at most two fractional digits                            | invalid; omit `separator` to disable it |
+| `separator.style` | `solid`                                                                                                | not applicable                          |
+| `separator.color` | six-digit hexadecimal color, case-insensitive                                                          | not applicable                          |
+| `separator.gap`   | `mm` length from `0mm` through `4mm`, with at most one fractional digit; numeric zero is also accepted | valid                                   |
 
 The shared `style` object is available only under `header` and `footer`.
 `pageNumbers` owns sequence, visibility, position, and format; it does not own a
@@ -56,22 +56,48 @@ second style object.
 ## Tasks
 
 - [x] Freeze the renderer-supported domains, defaults, and zero rules.
-- [ ] Extend core Profile types, schema allowlists, validation, normalization,
+- [x] Extend core Profile types, schema allowlists, validation, normalization,
       defaults, and deterministic initialization.
-- [ ] Preserve old-Profile behavior and lossless YAML/JSON round trips.
-- [ ] Extend Codex Profile patch paths and bounded value domains.
-- [ ] Prove Project/Profile loading and validation use the shared normalized
+- [x] Preserve old-Profile behavior and semantic values through YAML/JSON
+      round trips; normalized serialization may emit defaulted fields.
+- [x] Extend Codex Profile patch paths and bounded value domains.
+- [x] Prove Project/Profile loading and validation use the shared normalized
       contract without a second schema.
-- [ ] Add boundary, invalid-value, compatibility, and serialization tests.
-- [ ] Run focused and repository validation.
+- [x] Add boundary, invalid-value, compatibility, and serialization tests.
+- [x] Run focused and repository validation.
 - [ ] Review the exact Phase 2 implementation and evidence commit range and
       resolve every actionable finding.
 
 ## Evidence Status
 
-The Phase 1 renderer evidence establishes the accepted domains. Phase 2
-implementation and validation have started; no Phase 2 compatibility verdict
-is accepted yet.
+The Phase 1 renderer evidence establishes the accepted domains. Core Profile,
+Codex Profile, and Project/Profile integration are implemented and validated.
+Phase 2 remains active until exact-range review closes.
+
+## Checkpoint Commits
+
+- `3c56e6f3` — Phase 2 job activation and accepted-domain freeze.
+- `51883e09` — shared core Profile types, validation, normalization, defaults,
+  initialization, serialization behavior, and boundary tests.
+- `777fe89c` — Codex Profile patch paths, shared bounded-domain use, Project
+  integration, and fail-closed helper-flow tests.
+
+## Validation
+
+- Phase-focused Profile, Codex, and Project tests: 145 passed, 0 failed.
+- TypeScript type-check: passed.
+- Lint and formatting checks: passed.
+- Production build: passed.
+- Full repository suite: 1,888 passed, 0 failed.
+- `git diff --check`: passed.
+
+## Provisional Verdict
+
+**Continue after exact-range review.** Existing Profiles retain shipped
+defaults, new controls round-trip without coercion, literal zero values are
+preserved, invalid contracts fail before output, and Codex and Project flows
+reuse the shared Profile contract. Renderer CSS remains unchanged in this
+phase.
 
 ## Related Research
 
