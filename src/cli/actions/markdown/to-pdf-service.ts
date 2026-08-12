@@ -37,6 +37,8 @@ import {
   type NormalizeMarkdownPdfOptionsInput,
   type NormalizedMarkdownPdfOptions,
 } from "../../markdown-pdf/validation";
+import { assessMarkdownPdfTemplateCompatibility } from "../../markdown-pdf/template-compatibility";
+import type { MarkdownPdfTemplateCompatibilityResult } from "../../markdown-pdf/template-compatibility";
 
 export interface PrepareMarkdownPdfRenderInput extends NormalizeMarkdownPdfOptionsInput {
   input: string;
@@ -62,6 +64,7 @@ export interface PreparedMarkdownPdfRender {
   recipe: MarkdownPdfRecipe;
   resolvedInputs: MarkdownPdfRenderBundleResolvedInputs;
   resolvedBundle?: MarkdownPdfRenderBundleResolvedInputs;
+  templateCompatibility: MarkdownPdfTemplateCompatibilityResult;
   titleSignals: MarkdownPdfTitleSignals;
 }
 
@@ -155,6 +158,15 @@ export async function prepareMarkdownPdfRender(
     await ensureExistingFile(customCssPath, "CSS");
   }
 
+  const selectedTemplateHtml = customTemplatePath
+    ? await readTextFileRequired(customTemplatePath)
+    : recipe.templateHtml;
+  const templateCompatibility = assessMarkdownPdfTemplateCompatibility({
+    builtIn: customTemplatePath === undefined,
+    profile: normalizedProfile.profile,
+    templateHtml: selectedTemplateHtml,
+  });
+
   const resolvedInputs =
     resolvedBundle ??
     ({
@@ -176,6 +188,7 @@ export async function prepareMarkdownPdfRender(
     recipe,
     resolvedInputs,
     resolvedBundle,
+    templateCompatibility,
     titleSignals,
   };
 }
@@ -234,7 +247,7 @@ export async function executePlannedMarkdownPdfRender(
   requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
   await requireCommandAvailable("weasyprint", runtime.platform, runner);
 
-  return renderMarkdownPdf({
+  const result = await renderMarkdownPdf({
     inputPath: plan.prepared.inputPath,
     outputPath: plan.outputPath,
     templateHtml: plan.prepared.recipe.templateHtml,
@@ -249,4 +262,8 @@ export async function executePlannedMarkdownPdfRender(
     runner,
     codeHighlighter: options.codeHighlighter,
   });
+  return {
+    ...result,
+    warnings: [...plan.prepared.templateCompatibility.warnings, ...result.warnings],
+  };
 }
