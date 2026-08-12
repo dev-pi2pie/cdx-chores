@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 5 effective render configuration"
 created-date: 2026-08-12
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -46,7 +46,7 @@ available when Profile page numbers are disabled.
 - [x] Run focused validation, the Markdown PDF regression slice, and the full
       repository suite.
 - [x] Record static/build/format and `git diff --check` results.
-- [ ] Review the exact Phase 5 implementation and evidence range, resolve all
+- [x] Review the exact Phase 5 implementation and evidence range, resolve all
       actionable findings, and record the widened range and final verdict.
 
 ## Evidence Requirements
@@ -88,17 +88,28 @@ available when Profile page numbers are disabled.
 
 - `8114b2fc` — Phase 5 activation and direct tri-state effective configuration.
 - `e7404a2d` — no-default-CSS incompatibility and custom-counter compatibility.
+- `4f7d7428` — Phase 5 implementation and validation evidence.
+- `91ad99b8` — exact-review CSS-forwarding and custom-stylesheet regressions.
 
 ## Exact-Range Review
 
-To be completed after implementation and evidence commits. The review must use
-the named Phase 5 starting boundary through the final evidence tip, resolve
-every actionable finding, and record the widened range before Phase 6 begins.
+- Reviewed range: `ccf83fe8..91ad99b8`.
+- Maintainability review found no material concerns with the effective Profile
+  clone, precedence, failure ordering, or Node.js runtime compatibility.
+- Test review added action-level renderer CSS forwarding and explicit/bundle
+  custom-stylesheet guard coverage. The widened range has no remaining
+  material test gaps.
+- Security review found no material input-validation, output-write ordering,
+  trust-boundary, or data-exposure concerns.
+- Documentation review found the lifecycle, commands, counts, cleanup record,
+  status, and public-safe traceability aligned with implementation.
+- Every actionable finding was resolved and the widened range was re-reviewed.
 
 ## Final Verdict
 
-**Provisional Continue.** Phase 5A/5B implementation and validation are
-complete. The exact-range review remains required before Phase 6 begins.
+**Continue to Phase 6.** Direct override precedence, effective render
+configuration, renderer CSS forwarding, and the no-default-CSS ownership
+boundary are implemented, validated, and reviewed.
 
 ## Related Research
 

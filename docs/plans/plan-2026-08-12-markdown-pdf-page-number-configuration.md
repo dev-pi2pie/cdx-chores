@@ -582,7 +582,7 @@ Phase checkpoint:
 - [x] Run focused checks, the Markdown PDF regression slice, and the full
       repository validation suite; record the passing results in the Phase 5
       job before closing the phase.
-- [ ] Review the exact Phase 5 implementation and evidence range, resolve
+- [x] Review the exact Phase 5 implementation and evidence range, resolve
       every actionable finding, and record the widened range and final verdict
       in the job before beginning Phase 6.
 
