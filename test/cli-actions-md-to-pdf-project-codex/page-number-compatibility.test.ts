@@ -107,6 +107,10 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
       "article { counter-reset: attr(data-counter type(<custom-ident>)); }",
       "aside { counter-increment: \\61 ttr(data-counter); }",
       "section { counter-set: env(counter-name); }",
+      "nav { counter-reset: reversed(page); }",
+      "footer { counter-reset: reversed(p\\61 ges); }",
+      "header { counter-reset: reversed(var(--counter-name)); }",
+      "main { counter-reset: reversed(attr(data-counter)); }",
     ]) {
       expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
         "indeterminate counter mutation",
@@ -118,7 +122,9 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
     expect(() =>
       validateMdPdfProjectCodexTemplatePageNumberCssOwnership(`
         body { counter-reset: list-item 0 chapter-page 2; }
-        .document-body { counter-increment: section 1; }
+        ol { counter-reset: reversed(section) 8; }
+        ul { counter-reset: r\\65 versed(chapter) 3; }
+        .document-body { counter-increment: section calc(1 + 1); }
         @media print { main { counter-set: chapter 4; } }
         h2::before { content: counter(section) "." counter(chapter-page); }
       `),

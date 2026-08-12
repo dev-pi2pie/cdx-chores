@@ -237,14 +237,71 @@ function declaresCounterMutation(property: string): boolean {
   );
 }
 
+function mutationValueTokens(value: string): string[] | undefined {
+  const tokens: string[] = [];
+  let depth = 0;
+  let tokenStart: number | undefined;
+  for (let index = 0; index <= value.length; index += 1) {
+    const char = value[index];
+    if (char === "(") {
+      depth += 1;
+    } else if (char === ")") {
+      depth -= 1;
+      if (depth < 0) {
+        return undefined;
+      }
+    }
+    const boundary =
+      index === value.length || (depth === 0 && char !== undefined && /\s/u.test(char));
+    if (tokenStart === undefined && !boundary) {
+      tokenStart = index;
+    }
+    if (tokenStart !== undefined && boundary) {
+      tokens.push(value.slice(tokenStart, index));
+      tokenStart = undefined;
+    }
+  }
+  return depth === 0 ? tokens : undefined;
+}
+
+function isStaticUnrelatedCounterName(token: string): boolean {
+  const literalName = token.match(/^[-_A-Za-z][-_A-Za-z0-9]*$/u)?.[0]?.toLowerCase();
+  if (literalName) {
+    return literalName !== "page" && literalName !== "pages";
+  }
+  const reversedName = token
+    .match(/^reversed\(\s*([-_A-Za-z][-_A-Za-z0-9]*)\s*\)$/iu)?.[1]
+    ?.toLowerCase();
+  return Boolean(reversedName && reversedName !== "page" && reversedName !== "pages");
+}
+
+function isStaticCounterNumericValue(token: string): boolean {
+  return /^[+-]?\d+$/u.test(token) || /^calc\(.+\)$/iu.test(token);
+}
+
+function mutationValueUsesIndeterminateOrProfileCounterName(value: string): boolean {
+  const tokens = mutationValueTokens(value);
+  if (!tokens || tokens.length === 0) {
+    return true;
+  }
+  for (let index = 0; index < tokens.length; index += 1) {
+    const counterName = tokens[index];
+    if (!counterName || !isStaticUnrelatedCounterName(counterName)) {
+      return true;
+    }
+    const numericValue = tokens[index + 1];
+    if (numericValue && isStaticCounterNumericValue(numericValue)) {
+      index += 1;
+    }
+  }
+  return false;
+}
+
 function counterMutationCompetesWithProfile(input: { property: string; value: string }): boolean {
   if (!declaresCounterMutation(input.property)) {
     return false;
   }
-  return (
-    /[-_A-Za-z][-_A-Za-z0-9]*\s*\(/u.test(input.value) ||
-    /(?:^|[^-_A-Za-z0-9])pages?(?:$|[^-_A-Za-z0-9])/iu.test(input.value)
-  );
+  return mutationValueUsesIndeterminateOrProfileCounterName(input.value);
 }
 
 function competesWithOrdinaryPageChrome(property: string): boolean {
