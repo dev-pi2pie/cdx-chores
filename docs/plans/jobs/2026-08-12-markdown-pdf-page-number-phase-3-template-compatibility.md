@@ -31,17 +31,42 @@ inspector.
 
 ## Checkpoints
 
-- [ ] 3A: Add the shared structural inspector and built-in hook.
-- [ ] 3B: Validate actual selected Templates and preserve legacy/partial-bundle
+- [x] 3A: Add the shared structural inspector and built-in hook.
+- [x] 3B: Validate actual selected Templates and preserve legacy/partial-bundle
       behavior.
-- [ ] 3C: Validate Template-helper output and external base-Profile handoff.
-- [ ] Run focused and repository validation.
+- [x] 3C: Validate Template-helper output and external base-Profile handoff.
+- [x] Run focused validation, type-check, lint, formatting, and build.
+- [x] Run the full repository test suite.
 - [ ] Review the exact Phase 3 implementation and evidence range and resolve
       every actionable finding.
 
 ## Evidence Status
 
-Phase 3 is active. No structural compatibility verdict is accepted yet.
+All three implementation checkpoints and repository validation are complete.
+Phase 3 remains active until the exact-range review closes.
+
+## Checkpoint Commits
+
+- `854a0b18` — Phase 3 activation and explicit subphase boundaries.
+- `1326438e` — parsed structural body contract and built-in hook.
+- `04919c5f` — selected-Template compatibility and legacy fallback policy.
+- `05e445b2` — Template helper/base-Profile compatibility and external replay.
+
+## Validation
+
+- Phase-focused compatibility suite: 248 passed, 0 failed.
+- Full repository suite: 1,912 passed, 0 failed.
+- TypeScript type-check: passed.
+- Lint and formatting checks: passed.
+- Production build: passed.
+- `git diff --check`: passed.
+
+## Provisional Verdict
+
+**Continue after exact-range review.** Built-in and generated Templates expose
+one proven body boundary; body-origin requests fail before renderer probes or
+writes when proof is absent; legacy document-origin fallback warns once; and
+the Template helper keeps its base Profile external to the partial bundle.
 
 ## Related Research
 

@@ -445,49 +445,48 @@ Phase checkpoint:
 
 #### Phase 3A: Structural Body Contract
 
-- [ ] Add the stable `.document-body` hook to the built-in body `<main>`.
-- [ ] Adopt `.document-body` in generated Template-Codex required-hook
+- [x] Add the stable `.document-body` hook to the built-in body `<main>`.
+- [x] Adopt `.document-body` in generated Template-Codex required-hook
       validation while preserving existing Pandoc, title, and ToC hooks.
-- [ ] Define a provable boundary as exactly one usable `.document-body` element
+- [x] Define a provable boundary as exactly one usable `.document-body` element
       that owns the Pandoc `$body$` insertion point; reject missing, duplicate,
       or structurally unrelated matches for body-origin numbering.
-- [ ] Inspect actual selected or generated HTML rather than synthesis metadata
+- [x] Inspect actual selected or generated HTML rather than synthesis metadata
       when proving the boundary.
-- [ ] Treat exactly one class-token match containing the single real `$body$`
+- [x] Treat exactly one class-token match containing the single real `$body$`
       insertion point as proven; reject missing, duplicate, unrelated,
       comment-only, attribute-only, and script-only matches.
 
 #### Phase 3B: Selected-Template Compatibility
 
-- [ ] Preserve the warning-based legacy inference only for document-origin body
+- [x] Preserve the warning-based legacy inference only for document-origin body
       visibility; never use it to satisfy a body-origin request.
-- [ ] Inspect the final explicitly selected or bundle-resolved Template after
+- [x] Inspect the final explicitly selected or bundle-resolved Template after
       Profile resolution and fail before dependency probes or output writes
       when a body-origin request lacks a proven boundary.
-- [ ] Preserve existing generic Profile-only, Template-only, CSS-only,
+- [x] Preserve existing generic Profile-only, Template-only, CSS-only,
       Template/CSS, and complete-bundle behavior when no body proof is needed.
 
 #### Phase 3C: Template Helper And Base Profile
 
-- [ ] Review direct `md pdf-template codex --base-profile` behavior when the
+- [x] Review direct `md pdf-template codex --base-profile` behavior when the
       Profile requests document-origin or body-origin numbering.
-- [ ] Preserve Profile-only and Template/CSS partial bundle inputs in the direct
+- [x] Preserve Profile-only and Template/CSS partial bundle inputs in the direct
       Template helper while requiring generated HTML to be compatible with the
       externally owned Profile contract.
-- [ ] Keep Template signals and generated Template CSS free of duplicated
+- [x] Keep Template signals and generated Template CSS free of duplicated
       Profile-owned page-number values.
-- [ ] Keep generated output as a Template/CSS partial bundle and include the
+- [x] Keep generated output as a Template/CSS partial bundle and include the
       external base Profile in the follow-up render command without copying it
       into the bundle.
-- [ ] Add built-in, generated, legacy custom, missing-hook, duplicate-hook,
+- [x] Add built-in, generated, legacy custom, missing-hook, duplicate-hook,
       direct Template-helper, base-Profile, and partial-bundle tests.
-- [ ] Create and maintain
+- [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-3-template-compatibility.md`
-      with checkpoint commits, validation evidence, and the exact-range review
-      verdict.
+      with checkpoint commits and validation evidence.
 - [ ] Review the exact Phase 3 implementation and evidence commit range,
-      resolve every actionable finding, and record the final verdict before
-      beginning Phase 4.
+      resolve every actionable finding, and record the exact range and final
+      verdict in the job before beginning Phase 4.
 
 Phase checkpoint:
 
