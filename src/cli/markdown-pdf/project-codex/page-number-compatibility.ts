@@ -209,10 +209,22 @@ function isAllowedNamedPage(prelude: string): boolean {
   return name === "cover" || name === "toc";
 }
 
-function referencesPageCounter(value: string): boolean {
-  for (const match of value.matchAll(/\bcounters?\s*\(\s*([-_A-Za-z][-_A-Za-z0-9]*)/giu)) {
-    const counterName = match[1];
-    if (counterName === "page" || counterName === "pages") {
+function referencesProfileOrIndeterminateCounter(value: string): boolean {
+  const callPattern = /\bcounters?\s*\(\s*/giu;
+  for (const match of value.matchAll(callPattern)) {
+    const argumentStart = (match.index ?? 0) + match[0].length;
+    const argument = value.slice(argumentStart);
+    const firstArgumentMatch = argument.match(/^([-_A-Za-z][-_A-Za-z0-9]*)/u);
+    const firstArgument = firstArgumentMatch?.[1];
+    const followingSyntax = firstArgumentMatch
+      ? argument.slice(firstArgumentMatch[0].length).trimStart()[0]
+      : undefined;
+    if (
+      !firstArgument ||
+      (followingSyntax !== ")" && followingSyntax !== ",") ||
+      firstArgument === "page" ||
+      firstArgument === "pages"
+    ) {
       return true;
     }
   }
@@ -222,6 +234,16 @@ function referencesPageCounter(value: string): boolean {
 function declaresCounterMutation(property: string): boolean {
   return (
     property === "counter-reset" || property === "counter-increment" || property === "counter-set"
+  );
+}
+
+function counterMutationCompetesWithProfile(input: { property: string; value: string }): boolean {
+  if (!declaresCounterMutation(input.property)) {
+    return false;
+  }
+  return (
+    /\bvar\s*\(/iu.test(input.value) ||
+    /(?:^|[^-_A-Za-z0-9])pages?(?:$|[^-_A-Za-z0-9])/iu.test(input.value)
   );
 }
 
@@ -258,7 +280,10 @@ function assertOrdinaryPageOwnership(pageRule: CssBlock): void {
     PAGE_MARGIN_BOX_PATTERN.test(block.prelude.trim()),
   )) {
     for (const declaration of declarations(marginBox.body)) {
-      if (declaration.property === "content" && referencesPageCounter(declaration.value)) {
+      if (
+        declaration.property === "content" &&
+        referencesProfileOrIndeterminateCounter(declaration.value)
+      ) {
         throw new Error(
           "Generated Template stylesheet must not place Profile-owned page counters in ordinary-page margin boxes.",
         );
@@ -288,20 +313,20 @@ export function validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
   if (blocks.length > MAX_TEMPLATE_CSS_BLOCKS) {
     throw new Error("Generated Template stylesheet exceeds the supported rule count.");
   }
-  if (
-    blocks.some((block) =>
-      declarations(block.body).some((declaration) => declaresCounterMutation(declaration.property)),
-    )
-  ) {
-    throw new Error("Generated Template stylesheet must not declare counter mutation.");
+  if (blocks.some((block) => declarations(block.body).some(counterMutationCompetesWithProfile))) {
+    throw new Error(
+      "Generated Template stylesheet must not mutate Profile-owned page counters or use indeterminate counter mutation.",
+    );
   }
   if (
     blocks.some((block) =>
-      declarations(block.body).some((declaration) => referencesPageCounter(declaration.value)),
+      declarations(block.body).some((declaration) =>
+        referencesProfileOrIndeterminateCounter(declaration.value),
+      ),
     )
   ) {
     throw new Error(
-      "Generated Template stylesheet must not reference Profile-owned page counters.",
+      "Generated Template stylesheet must not reference Profile-owned or indeterminate counters.",
     );
   }
   for (const block of blocks) {

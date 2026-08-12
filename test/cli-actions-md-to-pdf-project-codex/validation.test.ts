@@ -637,7 +637,7 @@ describe("cli action modules: md pdf-project codex validation", () => {
 
         expectNoUsableValidationFailure(validation, {
           name: "template-page-number-css-ownership",
-          messageIncludes: "must not reference Profile-owned page counters",
+          messageIncludes: "must not reference Profile-owned or indeterminate counters",
         });
       },
     );
@@ -672,7 +672,31 @@ describe("cli action modules: md pdf-project codex validation", () => {
         expect(templatePhase.synthesis.styleCss).toContain("counter-set: var(--folio)");
         expectNoUsableValidationFailure(validation, {
           name: "template-page-number-css-ownership",
-          messageIncludes: "must not declare counter mutation",
+          messageIncludes: "indeterminate counter mutation",
+        });
+      },
+    );
+  });
+
+  test("rejects indeterminate counter references received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-counter-reference",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [{ css: "body { --folio: counter(var(--folio)); }", slot: "spacing" }],
+            }),
+        });
+
+        expect(templatePhase.synthesis.styleCss).toContain("counter(var(--folio))");
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "must not reference Profile-owned or indeterminate counters",
         });
       },
     );
