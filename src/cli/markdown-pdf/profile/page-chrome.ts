@@ -1,4 +1,8 @@
-import type { MarkdownPdfPageChromePosition, NormalizedMarkdownPdfProfile } from "./types";
+import type {
+  MarkdownPdfPageChromePosition,
+  NormalizedMarkdownPdfPageChromeStyle,
+  NormalizedMarkdownPdfProfile,
+} from "./types";
 
 export type MarkdownPdfPageChromeBodyBoundary =
   | "not-required"
@@ -89,9 +93,40 @@ function marginBoxRule(
   slot: "left" | "center" | "right",
   value: string,
   metadata: Record<string, string>,
+  style?: NormalizedMarkdownPdfPageChromeStyle,
 ): string {
+  const declarations: string[] = [];
+  if (style?.fontSize !== undefined) {
+    declarations.push(`font-size: ${style.fontSize};`);
+  }
+  if (style?.fontWeight !== undefined) {
+    declarations.push(`font-weight: ${style.fontWeight};`);
+  }
+  if (style?.lineHeight !== undefined) {
+    declarations.push(`line-height: ${style.lineHeight};`);
+  }
+  if (style?.color !== undefined) {
+    declarations.push(`color: ${style.color};`);
+  }
+
+  const separator = style?.separator;
+  const separatorSide = cssArea === "top" ? "bottom" : "top";
+  if (separator?.width !== undefined) {
+    declarations.push(`border-${separatorSide}-width: ${separator.width};`);
+  }
+  if (separator?.style !== undefined) {
+    declarations.push(`border-${separatorSide}-style: ${separator.style};`);
+  }
+  if (separator?.color !== undefined) {
+    declarations.push(`border-${separatorSide}-color: ${separator.color};`);
+  }
+  if (separator?.gap !== undefined) {
+    declarations.push(`padding-${separatorSide}: ${separator.gap};`);
+  }
+
+  const styleCss = declarations.map((declaration) => `    ${declaration}`).join("\n");
   return `  @${cssArea}-${slot} {
-    content: ${cssContentFromTemplate(value, metadata)};
+    content: ${cssContentFromTemplate(value, metadata)};${styleCss ? `\n${styleCss}` : ""}
   }`;
 }
 
@@ -156,7 +191,9 @@ export function createMarkdownPdfPageChromeCss(
       if (!value) {
         continue;
       }
-      genericMarginBoxes.push(marginBoxRule(cssArea, slot, value, profile.metadata));
+      genericMarginBoxes.push(
+        marginBoxRule(cssArea, slot, value, profile.metadata, slots[area].style),
+      );
     }
   }
 
@@ -193,6 +230,7 @@ export function createMarkdownPdfPageChromeCss(
               numberTarget.slot,
               pageNumbers.format,
               profile.metadata,
+              slots[numberTarget.area].style,
             ),
           ]
         : [];
@@ -222,6 +260,7 @@ export function createMarkdownPdfPageChromeCss(
         numberTarget.slot,
         pageNumbers.format,
         profile.metadata,
+        slots[numberTarget.area].style,
       ),
     );
   }

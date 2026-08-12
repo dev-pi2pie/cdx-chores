@@ -922,7 +922,15 @@ describe("Markdown PDF Codex profile adapter", () => {
     const unstyledCss = createMarkdownPdfPageChromeCss(
       normalizeMarkdownPdfProfile({ profile: unstyledProfile }).profile,
     );
-    expect(styledCss).toBe(unstyledCss);
+    expect(styledCss).not.toBe(unstyledCss);
+    expect(styledCss).toContain("font-size: 10pt;");
+    expect(styledCss).toContain("font-weight: 700;");
+    expect(styledCss).toContain("line-height: 1.5;");
+    expect(styledCss).toContain("color: #AABBCC;");
+    expect(styledCss).toContain("border-top-width: 1.5pt;");
+    expect(styledCss).toContain("border-top-style: solid;");
+    expect(styledCss).toContain("border-top-color: #112233;");
+    expect(styledCss).toContain("padding-top: 3.5mm;");
     expect(styledCss).not.toContain("#123ABC");
   });
 

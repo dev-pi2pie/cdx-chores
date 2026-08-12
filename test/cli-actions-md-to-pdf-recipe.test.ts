@@ -62,6 +62,28 @@ describe("markdown PDF recipe generation", () => {
     expect(recipe.styleCss).not.toContain("counter(pages)");
   });
 
+  test("keeps the page-chrome font family later than area typography longhands", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        fonts: { pageChrome: { default: "Profile Chrome" } },
+        header: {
+          left: "Header",
+          style: { fontSize: "8.5pt", fontWeight: 600 },
+        },
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+
+    const typographyIndex = recipe.styleCss.indexOf("font-size: 8.5pt;");
+    const fontFamilyIndex = recipe.styleCss.indexOf(
+      '@page {\n  font-family: "Profile Chrome", sans-serif;',
+    );
+    expect(typographyIndex).toBeGreaterThanOrEqual(0);
+    expect(fontFamilyIndex).toBeGreaterThan(typographyIndex);
+  });
+
   test("keeps page numbers disabled by default", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {},

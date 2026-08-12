@@ -159,11 +159,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           "    default: Profile Code",
           "  pageChrome:",
           "    default: Profile Chrome",
+          "header:",
+          "  left: Profile header",
+          "  style:",
+          "    fontSize: 8.5pt",
+          '    color: "#123456"',
           "",
         ].join("\n"),
         "utf8",
       );
-      await writeFile(templateCssPath, synthesis.styleCss, "utf8");
+      await writeFile(
+        templateCssPath,
+        `${synthesis.styleCss}\n@page {\n  @top-left {\n    font-size: 12pt;\n    color: #abcdef;\n  }\n}\n`,
+        "utf8",
+      );
 
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
@@ -200,12 +209,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedStyles[0]).toContain('font-family: "Profile Heading", sans-serif;');
       expect(renderedStyles[0]).toContain('font-family: "Profile Code", monospace;');
       expect(renderedStyles[0]).toContain('@page {\n  font-family: "Profile Chrome", sans-serif;');
+      expect(renderedStyles[0]).toContain(
+        '@top-left {\n    content: "Profile header";\n    font-size: 8.5pt;\n    color: #123456;',
+      );
+      const profileCss = renderedStyles[0] ?? "";
+      expect(profileCss.indexOf('font-family: "Profile Chrome", sans-serif;')).toBeGreaterThan(
+        profileCss.indexOf("font-size: 8.5pt;"),
+      );
       expect(renderedStyles[1]).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
       expect(renderedStyles[1]).toContain("font-size: 10.5pt;");
       expect(renderedStyles[1]).toContain("line-height: 1.5;");
       expect(renderedStyles[1]).toContain("font-family: var(--template-body-font);");
       expect(renderedStyles[1]).not.toContain("Profile Japanese");
       expect(renderedStyles[1]).not.toContain("Profile Chrome");
+      expect(renderedStyles[1]).toContain("@top-left {\n    font-size: 12pt;\n    color: #abcdef;");
       expectNoStderr();
     });
   });
