@@ -2,11 +2,19 @@ export {
   collectMarkdownPdfFormalGuideAnswers,
   collectMarkdownPdfProfileFormalGuideAnswers,
   reviseMarkdownPdfFormalGuideCode,
+  reviseMarkdownPdfFormalGuidePageChrome,
+  reviseMarkdownPdfFormalGuidePageNumbers,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
   reviseMarkdownPdfFormalGuideToc,
 } from "./collection";
-export { compileMarkdownPdfFormalGuideCode, compileMarkdownPdfFormalGuideOptions } from "./compile";
+export {
+  compileMarkdownPdfFormalGuideCode,
+  compileMarkdownPdfFormalGuideOptions,
+  compileMarkdownPdfFormalGuidePageChrome,
+  compileMarkdownPdfFormalGuidePageNumbers,
+  compileMarkdownPdfFormalGuideProfile,
+} from "./compile";
 export { createMarkdownPdfFormalGuidePrompts } from "./prompts";
 export type {
   MarkdownPdfFormalGuideAnswers,
@@ -17,11 +25,21 @@ export type {
   MarkdownPdfFormalGuideMarginAnswers,
   MarkdownPdfFormalGuideMarginPromptContext,
   MarkdownPdfFormalGuideOrientationAnswer,
+  MarkdownPdfFormalGuidePageChromeAnswers,
+  MarkdownPdfFormalGuidePageChromeAreaAnswers,
+  MarkdownPdfFormalGuidePageChromeAreaPromptContext,
+  MarkdownPdfFormalGuidePageChromeSeparatorAnswers,
+  MarkdownPdfFormalGuidePageChromeStyleAnswers,
+  MarkdownPdfFormalGuidePageNumberAnswers,
+  MarkdownPdfFormalGuidePageNumberDetails,
+  MarkdownPdfFormalGuidePageNumberDetailsPromptContext,
   MarkdownPdfFormalGuidePromptContext,
   MarkdownPdfFormalGuidePromptResult,
   MarkdownPdfFormalGuidePrompts,
   MarkdownPdfFormalGuideTocAnswers,
   MarkdownPdfFormalGuideTocDetails,
   MarkdownPdfFormalGuideTocDetailsPromptContext,
+  MarkdownPdfFormalGuideSharedGroup,
+  MarkdownPdfProfileFormalGuideGroup,
   MarkdownPdfProfileFormalGuideAnswers,
 } from "./types";

@@ -4,9 +4,24 @@ import type {
   MarkdownPdfPreset,
   MarkdownPdfTocPageBreak,
 } from "../../../markdown-pdf/validation";
-import type { MarkdownPdfCodeTheme } from "../../../markdown-pdf/profile";
+import type {
+  MarkdownPdfCodeTheme,
+  MarkdownPdfPageChromeFontWeight,
+  MarkdownPdfPageChromePosition,
+  MarkdownPdfPageChromeSeparatorStyle,
+  MarkdownPdfPageNumberCountOrigin,
+  MarkdownPdfPageNumberScope,
+} from "../../../markdown-pdf/profile";
 
-export type MarkdownPdfFormalGuideGroup = "code" | "layout" | "margins" | "toc";
+export type MarkdownPdfFormalGuideSharedGroup = "layout" | "margins" | "toc";
+
+export type MarkdownPdfProfileFormalGuideGroup =
+  | MarkdownPdfFormalGuideSharedGroup
+  | "code"
+  | "page-chrome"
+  | "page-numbers";
+
+export type MarkdownPdfFormalGuideGroup = MarkdownPdfFormalGuideSharedGroup | "code";
 
 export type MarkdownPdfFormalGuideOrientationAnswer =
   | { mode: "preset-default" }
@@ -46,6 +61,46 @@ export interface MarkdownPdfFormalGuideCodeAnswers {
   transformerNotation: boolean;
 }
 
+export interface MarkdownPdfFormalGuidePageNumberDetails {
+  position: MarkdownPdfPageChromePosition;
+  format: string;
+  countFrom: MarkdownPdfPageNumberCountOrigin;
+  start: number;
+  increment: number;
+}
+
+export interface MarkdownPdfFormalGuidePageNumberAnswers extends MarkdownPdfFormalGuidePageNumberDetails {
+  enabled: boolean;
+  scope: MarkdownPdfPageNumberScope;
+}
+
+export interface MarkdownPdfFormalGuidePageChromeSeparatorAnswers {
+  width?: string;
+  style?: MarkdownPdfPageChromeSeparatorStyle;
+  color?: string;
+  gap?: string | 0;
+}
+
+export interface MarkdownPdfFormalGuidePageChromeStyleAnswers {
+  fontSize?: string;
+  fontWeight?: MarkdownPdfPageChromeFontWeight;
+  lineHeight?: number;
+  color?: string;
+  separator?: MarkdownPdfFormalGuidePageChromeSeparatorAnswers;
+}
+
+export interface MarkdownPdfFormalGuidePageChromeAreaAnswers {
+  left: string;
+  center: string;
+  right: string;
+  style?: MarkdownPdfFormalGuidePageChromeStyleAnswers;
+}
+
+export interface MarkdownPdfFormalGuidePageChromeAnswers {
+  header: MarkdownPdfFormalGuidePageChromeAreaAnswers;
+  footer: MarkdownPdfFormalGuidePageChromeAreaAnswers;
+}
+
 export interface MarkdownPdfFormalGuideAnswers {
   layout: MarkdownPdfFormalGuideLayoutAnswers;
   margins: MarkdownPdfFormalGuideMarginAnswers;
@@ -54,6 +109,8 @@ export interface MarkdownPdfFormalGuideAnswers {
 
 export interface MarkdownPdfProfileFormalGuideAnswers extends MarkdownPdfFormalGuideAnswers {
   code: MarkdownPdfFormalGuideCodeAnswers;
+  pageChrome: MarkdownPdfFormalGuidePageChromeAnswers;
+  pageNumbers: MarkdownPdfFormalGuidePageNumberAnswers;
 }
 
 export interface MarkdownPdfFormalGuidePromptContext<TAnswers> {
@@ -66,6 +123,15 @@ export interface MarkdownPdfFormalGuideMarginPromptContext extends MarkdownPdfFo
 
 export type MarkdownPdfFormalGuideTocDetailsPromptContext =
   MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuideTocDetails>;
+
+export interface MarkdownPdfFormalGuidePageNumberDetailsPromptContext extends MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuidePageNumberDetails> {
+  countFromChoices: readonly MarkdownPdfPageNumberCountOrigin[];
+  scope: MarkdownPdfPageNumberScope;
+}
+
+export interface MarkdownPdfFormalGuidePageChromeAreaPromptContext extends MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuidePageChromeAreaAnswers> {
+  area: "header" | "footer";
+}
 
 export type MarkdownPdfFormalGuidePromptResult<T> = T | Promise<T>;
 
@@ -82,6 +148,18 @@ export interface MarkdownPdfFormalGuidePrompts {
   codeTransformerNotation(
     context: MarkdownPdfFormalGuidePromptContext<boolean>,
   ): MarkdownPdfFormalGuidePromptResult<boolean>;
+  pageNumbersEnabled(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
+  pageNumberScope(
+    context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfPageNumberScope>,
+  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfPageNumberScope>;
+  pageNumberDetails(
+    context: MarkdownPdfFormalGuidePageNumberDetailsPromptContext,
+  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuidePageNumberDetails>;
+  pageChromeArea(
+    context: MarkdownPdfFormalGuidePageChromeAreaPromptContext,
+  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuidePageChromeAreaAnswers>;
   layout(
     context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuideLayoutAnswers>,
   ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuideLayoutAnswers>;

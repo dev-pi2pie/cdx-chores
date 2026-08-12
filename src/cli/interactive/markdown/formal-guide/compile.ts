@@ -3,10 +3,21 @@ import {
   validateMarkdownPdfCssLength,
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../../markdown-pdf/validation";
-import type { NormalizedMarkdownPdfCode } from "../../../markdown-pdf/profile";
+import {
+  normalizeMarkdownPdfProfile,
+  type NormalizedMarkdownPdfCode,
+  type NormalizedMarkdownPdfPageChromeArea,
+  type NormalizedMarkdownPdfPageNumbers,
+  type NormalizedMarkdownPdfProfile,
+} from "../../../markdown-pdf/profile";
 import type {
   MarkdownPdfFormalGuideAnswers,
   MarkdownPdfFormalGuideMarginAnswers,
+  MarkdownPdfFormalGuidePageChromeAreaAnswers,
+  MarkdownPdfFormalGuidePageChromeAnswers,
+  MarkdownPdfFormalGuidePageChromeSeparatorAnswers,
+  MarkdownPdfFormalGuidePageChromeStyleAnswers,
+  MarkdownPdfFormalGuidePageNumberAnswers,
   MarkdownPdfProfileFormalGuideAnswers,
 } from "./types";
 
@@ -65,5 +76,96 @@ export function compileMarkdownPdfFormalGuideCode(
     theme: answers.code.theme,
     lineNumbers: answers.code.highlight ? answers.code.lineNumbers : false,
     transformerNotation: answers.code.highlight ? answers.code.transformerNotation : false,
+  };
+}
+
+export function compileMarkdownPdfFormalGuidePageNumbers(
+  answers: Readonly<MarkdownPdfFormalGuidePageNumberAnswers>,
+): NormalizedMarkdownPdfPageNumbers {
+  return normalizeMarkdownPdfProfile({
+    profile: {
+      pageNumbers: {
+        enabled: answers.enabled,
+        position: answers.position,
+        format: answers.format,
+        scope: answers.scope,
+        countFrom: answers.countFrom,
+        start: answers.start,
+        increment: answers.increment,
+      },
+    },
+  }).profile.pageNumbers;
+}
+
+function compilePageChromeSeparator(
+  answers: Readonly<MarkdownPdfFormalGuidePageChromeSeparatorAnswers>,
+): Record<string, unknown> {
+  return {
+    ...(answers.width !== undefined ? { width: answers.width } : {}),
+    ...(answers.style !== undefined ? { style: answers.style } : {}),
+    ...(answers.color !== undefined ? { color: answers.color } : {}),
+    ...(answers.gap !== undefined ? { gap: answers.gap } : {}),
+  };
+}
+
+function compilePageChromeStyle(
+  answers: Readonly<MarkdownPdfFormalGuidePageChromeStyleAnswers>,
+): Record<string, unknown> {
+  return {
+    ...(answers.fontSize !== undefined ? { fontSize: answers.fontSize } : {}),
+    ...(answers.fontWeight !== undefined ? { fontWeight: answers.fontWeight } : {}),
+    ...(answers.lineHeight !== undefined ? { lineHeight: answers.lineHeight } : {}),
+    ...(answers.color !== undefined ? { color: answers.color } : {}),
+    ...(answers.separator !== undefined
+      ? { separator: compilePageChromeSeparator(answers.separator) }
+      : {}),
+  };
+}
+
+function compilePageChromeArea(
+  answers: Readonly<MarkdownPdfFormalGuidePageChromeAreaAnswers>,
+): Record<string, unknown> {
+  return {
+    left: answers.left,
+    center: answers.center,
+    right: answers.right,
+    ...(answers.style !== undefined ? { style: compilePageChromeStyle(answers.style) } : {}),
+  };
+}
+
+export function compileMarkdownPdfFormalGuidePageChrome(
+  answers: Readonly<MarkdownPdfFormalGuidePageChromeAnswers>,
+): {
+  header: NormalizedMarkdownPdfPageChromeArea;
+  footer: NormalizedMarkdownPdfPageChromeArea;
+} {
+  const profile = normalizeMarkdownPdfProfile({
+    profile: {
+      header: compilePageChromeArea(answers.header),
+      footer: compilePageChromeArea(answers.footer),
+    },
+  }).profile;
+  return { header: profile.header, footer: profile.footer };
+}
+
+export function compileMarkdownPdfFormalGuideProfile(
+  answers: Readonly<MarkdownPdfProfileFormalGuideAnswers>,
+): Pick<NormalizedMarkdownPdfProfile, "code" | "header" | "footer" | "pageNumbers"> {
+  const pageChrome = compileMarkdownPdfFormalGuidePageChrome(answers.pageChrome);
+  const pageNumbers = compileMarkdownPdfFormalGuidePageNumbers(answers.pageNumbers);
+  const profile = normalizeMarkdownPdfProfile({
+    profile: {
+      code: compileMarkdownPdfFormalGuideCode(answers),
+      header: pageChrome.header,
+      footer: pageChrome.footer,
+      pageNumbers,
+    },
+  }).profile;
+
+  return {
+    code: profile.code,
+    header: profile.header,
+    footer: profile.footer,
+    pageNumbers: profile.pageNumbers,
   };
 }

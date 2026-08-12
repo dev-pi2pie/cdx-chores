@@ -5,6 +5,7 @@ import {
 } from "../../../cli/markdown-pdf/validation";
 import {
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
   MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
   MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
   MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
@@ -18,14 +19,6 @@ import {
 import type { MarkdownPdfCodexPatchPath, MarkdownPdfCodexPatchValue } from "./types";
 
 const MARKDOWN_PDF_COVER_STYLES = ["plain", "report"] as const;
-const MARKDOWN_PDF_PAGE_NUMBER_POSITIONS = [
-  "top-left",
-  "top-center",
-  "top-right",
-  "bottom-left",
-  "bottom-center",
-  "bottom-right",
-] as const;
 const MARKDOWN_PDF_METADATA_TITLE_BLOCK_MODES = ["auto", "show", "hide"] as const;
 
 export interface MarkdownPdfCodexPatchValueDomain {
@@ -38,7 +31,7 @@ export const MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS = [
   { path: "/page/orientation", values: MARKDOWN_PDF_ORIENTATIONS },
   { path: "/toc/pageBreak", values: MARKDOWN_PDF_TOC_PAGE_BREAKS },
   { path: "/cover/style", values: MARKDOWN_PDF_COVER_STYLES },
-  { path: "/pageNumbers/position", values: MARKDOWN_PDF_PAGE_NUMBER_POSITIONS },
+  { path: "/pageNumbers/position", values: MARKDOWN_PDF_PAGE_CHROME_POSITIONS },
   { path: "/pageNumbers/scope", values: MARKDOWN_PDF_PAGE_NUMBER_SCOPES },
   { path: "/pageNumbers/countFrom", values: MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS },
   { path: "/header/style/fontWeight", values: MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS },

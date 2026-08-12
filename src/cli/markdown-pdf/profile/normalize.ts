@@ -36,19 +36,15 @@ import type {
 } from "./types";
 import {
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
   MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
   MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
 } from "./types";
 
 const META_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
-const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>([
-  "top-left",
-  "top-center",
-  "top-right",
-  "bottom-left",
-  "bottom-center",
-  "bottom-right",
-]);
+const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>(
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+);
 const PAGE_NUMBER_SCOPES = new Set<MarkdownPdfPageNumberScope>(MARKDOWN_PDF_PAGE_NUMBER_SCOPES);
 const PAGE_NUMBER_COUNT_ORIGINS = new Set<MarkdownPdfPageNumberCountOrigin>(
   MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,

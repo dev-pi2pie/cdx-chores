@@ -34,13 +34,16 @@ export interface NormalizedMarkdownPdfCode {
 
 export type EffectiveMarkdownPdfCodeOptions = NormalizedMarkdownPdfCode;
 
-export type MarkdownPdfPageChromePosition =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
+export const MARKDOWN_PDF_PAGE_CHROME_POSITIONS = [
+  "top-left",
+  "top-center",
+  "top-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+] as const;
+
+export type MarkdownPdfPageChromePosition = (typeof MARKDOWN_PDF_PAGE_CHROME_POSITIONS)[number];
 
 export interface MarkdownPdfPageChromeSlots {
   left: string;
