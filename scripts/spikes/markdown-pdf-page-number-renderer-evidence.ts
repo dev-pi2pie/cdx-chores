@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { devNull, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -140,6 +140,7 @@ export interface RunRendererEvidenceOptions {
   uniqueId?: string;
   runner?: CommandRunner;
   inspectPdf?: PdfInspector;
+  materializeContract?: typeof materializePageNumberRendererContract;
   initializeMarker?: (markerPath: string) => Promise<void>;
 }
 
@@ -272,7 +273,18 @@ async function runChecked(
   runner: CommandRunner,
   request: CommandRequest,
 ): Promise<{ result: CommandResult; failure?: EvidenceFailure }> {
-  const result = await runner(request);
+  let result: CommandResult;
+  try {
+    result = await runner(request);
+  } catch (error) {
+    const commandError = error as NodeJS.ErrnoException;
+    result = {
+      exitCode: null,
+      stdout: "",
+      stderr: error instanceof Error ? error.message : String(error),
+      errorCode: commandError.code,
+    };
+  }
   return { result, failure: commandFailure(request, result) };
 }
 
@@ -550,10 +562,14 @@ function contractFailure(
 
 async function assertPngEvidence(paths: readonly string[]): Promise<string[]> {
   const mismatches: string[] = [];
+  const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   for (const path of paths) {
     try {
-      if ((await stat(path)).size <= 0) {
+      const contents = await readFile(path);
+      if (contents.length <= 0) {
         mismatches.push(`${basename(path)} is empty`);
+      } else if (!contents.subarray(0, pngSignature.length).equals(pngSignature)) {
+        mismatches.push(`${basename(path)} is not a valid PNG`);
       }
     } catch {
       mismatches.push(`${basename(path)} is missing`);
@@ -565,12 +581,28 @@ async function assertPngEvidence(paths: readonly string[]): Promise<string[]> {
 export async function runRendererEvidence(
   options: RunRendererEvidenceOptions = {},
 ): Promise<RendererEvidenceReport> {
+  const labRoot = await initializeEvidenceLaboratory(options);
+  try {
+    return await runRendererEvidenceInLaboratory(options, labRoot);
+  } catch (error) {
+    if (options.keep !== true) {
+      await closeRetainedEvidenceLaboratory(labRoot, options.temporaryRoot);
+    }
+    throw error;
+  }
+}
+
+async function runRendererEvidenceInLaboratory(
+  options: RunRendererEvidenceOptions,
+  labRoot: string,
+): Promise<RendererEvidenceReport> {
   const runner = options.runner ?? defaultCommandRunner;
   const pdfInspector = options.inspectPdf ?? inspectPdf;
-  const labRoot = await initializeEvidenceLaboratory(options);
   const failures: EvidenceFailure[] = [];
   const candidates: CandidateEvidence[] = [];
-  const contract = await materializePageNumberRendererContract(labRoot);
+  const contract = await (options.materializeContract ?? materializePageNumberRendererContract)(
+    labRoot,
+  );
   const bodyHooks = await inspectBodyHookCases(contract.bodyHookPaths);
   for (const bodyHook of bodyHooks) {
     if (!bodyHook.passed) {
@@ -730,7 +762,10 @@ export async function runRendererEvidence(
           ),
         );
       }
-      candidateResult.scenarios.push({ id: scenario.id, passed: scenarioMismatches.length === 0 });
+      candidateResult.scenarios.push({
+        id: scenario.id,
+        passed: scenarioMismatches.length === 0 && !pngCommandFailed,
+      });
     }
 
     const binDirectory = dirname(weasyprint);

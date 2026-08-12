@@ -23,7 +23,8 @@ resolved paths, or raw machine reports.
 - Starting commit: `de646be9`.
 - The worktree was clean before Phase 1 began.
 - The implementation plan is `active`.
-- The related research is `in-progress` until renderer evidence is recorded.
+- The related research remains `in-progress` while the implementation plan is
+  active; this job may close after its evidence and review gates are accepted.
 
 ## Permanent File Boundary
 

@@ -29,6 +29,7 @@ import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
 interface MockExecutionOptions {
   fail?: (request: CommandRequest) => CommandResult | undefined;
+  corruptPng?: boolean;
   skipPng?: boolean;
   inspect?: (path: string, expected: PdfEvidence) => PdfEvidence;
 }
@@ -66,7 +67,12 @@ function createMockExecution(options: MockExecutionOptions = {}) {
     if (request.stage === "png-render" && !options.skipPng) {
       const pngBase = request.argv.at(-1);
       if (!pngBase) throw new Error("mock png request has no output base");
-      await writeFile(`${pngBase}.png`, "png-evidence", "utf8");
+      await writeFile(
+        `${pngBase}.png`,
+        options.corruptPng
+          ? Buffer.from("not-a-png", "utf8")
+          : Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
+      );
     }
     if (request.stage === "environment-inspection") {
       const candidate = WEASYPRINT_CANDIDATES.find((item) =>
@@ -382,6 +388,42 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
     });
   });
 
+  test("keeps the optional repagination sentinel informative rather than gating", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const sentinel = PAGE_NUMBER_RENDERER_SCENARIOS.find((scenario) => !scenario.required);
+      expect(sentinel).toBeDefined();
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          sentinel && path.includes(`/${sentinel.id}/`)
+            ? {
+                ...expected,
+                pages: expected.pages.map((page, index) =>
+                  index === 0 ? { ...page, text: "REPAGINATION-SENTINEL-MISMATCH" } : page,
+                ),
+              }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "informative-sentinel",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("passed");
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({ scenarioId: sentinel?.id, classification: "contract-failure" }),
+      );
+      expect(
+        report.candidates.every(
+          (candidate) =>
+            candidate.scenarios.find((scenario) => scenario.id === sentinel?.id)?.passed === false,
+        ),
+      ).toBe(true);
+      expect(report.retained).toBe(false);
+    });
+  });
+
   test("rejects missing physical pages and non-finite dimensions", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const mock = createMockExecution({
@@ -445,7 +487,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
     });
   });
 
-  test("requires every selected PNG to exist and be non-empty", async () => {
+  test("requires every selected PNG to exist and carry a PNG signature", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const mock = createMockExecution({ skipPng: true });
       const report = await runRendererEvidence({
@@ -458,6 +500,19 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(report.outcome).toBe("failed");
       expect(report.failures.some((failure) => failure.message.includes("is missing"))).toBe(true);
       await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+
+      const corrupt = createMockExecution({ corruptPng: true });
+      const corruptReport = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "corrupt-png",
+        runner: corrupt.runner,
+        inspectPdf: corrupt.inspectPdf,
+      });
+      expect(corruptReport.outcome).toBe("failed");
+      expect(
+        corruptReport.failures.some((failure) => failure.message.includes("is not a valid PNG")),
+      ).toBe(true);
+      await closeRetainedEvidenceLaboratory(corruptReport.labPath, temporaryRoot);
     });
   });
 
@@ -586,6 +641,11 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(report.outcome).toBe("inconclusive");
       expect(report.failures.some((failure) => failure.stage === "png-render")).toBe(true);
       expect(
+        report.candidates.some((candidate) =>
+          candidate.scenarios.some((scenario) => scenario.passed === false),
+        ),
+      ).toBe(true);
+      expect(
         report.failures.some(
           (failure) =>
             failure.stage === "contract-extraction" &&
@@ -593,6 +653,55 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         ),
       ).toBe(false);
       await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
+  test("classifies a rejected command runner and retains its laboratory", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const mock = createMockExecution();
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "runner-rejection",
+        runner: (request) =>
+          request.stage === "setup" && request.candidateId === "wp-65-1"
+            ? Promise.reject(new Error("synthetic runner rejection"))
+            : mock.runner(request),
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("inconclusive");
+      expect(report.retained).toBe(true);
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          stage: "setup",
+          classification: "setup-failure",
+          candidateId: "wp-65-1",
+        }),
+      );
+      expect((await stat(report.labPath)).isDirectory()).toBe(true);
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
+  test("cleans the laboratory after an unexpected orchestration error", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const mock = createMockExecution();
+      await expect(
+        runRendererEvidence({
+          temporaryRoot,
+          uniqueId: "materialization-error-cleanup",
+          runner: mock.runner,
+          inspectPdf: mock.inspectPdf,
+          materializeContract: async () => {
+            throw new Error("synthetic materialization failure");
+          },
+        }),
+      ).rejects.toThrow("synthetic materialization failure");
+      expect(
+        (await readdir(temporaryRoot)).filter((entry) =>
+          entry.includes("materialization-error-cleanup"),
+        ),
+      ).toEqual([]);
     });
   });
 
