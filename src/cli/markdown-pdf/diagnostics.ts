@@ -5,16 +5,26 @@ export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
   occupiedPageNumberSlot: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
   physicalPageTotalWithLogicalSequence: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
   legacyBodyVisibilityFallback: "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
+  rendererCapabilityMissing: "MARKDOWN_PDF_RENDERER_CAPABILITY_MISSING",
+  rendererCapabilityUnsupported: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
+  rendererCapabilityUnverified: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED",
+  rendererCapabilityProbeFailed: "MARKDOWN_PDF_RENDERER_CAPABILITY_PROBE_FAILED",
+  rendererCapabilityUnknown: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNKNOWN",
 } as const;
 
 export type MarkdownPdfDiagnosticConditionId =
   (typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS)[keyof typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS];
 
+export type MarkdownPdfWarningConditionId =
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.occupiedPageNumberSlot
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.physicalPageTotalWithLogicalSequence
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyBodyVisibilityFallback;
+
 export const MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING =
   "Selected legacy Markdown PDF template has no provable .document-body boundary; body-scoped page-number visibility will use document-origin fallback behavior.";
 
 export interface MarkdownPdfDiagnostic {
-  conditionId: MarkdownPdfDiagnosticConditionId;
+  conditionId: MarkdownPdfWarningConditionId;
   severity: "warning";
   message: string;
   context:

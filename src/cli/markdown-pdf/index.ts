@@ -13,10 +13,28 @@ export {
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
 } from "./diagnostics";
+export {
+  assertMarkdownPdfRendererCapabilities,
+  assessMarkdownPdfRendererCapabilities,
+  collectMarkdownPdfRendererCapabilityRequests,
+  MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
+  MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
+  MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
+} from "./renderer-capabilities";
+export type {
+  MarkdownPdfRendererCapabilityAssessment,
+  MarkdownPdfRendererCapabilityDefinition,
+  MarkdownPdfRendererCapabilityField,
+  MarkdownPdfRendererCapabilityId,
+  MarkdownPdfRendererCapabilityRequest,
+  MarkdownPdfRendererCapabilityResult,
+  MarkdownPdfRendererCapabilityStatus,
+} from "./renderer-capabilities";
 export type {
   MarkdownPdfDiagnostic,
   MarkdownPdfDiagnosticConditionId,
   MarkdownPdfDiagnostics,
+  MarkdownPdfWarningConditionId,
 } from "./diagnostics";
 export type { MarkdownPdfCodexReportBinding } from "./codex-report-binding";
 export { renderMarkdownPdf } from "./render";
