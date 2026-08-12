@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
-modified-date: 2026-08-12
+modified-date: 2026-08-13
 status: in-progress
 agent: codex
 ---
@@ -571,11 +571,12 @@ The audit inventory is:
 
 ### Generated CSS
 
-The current generator emits ordinary page chrome globally and clears all six
-boxes on named ToC pages; cover CSS separately clears the named cover page. The
-new contract therefore requires actual scope and sequence branches. Fixtures
-must determine the named-page selectors, rule order, and specificity without
-restoring unrelated ToC headers or footers.
+Phase 4 now generates explicit document-origin and proven-body sequence rules,
+selective document/body visibility, page-number-only ToC restoration, and
+occupied-box area style. Cover CSS continues to clear the named cover page,
+while `countFrom` determines whether it participates in the sequence. The
+legacy missing-hook fallback remains document-visible and never satisfies a
+body-origin request.
 
 - document-origin page-counter reset and increment
 - first-body reset and increment for `countFrom: body`
@@ -709,15 +710,17 @@ executable-launch, or unrelated environment failure is inconclusive: retain the
 laboratory, correct the environment, and rerun the same version. It must not
 silently select a higher minimum.
 
-The recorded Phase 1 matrix passed every retained renderer-contract capability,
+The recorded renderer matrix passed every retained renderer-contract capability,
 the informative repagination sentinel, the generated and legacy body-hook
 cases, and the current-command launch control on WeasyPrint `65.1`, `68.0`, and
 `69.0`. The recorded evidence result identifies `65.1` as the capability-
 specific minimum for the retained sequence, visibility, positioning, layout,
-typography, and separator subset; Phase 1 acceptance remains pending its exact-
-range review. The linked Phase 1 job owns the exact bounded style domains and
-public-safe environment matrix. Advanced Profile controls remain unimplemented
-until the later plan phases land.
+typography, and separator subset. Phase 4 additionally passed Profile-driven
+document-origin, body-origin, selected-slot, bounded-style, and later-stylesheet
+product scenarios across the same candidates. The linked Phase 1 and Phase 4
+jobs own the bounded domains, public-safe matrix, visual review, and cleanup
+records. Later plan phases still own CLI overrides, diagnostics, Interactive
+workflows, and documentation rollout.
 
 For each render, record the command result and warnings, PDF page count and
 dimensions, extracted page-number text by physical page, and representative

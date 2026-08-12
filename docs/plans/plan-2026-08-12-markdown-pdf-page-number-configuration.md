@@ -504,42 +504,42 @@ Phase checkpoint:
       behavior with compact temporary renderer micro-smokes before selecting
       the generator strategy.
 
-- [ ] Generate document-origin reset and increment rules from normalized
+- [x] Generate document-origin reset and increment rules from normalized
       `start` and `increment`.
-- [ ] Generate first-body reset and increment rules only through the
+- [x] Generate first-body reset and increment rules only through the
       Phase 1-proven selector strategy.
-- [ ] Keep cover page numbers hidden while allowing sequence participation to
+- [x] Keep cover page numbers hidden while allowing sequence participation to
       follow `countFrom`.
-- [ ] Implement selective `scope: body` and `scope: document` visibility.
-- [ ] Restore only page-number content on eligible ToC pages without restoring
+- [x] Implement selective `scope: body` and `scope: document` visibility.
+- [x] Restore only page-number content on eligible ToC pages without restoring
       unrelated headers or footers.
 
 #### Phase 4B: Position, Style, And Cascade
 
-- [ ] Preserve all six existing positions and page-number-wins slot output.
-- [ ] Emit header/footer typography and separator CSS only for Phase 1-proven,
+- [x] Preserve all six existing positions and page-number-wins slot output.
+- [x] Emit header/footer typography and separator CSS only for Phase 1-proven,
       renderer-proven style fields.
-- [ ] Preserve `fonts.pageChrome` ownership of font family.
-- [ ] Preserve Template and user stylesheet precedence without adding
+- [x] Preserve `fonts.pageChrome` ownership of font family.
+- [x] Preserve Template and user stylesheet precedence without adding
       `!important` or a parallel stylesheet order.
-- [ ] Add deterministic CSS tests for all sequence, visibility, position,
+- [x] Add deterministic CSS tests for all sequence, visibility, position,
       style, cover, title, ToC, body, and legacy Template branches.
 
 #### Phase 4C: Product Renderer Evidence
 
-- [ ] Extend the compact Phase 1 harness with Profile-driven product scenarios
+- [x] Extend the compact Phase 1 harness with Profile-driven product scenarios
       without committing generated HTML, CSS, PDF, PNG, environment, or raw
       report artifacts.
-- [ ] Run every accepted candidate, extract expected labels by physical page,
+- [x] Run every accepted candidate, extract expected labels by physical page,
       inspect representative PNGs, and close every successful or resolved
       temporary laboratory.
-- [ ] Create and maintain
+- [x] Create and maintain
       `docs/plans/jobs/2026-08-12-markdown-pdf-page-number-phase-4-page-number-css.md`
       with selector decisions, renderer outcomes, checkpoint commits,
-      validation evidence, cleanup state, and exact-range review verdict.
+      validation evidence, and cleanup state.
 - [ ] Review the exact Phase 4 implementation and evidence commit range,
-      resolve every actionable finding, and record the final verdict before
-      beginning Phase 5.
+      resolve every actionable finding, and record the exact range and final
+      verdict in the job before beginning Phase 5.
 
 Phase checkpoint:
 

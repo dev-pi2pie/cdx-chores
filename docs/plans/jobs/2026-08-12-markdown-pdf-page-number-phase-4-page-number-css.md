@@ -35,18 +35,26 @@ the Phase 3 selected-Template compatibility boundary.
 
 - [x] Confirm the document-origin first-page reset selector and separator span
       semantics with compact temporary renderer micro-smokes.
-- [ ] 4A: Implement sequence and selective visibility behavior.
-- [ ] 4B: Implement position, bounded style, and cascade behavior.
-- [ ] 4C: Run Profile-driven product renderer extraction and visual evidence.
-- [ ] Run focused validation, type-check, lint, formatting, and build.
-- [ ] Run the full repository test suite.
+- [x] 4A: Implement sequence and selective visibility behavior.
+- [x] 4B: Implement position, bounded style, and cascade behavior.
+- [x] 4C: Run Profile-driven product renderer extraction and visual evidence.
+- [x] Run focused validation, type-check, lint, formatting, and build.
+- [x] Run the full repository test suite.
 - [ ] Review the exact Phase 4 implementation and evidence range and resolve
       every actionable finding.
 
 ## Evidence Status
 
-Phase 4 is active. The pre-generator selector and separator decisions are
-accepted; CSS-generation and product-renderer verdicts remain open.
+Phase 4 implementation and renderer evidence are complete. The phase remains
+active until the exact implementation/evidence range review closes.
+
+## Checkpoint Commits
+
+- `5adfc2ec` — Phase 4 activation and evidence lifecycle.
+- `5639a9e7` — pre-generator reset and separator renderer evidence.
+- `12a12fa6` — sequence and selective visibility CSS.
+- `572ce007` — bounded page-chrome style and cascade CSS.
+- `9842cbb9` — Profile-driven product renderer evidence harness.
 
 ## Pre-Generator Renderer Evidence
 
@@ -64,6 +72,41 @@ accepted; CSS-generation and product-renderer verdicts remain open.
 - The successful temporary laboratory was closed after visual review. Earlier
   inconclusive setup attempts were not treated as renderer evidence and their
   owned laboratories were also closed.
+
+## Product Renderer Evidence
+
+- WeasyPrint 65.1, 68.0, and 69.0 passed seven direct renderer-contract cases,
+  selected-version doctor checks, the current-command launch control, and three
+  Profile-driven product scenarios with zero automated failures.
+- Product scenarios cover built-in document-origin numbering with cover and
+  ToC pages, explicit proven-body numbering with bounded page-chrome style, and
+  later custom-stylesheet precedence over Profile presentation.
+- Automated checks prove exact physical-page order and labels, forbidden
+  displaced-slot text, A5 dimensions and orientation, selected margin-box
+  regions, complete decodable PNG output, selected CLI entrypoint, and selected
+  renderer candidate.
+- The harness correctly reported `evidenceStatus: visual-review-required` for
+  font, typography, color, separator, and stylesheet-cascade assertions. Manual
+  review completed those assertions: representative images were legible,
+  unclipped, non-overlapping, correctly positioned, and showed the expected
+  separator and later-stylesheet presentation changes.
+- Every successful or resolved owned temporary laboratory was closed after
+  extraction and visual review. No generated renderer artifact was committed.
+
+## Validation
+
+- Phase 4B focused suite: 57 passed, 0 failed.
+- Broad Markdown PDF regression slice: 901 passed, 0 failed.
+- Renderer-evidence harness: 26 passed, 0 failed.
+- Full repository suite at `9842cbb9`: 1,950 passed, 0 failed.
+- TypeScript type-check, lint, formatting, production build, and
+  `git diff --check`: passed.
+
+## Provisional Verdict
+
+**Continue after exact-range review.** The CSS generator and renderer evidence
+agree on accepted sequence, visibility, position, style, separator, and
+stylesheet-precedence behavior across the retained renderer matrix.
 
 ## Temporary Evidence Lifecycle
 
