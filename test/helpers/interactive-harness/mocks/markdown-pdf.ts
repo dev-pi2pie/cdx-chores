@@ -220,7 +220,58 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                     styleCss: { path: resolve(suggestedOutput, "style.css") },
                     templateHtml: { path: resolve(suggestedOutput, "template.html") },
                   },
-                  reportArtifact: { unsupportedDirections: [] },
+                  reportArtifact: {
+                    handoff: context.scenario.markdownPdfCodexProjectHandoff ?? {
+                      profile: {
+                        id: "md-pdf-profile-20260101T000000Z-abc12345",
+                        bundlePath: "profile.yml",
+                      },
+                      artifacts: { availability: unusable ? "unavailable" : "planned" },
+                      render: unusable
+                        ? { usability: "unavailable" }
+                        : {
+                            usability: "planned",
+                            command: {
+                              executable: "cdx-chores",
+                              args: [
+                                "md",
+                                "to-pdf",
+                                "--input",
+                                "fixtures/report.md",
+                                "--bundle",
+                                suggestedOutput,
+                                "--output",
+                                "<output.pdf>",
+                              ],
+                              display: `cdx-chores 'md' 'to-pdf' '--input' 'fixtures/report.md' '--bundle' '${suggestedOutput}' '--output' '<output.pdf>'`,
+                            },
+                          },
+                      diagnostics: [],
+                      capabilityRequirements: [],
+                    },
+                    managedAssets: [],
+                    files: unusable
+                      ? []
+                      : [
+                          { role: "profile", bundlePath: "profile.yml", planned: true },
+                          {
+                            role: "template-html",
+                            bundlePath: "template.html",
+                            planned: true,
+                          },
+                          { role: "style-css", bundlePath: "style.css", planned: true },
+                        ],
+                    phases: {
+                      profile: { decisionMode: "generated" },
+                      template: { decisionMode: "generated" },
+                    },
+                    project: {
+                      decisionMode: unusable ? "no-usable-project" : "generated",
+                      signalMode: setup.sample ? "document-informed" : "intent-only",
+                    },
+                    unsupportedDirections: [],
+                    validationResults: [{ name: "profile-normalization", status: "passed" }],
+                  },
                   validation: {
                     decisionMode: unusable ? "no-usable-project" : "generated",
                     results: [{ name: "profile-normalization", status: "passed" }],
@@ -232,7 +283,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   styleCss: { bundlePath: "style.css" },
                   templateHtml: { bundlePath: "template.html" },
                 },
-                profilePhase: { finalProfile: { code: GENERATED_CODE } },
+                profilePhase: {
+                  finalProfile: context.scenario.markdownPdfCodexFinalProfile ?? {
+                    code: GENERATED_CODE,
+                  },
+                },
                 signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
                 templatePhase: { synthesis: { fontDecisions: [] } },
               };

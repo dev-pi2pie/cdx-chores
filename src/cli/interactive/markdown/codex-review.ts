@@ -21,6 +21,7 @@ import {
   collectMarkdownPdfProfileAuthoringReview,
   formatMarkdownPdfProfileAuthoringReview,
 } from "../../markdown-pdf/profile-authoring-review";
+import { formatMdPdfProjectCodexHandoffReview } from "../../markdown-pdf/project-codex/summary";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -157,8 +158,10 @@ export function renderMarkdownPdfCodexCandidateReview(
   }
   printLine(runtime.stderr, `Artifact: ${MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[candidate.artifact]}`);
   printLine(runtime.stderr, "Preparation mode: Codex Assistant");
-  printLine(runtime.stderr, `Signal mode: ${candidateSignalMode(candidate)}`);
-  printLine(runtime.stderr, `Decision: ${candidateDecision(candidate)}`);
+  if (candidate.artifact !== "project-bundle") {
+    printLine(runtime.stderr, `Signal mode: ${candidateSignalMode(candidate)}`);
+    printLine(runtime.stderr, `Decision: ${candidateDecision(candidate)}`);
+  }
   printLine(
     runtime.stderr,
     `Codex request: ${isUsableMarkdownPdfCodexCandidate(candidate) ? "completed" : "no usable candidate"}`,
@@ -205,10 +208,20 @@ export function renderMarkdownPdfCodexCandidateReview(
       printLine(runtime.stderr, line);
     }
   }
-  printLine(runtime.stderr, "");
-  printLine(runtime.stderr, "Planned recipe files:");
-  for (const file of plannedFiles(candidate)) {
-    printLine(runtime.stderr, `- ${file}`);
+  if (candidate.artifact === "project-bundle") {
+    printLine(runtime.stderr, "");
+    for (const line of formatMdPdfProjectCodexHandoffReview({
+      finalProfile: candidate.prepared.profilePhase.finalProfile,
+      reportArtifact: candidate.prepared.binding.reportArtifact,
+    })) {
+      printLine(runtime.stderr, line);
+    }
+  } else {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, "Planned recipe files:");
+    for (const file of plannedFiles(candidate)) {
+      printLine(runtime.stderr, `- ${file}`);
+    }
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Dry run: no files have been written.");

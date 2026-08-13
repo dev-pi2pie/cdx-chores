@@ -14,9 +14,11 @@ import {
   planMdPdfProjectCodexOutput,
   runMdPdfProjectCodexProfilePhase,
   runMdPdfProjectCodexTemplatePhase,
+  validateMdPdfProjectBundleCompleteness,
   validateMdPdfProjectCodexProject,
   writeMdPdfProjectCodexBundle,
   writeMdPdfProjectCodexReportArtifact,
+  writeMdPdfProjectCodexReportIfRequested,
   type MarkdownPdfProjectCodexReportArtifact,
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
@@ -39,6 +41,7 @@ const SENSITIVE_REPORT_TEXT =
 
 const SENSITIVE_DIAGNOSTIC_TEXT =
   "Rejected /Users/alice/private/style.css, file:///Users/alice/private/style.css, ssh://host/private/style.css, smb://server/share/style.css, vscode://file/secrets/style.css, C:\\Users\\Alice\\style.css, \\\\server\\share\\style.css, ./secrets/style.css, ../drafts/style.css, assets/internal-style.css, and https://example.test/private?token=abc from localhost:3000, 127.0.0.1:3000, 127.1:3000, 2130706433:3000, and [::1]:3000";
+const TERMINAL_CONTROL_DIAGNOSTIC_TEXT = `${SENSITIVE_DIAGNOSTIC_TEXT} \u001B[31munsafe\u001B[0m \u0007bell`;
 
 function adaptedProfileRunner(unmatchedDirections: string[] = []): MarkdownPdfCodexProfileRunner {
   return async ({ prompt }) =>
@@ -252,6 +255,113 @@ async function prepareWriteValidationFixture(
 }
 
 describe("cli action modules: md pdf-project codex action writes", () => {
+  test("reviews the contained Profile policy separately through the public handoff", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-action-handoff-review", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "profile:",
+          "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+          "  source: deterministic",
+          "  createdAt: 2026-01-01T00:00:00Z",
+          "header:",
+          "  center: Existing page chrome",
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: document",
+          "  countFrom: document",
+          "  start: 4",
+          "  increment: 2",
+          "  position: top-center",
+          "  format: 'Page /Users/alice/private/{page} of {pages}'",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        dryRun: true,
+        output: "project-output",
+        identityUidFactory: () => "abc12345",
+      });
+
+      expect(stdout.text).toContain("Contained Profile:");
+      expect(stdout.text).toContain("Effective page numbers: enabled=yes, scope=document");
+      expect(stdout.text).toContain("Capability requirements:");
+      expect(stdout.text).toContain("pageNumbers.start (minimum 65.1");
+      expect(stdout.text).toContain("Template presentation:");
+      expect(stdout.text).toContain("Project orchestration:");
+      expect(stdout.text).toContain("Project artifacts: planned");
+      expect(stdout.text).toContain("Follow-up render usability: planned");
+      expect(stdout.text).toContain("Project warning [MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED]");
+      expect(
+        stdout.text.match(/Project warning \[MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED\]/g),
+      ).toHaveLength(1);
+      expect(stdout.text).toContain(
+        "Project warning [MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE]",
+      );
+      expect(
+        stdout.text.match(
+          /Project warning \[MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE\]/g,
+        ),
+      ).toHaveLength(1);
+      expect(stdout.text).toContain("Follow-up render: cdx-chores");
+      expect(stdout.text).not.toContain("--enable-page-numbers");
+      expect(stdout.text).not.toContain("--disable-page-numbers");
+      expect(stdout.text).toContain("[redacted-path]");
+      expect(stdout.text).not.toContain("/Users/alice/private");
+    });
+  });
+
+  test("reviews disabled page numbers without unnecessary capabilities or unsafe flags", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-action-disabled-review", async (fixtureDir) => {
+      const inputName = "client's report.md";
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "pageNumbers:",
+          "  enabled: false",
+          "  scope: document",
+          "  countFrom: document",
+          "  start: 0",
+          "  increment: 2",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(join(fixtureDir, inputName), "# Disabled page numbers\n", "utf8");
+      const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        dryRun: true,
+        input: inputName,
+        output: "project bundle",
+        identityUidFactory: () => "abc12345",
+        profileCodexRunner: adaptedProfileRunner(),
+      });
+
+      expect(stdout.text).toContain(
+        "Effective page numbers: enabled=no, scope=document, countFrom=document, start=0, increment=2",
+      );
+      expect(stdout.text).toContain("Capability requirements: none");
+      expect(stdout.text).not.toContain("Project warning [");
+      expect(stdout.text).toContain("'--input' 'client'\\''s report.md'");
+      expect(stdout.text).toContain("'--bundle' 'project bundle'");
+      for (const forbiddenFlag of [
+        "--profile",
+        "--template",
+        "--css",
+        "--enable-page-numbers",
+        "--disable-page-numbers",
+      ]) {
+        expect(stdout.text).not.toContain(forbiddenFlag);
+      }
+    });
+  });
+
   test("writes only requested advisory reports during dry runs", async () => {
     await withTempFixtureDir("md-pdf-project-codex-action-dry-run-report", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "project-output");
@@ -301,6 +411,10 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         files: Array<{ role: string }>;
         followUpRenderCommand: { args: string[]; display: string; executable: string };
         identities: Record<string, unknown>;
+        handoff: {
+          artifacts: { availability: string };
+          render: { usability: string; command?: { args: string[] } };
+        };
         input: { baseProfile: { basename: string; display: string; redacted: boolean } };
         project: { decisionMode: string; signalMode: string };
         version: number;
@@ -321,12 +435,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         basename: "base.yml",
         redacted: false,
       });
-      expect(report.files.map((file) => file.role)).toEqual([
-        "profile",
-        "template-html",
-        "style-css",
-        "project-report",
-      ]);
+      expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
       expect(report.followUpRenderCommand).toMatchObject({
         executable: "cdx-chores",
         args: [
@@ -344,6 +453,13 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(report.followUpRenderCommand.display).toContain("'<input.md>'");
       expect(report.followUpRenderCommand.display).toContain("'<output.pdf>'");
       expect(report.followUpRenderCommand.display).not.toContain(fixtureDir);
+      expect(report.handoff).toMatchObject({
+        artifacts: { availability: "planned" },
+        render: {
+          usability: "planned",
+          command: { args: report.followUpRenderCommand.args },
+        },
+      });
     });
   });
 
@@ -422,6 +538,90 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
       expect(await readFile(reportPath, "utf8")).toBe("existing report\n");
     });
+  });
+
+  test("keeps repo-relative external report references usable and private targets basename-only", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-external-report-reference",
+      async (fixtureDir) => {
+        await mkdir(join(fixtureDir, "reports"), { recursive: true });
+        await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-07-04T08:00:00.000Z"),
+        });
+        const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+          baseProfile: "base.yml",
+          codexReportOutput: "reports/project.json",
+          dryRun: true,
+          output: "project-output",
+        });
+        const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+        const outputPlan = await planMdPdfProjectCodexOutput({
+          identityUidFactory: () => "abc12345",
+          runtime,
+          signalMode: signals.modes.project,
+          state,
+          writeMode: "report-only",
+        });
+        const profilePhase = await runMdPdfProjectCodexProfilePhase({
+          outputPlan,
+          runtime,
+          signals,
+          state,
+        });
+        const templatePhase = await runMdPdfProjectCodexTemplatePhase({
+          outputPlan,
+          profilePhase,
+          runtime,
+          signals,
+          state,
+        });
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase,
+        });
+
+        const report = createMdPdfProjectCodexReportArtifact({
+          outputPlan,
+          profilePhase,
+          runtime,
+          signals,
+          state,
+          templatePhase,
+          validation,
+        });
+        expect(report.files.find((file) => file.role === "project-report")).toMatchObject({
+          path: "reports/project.json",
+        });
+
+        if (!outputPlan.report || outputPlan.report.location !== "external") {
+          throw new Error("expected external Project report");
+        }
+        const privateReportPath = join(fixtureDir, "..", "private-client", "project.json");
+        const privateReport = createMdPdfProjectCodexReportArtifact({
+          outputPlan: {
+            ...outputPlan,
+            report: { location: "external", path: privateReportPath },
+          },
+          profilePhase,
+          runtime,
+          signals,
+          state,
+          templatePhase,
+          validation,
+        });
+        expect(privateReport.files.find((file) => file.role === "project-report")).toMatchObject({
+          path: "project.json",
+        });
+        expect(JSON.stringify(privateReport)).not.toContain(privateReportPath);
+        expect(JSON.stringify(privateReport)).not.toContain("private-client");
+      },
+    );
   });
 
   test("redacts local output directory paths from validation errors", async () => {
@@ -579,6 +779,8 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(stdout.text).toContain("Output directory: project-output");
       expect(stdout.text).toContain("Codex report: project-output/project.codex-report.json");
       expect(stdout.text).toContain("Managed assets: 1");
+      expect(stdout.text).toContain("Project artifacts: written");
+      expect(stdout.text).toContain("Follow-up render usability: usable");
       expect(stderr.text).toContain("Wrote Markdown PDF project bundle:");
       expect(stderr.text).toContain("project-output");
       expectPrivacySafeReport(stdout.text, fixtureDir);
@@ -588,9 +790,23 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
       expect(await pathExists(join(outputPath, "assets", "cover.png"))).toBe(true);
 
+      const completeBundle = await validateMdPdfProjectBundleCompleteness(outputPath);
+      expect(completeBundle).toMatchObject({
+        assets: [join(outputPath, "assets", "cover.png")],
+        css: join(outputPath, "style.css"),
+        profile: join(outputPath, "profile.yml"),
+        reports: [reportPath],
+        template: join(outputPath, "template.html"),
+      });
+
       const reportText = await readFile(reportPath, "utf8");
       expectPrivacySafeReport(reportText, fixtureDir);
       const report = JSON.parse(reportText) as {
+        handoff: {
+          artifacts: { availability: string };
+          profile: { bundlePath: string; id: string };
+          render: { usability: string; command?: unknown };
+        };
         input: {
           coverImage: {
             dimensions: { height: number; width: number };
@@ -612,6 +828,36 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           source: { display: "cover.png", basename: "cover.png", redacted: true },
         }),
       ]);
+      expect(report.handoff).toMatchObject({
+        profile: {
+          id: "md-pdf-profile-20260704T080000Z-abc12345",
+          bundlePath: "profile.yml",
+        },
+        artifacts: { availability: "written" },
+        render: { usability: "usable" },
+      });
+    });
+  });
+
+  test("shows a usable written handoff after a successful bundle without a report", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-action-bundle-no-report", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        output: "project-output",
+        identityUidFactory: () => "abc12345",
+      });
+
+      expect(stdout.text).toContain("Project artifacts: written");
+      expect(stdout.text).toContain("Follow-up render usability: usable");
+      expect(stdout.text).not.toContain("Project artifacts: planned");
+      expect(stdout.text).not.toContain("Follow-up render usability: planned");
+      expect(stdout.text).not.toContain("Codex report:");
+      expect(await pathExists(join(fixtureDir, "project-output", "profile.yml"))).toBe(true);
+      expect(await pathExists(join(fixtureDir, "project-output", "template.html"))).toBe(true);
+      expect(await pathExists(join(fixtureDir, "project-output", "style.css"))).toBe(true);
     });
   });
 
@@ -1007,6 +1253,19 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           state,
           templatePhase,
         });
+        const reportArtifact = createMdPdfProjectCodexReportArtifact({
+          outputPlan,
+          profilePhase,
+          runtime,
+          signals,
+          state,
+          templatePhase,
+          validation,
+        });
+        expect(reportArtifact.handoff).toMatchObject({
+          artifacts: { availability: "planned" },
+          render: { usability: "planned" },
+        });
 
         await rm(coverPath);
         await writeFile(targetPath, minimalPng(1200, 800));
@@ -1017,6 +1276,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
             writeMdPdfProjectCodexBundle({
               outputPlan,
               profilePhase,
+              reportArtifact,
               runtime,
               signals,
               state,
@@ -1031,7 +1291,17 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         );
 
         expectPrivacySafeReport(error.message, fixtureDir);
+        expect(await pathExists(outputPlan.profile.path)).toBe(true);
+        expect(await pathExists(outputPlan.templateHtml.path)).toBe(true);
+        expect(await pathExists(outputPlan.styleCss.path)).toBe(true);
+        expect(await pathExists(join(outputPlan.outputDirectory, "assets", "cover.png"))).toBe(
+          false,
+        );
         expect(await pathExists(reportPath)).toBe(false);
+        expect(reportArtifact.handoff).toMatchObject({
+          artifacts: { availability: "planned" },
+          render: { usability: "planned" },
+        });
       },
     );
   });
@@ -1234,12 +1504,23 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         const report = JSON.parse(reportText) as {
           files: Array<{ role: string }>;
           followUpRenderCommand?: unknown;
+          handoff: {
+            artifacts: { availability: string };
+            diagnostics: Array<{ conditionId: string; message: string }>;
+            render: { usability: string; command?: unknown };
+          };
           validationResults: Array<{ message?: string; name: string; status: string }>;
         };
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
         expect(report.followUpRenderCommand).toBeUndefined();
-        expect(report).not.toHaveProperty("diagnostics");
-        expect(report).not.toHaveProperty("capabilityRequirements");
+        expect(report.handoff).toMatchObject({
+          artifacts: { availability: "unavailable" },
+          render: { usability: "unavailable" },
+          diagnostics: [
+            expect.objectContaining({ conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED" }),
+          ],
+        });
+        expect(report.handoff.render).not.toHaveProperty("command");
         expect(report.validationResults).toContainEqual({
           message:
             "The generated Project Template requires exactly one .document-body element containing the single live $body$ insertion point (found missing-hook).",
@@ -1340,6 +1621,10 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       const report = JSON.parse(reportText) as {
         files: Array<{ role: string }>;
         followUpRenderCommand?: unknown;
+        handoff: {
+          artifacts: { availability: string };
+          render: { usability: string; command?: unknown };
+        };
         project: { decisionMode: string; fallbackReason: string };
       };
       expect(report.project).toMatchObject({
@@ -1348,6 +1633,11 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       });
       expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
       expect(report.followUpRenderCommand).toBeUndefined();
+      expect(report.handoff).toMatchObject({
+        artifacts: { availability: "unavailable" },
+        render: { usability: "unavailable" },
+      });
+      expect(report.handoff.render).not.toHaveProperty("command");
     });
   });
 
@@ -1444,6 +1734,11 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         expectPrivacySafeReport(reportText, fixtureDir);
         const report = JSON.parse(reportText) as {
           files: Array<{ role: string }>;
+          followUpRenderCommand?: unknown;
+          handoff: {
+            artifacts: { availability: string };
+            render: { usability: string; command?: unknown };
+          };
           project: { decisionMode: string; fallbackReason: string };
         };
         expect(report.project).toMatchObject({
@@ -1451,6 +1746,12 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           fallbackReason: reason,
         });
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
+        expect(report.followUpRenderCommand).toBeUndefined();
+        expect(report.handoff).toMatchObject({
+          artifacts: { availability: "unavailable" },
+          render: { usability: "unavailable" },
+        });
+        expect(report.handoff.render).not.toHaveProperty("command");
       },
     );
   });
@@ -1481,7 +1782,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
               keepCodexReport: true,
               profileCodexRunner: adaptedProfileRunner(),
               templateCodexRunner: stubTemplateRunner(
-                noUsableTemplateResponse(SENSITIVE_DIAGNOSTIC_TEXT),
+                noUsableTemplateResponse(TERMINAL_CONTROL_DIAGNOSTIC_TEXT),
               ),
               identityUidFactory: () => "abc12345",
             }),
@@ -1494,11 +1795,19 @@ describe("cli action modules: md pdf-project codex action writes", () => {
 
         expect(error.message).toContain("[redacted-url]");
         expect(error.message).toContain("[redacted-host]");
+        expect(error.message).not.toContain("\u001B");
+        expect(error.message).not.toContain("\u0007");
+        expect(error.message).toContain("\\u001b");
+        expect(error.message).toContain("\\u0007");
         expect(stdout.text).toContain("Fallback reason:");
         expect(stdout.text).toContain("Unsupported direction:");
         expect(stdout.text).toContain("[redacted-path]");
         expect(stdout.text).toContain("[redacted-url]");
         expect(stdout.text).toContain("[redacted-host]");
+        expect(stdout.text).not.toContain("\u001B");
+        expect(stdout.text).not.toContain("\u0007");
+        expect(stdout.text).toContain("\\u001b");
+        expect(stdout.text).toContain("\\u0007");
         expectPrivacySafeReport(error.message, fixtureDir);
         expectPrivacySafeReport(stdout.text, fixtureDir);
         expectPrivacySafeReport(stderr.text, fixtureDir);
@@ -1562,7 +1871,47 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         templatePhase,
         validation: {
           ...validation,
+          diagnostics: {
+            conditions: [
+              {
+                conditionId: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+                severity: "warning",
+                context: {
+                  kind: "occupied-page-number-slot",
+                  position: "top-center",
+                  area: "header",
+                  slot: "center",
+                },
+                message: SENSITIVE_DIAGNOSTIC_TEXT,
+              },
+              {
+                conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+                severity: "warning",
+                context: {
+                  kind: "physical-page-total-with-logical-sequence",
+                  countFrom: "body",
+                  start: 4,
+                  increment: 2,
+                },
+                message: "Physical total uses the PDF page count.",
+              },
+              {
+                conditionId: "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
+                severity: "warning",
+                context: {
+                  kind: "legacy-body-visibility-fallback",
+                  bodyBoundary: "legacy-document-origin-fallback",
+                },
+                message: "Legacy body visibility fallback applies.",
+              },
+            ],
+          },
           fallbackReason: SENSITIVE_DIAGNOSTIC_TEXT,
+          renderCommand: {
+            executable: "cdx-chores",
+            args: [SENSITIVE_DIAGNOSTIC_TEXT],
+            display: SENSITIVE_DIAGNOSTIC_TEXT,
+          },
           results: [
             ...validation.results,
             { name: "raw-reference", status: "failed", message: SENSITIVE_DIAGNOSTIC_TEXT },
@@ -1576,7 +1925,213 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expectRedactedReportText(report.phases.template.warnings[0] ?? "");
       expectRedactedReportText(report.unsupportedDirections[0] ?? "");
       expectRedactedReportText(report.validationResults.at(-1)?.message ?? "");
+      expectRedactedReportText(report.handoff.diagnostics[0]?.message ?? "");
+      expect(report.handoff.diagnostics.map((diagnostic) => diagnostic.conditionId)).toEqual([
+        "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+        "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+        "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
+      ]);
+      expect(report.handoff.render).toMatchObject({
+        usability: "planned",
+        command: {
+          executable: "cdx-chores",
+          args: [
+            "md",
+            "to-pdf",
+            "--input",
+            "<input.md>",
+            "--bundle",
+            "project-output",
+            "--output",
+            "<output.pdf>",
+          ],
+        },
+      });
+      expect(JSON.stringify(report.handoff.render)).not.toContain(SENSITIVE_DIAGNOSTIC_TEXT);
       expectPrivacySafeReport(JSON.stringify(report), fixtureDir);
+
+      await writeMdPdfProjectCodexReportIfRequested({
+        outputPlan,
+        profilePhase,
+        runtime,
+        signals,
+        state,
+        templatePhase,
+        validation,
+      });
+      if (!outputPlan.report) {
+        throw new Error("expected report-only output plan");
+      }
+      const reportOnlyArtifact = JSON.parse(await readFile(outputPlan.report.path, "utf8")) as {
+        files: Array<{ role: string }>;
+        handoff: {
+          artifacts: { availability: string };
+          render: { usability: string; command?: unknown };
+        };
+      };
+      expect(reportOnlyArtifact.files.map((file) => file.role)).toEqual(["project-report"]);
+      expect(reportOnlyArtifact.handoff).toMatchObject({
+        artifacts: { availability: "planned" },
+        render: { usability: "planned" },
+      });
+      expect(reportOnlyArtifact.handoff.render).toHaveProperty("command");
+      expect(await pathExists(outputPlan.profile.path)).toBe(false);
+      expect(await pathExists(outputPlan.templateHtml.path)).toBe(false);
+      expect(await pathExists(outputPlan.styleCss.path)).toBe(false);
+
+      const occupiedSlotDiagnostic = {
+        conditionId: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+        severity: "warning",
+        context: {
+          kind: "occupied-page-number-slot",
+          position: "top-center",
+          area: "header",
+          slot: "center",
+        },
+        message: "Page-number slot occupied.",
+      } as const;
+      const rejectionCases: Array<{
+        expected: string;
+        label: string;
+        validation: typeof validation;
+      }> = [
+        {
+          label: "diagnostic root unknown key",
+          expected: "Project handoff diagnostic contains unsupported fields.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [
+                { ...occupiedSlotDiagnostic, rawDiagnostic: SENSITIVE_DIAGNOSTIC_TEXT } as never,
+              ],
+            },
+          },
+        },
+        {
+          label: "diagnostic context unknown key",
+          expected: "Project handoff diagnostic context contains unsupported fields.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [
+                {
+                  ...occupiedSlotDiagnostic,
+                  context: {
+                    ...occupiedSlotDiagnostic.context,
+                    rawDiagnostic: SENSITIVE_DIAGNOSTIC_TEXT,
+                  },
+                } as never,
+              ],
+            },
+          },
+        },
+        {
+          label: "unknown diagnostic condition",
+          expected: "Project handoff diagnostic condition is unsupported.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [
+                {
+                  ...occupiedSlotDiagnostic,
+                  conditionId: "MARKDOWN_PDF_PRIVATE_DIAGNOSTIC",
+                } as never,
+              ],
+            },
+          },
+        },
+        {
+          label: "diagnostic severity mismatch",
+          expected: "Project handoff diagnostic severity is unsupported.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [{ ...occupiedSlotDiagnostic, severity: "error" } as never],
+            },
+          },
+        },
+        {
+          label: "slot and position mismatch",
+          expected: "Project handoff diagnostic slot does not match its position.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [
+                {
+                  ...occupiedSlotDiagnostic,
+                  context: { ...occupiedSlotDiagnostic.context, area: "footer" },
+                },
+              ],
+            },
+          },
+        },
+        {
+          label: "unbounded page-number arithmetic",
+          expected: "Project handoff diagnostic start must be a bounded integer.",
+          validation: {
+            ...validation,
+            diagnostics: {
+              conditions: [
+                {
+                  conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+                  severity: "warning",
+                  context: {
+                    kind: "physical-page-total-with-logical-sequence",
+                    countFrom: "document",
+                    start: Number.MAX_SAFE_INTEGER + 1,
+                    increment: 1,
+                  },
+                  message: "Physical page total uses logical arithmetic.",
+                },
+              ],
+            },
+          },
+        },
+        {
+          label: "duplicate capability requesting field",
+          expected: "Project handoff capability requesting fields are unsupported.",
+          validation: {
+            ...validation,
+            capabilityRequirements: [
+              {
+                capabilityId: "pageNumbers.start",
+                requestedBy: ["pageNumbers.start", "pageNumbers.start"],
+                minimumVersion: "65.1",
+              },
+            ],
+          },
+        },
+        {
+          label: "unknown capability requesting field",
+          expected: "Project handoff capability requesting fields are unsupported.",
+          validation: {
+            ...validation,
+            capabilityRequirements: [
+              {
+                capabilityId: "pageNumbers.start",
+                requestedBy: [SENSITIVE_DIAGNOSTIC_TEXT],
+                minimumVersion: "65.1",
+              } as never,
+            ],
+          },
+        },
+      ];
+
+      for (const rejection of rejectionCases) {
+        expect(
+          () =>
+            createMdPdfProjectCodexReportArtifact({
+              outputPlan,
+              profilePhase,
+              runtime,
+              signals,
+              state,
+              templatePhase,
+              validation: rejection.validation,
+            }),
+          rejection.label,
+        ).toThrow(rejection.expected);
+      }
     });
   });
 });

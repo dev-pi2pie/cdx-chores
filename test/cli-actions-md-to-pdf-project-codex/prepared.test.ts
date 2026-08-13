@@ -130,6 +130,12 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
             status: "failed",
           }),
         );
+        expect(prepared.binding.outputPlan.report).toBeUndefined();
+        expect(prepared.binding.reportArtifact.handoff).toMatchObject({
+          artifacts: { availability: "unavailable" },
+          render: { usability: "unavailable" },
+        });
+        expect(prepared.binding.reportArtifact.handoff.render).not.toHaveProperty("command");
         expect(events).toEqual([
           "start:Requesting Codex Markdown PDF project profile recommendation",
           "update:Requesting Codex Markdown PDF project template recommendation",
@@ -140,7 +146,7 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
     );
   });
 
-  test("returns shared diagnostics and capability requirements without serializing Phase 9 fields", async () => {
+  test("projects shared diagnostics and capability requirements into a planned handoff", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-prepared-page-validation",
       async (fixtureDir) => {
@@ -188,8 +194,34 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
             requestedBy: ["pageNumbers.scope"],
           },
         ]);
-        expect(prepared.binding.reportArtifact).not.toHaveProperty("diagnostics");
-        expect(prepared.binding.reportArtifact).not.toHaveProperty("capabilityRequirements");
+        const renderCommand = prepared.binding.validation.renderCommand;
+        expect(renderCommand).toBeDefined();
+        if (!renderCommand) {
+          throw new Error("expected planned Project render command");
+        }
+        expect(prepared.binding.reportArtifact.handoff).toEqual({
+          profile: {
+            id: prepared.binding.outputPlan.identity.profileId,
+            bundlePath: "profile.yml",
+          },
+          artifacts: { availability: "planned" },
+          render: {
+            usability: "planned",
+            command: renderCommand,
+          },
+          diagnostics: prepared.binding.validation.diagnostics.conditions,
+          capabilityRequirements: prepared.binding.validation.capabilityRequirements,
+        });
+        expect(prepared.binding.reportArtifact.handoff).not.toHaveProperty("pageNumbers");
+        expect(prepared.binding.reportArtifact.handoff).not.toHaveProperty("renderer");
+        expect(
+          prepared.binding.reportArtifact.handoff.capabilityRequirements.map((requirement) =>
+            Object.keys(requirement).sort(),
+          ),
+        ).toEqual([
+          ["capabilityId", "minimumVersion", "requestedBy"],
+          ["capabilityId", "minimumVersion", "requestedBy"],
+        ]);
         expect(await readdir(fixtureDir)).toEqual(filesBefore);
         expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
       },
@@ -349,7 +381,11 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
       ).toBe(originalCover.toString("base64"));
       const report = JSON.parse(
         await readFile(join(fixtureDir, "accepted-project", "project.codex-report.json"), "utf8"),
-      ) as { followUpRenderCommand: { args: string[] }; identities: Record<string, string> };
+      ) as {
+        followUpRenderCommand: { args: string[] };
+        handoff: { artifacts: { availability: string }; render: { usability: string } };
+        identities: Record<string, string>;
+      };
       expect(report.identities).toEqual({
         projectBundleId: prepared.identity.projectBundleId,
         profileId: prepared.identity.profileId,
@@ -357,6 +393,14 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         createdAt: prepared.identity.createdAt,
       });
       expect(report.followUpRenderCommand.args).toContain("accepted-project");
+      expect(report.handoff).toMatchObject({
+        artifacts: { availability: "written" },
+        render: { usability: "usable" },
+      });
+      expect(rebound.binding.reportArtifact.handoff).toMatchObject({
+        artifacts: { availability: "planned" },
+        render: { usability: "planned" },
+      });
 
       await expectCliError(
         () =>

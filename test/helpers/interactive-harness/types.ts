@@ -9,6 +9,7 @@ export interface InteractiveHarnessScenario {
   markdownPdfDeterministicWriteErrorMessages?: string[];
   markdownPdfCodexBindErrorMessage?: string;
   markdownPdfCodexFinalProfile?: Record<string, unknown>;
+  markdownPdfCodexProjectHandoff?: Record<string, unknown>;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];
   markdownPdfRenderErrorMessages?: string[];

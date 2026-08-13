@@ -1,19 +1,89 @@
 import { printLine } from "../../actions/shared";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
-import { collectMdPdfProjectCodexUnsupportedDirections } from "./diagnostics";
+import { collectMarkdownPdfProfileAuthoringReview } from "../profile-authoring-review";
 import type {
   MarkdownPdfProjectCodexOutputPlan,
-  MdPdfProjectCodexSignalCollection,
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
-import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
-import { sanitizeMdPdfProjectCodexReportText } from "./report-redaction";
-import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
+import {
+  escapeMdPdfProjectCodexTerminalText,
+  sanitizeMdPdfProjectCodexTerminalText,
+} from "./report-redaction";
+import type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
 
 function publicSummaryPath(runtime: CliRuntime, path: string): string {
-  return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
+  return escapeMdPdfProjectCodexTerminalText(
+    publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path),
+  );
+}
+
+export function formatMdPdfProjectCodexHandoffReview(input: {
+  finalProfile: Record<string, unknown>;
+  reportArtifact: MarkdownPdfProjectCodexReportArtifact;
+}): string[] {
+  const profileReview = collectMarkdownPdfProfileAuthoringReview(input.finalProfile);
+  const pageNumbers = profileReview.normalizedProfile.pageNumbers;
+  const { handoff, phases, project } = input.reportArtifact;
+  const templateHtml = input.reportArtifact.files.find((file) => file.role === "template-html");
+  const styleCss = input.reportArtifact.files.find((file) => file.role === "style-css");
+  const lines = [
+    "Contained Profile:",
+    `Profile identity: ${handoff.profile.id}`,
+    `Profile: ${handoff.profile.bundlePath}`,
+    `Profile decision mode: ${phases.profile.decisionMode}`,
+    `Effective page numbers: enabled=${pageNumbers.enabled ? "yes" : "no"}, scope=${pageNumbers.scope}, countFrom=${pageNumbers.countFrom}, start=${pageNumbers.start}, increment=${pageNumbers.increment}, position=${pageNumbers.position}, format=${JSON.stringify(sanitizeMdPdfProjectCodexTerminalText(pageNumbers.format))}`,
+  ];
+
+  if (handoff.capabilityRequirements.length === 0) {
+    lines.push("Capability requirements: none");
+  } else {
+    lines.push("Capability requirements:");
+    for (const requirement of handoff.capabilityRequirements) {
+      lines.push(
+        `- ${requirement.capabilityId} (minimum ${requirement.minimumVersion}; requested by ${requirement.requestedBy.join(", ")})`,
+      );
+    }
+  }
+
+  lines.push(
+    "",
+    "Template presentation:",
+    `Template decision mode: ${phases.template.decisionMode}`,
+    ...(templateHtml?.bundlePath ? [`Template HTML: ${templateHtml.bundlePath}`] : []),
+    ...(styleCss?.bundlePath ? [`Stylesheet: ${styleCss.bundlePath}`] : []),
+    `Managed assets: ${input.reportArtifact.managedAssets.length}`,
+    "",
+    "Project orchestration:",
+    `Project signal mode: ${project.signalMode}`,
+    `Final decision mode: ${project.decisionMode}`,
+    `Project artifacts: ${handoff.artifacts.availability}`,
+    `Follow-up render usability: ${handoff.render.usability}`,
+  );
+
+  if (project.fallbackReason) {
+    lines.push(`Fallback reason: ${sanitizeMdPdfProjectCodexTerminalText(project.fallbackReason)}`);
+  }
+  for (const direction of input.reportArtifact.unsupportedDirections) {
+    lines.push(`Unsupported direction: ${sanitizeMdPdfProjectCodexTerminalText(direction)}`);
+  }
+  for (const result of input.reportArtifact.validationResults.filter(
+    (result) => result.status === "failed",
+  )) {
+    lines.push(`Validation failed: ${result.name}`);
+  }
+  for (const diagnostic of handoff.diagnostics) {
+    lines.push(
+      `Project ${diagnostic.severity} [${diagnostic.conditionId}]: ${sanitizeMdPdfProjectCodexTerminalText(diagnostic.message)}`,
+    );
+  }
+  if (handoff.render.usability !== "unavailable") {
+    lines.push(
+      `Follow-up render: ${escapeMdPdfProjectCodexTerminalText(handoff.render.command.display)}`,
+    );
+  }
+  return lines;
 }
 
 export function printMdPdfProjectCodexSummary(
@@ -21,54 +91,29 @@ export function printMdPdfProjectCodexSummary(
   input: {
     outputPlan: MarkdownPdfProjectCodexOutputPlan;
     profilePhase: MdPdfProjectCodexProfilePhaseResult;
-    signals: MdPdfProjectCodexSignalCollection;
+    reportArtifact: MarkdownPdfProjectCodexReportArtifact;
     state: NormalizedMdPdfProjectCodexCommandState;
-    templatePhase: MdPdfProjectCodexTemplatePhaseResult;
-    validation: MarkdownPdfProjectCodexValidationSummary;
   },
 ): void {
-  const noUsableProject = input.validation.decisionMode === "no-usable-project";
-  printLine(runtime.stdout, `Project signal mode: ${input.signals.modes.project}`);
-  printLine(runtime.stdout, `Final decision mode: ${input.validation.decisionMode}`);
-  printLine(runtime.stdout, `Profile decision mode: ${input.profilePhase.phase.decisionMode}`);
-  printLine(runtime.stdout, `Template decision mode: ${input.templatePhase.phase.decisionMode}`);
+  const noUsableProject = input.reportArtifact.handoff.artifacts.availability === "unavailable";
+  for (const line of formatMdPdfProjectCodexHandoffReview({
+    finalProfile: input.profilePhase.finalProfile,
+    reportArtifact: input.reportArtifact,
+  })) {
+    printLine(runtime.stdout, line);
+  }
   printLine(
     runtime.stdout,
     `Output directory: ${publicSummaryPath(runtime, input.outputPlan.outputDirectory)}`,
   );
   if (!noUsableProject) {
     printLine(runtime.stdout, `Project bundle: ${input.outputPlan.identity.projectBundleId}`);
-    printLine(runtime.stdout, `Profile: ${input.outputPlan.profile.bundlePath}`);
-    printLine(runtime.stdout, `Template HTML: ${input.outputPlan.templateHtml.bundlePath}`);
-    printLine(runtime.stdout, `Stylesheet: ${input.outputPlan.styleCss.bundlePath}`);
-    printLine(
-      runtime.stdout,
-      `Managed assets: ${input.templatePhase.synthesis.managedAssets.length}`,
-    );
   }
   if (input.outputPlan.report) {
     printLine(
       runtime.stdout,
       `Codex report: ${publicSummaryPath(runtime, input.outputPlan.report.path)}`,
     );
-  }
-  if (input.validation.fallbackReason) {
-    printLine(
-      runtime.stdout,
-      `Fallback reason: ${sanitizeMdPdfProjectCodexReportText(input.validation.fallbackReason)}`,
-    );
-  }
-  for (const direction of collectMdPdfProjectCodexUnsupportedDirections(input)) {
-    printLine(
-      runtime.stdout,
-      `Unsupported direction: ${sanitizeMdPdfProjectCodexReportText(direction)}`,
-    );
-  }
-  for (const result of input.validation.results.filter((result) => result.status === "failed")) {
-    printLine(runtime.stdout, `Validation failed: ${result.name}`);
-  }
-  if (input.validation.renderCommand) {
-    printLine(runtime.stdout, `Follow-up render: ${input.validation.renderCommand.display}`);
   }
   if (input.state.dryRun) {
     printLine(runtime.stdout, "Dry run only. No project bundle files were written.");

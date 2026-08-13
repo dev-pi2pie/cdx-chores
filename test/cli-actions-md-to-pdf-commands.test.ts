@@ -734,12 +734,7 @@ describe("cli command: md pdf-project codex", () => {
           signalMode: "deterministic",
         },
       });
-      expect(report.files.map((file) => file.role)).toEqual([
-        "profile",
-        "template-html",
-        "style-css",
-        "project-report",
-      ]);
+      expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
       expect(report.files.find((file) => file.role === "project-report")).toMatchObject({
         bundlePath: "project.codex-report.json",
       });

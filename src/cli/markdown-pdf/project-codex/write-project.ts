@@ -161,7 +161,7 @@ export async function writeMdPdfProjectCodexReportIfRequested(
   input: MdPdfProjectCodexWriteInput,
 ): Promise<void> {
   await validateMdPdfProjectCodexReportIfRequested(input);
-  await writeMdPdfProjectCodexReportArtifact(input);
+  await writeMdPdfProjectCodexReportArtifact({ ...input, projectRolesPlanned: false });
 }
 
 export async function writeMdPdfProjectCodexBundle(
@@ -205,5 +205,5 @@ export async function writeMdPdfProjectCodexBundle(
     runtime: input.runtime,
     templatePhase: input.templatePhase,
   });
-  await writeMdPdfProjectCodexReportArtifact(input);
+  await writeMdPdfProjectCodexReportArtifact({ ...input, projectArtifactsWritten: true });
 }

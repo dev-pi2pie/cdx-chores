@@ -7,6 +7,7 @@ import {
   createMdPdfProjectCodexIdentity,
   normalizeMdPdfProjectCodexCommandState,
   planMdPdfProjectCodexOutput,
+  validateMdPdfProjectBundleCompleteness,
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -318,7 +319,7 @@ describe("cli action modules: md pdf-project codex output planning", () => {
     });
   });
 
-  test("rejects non-empty output directories without overwrite and preserves unrelated files with overwrite", async () => {
+  test("rejects unrelated Project entries even with overwrite", async () => {
     await withTempFixtureDir("md-pdf-project-codex-overwrite", async (fixtureDir) => {
       const outputDirectory = join(fixtureDir, "pdf-project");
       const unrelatedPath = join(outputDirectory, "unrelated.txt");
@@ -342,14 +343,241 @@ describe("cli action modules: md pdf-project codex output planning", () => {
         output: "pdf-project",
         overwrite: true,
       });
-      const plan = await planMdPdfProjectCodexOutput({
-        runtime,
-        state: overwriteState,
-        signalMode: "deterministic",
-      });
-      expect(plan.outputDirectory).toBe(outputDirectory);
+      await expectCliError(
+        () =>
+          planMdPdfProjectCodexOutput({
+            runtime,
+            state: overwriteState,
+            signalMode: "deterministic",
+          }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+          exitCode: 2,
+          messageIncludes: "Unrelated Project bundle entries:\n- unrelated.txt",
+        },
+      );
       expect(await pathExists(unrelatedPath)).toBe(true);
       expect(await pathExists(join(outputDirectory, "profile.yml"))).toBe(false);
+    });
+  });
+
+  test("rejects nested unrelated Project assets before overwrite planning writes any role", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-overwrite-nested-asset", async (fixtureDir) => {
+      const outputDirectory = join(fixtureDir, "pdf-project");
+      const unrelatedAsset = join(outputDirectory, "assets", "notes.txt");
+      await mkdir(join(outputDirectory, "assets"), { recursive: true });
+      await writeFile(unrelatedAsset, "keep me\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        output: "pdf-project",
+        overwrite: true,
+      });
+      const error = await expectCliError(
+        () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "deterministic" }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+          exitCode: 2,
+          messageIncludes: "Unrelated Project bundle entries:\n- assets/notes.txt",
+        },
+      );
+
+      expect(error.message).toBe(
+        [
+          "Incomplete Markdown PDF Project bundle: pdf-project",
+          "Unrelated Project bundle entries:\n- assets/notes.txt",
+        ].join("\n\n"),
+      );
+      expect(await pathExists(unrelatedAsset)).toBe(true);
+      expect(await pathExists(join(outputDirectory, "profile.yml"))).toBe(false);
+      expect(await pathExists(join(outputDirectory, "template.html"))).toBe(false);
+      expect(await pathExists(join(outputDirectory, "style.css"))).toBe(false);
+    });
+  });
+
+  test("permits overwrite preflight for existing canonical roles, reports, and one managed cover", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-overwrite-managed", async (fixtureDir) => {
+      const outputDirectory = join(fixtureDir, "pdf-project");
+      await mkdir(join(outputDirectory, "assets"), { recursive: true });
+      await writeFile(join(fixtureDir, "cover-source.png"), minimalPng(1200, 800));
+      await writeFile(join(outputDirectory, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(join(outputDirectory, "template.html"), "$body$\n", "utf8");
+      await writeFile(join(outputDirectory, "style.css"), "body {}\n", "utf8");
+      await writeFile(join(outputDirectory, "assets", "cover.png"), minimalPng(1200, 800));
+      await writeFile(join(outputDirectory, "project.codex-report.json"), "not-json\n", "utf8");
+      await writeFile(
+        join(outputDirectory, "review.json"),
+        `${JSON.stringify({ artifactType: "markdown-pdf-codex-project-report" })}\n`,
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+        coverImage: "cover-source.png",
+        keepCodexReport: true,
+        output: "pdf-project",
+        overwrite: true,
+      });
+      const plan = await planMdPdfProjectCodexOutput({
+        runtime,
+        state,
+        signalMode: "deterministic",
+      });
+
+      expect(plan).toMatchObject({
+        outputDirectory,
+        profile: { path: join(outputDirectory, "profile.yml") },
+        templateHtml: { path: join(outputDirectory, "template.html") },
+        styleCss: { path: join(outputDirectory, "style.css") },
+        report: { path: join(outputDirectory, "project.codex-report.json") },
+        assets: [{ path: join(outputDirectory, "assets", "cover.png") }],
+      });
+    });
+  });
+
+  test("rejects multiple managed cover extensions with one stable sorted diagnostic", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-overwrite-multiple-covers",
+      async (fixtureDir) => {
+        const outputDirectory = join(fixtureDir, "pdf-project");
+        await mkdir(join(outputDirectory, "assets"), { recursive: true });
+        await writeFile(join(fixtureDir, "cover-source.png"), minimalPng(1200, 800));
+        await writeFile(join(outputDirectory, "assets", "cover.png"), minimalPng(1200, 800));
+        await writeFile(join(outputDirectory, "assets", "cover.jpg"), "jpeg\n", "utf8");
+
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+          coverImage: "cover-source.png",
+          output: "pdf-project",
+          overwrite: true,
+        });
+        const error = await expectCliError(
+          () => planMdPdfProjectCodexOutput({ runtime, state, signalMode: "deterministic" }),
+          {
+            code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+            exitCode: 2,
+            messageIncludes: "Unrelated Project bundle entries",
+          },
+        );
+
+        expect(error.message).toBe(
+          [
+            "Incomplete Markdown PDF Project bundle: pdf-project",
+            "Unrelated Project bundle entries:\n- assets/cover.jpg\n- assets/cover.png",
+          ].join("\n\n"),
+        );
+        expect(await pathExists(join(outputDirectory, "profile.yml"))).toBe(false);
+        expect(await pathExists(join(outputDirectory, "template.html"))).toBe(false);
+        expect(await pathExists(join(outputDirectory, "style.css"))).toBe(false);
+      },
+    );
+  });
+
+  test("accepts canonical complete Project files, recognized reports, and managed assets", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-complete-bundle", async (fixtureDir) => {
+      await mkdir(join(fixtureDir, "assets"), { recursive: true });
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+      await writeFile(join(fixtureDir, "style.css"), "body {}\n", "utf8");
+      await writeFile(join(fixtureDir, "assets", "cover.png"), minimalPng(1200, 800));
+      await writeFile(join(fixtureDir, "project.codex-report.json"), "not-json\n", "utf8");
+      await writeFile(
+        join(fixtureDir, "review.json"),
+        `${JSON.stringify({ artifactType: "markdown-pdf-codex-project-report" })}\n`,
+        "utf8",
+      );
+
+      const result = await validateMdPdfProjectBundleCompleteness(fixtureDir);
+
+      expect(result).toEqual({
+        assets: [join(fixtureDir, "assets", "cover.png")],
+        css: join(fixtureDir, "style.css"),
+        directory: fixtureDir,
+        profile: join(fixtureDir, "profile.yml"),
+        reports: [join(fixtureDir, "project.codex-report.json"), join(fixtureDir, "review.json")],
+        template: join(fixtureDir, "template.html"),
+      });
+    });
+  });
+
+  test.each([
+    ["profile", "profile.yml"],
+    ["template", "template.html"],
+    ["stylesheet", "style.css"],
+  ] as const)("rejects a Project missing its canonical %s", async (_role, missingBasename) => {
+    await withTempFixtureDir("md-pdf-project-codex-missing-role", async (fixtureDir) => {
+      const files = new Map([
+        ["profile.yml", "page: {}\n"],
+        ["template.html", "$body$\n"],
+        ["style.css", "body {}\n"],
+      ]);
+      files.delete(missingBasename);
+      await Promise.all(
+        [...files].map(([basename, contents]) =>
+          writeFile(join(fixtureDir, basename), contents, "utf8"),
+        ),
+      );
+
+      await expectCliError(() => validateMdPdfProjectBundleCompleteness(fixtureDir), {
+        code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+        exitCode: 2,
+        messageIncludes: `Missing required Project files:\n- ${missingBasename}`,
+      });
+    });
+  });
+
+  test("reports duplicate roles, invalid profiles, and unrelated entries deterministically", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-incomplete-bundle", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "profile.yml"), "page: {}\n", "utf8");
+      await writeFile(join(fixtureDir, "z-profile.yml"), "toc: {}\n", "utf8");
+      await writeFile(join(fixtureDir, "a-profile.json"), '{"page":{}}\n', "utf8");
+      await writeFile(join(fixtureDir, "broken.yml"), "page: true\n", "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+      await writeFile(join(fixtureDir, "alternate.html"), "$body$\n", "utf8");
+      await writeFile(join(fixtureDir, "style.css"), "body {}\n", "utf8");
+      await writeFile(join(fixtureDir, "print.css"), "body {}\n", "utf8");
+      await writeFile(join(fixtureDir, "z-notes.txt"), "notes\n", "utf8");
+      await writeFile(join(fixtureDir, "a-data.json"), '{"rows":[]}\n', "utf8");
+
+      const error = await expectCliError(
+        () =>
+          validateMdPdfProjectBundleCompleteness(fixtureDir, {
+            displayDirectory: "project-output",
+          }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+          exitCode: 2,
+          messageIncludes: "Incomplete Markdown PDF Project bundle: project-output",
+        },
+      );
+
+      expect(error.message).toBe(
+        [
+          "Incomplete Markdown PDF Project bundle: project-output",
+          "Multiple Project profile candidates:\n- a-profile.json\n- profile.yml\n- z-profile.yml",
+          "Multiple Project template candidates:\n- alternate.html\n- template.html",
+          "Multiple Project stylesheet candidates:\n- print.css\n- style.css",
+          "Invalid Project profile files:\n- broken.yml",
+          "Unrelated Project bundle entries:\n- a-data.json\n- z-notes.txt",
+        ].join("\n\n"),
+      );
+    });
+  });
+
+  test("rejects invalid canonical Profile content and unrecognized asset entries", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-invalid-complete-bundle", async (fixtureDir) => {
+      await mkdir(join(fixtureDir, "assets"), { recursive: true });
+      await writeFile(join(fixtureDir, "profile.yml"), "page: true\n", "utf8");
+      await writeFile(join(fixtureDir, "template.html"), "$body$\n", "utf8");
+      await writeFile(join(fixtureDir, "style.css"), "body {}\n", "utf8");
+      await writeFile(join(fixtureDir, "assets", "notes.txt"), "notes\n", "utf8");
+
+      const error = await expectCliError(() => validateMdPdfProjectBundleCompleteness(fixtureDir), {
+        code: "MARKDOWN_PDF_PROJECT_BUNDLE_INCOMPLETE",
+        exitCode: 2,
+        messageIncludes: "Invalid Project profile files:\n- profile.yml",
+      });
+      expect(error.message).toContain("Unrelated Project bundle entries:\n- assets/notes.txt");
     });
   });
 

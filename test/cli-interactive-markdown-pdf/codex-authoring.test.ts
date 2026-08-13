@@ -703,6 +703,187 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
+  test("reviews Project page numbers and handoff state without an Interactive override", () => {
+    const escape = "\u001B";
+    const bell = "\u0007";
+    const privateDiagnostic = `Rejected /Users/alice/private/style.css ${escape}]0;unsafe${bell}`;
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: {
+        pageNumbers: {
+          enabled: true,
+          scope: "body",
+          countFrom: "body",
+          start: 0,
+          increment: 2,
+          position: "bottom-right",
+          format: "Page /Users/alice/private/{page}",
+        },
+      },
+      markdownPdfCodexProjectHandoff: {
+        profile: {
+          id: "md-pdf-profile-20260101T000000Z-abc12345",
+          bundlePath: "profile.yml",
+        },
+        artifacts: { availability: "planned" },
+        render: {
+          usability: "planned",
+          command: {
+            executable: "cdx-chores",
+            args: [
+              "md",
+              "to-pdf",
+              "--input",
+              "fixtures/report.md",
+              "--bundle",
+              "generated/codex-project-bundle-1",
+              "--output",
+              "<output.pdf>",
+            ],
+            display:
+              "cdx-chores 'md' 'to-pdf' '--input' 'fixtures/report.md' '--bundle' 'generated/codex-project-bundle-1' '--output' '<output.pdf>'",
+          },
+        },
+        diagnostics: [
+          {
+            conditionId: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+            severity: "warning",
+            context: {
+              kind: "occupied-page-number-slot",
+              position: "bottom-right",
+              area: "footer",
+              slot: "right",
+            },
+            message: privateDiagnostic,
+          },
+          {
+            conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+            severity: "warning",
+            context: {
+              kind: "physical-page-total-with-logical-sequence",
+              countFrom: "body",
+              start: 0,
+              increment: 2,
+            },
+            message: `Physical total ${escape}[31mwarning${escape}[0m${bell}`,
+          },
+        ],
+        capabilityRequirements: [
+          {
+            capabilityId: "pageNumbers.start",
+            requestedBy: ["pageNumbers.start"],
+            minimumVersion: "65.1",
+          },
+          {
+            capabilityId: "pageNumbers.increment",
+            requestedBy: ["pageNumbers.increment"],
+            minimumVersion: "65.1",
+          },
+          {
+            capabilityId: "pageNumbers.countFrom.body",
+            requestedBy: ["pageNumbers.countFrom"],
+            minimumVersion: "65.1",
+          },
+        ],
+      },
+      selectQueue: [...recipesCodexSelections("project-bundle"), "continue", "cancel"],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr).toContain("Contained Profile:");
+    expect(result.stderr).toContain("Effective page numbers: enabled=yes, scope=body");
+    expect(result.stderr).toContain("pageNumbers.countFrom.body (minimum 65.1");
+    expect(result.stderr).toContain("Template presentation:");
+    expect(result.stderr).toContain("Template HTML: template.html");
+    expect(result.stderr).toContain("Stylesheet: style.css");
+    expect(result.stderr).toContain("Project orchestration:");
+    expect(result.stderr).toContain("Project artifacts: planned");
+    expect(result.stderr).toContain("Follow-up render usability: planned");
+    expect(result.stderr).toContain("MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED");
+    expect(result.stderr.match(/MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED/g)).toHaveLength(1);
+    expect(result.stderr).toContain("MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE");
+    expect(
+      result.stderr.match(/MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE/g),
+    ).toHaveLength(1);
+    expect(result.stderr).toContain("Follow-up render: cdx-chores");
+    expect(result.stderr).not.toContain("--enable-page-numbers");
+    expect(result.stderr).not.toContain("--disable-page-numbers");
+    expect(result.stderr).toContain("[redacted-path]");
+    expect(result.stderr).not.toContain("/Users/alice/private");
+    expect(result.stderr).not.toContain(privateDiagnostic);
+    expect(result.stderr).not.toContain(escape);
+    expect(result.stderr).not.toContain(bell);
+    expect(result.stderr).toContain("\\u001b");
+    expect(result.stderr).toContain("\\u0007");
+  });
+
+  test("reviews disabled Project page numbers without capabilities or override flags", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: {
+        pageNumbers: {
+          enabled: false,
+          scope: "document",
+          countFrom: "document",
+          start: 0,
+          increment: 2,
+          position: "bottom-center",
+          format: "{page}",
+        },
+      },
+      markdownPdfCodexProjectHandoff: {
+        profile: {
+          id: "md-pdf-profile-20260101T000000Z-abc12345",
+          bundlePath: "profile.yml",
+        },
+        artifacts: { availability: "planned" },
+        render: {
+          usability: "planned",
+          command: {
+            executable: "cdx-chores",
+            args: [
+              "md",
+              "to-pdf",
+              "--input",
+              "client's report.md",
+              "--bundle",
+              "generated/project bundle",
+              "--output",
+              "<output.pdf>",
+            ],
+            display:
+              "cdx-chores 'md' 'to-pdf' '--input' 'client'\\''s report.md' '--bundle' 'generated/project bundle' '--output' '<output.pdf>'",
+          },
+        },
+        diagnostics: [],
+        capabilityRequirements: [],
+      },
+      selectQueue: [...recipesCodexSelections("project-bundle"), "continue", "cancel"],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr).toContain(
+      "Effective page numbers: enabled=no, scope=document, countFrom=document, start=0, increment=2",
+    );
+    expect(result.stderr).toContain("Capability requirements: none");
+    expect(result.stderr).not.toContain("Project warning [");
+    expect(result.stderr).toContain("'--input' 'client'\\''s report.md'");
+    expect(result.stderr).toContain("'--bundle' 'generated/project bundle'");
+    for (const forbiddenFlag of [
+      "--profile",
+      "--template",
+      "--css",
+      "--enable-page-numbers",
+      "--disable-page-numbers",
+    ]) {
+      expect(result.stderr).not.toContain(forbiddenFlag);
+    }
+  });
+
   test("changes output and report binding without preparing the candidate again", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -901,6 +1082,11 @@ describe("interactive Markdown PDF Codex authoring", () => {
       ).toEqual(["regenerate", "change-setup", "change-artifact", "cancel"]);
       expect(result.markdownPdfCodexBindCalls).toEqual([]);
       expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+      if (artifact === "project-bundle") {
+        expect(result.stderr).toContain("Project artifacts: unavailable");
+        expect(result.stderr).toContain("Follow-up render usability: unavailable");
+        expect(result.stderr).not.toContain("Follow-up render: cdx-chores");
+      }
     },
   );
 

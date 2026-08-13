@@ -9,7 +9,11 @@ import type {
   MarkdownPdfProjectCodexTemplatePhaseSummary,
 } from "./types-phase";
 import type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
-import type { MarkdownPdfProjectCodexValidationResult } from "./validate-project";
+import type {
+  MarkdownPdfProjectCodexValidationDiagnostics,
+  MarkdownPdfProjectCodexValidationResult,
+} from "./validate-project";
+import type { MarkdownPdfProfileAuthoringCapabilityRequirement } from "../profile-authoring-review";
 
 export const MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-project-report";
 
@@ -30,6 +34,39 @@ export interface MarkdownPdfProjectCodexReportManagedAsset {
   orientationBucket: MarkdownPdfTemplateCodexCoverImageSignals["orientationBucket"];
   fitPressure: MarkdownPdfTemplateCodexCoverImageSignals["fitPressure"];
   metadataStatus?: MarkdownPdfTemplateCodexCoverImageSignals["metadataStatus"];
+}
+
+export type MarkdownPdfProjectCodexHandoffArtifactAvailability =
+  | "planned"
+  | "written"
+  | "unavailable";
+
+export type MarkdownPdfProjectCodexHandoffRenderUsability = "planned" | "usable" | "unavailable";
+
+export type MarkdownPdfProjectCodexHandoffDiagnostic =
+  MarkdownPdfProjectCodexValidationDiagnostics["conditions"][number];
+
+export type MarkdownPdfProjectCodexHandoffCapabilityRequirement =
+  MarkdownPdfProfileAuthoringCapabilityRequirement;
+
+export interface MarkdownPdfProjectCodexHandoffProjection {
+  profile: {
+    id: string;
+    bundlePath: "profile.yml";
+  };
+  artifacts: {
+    availability: MarkdownPdfProjectCodexHandoffArtifactAvailability;
+  };
+  render:
+    | {
+        usability: "planned" | "usable";
+        command: MarkdownPdfProjectCodexRenderCommand;
+      }
+    | {
+        usability: "unavailable";
+      };
+  diagnostics: MarkdownPdfProjectCodexHandoffDiagnostic[];
+  capabilityRequirements: MarkdownPdfProjectCodexHandoffCapabilityRequirement[];
 }
 
 export interface MarkdownPdfProjectCodexReportArtifact {
@@ -88,4 +125,5 @@ export interface MarkdownPdfProjectCodexReportArtifact {
   managedAssets: MarkdownPdfProjectCodexReportManagedAsset[];
   validationResults: MarkdownPdfProjectCodexValidationResult[];
   followUpRenderCommand?: MarkdownPdfProjectCodexRenderCommand;
+  handoff: MarkdownPdfProjectCodexHandoffProjection;
 }
