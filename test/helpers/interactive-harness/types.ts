@@ -12,6 +12,10 @@ export interface InteractiveHarnessScenario {
   markdownPdfCodexProjectHandoff?: Record<string, unknown>;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
   markdownPdfRenderWarnings?: string[];
+  markdownPdfNoDefaultCss?: boolean;
+  markdownPdfProfilePageNumbersEnabled?: boolean;
+  markdownPdfRendererCapabilityRequests?: Array<Record<string, unknown>>;
+  markdownPdfRendererCapabilities?: Record<string, unknown>;
   markdownPdfRenderErrorMessages?: string[];
   markdownPdfOutputErrorMessages?: string[];
   markdownPdfCleanupErrorMessage?: string;

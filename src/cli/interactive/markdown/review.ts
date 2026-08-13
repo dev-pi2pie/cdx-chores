@@ -13,6 +13,7 @@ import {
   formatReusableMarkdownPdfCodeReview,
 } from "./code-highlighting-review";
 import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import { formatMarkdownPdfPageNumberReview } from "./page-number-review";
 
 const SOURCE_LABELS: Record<MarkdownPdfInteractiveRenderSource, string> = {
   "built-in": "built-in",
@@ -119,5 +120,11 @@ export function renderMarkdownPdfRecipeReview(
     selection.codeHighlight,
   )) {
     printLine(runtime.stderr, line);
+  }
+  if (selection.pageNumbers !== undefined) {
+    printLine(runtime.stderr, "");
+    for (const line of formatMarkdownPdfPageNumberReview(selection.prepared)) {
+      printLine(runtime.stderr, line);
+    }
   }
 }

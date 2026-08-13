@@ -545,6 +545,18 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       };
       const resolvedProfile = rolePath("profile");
       const reusableCode = resolvedProfile ? GENERATED_CODE : DEFAULT_CODE;
+      const profilePageNumbersEnabled = resolvedProfile
+        ? (context.scenario.markdownPdfProfilePageNumbersEnabled ?? false)
+        : false;
+      const pageNumberOverride =
+        typeof input.pageNumbers === "boolean" ? input.pageNumbers : undefined;
+      const effectivePageNumbersEnabled = pageNumberOverride ?? profilePageNumbersEnabled;
+      if (context.scenario.markdownPdfNoDefaultCss && effectivePageNumbersEnabled) {
+        throw new CliError(
+          "Effective page numbers require the generated default stylesheet; remove --no-default-css or disable page numbers for this render.",
+          { code: "INVALID_INPUT", exitCode: 2 },
+        );
+      }
       return {
         __harnessPreparedId: preparedId,
         inputPath,
@@ -557,8 +569,28 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         },
         options: DEFAULT_OPTIONS,
         code: effectiveCodeOptions(reusableCode, input.codeHighlight),
-        noDefaultCss: false,
+        noDefaultCss: context.scenario.markdownPdfNoDefaultCss ?? false,
         normalizedProfile: { code: reusableCode },
+        pageNumberConfiguration: {
+          effective: {
+            enabled: effectivePageNumbersEnabled,
+            scope: "document",
+            countFrom: "document",
+            start: 1,
+            increment: 1,
+            position: "bottom-center",
+            format: "{page}",
+          },
+          ...(pageNumberOverride === undefined ? {} : { override: pageNumberOverride }),
+          profileEnabled: profilePageNumbersEnabled,
+          source:
+            pageNumberOverride === undefined
+              ? resolvedProfile
+                ? "profile"
+                : "default"
+              : "direct-override",
+        },
+        rendererCapabilityRequests: context.scenario.markdownPdfRendererCapabilityRequests ?? [],
         recipe: { templateHtml: "<main>$body$</main>", styleCss: "body {}" },
         titleSignals: { duplicateVisibleTitleRisk: false },
       };
@@ -620,6 +652,17 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       }
       return {
         outputPath: plan.outputPath,
+        rendererCapabilities: context.scenario.markdownPdfRendererCapabilities ?? {
+          renderer: { name: "weasyprint", available: true, version: "69.0" },
+          capabilities: [
+            {
+              id: "pageNumbers.start",
+              fields: ["pageNumbers.start"],
+              minimumVersion: "65.1",
+              status: "satisfied",
+            },
+          ],
+        },
         warnings: context.scenario.markdownPdfRenderWarnings ?? [],
       };
     },

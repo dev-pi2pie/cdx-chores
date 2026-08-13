@@ -27,6 +27,10 @@ import {
   compileMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+import {
+  compileMarkdownPdfRenderPageNumberChoice,
+  type MarkdownPdfRenderPageNumberChoice,
+} from "./render-page-numbers";
 
 export type MarkdownPdfInteractiveRenderSourceSelectionOutcome =
   | MarkdownPdfInteractiveSelectedRenderSource
@@ -37,6 +41,7 @@ export type MarkdownPdfInteractiveRenderSourceSelectionOutcome =
 export interface MarkdownPdfInteractivePreparedRenderSource {
   codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
   kind: "prepared";
+  pageNumbers?: MarkdownPdfRenderPageNumberChoice;
   prepared: PreparedMarkdownPdfRender;
   selected: MarkdownPdfInteractiveSelectedRenderSource;
   source: MarkdownPdfInteractiveRenderSource;
@@ -245,16 +250,21 @@ export async function prepareMarkdownPdfRenderSource(
   runtime: CliRuntime,
   selected: MarkdownPdfInteractiveSelectedRenderSource,
   codeHighlight: MarkdownPdfRenderCodeHighlightChoice,
+  pageNumbers?: MarkdownPdfRenderPageNumberChoice,
   implementations: Pick<MarkdownPdfRenderSourceImplementations, "prepareRender"> = {},
 ): Promise<MarkdownPdfInteractivePreparedRenderSource> {
   const compiledCodeHighlight = compileMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
+  const compiledPageNumbers =
+    pageNumbers === undefined ? undefined : compileMarkdownPdfRenderPageNumberChoice(pageNumbers);
   const prepared = await (implementations.prepareRender ?? prepareMarkdownPdfRender)(runtime, {
     ...selected.input,
     ...(compiledCodeHighlight === undefined ? {} : { codeHighlight: compiledCodeHighlight }),
+    ...(compiledPageNumbers === undefined ? {} : { pageNumbers: compiledPageNumbers }),
   });
   return {
     codeHighlight,
     kind: "prepared",
+    ...(pageNumbers === undefined ? {} : { pageNumbers }),
     prepared,
     selected,
     source: selected.source,

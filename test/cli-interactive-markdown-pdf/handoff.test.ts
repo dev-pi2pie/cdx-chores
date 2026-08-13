@@ -37,6 +37,9 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     expect(
       result.promptCalls.filter((call) => call.message === "Choose a recipe for this PDF"),
     ).toEqual([]);
+    expect(
+      result.promptCalls.filter((call) => call.message === "Page numbers for this PDF"),
+    ).toEqual([]);
     expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("codeHighlight");
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
