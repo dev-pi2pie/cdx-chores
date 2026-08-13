@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-13
+modified-date: 2026-08-14
 status: active
 agent: codex
 ---
@@ -1235,7 +1235,89 @@ Phase checkpoint:
 - The Phase 12 job records candidate outcomes, representative extraction and
   visual evidence, cleanup state, exact reviewed range, and final verdict.
 
-### Phase 13: Guidance And Lifecycle Closeout
+### Phase 13: Markdown PDF Contract Versioning And Module Boundaries
+
+Tasks:
+
+- [ ] Create and activate a Phase 13 job record from the Phase 12 documentation
+      closeout boundary `11767a14`. Freeze the permanent-file boundary,
+      versioning decisions, modularization inventory, validation commands,
+      meaningful commit checkpoints, exact review range, and final verdict
+      before implementation.
+- [ ] Inventory every versioned Markdown PDF artifact and distinguish public or
+      persisted report schemas from temporary evidence reports, fixture
+      catalogs, harness digests, and ownership markers. Include the Project and
+      Template Codex reports, page-number renderer evidence, font-discovery
+      evidence, and profile-font-preservation smoke records.
+- [ ] Define one explicit versioning policy: package and canary versions do not
+      version internal evidence formats; ownership markers remain stable;
+      content catalogs use deterministic digests; and schema numbers remain
+      only where an actual serialized compatibility boundary requires them.
+- [ ] Review the page-number fixture contract `4`, renderer harness contract
+      `4`, and renderer evidence report schema `3` independently. Remove or
+      rename manually incremented values that only mirror catalog additions,
+      and record why any retained schema version has a real consumer and
+      compatibility meaning.
+- [ ] Broaden WeasyPrint candidate identifiers, renderer versions, and pinned
+      dependency versions so future candidates do not require editing a closed
+      literal type union. Derive the current evidence-candidate identifiers
+      from the catalog itself.
+- [ ] Keep the current `65.1`, `68.0`, and `69.0` candidates as the precise
+      tested evidence matrix without presenting them as a runtime support
+      allowlist. Add a regression proving a compatible future renderer version
+      satisfies the capability minimum.
+- [ ] Inventory oversized Markdown PDF production, fixture, harness, helper,
+      and test files by line count and responsibility. Record a keep-or-split
+      disposition rather than treating a numeric threshold alone as proof that
+      a file needs refactoring.
+- [ ] Modularize the page-number renderer fixture catalog into focused types,
+      candidates, shared fixture builders, renderer scenarios, product
+      scenarios, Project scenarios, and materialization modules. Preserve the
+      existing fixture import path through a small compatibility facade.
+- [ ] Modularize the renderer-evidence harness into focused process execution,
+      PDF inspection, validation, owned-laboratory lifecycle, scenario
+      orchestration, public-report, and CLI-entry modules without adding a
+      second smoke or cleanup mechanism.
+- [ ] Modularize confirmed mixed-responsibility production hotspots in the
+      current Markdown-to-PDF scope. At minimum, separate render asset policy
+      and rewriting from render orchestration, Template Codex decision domains
+      and font ownership from final validation, and Profile page-chrome/code/
+      font normalization from top-level recipe conversion.
+- [ ] Split directly affected oversized tests by behavioral ownership when the
+      new module boundary would otherwise leave a single mixed-responsibility
+      suite. Preserve assertions and avoid unrelated fixture rewrites.
+- [ ] Preserve public exports, CLI behavior, catalog scenario values, guarded
+      cleanup refusal, public-safe report projection, and Node.js runtime
+      compatibility. Pure file movement must not silently change the catalog
+      digest or evidence acceptance result.
+- [ ] Run focused contract, fixture, harness, renderer-capability, Profile,
+      Template, Project, rendering, and Interactive tests. Then run the broad
+      Markdown PDF suite, full repository suite, TypeScript, lint, format
+      check, build, and `git diff --check`.
+- [ ] Do not repeat the live renderer matrix for behavior-preserving module
+      movement. If scenario inputs, renderer behavior, or evidence acceptance
+      semantics change, record the affected live evidence that must be rerun
+      before closeout.
+- [ ] Review the exact Phase 13 commit range with maintainability and
+      test-quality reviewers, resolve accepted findings, widen and re-review
+      the range when corrections land, and commit a reviewed documentation
+      closeout before Phase 14.
+
+Phase checkpoint:
+
+- Version numbers describe real serialized compatibility boundaries rather
+  than package releases, scenario counts, or informal implementation rounds.
+- The evidence catalog remains precise about tested candidates while runtime
+  capability comparison and candidate types admit compatible future versions.
+- Oversized mixed-responsibility Markdown PDF modules are separated behind
+  stable imports and explicit ownership boundaries.
+- Fixture and harness modularization preserves catalog meaning, guarded
+  cleanup, public-safe evidence, and the completed Phase 12 renderer results.
+- The Phase 13 job records the inventory and dispositions, versioning decisions,
+  implementation commits, exact reviewed range, validation evidence, and
+  Continue/Constrain/Stop verdict.
+
+### Phase 14: Guidance And Lifecycle Closeout
 
 Tasks:
 

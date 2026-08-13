@@ -170,9 +170,9 @@ tests during changes and all gates at the final committed implementation tip.
 ## Commit, Review, And Closeout
 
 - [x] Record `f2b0d81c` as the clean starting boundary.
-- [x] Ask `@auto_commit_notification` before the activation commit and at each
-      coherent, validated implementation, evidence, review-fix, and docs
-      closeout checkpoint; automatically commit meaningful progress.
+- [x] Review each coherent, validated activation, implementation, evidence,
+      review-fix, and documentation-closeout checkpoint, and commit only
+      meaningful progress.
 - [x] Record each commit and its evidence boundary here.
 - [x] Review the exact `f2b0d81c..<final-implementation-tip>` range with
       maintainability and test-quality reviewers after all gates complete.

@@ -100,7 +100,7 @@ smoke files or claim layout or visual acceptance.
 - [x] Commit this documentation-only closeout; use its commit as the Phase 10
       starting boundary.
 
-`@auto_commit_notification` is used only at the implementation and closeout
+Commits are created only at coherent, validated implementation and closeout
 boundaries, or for a necessary accepted-review correction.
 
 ## Evidence

@@ -113,7 +113,7 @@ sanitized outcomes, limitations, and cleanup state; commit no smoke artifacts.
 - [x] Have the completed job and parent checklist reviewed as documentation.
 - [x] Commit this documentation-only closeout before beginning Phase 11.
 
-`@auto_commit_notification` is used only at the implementation and closeout
+Commits are created only at coherent, validated implementation and closeout
 boundaries, or for a necessary accepted-review correction.
 
 ## Evidence

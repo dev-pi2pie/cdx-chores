@@ -183,8 +183,8 @@ inspection.
 - [x] Record `824ce4e6` as the clean Phase 11 starting boundary.
 - [x] Commit this activation job and parent link without checking implementation
       work; record that commit before implementation begins.
-- [x] Ask `@auto_commit_notification` at each coherent, validated
-      implementation boundary and automatically commit meaningful progress.
+- [x] Review each coherent, validated implementation boundary and commit only
+      meaningful progress.
 - [x] Record every implementation, test, or accepted-review correction commit
       in this job.
 - [x] Run focused gates while implementing and the focused, broad, full, and
@@ -202,8 +202,8 @@ inspection.
       Continue/Constrain/Stop verdict.
 - [x] Have the completed job and parent Phase 11 checklist reviewed by the
       documentation reviewer.
-- [x] Ask `@auto_commit_notification` at the reviewed documentation boundary
-      and commit a documentation-only Phase 11 closeout before Phase 12.
+- [x] Review the documentation boundary and commit a documentation-only Phase
+      11 closeout before Phase 12.
 
 No Codex Security scan or security plugin is part of Phase 11 verification.
 
