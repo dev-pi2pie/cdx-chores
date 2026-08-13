@@ -671,6 +671,55 @@ describe("interactive Markdown PDF Codex authoring", () => {
     },
   );
 
+  test.each(
+    (["profile", "template-bundle", "project-bundle"] as const).flatMap((artifact) =>
+      (["inherit", "enable", "disable"] as const).map((choice) => [artifact, choice] as const),
+    ),
+  )(
+    "passes generated Codex %s page numbers %s through the accepted candidate",
+    (artifact, choice) => {
+      const compiled = choice === "inherit" ? undefined : choice === "enable";
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          artifact,
+          ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
+          "continue",
+          "temporary-render",
+          "inherit",
+          choice,
+          "none",
+          "default",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: [false, true, false, true],
+      });
+
+      expect(result.markdownPdfCodexPrepareCalls).toEqual([
+        expect.objectContaining({ artifact, candidateId: `codex-${artifact}-1` }),
+      ]);
+      expect(result.markdownPdfCodexBindCalls).toEqual([
+        expect.objectContaining({ artifact, candidateId: `codex-${artifact}-1` }),
+      ]);
+      expect(result.markdownPdfCodexWriteCalls).toEqual([
+        expect.objectContaining({ artifact, candidateId: `codex-${artifact}-1` }),
+      ]);
+      expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+      if (compiled !== undefined) {
+        expect(result.markdownPdfPrepareCalls[0]).toEqual(
+          expect.objectContaining({ pageNumbers: compiled }),
+        );
+      }
+      if (compiled === undefined) {
+        expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("pageNumbers");
+      }
+    },
+  );
+
   test.each([
     ["profile", true],
     ["template-bundle", false],
@@ -1104,6 +1153,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "continue",
           "temporary-render",
           "enable",
+          "inherit",
           "none",
           "default",
         ],
@@ -1138,6 +1188,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "project-bundle",
         "continue",
         "temporary-render",
+        "inherit",
         "inherit",
         "none",
         "default",
@@ -1195,6 +1246,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "temporary-render",
         "enable",
+        "inherit",
         "none",
         "default",
         "review",
@@ -1236,11 +1288,13 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "continue",
           "temporary-render",
           "enable",
+          "inherit",
           "none",
           "default",
           "review",
           "save-and-render",
           "enable",
+          "inherit",
           "with-artifact",
           "cancel",
         ],
@@ -1276,6 +1330,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "save-and-render",
         "enable",
+        "inherit",
         "with-artifact",
         "suggested",
         "default",
@@ -1315,6 +1370,44 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).toContain("Render override:\n- Disable for this render");
   });
 
+  test.each(["profile", "template-bundle", "project-bundle"] as const)(
+    "changes generated Codex %s page numbers at final review without regenerating or rebinding",
+    (artifact) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          artifact,
+          ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
+          "continue",
+          "save-and-render",
+          "inherit",
+          "inherit",
+          "with-artifact",
+          "suggested",
+          "default",
+          "change-page-numbers",
+          "enable",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: [false, true, false, false, false, true],
+      });
+
+      expect(result.markdownPdfCodexPrepareCalls).toEqual([
+        expect.objectContaining({ artifact, candidateId: `codex-${artifact}-1` }),
+      ]);
+      expect(result.markdownPdfCodexBindCalls).toHaveLength(1);
+      expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        expect.objectContaining({ pageNumbers: true }),
+      ]);
+      expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+    },
+  );
+
   test("changes highlighting after Codex durable recovery without rewriting the recipe", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -1327,12 +1420,14 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "save-and-render",
         "enable",
+        "inherit",
         "with-artifact",
         "suggested",
         "default",
         "review",
         "save-and-render",
         "disable",
+        "inherit",
         "with-artifact",
       ],
       inputQueue: [""],
@@ -1374,12 +1469,14 @@ describe("interactive Markdown PDF Codex authoring", () => {
         "continue",
         "save-and-render",
         "enable",
+        "inherit",
         "with-artifact",
         "suggested",
         "default",
         "review",
         "save-and-render",
         "enable",
+        "inherit",
         "with-artifact",
         "outputs",
         "custom",
@@ -1422,6 +1519,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "continue",
           "save-and-render",
           "enable",
+          "inherit",
           "with-artifact",
           "suggested",
           "default",
@@ -1470,6 +1568,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "project-bundle",
           "continue",
           lifecycle,
+          "inherit",
           "inherit",
           report,
           ...(lifecycle === "save-and-render" ? ["suggested"] : []),

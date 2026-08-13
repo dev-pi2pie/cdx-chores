@@ -18,6 +18,9 @@ export const markdownPdfRenderServiceModuleUrl = pathToFileURL(
 export const markdownPdfRenderBundleModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/markdown-pdf/render-bundle.ts"),
 ).href;
+export const markdownPdfProjectBundleCompletenessModuleUrl = pathToFileURL(
+  resolve(REPO_ROOT, "src/cli/markdown-pdf/project-codex/project-bundle-completeness.ts"),
+).href;
 export const markdownPdfDeterministicAuthoringModuleUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/markdown/deterministic-authoring.ts"),
 ).href;

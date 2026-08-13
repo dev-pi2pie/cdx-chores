@@ -25,6 +25,10 @@ import {
   promptMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderPageNumberChoice,
+  type MarkdownPdfRenderPageNumberChoice,
+} from "./render-page-numbers";
 
 export type MarkdownPdfCodexAuthoringOutcome =
   | { kind: "complete" }
@@ -85,6 +89,7 @@ export async function runMarkdownPdfCodexAuthoring(
     | {
         candidate: PreparedMarkdownPdfCodexCandidate;
         codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+        pageNumbers: MarkdownPdfRenderPageNumberChoice;
       }
     | undefined;
   while (true) {
@@ -161,12 +166,32 @@ export async function runMarkdownPdfCodexAuthoring(
       const lifecycle = action;
       const currentCodeHighlight =
         renderContext?.candidate === prepared ? renderContext.codeHighlight : "inherit";
-      const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
-      if (codeHighlight === "back") {
-        continue;
+      let codeHighlight = currentCodeHighlight;
+      let pageNumbers =
+        renderContext?.candidate === prepared ? renderContext.pageNumbers : "inherit";
+      let backToReview = false;
+      while (true) {
+        const codeChoice = await promptMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
+        if (codeChoice === "back") {
+          backToReview = true;
+          break;
+        }
+        if (codeChoice === "cancel") {
+          return { kind: "complete" };
+        }
+        codeHighlight = codeChoice;
+        const pageChoice = await promptMarkdownPdfRenderPageNumberChoice(pageNumbers);
+        if (pageChoice === "cancel") {
+          return { kind: "complete" };
+        }
+        if (pageChoice === "back") {
+          continue;
+        }
+        pageNumbers = pageChoice;
+        break;
       }
-      if (codeHighlight === "cancel") {
-        return { kind: "complete" };
+      if (backToReview) {
+        continue;
       }
       const report = await promptMarkdownPdfCodexReportRetention(lifecycle, pathPromptContext);
       const selection: MarkdownPdfGeneratedLifecycleSelection = {
@@ -175,6 +200,7 @@ export async function runMarkdownPdfCodexAuthoring(
         kind: "generated-lifecycle",
         lifecycle,
         markdownInput: input.markdownInput!,
+        pageNumbers,
         report,
       };
       if (!input.onGeneratedLifecycle) {
@@ -184,7 +210,11 @@ export async function runMarkdownPdfCodexAuthoring(
       if (outcome.kind === "complete") {
         return { kind: "complete" };
       }
-      renderContext = { candidate: prepared, codeHighlight: outcome.codeHighlight };
+      renderContext = {
+        candidate: prepared,
+        codeHighlight: outcome.codeHighlight,
+        pageNumbers: outcome.pageNumbers,
+      };
     }
   }
 }

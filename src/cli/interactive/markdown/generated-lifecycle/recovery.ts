@@ -168,6 +168,7 @@ export async function executeDurableMaterializationAndRender(
   materialization: Extract<BoundMarkdownPdfGeneratedMaterialization, { kind: "durable" }>,
   writeState: DurableMaterializationWriteState,
   codeHighlight?: boolean,
+  pageNumbers?: boolean,
 ): Promise<GeneratedLifecycleOutcome> {
   while (true) {
     if (!writeState.isWritten) {
@@ -199,6 +200,7 @@ export async function executeDurableMaterializationAndRender(
         input: selection.markdownInput,
         ...materialization.rendererSource,
         ...(codeHighlight === undefined ? {} : { codeHighlight }),
+        ...(pageNumbers === undefined ? {} : { pageNumbers }),
       });
       return await executeRenderWithRecovery(
         runtime,

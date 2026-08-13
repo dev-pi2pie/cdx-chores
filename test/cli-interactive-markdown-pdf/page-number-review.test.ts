@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { formatMarkdownPdfPageNumberReview } from "../../src/cli/interactive/markdown/page-number-review";
+import {
+  formatMarkdownPdfPageNumberReview,
+  resolveGeneratedMarkdownPdfPageNumberConfiguration,
+} from "../../src/cli/interactive/markdown/page-number-review";
 import type { MarkdownPdfPageNumberReviewInput } from "../../src/cli/interactive/markdown/page-number-review";
 
 const EFFECTIVE_PAGE_NUMBERS = {
@@ -148,5 +151,75 @@ describe("formatMarkdownPdfPageNumberReview", () => {
     expect(text).not.toContain("status");
     expect(text).not.toContain("readiness");
     expect(text).not.toContain("installed");
+  });
+});
+
+describe("resolveGeneratedMarkdownPdfPageNumberConfiguration", () => {
+  test("uses the normalized default for a Profile-less generated Template", () => {
+    const result = resolveGeneratedMarkdownPdfPageNumberConfiguration(
+      {
+        kind: "deterministic",
+        candidate: {
+          artifact: "template-bundle",
+          preparation: "starter",
+          prepared: {} as never,
+        },
+      },
+      "enable",
+    );
+
+    expect(result.profileSource).toBe(false);
+    expect(result.configuration).toEqual(
+      expect.objectContaining({
+        profileEnabled: false,
+        override: true,
+        source: "direct-override",
+        effective: expect.objectContaining({ enabled: true }),
+      }),
+    );
+  });
+
+  test("resolves the accepted generated Profile before materialization", () => {
+    const result = resolveGeneratedMarkdownPdfPageNumberConfiguration(
+      {
+        kind: "deterministic",
+        candidate: {
+          artifact: "profile",
+          preparation: "starter",
+          prepared: { profile: { pageNumbers: { enabled: true } } } as never,
+        },
+      },
+      "inherit",
+    );
+
+    expect(result.profileSource).toBe(true);
+    expect(result.configuration.profileEnabled).toBe(true);
+    expect(result.configuration.effective.enabled).toBe(true);
+  });
+
+  test("resolves a Codex Project from its final contained Profile", () => {
+    const result = resolveGeneratedMarkdownPdfPageNumberConfiguration(
+      {
+        kind: "codex",
+        candidate: {
+          artifact: "project-bundle",
+          prepared: {
+            profilePhase: { finalProfile: { pageNumbers: { enabled: true } } },
+          } as never,
+          setup: { artifact: "project-bundle", fontHints: [] },
+        },
+      },
+      "disable",
+    );
+
+    expect(result.profileSource).toBe(true);
+    expect(result.configuration).toEqual(
+      expect.objectContaining({
+        profileEnabled: true,
+        override: false,
+        source: "direct-override",
+        effective: expect.objectContaining({ enabled: false }),
+      }),
+    );
   });
 });

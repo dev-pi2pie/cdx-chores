@@ -44,6 +44,10 @@ import {
   promptMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderPageNumberChoice,
+  type MarkdownPdfRenderPageNumberChoice,
+} from "./render-page-numbers";
 
 export type MarkdownPdfAuthoringOutcome =
   | InteractiveNavigationOutcome
@@ -211,6 +215,7 @@ async function reviewCandidate(
     | {
         candidate: PreparedMarkdownPdfDeterministicRecipe;
         codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+        pageNumbers: MarkdownPdfRenderPageNumberChoice;
       }
     | undefined;
   while (true) {
@@ -228,29 +233,49 @@ async function reviewCandidate(
     if (action === "temporary-render" || action === "save-and-render") {
       const currentCodeHighlight =
         renderContext?.candidate === candidate ? renderContext.codeHighlight : "inherit";
-      const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
-      if (codeHighlight === "back") {
-        continue;
+      let codeHighlight = currentCodeHighlight;
+      let pageNumbers =
+        renderContext?.candidate === candidate ? renderContext.pageNumbers : "inherit";
+      while (true) {
+        const codeChoice = await promptMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
+        if (codeChoice === "back") {
+          break;
+        }
+        if (codeChoice === "cancel") {
+          return "complete";
+        }
+        codeHighlight = codeChoice;
+        const pageChoice = await promptMarkdownPdfRenderPageNumberChoice(pageNumbers);
+        if (pageChoice === "cancel") {
+          return "complete";
+        }
+        if (pageChoice === "back") {
+          continue;
+        }
+        pageNumbers = pageChoice;
+        const selection: MarkdownPdfGeneratedLifecycleSelection = {
+          candidate: { kind: "deterministic", candidate },
+          codeHighlight,
+          kind: "generated-lifecycle",
+          lifecycle: action,
+          markdownInput: markdownInput!,
+          pageNumbers,
+          report: { kind: "none" },
+        };
+        if (!onGeneratedLifecycle) {
+          return selection;
+        }
+        const outcome = await onGeneratedLifecycle(selection);
+        if (outcome.kind === "complete") {
+          return "complete";
+        }
+        renderContext = {
+          candidate,
+          codeHighlight: outcome.codeHighlight,
+          pageNumbers: outcome.pageNumbers,
+        };
+        break;
       }
-      if (codeHighlight === "cancel") {
-        return "complete";
-      }
-      const selection: MarkdownPdfGeneratedLifecycleSelection = {
-        candidate: { kind: "deterministic", candidate },
-        codeHighlight,
-        kind: "generated-lifecycle",
-        lifecycle: action,
-        markdownInput: markdownInput!,
-        report: { kind: "none" },
-      };
-      if (!onGeneratedLifecycle) {
-        return selection;
-      }
-      const outcome = await onGeneratedLifecycle(selection);
-      if (outcome.kind === "complete") {
-        return "complete";
-      }
-      renderContext = { candidate, codeHighlight: outcome.codeHighlight };
       continue;
     }
     if (action === "save") {

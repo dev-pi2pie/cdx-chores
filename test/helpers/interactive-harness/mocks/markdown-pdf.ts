@@ -8,6 +8,7 @@ import {
   markdownPdfCodexServiceModuleUrl,
   markdownPdfDeterministicAuthoringModuleUrl,
   markdownPdfLifecycleModuleUrl,
+  markdownPdfProjectBundleCompletenessModuleUrl,
   markdownPdfRenderBundleModuleUrl,
   markdownPdfRenderServiceModuleUrl,
 } from "../module-urls";
@@ -502,6 +503,22 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         template: candidates("template"),
         css: candidates("css"),
         ignoredProfileFiles: context.scenario.markdownPdfIgnoredBundleFiles ?? [],
+      };
+    },
+  }));
+
+  mock.module(markdownPdfProjectBundleCompletenessModuleUrl, () => ({
+    validateMdPdfProjectBundleCompleteness: async (directory: string) => {
+      if (context.scenario.markdownPdfProjectCompletenessErrorMessage) {
+        throw new Error(context.scenario.markdownPdfProjectCompletenessErrorMessage);
+      }
+      return {
+        assets: [],
+        css: resolve(directory, "style.css"),
+        directory,
+        profile: resolve(directory, "profile.yml"),
+        reports: [],
+        template: resolve(directory, "template.html"),
       };
     },
   }));

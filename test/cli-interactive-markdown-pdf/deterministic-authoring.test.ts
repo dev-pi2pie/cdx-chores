@@ -554,6 +554,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "starter",
         "temporary-render",
         "enable",
+        "enable",
         "default",
       ],
       requiredPathQueue: ["fixtures/report.md"],
@@ -566,12 +567,14 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       { artifact: "profile", candidateId: "deterministic-1" },
     ]);
     expect(result.markdownPdfPrepareCalls).toEqual([
-      expect.objectContaining({ codeHighlight: true }),
+      expect.objectContaining({ codeHighlight: true, pageNumbers: true }),
     ]);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
     expect(result.stderr).toContain("Render override:\n- Enable for this render");
     expect(result.stderr).toContain("Effective render:");
     expect(result.stderr).toContain("- Highlighting: enabled");
+    expect(result.stderr).toContain("Page numbers:");
+    expect(result.stderr).toContain("- One-render override: enable for this PDF");
     expect(result.stdout).toContain("Wrote PDF:");
   });
 
@@ -586,6 +589,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "starter",
         "save-and-render",
         "disable",
+        "disable",
         "custom",
         "default",
       ],
@@ -599,11 +603,12 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     ]);
     expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
     expect(result.markdownPdfPrepareCalls).toEqual([
-      expect.objectContaining({ codeHighlight: false }),
+      expect.objectContaining({ codeHighlight: false, pageNumbers: false }),
     ]);
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
     expect(result.stderr).not.toContain("Reusable Profile settings:");
     expect(result.stderr).toContain("Render override:\n- Disable for this render");
+    expect(result.stderr).toContain("- One-render override: disable for this PDF");
     expect(result.stderr).toContain("- Highlighting: disabled");
     expect(result.stderr).toContain("Recipe cleanup: never");
   });

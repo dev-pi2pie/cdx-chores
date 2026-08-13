@@ -7,6 +7,7 @@ import {
   type PlannedMarkdownPdfRender,
 } from "../../actions/markdown/to-pdf-service";
 import { displayPath, printLine } from "../../actions/shared";
+import { validateMdPdfProjectBundleCompleteness } from "../../markdown-pdf/project-codex/project-bundle-completeness";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
@@ -346,15 +347,32 @@ async function handlePreparedMarkdownPdfRender(
   }
 }
 
-async function promptAndPrepareMarkdownPdfRenderSource(
+async function promptAndPrepareSavedMarkdownPdfRenderSource(
   runtime: CliRuntime,
   selected: MarkdownPdfInteractiveSelectedRenderSource,
+  saved: MarkdownPdfSavedRecipe,
 ): Promise<MarkdownPdfInteractivePreparedRenderSource | "back" | "cancel"> {
-  const choice = await promptMarkdownPdfRenderCodeHighlightChoice();
-  if (choice === "back" || choice === "cancel") {
-    return choice;
+  let currentCodeHighlight: MarkdownPdfRenderCodeHighlightChoice = "inherit";
+  while (true) {
+    const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
+    if (codeHighlight === "back" || codeHighlight === "cancel") {
+      return codeHighlight;
+    }
+    currentCodeHighlight = codeHighlight;
+    const pageNumbers = await promptMarkdownPdfRenderPageNumberChoice();
+    if (pageNumbers === "cancel") {
+      return "cancel";
+    }
+    if (pageNumbers === "back") {
+      continue;
+    }
+    if (saved.artifact === "project-bundle") {
+      await validateMdPdfProjectBundleCompleteness(saved.outputPath, {
+        displayDirectory: displayPath(runtime, saved.outputPath),
+      });
+    }
+    return await prepareMarkdownPdfRenderSource(runtime, selected, codeHighlight, pageNumbers);
   }
-  return await prepareMarkdownPdfRenderSource(runtime, selected, choice);
 }
 
 async function promptAndPrepareDirectMarkdownPdfRenderSource(
@@ -426,7 +444,11 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
           options.savedRecipe,
         );
         const selected = selectSavedMarkdownPdfRenderSource(input, options.savedRecipe);
-        const prepared = await promptAndPrepareMarkdownPdfRenderSource(runtime, selected);
+        const prepared = await promptAndPrepareSavedMarkdownPdfRenderSource(
+          runtime,
+          selected,
+          options.savedRecipe,
+        );
         if (prepared === "back") {
           continue;
         }
