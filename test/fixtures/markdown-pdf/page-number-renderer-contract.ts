@@ -3,10 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PAGE_NUMBER_RENDERER_CONTRACT_VERSION = 3;
+export const PAGE_NUMBER_RENDERER_CONTRACT_VERSION = 4;
 export const PAGE_NUMBER_LAB_MARKER_NAME = ".cdx-chores-page-number-renderer-evidence";
 export const PAGE_NUMBER_LAB_MARKER_CONTENT =
-  "cdx-chores markdown-pdf page-number renderer evidence v3\n";
+  "cdx-chores markdown-pdf page-number renderer evidence v4\n";
 
 export type RendererCapability =
   | "blank-pages"
@@ -35,6 +35,7 @@ export const PAGE_NUMBER_AUTOMATED_EVIDENCE = [
 
 export type VisualReviewAssertion =
   | "color"
+  | "cover-transition"
   | "font-family"
   | "separator"
   | "stylesheet-cascade"
@@ -86,6 +87,37 @@ export interface ProductRendererScenario {
   visualReviewRequired: readonly VisualReviewAssertion[];
 }
 
+export type ProjectRendererLaunchMode = "bundle" | "explicit-roles";
+
+export interface ProjectRendererScenario {
+  id: string;
+  purpose: string;
+  required: true;
+  candidateIds: readonly WeasyPrintCandidate["id"][];
+  authoring:
+    | {
+        mode: "cover-image-only";
+        coverImage: { fileName: string; base64: string };
+        expectedProjectSignalMode: "deterministic";
+        liveCodexAllowed: false;
+      }
+    | {
+        mode: "base-profile-only";
+        baseProfile: string;
+        expectedProjectSignalMode: "deterministic";
+        liveCodexAllowed: false;
+      };
+  markdown: string;
+  launchModes: readonly ProjectRendererLaunchMode[];
+  expected: ExpectedPdfDocument;
+  visualReviewRequired: readonly VisualReviewAssertion[];
+  equivalenceBoundary?: {
+    compare: readonly ["bundle", "explicit-roles"];
+    automated: readonly string[];
+    excluded: readonly string[];
+  };
+}
+
 export interface MaterializedRendererContract {
   catalogDigest: string;
   fixtureRoot: string;
@@ -103,6 +135,22 @@ export interface MaterializedRendererContract {
         profilePath: string;
         templatePath?: string;
         cssPath?: string;
+      }
+    >
+  >;
+  projectLaunches: Readonly<
+    Record<
+      string,
+      {
+        authoringDirectory: string;
+        baseProfilePath?: string;
+        coverImagePath?: string;
+        markdownPath: string;
+        projectDirectory: string;
+        bundlePath: string;
+        profilePath: string;
+        templatePath: string;
+        cssPath: string;
       }
     >
   >;
@@ -807,6 +855,122 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
   },
 ];
 
+const deterministicNoBaseProjectMarkdown = `---
+title: PROJECT-NO-BASE-COVER
+---
+
+# PROJECT-NO-BASE-BODY-1
+
+The no-base deterministic Project uses its canonical bundle launch on the oldest candidate.
+`;
+
+const deterministicBaseProjectMarkdown = `# PROJECT-BASE-BODY-1
+
+The base-profile deterministic Project uses body-origin numbering.
+
+<div style="break-after: page"></div>
+
+# PROJECT-BASE-BODY-2
+
+The second page preserves the configured arithmetic.
+`;
+
+const deterministicBaseProjectProfile = `page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+titleBlock:
+  metadataTitle: hide
+
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "PROJECT-BASE-{page}/{pages}"
+  scope: body
+  countFrom: body
+  start: 0
+  increment: 2
+`;
+
+export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererScenario[] = [
+  {
+    id: "project-deterministic-no-base-bundle",
+    purpose:
+      "Materialize a no-base deterministic Project without Codex and render its canonical bundle on the 65.1 baseline.",
+    required: true,
+    candidateIds: ["wp-65-1"],
+    authoring: {
+      mode: "cover-image-only",
+      coverImage: {
+        fileName: "cover.png",
+        base64:
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+RQS4WQAAAABJRU5ErkJggg==",
+      },
+      expectedProjectSignalMode: "deterministic",
+      liveCodexAllowed: false,
+    },
+    markdown: deterministicNoBaseProjectMarkdown,
+    launchModes: ["bundle"],
+    expected: {
+      pageCount: 2,
+      sizeMillimeters: [210, 297],
+      orientation: "portrait",
+      pages: [
+        { marker: "PROJECT-NO-BASE-COVER", pageNumberLabels: [] },
+        { marker: "PROJECT-NO-BASE-BODY-1", pageNumberLabels: [] },
+      ],
+      pngPages: [1, 2],
+    },
+    visualReviewRequired: ["cover-transition"],
+  },
+  {
+    id: "project-deterministic-base-profile-equivalence",
+    purpose:
+      "Materialize a base-profile deterministic Project without Codex and compare bundle versus explicit-role rendering on 69.0.",
+    required: true,
+    candidateIds: ["wp-69-0"],
+    authoring: {
+      mode: "base-profile-only",
+      baseProfile: deterministicBaseProjectProfile,
+      expectedProjectSignalMode: "deterministic",
+      liveCodexAllowed: false,
+    },
+    markdown: deterministicBaseProjectMarkdown,
+    launchModes: ["bundle", "explicit-roles"],
+    expected: {
+      pageCount: 2,
+      sizeMillimeters: portraitSize,
+      orientation: "portrait",
+      pages: [
+        {
+          marker: "PROJECT-BASE-BODY-1",
+          pageNumberLabels: ["PROJECT-BASE-0/2"],
+          pageNumberRegion: "bottom-center",
+        },
+        {
+          marker: "PROJECT-BASE-BODY-2",
+          pageNumberLabels: ["PROJECT-BASE-2/2"],
+          pageNumberRegion: "bottom-center",
+        },
+      ],
+      pngPages: [1, 2],
+    },
+    visualReviewRequired: [],
+    equivalenceBoundary: {
+      compare: ["bundle", "explicit-roles"],
+      automated: [
+        "command outcome and warnings",
+        "physical page count and dimensions",
+        "extracted marker and page-number text by physical page",
+        "page-number margin-box region",
+        "diagnostics and renderer-capability outcomes",
+      ],
+      excluded: ["PDF byte equality", "PNG byte equality", "temporary paths"],
+    },
+  },
+];
+
 export const PAGE_NUMBER_BODY_HOOK_CASES = [
   {
     id: "generated-hook-document-origin",
@@ -840,12 +1004,18 @@ function stableCatalogPayload(launchMarkdown: string, launchProfile: string) {
     candidates: WEASYPRINT_CANDIDATES,
     scenarios: PAGE_NUMBER_RENDERER_SCENARIOS,
     productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+    projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
     evidenceBoundary: {
       automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
       visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
         scenarioId: scenario.id,
         assertions: scenario.visualReviewRequired,
-      })),
+      })).concat(
+        PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map((scenario) => ({
+          scenarioId: scenario.id,
+          assertions: scenario.visualReviewRequired,
+        })),
+      ),
     },
     bodyHookCases: PAGE_NUMBER_BODY_HOOK_CASES,
     launch: { markdown: launchMarkdown, profile: launchProfile },
@@ -894,6 +1064,20 @@ export async function materializePageNumberRendererContract(
       cssPath?: string;
     }
   > = {};
+  const projectLaunches: Record<
+    string,
+    {
+      authoringDirectory: string;
+      baseProfilePath?: string;
+      coverImagePath?: string;
+      markdownPath: string;
+      projectDirectory: string;
+      bundlePath: string;
+      profilePath: string;
+      templatePath: string;
+      cssPath: string;
+    }
+  > = {};
 
   await mkdir(fixtureRoot);
   for (const scenario of PAGE_NUMBER_RENDERER_SCENARIOS) {
@@ -940,9 +1124,24 @@ export async function materializePageNumberRendererContract(
               ...scenario
             }) => scenario,
           ),
+          projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map(
+            ({ authoring, markdown: _markdown, ...scenario }) => ({
+              ...scenario,
+              authoring:
+                authoring.mode === "base-profile-only"
+                  ? { ...authoring, baseProfile: undefined }
+                  : {
+                      ...authoring,
+                      coverImage: { ...authoring.coverImage, base64: undefined },
+                    },
+            }),
+          ),
           evidenceBoundary: {
             automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
-            visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
+            visualReviewRequired: [
+              ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+              ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
+            ].map((scenario) => ({
               scenarioId: scenario.id,
               assertions: scenario.visualReviewRequired,
             })),
@@ -983,6 +1182,43 @@ export async function materializePageNumberRendererContract(
     };
   }
 
+  const projectLaunchDirectory = join(fixtureRoot, "project-launches");
+  await mkdir(projectLaunchDirectory);
+  for (const scenario of PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS) {
+    const authoringDirectory = join(projectLaunchDirectory, scenario.id);
+    await mkdir(authoringDirectory);
+    const markdownPath = join(authoringDirectory, "input.md");
+    const projectDirectory = join(authoringDirectory, "project");
+    const baseProfilePath =
+      scenario.authoring.mode === "base-profile-only"
+        ? join(authoringDirectory, "base-profile.yml")
+        : undefined;
+    const coverImagePath =
+      scenario.authoring.mode === "cover-image-only"
+        ? join(authoringDirectory, scenario.authoring.coverImage.fileName)
+        : undefined;
+    await Promise.all([
+      writeFile(markdownPath, scenario.markdown, "utf8"),
+      ...(baseProfilePath && scenario.authoring.mode === "base-profile-only"
+        ? [writeFile(baseProfilePath, scenario.authoring.baseProfile, "utf8")]
+        : []),
+      ...(coverImagePath && scenario.authoring.mode === "cover-image-only"
+        ? [writeFile(coverImagePath, Buffer.from(scenario.authoring.coverImage.base64, "base64"))]
+        : []),
+    ]);
+    projectLaunches[scenario.id] = {
+      authoringDirectory,
+      ...(baseProfilePath ? { baseProfilePath } : {}),
+      ...(coverImagePath ? { coverImagePath } : {}),
+      markdownPath,
+      projectDirectory,
+      bundlePath: projectDirectory,
+      profilePath: join(projectDirectory, "profile.yml"),
+      templatePath: join(projectDirectory, "template.html"),
+      cssPath: join(projectDirectory, "style.css"),
+    };
+  }
+
   return {
     catalogDigest,
     fixtureRoot,
@@ -990,5 +1226,6 @@ export async function materializePageNumberRendererContract(
     scenarioDirectories,
     launch: { markdownPath, profilePath },
     productLaunches,
+    projectLaunches,
   };
 }

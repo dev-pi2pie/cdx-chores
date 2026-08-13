@@ -25,11 +25,13 @@ import {
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+  PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
   WEASYPRINT_CANDIDATES,
 } from "./fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
   ProductRendererScenario,
+  ProjectRendererScenario,
   RendererContractScenario,
 } from "./fixtures/markdown-pdf/page-number-renderer-contract";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -42,11 +44,12 @@ interface MockExecutionOptions {
 }
 
 function expectedScenarioEvidence(
-  scenario: RendererContractScenario | ProductRendererScenario,
+  scenario: RendererContractScenario | ProductRendererScenario | ProjectRendererScenario,
 ): PdfEvidence {
   const [widthMillimeters, heightMillimeters] = scenario.expected.sizeMillimeters;
   return {
     pageCount: scenario.expected.pageCount,
+    pageLabelState: "default-physical",
     pages: scenario.expected.pages.map((page) => {
       const labelRuns = page.pageNumberLabels.map((label) =>
         evidenceRun(
@@ -82,6 +85,7 @@ function evidenceRun(
 function expectedActualLaunchEvidence(): PdfEvidence {
   return {
     pageCount: 3,
+    pageLabelState: "default-physical",
     pages: [1, 2, 3].map((pageNumber) => ({
       text: `LAUNCH-PAGE-${pageNumber} LAUNCH-PN-${pageNumber}/3`,
       runs: [
@@ -184,6 +188,7 @@ function createMockExecution(options: MockExecutionOptions = {}) {
     const scenario = [
       ...PAGE_NUMBER_RENDERER_SCENARIOS,
       ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+      ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
     ].find((item) => pathHasSegment(path, item.id));
     const expected = scenario ? expectedScenarioEvidence(scenario) : expectedActualLaunchEvidence();
     return options.inspect?.(path, expected) ?? expected;
@@ -237,11 +242,32 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(report.evidenceStatus).toBe("visual-review-required");
       expect(report.evidenceBoundary.automated).toEqual(PAGE_NUMBER_AUTOMATED_EVIDENCE);
       expect(report.evidenceBoundary.visualReviewRequired).toEqual(
-        PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
-          scenarioId: scenario.id,
-          assertions: scenario.visualReviewRequired,
-        })),
+        [...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS, ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS].map(
+          (scenario) => ({
+            scenarioId: scenario.id,
+            assertions: scenario.visualReviewRequired,
+          }),
+        ),
       );
+      expect(report.temporaryImages.length).toBeGreaterThan(0);
+      expect(report.visualConclusions).toEqual([]);
+      expect(report.candidates[0]?.scenarios[0]?.extraction).toEqual(
+        expect.objectContaining({
+          pageCount: expect.any(Number),
+          dimensionsMillimeters: expect.any(Array),
+          labelsByPhysicalPage: expect.any(Array),
+          pageLabelState: "default-physical",
+        }),
+      );
+      expect(
+        mock.requests
+          .filter((request) => request.stage === "actual-launch")
+          .every((request) => request.argv[0] === "node" && request.argv[0] !== process.execPath),
+      ).toBe(true);
+      const publicReportText = JSON.stringify(publicEvidenceReport(report));
+      expect(publicReportText).not.toContain(report.labPath);
+      for (const image of report.temporaryImages)
+        expect(publicReportText).not.toContain(image.path);
       expect(mock.requests.length).toBeGreaterThan(0);
       expect(new Set(mock.requests.map((request) => request.timeoutMs))).toEqual(
         new Set([120_000]),
@@ -260,6 +286,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         uniqueId: "candidate-commands",
         keep: true,
         pythonExecutable: "/shared/python3.11",
+        nodeExecutable: "/explicit/node",
         runner: mock.runner,
         inspectPdf: mock.inspectPdf,
       });
@@ -284,7 +311,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
         const launch = mock.requests.find(
           (request) => request.stage === "actual-launch" && request.candidateId === candidate.id,
         );
-        expect(doctor?.argv.slice(-2)).toEqual(["doctor", "--json"]);
+        expect(doctor?.argv).toEqual(["/explicit/node", "dist/esm/bin.mjs", "doctor", "--json"]);
         expect(launch?.argv).toContain("to-pdf");
         expect(doctor?.env?.PATH).toContain(candidate.id);
         expect(launch?.env?.PATH).toContain(candidate.id);
@@ -316,7 +343,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
               request.scenarioId === scenario.id,
           );
           expect(launchRequest?.env?.PATH).toContain(candidate.id);
-          expect(launchRequest?.argv[0]).toBe(process.execPath);
+          expect(launchRequest?.argv[0]).toBe("/explicit/node");
           expect(launchRequest?.argv[1]).toBe("dist/esm/bin.mjs");
           expect(launchRequest?.argv.slice(2, 4)).toEqual(["md", "to-pdf"]);
           expect(launchRequest?.argv).toContain("--profile");
@@ -364,6 +391,43 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
               `/${candidate.id}/product-launches/${scenario.id}/output.pdf`,
             );
             expect(request.argv.at(-1)).toContain(`/page-${expectedPage}`);
+          }
+        }
+
+        for (const scenario of PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.filter((item) =>
+          item.candidateIds.includes(candidate.id),
+        )) {
+          const authoringRequest = mock.requests.find(
+            (request) =>
+              request.stage === "actual-launch" &&
+              request.candidateId === candidate.id &&
+              request.scenarioId === `${scenario.id}:authoring`,
+          );
+          expect(authoringRequest?.argv.slice(0, 5)).toEqual([
+            "/explicit/node",
+            "dist/esm/bin.mjs",
+            "md",
+            "pdf-project",
+            "codex",
+          ]);
+          expect(authoringRequest?.argv.includes("--base-profile")).toBe(
+            scenario.authoring.mode === "base-profile-only",
+          );
+          expect(authoringRequest?.argv.includes("--cover-image")).toBe(
+            scenario.authoring.mode === "cover-image-only",
+          );
+          expect(authoringRequest?.argv).toContain("--output");
+          for (const launchMode of scenario.launchModes) {
+            const launchRequest = mock.requests.find(
+              (request) =>
+                request.stage === "actual-launch" &&
+                request.candidateId === candidate.id &&
+                request.scenarioId === `${scenario.id}:${launchMode}`,
+            );
+            expect(launchRequest?.argv[0]).toBe("/explicit/node");
+            expect(launchRequest?.argv).toContain("to-pdf");
+            expect(launchRequest?.argv.includes("--bundle")).toBe(launchMode === "bundle");
+            expect(launchRequest?.argv.includes("--profile")).toBe(launchMode === "explicit-roles");
           }
         }
       }
@@ -475,14 +539,31 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       expect(report.bodyHooks.every((bodyHook) => bodyHook.passed)).toBe(true);
       expect(report.candidates).toHaveLength(3);
       for (const candidate of report.candidates) {
-        expect(candidate.scenarios).toEqual(
+        expect(candidate.scenarios.map(({ id, passed }) => ({ id, passed }))).toEqual(
           PAGE_NUMBER_RENDERER_SCENARIOS.map((scenario) => ({ id: scenario.id, passed: true })),
         );
-        expect(candidate.productScenarios).toEqual(
+        expect(candidate.productScenarios.map(({ id, passed }) => ({ id, passed }))).toEqual(
           PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
             id: scenario.id,
             passed: true,
           })),
+        );
+        expect(
+          candidate.projectScenarios.map(({ id, passed, extraction }) => ({
+            id,
+            passed,
+            pageLabelState: extraction?.pageLabelState,
+          })),
+        ).toEqual(
+          PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.filter((scenario) =>
+            scenario.candidateIds.includes(candidate.candidateId),
+          ).flatMap((scenario) =>
+            scenario.launchModes.map((mode) => ({
+              id: `${scenario.id}:${mode}`,
+              passed: true,
+              pageLabelState: "default-physical",
+            })),
+          ),
         );
         expect(candidate.doctorPassed).toBe(true);
         expect(candidate.actualLaunchPassed).toBe(true);
@@ -497,6 +578,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       await writeFile(pdfPath, minimalPdf("PDF-INSPECTOR-EVIDENCE"));
       const evidence = await inspectPdf(pdfPath);
       expect(evidence.pageCount).toBe(1);
+      expect(evidence.pageLabelState).toBe("default-physical");
       expect(evidence.pages).toHaveLength(1);
       expect(evidence.pages[0]?.text).toContain("PDF-INSPECTOR-EVIDENCE");
       expect(evidence.pages[0]?.runs).toContainEqual(
@@ -508,6 +590,119 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       );
       expect(evidence.pages[0]?.widthMillimeters).toBeCloseTo(148, 1);
       expect(evidence.pages[0]?.heightMillimeters).toBeCloseTo(210, 1);
+    });
+  });
+
+  test("gates unexpected custom PDF page-label metadata", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          path.includes("document-origin-visibility")
+            ? { ...expected, pageLabelState: "unexpected-custom" }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "custom-page-labels",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+      expect(report.outcome).toBe("failed");
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          stage: "contract-extraction",
+          message: expect.stringContaining("unexpected custom page-label metadata"),
+        }),
+      );
+      expect(
+        report.candidates[0]?.scenarios.find(
+          (scenario) => scenario.id === "document-origin-visibility",
+        )?.extraction?.pageLabelState,
+      ).toBe("unexpected-custom");
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
+  test("gates unexpected custom page labels on implemented product launches", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const target = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS[0];
+      expect(target).toBeDefined();
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          target && pathHasSegment(path, target.id)
+            ? { ...expected, pageLabelState: "unexpected-custom" }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "product-custom-page-labels",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+      expect(report.outcome).toBe("failed");
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          stage: "actual-launch-extraction",
+          scenarioId: target?.id,
+          message: expect.stringContaining("unexpected custom page-label metadata"),
+        }),
+      );
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
+  test("classifies Project extraction failures and bundle-explicit mismatches", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const project = PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS[1];
+      expect(project).toBeDefined();
+      const failed = createMockExecution({
+        inspect: (path, expected) =>
+          project && pathHasSegment(path, project.id) && pathHasSegment(path, "bundle")
+            ? { ...expected, pageCount: expected.pageCount + 1 }
+            : expected,
+      });
+      const failedReport = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "project-extraction-failure",
+        runner: failed.runner,
+        inspectPdf: failed.inspectPdf,
+      });
+      expect(failedReport.outcome).toBe("failed");
+      expect(failedReport.failures).toContainEqual(
+        expect.objectContaining({
+          classification: "contract-failure",
+          scenarioId: `${project?.id}:bundle`,
+        }),
+      );
+      await closeRetainedEvidenceLaboratory(failedReport.labPath, temporaryRoot);
+
+      const mismatch = createMockExecution({
+        inspect: (path, expected) =>
+          project && pathHasSegment(path, project.id) && pathHasSegment(path, "explicit-roles")
+            ? {
+                ...expected,
+                pages: expected.pages.map((page) => ({
+                  ...page,
+                  widthMillimeters: page.widthMillimeters + 0.1,
+                })),
+              }
+            : expected,
+      });
+      const mismatchReport = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "project-equivalence-mismatch",
+        runner: mismatch.runner,
+        inspectPdf: mismatch.inspectPdf,
+      });
+      expect(mismatchReport.outcome).toBe("failed");
+      expect(mismatchReport.failures).toContainEqual(
+        expect.objectContaining({
+          classification: "contract-failure",
+          scenarioId: project?.id,
+          message: "Project bundle and explicit-role extraction summaries differ.",
+        }),
+      );
+      await closeRetainedEvidenceLaboratory(mismatchReport.labPath, temporaryRoot);
     });
   });
 
@@ -1205,7 +1400,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       "see https://example.test/guidance",
     );
     const publicReport = publicEvidenceReport({
-      schemaVersion: 2,
+      schemaVersion: 3,
       catalogDigest: "a".repeat(64),
       harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
       outcome: "inconclusive",
@@ -1221,15 +1416,32 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
           message: "failure at /home/alice/lab and D:\\private\\lab",
         },
       ],
+      temporaryImages: [
+        {
+          candidateId: "wp-65-1",
+          scenarioId: "private-image",
+          physicalPage: 1,
+          path: "/home/alice/lab/page-1.png",
+        },
+      ],
+      visualConclusions: [
+        {
+          candidateId: "wp-65-1",
+          scenarioId: "private-image",
+          conclusion: "reviewed at /home/alice/lab/page-1.png",
+        },
+      ],
       evidenceBoundary: {
         automated: [],
         visualReviewRequired: [],
       },
     });
     expect(publicReport).not.toHaveProperty("labPath");
+    expect(publicReport).not.toHaveProperty("temporaryImages");
     expect(publicReport.retained).toBe(false);
     expect(JSON.stringify(publicReport)).not.toContain("alice");
     expect(JSON.stringify(publicReport)).not.toContain("D:\\\\private");
+    expect(publicReport.visualConclusions[0]?.conclusion).toBe("reviewed at [redacted-path]");
   });
 
   test("uses an allowlisted subprocess environment without ambient credentials", () => {

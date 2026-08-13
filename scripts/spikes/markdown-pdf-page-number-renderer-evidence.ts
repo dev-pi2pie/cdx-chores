@@ -15,6 +15,7 @@ import {
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+  PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
   WEASYPRINT_CANDIDATES,
 } from "../../test/fixtures/markdown-pdf/page-number-renderer-contract";
@@ -23,6 +24,7 @@ import type {
   PageNumberRegion,
   PageOrientation,
   ProductRendererScenario,
+  ProjectRendererScenario,
   RendererContractScenario,
   WeasyPrintCandidate,
 } from "../../test/fixtures/markdown-pdf/page-number-renderer-contract";
@@ -35,9 +37,10 @@ const maximumOutputBytes = 64 * 1024;
 const commandTimeoutMs = 120_000;
 
 const harnessContract = {
-  version: 3,
+  version: 4,
   candidates: WEASYPRINT_CANDIDATES.map((candidate) => candidate.id),
   productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
+  projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
   stages: [
     "setup",
     "dependency-install",
@@ -109,6 +112,7 @@ export interface PdfTextRunEvidence {
 export interface PdfEvidence {
   pageCount: number;
   pages: readonly PdfPageEvidence[];
+  pageLabelState: "default-physical" | "unexpected-custom";
 }
 
 export type PdfInspector = (pdfPath: string) => Promise<PdfEvidence>;
@@ -125,10 +129,38 @@ export interface CandidateEvidence {
   candidateId: WeasyPrintCandidate["id"];
   weasyPrintVersion: string;
   environment?: Record<string, string>;
-  scenarios: Array<{ id: string; passed: boolean }>;
+  scenarios: ScenarioEvidence[];
   doctorPassed: boolean;
   actualLaunchPassed: boolean;
-  productScenarios: Array<{ id: string; passed: boolean }>;
+  actualLaunchExtraction?: PdfExtractionSummary;
+  productScenarios: ScenarioEvidence[];
+  projectScenarios: ScenarioEvidence[];
+}
+
+export interface PdfExtractionSummary {
+  pageCount: number;
+  dimensionsMillimeters: Array<{ width: number; height: number }>;
+  labelsByPhysicalPage: string[][];
+  pageLabelState: PdfEvidence["pageLabelState"];
+}
+
+export interface ScenarioEvidence {
+  id: string;
+  passed: boolean;
+  extraction?: PdfExtractionSummary;
+}
+
+export interface TemporaryImageEvidence {
+  candidateId: WeasyPrintCandidate["id"];
+  scenarioId: string;
+  physicalPage: number;
+  path: string;
+}
+
+export interface VisualConclusion {
+  candidateId: WeasyPrintCandidate["id"];
+  scenarioId: string;
+  conclusion: string;
 }
 
 export interface BodyHookEvidence {
@@ -139,7 +171,7 @@ export interface BodyHookEvidence {
 }
 
 export interface RendererEvidenceReport {
-  schemaVersion: 2;
+  schemaVersion: 3;
   catalogDigest: string;
   harnessDigest: string;
   outcome: "failed" | "inconclusive" | "passed";
@@ -149,6 +181,8 @@ export interface RendererEvidenceReport {
   bodyHooks: BodyHookEvidence[];
   candidates: CandidateEvidence[];
   failures: EvidenceFailure[];
+  temporaryImages: TemporaryImageEvidence[];
+  visualConclusions: VisualConclusion[];
   evidenceBoundary: {
     automated: readonly string[];
     visualReviewRequired: Array<{ scenarioId: string; assertions: readonly string[] }>;
@@ -158,12 +192,14 @@ export interface RendererEvidenceReport {
 export interface RunRendererEvidenceOptions {
   keep?: boolean;
   pythonExecutable?: string;
+  nodeExecutable?: string;
   temporaryRoot?: string;
   uniqueId?: string;
   runner?: CommandRunner;
   inspectPdf?: PdfInspector;
   materializeContract?: typeof materializePageNumberRendererContract;
   initializeMarker?: (markerPath: string) => Promise<void>;
+  visualConclusions?: readonly VisualConclusion[];
 }
 
 export function safeSubprocessEnvironment(pathPrefix?: string): NodeJS.ProcessEnv {
@@ -352,6 +388,7 @@ export const inspectPdf: PdfInspector = async (pdfPath) => {
   } as never);
   const document = await loadingTask.promise;
   try {
+    const pageLabels = await document.getPageLabels();
     const pages: PdfPageEvidence[] = [];
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);
@@ -390,7 +427,11 @@ export const inspectPdf: PdfInspector = async (pdfPath) => {
         heightMillimeters: millimetersFromPoints(Math.abs(y2 - y1)),
       });
     }
-    return { pageCount: document.numPages, pages };
+    return {
+      pageCount: document.numPages,
+      pages,
+      pageLabelState: pageLabels === null ? "default-physical" : "unexpected-custom",
+    };
   } finally {
     await loadingTask.destroy();
   }
@@ -491,6 +532,9 @@ function validatePdfEvidence(
   evidence: PdfEvidence,
 ): string[] {
   const mismatches: string[] = [];
+  if (evidence.pageLabelState !== "default-physical") {
+    mismatches.push("PDF contains unexpected custom page-label metadata");
+  }
   if (evidence.pageCount !== scenario.expected.pageCount) {
     mismatches.push(
       `expected ${scenario.expected.pageCount} pages, received ${evidence.pageCount}`,
@@ -560,6 +604,9 @@ const actualLaunchExpected = {
 
 function validateActualLaunch(evidence: PdfEvidence): string[] {
   const mismatches: string[] = [];
+  if (evidence.pageLabelState !== "default-physical") {
+    mismatches.push("PDF contains unexpected custom page-label metadata");
+  }
   if (evidence.pageCount !== actualLaunchExpected.pageCount) {
     mismatches.push(`expected 3 actual-launch pages, received ${evidence.pageCount}`);
   }
@@ -588,6 +635,27 @@ function validateActualLaunch(evidence: PdfEvidence): string[] {
     }
   }
   return mismatches;
+}
+
+function roundedMillimeters(value: number): number {
+  return Number(value.toFixed(3));
+}
+
+function extractionSummary(
+  evidence: PdfEvidence,
+  expectedLabels: readonly (readonly string[])[],
+): PdfExtractionSummary {
+  return {
+    pageCount: evidence.pageCount,
+    dimensionsMillimeters: evidence.pages.map((page) => ({
+      width: roundedMillimeters(page.widthMillimeters),
+      height: roundedMillimeters(page.heightMillimeters),
+    })),
+    labelsByPhysicalPage: evidence.pages.map((page, index) =>
+      [...(expectedLabels[index] ?? [])].filter((label) => findContiguousLabelRun(page, label)),
+    ),
+    pageLabelState: evidence.pageLabelState,
+  };
 }
 
 export async function initializeEvidenceLaboratory(
@@ -807,6 +875,9 @@ interface RenderedScenarioEvidenceInput {
   renderArgv: (pdfPath: string) => readonly string[];
   pngPages: readonly number[];
   validate: (evidence: PdfEvidence) => string[];
+  summarize: (evidence: PdfEvidence) => PdfExtractionSummary;
+  temporaryImages: TemporaryImageEvidence[];
+  onExtraction: (summary: PdfExtractionSummary) => void;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -828,7 +899,9 @@ async function runRenderedScenarioEvidence(input: RenderedScenarioEvidenceInput)
 
   let mismatches: string[];
   try {
-    mismatches = input.validate(await input.pdfInspector(pdfPath));
+    const evidence = await input.pdfInspector(pdfPath);
+    mismatches = input.validate(evidence);
+    input.onExtraction(input.summarize(evidence));
   } catch (error) {
     input.failures.push({
       stage: input.extractionStage,
@@ -844,7 +917,14 @@ async function runRenderedScenarioEvidence(input: RenderedScenarioEvidenceInput)
   let pngCommandFailed = false;
   for (const pageNumber of input.pngPages) {
     const pngBase = join(input.outputDirectory, `page-${pageNumber}`);
-    pngPaths.push(`${pngBase}.png`);
+    const pngPath = `${pngBase}.png`;
+    pngPaths.push(pngPath);
+    input.temporaryImages.push({
+      candidateId: input.candidateId,
+      scenarioId: input.scenarioId,
+      physicalPage: pageNumber,
+      path: pngPath,
+    });
     const renderedPng = await runChecked(
       input.runner,
       commandRequest(
@@ -904,6 +984,7 @@ async function runRendererEvidenceInLaboratory(
   const pdfInspector = options.inspectPdf ?? inspectPdf;
   const failures: EvidenceFailure[] = [];
   const candidates: CandidateEvidence[] = [];
+  const temporaryImages: TemporaryImageEvidence[] = [];
   const contract = await (options.materializeContract ?? materializePageNumberRendererContract)(
     labRoot,
   );
@@ -932,6 +1013,7 @@ async function runRendererEvidenceInLaboratory(
       doctorPassed: false,
       actualLaunchPassed: false,
       productScenarios: [],
+      projectScenarios: [],
     };
     candidates.push(candidateResult);
 
@@ -1002,21 +1084,29 @@ async function runRendererEvidenceInLaboratory(
       const scenarioDirectory = contract.scenarioDirectories[scenario.id];
       if (!scenarioDirectory) throw new Error(`Missing materialized scenario ${scenario.id}.`);
       const candidateScenarioDirectory = join(labRoot, "results", candidate.id, scenario.id);
-      candidateResult.scenarios.push({
-        id: scenario.id,
-        passed: await runRenderedScenarioEvidence({
-          runner,
-          pdfInspector,
-          failures,
-          candidateId: candidate.id,
-          scenarioId: scenario.id,
-          outputDirectory: candidateScenarioDirectory,
-          renderStage: "contract-render",
-          extractionStage: "contract-extraction",
-          renderArgv: (pdfPath) => [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
-          pngPages: scenario.expected.pngPages,
-          validate: (evidence) => validatePdfEvidence(scenario, evidence),
-        }),
+      const scenarioEvidence: ScenarioEvidence = { id: scenario.id, passed: false };
+      candidateResult.scenarios.push(scenarioEvidence);
+      scenarioEvidence.passed = await runRenderedScenarioEvidence({
+        runner,
+        pdfInspector,
+        failures,
+        candidateId: candidate.id,
+        scenarioId: scenario.id,
+        outputDirectory: candidateScenarioDirectory,
+        renderStage: "contract-render",
+        extractionStage: "contract-extraction",
+        renderArgv: (pdfPath) => [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
+        pngPages: scenario.expected.pngPages,
+        validate: (evidence) => validatePdfEvidence(scenario, evidence),
+        summarize: (evidence) =>
+          extractionSummary(
+            evidence,
+            scenario.expected.pages.map((page) => page.pageNumberLabels),
+          ),
+        temporaryImages,
+        onExtraction: (summary) => {
+          scenarioEvidence.extraction = summary;
+        },
       });
     }
 
@@ -1024,10 +1114,14 @@ async function runRendererEvidenceInLaboratory(
     const selectedEnvironment = safeSubprocessEnvironment(binDirectory);
     const doctor = await runChecked(
       runner,
-      commandRequest("doctor", [process.execPath, "dist/esm/bin.mjs", "doctor", "--json"], {
-        candidateId: candidate.id,
-        env: selectedEnvironment,
-      }),
+      commandRequest(
+        "doctor",
+        [options.nodeExecutable ?? "node", "dist/esm/bin.mjs", "doctor", "--json"],
+        {
+          candidateId: candidate.id,
+          env: selectedEnvironment,
+        },
+      ),
     );
     if (doctor.failure) {
       failures.push(doctor.failure);
@@ -1064,7 +1158,7 @@ async function runRendererEvidenceInLaboratory(
       commandRequest(
         "actual-launch",
         [
-          process.execPath,
+          options.nodeExecutable ?? "node",
           "dist/esm/bin.mjs",
           "md",
           "to-pdf",
@@ -1083,7 +1177,12 @@ async function runRendererEvidenceInLaboratory(
       failures.push(launched.failure);
     } else {
       try {
-        const mismatches = validateActualLaunch(await pdfInspector(launchPdf));
+        const evidence = await pdfInspector(launchPdf);
+        const mismatches = validateActualLaunch(evidence);
+        candidateResult.actualLaunchExtraction = extractionSummary(
+          evidence,
+          actualLaunchExpected.pages.map((page) => [page.label]),
+        );
         candidateResult.actualLaunchPassed = mismatches.length === 0;
         if (mismatches.length > 0) {
           failures.push(
@@ -1110,37 +1209,157 @@ async function runRendererEvidenceInLaboratory(
         "product-launches",
         scenario.id,
       );
-      candidateResult.productScenarios.push({
-        id: scenario.id,
-        passed: await runRenderedScenarioEvidence({
+      const scenarioEvidence: ScenarioEvidence = { id: scenario.id, passed: false };
+      candidateResult.productScenarios.push(scenarioEvidence);
+      scenarioEvidence.passed = await runRenderedScenarioEvidence({
+        runner,
+        pdfInspector,
+        failures,
+        candidateId: candidate.id,
+        scenarioId: scenario.id,
+        outputDirectory: productDirectory,
+        renderStage: "actual-launch",
+        extractionStage: "actual-launch-extraction",
+        renderArgv: (productPdf) => [
+          options.nodeExecutable ?? "node",
+          "dist/esm/bin.mjs",
+          "md",
+          "to-pdf",
+          "--input",
+          productLaunch.markdownPath,
+          "--profile",
+          productLaunch.profilePath,
+          ...(productLaunch.templatePath ? ["--template", productLaunch.templatePath] : []),
+          ...(productLaunch.cssPath ? ["--css", productLaunch.cssPath] : []),
+          "--output",
+          productPdf,
+          "--overwrite",
+        ],
+        pngPages: scenario.expected.pngPages,
+        validate: (evidence) => validatePdfEvidence(scenario, evidence),
+        summarize: (evidence) =>
+          extractionSummary(
+            evidence,
+            scenario.expected.pages.map((page) => page.pageNumberLabels),
+          ),
+        temporaryImages,
+        onExtraction: (summary) => {
+          scenarioEvidence.extraction = summary;
+        },
+        env: selectedEnvironment,
+      });
+    }
+
+    for (const scenario of PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS) {
+      if (!scenario.candidateIds.includes(candidate.id)) continue;
+      const projectLaunch = contract.projectLaunches[scenario.id];
+      if (!projectLaunch) throw new Error(`Missing materialized Project launch ${scenario.id}.`);
+      const authoringScenarioId = `${scenario.id}:authoring`;
+      const authored = await runChecked(
+        runner,
+        commandRequest(
+          "actual-launch",
+          [
+            options.nodeExecutable ?? "node",
+            "dist/esm/bin.mjs",
+            "md",
+            "pdf-project",
+            "codex",
+            ...(projectLaunch.baseProfilePath
+              ? ["--base-profile", projectLaunch.baseProfilePath]
+              : []),
+            ...(projectLaunch.coverImagePath
+              ? ["--cover-image", projectLaunch.coverImagePath]
+              : []),
+            "--output",
+            projectLaunch.projectDirectory,
+            "--overwrite",
+          ],
+          {
+            candidateId: candidate.id,
+            scenarioId: authoringScenarioId,
+            env: selectedEnvironment,
+          },
+        ),
+      );
+      if (authored.failure) {
+        failures.push(authored.failure);
+        continue;
+      }
+
+      const launchExtractions = new Map<string, PdfExtractionSummary>();
+      for (const launchMode of scenario.launchModes) {
+        const scenarioId = `${scenario.id}:${launchMode}`;
+        const scenarioEvidence: ScenarioEvidence = { id: scenarioId, passed: false };
+        candidateResult.projectScenarios.push(scenarioEvidence);
+        scenarioEvidence.passed = await runRenderedScenarioEvidence({
           runner,
           pdfInspector,
           failures,
           candidateId: candidate.id,
-          scenarioId: scenario.id,
-          outputDirectory: productDirectory,
+          scenarioId,
+          outputDirectory: join(
+            labRoot,
+            "results",
+            candidate.id,
+            "project-launches",
+            scenario.id,
+            launchMode,
+          ),
           renderStage: "actual-launch",
           extractionStage: "actual-launch-extraction",
-          renderArgv: (productPdf) => [
-            process.execPath,
+          renderArgv: (projectPdf) => [
+            options.nodeExecutable ?? "node",
             "dist/esm/bin.mjs",
             "md",
             "to-pdf",
             "--input",
-            productLaunch.markdownPath,
-            "--profile",
-            productLaunch.profilePath,
-            ...(productLaunch.templatePath ? ["--template", productLaunch.templatePath] : []),
-            ...(productLaunch.cssPath ? ["--css", productLaunch.cssPath] : []),
+            projectLaunch.markdownPath,
+            ...(launchMode === "bundle"
+              ? ["--bundle", projectLaunch.bundlePath]
+              : [
+                  "--profile",
+                  projectLaunch.profilePath,
+                  "--template",
+                  projectLaunch.templatePath,
+                  "--css",
+                  projectLaunch.cssPath,
+                ]),
             "--output",
-            productPdf,
+            projectPdf,
             "--overwrite",
           ],
           pngPages: scenario.expected.pngPages,
           validate: (evidence) => validatePdfEvidence(scenario, evidence),
+          summarize: (evidence) =>
+            extractionSummary(
+              evidence,
+              scenario.expected.pages.map((page) => page.pageNumberLabels),
+            ),
+          temporaryImages,
+          onExtraction: (summary) => {
+            scenarioEvidence.extraction = summary;
+            launchExtractions.set(launchMode, summary);
+          },
           env: selectedEnvironment,
-        }),
-      });
+        });
+      }
+      if (scenario.equivalenceBoundary && launchExtractions.size === 2) {
+        const [firstMode, secondMode] = scenario.equivalenceBoundary.compare;
+        if (
+          JSON.stringify(launchExtractions.get(firstMode)) !==
+          JSON.stringify(launchExtractions.get(secondMode))
+        ) {
+          failures.push(
+            contractFailure(
+              "actual-launch-extraction",
+              "Project bundle and explicit-role extraction summaries differ.",
+              candidate.id,
+              scenario.id,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -1148,7 +1367,20 @@ async function runRendererEvidenceInLaboratory(
     [
       ...PAGE_NUMBER_RENDERER_SCENARIOS.filter((scenario) => scenario.required),
       ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.filter((scenario) => scenario.required),
-    ].map((scenario: RendererContractScenario | ProductRendererScenario) => scenario.id),
+      ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.filter((scenario) => scenario.required).flatMap(
+        (scenario) => [
+          { id: scenario.id },
+          ...scenario.launchModes.map((mode) => ({ id: `${scenario.id}:${mode}` })),
+        ],
+      ),
+    ].map(
+      (
+        scenario:
+          | RendererContractScenario
+          | ProductRendererScenario
+          | Pick<ProjectRendererScenario, "id">,
+      ) => scenario.id,
+    ),
   );
   const hasRequiredContractFailure = failures.some(
     (failure) =>
@@ -1165,13 +1397,14 @@ async function runRendererEvidenceInLaboratory(
       : "passed";
   const retained = options.keep === true || outcome !== "passed";
   const report: RendererEvidenceReport = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     catalogDigest: contract.catalogDigest,
     harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
     outcome,
-    evidenceStatus: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.some(
-      (scenario) => scenario.visualReviewRequired.length > 0,
-    )
+    evidenceStatus: [
+      ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+      ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
+    ].some((scenario) => scenario.visualReviewRequired.length > 0)
       ? "visual-review-required"
       : "complete",
     retained,
@@ -1179,12 +1412,22 @@ async function runRendererEvidenceInLaboratory(
     bodyHooks,
     candidates,
     failures,
+    temporaryImages,
+    visualConclusions: (options.visualConclusions ?? []).map((conclusion) => ({
+      ...conclusion,
+      conclusion: publicSafeText(conclusion.conclusion),
+    })),
     evidenceBoundary: {
       automated: PAGE_NUMBER_AUTOMATED_EVIDENCE,
       visualReviewRequired: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => ({
         scenarioId: scenario.id,
         assertions: scenario.visualReviewRequired,
-      })),
+      })).concat(
+        PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map((scenario) => ({
+          scenarioId: scenario.id,
+          assertions: scenario.visualReviewRequired,
+        })),
+      ),
     },
   };
   await writeFile(
@@ -1198,13 +1441,17 @@ async function runRendererEvidenceInLaboratory(
 
 export function publicEvidenceReport(
   report: RendererEvidenceReport,
-): Omit<RendererEvidenceReport, "labPath"> {
-  const { labPath: _labPath, ...publicReport } = report;
+): Omit<RendererEvidenceReport, "labPath" | "temporaryImages"> {
+  const { labPath: _labPath, temporaryImages: _temporaryImages, ...publicReport } = report;
   return {
     ...publicReport,
     failures: report.failures.map((failure) => ({
       ...failure,
       message: publicSafeText(failure.message),
+    })),
+    visualConclusions: report.visualConclusions.map((conclusion) => ({
+      ...conclusion,
+      conclusion: publicSafeText(conclusion.conclusion),
     })),
     retained: false,
   };
@@ -1215,7 +1462,7 @@ function usage(): string {
     "Markdown PDF page-number renderer evidence harness.",
     "",
     "Usage:",
-    "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live [--keep] [--python <executable>]",
+    "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live [--keep] [--python <executable>] [--node <executable>]",
     "  bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts close --lab <retained-lab>",
     "",
     "The run command performs networked candidate installation and live rendering only with --live.",
@@ -1234,14 +1481,23 @@ async function main(argv: string[]): Promise<void> {
     const pythonIndex = args.indexOf("--python");
     const pythonExecutable = pythonIndex >= 0 ? args[pythonIndex + 1] : undefined;
     if (pythonIndex >= 0 && !pythonExecutable) throw new Error("--python requires an executable.");
+    const nodeIndex = args.indexOf("--node");
+    const nodeExecutable = nodeIndex >= 0 ? args[nodeIndex + 1] : undefined;
+    if (nodeIndex >= 0 && !nodeExecutable) throw new Error("--node requires an executable.");
     const unknown = args.filter(
       (arg, index) =>
-        arg !== "--live" && arg !== "--keep" && arg !== "--python" && index !== pythonIndex + 1,
+        arg !== "--live" &&
+        arg !== "--keep" &&
+        arg !== "--python" &&
+        arg !== "--node" &&
+        index !== pythonIndex + 1 &&
+        index !== nodeIndex + 1,
     );
     if (unknown.length > 0) throw new Error(`Unknown argument: ${unknown[0]}`);
     const report = await runRendererEvidence({
       keep: args.includes("--keep"),
       pythonExecutable,
+      nodeExecutable,
     });
     console.log(JSON.stringify(publicEvidenceReport(report), null, 2));
     if (report.retained) console.error(`Retained laboratory: ${report.labPath}`);
