@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-12
+modified-date: 2026-08-13
 status: active
 agent: codex
 ---
@@ -293,13 +293,21 @@ scenario HTML/CSS and one shared Markdown/Profile pair for the actual-launch
 lane. Any expansion requires review in the Phase 1 job. Do not force-add
 artifacts ignored by `examples/playground/.gitignore`.
 
-Candidate copies, environments, generated inputs, PDFs, PNGs, and raw reports
-belong in one uniquely named, ownership-marked OS temporary laboratory. Retain
-the laboratory through extraction and visual review, then remove it after the
+Renderer candidate copies, environments, generated inputs, PDFs, PNGs, and raw
+reports for the compatibility and integrated-renderer evidence lanes belong in
+one uniquely named, ownership-marked OS temporary laboratory. Retain the
+laboratory through extraction and visual review, then remove it after the
 public-safe evidence record is complete. Retain it only for a failed or
 inconclusive run, or when an explicit local keep option is used. Public records
 describe tested versions, fixture outcomes, and conclusions without copying
 local setup, retention choices, or resolved filesystem details.
+
+Phase 9 and Phase 10 may use small local workflow smokes under the ignored
+`examples/playground/md-pdf/smoke/<phase>/<unique-run>/` workspace. Never
+force-add that workspace or record its concrete path, private environment, raw
+output, or generated contents. Record only sanitized scenario outcomes,
+limitations, public tool versions when relevant, and whether the run was
+removed or retained locally for an unresolved failure.
 
 ## Implementation Phases
 
@@ -935,14 +943,18 @@ Phase checkpoint:
 - Focused Project, broad Markdown PDF, full repository, static, format, build,
   and diff checks pass at final tip `01879241`. Exact aggregate range
   `7b7ae9b5..01879241` covers 8A, 8B, 8C, 8D, evidence commit `127b2c16`, and
-  all review corrections. Security, maintainability, test, and documentation
-  review findings are closed; the documentation-only closeout commit remains
-  outside that reviewed range.
+  all review corrections. Recorded review findings are closed; the
+  documentation-only closeout commit remains outside that reviewed range.
 
 ### Phase 9: Project Bundle, Report, And Render Handoff
 
 Tasks:
 
+- [ ] Create and maintain the
+      [Phase 9 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-9-project-bundle-handoff.md)
+      from starting boundary `78701f3a`, with focused and aggregate validation,
+      one implementation commit, exact-range review, and a documentation-only
+      closeout.
 - [ ] Consume the typed Phase 8 validation results at the existing Project
       output boundary; serialize their public-safe diagnostic and capability
       fields into summaries and optional reports only in this phase.
@@ -981,6 +993,18 @@ Tasks:
 - [ ] Add direct Project tests for dry-run, generated and explicit output,
       base-Profile preservation/revision, validation failure, optional report,
       bundle resolution, and render-command output.
+- [ ] Run a small Project handoff smoke under
+      `examples/playground/md-pdf/smoke/phase9-project-handoff/<unique-run>/`:
+      cover a dry-run or report-only path with no Project-role writes, a
+      successful complete Project bundle, report exclusion from Profile
+      discovery, and bundle versus explicit-role preparation and render
+      handoff through the installed renderer.
+- [ ] Record sanitized smoke results and cleanup state in the Phase 9 job.
+      Treat installed-renderer execution as a handoff sanity check; Phase 12
+      owns cross-version, extraction, visual, and page-layout evidence.
+- [ ] Review the exact Phase 9 implementation range with maintainability and
+      test-quality reviewers, then review the closeout documentation and record
+      the final verdict before beginning Phase 10.
 
 Phase checkpoint:
 
@@ -989,11 +1013,20 @@ Phase checkpoint:
 - Bundle and explicit-role rendering resolve equivalent effective behavior.
 - `md pdf-project codex` remains an artifact coordinator; `md to-pdf` remains
   the renderer.
+- The small Project handoff smoke records sanitized results and cleanup state
+  without adding a permanent smoke framework or artifact.
+- The Phase 9 job records its implementation commit, exact reviewed range,
+  validation evidence, and Continue/Constrain/Stop verdict.
 
 ### Phase 10: Interactive Selected-Source Render Workflow
 
 Tasks:
 
+- [ ] Create and maintain the
+      [Phase 10 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-10-selected-source-render-workflow.md)
+      from the final Phase 9 closeout commit, with focused, broad, full, and
+      static validation, one implementation commit, exact-range review, and a
+      documentation-only closeout.
 - [ ] Audit the current Interactive `md to-pdf` working process for built-in,
       existing, bundle, Custom, generated, and saved-recipe handoff sources
       before changing prompt placement or lifecycle state.
@@ -1024,6 +1057,19 @@ Tasks:
 - [ ] Add selected-source tests for collection, effective-state review,
       no-Profile defaulting, backtracking, cancellation, retention, reset,
       recovery, warnings, and no-default-CSS failure.
+- [ ] Run a small selected-source smoke under
+      `examples/playground/md-pdf/smoke/phase10-selected-source/<unique-run>/`:
+      cover a navigation-only Back and Cancel path with zero writes, source
+      change and transient-choice reset, same-source review/output retention,
+      and representative built-in, existing Profile, Template/CSS bundle,
+      complete bundle, and Custom input paths.
+- [ ] Record sanitized smoke results and cleanup state in the Phase 10 job.
+      One representative installed-renderer case is a workflow sanity check;
+      generated and saved-recipe lifecycle remains Phase 11, and renderer
+      acceptance remains Phase 12.
+- [ ] Review the exact Phase 10 implementation and evidence range with
+      maintainability and test-quality reviewers, then review the closeout
+      documentation and record the final verdict before beginning Phase 11.
 
 Phase checkpoint:
 
@@ -1035,6 +1081,11 @@ Phase checkpoint:
   understandable.
 - Backtracking within the same selected-source context preserves the transient
   choice; a changed source or input resets it.
+- The small selected-source smoke confirms navigation, transient state,
+  preparation, and installed-renderer handoff with sanitized results and
+  cleanup state recorded in the Phase 10 job.
+- The Phase 10 job records its implementation commit, exact reviewed range,
+  validation evidence, and Continue/Constrain/Stop verdict.
 
 ### Phase 11: Interactive Generated And Saved-Recipe Lifecycle
 
