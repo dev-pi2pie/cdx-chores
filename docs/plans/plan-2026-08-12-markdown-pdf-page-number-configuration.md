@@ -1173,10 +1173,12 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and maintain a Phase 12 job from the Phase 11 documentation
-      closeout commit. Freeze the permanent-file boundary, candidate versions,
-      automated matrix, live covering matrix, cleanup policy, exact review
-      range, and final verdict before running evidence.
+- [ ] Create and activate the
+      [Phase 12 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-12-integrated-renderer-validation.md)
+      from the Phase 11 documentation closeout boundary `f2b0d81c`. Freeze the
+      permanent-file boundary, candidate versions, automated matrix, live
+      covering matrix, cleanup policy, exact review range, and final verdict
+      there before running evidence.
 - [ ] Reuse the Phase 1 fixture catalog, ownership marker, candidate setup,
       extraction, image, report, and cleanup harness. Add no second renderer
       smoke helper or playground workspace.
