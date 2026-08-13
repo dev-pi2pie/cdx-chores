@@ -1173,49 +1173,49 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and activate the
+- [x] Create and activate the
       [Phase 12 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-12-integrated-renderer-validation.md)
       from the Phase 11 documentation closeout boundary `f2b0d81c`. Freeze the
       permanent-file boundary, candidate versions, automated matrix, live
       covering matrix, cleanup policy, exact review range, and final verdict
       there before running evidence.
-- [ ] Reuse the Phase 1 fixture catalog, ownership marker, candidate setup,
+- [x] Reuse the Phase 1 fixture catalog, ownership marker, candidate setup,
       extraction, image, report, and cleanup harness. Add no second renderer
       smoke helper or playground workspace.
-- [ ] Keep the candidate set fixed to the Phase 1 evidence versions unless a
+- [x] Keep the candidate set fixed to the Phase 1 evidence versions unless a
       documented expansion review accepts a change.
-- [ ] Use deterministic tests for the complete orchestration matrix: old and
+- [x] Use deterministic tests for the complete orchestration matrix: old and
       new Profiles; direct overrides; built-in, Custom, generated, bundle, and
       saved-recipe sources; Interactive inherit/enable/disable; Project
       validation; report boundaries; body hooks; and Template CSS ownership.
-- [ ] For each frozen candidate, run `doctor --json`, the renderer-contract
+- [x] For each frozen candidate, run `doctor --json`, the renderer-contract
       scenarios, and at least one actual implemented `md to-pdf` launch with
       the same selected renderer.
-- [ ] Materialize deterministic Projects with no base Profile and with an
+- [x] Materialize deterministic Projects with no base Profile and with an
       existing base Profile, then cover bundle and explicit-role rendering
       without requiring live Codex requests.
-- [ ] Use a compact live covering matrix rather than every permutation. Cover
+- [x] Use a compact live covering matrix rather than every permutation. Cover
       each sequence origin, visibility scope, arithmetic boundary, position,
       typography/separator endpoint, cover/ToC/body transition, blank-page and
       repagination boundary at least once across the selected scenarios.
-- [ ] Verify occupied-slot, `{pages}`, legacy inference, missing-hook, and
+- [x] Verify occupied-slot, `{pages}`, legacy inference, missing-hook, and
       unsupported-capability diagnostics.
-- [ ] Record command result, warnings, PDF page count and dimensions, extracted
+- [x] Record command result, warnings, PDF page count and dimensions, extracted
       page-number text by physical page, and representative page images.
-- [ ] Visually inspect visibility, sequence, placement, clipping, overlap, and
+- [x] Visually inspect visibility, sequence, placement, clipping, overlap, and
       page transitions without using PDF byte equality as acceptance evidence.
-- [ ] Inspect PDF page-label metadata and confirm physical `{pages}` semantics
+- [x] Inspect PDF page-label metadata and confirm physical `{pages}` semantics
       remain unchanged without depending on a particular GUI viewer.
-- [ ] If a frozen candidate environment cannot be established after the
+- [x] If a frozen candidate environment cannot be established after the
       documented harness attempt, record a `Constrain` verdict and the sanitized
       limitation instead of adding ad hoc environment setup loops.
-- [ ] Run focused tests, the Markdown PDF regression suite, the full repository
+- [x] Run focused tests, the Markdown PDF regression suite, the full repository
       suite, TypeScript, lint, format check, build, and `git diff --check`.
-- [ ] Record only repository-relative, public-safe evidence. Remove a successful
+- [x] Record only repository-relative, public-safe evidence. Remove a successful
       ownership-marked laboratory after evidence is recorded; retain a failed
       or inconclusive laboratory only locally while unresolved, then close it
       through the existing guarded `close` command.
-- [ ] Review the exact Phase 12 implementation and evidence range with
+- [x] Review the exact Phase 12 implementation and evidence range with
       maintainability and test-quality reviewers, resolve accepted findings,
       and commit a reviewed documentation closeout before Phase 13.
 

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 12 integrated renderer validation"
 created-date: 2026-08-13
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -137,16 +137,16 @@ the same guarded command when it is resolved or abandoned.
 
 ## Checklist
 
-- [ ] Commit this activation job and parent link before implementation or live
+- [x] Commit this activation job and parent link before implementation or live
       evidence.
-- [ ] Audit and, only where needed, extend the existing harness and focused
+- [x] Audit and, only where needed, extend the existing harness and focused
       tests for the frozen automated and live matrices.
-- [ ] Prove the automated matrix, deterministic Project variants, and
+- [x] Prove the automated matrix, deterministic Project variants, and
       bundle/explicit equivalence.
-- [ ] Make the single live attempt across `65.1`, `68.0`, and `69.0`.
-- [ ] Record public-safe candidate, extraction, page-label, visual, and cleanup
+- [x] Make the single live attempt across `65.1`, `68.0`, and `69.0`.
+- [x] Record public-safe candidate, extraction, page-label, visual, and cleanup
       evidence plus a Continue or Constrain verdict.
-- [ ] Close every successful or resolved owned laboratory with the guarded
+- [x] Close every successful or resolved owned laboratory with the guarded
       `close` command.
 
 ## Validation
@@ -170,27 +170,59 @@ tests during changes and all gates at the final committed implementation tip.
 ## Commit, Review, And Closeout
 
 - [x] Record `f2b0d81c` as the clean starting boundary.
-- [ ] Ask `@auto_commit_notification` before the activation commit and at each
+- [x] Ask `@auto_commit_notification` before the activation commit and at each
       coherent, validated implementation, evidence, review-fix, and docs
       closeout checkpoint; automatically commit meaningful progress.
-- [ ] Record each commit and its evidence boundary here.
-- [ ] Review the exact `f2b0d81c..<final-implementation-tip>` range with
+- [x] Record each commit and its evidence boundary here.
+- [x] Review the exact `f2b0d81c..<final-implementation-tip>` range with
       maintainability and test-quality reviewers after all gates complete.
-- [ ] Record and resolve accepted findings in separate commits, widen the
+- [x] Record and resolve accepted findings in separate commits, widen the
       range, rerun affected gates, and repeat both reviews.
-- [ ] Review the completed job and parent checklist, then commit a reviewed
+- [x] Review the completed job and parent checklist, then commit a reviewed
       documentation-only Phase 12 closeout before Phase 13.
 
 No Codex Security scan or security plugin is part of Phase 12 verification.
 
 ## Evidence
 
-- Activation documentation commit: pending.
-- Implementation/evidence commits and final tip: pending.
-- Exact reviewed range and validation: pending.
-- Automated and live matrix results: pending.
-- Extraction, page-label, visual, and cleanup evidence: pending.
-- Review findings, documentation closeout, and final verdict: pending.
+- Activation documentation commit: `40d269b6`.
+- Harness, fixture, test, and evidence commit: `5a40c1f2`. This is the final
+  implementation/evidence tip.
+- Exact reviewed range: `f2b0d81c..5a40c1f2`. Maintainability and test-quality
+  review found no remaining material findings after the precommit review fixes
+  for Project failure gating, combined visual status, extraction/equivalence
+  coverage, page-label checks, and public-report path privacy.
+- Automated validation:
+  - focused evidence and Project contract: 31 tests, 1,048 assertions
+  - Phase 12 integration slice: 511 tests, 4,349 assertions
+  - broad Markdown PDF regression: 1,183 tests, 8,641 assertions across 80 files
+  - full repository: 2,203 tests, 13,079 assertions across 245 files
+  - TypeScript, lint, format, build, worktree diff, and exact-range diff checks:
+    passed
+- The single live attempt passed on WeasyPrint `65.1`, `68.0`, and `69.0` with
+  the frozen Pydyf and FontTools pins. Each candidate passed its selected
+  `doctor --json`, required renderer-contract cases, current Node CLI launch,
+  three product scenarios, and body-hook expectations. The informative
+  repagination sentinel also passed.
+- Deterministic Project evidence passed without live Codex: the no-base Project
+  rendered through its canonical bundle on `65.1`; the base-Profile Project
+  rendered through bundle and explicit roles on `69.0` with matching extraction
+  summaries, page-number regions, dimensions, and capability outcomes.
+- Every inspected PDF used default physical page-label metadata. Extracted
+  `{pages}` denominators equaled physical page count, including body-origin,
+  zero-start, non-default-increment, blank-page, cover, and ToC cases.
+- Representative temporary PNG review covered all six positions, separator
+  endpoints, blank and repagination pages, product cover/body transitions,
+  bounded typography/color/separators, custom stylesheet precedence, and both
+  Project forms. Extraction and images agreed; no clipping, overlap,
+  misplacement, illegibility, or transition defect was found.
+- The retained ownership-marked laboratory was closed through the guarded
+  command after inspection. Nothing was retained or committed; no local path,
+  environment name, raw report, PDF, or PNG appears in the durable record.
+- Documentation closeout review: completed with no material plan or evidence
+  gaps after correcting this stale pending-state wording.
+- Final verdict: **Continue to Phase 13 after this reviewed documentation-only
+  closeout commit.**
 
 ## Related Research
 
