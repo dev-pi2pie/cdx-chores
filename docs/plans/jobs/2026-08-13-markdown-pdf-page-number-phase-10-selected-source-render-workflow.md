@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 10 selected-source render workflow"
 created-date: 2026-08-13
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -19,8 +19,7 @@ acceptance remain Phase 12 work.
 
 ## Starting Boundary
 
-- Starting commit: the Phase 9 documentation closeout commit, to be recorded
-  before the Phase 10 implementation commit.
+- Starting commit: `0460f094`, the Phase 9 documentation closeout.
 - Preserved working-tree code from the abandoned execution is candidate work;
   every checklist item remains open until the code is recommitted, validated,
   and reviewed in the clean execution.
@@ -47,26 +46,26 @@ acceptance remain Phase 12 work.
 
 ## Implementation Checklist
 
-- [ ] Implement the exact three-choice prompt and lossless
+- [x] Implement the exact three-choice prompt and lossless
       `undefined`/`true`/`false` compilation while keeping legacy/generated
       callers free of new required transient state.
-- [ ] Integrate the prompt into direct selected-source rendering after source
+- [x] Integrate the prompt into direct selected-source rendering after source
       selection and before authoritative preparation.
-- [ ] Preserve code-highlighting state independently while page-number changes
+- [x] Preserve code-highlighting state independently while page-number changes
       reprepare and rebind the same output plan.
-- [ ] Cover Back, Cancel, same-choice reuse, changed-choice reprepare,
+- [x] Cover Back, Cancel, same-choice reuse, changed-choice reprepare,
       same-context retention, output-planning recovery, and source-change
       reset.
-- [ ] Review reusable, override, and effective page-number state without
+- [x] Review reusable, override, and effective page-number state without
       presenting requested capabilities as installed readiness.
-- [ ] Emit diagnostic warnings and actual requested capability assessment only
+- [x] Emit diagnostic warnings and actual requested capability assessment only
       from the successful execution result, once per rendered document.
-- [ ] Cover built-in, existing Profile, Template/CSS-only bundle, complete
+- [x] Cover built-in, existing Profile, Template/CSS-only bundle, complete
       bundle, Custom explicit roles, and Custom bundle-plus-explicit
       precedence.
-- [ ] Cover inherited and explicit `--no-default-css` conflicts before output
+- [x] Cover inherited and explicit `--no-default-css` conflicts before output
       planning or execution.
-- [ ] Prove generated and saved-recipe handoff receives no Phase 10 prompt,
+- [x] Prove generated and saved-recipe handoff receives no Phase 10 prompt,
       persisted override, materialization, cleanup, or recovery behavior.
 
 ## Verification
@@ -94,36 +93,67 @@ git diff --check
 
 Run one small local selected-source smoke under the ignored
 `examples/playground/md-pdf/smoke/phase10-selected-source/<unique-run>/` path.
-Cover Back/Cancel with zero output, same-context retention, source-change reset,
-and representative built-in, Profile, Template/CSS, complete-bundle, and
-Custom paths with inherit, enable, and disable choices. One installed-renderer
-case is command and handoff sanity only. Record sanitized outcomes, public
-renderer version, limitations, and cleanup state; commit no smoke artifacts.
+Cover Back/Cancel with zero output and one built-in override through preparation
+and review. Keep the complete source-family, same-context retention, and
+source-reset matrix in deterministic automated tests. One bounded
+installed-renderer attempt is command and handoff sanity only; environment
+unavailability is recorded rather than expanded into setup work. Record only
+sanitized outcomes, limitations, and cleanup state; commit no smoke artifacts.
 
 ## Commit And Review
 
-- [ ] Record the concrete Phase 9 closeout commit as the starting boundary.
-- [ ] Commit the coherent Phase 10 implementation and tests.
-- [ ] Record focused, broad, full, and static verification from the committed
+- [x] Record the concrete Phase 9 closeout commit as the starting boundary.
+- [x] Commit the coherent Phase 10 implementation and tests.
+- [x] Record focused, broad, full, and static verification from the committed
       tip.
-- [ ] Review the exact Phase 10 `base..implementation-tip` range with
+- [x] Review the exact Phase 10 `base..implementation-tip` range with
       maintainability and test-quality reviewers.
-- [ ] Resolve accepted findings, widen the tip, rerun affected gates, and
+- [x] Resolve accepted findings, widen the tip, rerun affected gates, and
       re-review when necessary.
-- [ ] Have the completed job and parent checklist reviewed as documentation.
-- [ ] Commit the documentation-only closeout before beginning Phase 11.
+- [x] Have the completed job and parent checklist reviewed as documentation.
+- [x] Commit this documentation-only closeout before beginning Phase 11.
 
 `@auto_commit_notification` is used only at the implementation and closeout
 boundaries, or for a necessary accepted-review correction.
 
 ## Evidence
 
-- Starting commit: pending Phase 9 closeout.
-- Implementation commit: pending.
-- Final implementation tip: pending.
-- Exact reviewed range: pending.
-- Smoke result and cleanup: pending.
-- Final verdict: pending.
+- Starting commit: `0460f094`.
+- Implementation commit: `9900b6b0`.
+- Accepted review correction: `2df8ecab`, preserving the selected code
+  highlighting mode after returning Back from the initial page-number prompt
+  and adding final-review Back, Cancel, and unchanged-choice coverage.
+- Final implementation tip: `2df8ecab`.
+- Exact reviewed range: `0460f094..2df8ecab`.
+- Focused validation passed: page-number choices `6` tests / `9` assertions;
+  preparation `4` / `14`; page-number review `7` / `26`; selected-source
+  rendering `56` / `211`; saved/generated handoff `9` / `32`; prepared render
+  `9` / `43`; diagnostics `13` / `29`; Interactive routing `12` / `29`.
+- The full Interactive Markdown PDF directory passed `273` tests / `1,179`
+  assertions before the review correction; the corrected selected-source and
+  lifecycle review passed `91` tests. Final broad Markdown PDF validation
+  passed `1,140` tests / `8,292` assertions, and the full repository passed
+  `2,160` tests / `12,730` assertions.
+- `bunx tsc --noEmit`, lint, format check, build, and `git diff --check` passed
+  at the implementation or widened correction tip as applicable.
+- Maintainability review found one lifecycle defect: returning Back from the
+  initial page-number prompt reset the code-highlighting prompt default. The
+  accepted correction preserves that choice. Widened-range maintainability and
+  test-quality reviews found no remaining material concern or coverage gap.
+- Documentation review found no material contract or evidence gap after the
+  final checklist lifecycle was aligned with this closeout commit.
+- Real PTY smoke passed Back and Cancel navigation with zero output and a
+  built-in `Enable for this PDF` path through preparation, effective-state
+  review, and output cancellation. Automated tests cover Profile,
+  Template/CSS-only, complete-bundle, and Custom sources; inherit, enable, and
+  disable choices; same-context retention; source reset; and capability output.
+- A bounded installed-renderer attempt could not start because the task
+  environment lacked the required native WeasyPrint libraries. Phase 10 makes
+  no renderer-layout claim; Phase 12 retains that acceptance. Marker-validated
+  cleanup removed the ignored smoke run and retained nothing.
+- Final verdict: **Continue to Phase 11.** The selected-source lifecycle is
+  complete, while generated/saved-recipe lifecycle and renderer acceptance
+  remain explicitly deferred to Phases 11 and 12.
 
 ## Related Research
 

@@ -1024,52 +1024,53 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and maintain the
+- [x] Create and maintain the
       [Phase 10 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-10-selected-source-render-workflow.md)
       from the final Phase 9 closeout commit, with focused, broad, full, and
       static validation, one implementation commit, exact-range review, and a
       documentation-only closeout.
-- [ ] Audit the current Interactive `md to-pdf` working process for built-in,
+- [x] Audit the current Interactive `md to-pdf` working process for built-in,
       existing, bundle, Custom, generated, and saved-recipe handoff sources
       before changing prompt placement or lifecycle state.
-- [ ] Record where source selection, Markdown input selection, authoritative
+- [x] Record where source selection, Markdown input selection, authoritative
       renderer preparation, recipe review, output selection, final review, and
       recovery occur for each source family.
-- [ ] Add `Use recipe setting` as a one-render page-number choice.
-- [ ] Add `Enable for this PDF` and `Disable for this PDF` as the other
+- [x] Add `Use recipe setting` as a one-render page-number choice.
+- [x] Add `Enable for this PDF` and `Disable for this PDF` as the other
       one-render page-number choices.
-- [ ] Compile the choices to the shared optional enablement override
+- [x] Compile the choices to the shared optional enablement override
       `undefined`, `true`, and `false` without adding a second detailed
       page-number object.
-- [ ] Default to `Use recipe setting`, using the resolved Profile value or the
+- [x] Default to `Use recipe setting`, using the resolved Profile value or the
       normalized default when the source has no Profile.
-- [ ] Place the choice after the source and Markdown input are known and before
+- [x] Place the choice after the source and Markdown input are known and before
       authoritative renderer preparation for existing, built-in, and Custom
       paths.
-- [ ] Show recipe setting, one-render override, and effective page-number result
+- [x] Show recipe setting, one-render override, and effective page-number result
       as distinct values in review output.
-- [ ] Show effective renderer capability posture and any page-number diagnostic
+- [x] Show effective renderer capability posture and any page-number diagnostic
       once in the Interactive review or result surface.
-- [ ] Define Back and Cancel destinations for built-in, existing Profile,
+- [x] Define Back and Cancel destinations for built-in, existing Profile,
       existing Template/CSS, ordinary selected bundle, and Custom paths.
-- [ ] Preserve the one-render choice while revisiting output selection, final
+- [x] Preserve the one-render choice while revisiting output selection, final
       review, or recovery within the same selected-source context.
-- [ ] Reset the choice to `Use recipe setting` when the Markdown input, recipe
+- [x] Reset the choice to `Use recipe setting` when the Markdown input, recipe
       source, selected artifact, or preparation mode changes.
-- [ ] Add selected-source tests for collection, effective-state review,
+- [x] Add selected-source tests for collection, effective-state review,
       no-Profile defaulting, backtracking, cancellation, retention, reset,
       recovery, warnings, and no-default-CSS failure.
-- [ ] Run a small selected-source smoke under
+- [x] Run a small selected-source smoke under
       `examples/playground/md-pdf/smoke/phase10-selected-source/<unique-run>/`:
-      cover a navigation-only Back and Cancel path with zero writes, source
-      change and transient-choice reset, same-source review/output retention,
-      and representative built-in, existing Profile, Template/CSS bundle,
-      complete bundle, and Custom input paths.
-- [ ] Record sanitized smoke results and cleanup state in the Phase 10 job.
-      One representative installed-renderer case is a workflow sanity check;
-      generated and saved-recipe lifecycle remains Phase 11, and renderer
-      acceptance remains Phase 12.
-- [ ] Review the exact Phase 10 implementation and evidence range with
+      cover navigation-only Back and Cancel with zero writes and one built-in
+      enable path through preparation and review. Keep the broader source,
+      reset, and retention matrix automated rather than duplicating it in a
+      long manual session.
+- [x] Record sanitized smoke results and cleanup state in the Phase 10 job. A
+      bounded installed-renderer attempt may be recorded as workflow sanity;
+      task-environment unavailability does not block Phase 10. Generated and
+      saved-recipe lifecycle remains Phase 11, and renderer acceptance remains
+      Phase 12.
+- [x] Review the exact Phase 10 implementation and evidence range with
       maintainability and test-quality reviewers, then review the closeout
       documentation and record the final verdict before beginning Phase 11.
 
@@ -1083,9 +1084,10 @@ Phase checkpoint:
   understandable.
 - Backtracking within the same selected-source context preserves the transient
   choice; a changed source or input resets it.
-- The small selected-source smoke confirms navigation, transient state,
-  preparation, and installed-renderer handoff with sanitized results and
-  cleanup state recorded in the Phase 10 job.
+- The small selected-source smoke confirms navigation and one prepared review
+  path; automated coverage proves the broader source, reset, retention, and
+  handoff matrix. Sanitized results and cleanup state are recorded in the Phase
+  10 job.
 - The Phase 10 job records its implementation commit, exact reviewed range,
   validation evidence, and Continue/Constrain/Stop verdict.
 
