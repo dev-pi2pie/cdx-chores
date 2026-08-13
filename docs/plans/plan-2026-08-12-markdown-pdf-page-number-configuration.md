@@ -257,7 +257,7 @@ overrides alongside this toggle.
 
 ### Out of scope
 
-- PDF viewer page-label metadata
+- changing or authoring PDF viewer page-label metadata
 - changing physical PDF page indices or `{pages}` semantics
 - a logical final-page-number placeholder
 - arbitrary Profile-authored CSS
@@ -293,21 +293,23 @@ scenario HTML/CSS and one shared Markdown/Profile pair for the actual-launch
 lane. Any expansion requires review in the Phase 1 job. Do not force-add
 artifacts ignored by `examples/playground/.gitignore`.
 
-Renderer candidate copies, environments, generated inputs, PDFs, PNGs, and raw
-reports for the compatibility and integrated-renderer evidence lanes belong in
-one uniquely named, ownership-marked OS temporary laboratory. Retain the
-laboratory through extraction and visual review, then remove it after the
-public-safe evidence record is complete. Retain it only for a failed or
-inconclusive run, or when an explicit local keep option is used. Public records
-describe tested versions, fixture outcomes, and conclusions without copying
-local setup, retention choices, or resolved filesystem details.
+Temporary and smoke work has three distinct owners:
 
-Phase 9 and Phase 10 may use small local workflow smokes under the ignored
-`examples/playground/md-pdf/smoke/<phase>/<unique-run>/` workspace. Never
-force-add that workspace or record its concrete path, private environment, raw
-output, or generated contents. Record only sanitized scenario outcomes,
-limitations, public tool versions when relevant, and whether the run was
-removed or retained locally for an unresolved failure.
+| Purpose                             | Workspace                                                        | Rule                                                                                                           |
+| ----------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Phase 9–10 workflow sanity          | ignored `examples/playground/md-pdf/smoke/<phase>/<unique-run>/` | Local-only smoke; never force-add or record the concrete path, environment, raw output, or generated contents. |
+| Phase 11 generated temporary render | existing CLI-owned OS-temporary recipe session                   | Product lifecycle, not a test workspace; reuse canonical session cleanup, retention, and recovery.             |
+| Phase 12 renderer evidence          | existing Phase 1 ownership-marked OS-temporary laboratory        | Reuse the fixture/evidence harness; add no second smoke or cleanup mechanism.                                  |
+
+For Phase 9–10 smoke, record only sanitized outcomes, limitations, relevant
+public tool versions, and cleanup state. For Phase 11, Back or Cancel before
+session creation writes nothing; success removes only the exact owned session,
+while failure or failed cleanup uses the existing recovery flow. Durable and
+pre-existing recipes are never automatically removed. For Phase 12, freeze a
+compact covering matrix before execution: deterministic tests own the complete
+source and override combinations, while live candidate runs own renderer
+selection, extraction, and representative visual evidence. Public evidence
+never includes local setup, retention choices, resolved paths, or raw reports.
 
 ## Implementation Phases
 
@@ -1095,31 +1097,38 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Place the one-render choice after candidate acceptance and lifecycle
-      selection but before materialization and authoritative renderer
-      preparation for generated paths.
-- [ ] Place the choice after Markdown input selection in saved-recipe
-      `to-pdf` handoff paths.
-- [ ] Resolve accepted generated Profile candidates from their normalized
-      Profile, and generated Template-only candidates from the normalized
-      default or separately selected Profile, after materialization.
+- [ ] Create and maintain a Phase 11 job from the Phase 10 documentation
+      closeout commit. Record focused, broad, full, and static gates; whether a
+      manual smoke was intentionally omitted; cleanup evidence; commits; exact
+      review range; and final verdict.
+- [ ] Reuse the existing generated and saved-recipe lifecycle, including its
+      CLI-owned temporary session and recovery behavior; add no new temporary
+      helper or playground smoke framework.
+- [ ] For generated paths, place the page-number choice after the existing
+      one-render code-highlighting choice and before report/output collection,
+      materialization, or authoritative renderer preparation.
+- [ ] For saved-recipe `to-pdf` handoff, place the choice after Markdown input
+      and code-highlighting selection but before authoritative preparation.
+- [ ] Use an accepted candidate's normalized Profile or normalized default only
+      to preview the reusable setting before materialization. After temporary
+      materialization or durable save, reload the actual artifact: use its
+      normalized contained Profile when present, or the normalized default or
+      separately selected Profile for Profile-less Template output.
 - [ ] Resolve a generated Project recipe setting from the final contained
       Profile only after both Project phases complete and the candidate is
       accepted.
-- [ ] Cover temporary Project materialization, saved Project handoff, an
-      existing complete Project bundle, and a user-edited saved Project through
-      the same bundle-resolution path.
-- [ ] Re-resolve and normalize the final contained Profile after temporary
-      materialization or durable save instead of relying only on pre-write
-      candidate state.
+- [ ] Cover generated Profile, Template, and Project candidates; temporary
+      rendering; save-and-render; saved-recipe handoff; existing complete
+      Project bundles; and user-edited saved Projects through the established
+      resolver and lifecycle paths.
 - [ ] Treat a saved or existing Project whose contained Profile identity or
       content changed as a new render context: resolve it once, show the current
       setting, and reset the transient override to `Use recipe setting`.
 - [ ] Fail closed on stale, missing, ambiguous, or invalid contained Profile
       state without mutating the saved Project bundle.
-- [ ] Define Back and Cancel destinations for generated candidates, temporary
-      materialization, save-and-render handoff, and saved-recipe rendering
-      without discarding an applicable accepted candidate.
+- [ ] Prove Back or Cancel before session creation produces no materialization,
+      report, render, or output write. Once a temporary session exists, retain
+      the established retry/review/keep/confirmed-delete recovery behavior.
 - [ ] Preserve the one-render choice while revisiting outputs, final review,
       recovery, or the same accepted generated candidate.
 - [ ] Reset the choice when the Markdown input, recipe source, artifact,
@@ -1134,6 +1143,14 @@ Tasks:
       Template, generated Project, temporary render, save-and-render, existing
       complete Project, user-edited saved Project, backtracking, cancellation,
       retention, reset, recovery, and stale-state failure.
+- [ ] Keep Phase 11 verification automated and deterministic; do not require a
+      live Codex or renderer smoke when lifecycle seams can prove materialized
+      state, exact-session cleanup, durable preservation, and zero-write paths.
+- [ ] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
+      format, build, and diff gates at the final implementation tip. Review the
+      exact Phase 11 range with maintainability and test-quality reviewers,
+      resolve accepted findings, and commit a reviewed documentation closeout
+      before Phase 12.
 
 Phase checkpoint:
 
@@ -1143,43 +1160,58 @@ Phase checkpoint:
   contained Profile, not stale candidate memory.
 - Override-only changes preserve accepted work and never repeat unrelated
   Profile or Template Codex phases.
+- Temporary recipe behavior reuses the shipped owned-session lifecycle; Phase
+  11 adds no second cleanup mechanism or manual smoke workspace.
+- The Phase 11 job records its implementation commits, exact reviewed range,
+  validation and cleanup evidence, and Continue/Constrain/Stop verdict.
 
 ### Phase 12: Integrated Renderer And Compatibility Validation
 
 Tasks:
 
-- [ ] Reuse the Phase 1 fixtures to exercise the implemented `md to-pdf` path
-      against every applicable candidate version.
-- [ ] Run `doctor --json` and actual launches with the same effective renderer
-      selected for each candidate.
-- [ ] Cover old Profiles, new Profiles, direct enable/disable overrides,
-      built-in recipes, generated Templates, Projects, and legacy custom
-      Templates.
-- [ ] Generate a Project from no base Profile and from an existing base Profile,
-      then render each complete bundle through both `--bundle` and explicit-role
-      selection.
-- [ ] Cover Project validation, summary/report boundaries, generated body hooks,
-      and absence of competing generated page-number/page-chrome policy.
-- [ ] Cover Interactive inherit, enable, and disable choices across existing,
-      built-in, Custom, generated, bundle, and saved-recipe handoff sources.
-- [ ] Verify default arithmetic, `start: 0`, increment greater than one, both
-      sequence origins, and both visibility scopes.
-- [ ] Verify single-page and multi-page covers, title/front matter, variable ToC
-      length, blank pages, repagination, and body transitions.
-- [ ] Verify all positions and Phase 1-proven typography/separator behavior across
-      portrait, landscape, and narrow margins.
+- [ ] Create and maintain a Phase 12 job from the Phase 11 documentation
+      closeout commit. Freeze the permanent-file boundary, candidate versions,
+      automated matrix, live covering matrix, cleanup policy, exact review
+      range, and final verdict before running evidence.
+- [ ] Reuse the Phase 1 fixture catalog, ownership marker, candidate setup,
+      extraction, image, report, and cleanup harness. Add no second renderer
+      smoke helper or playground workspace.
+- [ ] Keep the candidate set fixed to the Phase 1 evidence versions unless a
+      documented expansion review accepts a change.
+- [ ] Use deterministic tests for the complete orchestration matrix: old and
+      new Profiles; direct overrides; built-in, Custom, generated, bundle, and
+      saved-recipe sources; Interactive inherit/enable/disable; Project
+      validation; report boundaries; body hooks; and Template CSS ownership.
+- [ ] For each frozen candidate, run `doctor --json`, the renderer-contract
+      scenarios, and at least one actual implemented `md to-pdf` launch with
+      the same selected renderer.
+- [ ] Materialize deterministic Projects with no base Profile and with an
+      existing base Profile, then cover bundle and explicit-role rendering
+      without requiring live Codex requests.
+- [ ] Use a compact live covering matrix rather than every permutation. Cover
+      each sequence origin, visibility scope, arithmetic boundary, position,
+      typography/separator endpoint, cover/ToC/body transition, blank-page and
+      repagination boundary at least once across the selected scenarios.
 - [ ] Verify occupied-slot, `{pages}`, legacy inference, missing-hook, and
       unsupported-capability diagnostics.
 - [ ] Record command result, warnings, PDF page count and dimensions, extracted
       page-number text by physical page, and representative page images.
 - [ ] Visually inspect visibility, sequence, placement, clipping, overlap, and
       page transitions without using PDF byte equality as acceptance evidence.
-- [ ] Confirm viewer page labels and physical `{pages}` semantics remain
-      unchanged.
+- [ ] Inspect PDF page-label metadata and confirm physical `{pages}` semantics
+      remain unchanged without depending on a particular GUI viewer.
+- [ ] If a frozen candidate environment cannot be established after the
+      documented harness attempt, record a `Constrain` verdict and the sanitized
+      limitation instead of adding ad hoc environment setup loops.
 - [ ] Run focused tests, the Markdown PDF regression suite, the full repository
       suite, TypeScript, lint, format check, build, and `git diff --check`.
-- [ ] Record only repository-relative, public-safe evidence; keep raw candidate
-      environments and resolved temporary paths local.
+- [ ] Record only repository-relative, public-safe evidence. Remove a successful
+      ownership-marked laboratory after evidence is recorded; retain a failed
+      or inconclusive laboratory only locally while unresolved, then close it
+      through the existing guarded `close` command.
+- [ ] Review the exact Phase 12 implementation and evidence range with
+      maintainability and test-quality reviewers, resolve accepted findings,
+      and commit a reviewed documentation closeout before Phase 13.
 
 Phase checkpoint:
 
@@ -1188,8 +1220,14 @@ Phase checkpoint:
 - Compatibility fixtures prove omitted new fields preserve shipped behavior.
 - Direct and Interactive Project-bundle paths preserve one contained Profile
   contract and equivalent bundle/explicit rendering behavior.
+- Automated tests prove the complete orchestration matrix; the bounded live
+  matrix proves renderer behavior without a Cartesian source/style/layout run.
+- Phase 12 reuses and safely closes the Phase 1 evidence laboratory rather than
+  introducing another temporary or smoke framework.
 - All required focused, repository-wide, static, build, and formatting checks
   pass before documentation claims the feature as shipped.
+- The Phase 12 job records candidate outcomes, representative extraction and
+  visual evidence, cleanup state, exact reviewed range, and final verdict.
 
 ### Phase 13: Guidance And Lifecycle Closeout
 
