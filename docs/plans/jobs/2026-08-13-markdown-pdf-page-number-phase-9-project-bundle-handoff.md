@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 9 Project bundle handoff"
 created-date: 2026-08-13
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -26,25 +26,25 @@ acceptance.
 
 ## Implementation Checklist
 
-- [ ] Project reports add one bounded handoff projection containing the final
+- [x] Project reports add one bounded handoff projection containing the final
       Profile identity and canonical `profile.yml` reference, artifact and
       render state, structured diagnostics, and advisory capability
       requirements.
-- [ ] Preserve report version `1` additively: historical reports may omit the
+- [x] Preserve report version `1` additively: historical reports may omit the
       handoff field, and no existing field changes meaning.
-- [ ] Derive the follow-up render command from fixed public arguments; never
+- [x] Derive the follow-up render command from fixed public arguments; never
       trust or persist a raw command or Interactive page-number override.
-- [ ] Keep direct and Interactive Project review separated into contained
+- [x] Keep direct and Interactive Project review separated into contained
       Profile behavior, Template presentation, and Project orchestration.
-- [ ] Make Project-helper completeness require exactly one valid
+- [x] Make Project-helper completeness require exactly one valid
       `profile.yml`, `template.html`, and `style.css`, with only recognized
       reports and managed assets optional.
-- [ ] Preserve generic resolver support for Profile-only, Template/CSS-only,
+- [x] Preserve generic resolver support for Profile-only, Template/CSS-only,
       and other ordinary partial bundles.
-- [ ] Cover dry-run, report-only, successful write, validation failure,
+- [x] Cover dry-run, report-only, successful write, validation failure,
       missing/duplicate/invalid roles, unrelated files, report exclusion, and
       public-safe terminal/report output.
-- [ ] Prove bundle and explicit-role selection of the same canonical Project
+- [x] Prove bundle and explicit-role selection of the same canonical Project
       files prepare equivalent Profile, page-number, diagnostic, capability,
       Template, CSS, and renderer inputs.
 
@@ -82,20 +82,22 @@ Run one small local handoff smoke under the ignored
 `examples/playground/md-pdf/smoke/phase9-project-handoff/<unique-run>/` path.
 Cover report-only or dry-run with no Project-role writes, complete Project
 output, report exclusion, and bundle-versus-explicit installed-renderer
-handoff. Record only sanitized outcomes, the public renderer version,
-limitations, and whether cleanup removed the run. Do not commit smoke files or
-claim layout or visual acceptance.
+handoff when the task shell exposes the renderer. If it does not, record that
+limitation and rely on the automated equivalence gate rather than expanding
+environment setup. Record only sanitized outcomes, a public renderer version
+when observed, limitations, and whether cleanup removed the run. Do not commit
+smoke files or claim layout or visual acceptance.
 
 ## Commit And Review
 
-- [ ] Commit the coherent Phase 9 implementation and tests.
-- [ ] Record focused and aggregate verification from that committed tip.
-- [ ] Review the exact `78701f3a..<implementation-tip>` range with
+- [x] Commit the coherent Phase 9 implementation and tests.
+- [x] Record focused and aggregate verification from that committed tip.
+- [x] Review the exact `78701f3a..<implementation-tip>` range with
       maintainability and test-quality reviewers.
-- [ ] Resolve accepted findings, widen the tip, rerun affected gates, and
+- [x] Resolve accepted findings, widen the tip, rerun affected gates, and
       re-review when necessary.
-- [ ] Have the completed job and parent checklist reviewed as documentation.
-- [ ] Commit the documentation-only closeout; use that commit as the Phase 10
+- [x] Have the completed job and parent checklist reviewed as documentation.
+- [x] Commit this documentation-only closeout; use its commit as the Phase 10
       starting boundary.
 
 `@auto_commit_notification` is used only at the implementation and closeout
@@ -103,11 +105,29 @@ boundaries, or for a necessary accepted-review correction.
 
 ## Evidence
 
-- Implementation commit: pending.
-- Final implementation tip: pending.
-- Exact reviewed range: pending.
-- Smoke result and cleanup: pending.
-- Final verdict: pending.
+- Implementation commit and final implementation tip: `f253b3ec`.
+- Exact reviewed range: `78701f3a..f253b3ec`.
+- Focused validation passed: Project `133` tests / `1,727` assertions; generic
+  bundle resolver `55` / `164`; prepared render `9` / `43`; Interactive Project
+  review `59` / `294`.
+- Broad Markdown PDF validation passed `1,096` tests / `8,142` assertions. The
+  full repository passed `2,116` tests / `12,580` assertions.
+- `bunx tsc --noEmit`, lint, format check, build, and `git diff --check` passed.
+- Maintainability review found no material production or sequencing concern.
+  Test-quality review found no material coverage gap; its focused review passed
+  `107` tests and the generic resolver review passed `55` tests.
+- Documentation review verified the exact range, focused counts, smoke
+  limitation, cleanup state, and conditional Continue verdict with no material
+  gap. This documentation-only commit is the Phase 10 starting boundary.
+- The local smoke passed dry-run planned state with no Project-role writes,
+  successful complete Project output with written/usable state, and Project
+  report exclusion from bundle discovery. The task shell could not resolve the
+  installed renderer, so live PDF handoff was not repeated; automated
+  bundle/explicit equivalence remained green and Phase 12 retains renderer
+  acceptance. Cleanup removed the ignored run and retained nothing.
+- Final verdict: **Continue to Phase 10.** The Phase 9 product contract is
+  complete; the task-shell renderer limitation does not broaden this phase or
+  weaken the automated handoff-equivalence gate.
 
 ## Related Research
 

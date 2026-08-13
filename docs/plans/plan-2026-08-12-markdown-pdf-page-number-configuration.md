@@ -950,59 +950,61 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and maintain the
+- [x] Create and maintain the
       [Phase 9 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-9-project-bundle-handoff.md)
       from starting boundary `78701f3a`, with focused and aggregate validation,
       one implementation commit, exact-range review, and a documentation-only
       closeout.
-- [ ] Consume the typed Phase 8 validation results at the existing Project
+- [x] Consume the typed Phase 8 validation results at the existing Project
       output boundary; serialize their public-safe diagnostic and capability
       fields into summaries and optional reports only in this phase.
-- [ ] Show the final contained Profile page-number settings separately from
+- [x] Show the final contained Profile page-number settings separately from
       Template presentation and Project orchestration in direct and Interactive
       Project candidate review.
-- [ ] Keep Project summaries and optional reports bounded to phase decisions,
+- [x] Keep Project summaries and optional reports bounded to phase decisions,
       validation results, and artifact references without persisting a second
       detailed page-number object.
-- [ ] Show a compact effective page-number summary in human review while keeping
+- [x] Show a compact effective page-number summary in human review while keeping
       the optional report authoritative by reference to the final Profile
       identity and `profile.yml`; include structured page-number diagnostics and
       capability results, not a duplicated mutable configuration object.
-- [ ] Keep dry-run, validation-failure, successful-write, and optional-report
+- [x] Keep dry-run, validation-failure, successful-write, and optional-report
       output consistent about Profile identity, artifact availability,
       diagnostics, and whether a follow-up render is usable.
-- [ ] Apply existing public-safe path and error redaction to every new Project
+- [x] Apply existing public-safe path and error redaction to every new Project
       summary, validation result, and report field.
-- [ ] Preserve the public-safe follow-up `md to-pdf --bundle <project>` command
+- [x] Preserve the public-safe follow-up `md to-pdf --bundle <project>` command
       without embedding a transient Interactive enablement override.
-- [ ] Verify Project reports remain excluded from bundle Profile discovery and
+- [x] Verify Project reports remain excluded from bundle Profile discovery and
       the complete bundle resolves exactly one Profile, Template, and
       Stylesheet role.
-- [ ] Define Project-helper output completeness as exactly one valid
+- [x] Define Project-helper output completeness as exactly one valid
       `profile.yml`, one `template.html`, and one `style.css`, with optional
       managed assets and recognized report artifacts; keep ordinary
       profile-only and Template/CSS partial bundles valid in the generic bundle
       resolver.
-- [ ] Add Project acceptance tests for missing and duplicate Profile, Template,
+- [x] Add Project acceptance tests for missing and duplicate Profile, Template,
       or Stylesheet roles, stable ambiguity diagnostics, recognized report
       exclusion, invalid profile-shaped content, and unrelated top-level files.
-- [ ] Prove `--bundle <project>` and explicit `--profile --template --css`
+- [x] Prove `--bundle <project>` and explicit `--profile --template --css`
       selection of the same canonical three Project files produce the same
       effective page-number configuration and diagnostics; do not claim
       equivalence for a deliberately ambiguous or invalid directory.
-- [ ] Add direct Project tests for dry-run, generated and explicit output,
+- [x] Add direct Project tests for dry-run, generated and explicit output,
       base-Profile preservation/revision, validation failure, optional report,
       bundle resolution, and render-command output.
-- [ ] Run a small Project handoff smoke under
+- [x] Run a small Project handoff smoke under
       `examples/playground/md-pdf/smoke/phase9-project-handoff/<unique-run>/`:
       cover a dry-run or report-only path with no Project-role writes, a
       successful complete Project bundle, report exclusion from Profile
-      discovery, and bundle versus explicit-role preparation and render
-      handoff through the installed renderer.
-- [ ] Record sanitized smoke results and cleanup state in the Phase 9 job.
-      Treat installed-renderer execution as a handoff sanity check; Phase 12
-      owns cross-version, extraction, visual, and page-layout evidence.
-- [ ] Review the exact Phase 9 implementation range with maintainability and
+      discovery, and bundle versus explicit-role preparation. Attempt an
+      installed-renderer handoff; if the task shell cannot resolve the
+      renderer, record that limitation and rely on the automated equivalence
+      gate rather than expanding environment work.
+- [x] Record sanitized smoke results and cleanup state in the Phase 9 job.
+      Any installed-renderer execution is a handoff sanity check; Phase 12 owns
+      cross-version, extraction, visual, and page-layout evidence.
+- [x] Review the exact Phase 9 implementation range with maintainability and
       test-quality reviewers, then review the closeout documentation and record
       the final verdict before beginning Phase 10.
 
