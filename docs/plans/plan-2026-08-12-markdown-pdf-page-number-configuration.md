@@ -1097,10 +1097,12 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and maintain a Phase 11 job from the Phase 10 documentation
-      closeout commit. Record focused, broad, full, and static gates; whether a
-      manual smoke was intentionally omitted; cleanup evidence; commits; exact
-      review range; and final verdict.
+- [ ] Create and activate the
+      [Phase 11 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-11-generated-saved-lifecycle.md)
+      from starting boundary `824ce4e6`. Maintain focused, broad, full, and
+      static gates; the intentional manual-smoke omission; cleanup evidence;
+      commits; exact review range; and final verdict there as execution
+      proceeds.
 - [ ] Reuse the existing generated and saved-recipe lifecycle, including its
       CLI-owned temporary session and recovery behavior; add no new temporary
       helper or playground smoke framework.
