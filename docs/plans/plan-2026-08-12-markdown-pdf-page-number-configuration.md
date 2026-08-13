@@ -1097,62 +1097,64 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and activate the
+- [x] Create and activate the
       [Phase 11 job record](jobs/2026-08-13-markdown-pdf-page-number-phase-11-generated-saved-lifecycle.md)
       from starting boundary `824ce4e6`. Maintain focused, broad, full, and
       static gates; the intentional manual-smoke omission; cleanup evidence;
       commits; exact review range; and final verdict there as execution
       proceeds.
-- [ ] Reuse the existing generated and saved-recipe lifecycle, including its
+- [x] Reuse the existing generated and saved-recipe lifecycle, including its
       CLI-owned temporary session and recovery behavior; add no new temporary
       helper or playground smoke framework.
-- [ ] For generated paths, place the page-number choice after the existing
+- [x] For generated paths, place the page-number choice after the existing
       one-render code-highlighting choice and before report/output collection,
       materialization, or authoritative renderer preparation.
-- [ ] For saved-recipe `to-pdf` handoff, place the choice after Markdown input
+- [x] For saved-recipe `to-pdf` handoff, place the choice after Markdown input
       and code-highlighting selection but before authoritative preparation.
-- [ ] Use an accepted candidate's normalized Profile or normalized default only
+- [x] Use an accepted candidate's normalized Profile or normalized default only
       to preview the reusable setting before materialization. After temporary
       materialization or durable save, reload the actual artifact: use its
       normalized contained Profile when present, or the normalized default or
       separately selected Profile for Profile-less Template output.
-- [ ] Resolve a generated Project recipe setting from the final contained
+- [x] Resolve a generated Project recipe setting from the final contained
       Profile only after both Project phases complete and the candidate is
       accepted.
-- [ ] Cover generated Profile, Template, and Project candidates; temporary
+- [x] Cover generated Profile, Template, and Project candidates; temporary
       rendering; save-and-render; saved-recipe handoff; existing complete
       Project bundles; and user-edited saved Projects through the established
       resolver and lifecycle paths.
-- [ ] Treat a saved or existing Project whose contained Profile identity or
-      content changed as a new render context: resolve it once, show the current
-      setting, and reset the transient override to `Use recipe setting`.
-- [ ] Fail closed on stale, missing, ambiguous, or invalid contained Profile
+- [x] Treat a saved or existing Project handed off again after its contained
+      Profile changed as a new render context: begin at `Use recipe setting`,
+      resolve the current persisted Profile, and do not reuse candidate memory.
+      Do not add mid-prompt filesystem watching.
+- [x] Fail closed on stale, missing, ambiguous, or invalid contained Profile
       state without mutating the saved Project bundle.
-- [ ] Prove Back or Cancel before session creation produces no materialization,
+- [x] Prove Back or Cancel before session creation produces no materialization,
       report, render, or output write. Once a temporary session exists, retain
       the established retry/review/keep/confirmed-delete recovery behavior.
-- [ ] Preserve the one-render choice while revisiting outputs, final review,
+- [x] Preserve the one-render choice while revisiting outputs, final review,
       recovery, or the same accepted generated candidate.
-- [ ] Reset the choice when the Markdown input, recipe source, artifact,
+- [x] Reset the choice when the Markdown input, recipe source, artifact,
       preparation mode, generated candidate identity, or contained Profile
       identity changes.
-- [ ] Ensure changing only the one-render choice may repeat deterministic
+- [x] Ensure changing only the one-render choice may repeat deterministic
       renderer preparation but does not regenerate artifacts, repeat a Codex
       request, or rewrite a successfully saved recipe.
-- [ ] Ensure a Project override-only change repeats neither the Project Profile
+- [x] Ensure a Project override-only change repeats neither the Project Profile
       Codex phase nor the Project Template Codex phase.
-- [ ] Add generated/saved lifecycle tests for generated Profile, generated
+- [x] Add generated/saved lifecycle tests for generated Profile, generated
       Template, generated Project, temporary render, save-and-render, existing
       complete Project, user-edited saved Project, backtracking, cancellation,
       retention, reset, recovery, and stale-state failure.
-- [ ] Keep Phase 11 verification automated and deterministic; do not require a
+- [x] Keep Phase 11 verification automated and deterministic; do not require a
       live Codex or renderer smoke when lifecycle seams can prove materialized
       state, exact-session cleanup, durable preservation, and zero-write paths.
-- [ ] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
+- [x] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
       format, build, and diff gates at the final implementation tip. Review the
-      exact Phase 11 range with maintainability and test-quality reviewers,
-      resolve accepted findings, and commit a reviewed documentation closeout
-      before Phase 12.
+      exact Phase 11 range with maintainability and test-quality reviewers and
+      resolve accepted findings.
+- [x] Commit the reviewed Phase 11 documentation closeout before Phase 12 and
+      use that documentation-only commit as the Phase 12 starting boundary.
 
 Phase checkpoint:
 

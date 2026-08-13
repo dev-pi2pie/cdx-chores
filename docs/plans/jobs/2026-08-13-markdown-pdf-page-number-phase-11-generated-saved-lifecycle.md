@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 11 generated and saved-recipe lifecycle"
 created-date: 2026-08-13
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -44,9 +44,11 @@ and layout acceptance.
   selected Profile; it does not acquire invented durable Profile state.
 - A generated Project resolves page-number state from the final contained
   Profile only after both Project phases finish and the candidate is accepted.
-- A saved or existing Project with changed contained Profile identity or
-  content is a new render context. Resolve it once, show the current setting,
-  and reset the transient choice to `Use recipe setting`.
+- A saved or existing Project handed off again after its contained Profile
+  identity or content changed is a new render context. Start the new handoff at
+  `Use recipe setting`, resolve the current persisted Profile, and do not reuse
+  candidate memory from the earlier authoring session. Phase 11 does not watch
+  for external filesystem edits during one active prompt session.
 - Stale, missing, ambiguous, or invalid contained Profile state fails closed
   without mutating the saved Project.
 - Preserve the one-render choice while revisiting outputs, final review,
@@ -105,24 +107,25 @@ Focused test paths:
 
 - [x] Confirm the generated, saved-recipe, Project, materialization, and
       recovery seams before assigning file ownership.
-- [ ] Add page-number choice and review state to deterministic and Codex
+- [x] Add page-number choice and review state to deterministic and Codex
       generated Profile, Template, and Project lifecycles.
-- [ ] Place the generated prompt after code highlighting and before report or
+- [x] Place the generated prompt after code highlighting and before report or
       output collection, materialization, and authoritative preparation.
-- [ ] Reload temporary and durably saved artifacts before authoritative
+- [x] Reload temporary and durably saved artifacts before authoritative
       preparation, and resolve the actual normalized contained Profile.
-- [ ] Add the saved-recipe handoff choice after Markdown input and code
+- [x] Add the saved-recipe handoff choice after Markdown input and code
       highlighting while preserving the preselected saved artifact.
-- [ ] Treat changed contained Project Profile identity or content as a new
-      render context and fail closed on invalid contained Profile state.
-- [ ] Preserve same-context state through Back, output changes, final review,
+- [x] Treat a Project handed off again after its contained Profile changed as a
+      new render context, start from inherited state, and fail closed on invalid
+      contained Profile state.
+- [x] Preserve same-context state through Back, output changes, final review,
       recovery, and unchanged-choice reuse; reset every contract-defined
       changed context.
-- [ ] Prove page-number-only changes reprepare only the renderer and do not
+- [x] Prove page-number-only changes reprepare only the renderer and do not
       repeat Codex, Project phases, materialization, or durable writes.
-- [ ] Reuse exact-session cleanup and existing recovery behavior for temporary
+- [x] Reuse exact-session cleanup and existing recovery behavior for temporary
       materialization while preserving every durable or pre-existing recipe.
-- [ ] Add focused deterministic coverage for every generated/saved lifecycle,
+- [x] Add focused deterministic coverage for every generated/saved lifecycle,
       navigation, reset, recovery, cleanup, and stale-state boundary in the
       parent Phase 11 checklist.
 
@@ -178,28 +181,28 @@ inspection.
 ## Commit, Review, And Checklist Discipline
 
 - [x] Record `824ce4e6` as the clean Phase 11 starting boundary.
-- [ ] Commit this activation job and parent link without checking implementation
+- [x] Commit this activation job and parent link without checking implementation
       work; record that commit before implementation begins.
-- [ ] Ask `@auto_commit_notification` at each coherent, validated
+- [x] Ask `@auto_commit_notification` at each coherent, validated
       implementation boundary and automatically commit meaningful progress.
-- [ ] Record every implementation, test, or accepted-review correction commit
+- [x] Record every implementation, test, or accepted-review correction commit
       in this job.
-- [ ] Run focused gates while implementing and the focused, broad, full, and
+- [x] Run focused gates while implementing and the focused, broad, full, and
       static gates at the final committed implementation tip.
-- [ ] Review the exact `824ce4e6..<final-implementation-tip>` range with the
+- [x] Review the exact `824ce4e6..<final-implementation-tip>` range with the
       maintainability and test-quality reviewers.
-- [ ] Record every finding and disposition. Land accepted corrections in a
+- [x] Record every finding and disposition. Land accepted corrections in a
       separate commit, widen the exact range, rerun affected gates, and repeat
       both reviews.
-- [ ] Update implementation checklist items only after their committed evidence
+- [x] Update implementation checklist items only after their committed evidence
       exists; update aggregate validation and review items only at the final
       reviewed implementation tip.
-- [ ] Record the manual-smoke omission rationale, cleanup evidence, commits,
+- [x] Record the manual-smoke omission rationale, cleanup evidence, commits,
       exact review range, validation counts, findings, and a
       Continue/Constrain/Stop verdict.
-- [ ] Have the completed job and parent Phase 11 checklist reviewed by the
+- [x] Have the completed job and parent Phase 11 checklist reviewed by the
       documentation reviewer.
-- [ ] Ask `@auto_commit_notification` at the reviewed documentation boundary
+- [x] Ask `@auto_commit_notification` at the reviewed documentation boundary
       and commit a documentation-only Phase 11 closeout before Phase 12.
 
 No Codex Security scan or security plugin is part of Phase 11 verification.
@@ -207,15 +210,39 @@ No Codex Security scan or security plugin is part of Phase 11 verification.
 ## Evidence
 
 - Activation boundary: `824ce4e6` with a clean working tree.
-- Activation documentation commit: pending.
-- Implementation commits: pending.
-- Final implementation tip: pending.
-- Exact reviewed range: pending.
-- Focused, broad, full, and static validation: pending.
-- Cleanup and zero-write evidence: pending.
-- Maintainability and test-quality findings: pending.
-- Documentation review: pending.
-- Final verdict: pending.
+- Activation documentation commit: `f44fab3e`.
+- Implementation commits:
+  - `d7a1549c` — generated and saved-recipe page-number lifecycle integration.
+  - `cbb35c29` — accepted-review regression proving saved Project handoff uses
+    the current persisted Profile rather than stale candidate state.
+- Final implementation tip: `cbb35c29`.
+- Exact reviewed range: `824ce4e6..cbb35c29`.
+- Focused validation: the final Interactive Markdown PDF suite passed 315 tests
+  and 1,376 assertions; the saved-recipe handoff correction passed 22 tests and
+  95 assertions.
+- Broad Markdown PDF validation at the unchanged production tip passed 1,177
+  tests and 8,469 assertions across 79 files. Full repository validation passed
+  2,197 tests and 12,907 assertions across 244 files. TypeScript, lint, format,
+  build, worktree diff, and exact-range diff checks passed. The later correction
+  is tests-only; TypeScript, focused Interactive, and exact-range diff checks
+  were rerun at `cbb35c29`.
+- Cleanup and zero-write evidence: deterministic tests prove Back/Cancel creates
+  no session or output, successful temporary rendering removes the exact owned
+  session, failures retain it, confirmed deletion removes only that session,
+  and durable or saved recipes are not removed or rewritten by override-only
+  changes. No local temporary path or artifact is recorded.
+- Maintainability review found no material issue. Test review found one narrow
+  saved-Project current-Profile coverage gap; `cbb35c29` closed it at the actual
+  lifecycle boundary. A new handoff starts at inherited state and reads the
+  current Profile; external mid-prompt filesystem watching is outside scope.
+- Documentation review: completed with one accepted lifecycle-ordering wording
+  correction: the parent now separates completed gates/range review from this
+  documentation-only closeout checkpoint.
+- Manual smoke: intentionally omitted; deterministic lifecycle seams provide
+  the Phase 11 evidence, while renderer execution and PDF inspection remain
+  Phase 12 work.
+- Final verdict: **Continue to Phase 12 after the reviewed documentation-only
+  closeout commit.**
 
 ## Related Research
 
