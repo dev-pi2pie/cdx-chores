@@ -77,6 +77,35 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
 
+  test("uses the current saved Project Profile instead of stale candidate state", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: {
+        id: "candidate-profile",
+        pageNumbers: { enabled: false },
+      },
+      markdownPdfProfilePageNumbersEnabled: true,
+      selectQueue: [...projectSaveSelections("choose"), "sample", "inherit", "inherit", "default"],
+      inputQueue: [""],
+      requiredPathQueue: ["fixtures/sample.md"],
+      confirmQueue: [false, true, false, true, false, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({
+        bundle: expect.stringContaining("codex-project-bundle-1"),
+        input: "fixtures/sample.md",
+      }),
+    ]);
+    expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("pageNumbers");
+    expect(result.stderr).toContain("- Recipe setting: enabled (reusable Profile)");
+    expect(result.stderr).toContain("- One-render override: use recipe setting");
+    expect(result.markdownPdfCodexWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
+  });
+
   for (const choice of ["enable", "disable"] as const) {
     test(`applies the ${choice} code-highlighting override to a saved Project bundle`, () => {
       const result = runInteractiveHarness({
