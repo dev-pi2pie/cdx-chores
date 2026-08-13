@@ -28,7 +28,10 @@ import {
   type MarkdownPdfInteractiveSelectedRenderSource,
 } from "./render-source";
 import { renderMarkdownPdfRecipeReview } from "./review";
-import { promptMarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderCodeHighlightChoice,
+  type MarkdownPdfRenderCodeHighlightChoice,
+} from "./render-code-highlighting";
 import { promptMarkdownPdfRenderPageNumberChoice } from "./render-page-numbers";
 import {
   formatEffectiveMarkdownPdfCodeReview,
@@ -358,11 +361,13 @@ async function promptAndPrepareDirectMarkdownPdfRenderSource(
   runtime: CliRuntime,
   selected: MarkdownPdfInteractiveSelectedRenderSource,
 ): Promise<MarkdownPdfInteractivePreparedRenderSource | "back" | "cancel"> {
+  let currentCodeHighlight: MarkdownPdfRenderCodeHighlightChoice = "inherit";
   while (true) {
-    const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice();
+    const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
     if (codeHighlight === "back" || codeHighlight === "cancel") {
       return codeHighlight;
     }
+    currentCodeHighlight = codeHighlight;
     const pageNumbers = await promptMarkdownPdfRenderPageNumberChoice();
     if (pageNumbers === "cancel") {
       return "cancel";

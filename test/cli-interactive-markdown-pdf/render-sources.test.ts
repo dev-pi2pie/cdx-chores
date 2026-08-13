@@ -528,6 +528,23 @@ describe("interactive Markdown PDF render sources", () => {
     });
   }
 
+  test("retains code highlighting when backing from the initial page-number decision", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "enable", "back", "cancel"],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+  });
+
   test("keeps the prepared plan when final review reselects the current override", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -877,6 +894,42 @@ describe("interactive Markdown PDF render sources", () => {
       },
     ]);
   });
+
+  test.each(["back", "cancel", "inherit"] as const)(
+    "handles final-review page-number %s without unintended preparation or planning",
+    (pageNumberAction) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...ENTRY_SELECTIONS,
+          "built-in",
+          "inherit",
+          "inherit",
+          "default",
+          "change-page-numbers",
+          pageNumberAction,
+        ],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: pageNumberAction === "cancel" ? [false, false] : [false, false, true],
+      });
+
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        { input: "fixtures/report.md", preparedId: "prepared-1" },
+      ]);
+      expect(result.markdownPdfPlanCalls).toHaveLength(1);
+      expect(result.markdownPdfExecuteCalls).toEqual(
+        pageNumberAction === "cancel"
+          ? []
+          : [
+              {
+                outputPath: expect.stringMatching(/fixtures\/report\.pdf$/),
+                preparedId: "prepared-1",
+              },
+            ],
+      );
+    },
+  );
 
   test("resets page-number state when changing the selected recipe source", () => {
     const result = runInteractiveHarness({
