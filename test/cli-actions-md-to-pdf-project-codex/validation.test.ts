@@ -7,6 +7,7 @@ import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/mar
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import {
   collectMdPdfProjectCodexSignals,
+  createMdPdfProjectCodexHandoffProjection,
   createMdPdfProjectCodexRenderCommand,
   normalizeMdPdfProjectCodexCommandState,
   planMdPdfProjectCodexOutput,
@@ -254,6 +255,76 @@ describe("cli action modules: md pdf-project codex validation", () => {
         });
         expect(validation.renderCommand?.display).not.toContain(fixtureDir);
         await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
+  });
+
+  test("projects Profile revision advisories through validation and the planned handoff", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-profile-revision",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "base.yml"), "pageNumbers:\n  enabled: false\n", "utf8");
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const cases = [
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID",
+            declaration: "3",
+            pageNumbers: { enabled: false },
+            state: "invalid",
+          },
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+            declaration: 2,
+            pageNumbers: { enabled: false, start: 0 },
+            state: "stale",
+          },
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD",
+            declaration: 4,
+            pageNumbers: { enabled: false },
+            state: "forward",
+          },
+        ] as const;
+
+        for (const diagnosticCase of cases) {
+          const advisoryProfilePhase = {
+            ...profilePhase,
+            finalProfile: {
+              ...profilePhase.finalProfile,
+              schemaVersion: diagnosticCase.declaration,
+              pageNumbers: diagnosticCase.pageNumbers,
+            },
+          };
+          const validation = validateMdPdfProjectCodexProject({
+            outputPlan,
+            profilePhase: advisoryProfilePhase,
+            runtime,
+            state,
+            templatePhase,
+          });
+
+          expect(validation.diagnostics.conditions).toEqual([
+            expect.objectContaining({
+              conditionId: diagnosticCase.conditionId,
+              context: expect.objectContaining({
+                currentRevision: 3,
+                kind: "profile-schema-version",
+                state: diagnosticCase.state,
+              }),
+            }),
+          ]);
+
+          const handoff = createMdPdfProjectCodexHandoffProjection({
+            outputPlan,
+            profilePhase: advisoryProfilePhase,
+            runtime,
+            state,
+            validation,
+          });
+          expect(handoff.diagnostics).toEqual(validation.diagnostics.conditions);
+          expect(handoff.diagnostics[0]?.conditionId).toBe(diagnosticCase.conditionId);
+        }
       },
     );
   });

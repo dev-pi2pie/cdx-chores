@@ -9,9 +9,12 @@ import {
 import {
   MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
   type MarkdownPdfRendererCapabilityDefinition,
-  type MarkdownPdfRendererCapabilityField,
   type MarkdownPdfRendererCapabilityId,
 } from "../renderer-capabilities";
+import {
+  isMarkdownPdfRendererCapabilityField,
+  isMarkdownPdfRendererCapabilityId,
+} from "../renderer-capability-contract";
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import { createMdPdfProjectCodexRenderCommand } from "./render-command";
 import { sanitizeMdPdfProjectCodexReportText } from "./report-redaction";
@@ -215,6 +218,59 @@ function missingBodyBoundaryDiagnostic(
   };
 }
 
+function profileRevisionDiagnostic(
+  diagnostic: Record<string, unknown>,
+  conditionId:
+    | "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID"
+    | "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE"
+    | "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD",
+  state: "invalid" | "stale" | "forward",
+): MarkdownPdfProjectCodexHandoffDiagnostic {
+  const context = plainObject(diagnostic.context, "Project handoff diagnostic context");
+  const hasDeclaredRevision = state !== "invalid";
+  assertExactKeys(
+    context,
+    [
+      "kind",
+      "state",
+      ...(hasDeclaredRevision ? ["declaredRevision"] : []),
+      "inferredRevision",
+      "currentRevision",
+    ],
+    "Project handoff diagnostic context",
+  );
+  if (context.kind !== "profile-schema-version" || context.state !== state) {
+    return invalidProjection("Project handoff Profile revision diagnostic is inconsistent.");
+  }
+  return {
+    conditionId,
+    severity: "warning",
+    context: {
+      kind: context.kind,
+      state,
+      ...(hasDeclaredRevision
+        ? {
+            declaredRevision: safeInteger(context.declaredRevision, {
+              label: "Project handoff declared Profile revision",
+              minimum: 1,
+            }),
+          }
+        : {}),
+      inferredRevision: safeInteger(context.inferredRevision, {
+        label: "Project handoff inferred Profile revision",
+        minimum: 1,
+      }),
+      currentRevision: safeInteger(context.currentRevision, {
+        label: "Project handoff current Profile revision",
+        minimum: 1,
+      }),
+    },
+    message: sanitizeMdPdfProjectCodexReportText(
+      stringValue(diagnostic.message, "Project handoff diagnostic message"),
+    ),
+  };
+}
+
 function projectDiagnostic(value: unknown): MarkdownPdfProjectCodexHandoffDiagnostic {
   const diagnostic = plainObject(value, "Project handoff diagnostic");
   assertExactKeys(
@@ -243,6 +299,21 @@ function projectDiagnostic(value: unknown): MarkdownPdfProjectCodexHandoffDiagno
         return invalidProjection("Project handoff diagnostic severity is unsupported.");
       }
       return missingBodyBoundaryDiagnostic(diagnostic);
+    case "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID":
+      if (diagnostic.severity !== "warning") {
+        return invalidProjection("Project handoff diagnostic severity is unsupported.");
+      }
+      return profileRevisionDiagnostic(diagnostic, diagnostic.conditionId, "invalid");
+    case "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE":
+      if (diagnostic.severity !== "warning") {
+        return invalidProjection("Project handoff diagnostic severity is unsupported.");
+      }
+      return profileRevisionDiagnostic(diagnostic, diagnostic.conditionId, "stale");
+    case "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD":
+      if (diagnostic.severity !== "warning") {
+        return invalidProjection("Project handoff diagnostic severity is unsupported.");
+      }
+      return profileRevisionDiagnostic(diagnostic, diagnostic.conditionId, "forward");
     default:
       return invalidProjection("Project handoff diagnostic condition is unsupported.");
   }
@@ -257,10 +328,10 @@ function capabilityRequirement(
     ["capabilityId", "requestedBy", "minimumVersion"],
     "Project handoff capability requirement",
   );
-  const capabilityId = stringValue(
-    requirement.capabilityId,
-    "Project handoff capability ID",
-  ) as MarkdownPdfRendererCapabilityId;
+  const capabilityId = stringValue(requirement.capabilityId, "Project handoff capability ID");
+  if (!isMarkdownPdfRendererCapabilityId(capabilityId)) {
+    return invalidProjection("Project handoff capability requirement is unsupported.");
+  }
   const definition = CAPABILITY_DEFINITIONS.get(capabilityId);
   if (!definition || requirement.minimumVersion !== definition.minimumVersion) {
     return invalidProjection("Project handoff capability requirement is unsupported.");
@@ -268,20 +339,19 @@ function capabilityRequirement(
   if (!Array.isArray(requirement.requestedBy) || requirement.requestedBy.length === 0) {
     return invalidProjection("Project handoff capability requesting fields are required.");
   }
-  const requestedBy = requirement.requestedBy.map((field) =>
-    stringValue(field, "Project handoff capability requesting field"),
-  );
-  if (
-    new Set(requestedBy).size !== requestedBy.length ||
-    requestedBy.some(
-      (field) => !definition.fields.includes(field as MarkdownPdfRendererCapabilityField),
-    )
-  ) {
+  const requestedBy = requirement.requestedBy.map((field) => {
+    const value = stringValue(field, "Project handoff capability requesting field");
+    if (!isMarkdownPdfRendererCapabilityField(value) || !definition.fields.includes(value)) {
+      return invalidProjection("Project handoff capability requesting fields are unsupported.");
+    }
+    return value;
+  });
+  if (new Set(requestedBy).size !== requestedBy.length) {
     return invalidProjection("Project handoff capability requesting fields are unsupported.");
   }
   return {
     capabilityId: definition.id,
-    requestedBy: requestedBy as MarkdownPdfRendererCapabilityField[],
+    requestedBy,
     minimumVersion: definition.minimumVersion,
   };
 }

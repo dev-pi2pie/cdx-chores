@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { parse as parseYaml } from "yaml";
 
 import {
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
@@ -167,6 +168,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
         expect(baseOnly.result.serializedProfile).toContain(
           "id: md-pdf-profile-20260704T080000Z-abc12345",
         );
+        expect(parseYaml(baseOnly.result.serializedProfile)).toMatchObject({ schemaVersion: 3 });
         expect(await pathExists(baseOnly.outputPlan.profile.path)).toBe(false);
         await expectNoPlannedProjectArtifacts(baseOnly.outputPlan);
 
@@ -184,6 +186,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           basedOn: "default",
         });
         expect(coverOnly.result.finalProfile.schemaVersion).toBe(3);
+        expect(parseYaml(coverOnly.result.serializedProfile)).toMatchObject({ schemaVersion: 3 });
         await expectNoPlannedProjectArtifacts(coverOnly.outputPlan);
         expect(codexRunnerCallCount).toBe(0);
       },
