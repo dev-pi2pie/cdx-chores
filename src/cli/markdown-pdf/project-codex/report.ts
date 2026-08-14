@@ -184,7 +184,6 @@ export function createMdPdfProjectCodexReportArtifact(input: {
   const handoff = createMdPdfProjectCodexHandoffProjection(input);
   return {
     artifactType: MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE,
-    version: 1,
     advisoryOnly: true,
     reportId: reportArtifactId(input.outputPlan.identity.projectBundleId),
     generatedAt: input.runtime.now().toISOString(),

@@ -417,7 +417,6 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         };
         input: { baseProfile: { basename: string; display: string; redacted: boolean } };
         project: { decisionMode: string; signalMode: string };
-        version: number;
       };
 
       expect(report).toMatchObject({
@@ -427,8 +426,8 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           decisionMode: "deterministic",
           signalMode: "deterministic",
         },
-        version: 1,
       });
+      expect(report).not.toHaveProperty("version");
       expect(report.identities).not.toHaveProperty("outputDirectory");
       expect(report.input.baseProfile).toEqual({
         display: "base.yml",

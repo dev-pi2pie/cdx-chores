@@ -40,7 +40,6 @@ interface MdPdfTemplateCodexReportManagedAsset {
 
 export interface MdPdfTemplateCodexReportArtifact {
   artifactType: typeof MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE;
-  version: 1;
   advisoryOnly: true;
   reportId: string;
   templateBundleId: string;
@@ -228,7 +227,6 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
 }): MdPdfTemplateCodexReportArtifact {
   return {
     artifactType: MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,
-    version: 1,
     advisoryOnly: true,
     reportId: reportArtifactId(input.outputPlan.bundleId),
     templateBundleId: input.outputPlan.bundleId,

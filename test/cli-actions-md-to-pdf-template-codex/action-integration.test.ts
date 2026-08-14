@@ -269,6 +269,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
         files: Array<{ role: string }>;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
+      expect(report).not.toHaveProperty("version");
       expect(report.decision.cover).toMatchObject({
         enabled: false,
         byline: "none",

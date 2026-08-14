@@ -236,6 +236,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
           templateLevelDecisionReport: string;
         };
       };
+      expect(plan).not.toHaveProperty("schemaVersion");
       expect(plan.input).toBe(inputPath);
       expect(plan.fontHints).toEqual([]);
       expect(plan.scenarios.map(({ id, mode }) => ({ id, mode }))).toEqual([

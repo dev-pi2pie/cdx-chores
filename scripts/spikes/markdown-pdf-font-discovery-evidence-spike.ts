@@ -38,7 +38,6 @@ interface RunEvidence {
 }
 
 export interface FontDiscoveryEvidenceReport {
-  schemaVersion: 2;
   parameters: {
     discovery: "fontconfig";
     runs: number;
@@ -261,7 +260,6 @@ export async function collectFontDiscoveryEvidence(
   );
 
   return {
-    schemaVersion: 2,
     parameters: {
       discovery: "fontconfig",
       runs: options.runs,

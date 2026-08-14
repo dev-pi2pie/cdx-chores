@@ -37,7 +37,6 @@ const maximumOutputBytes = 64 * 1024;
 const commandTimeoutMs = 120_000;
 
 const harnessContract = {
-  version: 4,
   candidates: WEASYPRINT_CANDIDATES.map((candidate) => candidate.id),
   productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
   projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
@@ -171,7 +170,6 @@ export interface BodyHookEvidence {
 }
 
 export interface RendererEvidenceReport {
-  schemaVersion: 3;
   catalogDigest: string;
   harnessDigest: string;
   outcome: "failed" | "inconclusive" | "passed";
@@ -1397,7 +1395,6 @@ async function runRendererEvidenceInLaboratory(
       : "passed";
   const retained = options.keep === true || outcome !== "passed";
   const report: RendererEvidenceReport = {
-    schemaVersion: 3,
     catalogDigest: contract.catalogDigest,
     harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
     outcome,

@@ -33,6 +33,7 @@ import type {
   ProductRendererScenario,
   ProjectRendererScenario,
   RendererContractScenario,
+  WeasyPrintCandidate,
 } from "./fixtures/markdown-pdf/page-number-renderer-contract";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -225,6 +226,25 @@ async function withEvidenceRoot(callback: (temporaryRoot: string) => Promise<voi
 }
 
 describe("Markdown PDF page-number renderer evidence harness", () => {
+  test("keeps the tested catalog concrete while accepting future candidate identities", () => {
+    expect(WEASYPRINT_CANDIDATES.map((candidate) => candidate.weasyPrintVersion)).toEqual([
+      "65.1",
+      "68.0",
+      "69.0",
+    ]);
+
+    const futureCandidate: WeasyPrintCandidate = {
+      id: "wp-70-0-canary",
+      weasyPrintVersion: "70.0rc1",
+      dependencies: { pydyf: "0.12.2", fontTools: "4.64.0" },
+    };
+    const compatibleFutureScenario: Pick<ProjectRendererScenario, "candidateIds"> = {
+      candidateIds: [futureCandidate.id],
+    };
+
+    expect(compatibleFutureScenario.candidateIds).toEqual(["wp-70-0-canary"]);
+  });
+
   test("keeps stable harness metadata and uses bounded timed command requests", async () => {
     expect(PAGE_NUMBER_RENDERER_HARNESS_DIGEST).toMatch(/^[a-f0-9]{64}$/u);
     await withEvidenceRoot(async (temporaryRoot) => {
@@ -238,6 +258,7 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
 
       expect(report.harnessDigest).toBe(PAGE_NUMBER_RENDERER_HARNESS_DIGEST);
       expect(report.catalogDigest).toMatch(/^[a-f0-9]{64}$/u);
+      expect(report).not.toHaveProperty("schemaVersion");
       expect(report.outcome).toBe("passed");
       expect(report.evidenceStatus).toBe("visual-review-required");
       expect(report.evidenceBoundary.automated).toEqual(PAGE_NUMBER_AUTOMATED_EVIDENCE);
@@ -431,6 +452,10 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
           }
         }
       }
+      const materializedContract = JSON.parse(
+        await readFile(join(report.labPath, "fixtures", "contract.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(materializedContract).not.toHaveProperty("version");
       await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
     });
   });
@@ -1400,7 +1425,6 @@ describe("Markdown PDF page-number renderer evidence harness", () => {
       "see https://example.test/guidance",
     );
     const publicReport = publicEvidenceReport({
-      schemaVersion: 3,
       catalogDigest: "a".repeat(64),
       harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
       outcome: "inconclusive",

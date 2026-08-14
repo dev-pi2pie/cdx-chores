@@ -3,7 +3,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PAGE_NUMBER_RENDERER_CONTRACT_VERSION = 4;
 export const PAGE_NUMBER_LAB_MARKER_NAME = ".cdx-chores-page-number-renderer-evidence";
 export const PAGE_NUMBER_LAB_MARKER_CONTENT =
   "cdx-chores markdown-pdf page-number renderer evidence v4\n";
@@ -42,11 +41,11 @@ export type VisualReviewAssertion =
   | "typography";
 
 export interface WeasyPrintCandidate {
-  id: "wp-65-1" | "wp-68-0" | "wp-69-0";
-  weasyPrintVersion: "65.1" | "68.0" | "69.0";
+  id: string;
+  weasyPrintVersion: string;
   dependencies: {
-    pydyf: "0.12.1";
-    fontTools: "4.63.0";
+    pydyf: string;
+    fontTools: string;
   };
 }
 
@@ -209,7 +208,7 @@ ${pages
 const portraitSize = [148, 210] as const;
 const landscapeSize = [210, 148] as const;
 
-export const WEASYPRINT_CANDIDATES: readonly WeasyPrintCandidate[] = [
+export const WEASYPRINT_CANDIDATES = [
   {
     id: "wp-65-1",
     weasyPrintVersion: "65.1",
@@ -225,7 +224,21 @@ export const WEASYPRINT_CANDIDATES: readonly WeasyPrintCandidate[] = [
     weasyPrintVersion: "69.0",
     dependencies: { pydyf: "0.12.1", fontTools: "4.63.0" },
   },
-];
+] as const satisfies readonly WeasyPrintCandidate[];
+
+type TestedWeasyPrintCandidate = (typeof WEASYPRINT_CANDIDATES)[number];
+type TestedWeasyPrintCandidateId = TestedWeasyPrintCandidate["id"];
+type TestedWeasyPrintVersion = TestedWeasyPrintCandidate["weasyPrintVersion"];
+
+function candidateIdForVersion(version: TestedWeasyPrintVersion): TestedWeasyPrintCandidateId {
+  const candidate = WEASYPRINT_CANDIDATES.find(
+    ({ weasyPrintVersion }) => weasyPrintVersion === version,
+  );
+  if (!candidate) {
+    throw new Error(`Renderer scenario references an unconfigured WeasyPrint version: ${version}.`);
+  }
+  return candidate.id;
+}
 
 export const PAGE_NUMBER_RENDERER_SCENARIOS: readonly RendererContractScenario[] = [
   {
@@ -899,7 +912,7 @@ export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererSce
     purpose:
       "Materialize a no-base deterministic Project without Codex and render its canonical bundle on the 65.1 baseline.",
     required: true,
-    candidateIds: ["wp-65-1"],
+    candidateIds: [candidateIdForVersion("65.1")],
     authoring: {
       mode: "cover-image-only",
       coverImage: {
@@ -929,7 +942,7 @@ export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererSce
     purpose:
       "Materialize a base-profile deterministic Project without Codex and compare bundle versus explicit-role rendering on 69.0.",
     required: true,
-    candidateIds: ["wp-69-0"],
+    candidateIds: [candidateIdForVersion("69.0")],
     authoring: {
       mode: "base-profile-only",
       baseProfile: deterministicBaseProjectProfile,
@@ -1000,7 +1013,6 @@ export const PAGE_NUMBER_BODY_HOOK_CASES = [
 
 function stableCatalogPayload(launchMarkdown: string, launchProfile: string) {
   return JSON.stringify({
-    version: PAGE_NUMBER_RENDERER_CONTRACT_VERSION,
     candidates: WEASYPRINT_CANDIDATES,
     scenarios: PAGE_NUMBER_RENDERER_SCENARIOS,
     productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
@@ -1109,7 +1121,6 @@ export async function materializePageNumberRendererContract(
       join(fixtureRoot, "contract.json"),
       `${JSON.stringify(
         {
-          version: PAGE_NUMBER_RENDERER_CONTRACT_VERSION,
           catalogDigest,
           candidates: WEASYPRINT_CANDIDATES,
           scenarios: PAGE_NUMBER_RENDERER_SCENARIOS.map(
