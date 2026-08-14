@@ -1235,54 +1235,75 @@ Phase checkpoint:
 - The Phase 12 job records candidate outcomes, representative extraction and
   visual evidence, cleanup state, exact reviewed range, and final verdict.
 
-### Phase 13: Markdown PDF Contract Versioning And Module Boundaries
+### Phase 13: Profile Revision, Contract Versioning, And Module Boundaries
 
 Tasks:
 
 - [ ] Create and activate a Phase 13 job record from the Phase 12 documentation
       closeout boundary `11767a14`. Freeze the permanent-file boundary,
-      versioning decisions, modularization inventory, validation commands,
+      [Profile revision research][profile-revision-research] decisions,
+      versioning inventory, modularization dispositions, validation commands,
       meaningful commit checkpoints, exact review range, and final verdict
       before implementation.
-- [ ] Inventory every versioned Markdown PDF artifact and distinguish public or
-      persisted report schemas from temporary evidence reports, fixture
-      catalogs, harness digests, and ownership markers. Include the Project and
-      Template Codex reports, page-number renderer evidence, font-discovery
-      evidence, and profile-font-preservation smoke records.
-- [ ] Define one explicit versioning policy: package and canary versions do not
-      version internal evidence formats; ownership markers remain stable;
-      content catalogs use deterministic digests; and schema numbers remain
-      only where an actual serialized compatibility boundary requires them.
+- [ ] Inventory the accepted serialized Profile contract and freeze the revision-
+      bump rules from the research. Map the stable `v0.1.6` contract to the
+      unversioned revision-2 historical baseline and additive `v0.1.7` canary
+      features to revision `3`, the first emitted declaration. Do not claim that
+      `v0.1.6` serialized the field or reconstruct an undocumented revision `1`.
+- [ ] Add optional top-level `schemaVersion` and one feature registry for
+      recognized keys, later-added values and combinations, introduction
+      revisions, validation and normalization routing, diagnostic paths, and
+      renderer-capability relationships. Infer the minimum revision from
+      explicitly serialized features, excluding the declaration itself, before
+      defaults or one-render overrides, with revision `2` as the floor; derive
+      all revision views from this registry instead of parallel tables. Place
+      registry ownership and revision assessment in focused
+      `profile/feature-registry.ts` and
+      `profile/revision.ts` modules; make the schema and normalization modules
+      consume the registry, and carry the assessment through
+      `MarkdownPdfProfileLoadResult`.
+- [ ] Implement the advisory declaration boundary from the research. Accept only
+      positive safe-integer runtime numbers without coercion; keep missing
+      declarations quiet; bound malformed, stale, and newer declarations to one
+      successful condition in the shared Markdown PDF diagnostics; keep revision
+      diagnostics independent of page-number enablement; and retain concrete
+      failures for unsupported content, structure, or effective renderer
+      capabilities.
+- [ ] Make `md pdf-profile init`, Codex-generated Profiles, and generated Project
+      `profile.yml` write revision `3`. A new Profile derived from an older base
+      writes revision `3` without mutating the base; direct
+      rendering never rewrites an input Profile declaration.
+- [ ] Inventory every versioned Markdown PDF artifact and apply one taxonomy:
+      Profile `schemaVersion` is advisory; persisted reader/writer schemas are
+      strict only when required by a real consumer; catalogs and harness inputs
+      use deterministic digests; ownership markers remain stable; and package
+      versions do not version internal evidence formats. Include Project and
+      Template reports, renderer and font evidence, and profile-font smoke
+      records.
 - [ ] Review the page-number fixture contract `4`, renderer harness contract
       `4`, and renderer evidence report schema `3` independently. Remove or
       rename manually incremented values that only mirror catalog additions,
       and record why any retained schema version has a real consumer and
       compatibility meaning.
-- [ ] Broaden WeasyPrint candidate identifiers, renderer versions, and pinned
-      dependency versions so future candidates do not require editing a closed
-      literal type union. Derive the current evidence-candidate identifiers
-      from the catalog itself.
-- [ ] Keep the current `65.1`, `68.0`, and `69.0` candidates as the precise
-      tested evidence matrix without presenting them as a runtime support
-      allowlist. Add a regression proving a compatible future renderer version
-      satisfies the capability minimum.
+- [ ] Broaden WeasyPrint candidate and dependency identifiers beyond closed
+      literal unions, derive current identifiers from the catalog, and add a
+      regression for a compatible future version. Keep `65.1`, `68.0`, and
+      `69.0` as the tested evidence matrix, not a runtime allowlist.
 - [ ] Inventory oversized Markdown PDF production, fixture, harness, helper,
       and test files by line count and responsibility. Record a keep-or-split
       disposition rather than treating a numeric threshold alone as proof that
       a file needs refactoring.
-- [ ] Modularize the page-number renderer fixture catalog into focused types,
-      candidates, shared fixture builders, renderer scenarios, product
-      scenarios, Project scenarios, and materialization modules. Preserve the
-      existing fixture import path through a small compatibility facade.
-- [ ] Modularize the renderer-evidence harness into focused process execution,
-      PDF inspection, validation, owned-laboratory lifecycle, scenario
-      orchestration, public-report, and CLI-entry modules without adding a
-      second smoke or cleanup mechanism.
-- [ ] Modularize confirmed mixed-responsibility production hotspots in the
-      current Markdown-to-PDF scope. At minimum, separate render asset policy
-      and rewriting from render orchestration, Template Codex decision domains
-      and font ownership from final validation, and Profile page-chrome/code/
-      font normalization from top-level recipe conversion.
+- [ ] Review the page-number renderer fixture catalog and renderer-evidence
+      harness against the recorded keep-or-split dispositions. If a split is
+      accepted, separate catalog construction, execution and inspection,
+      laboratory lifecycle, orchestration, and public reporting behind the
+      existing fixture import path. Add no second smoke or cleanup mechanism;
+      if retained intact, record the cohesive-responsibility rationale.
+- [ ] Review the current Markdown-to-PDF production hotspots for render asset
+      policy and rewriting, Template Codex decision domains and font ownership,
+      and Profile page-chrome/code/font normalization. Apply the recorded
+      keep-or-split disposition to confirmed mixed-responsibility modules rather
+      than requiring a split from line count alone.
 - [ ] Split directly affected oversized tests by behavioral ownership when the
       new module boundary would otherwise leave a single mixed-responsibility
       suite. Preserve assertions and avoid unrelated fixture rewrites.
@@ -1291,9 +1312,12 @@ Tasks:
       compatibility. Pure file movement must not silently change the catalog
       digest or evidence acceptance result.
 - [ ] Run focused contract, fixture, harness, renderer-capability, Profile,
-      Template, Project, rendering, and Interactive tests. Then run the broad
-      Markdown PDF suite, full repository suite, TypeScript, lint, format
-      check, build, and `git diff --check`.
+      Template, Project, rendering, and Interactive tests. Cover declaration
+      states, revision-2 and revision-3 source inference, unsupported content,
+      renderer independence, revision diagnostics with page numbers disabled,
+      generated revision `3`, base preservation, non-rewriting renders, and
+      diagnostic aggregation. Then run the broad Markdown PDF and repository
+      suites, TypeScript, lint, format check, build, and `git diff --check`.
 - [ ] Do not repeat the live renderer matrix for behavior-preserving module
       movement. If scenario inputs, renderer behavior, or evidence acceptance
       semantics change, record the affected live evidence that must be rerun
@@ -1305,14 +1329,21 @@ Tasks:
 
 Phase checkpoint:
 
-- Version numbers describe real serialized compatibility boundaries rather
-  than package releases, scenario counts, or informal implementation rounds.
-- The evidence catalog remains precise about tested candidates while runtime
-  capability comparison and candidate types admit compatible future versions.
-- Oversized mixed-responsibility Markdown PDF modules are separated behind
-  stable imports and explicit ownership boundaries.
-- Fixture and harness modularization preserves catalog meaning, guarded
-  cleanup, public-safe evidence, and the completed Phase 12 renderer results.
+- Profile `schemaVersion` is advisory: explicitly serialized features determine
+  reader compatibility, while normalized effective behavior determines
+  renderer compatibility. The unversioned `v0.1.6` contract is the revision-2
+  historical baseline; revision `3` is the first emitted canary declaration.
+  Legacy Profiles remain valid, and rendering never rewrites input.
+- One feature registry owns recognized serialized features, introduction
+  revisions, source-based inference, validation and normalization routing,
+  diagnostics, and renderer-capability relationships.
+- Strict versions remain only at real reader/writer boundaries. Evidence uses
+  stable markers or deterministic digests, and its precise tested candidates do
+  not become a runtime allowlist.
+- Mixed-responsibility modules are separated behind stable imports; retained
+  large modules have a cohesive-responsibility rationale. Fixture and harness
+  dispositions preserve catalog meaning, guarded cleanup, public-safe evidence,
+  and Phase 12 results.
 - The Phase 13 job records the inventory and dispositions, versioning decisions,
   implementation commits, exact reviewed range, validation evidence, and
   Continue/Constrain/Stop verdict.
@@ -1366,6 +1397,7 @@ Phase checkpoint:
 ## Related Research
 
 - [Markdown PDF Page-Number Configuration research][page-number-research]
+- [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
@@ -1378,6 +1410,7 @@ Phase checkpoint:
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
 [pattern-language-research]: ../researches/research-2026-08-11-pattern-placeholder-and-template-language-guide.md
+[profile-revision-research]: ../researches/research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [project-helper]: ../guides/markdown-pdf-codex-project-helper.md
 [template-helper]: ../guides/markdown-pdf-codex-template-helper.md

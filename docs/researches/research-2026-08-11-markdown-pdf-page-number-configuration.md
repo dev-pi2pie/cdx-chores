@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
-modified-date: 2026-08-12
+modified-date: 2026-08-14
 status: in-progress
 agent: codex
 ---
@@ -490,6 +490,13 @@ otherwise unnecessary key-renaming boundary; old CLIs can still reject Profiles
 that actually use newly added fields such as `start`, `increment`, or
 `countFrom`.
 
+Cross-feature Profile revision signaling and key-compatibility policy are owned
+by [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research].
+This research defines the meaning and validation of its page-number fields, but
+it does not make a declared Profile revision an exact compatibility gate. The
+stable `v0.1.6` Profile contract is the unversioned revision-2 baseline; the
+additive canary contract is revision `3`, the first emitted declaration.
+
 ### Diagnostic And Fallback Contract
 
 Warnings are successful diagnostics, not partial failures. In the plain CLI,
@@ -825,6 +832,7 @@ applying that handoff to the new repository-wide guide.
 ## Related Research
 
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
+- [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 
 ## Related Plans
@@ -868,3 +876,4 @@ applying that handoff to the new repository-wide guide.
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
+[profile-revision-research]: research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
